@@ -1,0 +1,43 @@
+import { ROUTE_NAMES } from '@/constants/adminConstant'
+import { ROLE } from '@/constants/roleConstant'
+import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
+
+export const AdminRoutes = [
+  {
+    path: '/Admin',
+    name: GLOBAL_ROUTE_NAMES.ADMIN_PAGE,
+    component: import('@/views/layout/AdminLayout.vue'),
+    redirect: { name: ROUTE_NAMES.MANAGEMENT_FACILITY },
+    meta: {
+      title: 'Ban đào tạo',
+      requireRole: ROLE.ADMIN,
+    },
+    children: [
+      {
+        path: 'management-facility',
+        name: ROUTE_NAMES.MANAGEMENT_FACILITY,
+        component: import('@/views/pages/admin/AdminManagementFacilityPage.vue'),
+      },
+      {
+        path: 'management-semester',
+        name: ROUTE_NAMES.MANAGEMENT_SEMESTER,
+        component: import('@/views/pages/admin/AdminManagementSemesterPage.vue'),
+      },
+      {
+        path: 'management-subject',
+        name: ROUTE_NAMES.MANAGEMENT_SUBJECT,
+        component: import('@/views/pages/admin/AdminManagementSubjectPage.vue'),
+      },
+      {
+        path: 'management-staff',
+        name: ROUTE_NAMES.MANAGEMENT_STAFF,
+        component: import('@/views/pages/admin/AdminManagementStaffPage.vue'),
+      },
+      {
+        path: 'management-level-project',
+        name: ROUTE_NAMES.MANAGEMENT_LEVEL_PROJECT,
+        component: import('@/views/pages/admin/AdminManagementLevelProjectPage.vue'),
+      },
+    ],
+  },
+]
