@@ -16,12 +16,15 @@ public class SessionHelper {
 
     private final HttpSession httpSession;
 
+    private static AuthUser authUser;
+
     public AuthUser getCurrentUser() {
         return (AuthUser) httpSession.getAttribute(SessionConstant.AUTH_USER);
     }
 
     public void setCurrentUser(AuthUser user) {
         httpSession.setAttribute(SessionConstant.AUTH_USER, user);
+        authUser = user;
     }
 
     public AuthUser buildAuthUser(UserAdmin user, RoleConstant role, String idFacility) {
@@ -60,6 +63,42 @@ public class SessionHelper {
         authUser.setIdFacility(idFacility);
         authUser.setPicture(user.getImage());
         return authUser;
+    }
+
+    public String getUserId() {
+        return authUser.getId();
+    }
+
+    public String getUserName() {
+        return authUser.getName();
+    }
+
+    public RoleConstant getUserRole() {
+        return authUser.getRole();
+    }
+
+    public String getFacilityId() {
+        return authUser.getIdFacility();
+    }
+
+    public String getUserEmail() {
+        return authUser.getEmail();
+    }
+
+    public String getUserEmailFe() {
+        return authUser.getEmailFe();
+    }
+
+    public String getUserEmailFpt() {
+        return authUser.getEmailFpt();
+    }
+
+    public String getUserPicture() {
+        return authUser.getPicture();
+    }
+
+    public String getUserCode() {
+        return authUser.getCode();
     }
 
 }
