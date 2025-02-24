@@ -1,10 +1,9 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import { AuthenticationRoutes } from './authenticationRoute'
+import { AuthenticationRoutes, ROUTE_NAMES as RouteNameAuth } from './authenticationRoute'
 import { AdminRoutes } from './adminRoute'
 import { StaffRoutes } from './staffRoute'
 import { StudentRoutes } from './studentRoute'
 import useAuthStore from '@/stores/useAuthStore'
-import { ROUTE_NAMES as RouteNameAuth } from '@/constants/authenticationConstant'
 import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
 
 const routes = [
