@@ -3,7 +3,7 @@ import { ref } from 'vue'
 import { MenuUnfoldOutlined, MenuFoldOutlined, UserOutlined } from '@ant-design/icons-vue'
 import imgLogoFpt from '@/assets/images/logo-fpt.png'
 import useAuthStore from '@/stores/useAuthStore'
-import { ROUTE_NAMES } from '@/constants/adminConstant'
+import { ROUTE_NAMES } from '@/router/adminRoute'
 
 const selectedKeys = ref(['1'])
 const collapsed = ref(false)

@@ -1,6 +1,10 @@
-import { ROUTE_NAMES } from '@/constants/studentConstant'
 import { ROLE } from '@/constants/roleConstant'
 import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
+
+export const ROUTE_NAMES = {
+  ATTENDANCE: 'route_student_attendance',
+  HISTORY_ATTENDANCE: 'route_student_history_attendance',
+}
 
 export const StudentRoutes = [
   {
