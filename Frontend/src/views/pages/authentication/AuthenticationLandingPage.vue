@@ -9,11 +9,12 @@ import { GoogleOutlined } from '@ant-design/icons-vue'
 import { onMounted, ref } from 'vue'
 import { toast } from 'vue3-toastify'
 import requestAPI from '@/services/requestApiService'
-import { API_ROUTES, REDIRECT_LOGIN_ADMIN } from '@/constants/authenticationConstant'
+import { REDIRECT_LOGIN_ADMIN } from '@/constants/authenticationConstant'
 import useAuthStore from '@/stores/useAuthStore'
 import useLoadingStore from '@/stores/useLoadingStore'
 import { decodeBase64 } from '@/utils/utils'
 import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
+import { ROUTE_NAMES_API } from '@/router/authenticationRoute'
 
 const router = useRouter()
 const route = useRoute()
@@ -80,7 +81,7 @@ const handleRedirectLogin = (width_out_facility = false) => {
 
 const fetchDataFacility = async () => {
   try {
-    const response = await requestAPI.get(API_ROUTES.FETCH_DATA_FACILITY)
+    const response = await requestAPI.get(ROUTE_NAMES_API.FETCH_DATA_FACILITY)
     lstFacility.value = response.data.data
   } catch (error) {
     toast.error('Không thể tải danh sách cơ sở')
