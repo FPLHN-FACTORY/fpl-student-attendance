@@ -21,6 +21,7 @@ import udpm.hn.studentattendance.core.authentication.utils.JwtUtil;
 import udpm.hn.studentattendance.entities.UserAdmin;
 import udpm.hn.studentattendance.entities.UserStaff;
 import udpm.hn.studentattendance.entities.UserStudent;
+import udpm.hn.studentattendance.helpers.SessionHelper;
 import udpm.hn.studentattendance.infrastructure.constants.RoleConstant;
 
 import java.io.IOException;
@@ -33,6 +34,8 @@ import java.util.Optional;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
+
+    private final SessionHelper sessionHelper;
 
     private final AuthenticationUserAdminRepository authenticationUserAdminRepository;
 
@@ -54,7 +57,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
                 boolean isAuthentication = true;
 
-                RoleConstant roleCode = null;
+                AuthUser authUser = new AuthUser();
+
+                RoleConstant roleCode;
                 try {
                     roleCode = RoleConstant.valueOf(role.toUpperCase());
 
@@ -65,6 +70,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                             if (userAdmin.isEmpty()) {
                                 isAuthentication = false;
                             }
+                            authUser = sessionHelper.buildAuthUser(userAdmin.get(), roleCode, facilityID);
                             break;
 
                         case STAFF:
@@ -72,6 +78,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                             if (userStaff.isEmpty()) {
                                 isAuthentication = false;
                             }
+                            authUser = sessionHelper.buildAuthUser(userStaff.get(), roleCode, facilityID);
                             break;
 
                         case STUDENT:
@@ -79,6 +86,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                             if (userStudent.isEmpty()) {
                                 isAuthentication = false;
                             }
+                            authUser = sessionHelper.buildAuthUser(userStudent.get(), roleCode, facilityID);
                             break;
                     }
                 } catch (Exception e) {
@@ -86,6 +94,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
 
                 if (isAuthentication) {
+
+                    sessionHelper.setCurrentUser(authUser);
+
                     List<GrantedAuthority> authorities = new ArrayList<>();
                     authorities.add(new SimpleGrantedAuthority(role));
 
