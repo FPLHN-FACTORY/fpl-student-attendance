@@ -8,4 +8,6 @@ public final class SessionConstant {
 
     public static final String LOGIN_FACILITY = "login_facility";
 
+    public static final String AUTH_USER = "login_auth_user";
+
 }
