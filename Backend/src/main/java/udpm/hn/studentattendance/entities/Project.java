@@ -37,10 +37,6 @@ public class Project extends PrimaryEntity implements Serializable {
     private LevelProject levelProject;
 
     @ManyToOne
-    @JoinColumn(name = "id_user_staff")
-    private UserStaff userStaff;
-
-    @ManyToOne
     @JoinColumn(name = "id_subject_facility")
     private SubjectFacility subjectFacility;
 
