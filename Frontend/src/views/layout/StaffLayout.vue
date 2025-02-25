@@ -29,9 +29,9 @@ const handleLogout = () => {
       </div>
       <a-menu v-model:selectedKeys="selectedKeys" theme="light" mode="inline">
         <a-menu-item key="1">
-          <router-link :to="{ name: ROUTE_NAMES.MANAGEMENT_PROJECT }">
+          <router-link :to="{ name: ROUTE_NAMES.MANAGEMENT_FACTORY }">
             <user-outlined />
-            <span>Quản lý dự án</span>
+            <span>Quản lý nhóm xưởng</span>
           </router-link>
         </a-menu-item>
         <a-menu-item key="2">

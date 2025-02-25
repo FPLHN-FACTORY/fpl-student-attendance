@@ -1,6 +1,7 @@
 package udpm.hn.studentattendance.entities;
 
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
@@ -11,6 +12,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.DynamicUpdate;
 import udpm.hn.studentattendance.entities.base.PrimaryEntity;
+import udpm.hn.studentattendance.infrastructure.constants.EntityProperties;
 
 import java.io.Serializable;
 
@@ -19,16 +21,22 @@ import java.io.Serializable;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-@Table(name = "user_student_project")
+@Table(name = "factory")
 @DynamicUpdate
-public class UserStudentProject extends PrimaryEntity implements Serializable {
+public class Factory extends PrimaryEntity implements Serializable {
+
+    @Column(name = "name", length = EntityProperties.LENGTH_NAME)
+    private String name;
+
+    @Column(name = "description", length = EntityProperties.LENGTH_TEXT)
+    private String description;
 
     @ManyToOne
     @JoinColumn(name = "id_project")
     private Project project;
 
     @ManyToOne
-    @JoinColumn(name = "id_user_student")
-    private UserStudent userStudent;
+    @JoinColumn(name = "id_user_staff")
+    private UserStaff userStaff;
 
 }

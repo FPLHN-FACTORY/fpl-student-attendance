@@ -29,30 +29,36 @@ const handleLogout = () => {
       </div>
       <a-menu v-model:selectedKeys="selectedKeys" theme="light" mode="inline">
         <a-menu-item key="1">
+          <router-link :to="{ name: ROUTE_NAMES.MANAGEMENT_PROJECT }">
+            <user-outlined />
+            <span>Quản lý dự án</span>
+          </router-link>
+        </a-menu-item>
+        <a-menu-item key="2">
           <router-link :to="{ name: ROUTE_NAMES.MANAGEMENT_FACILITY }">
             <user-outlined />
             <span>Quản lý cơ sở</span>
           </router-link>
         </a-menu-item>
-        <a-menu-item key="2">
+        <a-menu-item key="3">
           <router-link :to="{ name: ROUTE_NAMES.MANAGEMENT_SEMESTER }">
             <user-outlined />
             <span>Quản lý học kỳ</span>
           </router-link>
         </a-menu-item>
-        <a-menu-item key="3">
+        <a-menu-item key="4">
           <router-link :to="{ name: ROUTE_NAMES.MANAGEMENT_SUBJECT }">
             <user-outlined />
             <span>Quản lý bộ môn</span>
           </router-link>
         </a-menu-item>
-        <a-menu-item key="4">
+        <a-menu-item key="5">
           <router-link :to="{ name: ROUTE_NAMES.MANAGEMENT_LEVEL_PROJECT }">
             <user-outlined />
             <span>Quản lý cấp độ dự án</span>
           </router-link>
         </a-menu-item>
-        <a-menu-item key="5">
+        <a-menu-item key="6">
           <router-link :to="{ name: ROUTE_NAMES.MANAGEMENT_STAFF }">
             <user-outlined />
             <span>Quản lý phụ trách xưởng</span>
