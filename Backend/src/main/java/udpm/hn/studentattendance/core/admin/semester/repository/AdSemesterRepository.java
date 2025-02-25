@@ -1,0 +1,53 @@
+package udpm.hn.studentattendance.core.admin.semester.repository;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.stereotype.Repository;
+import udpm.hn.studentattendance.core.admin.semester.model.request.SemesterRequest;
+import udpm.hn.studentattendance.core.admin.semester.model.respone.SemesterResponse;
+import udpm.hn.studentattendance.entities.Semester;
+import udpm.hn.studentattendance.repositories.SemesterRepository;
+
+import java.util.List;
+import java.util.Optional;
+
+@Repository
+public interface AdSemesterRepository extends SemesterRepository {
+    @Query("""
+            SELECT s.id AS semesterId
+            , s.code AS semesterCode 
+            ,s.name AS semesterName
+            , s.fromDate AS startDate
+            , s.toDate AS endDate FROM Semester s 
+            """)
+    Page<SemesterResponse> getAllSemester(Pageable pageable, SemesterRequest request);
+
+    @Query("""
+             SELECT s
+             FROM Semester s
+             WHERE (s.fromDate >= :startTime AND s.fromDate <= :endTime)
+             OR (s.toDate >= :startTime AND s.toDate <= :endTime)
+             OR (:startTime >= s.fromDate AND :startTime <= s.toDate)
+             OR (:endTime >= s.fromDate AND :endTime <= s.toDate)
+            """)
+    List<Semester> checkConflictTime(Long startTime, Long endTime);
+    @Query("""
+                FROM Semester s
+                WHERE s.name = :semesterName 
+                AND s.year = :semesterYear
+                AND s.status = 'ACTIVE'
+            """)
+    Optional<Semester> checkSemesterExistNameAndYear(String semesterName, Integer semesterYear);
+
+    @Query("""
+            SELECT 
+            s.id as semesterId,
+            s.name as semesterName,
+            s.fromDate as startTime,
+            s.toDate as endTime
+            FROM Semester s
+            WHERE s.id = :semesterId
+            """)
+    Optional<Semester> getDetailSemesterById(String semesterId);
+}

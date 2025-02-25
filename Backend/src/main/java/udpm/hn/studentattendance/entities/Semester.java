@@ -1,11 +1,7 @@
 package udpm.hn.studentattendance.entities;
 
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -32,6 +28,8 @@ public class Semester extends PrimaryEntity implements Serializable {
     private String code;
 
     @Column(name = "name", length = EntityProperties.LENGTH_NAME)
+    @Nationalized
+    @Enumerated(EnumType.STRING)
     private String name;
 
     @Column(name = "from_date")
@@ -39,7 +37,8 @@ public class Semester extends PrimaryEntity implements Serializable {
 
     @Column(name = "to_date")
     private Long toDate;
-
+    @Column(name = "year")
+    private Integer year;
     @ManyToOne
     @JoinColumn(name = "id_facility")
     private Facility facility;

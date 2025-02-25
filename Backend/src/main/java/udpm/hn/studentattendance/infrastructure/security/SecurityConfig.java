@@ -9,6 +9,7 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import udpm.hn.studentattendance.core.authentication.router.AuthenticationSecurityConfig;
+import udpm.hn.studentattendance.core.test.router.TestSecurityConfig;
 import udpm.hn.studentattendance.infrastructure.security.exception.CustomAuthenticationEntryPoint;
 
 @Configuration
@@ -20,6 +21,7 @@ import udpm.hn.studentattendance.infrastructure.security.exception.CustomAuthent
 public class SecurityConfig {
 
     private final AuthenticationSecurityConfig authenticationSecurityConfig;
+    private final TestSecurityConfig testSecurityConfig;
 
     @Bean
     protected SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -33,6 +35,7 @@ public class SecurityConfig {
 
         // Thêm từng config routes vào đây
         authenticationSecurityConfig.configure(http);
+        testSecurityConfig.configure(http);
 
         http.authorizeHttpRequests(auth -> auth.anyRequest().authenticated());
         return http.build();
