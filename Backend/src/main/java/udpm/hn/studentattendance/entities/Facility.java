@@ -31,4 +31,7 @@ public class Facility extends PrimaryEntity implements Serializable {
     @Column(name = "name", length = EntityProperties.LENGTH_NAME)
     private String name;
 
+    @Column(name = "position")
+    private Integer position;
+
 }
