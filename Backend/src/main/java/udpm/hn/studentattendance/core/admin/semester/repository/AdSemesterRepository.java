@@ -14,16 +14,31 @@ import java.util.Optional;
 
 @Repository
 public interface AdSemesterRepository extends SemesterRepository {
-    @Query("""
-            SELECT s.id AS semesterId
-            , s.code AS semesterCode 
-            ,s.name AS semesterName
-            , s.fromDate AS startDate
-            , s.toDate AS endDate FROM Semester s 
-            """)
+    @Query(
+            value = """
+                    SELECT s.id AS semesterId,
+                           s.code AS semesterCode,
+                           s.name AS semesterName,
+                           s.fromDate AS startDate,
+                           s.toDate AS endDate
+                    FROM Semester s
+                    WHERE (:#{#request.semesterName} IS NULL OR CONCAT(s.name, ' - ', s.year) LIKE CONCAT('%', :#{#request.semesterName}, '%'))
+                      AND ((:#{#request.fromDateSemester} IS NULL OR :#{#request.toDateSemester} IS NULL)
+                           OR (s.fromDate >= :#{#request.fromDateSemester} AND s.toDate <= :#{#request.toDateSemester})
+                           OR (s.toDate >= :#{#request.fromDateSemester} AND s.fromDate <= :#{#request.toDateSemester}))
+                    """,
+            countQuery = """
+                    SELECT COUNT(s.id)
+                    FROM Semester s
+                    WHERE (:#{#request.semesterName} IS NULL OR CONCAT(s.name, ' - ', s.year) LIKE CONCAT('%', :#{#request.semesterName}, '%'))
+                      AND ((:#{#request.fromDateSemester} IS NULL OR :#{#request.toDateSemester} IS NULL)
+                           OR (s.fromDate >= :#{#request.fromDateSemester} AND s.toDate <= :#{#request.toDateSemester})
+                           OR (s.toDate >= :#{#request.fromDateSemester} AND s.fromDate <= :#{#request.toDateSemester}))
+                    """
+    )
     Page<SemesterResponse> getAllSemester(Pageable pageable, SemesterRequest request);
 
-    @Query("""
+    @Query( value = """
              SELECT s
              FROM Semester s
              WHERE (s.fromDate >= :startTime AND s.fromDate <= :endTime)
@@ -32,7 +47,8 @@ public interface AdSemesterRepository extends SemesterRepository {
              OR (:endTime >= s.fromDate AND :endTime <= s.toDate)
             """)
     List<Semester> checkConflictTime(Long startTime, Long endTime);
-    @Query("""
+
+    @Query(value = """
                 FROM Semester s
                 WHERE s.name = :semesterName 
                 AND s.year = :semesterYear
@@ -40,7 +56,7 @@ public interface AdSemesterRepository extends SemesterRepository {
             """)
     Optional<Semester> checkSemesterExistNameAndYear(String semesterName, Integer semesterYear);
 
-    @Query("""
+    @Query(value = """
             SELECT 
             s.id as semesterId,
             s.name as semesterName,

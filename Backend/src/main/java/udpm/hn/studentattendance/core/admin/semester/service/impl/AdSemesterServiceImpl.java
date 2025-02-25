@@ -10,7 +10,7 @@ import org.springframework.validation.annotation.Validated;
 import udpm.hn.studentattendance.core.admin.semester.model.request.CreateUpdateSemesterRequest;
 import udpm.hn.studentattendance.core.admin.semester.model.request.SemesterRequest;
 import udpm.hn.studentattendance.core.admin.semester.repository.AdSemesterRepository;
-import udpm.hn.studentattendance.core.admin.semester.service.SemesterService;
+import udpm.hn.studentattendance.core.admin.semester.service.AdSemesterService;
 import udpm.hn.studentattendance.entities.Semester;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
 import udpm.hn.studentattendance.infrastructure.common.ApiResponse;
@@ -28,7 +28,7 @@ import java.util.Optional;
 @Service
 @RequiredArgsConstructor
 @Validated
-public class SemesterServiceImpl implements SemesterService {
+public class AdSemesterServiceImpl implements AdSemesterService {
     private AdSemesterRepository adSemesterRepository;
 
     @Override
@@ -136,7 +136,7 @@ public class SemesterServiceImpl implements SemesterService {
     }
 
     @Override
-    public ResponseEntity<?> updateSemester(CreateUpdateSemesterRequest request) {
+    public ResponseEntity<?> updateSemester(@Valid CreateUpdateSemesterRequest request) {
         // fomat từ epoch milli giây sang Instant convert thành giờ của máy chủ
         LocalDateTime fromDate = Instant
                 .ofEpochMilli(request.getFromDate())

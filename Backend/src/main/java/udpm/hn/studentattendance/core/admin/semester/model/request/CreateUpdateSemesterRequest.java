@@ -14,14 +14,18 @@ import java.time.ZoneId;
 public class CreateUpdateSemesterRequest {
 
     private String semesterId;
+
     private String facilytiId;
+
     @NotBlank(message = "Tên học kỳ không được để trống")
     private String semesterName;
+
     @NotNull(message = "Thời gian không được để trống")
     private Long fromDate;
 
     @NotNull(message = "Thời gian không được để trống")
     private Long toDate;
+
 
     public Long getStartTimeCustom() {
         // Chuyển đổi giá trị từ this.fromDate (epoch milli) thành đối tượng LocalDateTime dựa trên múi giờ mặc định của hệ thống
