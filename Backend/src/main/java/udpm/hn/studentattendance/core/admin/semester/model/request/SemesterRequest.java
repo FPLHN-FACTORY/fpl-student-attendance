@@ -8,7 +8,9 @@ import udpm.hn.studentattendance.infrastructure.common.PageableRequest;
 @Setter
 public class SemesterRequest extends PageableRequest {
     private String semesterName;
+
     private Long fromDateSemester;
+
     private Long toDateSemester;
 
 }

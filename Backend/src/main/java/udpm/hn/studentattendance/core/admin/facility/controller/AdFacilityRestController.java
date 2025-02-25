@@ -1,0 +1,41 @@
+package udpm.hn.studentattendance.core.admin.facility.controller;
+
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import udpm.hn.studentattendance.core.admin.facility.model.request.CreateUpdateFacilityRequest;
+import udpm.hn.studentattendance.core.admin.facility.model.request.FacilitySearchRequest;
+import udpm.hn.studentattendance.core.admin.facility.service.AdFacilityService;
+
+@RestController
+@RequiredArgsConstructor
+@RequestMapping("/api/facilities")
+public class AdFacilityRestController {
+
+    private AdFacilityService adFacilityService;
+
+    @GetMapping
+    public ResponseEntity<?> getAllFacility
+            (FacilitySearchRequest request) {
+        return adFacilityService.getAllFacility(request);
+    }
+
+    @PostMapping
+    public ResponseEntity<?> createFacility
+            (@RequestBody CreateUpdateFacilityRequest createUpdateFacilityRequest) {
+        return adFacilityService.createFacility(createUpdateFacilityRequest);
+    }
+
+    @PutMapping("/{facilityId}")
+    public ResponseEntity<?> updateFacility
+            (@PathVariable("facilityId") String facilityId,
+             @RequestBody CreateUpdateFacilityRequest createUpdateFacilityRequest) {
+        return adFacilityService.updateFacility(facilityId, createUpdateFacilityRequest);
+    }
+
+    @PutMapping("/status/{facilityId}")
+    public ResponseEntity<?> changeStatusFacility
+            (@PathVariable("facilityId") String facilityId) {
+        return adFacilityService.changeFacilityStatus(facilityId);
+    }
+}
