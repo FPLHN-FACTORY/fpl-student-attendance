@@ -7,8 +7,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
-import udpm.hn.studentattendance.core.admin.semester.model.request.CreateUpdateSemesterRequest;
-import udpm.hn.studentattendance.core.admin.semester.model.request.SemesterRequest;
+import udpm.hn.studentattendance.core.admin.semester.model.request.AdCreateUpdateSemesterRequest;
+import udpm.hn.studentattendance.core.admin.semester.model.request.AdSemesterRequest;
 import udpm.hn.studentattendance.core.admin.semester.repository.AdSemesterRepository;
 import udpm.hn.studentattendance.core.admin.semester.service.AdSemesterService;
 import udpm.hn.studentattendance.entities.Semester;
@@ -32,7 +32,7 @@ public class AdSemesterServiceImpl implements AdSemesterService {
     private AdSemesterRepository adSemesterRepository;
 
     @Override
-    public ResponseEntity<ApiResponse> getAllSemester(SemesterRequest request) {
+    public ResponseEntity<?> getAllSemester(AdSemesterRequest request) {
         Pageable pageable = PaginationHelper.createPageable(request, "createdAt");
         PageableObject pageableObject = PageableObject.of(adSemesterRepository.getAllSemester(pageable, request));
         return new ResponseEntity<>(new ApiResponse(
@@ -62,7 +62,7 @@ public class AdSemesterServiceImpl implements AdSemesterService {
     }
 
     @Override
-    public ResponseEntity<?> createSemester(@Valid CreateUpdateSemesterRequest request) {
+    public ResponseEntity<?> createSemester(@Valid AdCreateUpdateSemesterRequest request) {
         try {
             // fomat từ epoch milli giây sang Instant convert thành giờ của máy chủ
             LocalDateTime fromDate = Instant
@@ -136,7 +136,7 @@ public class AdSemesterServiceImpl implements AdSemesterService {
     }
 
     @Override
-    public ResponseEntity<?> updateSemester(@Valid CreateUpdateSemesterRequest request) {
+    public ResponseEntity<?> updateSemester(@Valid AdCreateUpdateSemesterRequest request) {
         // fomat từ epoch milli giây sang Instant convert thành giờ của máy chủ
         LocalDateTime fromDate = Instant
                 .ofEpochMilli(request.getFromDate())

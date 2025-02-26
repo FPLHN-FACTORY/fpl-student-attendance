@@ -4,8 +4,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
-import udpm.hn.studentattendance.core.admin.semester.model.request.SemesterRequest;
-import udpm.hn.studentattendance.core.admin.semester.model.respone.SemesterResponse;
+import udpm.hn.studentattendance.core.admin.semester.model.request.AdSemesterRequest;
+import udpm.hn.studentattendance.core.admin.semester.model.respone.AdSemesterRespone;
 import udpm.hn.studentattendance.entities.Semester;
 import udpm.hn.studentattendance.repositories.SemesterRepository;
 
@@ -22,7 +22,7 @@ public interface AdSemesterRepository extends SemesterRepository {
                            s.fromDate AS startDate,
                            s.toDate AS endDate
                     FROM Semester s
-                    WHERE (:#{#request.semesterName} IS NULL OR CONCAT(s.name, ' - ', s.year) LIKE CONCAT('%', :#{#request.semesterName}, '%'))
+                    WHERE (:#{#request.semesterName} IS NULL OR CONCAT(s.name, ' - ', s.year) LIKE CONCAT('%', TRIM(:#{#request.semesterName}), '%'))
                       AND ((:#{#request.fromDateSemester} IS NULL OR :#{#request.toDateSemester} IS NULL)
                            OR (s.fromDate >= :#{#request.fromDateSemester} AND s.toDate <= :#{#request.toDateSemester})
                            OR (s.toDate >= :#{#request.fromDateSemester} AND s.fromDate <= :#{#request.toDateSemester}))
@@ -30,15 +30,15 @@ public interface AdSemesterRepository extends SemesterRepository {
             countQuery = """
                     SELECT COUNT(s.id)
                     FROM Semester s
-                    WHERE (:#{#request.semesterName} IS NULL OR CONCAT(s.name, ' - ', s.year) LIKE CONCAT('%', :#{#request.semesterName}, '%'))
+                    WHERE (:#{#request.semesterName} IS NULL OR CONCAT(s.name, ' - ', s.year) LIKE CONCAT('%', TRIM(:#{#request.semesterName}), '%'))
                       AND ((:#{#request.fromDateSemester} IS NULL OR :#{#request.toDateSemester} IS NULL)
                            OR (s.fromDate >= :#{#request.fromDateSemester} AND s.toDate <= :#{#request.toDateSemester})
                            OR (s.toDate >= :#{#request.fromDateSemester} AND s.fromDate <= :#{#request.toDateSemester}))
                     """
     )
-    Page<SemesterResponse> getAllSemester(Pageable pageable, SemesterRequest request);
+    Page<AdSemesterRespone> getAllSemester(Pageable pageable, AdSemesterRequest request);
 
-    @Query( value = """
+    @Query(value = """
              SELECT s
              FROM Semester s
              WHERE (s.fromDate >= :startTime AND s.fromDate <= :endTime)
@@ -50,7 +50,7 @@ public interface AdSemesterRepository extends SemesterRepository {
 
     @Query(value = """
                 FROM Semester s
-                WHERE s.name = :semesterName 
+                WHERE TRIM(s.name) = TRIM(:semesterName)
                 AND s.year = :semesterYear
                 AND s.status = 'ACTIVE'
             """)
@@ -63,7 +63,7 @@ public interface AdSemesterRepository extends SemesterRepository {
             s.fromDate as startTime,
             s.toDate as endTime
             FROM Semester s
-            WHERE s.id = :semesterId
+            WHERE TRIM(s.id) = TRIM(:semesterId)
             """)
     Optional<Semester> getDetailSemesterById(String semesterId);
 }

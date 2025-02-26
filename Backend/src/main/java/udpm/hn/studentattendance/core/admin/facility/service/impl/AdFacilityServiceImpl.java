@@ -29,7 +29,7 @@ public class AdFacilityServiceImpl implements AdFacilityService {
     private AdFacilityRepository facilityRepository;
 
     @Override
-    public ResponseEntity<ApiResponse> getAllFacility(FacilitySearchRequest request) {
+    public ResponseEntity<?> getAllFacility(FacilitySearchRequest request) {
         Pageable pageable = PaginationHelper.createPageable(request, "createdAt");
         PageableObject facilities = PageableObject.of(facilityRepository.getAllFacility(pageable, request));
         return new ResponseEntity<>(
@@ -41,7 +41,7 @@ public class AdFacilityServiceImpl implements AdFacilityService {
     }
 
     @Override
-    public ResponseEntity<ApiResponse> createFacility(@Valid CreateUpdateFacilityRequest request) {
+    public ResponseEntity<?> createFacility(@Valid CreateUpdateFacilityRequest request) {
         Optional<Facility> existFacility = facilityRepository.findByName(request.getFacilityName().trim());
         if (!existFacility.isEmpty()) {
             return new ResponseEntity<>(
