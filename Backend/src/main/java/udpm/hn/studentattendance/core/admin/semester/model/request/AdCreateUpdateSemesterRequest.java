@@ -11,7 +11,7 @@ import java.time.ZoneId;
 
 @Getter
 @Setter
-public class CreateUpdateSemesterRequest {
+public class AdCreateUpdateSemesterRequest {
 
     private String semesterId;
 

@@ -3,8 +3,8 @@ package udpm.hn.studentattendance.core.admin.semester.controller;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import udpm.hn.studentattendance.core.admin.semester.model.request.CreateUpdateSemesterRequest;
-import udpm.hn.studentattendance.core.admin.semester.model.request.SemesterRequest;
+import udpm.hn.studentattendance.core.admin.semester.model.request.AdCreateUpdateSemesterRequest;
+import udpm.hn.studentattendance.core.admin.semester.model.request.AdSemesterRequest;
 import udpm.hn.studentattendance.core.admin.semester.service.AdSemesterService;
 
 @RestController
@@ -14,7 +14,7 @@ public class AdSemesterRestController {
     private AdSemesterService semesterService;
 
     @GetMapping
-    public ResponseEntity<?> getAll(SemesterRequest request) {
+    public ResponseEntity<?> getAll(AdSemesterRequest request) {
         return semesterService.getAllSemester(request);
     }
 
@@ -26,13 +26,13 @@ public class AdSemesterRestController {
 
     @PostMapping
     public ResponseEntity<?> createSemester
-            (@RequestBody CreateUpdateSemesterRequest createUpdateSemesterRequest) {
+            (@RequestBody AdCreateUpdateSemesterRequest createUpdateSemesterRequest) {
         return semesterService.createSemester(createUpdateSemesterRequest);
     }
 
     @PutMapping
     public ResponseEntity<?> updateSemester
-            (@RequestBody CreateUpdateSemesterRequest createUpdateSemesterRequest) {
+            (@RequestBody AdCreateUpdateSemesterRequest createUpdateSemesterRequest) {
         return semesterService.updateSemester(createUpdateSemesterRequest);
     }
 
