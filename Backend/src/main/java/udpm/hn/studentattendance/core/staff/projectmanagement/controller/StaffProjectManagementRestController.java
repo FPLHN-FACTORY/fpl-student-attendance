@@ -31,12 +31,12 @@ public class StaffProjectManagementRestController {
     }
 
     @PostMapping
-    public ResponseEntity<?> addProject(ProjectCreateRequest request) {
+    public ResponseEntity<?> addProject(@RequestBody ProjectCreateRequest request) {
         return PaginationHelper.createResponseEntity(service.createProject(request));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateProject(@PathVariable String id, ProjectCreateRequest request) {
+    public ResponseEntity<?> updateProject(@PathVariable String id, @RequestBody ProjectCreateRequest request) {
         return PaginationHelper.createResponseEntity(service.updateProject(id, request));
     }
 

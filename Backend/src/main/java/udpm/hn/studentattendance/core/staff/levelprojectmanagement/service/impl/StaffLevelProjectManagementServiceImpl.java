@@ -5,6 +5,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import udpm.hn.studentattendance.core.staff.levelprojectmanagement.model.request.LevelProjectCreateRequest;
+import udpm.hn.studentattendance.core.staff.levelprojectmanagement.model.request.LevelProjectUpdateRequest;
 import udpm.hn.studentattendance.core.staff.levelprojectmanagement.model.request.StaffLevelProjectSearchRequest;
 import udpm.hn.studentattendance.core.staff.levelprojectmanagement.repository.StaffLevelProjectRepository;
 import udpm.hn.studentattendance.core.staff.levelprojectmanagement.service.StaffLevelProjectManagementService;
@@ -33,15 +34,15 @@ public class StaffLevelProjectManagementServiceImpl implements StaffLevelProject
     @Override
     public ResponseObject<?> createLevelProject(LevelProjectCreateRequest request) {
         LevelProject lv = new LevelProject();
-        lv = convert(request, lv);
+        lv = convertAdd(request, lv);
         repository.save(lv);
         return new ResponseObject<>(lv, HttpStatus.OK, "Thêm cấp dự án thành công");
     }
 
     @Override
-    public ResponseObject<?> updateLevelProject(String id, LevelProjectCreateRequest request) {
+    public ResponseObject<?> updateLevelProject(String id, LevelProjectUpdateRequest request) {
         LevelProject lv = repository.findById(id).get();
-        lv = convert(request, lv);
+        lv = convertUpdate(request, lv);
         repository.save(lv);
         return new ResponseObject<>(lv, HttpStatus.OK, "Sửa cấp dự án thành công");
     }
@@ -59,11 +60,23 @@ public class StaffLevelProjectManagementServiceImpl implements StaffLevelProject
         return new ResponseObject<>(null, HttpStatus.OK, "Xóa cấp dự án thành công");
     }
 
-    private LevelProject convert(LevelProjectCreateRequest request, LevelProject lv) {
+    private LevelProject convertAdd(LevelProjectCreateRequest request, LevelProject lv) {
         lv.setName(request.getName());
         lv.setCode(request.getCode());
         lv.setDescription(request.getDescription());
         lv.setStatus(EntityStatus.ACTIVE);
+        return lv;
+    }
+
+    private LevelProject convertUpdate(LevelProjectUpdateRequest request, LevelProject lv) {
+        lv.setName(request.getName());
+        lv.setCode(request.getCode());
+        lv.setDescription(request.getDescription());
+        if (request.getStatus().equalsIgnoreCase("ACTIVE")) {
+            lv.setStatus(EntityStatus.ACTIVE);
+        } else {
+            lv.setStatus(EntityStatus.INACTIVE);
+        }
         return lv;
     }
 }

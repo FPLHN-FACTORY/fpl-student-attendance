@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import udpm.hn.studentattendance.core.staff.levelprojectmanagement.model.request.LevelProjectCreateRequest;
+import udpm.hn.studentattendance.core.staff.levelprojectmanagement.model.request.LevelProjectUpdateRequest;
 import udpm.hn.studentattendance.core.staff.levelprojectmanagement.model.request.StaffLevelProjectSearchRequest;
 import udpm.hn.studentattendance.core.staff.levelprojectmanagement.service.StaffLevelProjectManagementService;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
@@ -32,11 +33,11 @@ public class StaffLevelProjectResController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateLevelProject(@PathVariable String id, LevelProjectCreateRequest request) {
+    public ResponseEntity<?> updateLevelProject(@PathVariable String id, @RequestBody LevelProjectUpdateRequest request) {
         return PaginationHelper.createResponseEntity(service.updateLevelProject(id, request));
     }
 
-    @DeleteMapping
+    @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteLevelProject(@PathVariable String id) {
         return PaginationHelper.createResponseEntity(service.deleteLevelProject(id));
     }
