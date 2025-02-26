@@ -6,4 +6,9 @@ import lombok.Setter;
 @Getter
 @Setter
 public class AdStaffRoleRequest {
+    private String staffId;
+
+    private String idFacility;
+
+    private String roleName;
 }
