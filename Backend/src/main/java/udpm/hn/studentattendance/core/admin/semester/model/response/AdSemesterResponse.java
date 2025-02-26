@@ -1,6 +1,6 @@
-package udpm.hn.studentattendance.core.admin.semester.model.respone;
+package udpm.hn.studentattendance.core.admin.semester.model.response;
 
-public interface AdSemesterRespone {
+public interface AdSemesterResponse {
     String getSemesterId();
 
     String getSemesterName();

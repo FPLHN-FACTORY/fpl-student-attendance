@@ -5,7 +5,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 import udpm.hn.studentattendance.core.admin.semester.model.request.AdSemesterRequest;
-import udpm.hn.studentattendance.core.admin.semester.model.respone.AdSemesterRespone;
+import udpm.hn.studentattendance.core.admin.semester.model.response.AdSemesterResponse;
 import udpm.hn.studentattendance.entities.Semester;
 import udpm.hn.studentattendance.repositories.SemesterRepository;
 
@@ -36,7 +36,7 @@ public interface AdSemesterRepository extends SemesterRepository {
                            OR (s.toDate >= :#{#request.fromDateSemester} AND s.fromDate <= :#{#request.toDateSemester}))
                     """
     )
-    Page<AdSemesterRespone> getAllSemester(Pageable pageable, AdSemesterRequest request);
+    Page<AdSemesterResponse> getAllSemester(Pageable pageable, AdSemesterRequest request);
 
     @Query(value = """
              SELECT s

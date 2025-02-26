@@ -5,7 +5,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 import udpm.hn.studentattendance.core.admin.facility.model.request.FacilitySearchRequest;
-import udpm.hn.studentattendance.core.admin.facility.model.respone.AdFacilityRespone;
+import udpm.hn.studentattendance.core.admin.facility.model.response.AdFacilityResponse;
 import udpm.hn.studentattendance.entities.Facility;
 import udpm.hn.studentattendance.repositories.FacilityRepository;
 
@@ -32,7 +32,7 @@ public interface AdFacilityRepository extends FacilityRepository {
                       AND (:#{#request.status} IS NULL OR f.status = TRIM(:#{#request.status}))
                     """
     )
-    Page<AdFacilityRespone> getAllFacility(Pageable pageable, FacilitySearchRequest request);
+    Page<AdFacilityResponse> getAllFacility(Pageable pageable, FacilitySearchRequest request);
 
     @Query(value = """
             SELECT COUNT(f) > 0
@@ -50,7 +50,7 @@ public interface AdFacilityRepository extends FacilityRepository {
             FROM Facility f
             WHERE TRIM(f.id) = TRIM(:facilityId)
             """)
-    Optional<AdFacilityRespone> getDetailFacilityById(String facilityId);
+    Optional<AdFacilityResponse> getDetailFacilityById(String facilityId);
 
     boolean existsByNameAndId(String name, String id);
     Optional<Facility> findByName(String nameFacility);

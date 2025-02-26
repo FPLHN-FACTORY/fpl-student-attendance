@@ -1,6 +1,6 @@
-package udpm.hn.studentattendance.core.admin.staff.model.respone;
+package udpm.hn.studentattendance.core.admin.staff.model.response;
 
-public interface AdStaffRespone {
+public interface AdStaffResponse {
     String getId();
 
     String getName();

@@ -1,9 +1,9 @@
-package udpm.hn.studentattendance.core.admin.facility.model.respone;
+package udpm.hn.studentattendance.core.admin.facility.model.response;
 
 import udpm.hn.studentattendance.infrastructure.common.HasOrderNumber;
 import udpm.hn.studentattendance.infrastructure.common.IsIdentify;
 
-public interface AdFacilityRespone extends IsIdentify, HasOrderNumber {
+public interface AdFacilityResponse extends IsIdentify, HasOrderNumber {
 
     String getFacilityName();
 

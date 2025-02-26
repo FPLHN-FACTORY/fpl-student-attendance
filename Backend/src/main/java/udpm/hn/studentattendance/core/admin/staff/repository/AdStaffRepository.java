@@ -5,14 +5,13 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 import udpm.hn.studentattendance.core.admin.staff.model.request.AdStaffRequest;
-import udpm.hn.studentattendance.core.admin.staff.model.respone.AdStaffDetailRespone;
-import udpm.hn.studentattendance.core.admin.staff.model.respone.AdStaffRespone;
+import udpm.hn.studentattendance.core.admin.staff.model.response.AdStaffDetailResponse;
+import udpm.hn.studentattendance.core.admin.staff.model.response.AdStaffResponse;
 import udpm.hn.studentattendance.entities.UserStaff;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.repositories.UserStaffRepository;
 
 import java.util.Optional;
-import java.util.OptionalInt;
 
 @Repository
 public interface AdStaffRepository extends UserStaffRepository {
@@ -71,7 +70,7 @@ public interface AdStaffRepository extends UserStaffRepository {
 
                                         """
     )
-    Page<AdStaffRespone> getAllStaff(Pageable pageable, AdStaffRequest adStaffRequest);
+    Page<AdStaffResponse> getAllStaff(Pageable pageable, AdStaffRequest adStaffRequest);
 
     Optional<UserStaff> findUserStaffByCode(String staffCode);
 
@@ -91,7 +90,7 @@ public interface AdStaffRepository extends UserStaffRepository {
                             FROM UserStaff AS s
                             WHERE s.id  = :id
                      """)
-    Optional<AdStaffDetailRespone> getDetailStaff(String id);
+    Optional<AdStaffDetailResponse> getDetailStaff(String id);
 
     Optional<UserStaff> findUserStaffByIdAndStatus(String staffId, EntityStatus status);
 }
