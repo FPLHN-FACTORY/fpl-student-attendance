@@ -10,7 +10,9 @@ import org.springframework.validation.annotation.Validated;
 import udpm.hn.studentattendance.core.admin.staff.model.request.AdCreateUpdateStaffRequest;
 import udpm.hn.studentattendance.core.admin.staff.model.request.AdStaffRequest;
 import udpm.hn.studentattendance.core.admin.staff.repository.AdStaffRepository;
+import udpm.hn.studentattendance.core.admin.staff.repository.AdStaffRoleRepository;
 import udpm.hn.studentattendance.core.admin.staff.service.AdStaffService;
+import udpm.hn.studentattendance.entities.Role;
 import udpm.hn.studentattendance.entities.UserStaff;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
 import udpm.hn.studentattendance.infrastructure.common.ApiResponse;
@@ -18,6 +20,7 @@ import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.RestApiStatus;
 
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -25,6 +28,8 @@ import java.util.Optional;
 @Validated
 public class AdStaffServiceImpl implements AdStaffService {
     private AdStaffRepository adStaffRepository;
+
+    private AdStaffRoleRepository adStaffRoleRepository;
 
     @Override
     public ResponseEntity<?> getAllStaffByFilter(AdStaffRequest adStaffRequest) {
@@ -113,6 +118,11 @@ public class AdStaffServiceImpl implements AdStaffService {
         }
         UserStaff staff = existStaff.get();
         staff.setStatus(staff.getStatus() == EntityStatus.ACTIVE ? EntityStatus.INACTIVE : EntityStatus.ACTIVE);
+
+        List<Role> staffRoles = adStaffRoleRepository.findAllByUserStaffId(staffId);
+        staffRoles.forEach(staffRole -> staffRole.setStatus(staff.getStatus() == EntityStatus.ACTIVE ? EntityStatus.INACTIVE : EntityStatus.ACTIVE));
+        adStaffRoleRepository.saveAll(staffRoles);
+        
         adStaffRepository.save(staff);
         return new ResponseEntity<>(
                 new ApiResponse(

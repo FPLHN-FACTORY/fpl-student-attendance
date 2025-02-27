@@ -11,5 +11,5 @@ public class AdStaffRoleRequest extends PageableRequest {
 
     private String idFacility;
 
-    private String roleName;
+    private String roleCode;
 }
