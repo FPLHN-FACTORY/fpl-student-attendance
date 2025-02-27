@@ -18,11 +18,10 @@ import java.util.List;
 public interface AdRoleRepository extends RoleRepository {
 
     @Query(value = """
-            SELECT new udpm.hn.studentattendance.core.admin.role.model.response.AdRoleResponse(
+            SELECT 
                    r.id,
                    str(r.code),
                    f.name
-            )
             FROM Role r
             LEFT JOIN r.facility f
             WHERE r.status = 0

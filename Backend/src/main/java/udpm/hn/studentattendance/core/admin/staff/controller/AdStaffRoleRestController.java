@@ -16,7 +16,7 @@ import udpm.hn.studentattendance.core.admin.staff.service.AdStaffRoleService;
 public class AdStaffRoleRestController {
 
     private AdStaffRoleService adStaffRoleService;
-    @GetMapping("/role/{staffId)")
+    @GetMapping("/role/{staffId}")
     public ResponseEntity<?> getAllRole(String staffId){
         return adStaffRoleService.getAllRole(staffId);
     }
