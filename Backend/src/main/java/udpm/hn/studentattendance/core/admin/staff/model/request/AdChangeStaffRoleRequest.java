@@ -8,7 +8,7 @@ import org.hibernate.validator.constraints.Length;
 
 @Getter
 @Setter
-public class AdChangeStaffRole {
+public class AdChangeStaffRoleRequest {
     @NotBlank(message = "Id staff không được để trống")
     @Length(max = 255, message = "Mã nhân viên phải ngắn hơn 255 ký tự")
     @Pattern(regexp = "^[^\\s]+$", message = "Mã nhân viên không được chứa khoảng trắng")
