@@ -22,14 +22,14 @@ public interface AdFacilityRepository extends FacilityRepository {
                         f.status
                     FROM Facility f
                     WHERE (:#{#request.name} IS NULL OR f.code LIKE CONCAT('%', TRIM(:#{#request.q}), '%') OR f.name LIKE CONCAT('%', TRIM(:#{#request.name}), '%'))
-                      AND (:#{#request.status} IS NULL OR f.status = TRIM(:#{#request.status}))
+                      AND (:#{#request.status} IS NULL OR f.status = (:#{#request.status}))
                     ORDER BY f.createdAt DESC
                     """,
             countQuery = """
                     SELECT COUNT(f.id)
                     FROM Facility f
                     WHERE (:#{#request.name} IS NULL OR f.code LIKE CONCAT('%', TRIM(:#{#request.q}), '%') OR f.name LIKE CONCAT('%', TRIM(:#{#request.name}), '%'))
-                      AND (:#{#request.status} IS NULL OR f.status = TRIM(:#{#request.status}))
+                      AND (:#{#request.status} IS NULL OR f.status = (:#{#request.status}))
                     """
     )
     Page<AdFacilityResponse> getAllFacility(Pageable pageable, FacilitySearchRequest request);

@@ -78,7 +78,7 @@ public class AdSemesterServiceImpl implements AdSemesterService {
             Integer yearStartTime = fromDate.getYear();
             Integer yearEndTime = toDate.getYear();
             // quy chuẩn lại tên kỳ học : Spring, Summer, Fall
-            String name = SemesterName.valueOf(request.getSemesterName()).toString();
+            String name = SemesterName.valueOf(request.getSemesterName()).toString().trim();
             // lấy thời gian bắt đầu và kêt thúc học kỳ
             Long fromTimeSemester = request.getStartTimeCustom();
             Long toTimeSemester = request.getEndTimeCustom();
@@ -110,7 +110,7 @@ public class AdSemesterServiceImpl implements AdSemesterService {
                         HttpStatus.CONFLICT);
             }
             Semester semester = new Semester();
-            semester.setName(SemesterName.valueOf(name).toString());
+            semester.setSemesterName(SemesterName.valueOf(name));
             semester.setYear(yearStartTime);
             semester.setFromDate(fromTimeSemester);
             semester.setToDate(toTimeSemester);
@@ -151,7 +151,7 @@ public class AdSemesterServiceImpl implements AdSemesterService {
         Integer yearStartTime = fromDate.getYear();
         Integer yearEndTime = toDate.getYear();
         // quy chuẩn lại tên kỳ học : Spring, Summer, Fall
-        String name = SemesterName.valueOf(request.getSemesterName()).toString();
+        String name = SemesterName.valueOf(request.getSemesterName()).toString().trim();
         // lấy thời gian bắt đầu và kêt thúc học kỳ
         Long fromTimeSemester = request.getStartTimeCustom();
         Long toTimeSemester = request.getEndTimeCustom();
@@ -179,7 +179,7 @@ public class AdSemesterServiceImpl implements AdSemesterService {
                                 null),
                         HttpStatus.BAD_REQUEST);
             }
-            semester.setName(SemesterName.valueOf(name).toString());
+            semester.setSemesterName(SemesterName.valueOf(name));
             semester.setYear(yearStartTime);
             semester.setFromDate(fromTimeSemester);
             semester.setToDate(toTimeSemester);

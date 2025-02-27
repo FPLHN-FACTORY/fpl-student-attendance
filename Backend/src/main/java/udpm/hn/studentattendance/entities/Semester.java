@@ -2,10 +2,7 @@ package udpm.hn.studentattendance.entities;
 
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import org.hibernate.annotations.DynamicUpdate;
 import org.hibernate.annotations.ManyToAny;
 import org.hibernate.annotations.Nationalized;
@@ -20,6 +17,7 @@ import java.io.Serializable;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
+@ToString
 @Table(name = "semester")
 @DynamicUpdate
 public class Semester extends PrimaryEntity implements Serializable {
@@ -28,11 +26,10 @@ public class Semester extends PrimaryEntity implements Serializable {
     @Nationalized
     private String code;
 
-    // Giả sử bạn có enum ở class riêng
     @Column(name = "name", length = EntityProperties.LENGTH_NAME)
     @Nationalized
     @Enumerated(EnumType.STRING)
-    private SemesterName name;  // Import enum từ class chứa enum
+    private SemesterName semesterName;
 
     @Column(name = "from_date")
     private Long fromDate;

@@ -31,19 +31,19 @@ public interface AdStaffRepository extends UserStaffRepository {
                             LEFT JOIN Facility as f on r.facility.id = f.id
                             WHERE\s
                                 (TRIM(:#{#adStaffRequest.searchQuery}) IS NULL
-                                 OR TRIM(:#{#adStaffRequest.searchQuery}) = ''
+                                 OR TRIM(:#{#adStaffRequest.searchQuery}) LIKE ''
                                  OR s.name LIKE CONCAT('%', TRIM(:#{#adStaffRequest.searchQuery}), '%')
                                  OR s.code LIKE CONCAT('%', TRIM(:#{#adStaffRequest.searchQuery}), '%')
                                  OR s.emailFe LIKE CONCAT('%', TRIM(:#{#adStaffRequest.searchQuery}), '%')
                                  OR s.emailFpt LIKE CONCAT('%', TRIM(:#{#adStaffRequest.searchQuery}), '%'))
                               AND\s
                                 (TRIM(:#{#adStaffRequest.idFacility}) IS NULL
-                                 OR TRIM(:#{#adStaffRequest.idFacility}) = ''
+                                 OR TRIM(:#{#adStaffRequest.idFacility}) LIKE ''
                                  OR f.id = TRIM(:#{#adStaffRequest.idFacility}))
                               AND\s
-                                (TRIM(:#{#adStaffRequest.status}) IS NULL
-                                 OR TRIM(:#{#adStaffRequest.status}) = ''
-                                 OR s.status = TRIM(:#{#adStaffRequest.status}))
+                                ((:#{#adStaffRequest.status}) IS NULL
+                                 OR (:#{#adStaffRequest.status}) LIKE ''
+                                 OR s.status = (:#{#adStaffRequest.status}))
                             GROUP BY s.id, s.name, s.code, s.emailFe, s.emailFpt, s.status
                             ORDER BY s.createdAt DESC
                                      """,
@@ -61,13 +61,13 @@ public interface AdStaffRepository extends UserStaffRepository {
                          OR s.emailFpt LIKE CONCAT('%', TRIM(:#{#adStaffRequest.searchQuery}), '%'))
                       AND\s
                         (TRIM(:#{#adStaffRequest.idFacility}) IS NULL
-                         OR TRIM(:#{#adStaffRequest.idFacility}) = ''
+                         OR TRIM(:#{#adStaffRequest.idFacility}) LIKE ''
                          OR f.id = TRIM(:#{#adStaffRequest.idFacility}))
                       AND\s
-                        (TRIM(:#{#adStaffRequest.status}) IS NULL
-                         OR TRIM(:#{#adStaffRequest.status}) = ''
-                         OR s.status = TRIM(:#{#adStaffRequest.status}))
-
+                        ((:#{#adStaffRequest.status}) IS NULL
+                         OR (:#{#adStaffRequest.status}) LIKE ''
+                         OR s.status = (:#{#adStaffRequest.status}))
+                        GROUP BY s.id, s.name, s.code, s.emailFe, s.emailFpt, s.status
                                         """
     )
     Page<AdStaffResponse> getAllStaff(Pageable pageable, AdStaffRequest adStaffRequest);

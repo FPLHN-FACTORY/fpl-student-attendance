@@ -36,7 +36,7 @@ public class AdSemesterRestController {
         return semesterService.updateSemester(createUpdateSemesterRequest);
     }
 
-    @PutMapping("/status/{semesterId")
+    @PutMapping("/status/{semesterId}")
     public ResponseEntity<?> changeStatusSemester
             (@PathVariable("semesterId") String semesterId) {
         return semesterService.changeStatusSemester(semesterId);
