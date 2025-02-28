@@ -1,6 +1,5 @@
 package udpm.hn.studentattendance.core.staff.projectmanagement.model.response;
 
-import org.springframework.beans.factory.annotation.Value;
 
 public interface ProjectResponse {
 
@@ -12,7 +11,14 @@ public interface ProjectResponse {
 
     String getNameLevelProject();
 
-    String getNameSubjectFacility();
+    String getNameSubject();
+
+    String getNameSemester();
+
+    String getDescription();
 
     String getStatus();
+
+    String getFacilityName();
+
 }

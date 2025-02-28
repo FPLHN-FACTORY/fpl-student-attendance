@@ -10,7 +10,7 @@ import static udpm.hn.studentattendance.helpers.RouterHelper.appendPrefixApi;
 public class StaffSecurityConfig {
     public void configure(HttpSecurity http) throws Exception {
         http.authorizeHttpRequests(auth -> {
-            auth.requestMatchers(appendPrefixApi("/api/v1/staff-management/level-project-management")).permitAll();
+            auth.requestMatchers(appendPrefixApi("/api/v1/staff-management")).permitAll();
                 }
         );
     }

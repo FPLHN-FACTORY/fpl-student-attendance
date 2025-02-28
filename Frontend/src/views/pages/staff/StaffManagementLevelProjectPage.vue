@@ -6,12 +6,12 @@
     <a-row :gutter="16" class="filter-container">
       <!-- Ô nhập tên để tìm kiếm -->
       <a-col :span="8">
-        <a-input v-model:value="filter.name" placeholder="Tìm kiếm theo tên" allowClear />
+        <a-input v-model:value="filter.name" placeholder="Tìm kiếm theo tên" allowClear  @change="fetchLevels" />
       </a-col>
 
       <!-- Dropdown chọn trạng thái -->
       <a-col :span="8">
-        <a-select v-model:value="filter.status" placeholder="Chọn trạng thái" allowClear>
+        <a-select v-model:value="filter.status" placeholder="Chọn trạng thái" allowClear  @change="fetchLevels">
           <a-select-option :value="''">Tất cả trạng thái</a-select-option>
           <a-select-option :value="1">Hoạt động</a-select-option>
           <a-select-option :value="0">Không hoạt động</a-select-option>
