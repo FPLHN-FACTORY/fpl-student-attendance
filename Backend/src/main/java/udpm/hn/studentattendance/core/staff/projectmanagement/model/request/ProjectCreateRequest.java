@@ -13,11 +13,9 @@ public class ProjectCreateRequest {
     @NotBlank(message = "Không được bỏ trống")
     private String name;
 
-    private Long createTime;
-
-    private Long updateTime;
-
     private String description;
+
+    private String code;
 
     private String levelProjectId;
 
@@ -25,5 +23,4 @@ public class ProjectCreateRequest {
 
     private String subjectFacilityId;
 
-    private String userStaffId;
 }
