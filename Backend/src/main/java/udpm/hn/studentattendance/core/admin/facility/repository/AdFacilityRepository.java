@@ -16,10 +16,10 @@ public interface AdFacilityRepository extends FacilityRepository {
     @Query(
             value = """
                     SELECT 
-                        f.id,
-                        f.code,
-                        f.name,
-                        f.status
+                        f.id AS id,
+                        f.code AS facilityCode,
+                        f.name AS facilityName,
+                        f.status AS facilityStatus
                     FROM Facility f
                     WHERE (:#{#request.name} IS NULL OR f.code LIKE CONCAT('%', TRIM(:#{#request.q}), '%') OR f.name LIKE CONCAT('%', TRIM(:#{#request.name}), '%'))
                       AND (:#{#request.status} IS NULL OR f.status = (:#{#request.status}))

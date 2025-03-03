@@ -29,7 +29,7 @@ import java.util.Optional;
 @RequiredArgsConstructor
 @Validated
 public class AdSemesterServiceImpl implements AdSemesterService {
-    private AdSemesterRepository adSemesterRepository;
+    private final AdSemesterRepository adSemesterRepository;
 
     @Override
     public ResponseEntity<?> getAllSemester(AdSemesterRequest request) {

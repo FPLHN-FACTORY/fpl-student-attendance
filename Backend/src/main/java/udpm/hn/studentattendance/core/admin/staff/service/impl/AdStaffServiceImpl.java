@@ -27,9 +27,9 @@ import java.util.Optional;
 @RequiredArgsConstructor
 @Validated
 public class AdStaffServiceImpl implements AdStaffService {
-    private AdStaffRepository adStaffRepository;
+    private final AdStaffRepository adStaffRepository;
 
-    private AdStaffRoleRepository adStaffRoleRepository;
+    private final AdStaffRoleRepository adStaffRoleRepository;
 
     @Override
     public ResponseEntity<?> getAllStaffByFilter(AdStaffRequest adStaffRequest) {
