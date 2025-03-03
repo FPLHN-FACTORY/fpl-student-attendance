@@ -26,7 +26,7 @@ import java.util.Optional;
 @RequiredArgsConstructor
 @Validated
 public class AdFacilityServiceImpl implements AdFacilityService {
-    private AdFacilityRepository facilityRepository;
+    private final AdFacilityRepository facilityRepository;
 
     @Override
     public ResponseEntity<?> getAllFacility(FacilitySearchRequest request) {

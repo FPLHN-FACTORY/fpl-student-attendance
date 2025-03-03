@@ -6,13 +6,14 @@ import org.springframework.web.bind.annotation.*;
 import udpm.hn.studentattendance.core.admin.facility.model.request.CreateUpdateFacilityRequest;
 import udpm.hn.studentattendance.core.admin.facility.model.request.FacilitySearchRequest;
 import udpm.hn.studentattendance.core.admin.facility.service.AdFacilityService;
+import udpm.hn.studentattendance.infrastructure.constants.RoutesConstant;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/facilities")
+@RequestMapping(RoutesConstant.API_PREFIX + "/admin/facilities")
 public class AdFacilityRestController {
 
-    private AdFacilityService adFacilityService;
+    private final AdFacilityService adFacilityService;
 
     @GetMapping
     public ResponseEntity<?> getAllFacility

@@ -10,4 +10,5 @@ public class FacilitySearchRequest extends PageableRequest {
     private String name;
 
     private Integer status;
+    
 }
