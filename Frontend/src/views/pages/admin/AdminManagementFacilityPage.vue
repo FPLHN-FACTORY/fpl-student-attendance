@@ -1,7 +1,5 @@
 <template>
   <span>Đây là quản lý cơ sở</span>
-  <button @click="fetchData">Load dataa</button>
-
   <a-table :columns="columns" :data-source="data">
     <template #headerCell="{ column }">
         <span>
