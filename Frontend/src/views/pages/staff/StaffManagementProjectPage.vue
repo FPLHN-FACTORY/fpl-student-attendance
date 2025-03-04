@@ -4,7 +4,7 @@
   <!-- Card lọc dự án -->
   <a-card title="Bộ lọc" :bordered="false" class="filter-card">
     <a-row :gutter="16" class="filter-container">
-      <a-col :span="9">
+      <a-col :span="8">
         <a-input
           v-model:value="filter.name"
           placeholder="Tìm kiếm theo tên"
@@ -14,7 +14,7 @@
         />
       </a-col>
 
-      <a-col :span="3">
+      <a-col :span="4">
         <a-select
           v-model:value="filter.levelProjectId"
           placeholder="Cấp dự án"
@@ -30,7 +30,7 @@
         </a-select>
       </a-col>
 
-      <a-col :span="3">
+      <a-col :span="4">
         <a-select
           v-model:value="filter.semesterId"
           placeholder="Học kỳ"
@@ -46,7 +46,7 @@
         </a-select>
       </a-col>
 
-      <a-col :span="3">
+      <a-col :span="4">
         <a-select
           v-model:value="filter.subjectId"
           placeholder="Môn học"
@@ -62,7 +62,7 @@
         </a-select>
       </a-col>
 
-      <a-col :span="3">
+      <a-col :span="4">
         <a-select
           v-model:value="filter.status"
           placeholder="Trạng thái"
@@ -75,17 +75,6 @@
           <a-select-option :value="1">Hoạt động</a-select-option>
           <a-select-option :value="0">Không hoạt động</a-select-option>
         </a-select>
-      </a-col>
-
-      <a-col>
-        <a-button
-          @click="fetchProjects"
-          class="filter-button"
-          :style="{ backgroundColor: '#fff7e6', color: 'black', border: '1px solid #ffa940' }"
-        >
-          <SearchOutlined />
-          Lọc
-        </a-button>
       </a-col>
     </a-row>
   </a-card>
@@ -334,7 +323,6 @@ export default {
   },
 
   methods: {
-
     //Chuyển đổi thời gian
     formatDate(timestamp) {
       if (!timestamp) return 'Không xác định'
@@ -382,7 +370,9 @@ export default {
     //Hiển thị dữ liệu combobox
     fetchSubjects() {
       requestAPI
-        .get('http://localhost:8765/api/v1/staff-management/project-management/subject-facility-combobox')
+        .get(
+          'http://localhost:8765/api/v1/staff-management/project-management/subject-facility-combobox'
+        )
         .then((response) => {
           this.subjects = response.data
         })
@@ -491,7 +481,10 @@ export default {
         status: this.detailProject.status,
       }
       requestAPI
-        .put(`http://localhost:8765/api/v1/staff-management/project-management/${this.detailProject.id}`, req)
+        .put(
+          `http://localhost:8765/api/v1/staff-management/project-management/${this.detailProject.id}`,
+          req
+        )
         .then(() => {
           message.success('Cập nhật dự án thành công')
           this.modalEdit = false
