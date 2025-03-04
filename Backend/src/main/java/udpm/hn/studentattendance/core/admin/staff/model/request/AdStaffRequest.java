@@ -12,5 +12,5 @@ public class AdStaffRequest extends PageableRequest {
 
     private String idFacility;
 
-    private String status;
+    private EntityStatus status;
 }

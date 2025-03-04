@@ -45,7 +45,7 @@ public class AdStaffServiceImpl implements AdStaffService {
     }
 
     @Override
-    public ResponseEntity<?> createStaff(@Valid AdCreateUpdateStaffRequest adCreateUpdateStaffRequest) {
+    public ResponseEntity<?> createStaff(AdCreateUpdateStaffRequest adCreateUpdateStaffRequest) {
         UserStaff staffExist = isStaffExist(
                 adCreateUpdateStaffRequest.getStaffCode(),
                 adCreateUpdateStaffRequest.getEmailFe(),
@@ -77,7 +77,7 @@ public class AdStaffServiceImpl implements AdStaffService {
     }
 
     @Override
-    public ResponseEntity<?> updateStaff(@Valid AdCreateUpdateStaffRequest adCreateUpdateStaffRequest) {
+    public ResponseEntity<?> updateStaff(AdCreateUpdateStaffRequest adCreateUpdateStaffRequest) {
         Optional<UserStaff> existStaff = adStaffRepository.findById(adCreateUpdateStaffRequest.getId());
         if (existStaff.isEmpty()) {
             return new ResponseEntity<>(
@@ -90,10 +90,10 @@ public class AdStaffServiceImpl implements AdStaffService {
         }
         UserStaff staff = existStaff.get();
         staff.setId(adCreateUpdateStaffRequest.getId());
-        staff.setName(adCreateUpdateStaffRequest.getName());
-        staff.setCode(adCreateUpdateStaffRequest.getStaffCode());
-        staff.setEmailFe(adCreateUpdateStaffRequest.getEmailFe());
-        staff.setEmailFpt(adCreateUpdateStaffRequest.getEmailFpt());
+        staff.setName(adCreateUpdateStaffRequest.getName().trim());
+        staff.setCode(adCreateUpdateStaffRequest.getStaffCode().trim());
+        staff.setEmailFe(adCreateUpdateStaffRequest.getEmailFe().trim());
+        staff.setEmailFpt(adCreateUpdateStaffRequest.getEmailFpt().trim());
         adStaffRepository.save(staff);
         return new ResponseEntity<>(
                 new ApiResponse(
@@ -135,13 +135,23 @@ public class AdStaffServiceImpl implements AdStaffService {
 
     @Override
     public ResponseEntity<?> getStaffById(String staffId) {
+        Optional<UserStaff> existStaff = adStaffRepository.findById(staffId);
+        if (existStaff.isPresent()){
+            return new ResponseEntity<>(
+                    new ApiResponse(
+                            RestApiStatus.SUCCESS,
+                            "Xem chi tiết giảng viên thành công",
+                            existStaff
+                    ),
+                    HttpStatus.OK);
+        }
         return new ResponseEntity<>(
                 new ApiResponse(
-                        RestApiStatus.SUCCESS,
-                        "Xem chi tiết giảng viên thành công",
-                        adStaffRepository.getDetailStaff(staffId)
+                        RestApiStatus.WARNING,
+                        "Giảng viên không tồn tại",
+                        existStaff
                 ),
-                HttpStatus.OK);
+                HttpStatus.NOT_FOUND);
     }
 
     private UserStaff isStaffExist(

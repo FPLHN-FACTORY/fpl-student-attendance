@@ -31,7 +31,7 @@ public class AdStaffRestController {
         return adStaffService.createStaff(createUpdateStaffRequest);
     }
 
-    @PutMapping
+    @PutMapping()
     public ResponseEntity<?> updateStaff(@Valid @RequestBody AdCreateUpdateStaffRequest createUpdateStaffRequest) {
         return adStaffService.updateStaff(createUpdateStaffRequest);
     }

@@ -45,13 +45,15 @@
   <a-card title="Danh sách học kỳ" :bordered="false" class="cart">
     <!-- Nút thêm học kỳ -->
     <div style="display: flex; justify-content: flex-end; margin-bottom: 10px">
-      <a-button
-        style="background-color: #fff7e6; color: black; border: 1px solid #ffa940"
-        @click="() => (modalAdd = true)"
-      >
-        <PlusOutlined />
-        Thêm
-      </a-button>
+      <a-tooltip title="Thêm học kỳ mới">
+        <a-button
+          style="background-color: #fff7e6; color: black; border: 1px solid #ffa940"
+          @click="() => (modalAdd = true)"
+        >
+          <PlusOutlined />
+          Thêm
+        </a-button>
+      </a-tooltip>
     </div>
     <!-- Bảng hiển thị danh sách -->
     <a-table
@@ -88,20 +90,24 @@
         </template>
         <!-- Các chức năng: Sửa và thay đổi trạng thái -->
         <template v-else-if="column.key === 'actions'">
-          <a-button
-            @click="handleUpdateSemester(record)"
-            type="text"
-            style="background-color: #fff7e6; margin-right: 8px; border: 1px solid #ffa940"
-          >
-            <EditOutlined />
-          </a-button>
-          <a-button
-            @click="handleChangeStatusSemester(record)"
-            type="text"
-            style="background-color: #fff7e6; border: 1px solid #ffa940"
-          >
-            <SwapOutlined />
-          </a-button>
+          <a-tooltip title="Sửa thông tin học kỳ">
+            <a-button
+              @click="handleUpdateSemester(record)"
+              type="text"
+              style="background-color: #fff7e6; margin-right: 8px; border: 1px solid #ffa940"
+            >
+              <EditOutlined />
+            </a-button>
+          </a-tooltip>
+          <a-tooltip title="Đổi trạng thái học kỳ">
+            <a-button
+              @click="handleChangeStatusSemester(record)"
+              type="text"
+              style="background-color: #fff7e6; border: 1px solid #ffa940"
+            >
+              <SwapOutlined />
+            </a-button>
+          </a-tooltip>
         </template>
         <template v-else>
           {{ record[column.dataIndex] }}
