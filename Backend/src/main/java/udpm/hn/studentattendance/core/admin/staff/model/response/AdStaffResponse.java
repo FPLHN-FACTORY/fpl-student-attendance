@@ -1,9 +1,10 @@
 package udpm.hn.studentattendance.core.admin.staff.model.response;
 
-public interface AdStaffResponse {
-    Integer getRowNumber();
+import udpm.hn.studentattendance.infrastructure.common.HasOrderNumber;
+import udpm.hn.studentattendance.infrastructure.common.IsIdentify;
 
-    String getStaffId();
+public interface AdStaffResponse  extends IsIdentify, HasOrderNumber {
+    Integer getRowNumber();
 
     String getStaffName();
 
@@ -15,5 +16,5 @@ public interface AdStaffResponse {
 
     String getFacilityName();
 
-    String getStaffStatus();
+    Integer getStaffStatus();
 }
