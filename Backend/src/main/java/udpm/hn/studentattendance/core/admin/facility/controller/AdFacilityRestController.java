@@ -10,7 +10,7 @@ import udpm.hn.studentattendance.infrastructure.constants.RoutesConstant;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping(RoutesConstant.API_PREFIX + "/admin/facilities")
+@RequestMapping(RoutesConstant.URL_ADMIN_FACILITY_MANAGEMENT)
 public class AdFacilityRestController {
 
     private final AdFacilityService adFacilityService;
@@ -20,7 +20,11 @@ public class AdFacilityRestController {
             (FacilitySearchRequest request) {
         return adFacilityService.getAllFacility(request);
     }
-
+    @GetMapping("/{facilityId}")
+    public ResponseEntity<?> updateFacility
+            (@PathVariable("facilityId") String facilityId){
+        return adFacilityService.getFacilityById(facilityId);
+    }
     @PostMapping
     public ResponseEntity<?> createFacility
             (@RequestBody CreateUpdateFacilityRequest createUpdateFacilityRequest) {

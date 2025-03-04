@@ -15,7 +15,7 @@ public class AdCreateUpdateSemesterRequest {
 
     private String semesterId;
 
-    private String facilytiId;
+    private String facilityId;
 
     @NotBlank(message = "Tên học kỳ không được để trống")
     private String semesterName;

@@ -9,14 +9,16 @@ import org.springframework.web.bind.annotation.RestController;
 import udpm.hn.studentattendance.core.admin.staff.model.request.AdChangeStaffRoleRequest;
 import udpm.hn.studentattendance.core.admin.staff.model.request.AdStaffRoleRequest;
 import udpm.hn.studentattendance.core.admin.staff.service.AdStaffRoleService;
+import udpm.hn.studentattendance.infrastructure.constants.RoutesConstant;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/staffs")
+@RequestMapping(RoutesConstant.URL_ADMIN_STAFF_ROLE_MANAGEMENT)
 public class AdStaffRoleRestController {
 
-    private AdStaffRoleService adStaffRoleService;
-    @GetMapping("/role/{staffId}")
+    private final AdStaffRoleService adStaffRoleService;
+
+    @GetMapping("/{staffId}")
     public ResponseEntity<?> getAllRole(String staffId){
         return adStaffRoleService.getAllRole(staffId);
     }

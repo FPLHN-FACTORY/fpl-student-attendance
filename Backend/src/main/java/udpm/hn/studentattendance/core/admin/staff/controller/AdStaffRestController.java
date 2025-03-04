@@ -8,12 +8,13 @@ import org.springframework.web.bind.annotation.*;
 import udpm.hn.studentattendance.core.admin.staff.model.request.AdCreateUpdateStaffRequest;
 import udpm.hn.studentattendance.core.admin.staff.model.request.AdStaffRequest;
 import udpm.hn.studentattendance.core.admin.staff.service.AdStaffService;
+import udpm.hn.studentattendance.infrastructure.constants.RoutesConstant;
 
 @Controller
 @RequiredArgsConstructor
-@RequestMapping("/api/staffs")
+@RequestMapping(RoutesConstant.URL_ADMIN_STAFF_MANAGEMENT)
 public class AdStaffRestController {
-    private AdStaffService adStaffService;
+    private final AdStaffService adStaffService;
 
     @GetMapping
     public ResponseEntity<?> getAllStaffs(AdStaffRequest staffRequest) {
