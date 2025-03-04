@@ -12,6 +12,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import udpm.hn.studentattendance.core.admin.router.AdminSecurityConfig;
 import udpm.hn.studentattendance.core.authentication.router.AuthenticationSecurityConfig;
 import udpm.hn.studentattendance.infrastructure.security.exception.CustomAccessDeniedHandler;
 import udpm.hn.studentattendance.infrastructure.security.exception.CustomAuthenticationEntryPoint;
@@ -28,6 +29,12 @@ import java.util.List;
 public class SecurityConfig {
 
     private final AuthenticationSecurityConfig authenticationSecurityConfig;
+
+
+    private final StaffSecurityConfig staffSecurityConfig;
+
+    private final AdminSecurityConfig adminSecurityConfig;
+
 
     @Value("${allowed.origin}")
     public String ALLOWED_ORIGIN;
@@ -58,6 +65,9 @@ public class SecurityConfig {
 
         // Thêm từng config routes vào đây
         authenticationSecurityConfig.configure(http);
+        staffSecurityConfig.configure(http);
+        adminSecurityConfig.configure(http);
+
 
         http.authorizeHttpRequests(auth -> auth.anyRequest().authenticated());
         return http.build();
