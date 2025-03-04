@@ -49,7 +49,7 @@ const handleLogout = () => {
         <a-menu-item key="4">
           <router-link :to="{ name: ROUTE_NAMES.MANAGEMENT_LEVEL_PROJECT }">
             <user-outlined />
-            <span>Quản lý cấp dự </span>
+            <span>Quản lý cấp dự án </span>
           </router-link>
         </a-menu-item>
         <a-menu-item key="5">

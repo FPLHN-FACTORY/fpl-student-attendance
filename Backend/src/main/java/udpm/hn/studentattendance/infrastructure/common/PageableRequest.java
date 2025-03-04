@@ -16,4 +16,6 @@ public abstract class PageableRequest {
 
     private String sortBy = PaginationConstant.DEFAULT_SORT_BY;
 
+    private String q;
+
 }
