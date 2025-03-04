@@ -1,11 +1,19 @@
 package udpm.hn.studentattendance.core.admin.semester.model.response;
 
-public interface AdSemesterResponse {
-    String getSemesterId();
+import udpm.hn.studentattendance.infrastructure.common.HasOrderNumber;
+import udpm.hn.studentattendance.infrastructure.common.IsIdentify;
+
+public interface AdSemesterResponse extends IsIdentify, HasOrderNumber {
+
+    Integer getSemesterIndex();
+
+    String getSemesterCode();
 
     String getSemesterName();
 
-    Long getStartTime();
+    Integer getSemesterStatus();
 
-    Long getEndTime();
+    Long getStartDate();
+
+    Long getEndDate();
 }

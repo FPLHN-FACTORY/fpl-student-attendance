@@ -12,7 +12,7 @@ import static udpm.hn.studentattendance.helpers.RouterHelper.appendPrefixApi;
 public class TestSecurityConfig {
     public void configure(HttpSecurity httpSecurity) throws Exception {
         httpSecurity.authorizeHttpRequests(auth ->{
-            auth.requestMatchers(appendPrefixApi("/admin")).hasAuthority(RoleConstant.ADMIN.name());
+            auth.requestMatchers(appendPrefixApi("/api/v1/admin")).permitAll();
         });
     }
 }

@@ -70,21 +70,21 @@ public class AdFacilityServiceImpl implements AdFacilityService {
 
     @Override
     public ResponseEntity<?> updateFacility(String facilityId, @Valid CreateUpdateFacilityRequest request) {
-        if (!facilityRepository.existsByNameAndId(request.getFacilityName(), facilityId)) {
-            return new ResponseEntity<>(
-                    new ApiResponse(
-                            RestApiStatus.ERROR,
-                            "Cơ sở không tồn tại",
-                            null
-                    ),
-                    HttpStatus.NOT_FOUND);
-        }
+//        if (!facilityRepository.existsByNameAndId(request.getFacilityName(), facilityId)) {
+//            return new ResponseEntity<>(
+//                    new ApiResponse(
+//                            RestApiStatus.ERROR,
+//                            "Cơ sở không tồn tại",
+//                            null
+//                    ),
+//                    HttpStatus.NOT_FOUND);
+//        }
         Optional<Facility> existFacility = facilityRepository.findById(facilityId);
         existFacility.map(facilities -> {
             facilities.setCode(GenerateNameHelper.generateCodeFromName(request.getFacilityName().trim()));
             facilities.setName(GenerateNameHelper.replaceManySpaceToOneSpace(request.getFacilityName().trim()));
             facilities.setCreatedAt(facilities.getCreatedAt());
-            facilities.setStatus(EntityStatus.ACTIVE);
+//            facilities.setStatus(EntityStatus.ACTIVE);
             return facilityRepository.save(facilities);
         });
         return existFacility
@@ -144,7 +144,7 @@ public class AdFacilityServiceImpl implements AdFacilityService {
                                 new ApiResponse(
                                         RestApiStatus.SUCCESS,
                                         "Hiển thị chi tiết cơ sở thành công",
-                                        null
+                                        facilityRepository.getDetailFacilityById(facilityId)
                                 ),
                                 HttpStatus.OK)
                 )

@@ -15,22 +15,27 @@ import java.util.Optional;
 public interface AdFacilityRepository extends FacilityRepository {
     @Query(
             value = """
-                    SELECT 
-                        f.id AS id,
-                        f.code AS facilityCode,
-                        f.name AS facilityName,
-                        f.status AS facilityStatus
-                    FROM Facility f
-                    WHERE (:#{#request.name} IS NULL OR f.code LIKE CONCAT('%', TRIM(:#{#request.q}), '%') OR f.name LIKE CONCAT('%', TRIM(:#{#request.name}), '%'))
-                      AND (:#{#request.status} IS NULL OR f.status = (:#{#request.status}))
-                    ORDER BY f.createdAt DESC
-                    """,
+            SELECT 
+                ROW_NUMBER() OVER (ORDER BY f.createdAt DESC) AS facilityIndex,
+                f.id AS id,
+                f.code AS facilityCode,
+                f.name AS facilityName,
+                f.status AS facilityStatus
+            FROM Facility f
+            WHERE (:#{#request.name} IS NULL 
+                   OR f.code LIKE CONCAT('%', TRIM(:#{#request.q}), '%') 
+                   OR f.name LIKE CONCAT('%', TRIM(:#{#request.name}), '%'))
+              AND (:#{#request.status} IS NULL OR f.status = (:#{#request.status}))
+            ORDER BY f.createdAt DESC
+            """,
             countQuery = """
-                    SELECT COUNT(f.id)
-                    FROM Facility f
-                    WHERE (:#{#request.name} IS NULL OR f.code LIKE CONCAT('%', TRIM(:#{#request.q}), '%') OR f.name LIKE CONCAT('%', TRIM(:#{#request.name}), '%'))
-                      AND (:#{#request.status} IS NULL OR f.status = (:#{#request.status}))
-                    """
+            SELECT COUNT(f.id)
+            FROM Facility f
+            WHERE (:#{#request.name} IS NULL 
+                   OR f.code LIKE CONCAT('%', TRIM(:#{#request.q}), '%') 
+                   OR f.name LIKE CONCAT('%', TRIM(:#{#request.name}), '%'))
+              AND (:#{#request.status} IS NULL OR f.status = (:#{#request.status}))
+            """
     )
     Page<AdFacilityResponse> getAllFacility(Pageable pageable, FacilitySearchRequest request);
 
@@ -43,7 +48,7 @@ public interface AdFacilityRepository extends FacilityRepository {
 
     @Query(value = """
             SELECT 
-            f.id as facilityId,
+            f.id as id,
             f.code as facilityCode,
             f.name as facilityName,
             f.status as facilityStatus

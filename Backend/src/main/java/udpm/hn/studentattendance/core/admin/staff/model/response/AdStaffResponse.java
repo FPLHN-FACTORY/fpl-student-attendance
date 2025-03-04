@@ -1,17 +1,19 @@
 package udpm.hn.studentattendance.core.admin.staff.model.response;
 
 public interface AdStaffResponse {
-    String getId();
+    Integer getRowNumber();
 
-    String getName();
+    String getStaffId();
 
-    String getCode();
+    String getStaffName();
 
-    String getAccountFe();
+    String getStaffCode();
 
-    String getAccountFpt();
+    String getStaffEmailFe();
+
+    String getStaffEmailFpt();
 
     String getFacilityName();
 
-    String getStatus();
+    String getStaffStatus();
 }

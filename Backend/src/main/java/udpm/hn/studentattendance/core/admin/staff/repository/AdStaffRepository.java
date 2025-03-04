@@ -16,61 +16,37 @@ import java.util.Optional;
 @Repository
 public interface AdStaffRepository extends UserStaffRepository {
 
-    @Query(
-            value =
-                    """
-                            SELECT\s
-                                s.id as staffId,
-                                s.name as staffName,
-                                s.code as staffCode,
-                                s.emailFe as staffEmailFe,
-                                s.emailFpt as staffEmailFpt,
-                                s.status as staffStatus
-                            FROM UserStaff as s
-                            LEFT JOIN Role as r on s.id = r.userStaff.id
-                            LEFT JOIN Facility as f on r.facility.id = f.id
-                            WHERE\s
-                                (TRIM(:#{#adStaffRequest.searchQuery}) IS NULL
-                                 OR TRIM(:#{#adStaffRequest.searchQuery}) LIKE ''
-                                 OR s.name LIKE CONCAT('%', TRIM(:#{#adStaffRequest.searchQuery}), '%')
-                                 OR s.code LIKE CONCAT('%', TRIM(:#{#adStaffRequest.searchQuery}), '%')
-                                 OR s.emailFe LIKE CONCAT('%', TRIM(:#{#adStaffRequest.searchQuery}), '%')
-                                 OR s.emailFpt LIKE CONCAT('%', TRIM(:#{#adStaffRequest.searchQuery}), '%'))
-                              AND\s
-                                (TRIM(:#{#adStaffRequest.idFacility}) IS NULL
-                                 OR TRIM(:#{#adStaffRequest.idFacility}) LIKE ''
-                                 OR f.id = TRIM(:#{#adStaffRequest.idFacility}))
-                              AND\s
-                                ((:#{#adStaffRequest.status}) IS NULL
-                                 OR (:#{#adStaffRequest.status}) LIKE ''
-                                 OR s.status = (:#{#adStaffRequest.status}))
-                            GROUP BY s.id, s.name, s.code, s.emailFe, s.emailFpt, s.status
-                            ORDER BY s.createdAt DESC
-                                     """,
-            countQuery = """
-                    SELECT COUNT(DISTINCT s.id) AS totalCount
-                    FROM UserStaff AS s
-                    LEFT JOIN Role AS r ON s.id = r.userStaff.id
-                    LEFT JOIN Facility AS f ON r.facility.id = f.id
-                    WHERE\s
-                        (TRIM(:#{#adStaffRequest.searchQuery}) IS NULL
-                         OR TRIM(:#{#adStaffRequest.searchQuery}) = ''
-                         OR s.name LIKE CONCAT('%', TRIM(:#{#adStaffRequest.searchQuery}), '%')
-                         OR s.code LIKE CONCAT('%', TRIM(:#{#adStaffRequest.searchQuery}), '%')
-                         OR s.emailFe LIKE CONCAT('%', TRIM(:#{#adStaffRequest.searchQuery}), '%')
-                         OR s.emailFpt LIKE CONCAT('%', TRIM(:#{#adStaffRequest.searchQuery}), '%'))
-                      AND\s
-                        (TRIM(:#{#adStaffRequest.idFacility}) IS NULL
-                         OR TRIM(:#{#adStaffRequest.idFacility}) LIKE ''
-                         OR f.id = TRIM(:#{#adStaffRequest.idFacility}))
-                      AND\s
-                        ((:#{#adStaffRequest.status}) IS NULL
-                         OR (:#{#adStaffRequest.status}) LIKE ''
-                         OR s.status = (:#{#adStaffRequest.status}))
-                        GROUP BY s.id, s.name, s.code, s.emailFe, s.emailFpt, s.status
-                                        """
-    )
+    @Query("""
+    SELECT 
+         ROW_NUMBER() OVER (ORDER BY s.createdAt DESC) AS rowNumber,
+         s.id AS staffId,
+         s.name AS staffName,
+         s.code AS staffCode,
+         s.emailFe AS staffEmailFe,
+         s.emailFpt AS staffEmailFpt,
+         s.status AS staffStatus,
+         f.name AS facilityName
+    FROM UserStaff s
+         LEFT JOIN Role r on r.userStaff.id = s.id
+         LEFT JOIN Facility  f on r.facility.id = f.id
+    WHERE (trim(:#{#adStaffRequest.searchQuery}) IS NULL 
+           OR trim(:#{#adStaffRequest.searchQuery}) = '' 
+           OR s.name LIKE concat('%', trim(:#{#adStaffRequest.searchQuery}), '%')
+           OR s.code LIKE concat('%', trim(:#{#adStaffRequest.searchQuery}), '%')
+           OR s.emailFe LIKE concat('%', trim(:#{#adStaffRequest.searchQuery}), '%')
+           OR s.emailFpt LIKE concat('%', trim(:#{#adStaffRequest.searchQuery}), '%'))
+      AND (trim(:#{#adStaffRequest.idFacility}) IS NULL 
+           OR trim(:#{#adStaffRequest.idFacility}) = '' 
+           OR f.id = trim(:#{#adStaffRequest.idFacility}))
+      AND (:#{#adStaffRequest.status} IS NULL 
+           OR :#{#adStaffRequest.status} = '' 
+           OR s.status = :#{#adStaffRequest.status})
+    GROUP BY s.id, s.name, s.code, s.emailFe, s.emailFpt, s.status, s.createdAt
+    ORDER BY s.createdAt DESC
+    """)
     Page<AdStaffResponse> getAllStaff(Pageable pageable, AdStaffRequest adStaffRequest);
+
+
 
     Optional<UserStaff> findUserStaffByCode(String staffCode);
 

@@ -3,14 +3,17 @@ package udpm.hn.studentattendance.core.admin.semester.model.request;
 import lombok.Getter;
 import lombok.Setter;
 import udpm.hn.studentattendance.infrastructure.common.PageableRequest;
+import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 
 @Getter
 @Setter
 public class AdSemesterRequest extends PageableRequest {
-    private String semesterName;
+    private String semesterCode;
 
     private Long fromDateSemester;
 
     private Long toDateSemester;
+
+    private EntityStatus status;
 
 }

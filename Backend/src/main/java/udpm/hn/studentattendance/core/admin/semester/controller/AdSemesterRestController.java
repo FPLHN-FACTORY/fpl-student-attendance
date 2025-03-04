@@ -6,12 +6,13 @@ import org.springframework.web.bind.annotation.*;
 import udpm.hn.studentattendance.core.admin.semester.model.request.AdCreateUpdateSemesterRequest;
 import udpm.hn.studentattendance.core.admin.semester.model.request.AdSemesterRequest;
 import udpm.hn.studentattendance.core.admin.semester.service.AdSemesterService;
+import udpm.hn.studentattendance.infrastructure.constants.RoutesConstant;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/semesters")
+@RequestMapping(RoutesConstant.URL_ADMIN_SEMESTER_MANAGEMENT)
 public class AdSemesterRestController {
-    private AdSemesterService semesterService;
+    private final AdSemesterService semesterService;
 
     @GetMapping
     public ResponseEntity<?> getAll(AdSemesterRequest request) {
