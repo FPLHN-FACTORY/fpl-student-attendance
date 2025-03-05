@@ -25,7 +25,7 @@ public interface AdStaffRepository extends UserStaffRepository {
                  s.emailFe AS staffEmailFe,
                  s.emailFpt AS staffEmailFpt,
                  s.status AS staffStatus,
-                 f.name AS facilityName
+                 min(f.name) AS facilityName
             FROM UserStaff s
                  LEFT JOIN Role r on r.userStaff.id = s.id
                  LEFT JOIN Facility  f on r.facility.id = f.id
@@ -39,7 +39,7 @@ public interface AdStaffRepository extends UserStaffRepository {
                    OR trim(:#{#adStaffRequest.idFacility}) = '' 
                    OR f.id = trim(:#{#adStaffRequest.idFacility}))
               AND (:#{#adStaffRequest.status} IS NULL OR s.status = :#{#adStaffRequest.status})
-            GROUP BY s.id, s.name, s.code, s.emailFe, s.emailFpt, s.status, s.createdAt, f.name
+            GROUP BY s.id, s.name, s.code, s.emailFe, s.emailFpt, s.status, s.createdAt
             ORDER BY s.createdAt DESC
             """,
             countQuery = """
