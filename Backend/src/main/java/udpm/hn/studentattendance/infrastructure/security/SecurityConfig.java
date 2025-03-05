@@ -14,6 +14,7 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import udpm.hn.studentattendance.core.admin.router.AdminSecurityConfig;
 import udpm.hn.studentattendance.core.authentication.router.AuthenticationSecurityConfig;
+import udpm.hn.studentattendance.core.staff.levelprojectmanagement.router.StaffSecurityConfig;
 import udpm.hn.studentattendance.infrastructure.security.exception.CustomAccessDeniedHandler;
 import udpm.hn.studentattendance.infrastructure.security.exception.CustomAuthenticationEntryPoint;
 
