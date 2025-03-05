@@ -27,7 +27,7 @@ const handleLogout = () => {
 </script>
 
 <template>
-  <a-layout id="components-layout-demo-custom-trigger" style="height: 100vh">
+  <a-layout id="components-layout-demo-custom-trigger">
     <a-layout-sider
       v-model:collapsed="collapsed"
       :trigger="null"
@@ -105,10 +105,7 @@ const handleLogout = () => {
         </a-dropdown>
       </a-layout-header>
 
-      <!-- CONTENT -->
-      <a-layout-content
-        :style="{ margin: '24px 16px', padding: '24px', background: '#fff', minHeight: '280px' }"
-      >
+      <a-layout-content :style="{ margin: '24px 16px', padding: '24px', background: '#fff' }">
         <router-view />
       </a-layout-content>
     </a-layout>
@@ -116,6 +113,10 @@ const handleLogout = () => {
 </template>
 
 <style scoped>
+#components-layout-demo-custom-trigger {
+  min-height: 100vh; /* Đảm bảo bố cục ít nhất bằng viewport */
+}
+
 #components-layout-demo-custom-trigger .trigger {
   font-size: 18px;
   line-height: 64px;

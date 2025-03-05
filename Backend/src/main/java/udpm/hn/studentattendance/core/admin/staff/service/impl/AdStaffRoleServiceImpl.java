@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
 import udpm.hn.studentattendance.core.admin.staff.model.request.AdChangeStaffRoleRequest;
 import udpm.hn.studentattendance.core.admin.staff.model.request.AdStaffRoleRequest;
+import udpm.hn.studentattendance.core.admin.staff.model.response.AdStaffRoleResponse;
 import udpm.hn.studentattendance.core.admin.staff.repository.ADStaffFacilityRepository;
 import udpm.hn.studentattendance.core.admin.staff.repository.AdStaffRepository;
 import udpm.hn.studentattendance.core.admin.staff.repository.AdStaffRoleRepository;
@@ -36,11 +37,21 @@ public class AdStaffRoleServiceImpl implements AdStaffRoleService {
 
     @Override
     public ResponseEntity<?> getAllRole(String staffId) {
+        List<AdStaffRoleResponse> list = adStaffRoleRepository.getRolesByStaffId(staffId, EntityStatus.ACTIVE);
+        if (list.get(0).getRoleId() == null){
+            return new ResponseEntity<>(
+                    new ApiResponse(
+                            RestApiStatus.SUCCESS,
+                            "Nhân viên chưa có vai trò nào",
+                            null
+                    ),
+                    HttpStatus.OK);
+        }
         return new ResponseEntity<>(
                 new ApiResponse(
                         RestApiStatus.SUCCESS,
                         "Lấy vai trò của giảng viên thành công",
-                        adStaffRoleRepository.getRolesByStaffId(staffId)
+                        list
                 ),
                 HttpStatus.OK);
     }
@@ -95,7 +106,7 @@ public class AdStaffRoleServiceImpl implements AdStaffRoleService {
                 new ApiResponse(
                         RestApiStatus.SUCCESS,
                         "Lấy cơ sở thành công",
-                        adStaffFacilityRepository.getFacilities()
+                        adStaffFacilityRepository.getFacilities(EntityStatus.ACTIVE)
                 ),
                 HttpStatus.OK);
     }
@@ -104,4 +115,10 @@ public class AdStaffRoleServiceImpl implements AdStaffRoleService {
     public ResponseEntity<?> getFacilitiesSelect(String idStaff) { // dùng để lấy bộ môn theo cơ sở
         return null;
     }
+
+    @Override
+    public ResponseEntity<?> getAllFactoryByFacility(String facilityId) {
+        return null;
+    }
+
 }

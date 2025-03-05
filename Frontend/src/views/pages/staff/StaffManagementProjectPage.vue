@@ -180,7 +180,7 @@
   <a-modal v-model:visible="modalDetail" title="Chi tiết dự án" footer="">
     <p><strong>Tên:</strong> {{ detailProject.name }}</p>
     <p><strong>Cấp dự án:</strong> {{ detailProject.levelProject.name }}</p>
-    <p><strong>Học kỳ:</strong> {{ detailProject.semester.id }}</p>
+    <!-- <p><strong>Học kỳ:</strong> {{ detailProject.semester.id }}</p> -->
     <p><strong>Môn học:</strong> {{ detailProject.subjectFacility.subject.name }}</p>
     <p><strong>Mô tả:</strong> {{ detailProject.description }}</p>
     <p><strong>Ngày tạo:</strong> {{ formatDate(detailProject.createdAt) }}</p>
@@ -476,7 +476,7 @@ export default {
         name: this.detailProject.name,
         description: this.detailProject.description,
         idLevelProject: this.detailProject.levelProject.id,
-        idSemester: this.detailProject.semester.id,
+        // idSemester: this.detailProject.semester.id,
         idSubject: this.detailProject.subjectFacility.subject.id,
         status: this.detailProject.status,
       }

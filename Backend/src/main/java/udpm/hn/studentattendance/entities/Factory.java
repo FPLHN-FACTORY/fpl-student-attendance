@@ -1,6 +1,7 @@
 package udpm.hn.studentattendance.entities;
 
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.JoinColumn;
@@ -32,10 +33,12 @@ public class Factory extends PrimaryEntity implements Serializable {
     private String description;
 
     @ManyToOne
+    @JsonIgnore
     @JoinColumn(name = "id_project")
     private Project project;
 
     @ManyToOne
+    @JsonIgnore
     @JoinColumn(name = "id_user_staff")
     private UserStaff userStaff;
 
