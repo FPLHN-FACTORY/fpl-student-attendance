@@ -29,18 +29,30 @@ const handleLogout = () => {
       </div>
       <a-menu v-model:selectedKeys="selectedKeys" theme="light" mode="inline">
         <a-menu-item key="1">
+          <router-link :to="{ name: ROUTE_NAMES.MANAGEMENT_PROJECT }">
+            <user-outlined />
+            <span>Quản lý dự án</span>
+          </router-link>
+        </a-menu-item>
+        <a-menu-item key="2">
           <router-link :to="{ name: ROUTE_NAMES.MANAGEMENT_FACTORY }">
             <user-outlined />
             <span>Quản lý nhóm xưởng</span>
           </router-link>
         </a-menu-item>
-        <a-menu-item key="2">
+        <a-menu-item key="3">
           <router-link :to="{ name: ROUTE_NAMES.MANAGEMENT_PLAN }">
             <user-outlined />
             <span>Phân công kế hoạch</span>
           </router-link>
         </a-menu-item>
-        <a-menu-item key="3">
+        <a-menu-item key="4">
+          <router-link :to="{ name: ROUTE_NAMES.MANAGEMENT_LEVEL_PROJECT }">
+            <user-outlined />
+            <span>Quản lý cấp dự án </span>
+          </router-link>
+        </a-menu-item>
+        <a-menu-item key="5">
           <router-link :to="{ name: ROUTE_NAMES.MANAGEMENT_STUDENT }">
             <user-outlined />
             <span>Quản lý sinh viên</span>
