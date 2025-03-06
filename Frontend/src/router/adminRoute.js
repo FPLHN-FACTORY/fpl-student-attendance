@@ -8,6 +8,7 @@ export const ROUTE_NAMES = {
   MANAGEMENT_SUBJECT_FACILITY: 'route_admin_management_subject_facility',
   MANAGEMENT_LEVEL_PROJECT: 'route_admin_management_level_project',
   MANAGEMENT_STAFF: 'route_admin_management_staff',
+  MANAGEMENT_STAFF_ROLE: 'route_admin_management_staff_role',
   MANAGEMENT_PROJECT: 'route_admin_management_project',
 }
 
@@ -41,6 +42,11 @@ export const AdminRoutes = [
         path: 'management-staff',
         name: ROUTE_NAMES.MANAGEMENT_STAFF,
         component: import('@/views/pages/admin/AdminManagementStaffPage.vue'),
+      },
+      {
+        path: 'management-staff-role',
+        name: ROUTE_NAMES.MANAGEMENT_STAFF_ROLE,
+        component: import('@/views/pages/admin/AdminManagementStaffRolePage.vue'),
       },
       {
         path: 'management-level-project',

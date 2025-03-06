@@ -14,4 +14,6 @@ public interface AdStaffRoleService {
     ResponseEntity<?> getFacilities();
 
     ResponseEntity<?> getFacilitiesSelect(String idStaff);
+
+    ResponseEntity<?> getAllFactoryByFacility(String facilityId);
 }

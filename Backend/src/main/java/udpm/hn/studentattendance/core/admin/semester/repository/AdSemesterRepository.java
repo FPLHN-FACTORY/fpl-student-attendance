@@ -17,8 +17,9 @@ import java.util.Optional;
 public interface AdSemesterRepository extends SemesterRepository {
     @Query(
             value = """
-        SELECT 
-            ROW_NUMBER() OVER (ORDER BY s.fromDate DESC) AS semesterIndex,
+        SELECT  
+            DISTINCT 
+            ROW_NUMBER() OVER (ORDER BY s.id DESC) AS semesterIndex, 
             s.id AS id,
             s.code AS semesterCode,
             s.semesterName AS semesterName,

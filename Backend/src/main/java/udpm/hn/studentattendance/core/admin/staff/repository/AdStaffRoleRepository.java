@@ -26,11 +26,11 @@ public interface AdStaffRoleRepository extends RoleRepository {
                             FROM UserStaff s  
                             LEFT JOIN Role r ON s.id = r.userStaff.id
                             LEFT JOIN Facility f ON r.facility.id = f.id
-                            WHERE s.status = 0 
+                            WHERE s.status = :status
                               AND TRIM(s.id) = TRIM(:staffId)
                             """
     )
-    List<AdStaffRoleResponse> getRolesByStaffId(String staffId);
+    List<AdStaffRoleResponse> getRolesByStaffId(String staffId, EntityStatus status);
 
     @Query(
             value = """
