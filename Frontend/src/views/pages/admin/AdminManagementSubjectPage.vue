@@ -170,6 +170,7 @@ import {
 import { message, Modal } from 'ant-design-vue'
 import requestAPI from '@/services/requestApiService'
 import { ROUTE_NAMES } from '@/router/adminRoute'
+import { API_ROUTES_ADMIN } from '@/constants/adminConstant'
 
 export default {
   components: {
@@ -218,7 +219,7 @@ export default {
     // Load table
     fetchSubjects() {
       requestAPI
-        .post('http://localhost:8765/api/v1/admin-management/subject-management/list', this.filter)
+        .post(`${API_ROUTES_ADMIN.FETCH_DATA_SUBJECT}/list`, this.filter)
         .then((response) => {
           this.subjects = response.data.data.data
           this.pagination.total = response.data.data.totalPages * this.filter.pageSize
@@ -247,7 +248,7 @@ export default {
         return
       }
       requestAPI
-        .post('http://localhost:8765/api/v1/admin-management/subject-management', this.newSubject)
+        .post(API_ROUTES_ADMIN.FETCH_DATA_SUBJECT, this.newSubject)
         .then(() => {
           message.success('Thêm bộ môn thành công')
           this.ShowAddModal(false)
@@ -262,7 +263,7 @@ export default {
     // Xem chi tiết bộ môn
     handleDetailSubject(record) {
       requestAPI
-        .get(`http://localhost:8765/api/v1/admin-management/subject-management/${record.id}`)
+        .get(`${API_ROUTES_ADMIN.FETCH_DATA_SUBJECT}/${record.id}`)
         .then((response) => {
           this.ModalDetail = true
           this.detailSubject = response.data.data
@@ -275,7 +276,7 @@ export default {
     // Mở modal sửa bộ môn
     handleUpdateSubject(record) {
       requestAPI
-        .get(`http://localhost:8765/api/v1/admin-management/subject-management/${record.id}`)
+        .get(`${API_ROUTES_ADMIN.FETCH_DATA_SUBJECT}/${record.id}`)
         .then((response) => {
           this.detailSubject = response.data.data
           this.ModalUpdate = true
@@ -300,7 +301,7 @@ export default {
       console.log(req.id)
 
       requestAPI
-        .put(`http://localhost:8765/api/v1/admin-management/subject-management/${req.id}`, req)
+        .put(`${API_ROUTES_ADMIN.FETCH_DATA_SUBJECT}/${req.id}`, req)
         .then(() => {
           message.success('Cập nhật bộ môn thành công')
           this.ModalUpdate = false
@@ -318,7 +319,7 @@ export default {
         content: `Bạn có chắc chắn muốn xóa bộ môn ${record.name} không?`,
         onOk: () => {
           requestAPI
-            .delete(`http://localhost:8765/api/v1/admin-management/subject-management/${record.id}`)
+            .delete(`${API_ROUTES_ADMIN.FETCH_DATA_SUBJECT}/${record.id}`)
             .then(() => {
               message.success('Xóa bộ môn thành công')
               this.fetchSubjects()

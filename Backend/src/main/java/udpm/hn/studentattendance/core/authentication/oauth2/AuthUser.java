@@ -6,6 +6,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import udpm.hn.studentattendance.infrastructure.constants.RoleConstant;
 
+import java.util.Set;
+
 @Setter
 @Getter
 @NoArgsConstructor
@@ -16,7 +18,7 @@ public class AuthUser {
 
     private String name;
 
-    private RoleConstant role;
+    private Set<RoleConstant> role;
 
     private String idFacility;
 

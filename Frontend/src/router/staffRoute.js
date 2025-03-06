@@ -5,7 +5,6 @@ export const ROUTE_NAMES = {
   MANAGEMENT_PROJECT: 'route_staff_management_project',
   MANAGEMENT_FACTORY: 'route_staff_management_factory',
   MANAGEMENT_PLAN: 'route_staff_management_plan',
-  MANAGEMENT_LEVEL_PROJECT: 'route_staff_management_level_project',
   MANAGEMENT_STUDENT: 'route_staff_management_student',
 }
 
@@ -34,11 +33,6 @@ export const StaffRoutes = [
         path: 'management-plan',
         name: ROUTE_NAMES.MANAGEMENT_PLAN,
         component: import('@/views/pages/staff/StaffManagementPlanPage.vue'),
-      },
-      {
-        path: 'management-level-project',
-        name: ROUTE_NAMES.MANAGEMENT_LEVEL_PROJECT,
-        component: import('@/views/pages/staff/StaffManagementLevelProjectPage.vue'),
       },
       {
         path: 'management-student',

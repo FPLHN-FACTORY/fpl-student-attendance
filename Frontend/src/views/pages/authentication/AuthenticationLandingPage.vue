@@ -15,6 +15,7 @@ import useLoadingStore from '@/stores/useLoadingStore'
 import { decodeBase64 } from '@/utils/utils'
 import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
 import { ROUTE_NAMES_API } from '@/router/authenticationRoute'
+import { ROLE } from '@/constants/roleConstant'
 
 const router = useRouter()
 const route = useRoute()
@@ -29,19 +30,25 @@ const lstFacility = ref([])
 
 const roles = [
   {
-    role: 'ADMIN',
+    role: ROLE.ADMIN,
     label: 'Cán bộ đào tạo',
     img: imgRoleAdmin,
     route: GLOBAL_ROUTE_NAMES.ADMIN_PAGE,
   },
   {
-    role: 'STAFF',
+    role: ROLE.STAFF,
     label: 'Quản lý xưởng',
     img: imgRoleStaff,
     route: GLOBAL_ROUTE_NAMES.STAFF_PAGE,
   },
   {
-    role: 'STUDENT',
+    role: ROLE.TEACHER,
+    label: 'Giảng viên',
+    img: imgRoleStaff,
+    route: GLOBAL_ROUTE_NAMES.TEACHER_PAGE,
+  },
+  {
+    role: ROLE.STUDENT,
     label: 'Sinh viên',
     img: imgRoleStudent,
     route: GLOBAL_ROUTE_NAMES.STUDENT_PAGE,
@@ -52,7 +59,7 @@ const showModalSelectFacility = () => (isShowModalSelectFacility.value = true)
 
 const handleSelectFacility = (role) => {
   roleLogin.value = role
-  if (role === 'ADMIN') {
+  if (role === ROLE.ADMIN) {
     return handleRedirectLogin(true)
   }
   showModalSelectFacility()
@@ -64,7 +71,7 @@ const handleRedirectLogin = (width_out_facility = false) => {
     return toast.error('Vui lòng chọn cơ sở muốn đăng nhập')
   }
 
-  const currentRole = roles.find((o) => o.role === roleLogin.value)
+  const currentRole = roles.find((o) => o.role.includes(roleLogin.value))
 
   if (!currentRole) {
     return toast.error('Role đăng nhập không chính xác')
@@ -90,8 +97,7 @@ const fetchDataFacility = async () => {
 
 const redirectLoginRole = () => {
   if (authStore.isLogin) {
-    const user = authStore.user
-    const role = roles.find((o) => o.role === user.role)
+    const role = roles.find((o) => o.role.includes(roleLogin.value))
 
     if (role) {
       loadingPage.hide()
@@ -101,6 +107,7 @@ const redirectLoginRole = () => {
 }
 
 const checkLogin = () => {
+  roleLogin.value = route.query.role || null
   const authenticationToken = route.query.authencation_token || null
   const authenticationError = route.query.authencation_error || null
 

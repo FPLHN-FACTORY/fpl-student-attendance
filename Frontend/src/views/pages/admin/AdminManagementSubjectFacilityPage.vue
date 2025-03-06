@@ -151,19 +151,14 @@
       </a-tag>
     </p>
     <p><strong>Ngày tạo:</strong> {{ formatDate(detailSubjectFacility.createdAt) }}</p>
-    <p><strong>Ngày cập nhật:</strong> {{ formatDate(detailSubjectFacility.updatedAt) }}</p> 
+    <p><strong>Ngày cập nhật:</strong> {{ formatDate(detailSubjectFacility.updatedAt) }}</p>
   </a-modal>
-
 
   <!-- Modal sửa bộ môn -->
   <a-modal v-model:visible="ModalUpdate" title="Sửa bộ môn cơ sở" @ok="updateSubjectFacility">
     <p>Chưa nghĩ ra cần sửa cái gì</p>
   </a-modal>
-
-
 </template>
-
-
 
 <script>
 import {
@@ -175,6 +170,7 @@ import {
 } from '@ant-design/icons-vue'
 import { message, Modal } from 'ant-design-vue'
 import requestAPI from '@/services/requestApiService'
+import { API_ROUTES_ADMIN } from '@/constants/adminConstant'
 
 export default {
   components: { SearchOutlined, PlusOutlined, EyeOutlined, EditOutlined, DeleteOutlined },
@@ -227,10 +223,7 @@ export default {
   methods: {
     fetchSubjectFacility() {
       requestAPI
-        .post(
-          'http://localhost:8765/api/v1/admin-management/subject-facility-management/list',
-          this.filter,
-        )
+        .post(`${API_ROUTES_ADMIN.FETCH_DATA_SUBJECT_FACILITY}/list`, this.filter)
         .then((response) => {
           this.subjectFacility = response.data.data.data
           this.pagination.total = response.data.data.totalPages * this.filter.pageSize
@@ -243,9 +236,7 @@ export default {
 
     fetchSubject() {
       requestAPI
-        .get(
-          `http://localhost:8765/api/v1/admin-management/subject-management/${this.filter.subjectId}`,
-        )
+        .get(`${API_ROUTES_ADMIN.FETCH_DATA_SUBJECT}/${this.filter.subjectId}`)
         .then((response) => {
           this.subject = response.data.data
         })
@@ -256,9 +247,7 @@ export default {
 
     fetchFacilityCombobox() {
       requestAPI
-        .get(
-          'http://localhost:8765/api/v1/admin-management/subject-facility-management/facility-combobox',
-        )
+        .get(`${API_ROUTES_ADMIN.FETCH_DATA_SUBJECT_FACILITY}/facility-combobox`)
         .then((response) => {
           this.facility = response.data
         })
@@ -269,10 +258,7 @@ export default {
 
     fetchFacilitySubjectCombobox() {
       requestAPI
-        .post(
-          'http://localhost:8765/api/v1/admin-management/subject-facility-management/facility-combobox',
-          this.filter,
-        )
+        .post(`${API_ROUTES_ADMIN.FETCH_DATA_SUBJECT_FACILITY}/facility-combobox`, this.filter)
         .then((response) => {
           this.facilitySubject = response.data
         })
@@ -300,11 +286,9 @@ export default {
             facilityId: f.id,
             subjectId: this.subject.id,
           }
-          requestAPI
-            .post('http://localhost:8765/api/v1/admin-management/subject-facility-management', req)
-            .then(() => {
-              this.fetchSubjectFacility()
-            })
+          requestAPI.post(API_ROUTES_ADMIN.FETCH_DATA_SUBJECT_FACILITY, req).then(() => {
+            this.fetchSubjectFacility()
+          })
         })
         message.success('Thêm bộ môn cơ sở thành công')
         this.ModalAdd = false
@@ -314,18 +298,16 @@ export default {
             facilityId: f,
             subjectId: this.subject.id,
           }
-          requestAPI
-            .post('http://localhost:8765/api/v1/admin-management/subject-facility-management', req)
-            .then(() => {
-              this.fetchSubjectFacility()
-            })
+          requestAPI.post(API_ROUTES_ADMIN.FETCH_DATA_SUBJECT_FACILITY, req).then(() => {
+            this.fetchSubjectFacility()
+          })
         })
         message.success('Thêm bộ môn cơ sở thành công')
         this.ModalAdd = false
       }
     },
 
-    handleUpdateProject(record){
+    handleUpdateProject(record) {
       this.ModalUpdate = true
     },
 
@@ -335,27 +317,23 @@ export default {
         content: `Bạn có chắc chắn muốn xóa bộ môn ${record.subjectName} cơ sở ${record.facilityName}  không?`,
         onOk: () => {
           requestAPI
-            .delete(`http://localhost:8765/api/v1/admin-management/subject-facility-management/${record.id}`)
+            .delete(`${API_ROUTES_ADMIN.FETCH_DATA_SUBJECT_FACILITY}/${record.id}`)
             .then(() => {
               message.success('Xóa bộ môn thành công')
               this.fetchSubjectFacility()
             })
-            .catch(() => {
-            })
+            .catch(() => {})
         },
       })
     },
 
-    handleDetailSubjectFacility(record){
+    handleDetailSubjectFacility(record) {
       this.ModalDetail = true
       requestAPI
-        .get(
-          `http://localhost:8765/api/v1/admin-management/subject-facility-management/${record.id}`,
-        )
+        .get(`${API_ROUTES_ADMIN.FETCH_DATA_SUBJECT_FACILITY}/${record.id}`)
         .then((response) => {
           this.detailSubjectFacility = response.data.data
-          console.log(this.detailSubjectFacility);
-          
+          console.log(this.detailSubjectFacility)
         })
         .catch(() => {
           message.error('Lỗi khi lấy dữ liệu combobox cơ sở')

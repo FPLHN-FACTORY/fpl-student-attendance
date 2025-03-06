@@ -145,6 +145,7 @@ import { message } from 'ant-design-vue'
 import { PlusOutlined, EyeOutlined } from '@ant-design/icons-vue'
 import requestAPI from '@/services/requestApiService'
 import dayjs from 'dayjs'
+import { API_ROUTES_STAFF } from '@/constants/staffConstant'
 
 const factories = ref([])
 
@@ -187,7 +188,7 @@ const columns = ref([
 // Hàm fetch danh sách xưởng từ backend qua getAll
 const fetchFactories = () => {
   requestAPI
-    .get('http://localhost:8765/api/v1/staff-management/factory-management', { params: filter })
+    .get(API_ROUTES_STAFF.FETCH_DATA_FACTORY, { params: filter })
     .then((response) => {
       // Giả sử API trả về dữ liệu theo cấu trúc: { data: { data: [...], totalPages } }
       factories.value = response.data.data.data
@@ -197,7 +198,7 @@ const fetchFactories = () => {
     .catch((error) => {
       message.error(
         (error.response && error.response.data && error.response.data.message) ||
-          'Lỗi khi lấy danh sách xưởng'
+          'Lỗi khi lấy danh sách xưởng',
       )
     })
 }

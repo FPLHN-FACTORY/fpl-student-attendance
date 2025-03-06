@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @Getter
 @Setter
@@ -22,7 +23,7 @@ public class CustomOAuth2User implements OAuth2User {
 
     private String id;
 
-    private String role;
+    private Set<String> role;
 
     private String code;
 
@@ -44,7 +45,9 @@ public class CustomOAuth2User implements OAuth2User {
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         List<GrantedAuthority> authorities = new ArrayList<>();
-        authorities.add(new SimpleGrantedAuthority(role));
+        for(String r: role) {
+            authorities.add(new SimpleGrantedAuthority(r));
+        }
         return authorities;
     }
 
