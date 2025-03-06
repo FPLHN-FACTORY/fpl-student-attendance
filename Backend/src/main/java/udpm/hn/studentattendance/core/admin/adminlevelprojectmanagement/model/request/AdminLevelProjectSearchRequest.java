@@ -1,4 +1,4 @@
-package udpm.hn.studentattendance.core.admin.levelprojectmanagement.model.request;
+package udpm.hn.studentattendance.core.admin.adminlevelprojectmanagement.model.request;
 
 import lombok.Getter;
 import lombok.Setter;
