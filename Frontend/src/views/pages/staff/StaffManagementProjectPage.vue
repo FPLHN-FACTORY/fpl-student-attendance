@@ -259,6 +259,7 @@ import {
 } from '@ant-design/icons-vue'
 import { message, Modal } from 'ant-design-vue'
 import requestAPI from '@/services/requestApiService'
+import { API_ROUTES_STAFF } from '@/constants/staffConstant'
 
 export default {
   components: { SearchOutlined, PlusOutlined, EyeOutlined, EditOutlined, DeleteOutlined },
@@ -333,7 +334,7 @@ export default {
     //Hiển thị dữ liệu dự án
     fetchProjects() {
       requestAPI
-        .post('http://localhost:8765/api/v1/staff-management/project-management/list', this.filter)
+        .post(`${API_ROUTES_STAFF.FETCH_DATA_PROJECT}/list`, this.filter)
         .then((response) => {
           this.projects = response.data.data.data
           this.pagination.total = response.data.data.totalPages * this.filter.pageSize
@@ -347,7 +348,7 @@ export default {
     //Hiển thị dữ liệu combobox
     fetchLevelCombobox() {
       requestAPI
-        .get('http://localhost:8765/api/v1/staff-management/project-management/level-combobox')
+        .get(`${API_ROUTES_STAFF.FETCH_DATA_PROJECT}/level-combobox`)
         .then((response) => {
           this.levels = response.data
         })
@@ -359,7 +360,7 @@ export default {
     //Hiển thị dữ liệu combobox
     fetchSemesters() {
       requestAPI
-        .get('http://localhost:8765/api/v1/staff-management/project-management/semester-combobox')
+        .get(`${API_ROUTES_STAFF.FETCH_DATA_PROJECT}/semester-combobox`)
         .then((response) => {
           this.semesters = response.data
         })
@@ -371,9 +372,7 @@ export default {
     //Hiển thị dữ liệu combobox
     fetchSubjects() {
       requestAPI
-        .get(
-          'http://localhost:8765/api/v1/staff-management/project-management/subject-facility-combobox'
-        )
+        .get(`${API_ROUTES_STAFF.FETCH_DATA_PROJECT}/subject-facility-combobox`)
         .then((response) => {
           this.subjects = response.data
         })
@@ -413,7 +412,7 @@ export default {
         return
       }
       requestAPI
-        .post('http://localhost:8765/api/v1/staff-management/project-management', this.newProject)
+        .post(API_ROUTES_STAFF.FETCH_DATA_PROJECT, this.newProject)
         .then(() => {
           message.success('Thêm dự án thành công')
           this.fetchProjects()
@@ -428,7 +427,7 @@ export default {
     //Chức năng xem
     handleDetailProject(record) {
       requestAPI
-        .get(`http://localhost:8765/api/v1/staff-management/project-management/${record.id}`)
+        .get(`${API_ROUTES_STAFF.FETCH_DATA_PROJECT}/${record.id}`)
         .then((response) => {
           this.detailProject = response.data.data
           this.modalDetail = true
@@ -441,7 +440,7 @@ export default {
     //Mở modal sửa
     handleEditProject(record) {
       requestAPI
-        .get(`http://localhost:8765/api/v1/staff-management/project-management/${record.id}`)
+        .get(`${API_ROUTES_STAFF.FETCH_DATA_PROJECT}/${record.id}`)
         .then((response) => {
           this.detailProject = response.data.data
           this.modalEdit = true
@@ -482,10 +481,7 @@ export default {
         status: this.detailProject.status,
       }
       requestAPI
-        .put(
-          `http://localhost:8765/api/v1/staff-management/project-management/${this.detailProject.id}`,
-          req
-        )
+        .put(`${API_ROUTES_STAFF.FETCH_DATA_PROJECT}/${this.detailProject.id}`, req)
         .then(() => {
           message.success('Cập nhật dự án thành công')
           this.modalEdit = false
@@ -503,7 +499,7 @@ export default {
         content: 'Bạn có chắc chắn muốn xóa dự án này?',
         onOk: () => {
           requestAPI
-            .delete(`http://localhost:8765/api/v1/staff-management/project-management/${record.id}`)
+            .delete(`${API_ROUTES_STAFF.FETCH_DATA_PROJECT}/${record.id}`)
             .then(() => {
               message.success('Xóa dự án thành công')
               this.fetchProjects()

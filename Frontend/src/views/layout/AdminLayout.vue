@@ -1,16 +1,14 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, watch, onMounted } from 'vue'
 import {
   MenuUnfoldOutlined,
   MenuFoldOutlined,
-  UserOutlined,
   ProjectOutlined,
   ApartmentOutlined,
   CalendarOutlined,
   BookOutlined,
   ClusterOutlined,
   TeamOutlined,
-  LogoutOutlined,
 } from '@ant-design/icons-vue'
 import imgLogoFpt from '@/assets/images/logo-fpt.png'
 import useAuthStore from '@/stores/useAuthStore'
@@ -24,6 +22,21 @@ const handleLogout = () => {
   authStore.logout()
   window.location.reload()
 }
+
+onMounted(() => {
+  const savedKeys = sessionStorage.getItem('selectedKeys')
+  if (savedKeys) {
+    selectedKeys.value = JSON.parse(savedKeys)
+  }
+})
+
+watch(
+  selectedKeys,
+  (newValue) => {
+    sessionStorage.setItem('selectedKeys', JSON.stringify(newValue))
+  },
+  { deep: true },
+)
 </script>
 
 <template>
@@ -97,7 +110,6 @@ const handleLogout = () => {
           <template #overlay>
             <a-menu>
               <a-menu-item key="logout" @click="handleLogout()">
-                <logout-outlined />
                 <span>Đăng xuất</span>
               </a-menu-item>
             </a-menu>

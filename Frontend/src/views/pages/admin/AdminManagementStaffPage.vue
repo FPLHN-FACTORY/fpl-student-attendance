@@ -165,6 +165,7 @@ import { PlusOutlined, EditOutlined, SwapOutlined, EyeOutlined } from '@ant-desi
 import requestAPI from '@/services/requestApiService'
 import { ROUTE_NAMES } from '@/router/adminRoute'
 import router from '@/router'
+import { API_ROUTES_ADMIN } from '@/constants/adminConstant'
 
 // Danh sách nhân viên
 const staffs = ref([])
@@ -225,7 +226,7 @@ const columns = ref([
 // Hàm lấy danh sách nhân viên từ backend
 const fetchStaffs = () => {
   requestAPI
-    .get('http://localhost:8765/api/v1/admin/staffs', { params: filter })
+    .get(API_ROUTES_ADMIN.FETCH_DATA_STAFF, { params: filter })
     .then((response) => {
       staffs.value = response.data.data.data
       pagination.total = response.data.data.totalPages * filter.pageSize
@@ -234,7 +235,7 @@ const fetchStaffs = () => {
     .catch((error) => {
       message.error(
         (error.response && error.response.data && error.response.data.message) ||
-          'Lỗi khi lấy danh sách nhân viên'
+          'Lỗi khi lấy danh sách nhân viên',
       )
     })
 }
@@ -242,7 +243,7 @@ const fetchStaffs = () => {
 // Hàm lấy danh sách cơ sở để hiển thị trong combobox
 const fetchFacilitiesList = () => {
   requestAPI
-    .get('http://localhost:8765/api/v1/admin/staffs/roles/facilities')
+    .get(`${API_ROUTES_ADMIN.FETCH_DATA_STAFF_ROLE}/facilities`)
     .then((response) => {
       // Giả sử API trả về { data: { data: [ { id, name }, ... ] } }
       facilitiesList.value = response.data.data.data || response.data.data
@@ -250,7 +251,7 @@ const fetchFacilitiesList = () => {
     .catch((error) => {
       message.error(
         (error.response && error.response.data && error.response.data.message) ||
-          'Lỗi khi lấy danh sách cơ sở'
+          'Lỗi khi lấy danh sách cơ sở',
       )
     })
 }
@@ -268,7 +269,7 @@ const handleAddStaff = () => {
     return
   }
   requestAPI
-    .post('http://localhost:8765/api/v1/admin/staffs', newStaff)
+    .post(API_ROUTES_ADMIN.FETCH_DATA_STAFF, newStaff)
     .then(() => {
       message.success('Thêm nhân viên thành công')
       modalAdd.value = false
@@ -278,7 +279,7 @@ const handleAddStaff = () => {
     .catch((error) => {
       message.error(
         (error.response && error.response.data && error.response.data.message) ||
-          'Lỗi khi thêm nhân viên'
+          'Lỗi khi thêm nhân viên',
       )
     })
 }
@@ -286,7 +287,7 @@ const handleAddStaff = () => {
 // Hàm mở modal cập nhật, load chi tiết nhân viên
 const handleUpdateStaff = (record) => {
   requestAPI
-    .get(`http://localhost:8765/api/v1/admin/staffs/${record.id}`)
+    .get(`${API_ROUTES_ADMIN.FETCH_DATA_STAFF}/${record.id}`)
     .then((response) => {
       const staff = response.data.data
       detailStaff.id = staff.id
@@ -299,7 +300,7 @@ const handleUpdateStaff = (record) => {
     .catch((error) => {
       message.error(
         (error.response && error.response.data && error.response.data.message) ||
-          'Lỗi khi lấy chi tiết nhân viên'
+          'Lỗi khi lấy chi tiết nhân viên',
       )
     })
 }
@@ -316,7 +317,7 @@ const updateStaff = () => {
     return
   }
   requestAPI
-    .put(`http://localhost:8765/api/v1/admin/staffs`, detailStaff)
+    .put(API_ROUTES_ADMIN.FETCH_DATA_STAFF, detailStaff)
     .then(() => {
       message.success('Cập nhật nhân viên thành công')
       modalUpdate.value = false
@@ -325,7 +326,7 @@ const updateStaff = () => {
     .catch((error) => {
       message.error(
         (error.response && error.response.data && error.response.data.message) ||
-          'Lỗi khi cập nhật nhân viên'
+          'Lỗi khi cập nhật nhân viên',
       )
     })
 }
@@ -345,7 +346,7 @@ const handleChangeStatusStaff = (record) => {
     content: `Bạn có chắc chắn muốn đổi trạng thái cho nhân viên ${record.staffName}?`,
     onOk: () => {
       requestAPI
-        .put(`http://localhost:8765/api/v1/admin/staffs/status/${record.id}`)
+        .put(`${API_ROUTES_ADMIN.FETCH_DATA_STAFF}/status/${record.id}`)
         .then(() => {
           message.success('Đổi trạng thái thành công')
           fetchStaffs()
@@ -353,7 +354,7 @@ const handleChangeStatusStaff = (record) => {
         .catch((error) => {
           message.error(
             (error.response && error.response.data && error.response.data.message) ||
-              'Lỗi khi đổi trạng thái nhân viên'
+              'Lỗi khi đổi trạng thái nhân viên',
           )
         })
     },

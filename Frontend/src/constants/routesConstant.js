@@ -9,5 +9,6 @@ export const GLOBAL_ROUTE_NAMES = {
   ERROR_404_PAGE: 'error_404_page',
   ADMIN_PAGE: 'admin_page',
   STAFF_PAGE: 'staff_page',
+  TEACHER_PAGE: 'teacher_page',
   STUDENT_PAGE: 'student_page',
 }

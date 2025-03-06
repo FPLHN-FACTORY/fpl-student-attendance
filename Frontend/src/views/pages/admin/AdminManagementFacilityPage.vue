@@ -111,6 +111,7 @@ import { ref, reactive, onMounted } from 'vue'
 import { SearchOutlined, PlusOutlined, EditOutlined, SwapOutlined } from '@ant-design/icons-vue'
 import { message, Modal } from 'ant-design-vue'
 import requestAPI from '@/services/requestApiService'
+import { API_ROUTES_ADMIN } from '@/constants/adminConstant'
 
 const facilities = ref([])
 const filter = reactive({ name: '', status: '', page: 1, pageSize: 5 })
@@ -137,7 +138,7 @@ const pagination = reactive({
 // Các phương thức giữ nguyên như mã gốc
 const fetchFacilities = () => {
   requestAPI
-    .get('http://localhost:8765/api/v1/admin/facilities', { params: filter })
+    .get(API_ROUTES_ADMIN.FETCH_DATA_FACILITY, { params: filter })
     .then((response) => {
       facilities.value = response.data.data.data
       pagination.total = response.data.data.totalPages * filter.pageSize
@@ -146,7 +147,7 @@ const fetchFacilities = () => {
     .catch((error) => {
       message.error(
         (error.response && error.response.data && error.response.data.message) ||
-          'Lỗi khi lấy dữ liệu cơ sở'
+          'Lỗi khi lấy dữ liệu cơ sở',
       )
     })
 }
@@ -162,7 +163,7 @@ const handleAddFacility = () => {
     return
   }
   requestAPI
-    .post('http://localhost:8765/api/v1/admin/facilities', newFacility)
+    .post(API_ROUTES_ADMIN.FETCH_DATA_FACILITY, newFacility)
     .then(() => {
       message.success('Thêm cơ sở thành công')
       modalAdd.value = false
@@ -172,14 +173,14 @@ const handleAddFacility = () => {
     .catch((error) => {
       message.error(
         (error.response && error.response.data && error.response.data.message) ||
-          'Lỗi khi thêm cơ sở'
+          'Lỗi khi thêm cơ sở',
       )
     })
 }
 
 const handleUpdateFacility = (record) => {
   requestAPI
-    .get(`http://localhost:8765/api/v1/admin/facilities/${record.id}`)
+    .get(`${API_ROUTES_ADMIN.FETCH_DATA_FACILITY}/${record.id}`)
     .then((response) => {
       detailFacility.value = response.data.data
       modalUpdate.value = true
@@ -187,7 +188,7 @@ const handleUpdateFacility = (record) => {
     .catch((error) => {
       message.error(
         (error.response && error.response.data && error.response.data.message) ||
-          'Lỗi khi lấy chi tiết cơ sở'
+          'Lỗi khi lấy chi tiết cơ sở',
       )
     })
 }
@@ -198,10 +199,7 @@ const updateFacility = () => {
     return
   }
   requestAPI
-    .put(
-      `http://localhost:8765/api/v1/admin/facilities/${detailFacility.value.id}`,
-      detailFacility.value
-    )
+    .put(`${API_ROUTES_ADMIN.FETCH_DATA_FACILITY}/${detailFacility.value.id}`, detailFacility.value)
     .then(() => {
       message.success('Cập nhật cơ sở thành công')
       modalUpdate.value = false
@@ -210,7 +208,7 @@ const updateFacility = () => {
     .catch((error) => {
       message.error(
         (error.response && error.response.data && error.response.data.message) ||
-          'Lỗi khi cập nhật cơ sở'
+          'Lỗi khi cập nhật cơ sở',
       )
     })
 }
@@ -221,7 +219,7 @@ const handleChangeStatusFacility = (record) => {
     content: `Bạn có chắc chắn muốn thay đổi trạng thái của cơ sở ${record.facilityName} ?`,
     onOk: () => {
       requestAPI
-        .put(`http://localhost:8765/api/v1/admin/facilities/status/${record.id}`)
+        .put(`${API_ROUTES_ADMIN.FETCH_DATA_FACILITY}/status/${record.id}`)
         .then(() => {
           message.success('Cập nhật trạng thái cơ sở thành công')
           fetchFacilities()
@@ -229,7 +227,7 @@ const handleChangeStatusFacility = (record) => {
         .catch((error) => {
           message.error(
             (error.response && error.response.data && error.response.data.message) ||
-              'Lỗi khi cập nhật trạng thái cơ sở'
+              'Lỗi khi cập nhật trạng thái cơ sở',
           )
         })
     },
