@@ -21,12 +21,12 @@ public class AdStaffRoleRestController {
     }
 
     @GetMapping("/role-check")
-    public ResponseEntity<?> getRoleCheck(AdStaffRoleRequest adStaffRoleRequest) {
+    public ResponseEntity<?> getRoleCheck(@RequestBody AdStaffRoleRequest adStaffRoleRequest) {
         return adStaffRoleService.getRoleChecked(adStaffRoleRequest);
     }
 
     @PutMapping("/change-role")
-    public ResponseEntity<?> changeStaffRole(AdChangeStaffRoleRequest adChangeStaffRoleRequest) {
+    public ResponseEntity<?> changeStaffRole(@RequestBody AdChangeStaffRoleRequest adChangeStaffRoleRequest) {
         return adStaffRoleService.changeStaffRole(adChangeStaffRoleRequest);
     }
 

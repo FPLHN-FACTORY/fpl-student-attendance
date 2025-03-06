@@ -131,10 +131,13 @@ public class AdSemesterServiceImpl implements AdSemesterService {
             semester.setFromDate(fromTimeSemester);
             semester.setToDate(toTimeSemester);
             semester.setStatus(EntityStatus.ACTIVE);
-            for (Facility facility: facilityRepository.findAll()
-                 ) {
-                semester.setFacility(facility);
-            }
+//            for (Facility facility: facilityRepository.findAll()
+//                 ) {
+//                if (facility.getStatus().equals(EntityStatus.ACTIVE)){
+//                    semester.setFacility(facility);
+//                }
+//
+//            }
 
             Semester semesterSave = adSemesterRepository.save(semester);
             return new ResponseEntity<>(
