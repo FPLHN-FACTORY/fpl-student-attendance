@@ -79,54 +79,6 @@
     </a-table>
   </a-card>
 
-  <!-- Danh sách nhóm xưởng theo cơ sở -->
-  <a-card title="Nhóm xưởng phụ trách" :bordered="false" class="cart">
-    <!-- Nút thêm nhóm xưởng -->
-    <div style="display: flex; justify-content: flex-end; margin-bottom: 10px">
-      <a-button
-        style="background-color: #fff7e6; color: black; border: 1px solid #ffa940"
-        @click="handleAddFactory"
-      >
-        Thêm nhóm xưởng
-      </a-button>
-    </div>
-    <!-- Bảng hiển thị nhóm xưởng -->
-    <a-table :dataSource="groups" :columns="groupColumns" rowKey="groupId" bordered>
-      <template #bodyCell="{ column, record, index }">
-        <!-- STT -->
-        <template v-if="column.dataIndex === 'index'">
-          {{ index + 1 }}
-        </template>
-        <!-- Mã nhóm xưởng -->
-        <template v-else-if="column.dataIndex === 'groupCode'">
-          {{ record.groupCode }}
-        </template>
-        <!-- Tên nhóm xưởng -->
-        <template v-else-if="column.dataIndex === 'groupName'">
-          {{ record.groupName }}
-        </template>
-        <!-- Tên cơ sở -->
-        <template v-else-if="column.dataIndex === 'facilityName'">
-          {{ record.facilityName }}
-        </template>
-        <!-- Cột hành động -->
-        <template v-else-if="column.key === 'actions'">
-          <a-button
-            type="text"
-            style="background-color: #fff7e6; border: 1px solid #ffa940"
-            @click="handleDeleteFactory(record)"
-          >
-            <DeleteOutlined />
-          </a-button>
-        </template>
-        <!-- Mặc định -->
-        <template v-else>
-          {{ record[column.dataIndex] }}
-        </template>
-      </template>
-    </a-table>
-  </a-card>
-
   <!-- Modal thêm chức vụ -->
   <a-modal
     v-model:visible="isRoleModalVisible"
@@ -367,14 +319,6 @@ function handleRoleCheckboxChange(role, isChecked) {
 
 function handleDeleteRole(record) {
   message.info(`Xóa chức vụ ${record.roleCode} chưa triển khai`)
-}
-
-function handleAddFactory() {
-  message.info('Chức năng Thêm nhóm xưởng chưa triển khai')
-}
-
-function handleDeleteFactory(record) {
-  message.info(`Xóa nhóm xưởng ${record.groupCode} chưa triển khai`)
 }
 
 onMounted(() => {

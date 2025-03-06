@@ -46,13 +46,13 @@ const handleLogout = () => {
             <span>Phân công kế hoạch</span>
           </router-link>
         </a-menu-item>
-        <a-menu-item key="4">
+        <!-- <a-menu-item key="4">
           <router-link :to="{ name: ROUTE_NAMES.MANAGEMENT_LEVEL_PROJECT }">
             <user-outlined />
             <span>Quản lý cấp dự án </span>
           </router-link>
-        </a-menu-item>
-        <a-menu-item key="5">
+        </a-menu-item> -->
+        <a-menu-item key="4">
           <router-link :to="{ name: ROUTE_NAMES.MANAGEMENT_STUDENT }">
             <user-outlined />
             <span>Quản lý sinh viên</span>
