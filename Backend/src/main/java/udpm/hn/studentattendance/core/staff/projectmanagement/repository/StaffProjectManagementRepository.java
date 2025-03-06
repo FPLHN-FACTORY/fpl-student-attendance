@@ -7,7 +7,10 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import udpm.hn.studentattendance.core.staff.projectmanagement.model.request.StaffProjectSearchRequest;
 import udpm.hn.studentattendance.core.staff.projectmanagement.model.response.ProjectResponse;
+import udpm.hn.studentattendance.entities.Project;
 import udpm.hn.studentattendance.repositories.ProjectRepository;
+
+import java.util.Optional;
 
 @Repository
 public interface StaffProjectManagementRepository extends ProjectRepository {
@@ -56,5 +59,24 @@ public interface StaffProjectManagementRepository extends ProjectRepository {
                     )
             """, nativeQuery = true)
     Page<ProjectResponse> getListProject(Pageable pageable, @Param("request") StaffProjectSearchRequest request);
+
+
+    @Query(value = """
+    SELECT 
+    p.id as id,
+    p.name as name,
+    p.semester.semesterName as nameSemester,
+    p.levelProject.name as nameLevelProject,
+    p.subjectFacility.subject.code as nameSubject,
+    p.description as description,
+    p.status as status,
+    p.levelProject.id as levelProjectId,
+    p.semester.id as semesterId,
+    p.subjectFacility.subject.id as subjectId
+    FROM Project p
+    WHERE 
+    p.id = :projectId
+""")
+    Optional<ProjectResponse> getDetailProject(String projectId);
 
 }

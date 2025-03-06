@@ -65,7 +65,7 @@ public class StaffProjectManagementImpl implements StaffProjectManagementService
 
     @Override
     public ResponseObject<?> detailProject(String idProject) {
-        return staffProjectManagementRepository.findById(idProject)
+        return staffProjectManagementRepository.getDetailProject(idProject)
                 .map(project -> new ResponseObject<>(project, HttpStatus.OK, "Detail thành công!"))
                 .orElseGet(() -> new ResponseObject<>(null, HttpStatus.CONFLICT, "Không tìm thấy dự án!"));
     }

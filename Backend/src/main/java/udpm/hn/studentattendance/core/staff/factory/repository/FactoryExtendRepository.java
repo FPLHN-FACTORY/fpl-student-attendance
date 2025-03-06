@@ -17,7 +17,6 @@ public interface FactoryExtendRepository extends FactoryRepository {
         ft.status AS factoryStatus,
         p.name AS projectName,
         sub.code AS subjectCode,
-        f.name AS facilityName,
         us.name AS staffName,
         pd.start_date AS planStartDate,
         pd.shift AS planShift
@@ -25,7 +24,6 @@ public interface FactoryExtendRepository extends FactoryRepository {
      LEFT JOIN project p ON p.id = ft.id_project
      LEFT JOIN subject_facility sf ON p.id_subject_facility = sf.id
      LEFT JOIN subject sub ON sub.id = sf.id_subject
-     LEFT JOIN facility f ON f.id = sf.id_facility
      LEFT JOIN user_staff us ON us.id = ft.id_user_staff
      LEFT JOIN plan_date pd ON pd.id_factory = ft.id
     WHERE 
@@ -37,7 +35,6 @@ public interface FactoryExtendRepository extends FactoryRepository {
                 ft.name LIKE CONCAT('%', :#{#factoryRequest.searchQuery}, '%')
                 OR p.name LIKE CONCAT('%', :#{#factoryRequest.searchQuery}, '%')
                 OR sub.code LIKE CONCAT('%', :#{#factoryRequest.searchQuery}, '%')
-                OR f.name LIKE CONCAT('%', :#{#factoryRequest.searchQuery}, '%')
                 OR us.name LIKE CONCAT('%', :#{#factoryRequest.searchQuery}, '%')
         ))
         AND (:#{#factoryRequest.status} IS NULL OR ft.status = :#{#factoryRequest.status})
