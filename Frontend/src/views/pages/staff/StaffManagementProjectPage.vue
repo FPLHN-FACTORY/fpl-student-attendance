@@ -180,7 +180,7 @@
   <a-modal v-model:visible="modalDetail" title="Chi tiết dự án" footer="">
     <p><strong>Tên:</strong> {{ detailProject.name }}</p>
     <p><strong>Cấp dự án:</strong> {{ detailProject.levelProject.name }}</p>
-    <!-- <p><strong>Học kỳ:</strong> {{ detailProject.semester.id }}</p> -->
+    <p><strong>Học kỳ:</strong> {{ detailProject.semester.name }}</p>
     <p><strong>Môn học:</strong> {{ detailProject.subjectFacility.subject.name }}</p>
     <p><strong>Mô tả:</strong> {{ detailProject.description }}</p>
     <p><strong>Ngày tạo:</strong> {{ formatDate(detailProject.createdAt) }}</p>
@@ -371,7 +371,7 @@ export default {
     fetchSubjects() {
       requestAPI
         .get(
-          'http://localhost:8765/api/v1/staff-management/project-management/subject-facility-combobox'
+          'http://localhost:8765/api/v1/staff-management/project-management/subject-facility-combobox',
         )
         .then((response) => {
           this.subjects = response.data
@@ -476,14 +476,14 @@ export default {
         name: this.detailProject.name,
         description: this.detailProject.description,
         idLevelProject: this.detailProject.levelProject.id,
-        // idSemester: this.detailProject.semester.id,
+        idSemester: this.detailProject.semester.id,
         idSubject: this.detailProject.subjectFacility.subject.id,
         status: this.detailProject.status,
       }
       requestAPI
         .put(
           `http://localhost:8765/api/v1/staff-management/project-management/${this.detailProject.id}`,
-          req
+          req,
         )
         .then(() => {
           message.success('Cập nhật dự án thành công')
@@ -561,4 +561,3 @@ export default {
   font-weight: 500;
 }
 </style>
-

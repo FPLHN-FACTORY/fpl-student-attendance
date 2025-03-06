@@ -11,6 +11,8 @@ public class RoutesConstant {
     public static final String URL_API_ADMIN_MANAGEMENT = API_PREFIX + "/admin-management";
     //API quản lý bộ môn
     public static final String URL_API_ADMIN_SUBJECT_MANAGEMENT = URL_API_ADMIN_MANAGEMENT + "/subject-management";
+
+    public static final String URL_API_ADMIN_LEVEL_PROJECT_MANAGEMENT = URL_API_ADMIN_MANAGEMENT + "/level-project-management";
     //API quản lý bộ môn cơ sowr
     public static final String URL_API_ADMIN_SUBJECT_FACILITY_MANAGEMENT = URL_API_ADMIN_MANAGEMENT + "/subject-facility-management";
 
