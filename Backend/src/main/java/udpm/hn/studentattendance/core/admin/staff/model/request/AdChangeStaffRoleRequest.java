@@ -18,4 +18,6 @@ public class AdChangeStaffRoleRequest {
     @Length(max = 255, message = "Mã vai trò phải ngắn hơn 255 ký tự")
     @Pattern(regexp = "^[^\\s]+$", message = "Mã vai trò không được chứa khoảng trắng")
     private String idRole;
+
+    private String facilityId;
 }
