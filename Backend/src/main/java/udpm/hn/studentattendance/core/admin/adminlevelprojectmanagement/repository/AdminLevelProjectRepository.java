@@ -1,11 +1,11 @@
-package udpm.hn.studentattendance.core.admin.levelprojectmanagement.repository;
+package udpm.hn.studentattendance.core.admin.adminlevelprojectmanagement.repository;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
-import udpm.hn.studentattendance.core.admin.levelprojectmanagement.model.request.AdminLevelProjectSearchRequest;
-import udpm.hn.studentattendance.core.admin.levelprojectmanagement.model.response.LevelProjectResponse;
+import udpm.hn.studentattendance.core.admin.adminlevelprojectmanagement.model.request.AdminLevelProjectSearchRequest;
+import udpm.hn.studentattendance.core.admin.adminlevelprojectmanagement.model.response.LevelProjectResponse;
 import udpm.hn.studentattendance.repositories.LevelProjectRepository;
 
 @Repository

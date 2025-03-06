@@ -1,8 +1,8 @@
-package udpm.hn.studentattendance.core.admin.levelprojectmanagement.service;
+package udpm.hn.studentattendance.core.admin.adminlevelprojectmanagement.service;
 
-import udpm.hn.studentattendance.core.admin.levelprojectmanagement.model.request.LevelProjectCreateRequest;
-import udpm.hn.studentattendance.core.admin.levelprojectmanagement.model.request.LevelProjectUpdateRequest;
-import udpm.hn.studentattendance.core.admin.levelprojectmanagement.model.request.AdminLevelProjectSearchRequest;
+import udpm.hn.studentattendance.core.admin.adminlevelprojectmanagement.model.request.LevelProjectCreateRequest;
+import udpm.hn.studentattendance.core.admin.adminlevelprojectmanagement.model.request.LevelProjectUpdateRequest;
+import udpm.hn.studentattendance.core.admin.adminlevelprojectmanagement.model.request.AdminLevelProjectSearchRequest;
 import udpm.hn.studentattendance.infrastructure.common.ResponseObject;
 
 public interface AdminLevelProjectManagementService {

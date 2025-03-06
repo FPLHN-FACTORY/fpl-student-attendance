@@ -1,12 +1,12 @@
-package udpm.hn.studentattendance.core.admin.levelprojectmanagement.controller;
+package udpm.hn.studentattendance.core.admin.adminlevelprojectmanagement.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import udpm.hn.studentattendance.core.admin.levelprojectmanagement.model.request.LevelProjectCreateRequest;
-import udpm.hn.studentattendance.core.admin.levelprojectmanagement.model.request.LevelProjectUpdateRequest;
-import udpm.hn.studentattendance.core.admin.levelprojectmanagement.model.request.AdminLevelProjectSearchRequest;
-import udpm.hn.studentattendance.core.admin.levelprojectmanagement.service.AdminLevelProjectManagementService;
+import udpm.hn.studentattendance.core.admin.adminlevelprojectmanagement.model.request.LevelProjectCreateRequest;
+import udpm.hn.studentattendance.core.admin.adminlevelprojectmanagement.model.request.LevelProjectUpdateRequest;
+import udpm.hn.studentattendance.core.admin.adminlevelprojectmanagement.model.request.AdminLevelProjectSearchRequest;
+import udpm.hn.studentattendance.core.admin.adminlevelprojectmanagement.service.AdminLevelProjectManagementService;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
 import udpm.hn.studentattendance.infrastructure.constants.RoutesConstant;
 
