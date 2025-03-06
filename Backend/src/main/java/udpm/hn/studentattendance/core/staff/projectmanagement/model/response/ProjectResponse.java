@@ -21,4 +21,9 @@ public interface ProjectResponse {
 
     String getFacilityName();
 
+    String getLevelProjectId();
+    String getSemesterId();
+
+    String getSubjectId();
+
 }

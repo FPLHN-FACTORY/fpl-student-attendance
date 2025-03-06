@@ -179,12 +179,17 @@
   <!-- Modal xem chi tiết dự án -->
   <a-modal v-model:visible="modalDetail" title="Chi tiết dự án" footer="">
     <p><strong>Tên:</strong> {{ detailProject.name }}</p>
-    <p><strong>Cấp dự án:</strong> {{ detailProject.levelProject.name }}</p>
-    <p><strong>Học kỳ:</strong> {{ detailProject.semester.name }}</p>
-    <p><strong>Môn học:</strong> {{ detailProject.subjectFacility.subject.name }}</p>
+    <p><strong>Cấp dự án:</strong> {{ detailProject.nameLevelProject }}</p>
+    <p><strong>Học kỳ:</strong> {{ detailProject.nameSemester }}</p>
+    <p><strong>Môn học:</strong> {{ detailProject.nameSubject }}</p>
     <p><strong>Mô tả:</strong> {{ detailProject.description }}</p>
-    <p><strong>Ngày tạo:</strong> {{ formatDate(detailProject.createdAt) }}</p>
-    <p><strong>Ngày sửa:</strong> {{ formatDate(detailProject.updatedAt) }}</p>
+    <!-- Nếu createdAt và updatedAt không được trả về, bạn có thể loại bỏ hoặc xử lý kiểm tra tồn tại -->
+    <p v-if="detailProject.createdAt">
+      <strong>Ngày tạo:</strong> {{ formatDate(detailProject.createdAt) }}
+    </p>
+    <p v-if="detailProject.updatedAt">
+      <strong>Ngày sửa:</strong> {{ formatDate(detailProject.updatedAt) }}
+    </p>
     <p><strong>Số nhóm xưởng: COMING SOON</strong></p>
     <p><strong>Giảng viên: COMING SOON</strong></p>
     <p>
@@ -208,7 +213,7 @@
 
       <a-form-item label="Cấp dự án" required>
         <a-select
-          v-model:value="detailProject.levelProject.id"
+          v-model:value="detailProject.levelProjectId"
           placeholder="Chọn cấp dự án"
           allowClear
         >
@@ -219,7 +224,7 @@
       </a-form-item>
 
       <a-form-item label="Học kỳ" required>
-        <a-select v-model:value="detailProject.semester.id" placeholder="Chọn học kỳ" allowClear>
+        <a-select v-model:value="detailProject.semesterId" placeholder="Chọn học kỳ" allowClear>
           <a-select-option v-for="semester in semesters" :key="semester.id" :value="semester.id">
             {{ semester.name }}
           </a-select-option>
@@ -227,11 +232,7 @@
       </a-form-item>
 
       <a-form-item label="Môn học" required>
-        <a-select
-          v-model:value="detailProject.subjectFacility.subject.id"
-          placeholder="Chọn môn học"
-          allowClear
-        >
+        <a-select v-model:value="detailProject.subjectId" placeholder="Chọn môn học" allowClear>
           <a-select-option v-for="subject in subjects" :key="subject.id" :value="subject.id">
             {{ subject.name }}
           </a-select-option>
@@ -371,7 +372,7 @@ export default {
     fetchSubjects() {
       requestAPI
         .get(
-          'http://localhost:8765/api/v1/staff-management/project-management/subject-facility-combobox',
+          'http://localhost:8765/api/v1/staff-management/project-management/subject-facility-combobox'
         )
         .then((response) => {
           this.subjects = response.data
@@ -456,15 +457,15 @@ export default {
         message.error('Tên dự án không được bỏ trống')
         return
       }
-      if (!this.detailProject.levelProject.id) {
+      if (!this.detailProject.levelProjectId) {
         message.error('Phải chọn cấp dự án')
         return
       }
-      if (!this.detailProject.semester.id) {
+      if (!this.detailProject.semesterId) {
         message.error('Phải chọn học kỳ')
         return
       }
-      if (!this.detailProject.subjectFacility.subject.id) {
+      if (!this.detailProject.subjectId) {
         message.error('Phải chọn môn học')
         return
       }
@@ -475,15 +476,15 @@ export default {
       let req = {
         name: this.detailProject.name,
         description: this.detailProject.description,
-        idLevelProject: this.detailProject.levelProject.id,
-        idSemester: this.detailProject.semester.id,
-        idSubject: this.detailProject.subjectFacility.subject.id,
+        idLevelProject: this.detailProject.levelProjectId,
+        idSemester: this.detailProject.semesterId,
+        idSubject: this.detailProject.subjectId,
         status: this.detailProject.status,
       }
       requestAPI
         .put(
           `http://localhost:8765/api/v1/staff-management/project-management/${this.detailProject.id}`,
-          req,
+          req
         )
         .then(() => {
           message.success('Cập nhật dự án thành công')
