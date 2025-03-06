@@ -1,14 +1,14 @@
-package udpm.hn.studentattendance.core.admin.levelprojectmanagement.service.impl;
+package udpm.hn.studentattendance.core.admin.adminlevelprojectmanagement.service.impl;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import udpm.hn.studentattendance.core.admin.levelprojectmanagement.model.request.LevelProjectCreateRequest;
-import udpm.hn.studentattendance.core.admin.levelprojectmanagement.model.request.LevelProjectUpdateRequest;
-import udpm.hn.studentattendance.core.admin.levelprojectmanagement.model.request.AdminLevelProjectSearchRequest;
-import udpm.hn.studentattendance.core.admin.levelprojectmanagement.repository.AdminLevelProjectRepository;
-import udpm.hn.studentattendance.core.admin.levelprojectmanagement.service.AdminLevelProjectManagementService;
+import udpm.hn.studentattendance.core.admin.adminlevelprojectmanagement.model.request.LevelProjectCreateRequest;
+import udpm.hn.studentattendance.core.admin.adminlevelprojectmanagement.model.request.LevelProjectUpdateRequest;
+import udpm.hn.studentattendance.core.admin.adminlevelprojectmanagement.model.request.AdminLevelProjectSearchRequest;
+import udpm.hn.studentattendance.core.admin.adminlevelprojectmanagement.repository.AdminLevelProjectRepository;
+import udpm.hn.studentattendance.core.admin.adminlevelprojectmanagement.service.AdminLevelProjectManagementService;
 import udpm.hn.studentattendance.entities.LevelProject;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;

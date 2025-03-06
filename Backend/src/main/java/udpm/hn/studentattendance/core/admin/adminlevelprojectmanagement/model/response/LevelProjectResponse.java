@@ -1,4 +1,4 @@
-package udpm.hn.studentattendance.core.admin.levelprojectmanagement.model.response;
+package udpm.hn.studentattendance.core.admin.adminlevelprojectmanagement.model.response;
 
 public interface LevelProjectResponse {
 
