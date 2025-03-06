@@ -1,6 +1,7 @@
 package udpm.hn.studentattendance.entities;
 
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.JoinColumn;
@@ -37,10 +38,12 @@ public class Project extends PrimaryEntity implements Serializable {
     private LevelProject levelProject;
 
     @ManyToOne
+    @JsonIgnore
     @JoinColumn(name = "id_subject_facility")
     private SubjectFacility subjectFacility;
 
     @ManyToOne
+    @JsonIgnore
     @JoinColumn(name = "id_semester")
     private Semester semester;
 

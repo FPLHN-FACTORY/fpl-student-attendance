@@ -1,6 +1,17 @@
 <script setup>
 import { ref } from 'vue'
-import { MenuUnfoldOutlined, MenuFoldOutlined, UserOutlined } from '@ant-design/icons-vue'
+import {
+  MenuUnfoldOutlined,
+  MenuFoldOutlined,
+  UserOutlined,
+  ProjectOutlined,
+  ApartmentOutlined,
+  CalendarOutlined,
+  BookOutlined,
+  ClusterOutlined,
+  TeamOutlined,
+  LogoutOutlined,
+} from '@ant-design/icons-vue'
 import imgLogoFpt from '@/assets/images/logo-fpt.png'
 import useAuthStore from '@/stores/useAuthStore'
 import { ROUTE_NAMES } from '@/router/adminRoute'
@@ -16,7 +27,7 @@ const handleLogout = () => {
 </script>
 
 <template>
-  <a-layout id="components-layout-demo-custom-trigger" style="height: 100vh">
+  <a-layout id="components-layout-demo-custom-trigger">
     <a-layout-sider
       v-model:collapsed="collapsed"
       :trigger="null"
@@ -30,38 +41,38 @@ const handleLogout = () => {
       <a-menu v-model:selectedKeys="selectedKeys" theme="light" mode="inline">
         <a-menu-item key="1">
           <router-link :to="{ name: ROUTE_NAMES.MANAGEMENT_PROJECT }">
-            <user-outlined />
+            <project-outlined />
             <span>Quản lý dự án</span>
           </router-link>
         </a-menu-item>
         <a-menu-item key="2">
           <router-link :to="{ name: ROUTE_NAMES.MANAGEMENT_FACILITY }">
-            <user-outlined />
+            <apartment-outlined />
             <span>Quản lý cơ sở</span>
           </router-link>
         </a-menu-item>
         <a-menu-item key="3">
           <router-link :to="{ name: ROUTE_NAMES.MANAGEMENT_SEMESTER }">
-            <user-outlined />
+            <calendar-outlined />
             <span>Quản lý học kỳ</span>
           </router-link>
         </a-menu-item>
         <a-menu-item key="4">
           <router-link :to="{ name: ROUTE_NAMES.MANAGEMENT_SUBJECT }">
-            <user-outlined />
+            <book-outlined />
             <span>Quản lý bộ môn</span>
           </router-link>
         </a-menu-item>
         <a-menu-item key="5">
           <router-link :to="{ name: ROUTE_NAMES.MANAGEMENT_LEVEL_PROJECT }">
-            <user-outlined />
+            <cluster-outlined />
             <span>Quản lý cấp độ dự án</span>
           </router-link>
         </a-menu-item>
         <a-menu-item key="6">
           <router-link :to="{ name: ROUTE_NAMES.MANAGEMENT_STAFF }">
-            <user-outlined />
-            <span>Quản lý phụ trách xưởng</span>
+            <team-outlined />
+            <span>Quản lý nhân viên</span>
           </router-link>
         </a-menu-item>
       </a-menu>
@@ -94,10 +105,7 @@ const handleLogout = () => {
         </a-dropdown>
       </a-layout-header>
 
-      <!-- CONTENT -->
-      <a-layout-content
-        :style="{ margin: '24px 16px', padding: '24px', background: '#fff', minHeight: '280px' }"
-      >
+      <a-layout-content :style="{ margin: '24px 16px', padding: '24px', background: '#fff' }">
         <router-view />
       </a-layout-content>
     </a-layout>
@@ -105,6 +113,10 @@ const handleLogout = () => {
 </template>
 
 <style scoped>
+#components-layout-demo-custom-trigger {
+  min-height: 100vh; /* Đảm bảo bố cục ít nhất bằng viewport */
+}
+
 #components-layout-demo-custom-trigger .trigger {
   font-size: 18px;
   line-height: 64px;

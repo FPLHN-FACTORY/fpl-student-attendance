@@ -39,10 +39,10 @@
           <a-select-option :value="''">Tất cả cơ sở</a-select-option>
           <a-select-option
             v-for="facility in facilitiesList"
-            :key="facility.id"
-            :value="facility.id"
+            :key="facility.facilityId"
+            :value="facility.facilityId"
           >
-            {{ facility.name }}
+            {{ facility.facilityName }}
           </a-select-option>
         </a-select>
       </a-col>
@@ -95,7 +95,7 @@
               <EditOutlined />
             </a-button>
           </a-tooltip>
-          <a-tooltip title="Xem chi tiết nhân viên">
+          <a-tooltip title="Chức vụ/ cơ sở/ bộ môn">
             <a-button
               @click="handleDetailStaff(record)"
               type="text"
@@ -163,6 +163,8 @@ import { ref, reactive, onMounted } from 'vue'
 import { message, Modal } from 'ant-design-vue'
 import { PlusOutlined, EditOutlined, SwapOutlined, EyeOutlined } from '@ant-design/icons-vue'
 import requestAPI from '@/services/requestApiService'
+import { ROUTE_NAMES } from '@/router/adminRoute'
+import router from '@/router'
 
 // Danh sách nhân viên
 const staffs = ref([])
@@ -238,20 +240,20 @@ const fetchStaffs = () => {
 }
 
 // Hàm lấy danh sách cơ sở để hiển thị trong combobox
-// const fetchFacilitiesList = () => {
-//   requestAPI
-//     .get('http://localhost:8765/api/v1/admin/staffs/')
-//     .then((response) => {
-//       // Giả sử API trả về { data: { data: [ { id, name }, ... ] } }
-//       facilitiesList.value = response.data.data.data || response.data.data
-//     })
-//     .catch((error) => {
-//       message.error(
-//         (error.response && error.response.data && error.response.data.message) ||
-//           'Lỗi khi lấy danh sách cơ sở'
-//       )
-//     })
-// }
+const fetchFacilitiesList = () => {
+  requestAPI
+    .get('http://localhost:8765/api/v1/admin/staffs/roles/facilities')
+    .then((response) => {
+      // Giả sử API trả về { data: { data: [ { id, name }, ... ] } }
+      facilitiesList.value = response.data.data.data || response.data.data
+    })
+    .catch((error) => {
+      message.error(
+        (error.response && error.response.data && error.response.data.message) ||
+          'Lỗi khi lấy danh sách cơ sở'
+      )
+    })
+}
 
 // Sự kiện thay đổi trang bảng
 const handleTableChange = (paginationData) => {
@@ -330,7 +332,10 @@ const updateStaff = () => {
 
 // Hàm xem chi tiết nhân viên (ví dụ)
 const handleDetailStaff = (record) => {
-  message.info(`Xem chi tiết nhân viên: ${record.staffName}`)
+  router.push({
+    name: ROUTE_NAMES.MANAGEMENT_STAFF_ROLE,
+    query: { staffId: record.id },
+  })
 }
 
 // Hàm đổi trạng thái nhân viên
@@ -364,7 +369,7 @@ const clearNewStaffForm = () => {
 
 onMounted(() => {
   fetchStaffs()
-  // fetchFacilitiesList()
+  fetchFacilitiesList()
 })
 </script>
 

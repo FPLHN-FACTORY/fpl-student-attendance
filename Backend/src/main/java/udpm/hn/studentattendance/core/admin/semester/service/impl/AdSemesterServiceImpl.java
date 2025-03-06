@@ -11,6 +11,7 @@ import udpm.hn.studentattendance.core.admin.semester.model.request.AdCreateUpdat
 import udpm.hn.studentattendance.core.admin.semester.model.request.AdSemesterRequest;
 import udpm.hn.studentattendance.core.admin.semester.repository.AdSemesterRepository;
 import udpm.hn.studentattendance.core.admin.semester.service.AdSemesterService;
+import udpm.hn.studentattendance.entities.Facility;
 import udpm.hn.studentattendance.entities.Semester;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
 import udpm.hn.studentattendance.infrastructure.common.ApiResponse;
@@ -18,6 +19,7 @@ import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.RestApiStatus;
 import udpm.hn.studentattendance.infrastructure.constants.SemesterName;
+import udpm.hn.studentattendance.repositories.FacilityRepository;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -31,6 +33,8 @@ import java.util.Optional;
 @Validated
 public class AdSemesterServiceImpl implements AdSemesterService {
     private final AdSemesterRepository adSemesterRepository;
+
+    private final FacilityRepository facilityRepository;
 
     @Override
     public ResponseEntity<?> getAllSemester(AdSemesterRequest request) {
@@ -127,6 +131,14 @@ public class AdSemesterServiceImpl implements AdSemesterService {
             semester.setFromDate(fromTimeSemester);
             semester.setToDate(toTimeSemester);
             semester.setStatus(EntityStatus.ACTIVE);
+//            for (Facility facility: facilityRepository.findAll()
+//                 ) {
+//                if (facility.getStatus().equals(EntityStatus.ACTIVE)){
+//                    semester.setFacility(facility);
+//                }
+//
+//            }
+
             Semester semesterSave = adSemesterRepository.save(semester);
             return new ResponseEntity<>(
                     new ApiResponse(

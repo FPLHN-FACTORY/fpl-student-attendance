@@ -4,7 +4,7 @@ public interface AdStaffRoleResponse {
 
     String getRoleCode();
 
-    String getIdRole();
+    String getRoleId();
 
     String getFacilityName();
 }

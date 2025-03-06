@@ -35,6 +35,8 @@ public class PlanDate extends PrimaryEntity implements Serializable {
     @Column(name = "start_date")
     private Long startDate;
 
+    @Column(name = "shift")
+    private Integer shift;
     @ManyToOne
     @JoinColumn(name = "id_factory")
     private Factory factory;

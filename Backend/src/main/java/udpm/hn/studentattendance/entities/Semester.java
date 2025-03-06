@@ -1,6 +1,7 @@
 package udpm.hn.studentattendance.entities;
 
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.DynamicUpdate;
@@ -39,6 +40,7 @@ public class Semester extends PrimaryEntity implements Serializable {
     @Column(name = "year")
     private Integer year;
     @ManyToOne
+    @JsonIgnore
     @JoinColumn(name = "id_facility")
     private Facility facility;
 
