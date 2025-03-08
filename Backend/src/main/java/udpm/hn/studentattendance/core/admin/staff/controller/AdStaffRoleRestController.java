@@ -7,10 +7,11 @@ import udpm.hn.studentattendance.core.admin.staff.model.request.AdChangeStaffRol
 import udpm.hn.studentattendance.core.admin.staff.model.request.AdStaffRoleRequest;
 import udpm.hn.studentattendance.core.admin.staff.service.AdStaffRoleService;
 import udpm.hn.studentattendance.infrastructure.constants.RoutesConstant;
+import udpm.hn.studentattendance.infrastructure.constants.router.RouteAdminConstant;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping(RoutesConstant.URL_ADMIN_STAFF_ROLE_MANAGEMENT)
+@RequestMapping(RouteAdminConstant.URL_API_STAFF_ROLE_MANAGEMENT)
 public class AdStaffRoleRestController {
 
     private final AdStaffRoleService adStaffRoleService;
@@ -34,4 +35,5 @@ public class AdStaffRoleRestController {
     public ResponseEntity<?> getFacilities() {
         return adStaffRoleService.getFacilities();
     }
+
 }

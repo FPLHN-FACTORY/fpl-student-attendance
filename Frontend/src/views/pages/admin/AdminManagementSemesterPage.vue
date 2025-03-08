@@ -189,6 +189,7 @@ import { PlusOutlined, EditOutlined, SwapOutlined } from '@ant-design/icons-vue'
 import { message, Modal } from 'ant-design-vue'
 import requestAPI from '@/services/requestApiService'
 import dayjs from 'dayjs'
+import { API_ROUTES_ADMIN } from '@/constants/adminConstant'
 
 // State
 const semesters = ref([])
@@ -255,7 +256,7 @@ const fetchSemesters = () => {
   params.toDateSemester = filter.toDateSemester ? filter.toDateSemester.valueOf() : null
 
   requestAPI
-    .get('http://localhost:8765/api/v1/admin/semesters', { params })
+    .get(API_ROUTES_ADMIN.FETCH_DATA_SEMESTER, { params })
     .then((response) => {
       semesters.value = response.data.data.data
       pagination.total = response.data.data.totalPages * filter.pageSize
@@ -264,7 +265,7 @@ const fetchSemesters = () => {
     .catch((error) => {
       message.error(
         (error.response && error.response.data && error.response.data.message) ||
-          'Lỗi khi lấy dữ liệu học kỳ'
+          'Lỗi khi lấy dữ liệu học kỳ',
       )
     })
 }
@@ -285,7 +286,7 @@ const handleAddSemester = () => {
     toDate: newSemester.toDate.valueOf(),
   }
   requestAPI
-    .post('http://localhost:8765/api/v1/admin/semesters', payload)
+    .post(API_ROUTES_ADMIN.FETCH_DATA_SEMESTER, payload)
     .then(() => {
       message.success('Thêm học kỳ thành công')
       modalAdd.value = false
@@ -295,14 +296,14 @@ const handleAddSemester = () => {
     .catch((error) => {
       message.error(
         (error.response && error.response.data && error.response.data.message) ||
-          'Lỗi khi thêm học kỳ'
+          'Lỗi khi thêm học kỳ',
       )
     })
 }
 
 const handleUpdateSemester = (record) => {
   requestAPI
-    .get(`http://localhost:8765/api/v1/admin/semesters/${record.id}`)
+    .get(`${API_ROUTES_ADMIN.FETCH_DATA_SEMESTER}/${record.id}`)
     .then((response) => {
       const data = response.data.data
       detailSemester.value = {
@@ -316,7 +317,7 @@ const handleUpdateSemester = (record) => {
     .catch((error) => {
       message.error(
         (error.response && error.response.data && error.response.data.message) ||
-          'Lỗi khi lấy chi tiết học kỳ'
+          'Lỗi khi lấy chi tiết học kỳ',
       )
     })
 }
@@ -336,7 +337,7 @@ const updateSemester = () => {
     toDate: detailSemester.value.toDate.valueOf(),
   }
   requestAPI
-    .put('http://localhost:8765/api/v1/admin/semesters', payload)
+    .put(API_ROUTES_ADMIN.FETCH_DATA_SEMESTER, payload)
     .then(() => {
       message.success('Cập nhật học kỳ thành công')
       modalUpdate.value = false
@@ -345,7 +346,7 @@ const updateSemester = () => {
     .catch((error) => {
       message.error(
         (error.response && error.response.data && error.response.data.message) ||
-          'Lỗi khi cập nhật học kỳ'
+          'Lỗi khi cập nhật học kỳ',
       )
     })
 }
@@ -356,7 +357,7 @@ const handleChangeStatusSemester = (record) => {
     content: `Bạn có chắc chắn muốn thay đổi trạng thái của học kỳ ${record.semesterName}?`,
     onOk: () => {
       requestAPI
-        .put(`http://localhost:8765/api/v1/admin/semesters/status/${record.id}`)
+        .put(`${API_ROUTES_ADMIN.FETCH_DATA_SEMESTER}/status/${record.id}`)
         .then(() => {
           message.success('Cập nhật trạng thái học kỳ thành công')
           fetchSemesters()
@@ -364,7 +365,7 @@ const handleChangeStatusSemester = (record) => {
         .catch((error) => {
           message.error(
             (error.response && error.response.data && error.response.data.message) ||
-              'Lỗi khi cập nhật trạng thái học kỳ'
+              'Lỗi khi cập nhật trạng thái học kỳ',
           )
         })
     },

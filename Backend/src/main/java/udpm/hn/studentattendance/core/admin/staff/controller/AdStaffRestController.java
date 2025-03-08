@@ -9,10 +9,11 @@ import udpm.hn.studentattendance.core.admin.staff.model.request.AdCreateUpdateSt
 import udpm.hn.studentattendance.core.admin.staff.model.request.AdStaffRequest;
 import udpm.hn.studentattendance.core.admin.staff.service.AdStaffService;
 import udpm.hn.studentattendance.infrastructure.constants.RoutesConstant;
+import udpm.hn.studentattendance.infrastructure.constants.router.RouteAdminConstant;
 
-@Controller
+@RestController
 @RequiredArgsConstructor
-@RequestMapping(RoutesConstant.URL_ADMIN_STAFF_MANAGEMENT)
+@RequestMapping(RouteAdminConstant.URL_API_STAFF_MANAGEMENT)
 public class AdStaffRestController {
     private final AdStaffService adStaffService;
 
@@ -40,4 +41,5 @@ public class AdStaffRestController {
     public ResponseEntity<?> changeStaffStatus(@PathVariable("id") String id) {
         return adStaffService.changeStaffStatus(id);
     }
+
 }

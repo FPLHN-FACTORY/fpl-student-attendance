@@ -7,10 +7,11 @@ import udpm.hn.studentattendance.core.admin.facility.model.request.CreateUpdateF
 import udpm.hn.studentattendance.core.admin.facility.model.request.FacilitySearchRequest;
 import udpm.hn.studentattendance.core.admin.facility.service.AdFacilityService;
 import udpm.hn.studentattendance.infrastructure.constants.RoutesConstant;
+import udpm.hn.studentattendance.infrastructure.constants.router.RouteAdminConstant;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping(RoutesConstant.URL_ADMIN_FACILITY_MANAGEMENT)
+@RequestMapping(RouteAdminConstant.URL_API_FACILITY_MANAGEMENT)
 public class AdFacilityRestController {
 
     private final AdFacilityService adFacilityService;
@@ -43,4 +44,5 @@ public class AdFacilityRestController {
             (@PathVariable("facilityId") String facilityId) {
         return adFacilityService.changeFacilityStatus(facilityId);
     }
+
 }
