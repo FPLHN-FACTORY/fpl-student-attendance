@@ -135,6 +135,7 @@ import { useRoute } from 'vue-router'
 import { message } from 'ant-design-vue'
 import requestAPI from '@/services/requestApiService'
 import { DeleteOutlined } from '@ant-design/icons-vue'
+import { API_ROUTES_ADMIN } from '@/constants/adminConstant'
 
 // Thông tin nhân viên (read-only)
 const staffDetail = reactive({
@@ -238,7 +239,7 @@ const roleIdMapping = {
 // API lấy chi tiết nhân viên
 function fetchStaffDetail() {
   requestAPI
-    .get(`http://localhost:8765/api/v1/admin/staffs/${staffId}`)
+    .get(`${API_ROUTES_ADMIN.FETCH_DATA_STAFF_ROLE}/${staffId}`)
     .then((res) => {
       const data = res.data.data
       staffDetail.id = data.id
@@ -250,7 +251,7 @@ function fetchStaffDetail() {
     .catch((error) => {
       message.error(
         (error.response && error.response.data && error.response.data.message) ||
-          'Lỗi khi lấy chi tiết nhân viên'
+          'Lỗi khi lấy chi tiết nhân viên',
       )
     })
 }
@@ -258,14 +259,14 @@ function fetchStaffDetail() {
 // API lấy danh sách chức vụ
 function fetchRoles() {
   requestAPI
-    .get(`http://localhost:8765/api/v1/admin/staffs/roles/${staffId}`)
+    .get(`${API_ROUTES_ADMIN.FETCH_DATA_STAFF_ROLE}/${staffId}`)
     .then((res) => {
       roles.value = res.data.data
     })
     .catch((error) => {
       message.error(
         (error.response && error.response.data && error.response.data.message) ||
-          'Lỗi khi lấy danh sách chức vụ'
+          'Lỗi khi lấy danh sách chức vụ',
       )
     })
 }
@@ -273,7 +274,7 @@ function fetchRoles() {
 // API lấy danh sách cơ sở (fetch từ controller /facilities)
 function fetchFacilitiesList() {
   requestAPI
-    .get('http://localhost:8765/api/v1/admin/staffs/roles/facilities')
+    .get(`${API_ROUTES_ADMIN.FETCH_DATA_STAFF_ROLE}/facilities`)
     .then((res) => {
       // Giả sử API trả về: { data: [ { facilityId, facilityName }, ... ] }
       facilitiesList.value = res.data.data
@@ -281,7 +282,7 @@ function fetchFacilitiesList() {
     .catch((error) => {
       message.error(
         (error.response && error.response.data && error.response.data.message) ||
-          'Lỗi khi lấy danh sách cơ sở'
+          'Lỗi khi lấy danh sách cơ sở',
       )
     })
 }
@@ -303,7 +304,7 @@ function handleRoleCheckboxChange(role, isChecked) {
   }
   // Gọi API PUT để thay đổi vai trò
   requestAPI
-    .put(`http://localhost:8765/api/v1/admin/staffs/roles/change-role`, payload)
+    .put(`${API_ROUTES_ADMIN.FETCH_DATA_STAFF_ROLE}/change-role`, payload)
     .then(() => {
       if (isChecked) {
         message.success(`Cập nhật vai trò ${role.name} với cơ sở ${facilityId} thành công`)

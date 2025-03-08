@@ -10,6 +10,8 @@ import udpm.hn.studentattendance.entities.UserStudent;
 import udpm.hn.studentattendance.infrastructure.constants.RoleConstant;
 import udpm.hn.studentattendance.infrastructure.constants.SessionConstant;
 
+import java.util.Set;
+
 @Component
 @RequiredArgsConstructor
 public class SessionHelper {
@@ -27,7 +29,7 @@ public class SessionHelper {
         authUser = user;
     }
 
-    public AuthUser buildAuthUser(UserAdmin user, RoleConstant role, String idFacility) {
+    public AuthUser buildAuthUser(UserAdmin user, Set<RoleConstant> role, String idFacility) {
         AuthUser authUser = new AuthUser();
         authUser.setId(user.getId());
         authUser.setCode(user.getCode());
@@ -39,7 +41,7 @@ public class SessionHelper {
         return authUser;
     }
 
-    public AuthUser buildAuthUser(UserStaff user, RoleConstant role, String idFacility) {
+    public AuthUser buildAuthUser(UserStaff user, Set<RoleConstant> role, String idFacility) {
         AuthUser authUser = new AuthUser();
         authUser.setId(user.getId());
         authUser.setCode(user.getCode());
@@ -53,7 +55,7 @@ public class SessionHelper {
         return authUser;
     }
 
-    public AuthUser buildAuthUser(UserStudent user, RoleConstant role, String idFacility) {
+    public AuthUser buildAuthUser(UserStudent user, Set<RoleConstant> role, String idFacility) {
         AuthUser authUser = new AuthUser();
         authUser.setId(user.getId());
         authUser.setCode(user.getCode());
@@ -73,7 +75,7 @@ public class SessionHelper {
         return authUser.getName();
     }
 
-    public RoleConstant getUserRole() {
+    public Set<RoleConstant> getUserRole() {
         return authUser.getRole();
     }
 

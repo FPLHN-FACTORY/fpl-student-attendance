@@ -7,10 +7,11 @@ import udpm.hn.studentattendance.core.admin.semester.model.request.AdCreateUpdat
 import udpm.hn.studentattendance.core.admin.semester.model.request.AdSemesterRequest;
 import udpm.hn.studentattendance.core.admin.semester.service.AdSemesterService;
 import udpm.hn.studentattendance.infrastructure.constants.RoutesConstant;
+import udpm.hn.studentattendance.infrastructure.constants.router.RouteAdminConstant;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping(RoutesConstant.URL_ADMIN_SEMESTER_MANAGEMENT)
+@RequestMapping(RouteAdminConstant.URL_API_SEMESTER_MANAGEMENT)
 public class AdSemesterRestController {
     private final AdSemesterService semesterService;
 
@@ -42,4 +43,5 @@ public class AdSemesterRestController {
             (@PathVariable("semesterId") String semesterId) {
         return semesterService.changeStatusSemester(semesterId);
     }
+
 }
