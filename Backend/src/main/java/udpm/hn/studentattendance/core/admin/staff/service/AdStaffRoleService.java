@@ -13,7 +13,6 @@ public interface AdStaffRoleService {
 
     ResponseEntity<?> getFacilities();
 
-    ResponseEntity<?> getFacilitiesSelect(String idStaff);
+    ResponseEntity<?> deleteStaffRole(String roleId);
 
-    ResponseEntity<?> getAllFactoryByFacility(String facilityId);
 }

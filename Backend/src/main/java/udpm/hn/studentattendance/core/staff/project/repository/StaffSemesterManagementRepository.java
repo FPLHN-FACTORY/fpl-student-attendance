@@ -18,10 +18,8 @@ public interface StaffSemesterManagementRepository extends ProjectRepository {
                     s.name AS name
                 FROM semester s
                 LEFT JOIN facility f ON s.id_facility = f.id
-                WHERE (
-                    :facilityId IS NULL OR f.id = :facilityId
-                ) AND s.status = 1
+                WHERE s.status = 1
                 ORDER BY s.created_at DESC
             """, nativeQuery = true)
-    List<SemesterResponse> getSemesters(@Param("facilityId") String facilityId);
+    List<SemesterResponse> getSemesters();
 }

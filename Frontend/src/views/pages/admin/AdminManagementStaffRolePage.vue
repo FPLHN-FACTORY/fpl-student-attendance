@@ -79,54 +79,6 @@
     </a-table>
   </a-card>
 
-  <!-- Danh sách nhóm xưởng theo cơ sở -->
-  <a-card title="Nhóm xưởng phụ trách" :bordered="false" class="cart">
-    <!-- Nút thêm nhóm xưởng -->
-    <div style="display: flex; justify-content: flex-end; margin-bottom: 10px">
-      <a-button
-        style="background-color: #fff7e6; color: black; border: 1px solid #ffa940"
-        @click="handleAddFactory"
-      >
-        Thêm nhóm xưởng
-      </a-button>
-    </div>
-    <!-- Bảng hiển thị nhóm xưởng -->
-    <a-table :dataSource="groups" :columns="groupColumns" rowKey="groupId" bordered>
-      <template #bodyCell="{ column, record, index }">
-        <!-- STT -->
-        <template v-if="column.dataIndex === 'index'">
-          {{ index + 1 }}
-        </template>
-        <!-- Mã nhóm xưởng -->
-        <template v-else-if="column.dataIndex === 'groupCode'">
-          {{ record.groupCode }}
-        </template>
-        <!-- Tên nhóm xưởng -->
-        <template v-else-if="column.dataIndex === 'groupName'">
-          {{ record.groupName }}
-        </template>
-        <!-- Tên cơ sở -->
-        <template v-else-if="column.dataIndex === 'facilityName'">
-          {{ record.facilityName }}
-        </template>
-        <!-- Cột hành động -->
-        <template v-else-if="column.key === 'actions'">
-          <a-button
-            type="text"
-            style="background-color: #fff7e6; border: 1px solid #ffa940"
-            @click="handleDeleteFactory(record)"
-          >
-            <DeleteOutlined />
-          </a-button>
-        </template>
-        <!-- Mặc định -->
-        <template v-else>
-          {{ record[column.dataIndex] }}
-        </template>
-      </template>
-    </a-table>
-  </a-card>
-
   <!-- Modal thêm chức vụ -->
   <a-modal
     v-model:visible="isRoleModalVisible"
@@ -185,7 +137,6 @@ import requestAPI from '@/services/requestApiService'
 import { DeleteOutlined } from '@ant-design/icons-vue'
 import { API_ROUTES_ADMIN } from '@/constants/adminConstant'
 
-// Thông tin nhân viên (read-only)
 const staffDetail = reactive({
   id: '',
   staffCode: '',
@@ -194,10 +145,8 @@ const staffDetail = reactive({
   emailFpt: '',
 })
 
-// Danh sách chức vụ
 const roles = ref([])
 
-// Cấu hình cột cho bảng chức vụ
 const columns = ref([
   { title: 'STT', dataIndex: 'index', key: 'index' },
   { title: 'Mã chức vụ', dataIndex: 'roleCode', key: 'roleCode' },
@@ -206,7 +155,6 @@ const columns = ref([
   { title: 'Hành động', key: 'actions' },
 ])
 
-// Map mã chức vụ -> tên hiển thị
 function mapRoleCodeToName(code) {
   switch (code) {
     case 'TEACHER':
@@ -220,10 +168,8 @@ function mapRoleCodeToName(code) {
   }
 }
 
-// Danh sách nhóm xưởng
 const groups = ref([])
 
-// Cấu hình cột cho bảng nhóm xưởng
 const groupColumns = ref([
   { title: 'STT', dataIndex: 'index', key: 'index' },
   { title: 'Mã nhóm xưởng', dataIndex: 'groupCode', key: 'groupCode' },
@@ -232,28 +178,22 @@ const groupColumns = ref([
   { title: 'Hành động', key: 'actions' },
 ])
 
-// Danh sách cơ sở cho combobox (fetch từ API)
 const facilitiesList = ref([])
 
-// Mảng danh sách chức vụ mặc định (lấy từ enum RoleConstant)
 const defaultRoles = ref([
   { code: 'ADMIN', name: 'Ban đào tạo' },
   { code: 'STAFF', name: 'Phụ trách xưởng' },
   { code: 'TEACHER', name: 'Giảng Viên' },
 ])
 
-// Object lưu trạng thái combobox của từng role trong modal, mặc định là facilityId được chỉ định
 const selectedFacilities = reactive({})
 
-// Mặc định, mỗi role sẽ chọn cơ sở có facilityId: "7adf9f59-f5ff-416a-86f8-edf1f201ebe6"
 defaultRoles.value.forEach((role) => {
   selectedFacilities[role.code] = '7adf9f59-f5ff-416a-86f8-edf1f201ebe6'
 })
 
-// Object lưu trạng thái checkbox của từng role (ban đầu chưa chọn)
 const roleChecked = reactive({})
 
-// Modal thêm chức vụ
 const isRoleModalVisible = ref(false)
 
 function openRoleModal() {
@@ -264,7 +204,6 @@ function closeRoleModal() {
   isRoleModalVisible.value = false
 }
 
-// Cấu hình cột cho modal thêm chức vụ
 const roleModalColumns = ref([
   { title: 'STT', dataIndex: 'index', key: 'index' },
   { title: 'Mã chức vụ', dataIndex: 'code', key: 'code' },
@@ -273,21 +212,64 @@ const roleModalColumns = ref([
   { title: 'Chọn', key: 'select' },
 ])
 
-// Lấy staffId từ route
 const route = useRoute()
 const staffId = route.query.staffId || route.params.staffId
 
-// Định nghĩa mapping cho idRole
 const roleIdMapping = {
   STAFF: 1,
   ADMIN: 2,
   TEACHER: 3,
 }
+function fetchRoles() {
+  requestAPI
+    .get(`${API_ROUTES_ADMIN.FETCH_DATA_STAFF_ROLE}/${staffId}`)
+    .then((res) => {
+      roles.value = res.data.data
+    })
+    .catch((error) => {
+      message.error(
+        (error.response && error.response.data && error.response.data.message) ||
+          'Lỗi khi lấy danh sách chức vụ'
+      )
+    })
+}
+
+function fetchRoleChecked() {
+  const requestPayload = {
+    staffId: staffId,
+  }
+
+  requestAPI
+    .get(`${API_ROUTES_ADMIN.FETCH_DATA_STAFF_ROLE}/role-check`, { params: requestPayload })
+    .then((res) => {
+      const checkedRoles = res.data.data.data
+      defaultRoles.value.forEach((defaultRole) => {
+        const roleData = checkedRoles.find((item) => item.roleCode === defaultRole.code)
+        if (roleData && roleData.checked === true) {
+          roleChecked[defaultRole.code] = true
+          const facilityObj = facilitiesList.value.find(
+            (f) => f.facilityName === roleData.facilityName
+          )
+          if (facilityObj) {
+            selectedFacilities[defaultRole.code] = facilityObj.facilityId
+          }
+        } else {
+          roleChecked[defaultRole.code] = false
+        }
+      })
+    })
+    .catch((error) => {
+      message.error(
+        (error.response && error.response.data && error.response.data.message) ||
+          'Lỗi khi lấy danh sách vai trò đã tích'
+      )
+    })
+}
 
 // API lấy chi tiết nhân viên
 function fetchStaffDetail() {
   requestAPI
-    .get(`${API_ROUTES_ADMIN.FETCH_DATA_STAFF_ROLE}/${staffId}`)
+    .get(`${API_ROUTES_ADMIN.FETCH_DATA_STAFF}/${staffId}`)
     .then((res) => {
       const data = res.data.data
       staffDetail.id = data.id
@@ -299,67 +281,61 @@ function fetchStaffDetail() {
     .catch((error) => {
       message.error(
         (error.response && error.response.data && error.response.data.message) ||
-          'Lỗi khi lấy chi tiết nhân viên',
+          'Lỗi khi lấy chi tiết nhân viên'
       )
     })
 }
 
-// API lấy danh sách chức vụ
-function fetchRoles() {
-  requestAPI
-    .get(`${API_ROUTES_ADMIN.FETCH_DATA_STAFF_ROLE}/${staffId}`)
-    .then((res) => {
-      roles.value = res.data.data
-    })
-    .catch((error) => {
-      message.error(
-        (error.response && error.response.data && error.response.data.message) ||
-          'Lỗi khi lấy danh sách chức vụ',
-      )
-    })
-}
-
-// API lấy danh sách cơ sở (fetch từ controller /facilities)
 function fetchFacilitiesList() {
   requestAPI
     .get(`${API_ROUTES_ADMIN.FETCH_DATA_STAFF_ROLE}/facilities`)
     .then((res) => {
-      // Giả sử API trả về: { data: [ { facilityId, facilityName }, ... ] }
       facilitiesList.value = res.data.data
+      if (facilitiesList.value && facilitiesList.value.length > 0) {
+        const defaultFacilityId = facilitiesList.value[0].facilityId
+        defaultRoles.value.forEach((role) => {
+          selectedFacilities[role.code] = defaultFacilityId
+        })
+      }
     })
     .catch((error) => {
       message.error(
         (error.response && error.response.data && error.response.data.message) ||
-          'Lỗi khi lấy danh sách cơ sở',
+          'Lỗi khi lấy danh sách cơ sở'
       )
     })
 }
 
-// Cập nhật trạng thái combobox cho từng role trong modal
 function updateSelectedFacility(roleCode, value) {
   selectedFacilities[roleCode] = value
+  const facilityObj = facilitiesList.value.find((f) => f.facilityId === value)
+  const facilityName = facilityObj ? facilityObj.facilityName : ''
+  const exists = roles.value.find((r) => r.roleCode === roleCode && r.facilityName === facilityName)
+  roleChecked[roleCode] = exists ? true : false
 }
 
-// Khi checkbox thay đổi, gọi API để thêm (hoặc bỏ) vai trò cho nhân viên theo cơ sở
 function handleRoleCheckboxChange(role, isChecked) {
   roleChecked[role.code] = isChecked
   const facilityId = selectedFacilities[role.code]
+  const facilityObj = facilitiesList.value.find((f) => f.facilityId === facilityId)
+  const facilityName = facilityObj ? facilityObj.facilityName : facilityId
+
   const payload = {
     idStaff: staffDetail.id,
-    // Sử dụng mapping: nếu role.code là STAFF thì idRole = 1, ADMIN -> 2, TEACHER -> 3
     idRole: roleIdMapping[role.code],
     facilityId: facilityId,
   }
-  // Gọi API PUT để thay đổi vai trò
+
   requestAPI
     .put(`${API_ROUTES_ADMIN.FETCH_DATA_STAFF_ROLE}/change-role`, payload)
     .then(() => {
       if (isChecked) {
-        message.success(`Cập nhật vai trò ${role.name} với cơ sở ${facilityId} thành công`)
+        message.success(`Cập nhật vai trò ${role.name} với cơ sở ${facilityName} thành công`)
       } else {
         message.success(`Bỏ vai trò ${role.name} thành công`)
       }
-      fetchRoles() // refresh danh sách chức vụ sau khi cập nhật
+      fetchRoles()
+      fetchRoleChecked()
     })
     .catch((error) => {
       message.error(`Lỗi khi cập nhật vai trò ${role.name}`)
@@ -370,20 +346,13 @@ function handleDeleteRole(record) {
   message.info(`Xóa chức vụ ${record.roleCode} chưa triển khai`)
 }
 
-function handleAddFactory() {
-  message.info('Chức năng Thêm nhóm xưởng chưa triển khai')
-}
-
-function handleDeleteFactory(record) {
-  message.info(`Xóa nhóm xưởng ${record.groupCode} chưa triển khai`)
-}
-
 onMounted(() => {
   if (!staffId) {
     message.warning('Không tìm thấy staffId')
   } else {
     fetchStaffDetail()
     fetchRoles()
+    fetchRoleChecked()
     fetchFacilitiesList()
   }
 })
