@@ -5,6 +5,9 @@ import jakarta.validation.constraints.Pattern;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.validator.constraints.Length;
+import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
+
+import javax.swing.text.html.parser.Entity;
 
 @Getter
 @Setter
@@ -18,6 +21,5 @@ public class AdChangeStaffRoleRequest {
     @Length(max = 255, message = "Mã vai trò phải ngắn hơn 255 ký tự")
     @Pattern(regexp = "^[^\\s]+$", message = "Mã vai trò không được chứa khoảng trắng")
     private String idRole;
-
     private String facilityId;
 }

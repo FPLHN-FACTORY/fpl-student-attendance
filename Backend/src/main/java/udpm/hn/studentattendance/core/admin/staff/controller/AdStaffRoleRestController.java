@@ -22,7 +22,7 @@ public class AdStaffRoleRestController {
     }
 
     @GetMapping("/role-check")
-    public ResponseEntity<?> getRoleCheck(@RequestBody AdStaffRoleRequest adStaffRoleRequest) {
+    public ResponseEntity<?> getRoleCheck(AdStaffRoleRequest adStaffRoleRequest) {
         return adStaffRoleService.getRoleChecked(adStaffRoleRequest);
     }
 

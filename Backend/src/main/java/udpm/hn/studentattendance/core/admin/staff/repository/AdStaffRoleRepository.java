@@ -9,6 +9,7 @@ import udpm.hn.studentattendance.core.admin.staff.model.response.AdCheckStaffRol
 import udpm.hn.studentattendance.core.admin.staff.model.response.AdStaffRoleResponse;
 import udpm.hn.studentattendance.entities.Role;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
+import udpm.hn.studentattendance.infrastructure.constants.RoleConstant;
 import udpm.hn.studentattendance.repositories.RoleRepository;
 
 import java.util.List;
@@ -22,15 +23,18 @@ public interface AdStaffRoleRepository extends RoleRepository {
                             SELECT
                                 r.id as roleId,
                                 r.code as roleCode,
-                                f.name as facilityName              
-                            FROM UserStaff s  
+                                f.name as facilityName
+                            FROM UserStaff s
                             LEFT JOIN Role r ON s.id = r.userStaff.id
                             LEFT JOIN Facility f ON r.facility.id = f.id
-                            WHERE s.status = :status
-                              AND TRIM(s.id) = TRIM(:staffId)
+                            WHERE 
+                            s.status = :status
+                            AND 
+                            r.status = :roleStatus
+                            AND TRIM(s.id) = TRIM(:staffId)
                             """
     )
-    List<AdStaffRoleResponse> getRolesByStaffId(String staffId, EntityStatus status);
+    List<AdStaffRoleResponse> getRolesByStaffId(String staffId, EntityStatus status, EntityStatus roleStatus);
 
     @Query(
             value = """
@@ -43,15 +47,15 @@ public interface AdStaffRoleRepository extends RoleRepository {
                             SELECT role.id 
                             FROM UserStaff s JOIN s.roles role
                             WHERE s.id = :#{#adStaffRoleRequest.staffId} 
-                              AND s.status = 0
+                              AND s.status = :statusRole
                        )
                        THEN 'true'
                        ELSE 'false'
                    END as checked
             FROM Role r
             JOIN Facility f ON f.id = r.facility.id 
-            WHERE r.status = 0 
-              AND f.status = 0
+            WHERE r.status = :statusRole
+              AND f.status = :statusFacility
               AND (
                     :#{#adStaffRoleRequest.roleCode} IS NULL
                  OR :#{#adStaffRoleRequest.roleCode} = ''
@@ -68,8 +72,8 @@ public interface AdStaffRoleRepository extends RoleRepository {
              SELECT COUNT(r)
              FROM Role r
              JOIN Facility f ON f.id = r.facility.id 
-             WHERE r.status = 0 
-               AND f.status = 0
+             WHERE r.status = :statusRole
+              AND f.status = :statusFacility
                AND (
                     :#{#adStaffRoleRequest.roleCode} IS NULL
                  OR :#{#adStaffRoleRequest.roleCode} = ''
@@ -83,10 +87,20 @@ public interface AdStaffRoleRepository extends RoleRepository {
              ORDER BY r.updatedAt DESC
             """
     )
-    Page<AdCheckStaffRoleResponse> getRolesChecked(Pageable pageable, AdStaffRoleRequest adStaffRoleRequest);
+    Page<AdCheckStaffRoleResponse> getRolesChecked(Pageable pageable, AdStaffRoleRequest adStaffRoleRequest, EntityStatus statusRole, EntityStatus statusFacility);
 
 
-    List<Role> findAllByIdAndUserStaffId(String roleId, String staffId);
+    @Query("""
+    SELECT 
+    r
+    FROM Role r
+    LEFT JOIN UserStaff us on r.userStaff.id = us.id
+    WHERE 
+    r.code = :roleCode
+    AND us.id= :staffId
+    
+""")
+    List<Role> findAllByCodeAndUserStaffId(RoleConstant roleCode, String staffId);
 
     List<Role> findAllByUserStaffIdAndStatus(String staffId, EntityStatus status);
 
