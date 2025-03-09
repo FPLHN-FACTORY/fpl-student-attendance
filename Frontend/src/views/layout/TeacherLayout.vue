@@ -2,6 +2,7 @@
 import { ref, watch, onMounted } from 'vue'
 import { MenuUnfoldOutlined, MenuFoldOutlined, UserOutlined } from '@ant-design/icons-vue'
 import imgLogoFpt from '@/assets/images/logo-fpt.png'
+import imgLogoUDPM from '@/assets/images/logo-udpm.png'
 import useAuthStore from '@/stores/useAuthStore'
 import { ROUTE_NAMES } from '@/router/teacherRoute'
 
@@ -26,7 +27,7 @@ watch(
   (newValue) => {
     sessionStorage.setItem('selectedKeys', JSON.stringify(newValue))
   },
-  { deep: true },
+  { deep: true }
 )
 </script>
 
@@ -40,7 +41,7 @@ watch(
       collapsible
     >
       <div class="logo">
-        <img :src="imgLogoFpt" />
+        <img :src="imgLogoUDPM" />
       </div>
       <a-menu v-model:selectedKeys="selectedKeys" theme="light" mode="inline">
         <a-menu-item key="1">
@@ -125,8 +126,8 @@ watch(
   text-align: center;
 }
 .logo img {
-  max-width: 100%;
-  max-height: 100%;
+  max-width: 180%;
+  max-height: 140%;
 }
 
 /* User menu */
