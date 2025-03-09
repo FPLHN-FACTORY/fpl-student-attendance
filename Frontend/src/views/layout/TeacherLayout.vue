@@ -1,7 +1,12 @@
 <script setup>
 import { ref, watch, onMounted } from 'vue'
-import { MenuUnfoldOutlined, MenuFoldOutlined, UserOutlined } from '@ant-design/icons-vue'
-import imgLogoFpt from '@/assets/images/logo-fpt.png'
+import {
+  MenuUnfoldOutlined,
+  MenuFoldOutlined,
+  UserOutlined,
+  LogoutOutlined,
+} from '@ant-design/icons-vue'
+import imgLogoUdpm from '@/assets/images/logo-udpm.png'
 import useAuthStore from '@/stores/useAuthStore'
 import { ROUTE_NAMES } from '@/router/teacherRoute'
 
@@ -40,7 +45,7 @@ watch(
       collapsible
     >
       <div class="logo">
-        <img :src="imgLogoFpt" />
+        <img :src="imgLogoUdpm" />
       </div>
       <a-menu v-model:selectedKeys="selectedKeys" theme="light" mode="inline">
         <a-menu-item key="1">
@@ -66,6 +71,7 @@ watch(
           class="trigger"
           @click="collapsed = !collapsed"
         />
+        <img class="logo-mobile" :src="imgLogoUdpm" />
 
         <!-- Thông tin người dùng + Dropdown -->
 
@@ -76,69 +82,23 @@ watch(
           </a>
           <template #overlay>
             <a-menu>
+              <a-menu-item class="active">
+                <b>{{ authStore.user.name }}</b>
+                <div>{{ authStore.user.sub }}</div>
+              </a-menu-item>
+              <a-menu-divider />
               <a-menu-item key="logout" @click="handleLogout()">
-                <logout-outlined />
-                <span>Đăng xuất</span>
+                <LogoutOutlined />
+                <span class="ms-2">Đăng xuất</span>
               </a-menu-item>
             </a-menu>
           </template>
         </a-dropdown>
       </a-layout-header>
 
-      <!-- CONTENT -->
-      <a-layout-content
-        :style="{ margin: '24px 16px', padding: '24px', background: '#fff', minHeight: '280px' }"
-      >
+      <a-layout-content>
         <router-view />
       </a-layout-content>
     </a-layout>
   </a-layout>
 </template>
-
-<style scoped>
-#components-layout-demo-custom-trigger .trigger {
-  font-size: 18px;
-  line-height: 64px;
-  padding: 0 24px;
-  cursor: pointer;
-  transition: color 0.3s;
-}
-
-#components-layout-demo-custom-trigger .trigger:hover {
-  color: #1890ff;
-}
-
-#components-layout-demo-custom-trigger .logo {
-  height: 32px;
-  background: rgba(255, 255, 255, 0.3);
-  margin: 16px;
-}
-
-.site-layout .site-layout-background {
-  background: #fff;
-}
-
-.bg-white {
-  background-color: #fff;
-}
-.logo {
-  text-align: center;
-}
-.logo img {
-  max-width: 100%;
-  max-height: 100%;
-}
-
-/* User menu */
-.user-menu {
-  display: flex;
-  align-items: center;
-  cursor: pointer;
-}
-
-.username {
-  margin-left: 8px;
-  font-weight: 500;
-  color: #333;
-}
-</style>

@@ -37,8 +37,10 @@ public class Semester extends PrimaryEntity implements Serializable {
 
     @Column(name = "to_date")
     private Long toDate;
+
     @Column(name = "year")
     private Integer year;
+
     @ManyToOne
     @JsonIgnore
     @JoinColumn(name = "id_facility")
