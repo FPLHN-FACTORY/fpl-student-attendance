@@ -178,7 +178,6 @@ const columns = ref([
   { title: 'Trạng thái', dataIndex: 'factoryStatus', key: 'factoryStatus' },
   { title: 'Tên dự án', dataIndex: 'projectName', key: 'projectName' },
   { title: 'Mã bộ môn', dataIndex: 'subjectCode', key: 'subjectCode' },
-  { title: 'Tên cơ sở', dataIndex: 'facilityName', key: 'facilityName' },
   { title: 'Tên giảng viên', dataIndex: 'staffName', key: 'staffName' },
   { title: 'Ngày bắt đầu kế hoạch', dataIndex: 'planStartDate', key: 'planStartDate' },
   { title: 'Ca học', dataIndex: 'planShift', key: 'planShift' },
@@ -224,7 +223,7 @@ const handleViewDetails = (record) => {
 
 onMounted(() => {
   fetchFactories()
-  // fetchFacilitiesList()
+  fetchFacilitiesList()
 })
 </script>
 

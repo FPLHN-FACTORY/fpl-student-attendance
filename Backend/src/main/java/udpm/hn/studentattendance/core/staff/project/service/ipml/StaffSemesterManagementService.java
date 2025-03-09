@@ -14,7 +14,7 @@ public class StaffSemesterManagementService {
     private StaffSemesterManagementRepository repository;
 
     public List<SemesterResponse> getComboboxSemester(String facilityId) {
-        return repository.getSemesters(facilityId);
+        return repository.getSemesters();
 
     }
 }
