@@ -1,12 +1,15 @@
 package udpm.hn.studentattendance.core.staff.factory.model.response;
 
-public interface StaffFactoryResponse {
+public interface FactoryResponse {
+    String getRowNumber();
     String getFactoryId();
     String getFactoryName();
     Integer getFactoryStatus();
     String getProjectName();
     String getSubjectCode();
     String getStaffName();
-    Long getPlanStartDate();
-    String getPlanShift();
+    String getFactoryDescription();
+
+//    Long getPlanStartDate();
+//    String getPlanShift();
 }

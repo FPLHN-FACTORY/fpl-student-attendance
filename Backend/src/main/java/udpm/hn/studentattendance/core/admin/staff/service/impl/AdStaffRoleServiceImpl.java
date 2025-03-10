@@ -101,7 +101,7 @@ public class AdStaffRoleServiceImpl implements AdStaffRoleService {
         } else if (codeRole.equals("0")) {
             roleConstant = RoleConstant.ADMIN;
             UserAdmin userAdmin = existStaffAdmin.get();
-            userAdmin.setStatus(EntityStatus.ACTIVE);
+            userAdmin.setStatus(userAdmin.getStatus() == EntityStatus.ACTIVE ? EntityStatus.INACTIVE : EntityStatus.ACTIVE);
             adStaffAdminRepository.save(userAdmin);
         }
         // Tìm tất cả các role của nhân viên dựa trên RoleConstant
@@ -115,7 +115,7 @@ public class AdStaffRoleServiceImpl implements AdStaffRoleService {
             role.setUserStaff(existStaff.get());
             role.setStatus(EntityStatus.ACTIVE);
             adStaffRoleRepository.save(role);
-        } else if (!listRole.isEmpty()){
+        } else if (!listRole.isEmpty()) {
             Role role = listRole.get(0);
             if (role.getStatus().equals(EntityStatus.INACTIVE)) {
                 role.setStatus(EntityStatus.ACTIVE);
