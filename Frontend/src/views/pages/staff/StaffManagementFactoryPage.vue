@@ -197,7 +197,7 @@ const fetchFactories = () => {
     .catch((error) => {
       message.error(
         (error.response && error.response.data && error.response.data.message) ||
-          'Lỗi khi lấy danh sách xưởng',
+          'Lỗi khi lấy danh sách xưởng'
       )
     })
 }

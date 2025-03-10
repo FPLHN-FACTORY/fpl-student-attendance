@@ -11,11 +11,13 @@ import udpm.hn.studentattendance.core.admin.staff.model.request.AdChangeStaffRol
 import udpm.hn.studentattendance.core.admin.staff.model.request.AdStaffRoleRequest;
 import udpm.hn.studentattendance.core.admin.staff.model.response.AdStaffRoleResponse;
 import udpm.hn.studentattendance.core.admin.staff.repository.ADStaffFacilityRepository;
+import udpm.hn.studentattendance.core.admin.staff.repository.AdStaffAdminRepository;
 import udpm.hn.studentattendance.core.admin.staff.repository.AdStaffRepository;
 import udpm.hn.studentattendance.core.admin.staff.repository.AdStaffRoleRepository;
 import udpm.hn.studentattendance.core.admin.staff.service.AdStaffRoleService;
 import udpm.hn.studentattendance.entities.Facility;
 import udpm.hn.studentattendance.entities.Role;
+import udpm.hn.studentattendance.entities.UserAdmin;
 import udpm.hn.studentattendance.entities.UserStaff;
 import udpm.hn.studentattendance.helpers.GenerateNameHelper;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
@@ -40,10 +42,12 @@ public class AdStaffRoleServiceImpl implements AdStaffRoleService {
 
     private final ADStaffFacilityRepository adStaffFacilityRepository;
 
+    private final AdStaffAdminRepository adStaffAdminRepository;
+
     @Override
     public ResponseEntity<?> getAllRole(String staffId) {
         List<AdStaffRoleResponse> list = adStaffRoleRepository.getRolesByStaffId(staffId, EntityStatus.ACTIVE, EntityStatus.ACTIVE);
-        if (list.size() <= 0){
+        if (list.size() <= 0) {
             return new ResponseEntity<>(
                     new ApiResponse(
                             RestApiStatus.SUCCESS,
@@ -78,17 +82,7 @@ public class AdStaffRoleServiceImpl implements AdStaffRoleService {
     public ResponseEntity<?> changeStaffRole(AdChangeStaffRoleRequest request) {
         Optional<UserStaff> existStaff = adStaffRepository.findById(request.getIdStaff().trim());
         Optional<Facility> existFacility = adStaffFacilityRepository.findById(request.getFacilityId().trim());
-
-        String codeRole = request.getIdRole().trim();
-        RoleConstant roleConstant;
-        if (codeRole.equals("1")) {
-            roleConstant = RoleConstant.STAFF;
-        } else if (codeRole.equals("2")) {
-            roleConstant = RoleConstant.ADMIN;
-        } else {
-            roleConstant = RoleConstant.TEACHER;
-        }
-
+        Optional<UserAdmin> existStaffAdmin = adStaffAdminRepository.getUserAdminByCode(request.getStaffCode());
         if (existStaff.isEmpty() || existFacility.isEmpty()) {
             return new ResponseEntity<>(
                     new ApiResponse(
@@ -98,7 +92,18 @@ public class AdStaffRoleServiceImpl implements AdStaffRoleService {
                     ),
                     HttpStatus.NOT_FOUND);
         }
-
+        String codeRole = request.getIdRole().trim();
+        RoleConstant roleConstant = null;
+        if (codeRole.equals("1")) {
+            roleConstant = RoleConstant.STAFF;
+        } else if (codeRole.equals("3")) {
+            roleConstant = RoleConstant.TEACHER;
+        } else if (codeRole.equals("0")) {
+            roleConstant = RoleConstant.ADMIN;
+            UserAdmin userAdmin = existStaffAdmin.get();
+            userAdmin.setStatus(EntityStatus.ACTIVE);
+            adStaffAdminRepository.save(userAdmin);
+        }
         // Tìm tất cả các role của nhân viên dựa trên RoleConstant
         List<Role> listRole = adStaffRoleRepository.findAllByCodeAndUserStaffId(roleConstant, request.getIdStaff());
         if (listRole.isEmpty()) {
@@ -110,7 +115,7 @@ public class AdStaffRoleServiceImpl implements AdStaffRoleService {
             role.setUserStaff(existStaff.get());
             role.setStatus(EntityStatus.ACTIVE);
             adStaffRoleRepository.save(role);
-        } else {
+        } else if (!listRole.isEmpty()){
             Role role = listRole.get(0);
             if (role.getStatus().equals(EntityStatus.INACTIVE)) {
                 role.setStatus(EntityStatus.ACTIVE);
@@ -144,7 +149,7 @@ public class AdStaffRoleServiceImpl implements AdStaffRoleService {
     @Override
     public ResponseEntity<?> deleteStaffRole(String roleId) {
         Role existRole = adStaffRoleRepository.findById(roleId).orElse(null);
-        if (existRole != null){
+        if (existRole != null) {
             adStaffRoleRepository.deleteById(roleId);
             return new ResponseEntity<>(
                     new ApiResponse(
@@ -152,7 +157,7 @@ public class AdStaffRoleServiceImpl implements AdStaffRoleService {
                             "Xoá nhân viên thành công",
                             null
                     ),
-            HttpStatus.OK);
+                    HttpStatus.OK);
         }
         return new ResponseEntity<>(
                 new ApiResponse(

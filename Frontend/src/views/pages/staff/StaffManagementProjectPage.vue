@@ -41,7 +41,7 @@
         >
           <a-select-option :value="null">Tất cả học kỳ</a-select-option>
           <a-select-option v-for="semester in semesters" :key="semester.id" :value="semester.id">
-            {{ semester.name }}
+            {{ semester.code }}
           </a-select-option>
         </a-select>
       </a-col>
