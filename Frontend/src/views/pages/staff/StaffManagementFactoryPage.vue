@@ -76,11 +76,11 @@
           <template v-else-if="column.key === 'actions'">
             <a-space>
               <!-- Nút Chi tiết: đẩy sang router khác -->
-              <!-- <a-tooltip title="Chi tiết">
+              <a-tooltip title="Chi tiết">
                 <a-button type="text" class="action-button" @click="handleDetailFactory(record)">
                   <EyeOutlined />
                 </a-button>
-              </a-tooltip> -->
+              </a-tooltip>
               <!-- Nút Chỉnh sửa -->
               <a-tooltip title="Chỉnh sửa">
                 <a-button type="text" class="action-button" @click="handleUpdateFactory(record)">
@@ -309,14 +309,14 @@ const submitUpdateFactory = () => {
     })
 }
 
-// /* ----- Detail Factory ----- */
-// // Nút "Chi tiết" đẩy sang router khác
-// const handleDetailFactory = (record) => {
-//   router.push({
-//     name: 'MANAGEMENT_FACTORY_DETAIL',
-//     query: { factoryId: record.factoryId },
-//   })
-// }
+/* ----- Detail Factory ----- */
+// Nút "Chi tiết" đẩy sang router khác (chưa có phần hiển thị phân sinh viên vào nhóm xưởng)
+const handleDetailFactory = (record) => {
+  router.push({
+    name: API_ROUTES_STAFF.FETCH_DATA_FACTORY,
+    query: { factoryId: record.factoryId },
+  })
+}
 
 /* ----- Change Status ----- */
 const confirmChangeStatus = (record) => {

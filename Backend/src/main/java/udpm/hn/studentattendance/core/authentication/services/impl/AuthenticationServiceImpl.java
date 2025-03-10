@@ -9,6 +9,7 @@ import udpm.hn.studentattendance.core.authentication.repositories.Authentication
 import udpm.hn.studentattendance.core.authentication.repositories.AuthenticationUserAdminRepository;
 import udpm.hn.studentattendance.core.authentication.repositories.AuthenticationUserStaffRepository;
 import udpm.hn.studentattendance.core.authentication.repositories.AuthenticationUserStudentRepository;
+import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.router.RouteAuthenticationConstant;
 import udpm.hn.studentattendance.core.authentication.services.AuthenticationService;
 import udpm.hn.studentattendance.core.authentication.utils.JwtUtil;
@@ -43,7 +44,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
     @Override
     public List<Facility> getAll() {
-        return authenticationFacilityRepository.findAll();
+        return authenticationFacilityRepository.getFacilitiesByStatus(EntityStatus.ACTIVE);
     }
 
     @Override
