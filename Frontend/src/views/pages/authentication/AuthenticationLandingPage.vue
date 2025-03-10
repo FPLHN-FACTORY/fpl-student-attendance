@@ -4,6 +4,7 @@ import imgLogoFpt from '@/assets/images/logo-fpt.png'
 import imgLogoUdpm from '@/assets/images/logo-udpm.png'
 import imgRoleAdmin from '@/assets/images/role-admin.png'
 import imgRoleStaff from '@/assets/images/role-staff.png'
+import imgRoleTeacher from '@/assets/images/role-teacher.png'
 import imgRoleStudent from '@/assets/images/role-student.png'
 import { GoogleOutlined } from '@ant-design/icons-vue'
 import { onMounted, ref } from 'vue'
@@ -44,7 +45,7 @@ const roles = [
   {
     role: ROLE.TEACHER,
     label: 'Giảng viên',
-    img: imgRoleStaff,
+    img: imgRoleTeacher,
     route: GLOBAL_ROUTE_NAMES.TEACHER_PAGE,
   },
   {
@@ -127,6 +128,8 @@ const checkLogin = () => {
 }
 
 onMounted(() => {
+  document.body.classList.add('bg-login')
+  sessionStorage.setItem('selectedKeys', JSON.stringify(['1']))
   checkLogin()
   fetchDataFacility()
   loadingPage.hide()
@@ -135,27 +138,32 @@ onMounted(() => {
 
 <template>
   <div class="container">
-    <a-flex justify="center" alignItem="center" gap="middle" vertical>
+    <div class="row">
       <div class="logo">
         <img :src="imgLogoFpt" alt="Logo" />
         <img :src="imgLogoUdpm" alt="Logo" />
       </div>
+    </div>
+
+    <div class="row">
       <h2 class="title">Đăng nhập</h2>
-      <div class="role-container">
-        <div
-          v-for="role in roles"
-          :key="role.role"
-          class="role-item"
-          @click="handleSelectFacility(role.role)"
-        >
-          <img :src="role.img" class="role-img" />
-          <a-button type="primary" class="role-button" size="large">
-            <span>{{ role.label }}</span>
-          </a-button>
+      <div class="d-flex justify-content-center align-items-center">
+        <div class="role-container">
+          <div
+            v-for="role in roles"
+            :key="role.role"
+            class="role-item"
+            @click="handleSelectFacility(role.role)"
+          >
+            <img :src="role.img" class="role-img" />
+            <a-button class="role-button" size="large">
+              <span>{{ role.label }}</span>
+            </a-button>
+          </div>
         </div>
       </div>
       <p class="footer">Powered by <strong>FPLHN-UDPM</strong></p>
-    </a-flex>
+    </div>
 
     <a-modal v-model:open="isShowModalSelectFacility" centered :footer="null">
       <template #title>
@@ -197,19 +205,13 @@ onMounted(() => {
 </template>
 
 <style scoped>
-body {
-  background-image: url('@/assets/images/bg.jpg');
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  height: 100vh;
-}
 .container {
-  height: 100vh;
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
   margin: 0 auto;
+  margin-top: 6rem;
 }
 .logo {
   text-align: center;
@@ -220,9 +222,12 @@ body {
   margin-bottom: 20px;
 }
 .title {
+  margin: 2rem 0;
   font-size: 24px;
   font-weight: bold;
   text-align: center;
+  color: #41395a;
+  text-transform: uppercase;
 }
 .role-container {
   display: flex;
@@ -247,7 +252,7 @@ body {
   margin-top: 10px;
 }
 .footer {
-  margin-top: 30px;
+  margin-top: 6rem;
   font-size: 14px;
   color: gray;
   text-align: center;
