@@ -114,7 +114,7 @@
 
   <a-modal
     title="Thêm Bộ Môn Cơ Sở"
-    v-model:visible="ModalAdd"
+    v-model:open="ModalAdd"
     @ok="handleAddSubjectFacility"
     @cancel="ModalAdd = false"
   >
@@ -141,7 +141,7 @@
   </a-modal>
 
   <!-- Modal xem chi tiết bộ môn -->
-  <a-modal v-model:visible="ModalDetail" title="Chi tiết bộ môn cơ sở" footer="">
+  <a-modal v-model:open="ModalDetail" title="Chi tiết bộ môn cơ sở" footer="">
     <p><strong>Tên bộ môn:</strong> {{ detailSubjectFacility.subject.name }}</p>
     <p><strong>Tên cơ sở:</strong> {{ detailSubjectFacility.facility.name }}</p>
     <p>
@@ -155,7 +155,7 @@
   </a-modal>
 
   <!-- Modal sửa bộ môn -->
-  <a-modal v-model:visible="ModalUpdate" title="Sửa bộ môn cơ sở" @ok="updateSubjectFacility">
+  <a-modal v-model:open="ModalUpdate" title="Sửa bộ môn cơ sở" @ok="updateSubjectFacility">
     <p>Chưa nghĩ ra cần sửa cái gì</p>
   </a-modal>
 </template>

@@ -120,7 +120,7 @@
   </a-modal>
 
   <!-- Modal thêm cấp dự án -->
-  <a-modal v-model:visible="ModalAdd" title="Thêm cấp dự án" @ok="HandelAddLevel">
+  <a-modal v-model:open="ModalAdd" title="Thêm cấp dự án" @ok="HandelAddLevel">
     <a-form layout="vertical">
       <a-form-item label="Tên" required>
         <a-input v-model:value="newLevel.name" />
@@ -135,7 +135,7 @@
   </a-modal>
 
   <!-- Modal sửa cấp dự án -->
-  <a-modal v-model:visible="ModalUpdate" title="Sửa cấp dự án" @ok="updateLevel">
+  <a-modal v-model:open="ModalUpdate" title="Sửa cấp dự án" @ok="updateLevel">
     <a-form layout="vertical">
       <a-form-item label="Tên" required>
         <a-input v-model:value="detailLevel.name" />
