@@ -1,92 +1,95 @@
 <template>
-  <div class="container">
+  <div class="container-fluid">
     <h1 class="mb-3">Quản lý cơ sở</h1>
-    <!-- Bộ lọc tìm kiếm -->
-    <a-card title="Bộ lọc" :bordered="false" class="cart mb-4">
-      <a-row :gutter="16" class="filter-container">
-        <a-col :xs="24" :md="12">
-          <a-input
-            v-model:value="filter.name"
-            placeholder="Tìm kiếm theo tên"
-            allowClear
-            @change="fetchFacilities"
-          />
-        </a-col>
-        <a-col :xs="24" :md="12">
-          <a-select
-            v-model:value="filter.status"
-            placeholder="Chọn trạng thái"
-            allowClear
-            style="width: 100%"
-            @change="fetchFacilities"
-          >
-            <a-select-option :value="''">Tất cả trạng thái</a-select-option>
-            <a-select-option value="ACTIVE">Hoạt động</a-select-option>
-            <a-select-option value="INACTIVE">Không hoạt động</a-select-option>
-          </a-select>
-        </a-col>
-      </a-row>
-    </a-card>
-
-    <!-- Danh sách cơ sở -->
-    <a-card title="Danh sách cơ sở" :bordered="false" class="cart mb-4">
-      <div class="d-flex justify-content-end mb-3">
-        <a-button
-          class="px-3 py-2"
-          style="background-color: #fff7e6; color: black; border: 1px solid #ffa940"
-          @click="() => (modalAdd = true)"
-        >
-          <PlusOutlined />
-          Thêm
-        </a-button>
+    <div class="row g-3">
+      <div class="col-12">
+        <!-- Bộ lọc tìm kiếm -->
+        <a-card :bordered="false" class="cart">
+          <template #title> <FilterFilled /> Bộ lọc </template>
+          <a-row :gutter="16" class="filter-container">
+            <a-col :xs="24" :md="12">
+              <a-input
+                v-model:value="filter.name"
+                placeholder="Tìm kiếm theo tên"
+                allowClear
+                @change="fetchFacilities"
+              />
+            </a-col>
+            <a-col :xs="24" :md="12">
+              <a-select
+                v-model:value="filter.status"
+                placeholder="Chọn trạng thái"
+                allowClear
+                style="width: 100%"
+                @change="fetchFacilities"
+              >
+                <a-select-option :value="''">Tất cả trạng thái</a-select-option>
+                <a-select-option value="ACTIVE">Hoạt động</a-select-option>
+                <a-select-option value="INACTIVE">Không hoạt động</a-select-option>
+              </a-select>
+            </a-col>
+          </a-row>
+        </a-card>
       </div>
+      <div class="col-12">
+        <!-- Danh sách cơ sở -->
+        <a-card :bordered="false" class="cart">
+          <template #title> <UnorderedListOutlined /> Danh sách cơ sở </template>
+          <div class="d-flex justify-content-end mb-3">
+            <a-button @click="() => (modalAdd = true)">
+              <PlusOutlined />
+              Thêm
+            </a-button>
+          </div>
 
-      <div style="max-height: 500px; overflow-y: auto">
-        <a-table
-          :dataSource="facilities"
-          :columns="columns"
-          rowKey="id"
-          bordered
-          :pagination="pagination"
-          @change="handleTableChange"
-        >
-          <template #bodyCell="{ column, record }">
-            <template v-if="column.dataIndex === 'facilityStatus'">
-              <a-tag
-                :color="
-                  record.facilityStatus === 'ACTIVE' || record.facilityStatus === 1
-                    ? 'green'
-                    : 'red'
-                "
-              >
-                {{
-                  record.facilityStatus === 'ACTIVE' || record.facilityStatus === 1
-                    ? 'Hoạt động'
-                    : 'Không hoạt động'
-                }}
-              </a-tag>
-            </template>
-            <template v-if="column.key === 'actions'">
-              <a-button
-                @click="handleUpdateFacility(record)"
-                type="text"
-                class="me-2"
-                style="background-color: #fff7e6; border: 1px solid #ffa940"
-              >
-                <EditOutlined />
-              </a-button>
-              <a-button
-                @click="handleChangeStatusFacility(record)"
-                type="text"
-                style="background-color: #fff7e6; border: 1px solid #ffa940"
-              >
-                <SwapOutlined />
-              </a-button>
-            </template>
-          </template>
-        </a-table>
+          <div>
+            <a-table
+              :dataSource="facilities"
+              :columns="columns"
+              rowKey="id"
+              :pagination="pagination"
+              @change="handleTableChange"
+              :scroll="{ y: 500 }"
+            >
+              <template #bodyCell="{ column, record }">
+                <template v-if="column.dataIndex === 'facilityStatus'">
+                  <a-tag
+                    :color="
+                      record.facilityStatus === 'ACTIVE' || record.facilityStatus === 1
+                        ? 'green'
+                        : 'red'
+                    "
+                  >
+                    {{
+                      record.facilityStatus === 'ACTIVE' || record.facilityStatus === 1
+                        ? 'Hoạt động'
+                        : 'Không hoạt động'
+                    }}
+                  </a-tag>
+                </template>
+                <template v-if="column.key === 'actions'">
+                  <a-button
+                    @click="handleUpdateFacility(record)"
+                    type="text"
+                    class="me-2"
+                    style="background-color: #fff7e6; border: 1px solid #ffa940"
+                  >
+                    <EditOutlined />
+                  </a-button>
+                  <a-button
+                    @click="handleChangeStatusFacility(record)"
+                    type="text"
+                    style="background-color: #fff7e6; border: 1px solid #ffa940"
+                  >
+                    <SwapOutlined />
+                  </a-button>
+                </template>
+              </template>
+            </a-table>
+          </div>
+        </a-card>
       </div>
-    </a-card>
+    </div>
 
     <a-modal v-model:open="modalAdd" title="Thêm cơ sở" @ok="handleAddFacility">
       <a-form layout="vertical">
@@ -108,7 +111,13 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
-import { SearchOutlined, PlusOutlined, EditOutlined, SwapOutlined } from '@ant-design/icons-vue'
+import {
+  PlusOutlined,
+  EditOutlined,
+  SwapOutlined,
+  FilterFilled,
+  UnorderedListOutlined,
+} from '@ant-design/icons-vue'
 import { message, Modal } from 'ant-design-vue'
 import requestAPI from '@/services/requestApiService'
 import { API_ROUTES_ADMIN } from '@/constants/adminConstant'
@@ -242,16 +251,3 @@ onMounted(() => {
   fetchFacilities()
 })
 </script>
-
-<style scoped>
-.container {
-  width: 100%;
-  max-width: none;
-}
-.cart {
-  margin-top: 5px;
-}
-.filter-container {
-  margin-bottom: 5px;
-}
-</style>

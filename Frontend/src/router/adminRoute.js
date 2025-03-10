@@ -9,7 +9,6 @@ export const ROUTE_NAMES = {
   MANAGEMENT_LEVEL_PROJECT: 'route_admin_management_level_project',
   MANAGEMENT_STAFF: 'route_admin_management_staff',
   MANAGEMENT_STAFF_ROLE: 'route_admin_management_staff_role',
-  MANAGEMENT_PROJECT: 'route_admin_management_project',
 }
 
 export const AdminRoutes = [
@@ -17,7 +16,7 @@ export const AdminRoutes = [
     path: '/Admin',
     name: GLOBAL_ROUTE_NAMES.ADMIN_PAGE,
     component: import('@/views/layout/AdminLayout.vue'),
-    redirect: { name: ROUTE_NAMES.MANAGEMENT_PROJECT },
+    redirect: { name: ROUTE_NAMES.MANAGEMENT_FACILITY },
     meta: {
       title: 'Ban đào tạo',
       requireRole: ROLE.ADMIN,
@@ -52,11 +51,6 @@ export const AdminRoutes = [
         path: 'management-level-project',
         name: ROUTE_NAMES.MANAGEMENT_LEVEL_PROJECT,
         component: import('@/views/pages/admin/AdminManagementLevelProjectPage.vue'),
-      },
-      {
-        path: 'management-project',
-        name: ROUTE_NAMES.MANAGEMENT_PROJECT,
-        component: import('@/views/pages/admin/AdminManagementProjectPage.vue'),
       },
       {
         path: 'management-subject_facility',

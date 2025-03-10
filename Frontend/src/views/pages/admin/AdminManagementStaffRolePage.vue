@@ -81,7 +81,7 @@
 
   <!-- Modal thêm chức vụ -->
   <a-modal
-    v-model:visible="isRoleModalVisible"
+    v-model:open="isRoleModalVisible"
     title="Thêm chức vụ cho nhân viên"
     @cancel="closeRoleModal"
     width="60%"
@@ -229,7 +229,7 @@ function fetchRoles() {
     .catch((error) => {
       message.error(
         (error.response && error.response.data && error.response.data.message) ||
-          'Lỗi khi lấy danh sách chức vụ'
+          'Lỗi khi lấy danh sách chức vụ',
       )
     })
 }
@@ -248,7 +248,7 @@ function fetchRoleChecked() {
         if (roleData && roleData.checked === true) {
           roleChecked[defaultRole.code] = true
           const facilityObj = facilitiesList.value.find(
-            (f) => f.facilityName === roleData.facilityName
+            (f) => f.facilityName === roleData.facilityName,
           )
           if (facilityObj) {
             selectedFacilities[defaultRole.code] = facilityObj.facilityId
@@ -261,7 +261,7 @@ function fetchRoleChecked() {
     .catch((error) => {
       message.error(
         (error.response && error.response.data && error.response.data.message) ||
-          'Lỗi khi lấy danh sách vai trò đã tích'
+          'Lỗi khi lấy danh sách vai trò đã tích',
       )
     })
 }
@@ -281,7 +281,7 @@ function fetchStaffDetail() {
     .catch((error) => {
       message.error(
         (error.response && error.response.data && error.response.data.message) ||
-          'Lỗi khi lấy chi tiết nhân viên'
+          'Lỗi khi lấy chi tiết nhân viên',
       )
     })
 }
@@ -301,7 +301,7 @@ function fetchFacilitiesList() {
     .catch((error) => {
       message.error(
         (error.response && error.response.data && error.response.data.message) ||
-          'Lỗi khi lấy danh sách cơ sở'
+          'Lỗi khi lấy danh sách cơ sở',
       )
     })
 }
