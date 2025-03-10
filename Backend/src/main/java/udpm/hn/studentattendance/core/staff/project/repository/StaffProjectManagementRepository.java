@@ -21,7 +21,7 @@ public interface StaffProjectManagementRepository extends ProjectRepository {
                         p.name AS name,
                         lp.name AS nameLevelProject,
                         s.name AS nameSubject,
-                        sem.name AS nameSemester,
+                        sem.code AS nameSemester,
                         p.description AS description,
                         p.status AS status
                     FROM project p
@@ -29,7 +29,7 @@ public interface StaffProjectManagementRepository extends ProjectRepository {
                     LEFT JOIN subject_facility sf ON p.id_subject_facility = sf.id
                     LEFT JOIN subject s ON sf.id_subject = s.id
                     LEFT JOIN semester sem ON p.id_semester = sem.id
-                    LEFT JOIN facility f ON sem.id_facility = f.id
+                    LEFT JOIN facility f ON sf.id_facility = f.id
                     WHERE (
                         (:#{#request.name} IS NULL OR p.name LIKE CONCAT('%', :#{#request.name}, '%'))
                         AND (:#{#request.levelProjectId} IS NULL OR lp.id = :#{#request.levelProjectId})
@@ -47,7 +47,7 @@ public interface StaffProjectManagementRepository extends ProjectRepository {
                     LEFT JOIN subject_facility sf ON p.id_subject_facility = sf.id
                     LEFT JOIN subject s ON sf.id_subject = s.id
                     LEFT JOIN semester sem ON p.id_semester = sem.id
-                    LEFT JOIN facility f ON sem.id_facility = f.id
+                    LEFT JOIN facility f ON sf.id_facility = f.id
                     WHERE (
                         (:#{#request.name} IS NULL OR p.name LIKE CONCAT('%', :#{#request.name}, '%'))
                         AND (:#{#request.levelProjectId} IS NULL OR lp.id = :#{#request.levelProjectId})

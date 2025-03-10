@@ -45,27 +45,31 @@
       </a-col>
 
       <a-col>
-        <a-button
-          @click="fetchSubjectFacility"
-          class="filter-button"
-          :style="{ backgroundColor: '#fff7e6', color: 'black', border: '1px solid #ffa940' }"
-        >
-          <SearchOutlined />
-          Lọc
-        </a-button>
+        <a-tooltip title="Lọc">
+          <a-button
+            @click="fetchSubjectFacility"
+            class="filter-button"
+            :style="{ backgroundColor: '#fff7e6', color: 'black', border: '1px solid #ffa940' }"
+          >
+            <SearchOutlined />
+            Lọc
+          </a-button>
+        </a-tooltip>
       </a-col>
     </a-row>
   </a-card>
 
   <a-card title="Danh sách bộ môn cơ sở" :bordered="false" class="cart">
     <div style="display: flex; justify-content: flex-end; margin-bottom: 10px">
-      <a-button
-        style="background-color: #fff7e6; color: black; border: '1px solid #ffa940'"
-        @click="showAddModal()"
-      >
-        <PlusOutlined />
-        Thêm
-      </a-button>
+      <a-tooltip title="Thêm bộ môn cơ sở">
+        <a-button
+          style="background-color: #fff7e6; color: black; border: 1px solid #ffa940"
+          @click="showAddModal()"
+        >
+          <PlusOutlined />
+          Thêm
+        </a-button>
+      </a-tooltip>
     </div>
 
     <a-table
@@ -84,29 +88,43 @@
         </template>
 
         <template v-if="column.key === 'actions'">
-          <a-button
-            @click="handleDetailSubjectFacility(record)"
-            type="text"
-            :style="{ backgroundColor: '#FFF7E6', marginRight: '8px', border: '1px solid #ffa940' }"
-          >
-            <EyeOutlined />
-          </a-button>
+          <a-tooltip title="Xem chi tiết">
+            <a-button
+              @click="handleDetailSubjectFacility(record)"
+              type="text"
+              :style="{
+                backgroundColor: '#FFF7E6',
+                marginRight: '8px',
+                border: '1px solid #ffa940',
+              }"
+            >
+              <EyeOutlined />
+            </a-button>
+          </a-tooltip>
 
-          <a-button
-            @click="handleUpdateProject(record)"
-            type="text"
-            :style="{ backgroundColor: '#FFF7E6', marginRight: '8px', border: '1px solid #ffa940' }"
-          >
-            <EditOutlined />
-          </a-button>
+          <a-tooltip title="Sửa">
+            <a-button
+              @click="handleUpdateProject(record)"
+              type="text"
+              :style="{
+                backgroundColor: '#FFF7E6',
+                marginRight: '8px',
+                border: '1px solid #ffa940',
+              }"
+            >
+              <EditOutlined />
+            </a-button>
+          </a-tooltip>
 
-          <a-button
-            @click="handleDeleteSubjectFacility(record)"
-            type="text"
-            :style="{ backgroundColor: '#FFF7E6', border: '1px solid #ffa940' }"
-          >
-            <DeleteOutlined />
-          </a-button>
+          <a-tooltip title="Xóa">
+            <a-button
+              @click="handleDeleteSubjectFacility(record)"
+              type="text"
+              :style="{ backgroundColor: '#FFF7E6', border: '1px solid #ffa940' }"
+            >
+              <DeleteOutlined />
+            </a-button>
+          </a-tooltip>
         </template>
       </template>
     </a-table>
@@ -130,8 +148,7 @@
           allowClear
           mode="multiple"
         >
-          <a-select-option :value="null">Tất cả cở sở</a-select-option>
-
+          <a-select-option :value="null">Tất cả cơ sở</a-select-option>
           <a-select-option v-for="f in facilitySubject" :key="f.id" :value="f.id">
             {{ f.name }}
           </a-select-option>

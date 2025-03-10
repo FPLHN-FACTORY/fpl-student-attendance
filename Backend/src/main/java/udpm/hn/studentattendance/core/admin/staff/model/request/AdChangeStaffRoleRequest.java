@@ -17,6 +17,7 @@ public class AdChangeStaffRoleRequest {
     @Pattern(regexp = "^[^\\s]+$", message = "Mã nhân viên không được chứa khoảng trắng")
     private String idStaff;
 
+    private String staffCode;
     @NotBlank(message = "Id role không được để trống")
     @Length(max = 255, message = "Mã vai trò phải ngắn hơn 255 ký tự")
     @Pattern(regexp = "^[^\\s]+$", message = "Mã vai trò không được chứa khoảng trắng")
