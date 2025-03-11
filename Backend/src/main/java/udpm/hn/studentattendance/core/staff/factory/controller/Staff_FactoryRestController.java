@@ -4,20 +4,20 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import udpm.hn.studentattendance.core.staff.factory.model.request.FactoryCreateUpdateRequest;
-import udpm.hn.studentattendance.core.staff.factory.model.request.FactoryRequest;
+import udpm.hn.studentattendance.core.staff.factory.model.request.Staff_FactoryCreateUpdateRequest;
+import udpm.hn.studentattendance.core.staff.factory.model.request.Staff_FactoryRequest;
 import udpm.hn.studentattendance.core.staff.factory.service.FactoryService;
 import udpm.hn.studentattendance.infrastructure.constants.router.RouteStaffConstant;
 
 @RestController
 @RequiredArgsConstructor
 @RequestMapping(RouteStaffConstant.URL_API_FACTORY_MANAGEMENT)
-public class FactoryRestController {
+public class Staff_FactoryRestController {
 
     private final FactoryService factoryService;
 
     @GetMapping
-    public ResponseEntity<?> getAllFactory(FactoryRequest staffFactoryRequest) {
+    public ResponseEntity<?> getAllFactory(Staff_FactoryRequest staffFactoryRequest) {
         return factoryService.getAllFactory(staffFactoryRequest);
     }
 
@@ -47,12 +47,12 @@ public class FactoryRestController {
     }
 
     @PostMapping
-    public ResponseEntity<?> createFacility(@Valid @RequestBody FactoryCreateUpdateRequest factoryCreateUpdateRequest) {
+    public ResponseEntity<?> createFacility(@Valid @RequestBody Staff_FactoryCreateUpdateRequest factoryCreateUpdateRequest) {
         return factoryService.createFactory(factoryCreateUpdateRequest);
     }
 
     @PutMapping
-    public ResponseEntity<?> updateFacility(@Valid @RequestBody FactoryCreateUpdateRequest factoryCreateUpdateRequest) {
+    public ResponseEntity<?> updateFacility(@Valid @RequestBody Staff_FactoryCreateUpdateRequest factoryCreateUpdateRequest) {
         return factoryService.updateFactory(factoryCreateUpdateRequest);
     }
 

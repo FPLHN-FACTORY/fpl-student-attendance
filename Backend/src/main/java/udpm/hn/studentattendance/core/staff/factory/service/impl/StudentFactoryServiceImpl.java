@@ -6,9 +6,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
-import udpm.hn.studentattendance.core.staff.factory.model.request.StudentFactoryCreateUpdateRequest;
-import udpm.hn.studentattendance.core.staff.factory.model.request.StudentFactoryRequest;
-import udpm.hn.studentattendance.core.staff.factory.model.request.UserStudentRequest;
+import udpm.hn.studentattendance.core.staff.factory.model.request.Staff_StudentFactoryCreateUpdateRequest;
+import udpm.hn.studentattendance.core.staff.factory.model.request.Staff_StudentFactoryRequest;
+import udpm.hn.studentattendance.core.staff.factory.model.request.Staff_UserStudentRequest;
 import udpm.hn.studentattendance.core.staff.factory.repository.StudentFactoryRepository;
 import udpm.hn.studentattendance.core.staff.factory.repository.UserStudentFactoryExtendRepository;
 import udpm.hn.studentattendance.core.staff.factory.service.StudentFactoryService;
@@ -44,7 +44,7 @@ public class StudentFactoryServiceImpl implements StudentFactoryService {
     private final SessionHelper sessionHelper;
 
     @Override
-    public ResponseEntity<?> getAllStudentInFactory(String factoryId, StudentFactoryRequest studentFactoryRequest) {
+    public ResponseEntity<?> getAllStudentInFactory(String factoryId, Staff_StudentFactoryRequest studentFactoryRequest) {
         Pageable pageable = PaginationHelper.createPageable(studentFactoryRequest, "createdAt");
         PageableObject listStudentFactory = PageableObject.of(studentFactoryRepository.getUserStudentInFactory(pageable, factoryId, studentFactoryRequest));
         return new ResponseEntity<>(
@@ -103,7 +103,7 @@ public class StudentFactoryServiceImpl implements StudentFactoryService {
     }
 
     @Override
-    public ResponseEntity<?> createOrDeleteStudentFactory(StudentFactoryCreateUpdateRequest studentFactoryCreateUpdateRequest) {
+    public ResponseEntity<?> createOrDeleteStudentFactory(Staff_StudentFactoryCreateUpdateRequest studentFactoryCreateUpdateRequest) {
         Optional<UserStudentFactory> existStudentFactory = studentFactoryRepository
                 .getUserStudentFactoriesByUserStudentIdAndFactoryId
                         (studentFactoryCreateUpdateRequest.getStudentId(), studentFactoryCreateUpdateRequest.getFactoryId());
@@ -136,12 +136,13 @@ public class StudentFactoryServiceImpl implements StudentFactoryService {
     }
 
     @Override
-    public ResponseEntity<?> getStudentFactoryExist() {
+    public ResponseEntity<?> getStudentFactoryExist(String studentId, String factoryId) {
+
         return null;
     }
 
     @Override
-    public ResponseEntity<?> getAllStudent(UserStudentRequest userStudentRequest) {
+    public ResponseEntity<?> getAllStudent(Staff_UserStudentRequest userStudentRequest) {
         Pageable pageable = PaginationHelper.createPageable(userStudentRequest, "createdAt");
         PageableObject listStudent = PageableObject
                 .of(userStudentFactoryExtendRepository.getAllUserStudent

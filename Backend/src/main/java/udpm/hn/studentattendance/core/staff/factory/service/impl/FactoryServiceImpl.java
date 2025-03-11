@@ -6,9 +6,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
-import udpm.hn.studentattendance.core.staff.factory.model.request.FactoryCreateUpdateRequest;
-import udpm.hn.studentattendance.core.staff.factory.model.request.FactoryRequest;
-import udpm.hn.studentattendance.core.staff.factory.model.response.DetailFactoryResponse;
+import udpm.hn.studentattendance.core.staff.factory.model.request.Staff_FactoryCreateUpdateRequest;
+import udpm.hn.studentattendance.core.staff.factory.model.request.Staff_FactoryRequest;
+import udpm.hn.studentattendance.core.staff.factory.model.response.Staff_DetailFactoryResponse;
 import udpm.hn.studentattendance.core.staff.factory.repository.FactoryExtendRepository;
 import udpm.hn.studentattendance.core.staff.factory.repository.ProjectFactoryExtendRepository;
 import udpm.hn.studentattendance.core.staff.factory.repository.StaffFactoryExtendRepository;
@@ -45,7 +45,7 @@ public class FactoryServiceImpl implements FactoryService {
     private final SessionHelper sessionHelper;
 
     @Override
-    public ResponseEntity<?> getAllFactory(FactoryRequest staffFactoryRequest) {
+    public ResponseEntity<?> getAllFactory(Staff_FactoryRequest staffFactoryRequest) {
         Pageable pageable = PaginationHelper.createPageable(staffFactoryRequest, "createdAt");
         PageableObject factories = PageableObject.of(
                 factoryRepository.getAllFactory(pageable, sessionHelper.getFacilityId(), staffFactoryRequest));
@@ -99,7 +99,7 @@ public class FactoryServiceImpl implements FactoryService {
 
     @Override
     public ResponseEntity<?> getDetailFactory(String factoryId) {
-        Optional<DetailFactoryResponse> existFactory = factoryRepository.getFactoryById(factoryId);
+        Optional<Staff_DetailFactoryResponse> existFactory = factoryRepository.getFactoryById(factoryId);
         if (existFactory.isPresent()) {
             return new ResponseEntity<>(
                     new ApiResponse(
@@ -119,39 +119,58 @@ public class FactoryServiceImpl implements FactoryService {
     }
 
     @Override
-    public ResponseEntity<?> createFactory(FactoryCreateUpdateRequest factoryCreateUpdateRequest) {
-        Optional<Factory> existFactory = factoryRepository.findById(factoryCreateUpdateRequest.getId());
+    public ResponseEntity<?> createFactory(Staff_FactoryCreateUpdateRequest factoryCreateUpdateRequest) {
         Optional<UserStaff> userStaff = staffFactoryExtendRepository.findById(factoryCreateUpdateRequest.getIdUserStaff());
         Optional<Project> project = projectFactoryExtendRepository.findById(factoryCreateUpdateRequest.getIdProject());
-        if (existFactory.isEmpty()) {
-            Factory factory = new Factory();
-            factory.setId(CodeGeneratorUtils.generateRandom());
-            factory.setName(factoryCreateUpdateRequest.getFactoryName());
-            factory.setDescription(factoryCreateUpdateRequest.getFactoryDescription());
-            factory.setUserStaff(userStaff.get());
-            factory.setProject(project.get());
-            factory.setStatus(EntityStatus.ACTIVE);
-            factoryRepository.save(factory);
-            return new ResponseEntity<>(
-                    new ApiResponse(
-                            RestApiStatus.SUCCESS,
-                            "Thêm nhóm xưởng mới thành công",
-                            factory
-                    ),
-                    HttpStatus.CREATED);
-        } else {
+        if (userStaff.isEmpty()){
             return new ResponseEntity<>(
                     new ApiResponse(
                             RestApiStatus.ERROR,
-                            "Nhóm xưởng đã tồn tại",
+                            "Giảng viên không tồn tại",
                             null
                     ),
-                    HttpStatus.CONFLICT);
+                    HttpStatus.BAD_REQUEST);
         }
+        if (project.isEmpty()){
+            return new ResponseEntity<>(
+                    new ApiResponse(
+                            RestApiStatus.ERROR,
+                            "Dự án không tồn tại",
+                            null
+                    ),
+                    HttpStatus.BAD_REQUEST);
+        }
+        if (factoryRepository.isExistNameAndProject(factoryCreateUpdateRequest.getFactoryName(), project.get().getId())){
+            return new ResponseEntity<>(
+                    new ApiResponse(
+                            RestApiStatus.ERROR,
+                            "Nhóm xưởng đã tồn tại trong dự án này",
+                            null
+                    ),
+                    HttpStatus.BAD_REQUEST);
+        }
+        Factory factory = new Factory();
+        factory.setId(CodeGeneratorUtils.generateRandom());
+        factory.setName(factoryCreateUpdateRequest.getFactoryName());
+        factory.setDescription(factoryCreateUpdateRequest.getFactoryDescription());
+        factory.setUserStaff(userStaff.get());
+        factory.setProject(project.get());
+        factory.setStatus(EntityStatus.ACTIVE);
+        factoryRepository.save(factory);
+        return new ResponseEntity<>(
+                new ApiResponse(
+                        RestApiStatus.SUCCESS,
+                        "Thêm nhóm xưởng mới thành công",
+                        factory
+                ),
+                HttpStatus.CREATED);
+
+
     }
 
+
     @Override
-    public ResponseEntity<?> updateFactory(FactoryCreateUpdateRequest factoryCreateUpdateRequest) {
+    public ResponseEntity<?> updateFactory(Staff_FactoryCreateUpdateRequest factoryCreateUpdateRequest) {
         Optional<Factory> existFactory = factoryRepository.findById(factoryCreateUpdateRequest.getId());
         Optional<UserStaff> userStaff = staffFactoryExtendRepository.findById(factoryCreateUpdateRequest.getIdUserStaff());
         Optional<Project> project = projectFactoryExtendRepository.findById(factoryCreateUpdateRequest.getIdProject());
@@ -191,7 +210,7 @@ public class FactoryServiceImpl implements FactoryService {
     }
 
     @Override
-    public ResponseEntity<?> detailFactory(String factoryId){
+    public ResponseEntity<?> detailFactory(String factoryId) {
         Optional<Factory> existFactory = factoryRepository.findById(factoryId);
         if (existFactory.isPresent()) {
             return new ResponseEntity<>(
