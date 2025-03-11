@@ -15,7 +15,7 @@ public interface StudentFactoryResponse {
 
     String getStudentEmail();
 
-    Integer getStatus();
+    Integer getStatusStudentFactory();
 
 
 }

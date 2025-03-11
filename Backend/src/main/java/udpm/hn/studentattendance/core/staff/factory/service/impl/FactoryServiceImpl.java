@@ -190,5 +190,25 @@ public class FactoryServiceImpl implements FactoryService {
         return null;
     }
 
+    @Override
+    public ResponseEntity<?> detailFactory(String factoryId){
+        Optional<Factory> existFactory = factoryRepository.findById(factoryId);
+        if (existFactory.isPresent()) {
+            return new ResponseEntity<>(
+                    new ApiResponse(
+                            RestApiStatus.SUCCESS,
+                            "Xem chi tiết nhóm xưởng thành công",
+                            existFactory
+                    ),
+                    HttpStatus.OK);
+        }
+        return new ResponseEntity<>(
+                new ApiResponse(
+                        RestApiStatus.ERROR,
+                        "Nhóm xưởng không tồn tại",
+                        null
+                ),
+                HttpStatus.NOT_FOUND);
+    }
 
 }

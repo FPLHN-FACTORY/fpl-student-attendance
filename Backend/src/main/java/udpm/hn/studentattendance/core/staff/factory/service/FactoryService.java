@@ -20,4 +20,6 @@ public interface FactoryService {
     ResponseEntity<?> updateFactory(FactoryCreateUpdateRequest factoryCreateUpdateRequest);
 
     ResponseEntity<?> changeStatus(String factoryId);
+
+    ResponseEntity<?> detailFactory(String factoryId);
 }
