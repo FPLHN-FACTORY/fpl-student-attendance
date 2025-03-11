@@ -41,4 +41,9 @@ public class Staff_StudentFactoryRestController {
             (@Valid @RequestBody Staff_StudentFactoryCreateUpdateRequest studentFactoryCreateUpdateRequest) {
         return studentFactoryService.createOrDeleteStudentFactory(studentFactoryCreateUpdateRequest);
     }
+
+    @GetMapping("/exist-student/{id}")
+    public ResponseEntity<?> getStudentInFactory(@PathVariable String id) {
+        return studentFactoryService.getStudentFactoryExist(id);
+    }
 }

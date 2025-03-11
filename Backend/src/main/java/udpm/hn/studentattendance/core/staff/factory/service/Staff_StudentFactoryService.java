@@ -14,7 +14,7 @@ public interface Staff_StudentFactoryService {
 
     ResponseEntity<?> createOrDeleteStudentFactory(Staff_StudentFactoryCreateUpdateRequest studentFactoryCreateUpdateRequest);
 
-    ResponseEntity<?> getStudentFactoryExist(String studentId, String factoryId);
+    ResponseEntity<?> getStudentFactoryExist( String factoryId);
 
     ResponseEntity<?> getAllStudent(Staff_UserStudentRequest userStudentRequest);
 

@@ -56,8 +56,8 @@ public class Staff_FactoryRestController {
         return factoryService.updateFactory(factoryCreateUpdateRequest);
     }
 
-    @PutMapping("/status/{factoryId}")
-    public ResponseEntity<?> changeStatus(@PathVariable("factoryId") String factoryId) {
+    @PutMapping("/status/{id}")
+    public ResponseEntity<?> changeStatus(@PathVariable("id") String factoryId) {
         return factoryService.changeStatus(factoryId);
     }
 

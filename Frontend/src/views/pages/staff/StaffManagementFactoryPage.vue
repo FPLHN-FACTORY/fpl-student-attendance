@@ -345,14 +345,14 @@ const confirmChangeStatus = (record) => {
     title: 'Xác nhận đổi trạng thái',
     content: `Bạn có chắc muốn đổi trạng thái cho nhóm xưởng "${record.factoryName}"?`,
     onOk() {
-      handleChangeStatus(record.factoryId)
+      handleChangeStatus(record.id)
     },
   })
 }
 
-const handleChangeStatus = (factoryId) => {
+const handleChangeStatus = (id) => {
   requestAPI
-    .put(API_ROUTES_STAFF.FETCH_DATA_FACTORY + '/status/' + factoryId)
+    .put(API_ROUTES_STAFF.FETCH_DATA_FACTORY + '/status/' + id)
     .then((response) => {
       message.success(response.data.message || 'Đổi trạng thái thành công')
       fetchFactories()

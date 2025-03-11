@@ -13,7 +13,6 @@ public interface Staff_UserStudentResponse {
 
     String getStudentEmail();
 
-    Boolean isChecked();
+    Boolean getChecked();
 
-    Integer getRowNumber();
 }
