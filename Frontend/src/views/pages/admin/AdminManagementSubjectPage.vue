@@ -30,13 +30,15 @@
 
       <!-- Nút lọc -->
       <a-col :span="8">
-        <a-button
-          @click="fetchSubjects"
-          style="background-color: #fff7e6; color: black; border: 1px solid #ffa940"
-        >
-          <SearchOutlined />
-          Lọc
-        </a-button>
+        <a-tooltip title="Lọc">
+          <a-button
+            @click="fetchSubjects"
+            style="background-color: #fff7e6; color: black; border: 1px solid #ffa940"
+          >
+            <SearchOutlined />
+            Lọc
+          </a-button>
+        </a-tooltip>
       </a-col>
     </a-row>
   </a-card>
@@ -45,13 +47,15 @@
   <a-card title="Danh sách bộ môn" :bordered="false" class="cart">
     <!-- Nút thêm bộ môn -->
     <div style="display: flex; justify-content: flex-end; margin-bottom: 10px">
-      <a-button
-        style="background-color: #fff7e6; color: black; border: 1px solid #ffa940"
-        @click="ShowAddModal(true)"
-      >
-        <PlusOutlined />
-        Thêm
-      </a-button>
+      <a-tooltip title="Thêm bộ môn">
+        <a-button
+          style="background-color: #fff7e6; color: black; border: 1px solid #ffa940"
+          @click="ShowAddModal(true)"
+        >
+          <PlusOutlined />
+          Thêm
+        </a-button>
+      </a-tooltip>
     </div>
 
     <!-- Bảng hiển thị danh sách -->
@@ -63,7 +67,7 @@
       :pagination="pagination"
       @change="handleTableChange"
     >
-      <!-- Custom cell cho cột trạng thái -->
+      <!-- Custom cell cho cột trạng thái và chức năng -->
       <template #bodyCell="{ column, record }">
         <template v-if="column.dataIndex === 'status'">
           <a-tag :color="record.status === 1 ? 'green' : 'red'">
@@ -73,41 +77,61 @@
 
         <!-- Custom cell cho cột chức năng (actions) -->
         <template v-if="column.key === 'actions'">
-          <!-- Nút xem chi tiết bộ môn cơ sở -->
-          <a-button
-            @click="handleAddSubjectFacility(record)"
-            type="text"
-            :style="{ backgroundColor: '#FFF7E6', marginRight: '8px', border: '1px solid #ffa940' }"
-          >
-            <ClusterOutlined />
-          </a-button>
+          <!-- Nút chuyển hướng bộ môn cơ sở -->
+          <a-tooltip title="Bộ môn cơ sở">
+            <a-button
+              @click="handleAddSubjectFacility(record)"
+              type="text"
+              :style="{
+                backgroundColor: '#FFF7E6',
+                marginRight: '8px',
+                border: '1px solid #ffa940',
+              }"
+            >
+              <ClusterOutlined />
+            </a-button>
+          </a-tooltip>
 
           <!-- Nút xem chi tiết -->
-          <a-button
-            @click="handleDetailSubject(record)"
-            type="text"
-            :style="{ backgroundColor: '#FFF7E6', marginRight: '8px', border: '1px solid #ffa940' }"
-          >
-            <EyeOutlined />
-          </a-button>
+          <a-tooltip title="Xem chi tiết">
+            <a-button
+              @click="handleDetailSubject(record)"
+              type="text"
+              :style="{
+                backgroundColor: '#FFF7E6',
+                marginRight: '8px',
+                border: '1px solid #ffa940',
+              }"
+            >
+              <EyeOutlined />
+            </a-button>
+          </a-tooltip>
 
           <!-- Nút sửa -->
-          <a-button
-            @click="handleUpdateSubject(record)"
-            type="text"
-            :style="{ backgroundColor: '#FFF7E6', marginRight: '8px', border: '1px solid #ffa940' }"
-          >
-            <EditOutlined />
-          </a-button>
+          <a-tooltip title="Sửa bộ môn">
+            <a-button
+              @click="handleUpdateSubject(record)"
+              type="text"
+              :style="{
+                backgroundColor: '#FFF7E6',
+                marginRight: '8px',
+                border: '1px solid #ffa940',
+              }"
+            >
+              <EditOutlined />
+            </a-button>
+          </a-tooltip>
 
           <!-- Nút xóa -->
-          <a-button
-            @click="handleDeleteSubject(record)"
-            type="text"
-            :style="{ backgroundColor: '#FFF7E6', border: '1px solid #ffa940' }"
-          >
-            <DeleteOutlined />
-          </a-button>
+          <a-tooltip title="Xóa bộ môn">
+            <a-button
+              @click="handleDeleteSubject(record)"
+              type="text"
+              :style="{ backgroundColor: '#FFF7E6', border: '1px solid #ffa940' }"
+            >
+              <DeleteOutlined />
+            </a-button>
+          </a-tooltip>
         </template>
       </template>
     </a-table>

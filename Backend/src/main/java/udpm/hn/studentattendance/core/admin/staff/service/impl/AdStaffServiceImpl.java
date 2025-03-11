@@ -9,16 +9,19 @@ import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
 import udpm.hn.studentattendance.core.admin.staff.model.request.AdCreateUpdateStaffRequest;
 import udpm.hn.studentattendance.core.admin.staff.model.request.AdStaffRequest;
+import udpm.hn.studentattendance.core.admin.staff.repository.AdStaffAdminRepository;
 import udpm.hn.studentattendance.core.admin.staff.repository.AdStaffRepository;
 import udpm.hn.studentattendance.core.admin.staff.repository.AdStaffRoleRepository;
 import udpm.hn.studentattendance.core.admin.staff.service.AdStaffService;
 import udpm.hn.studentattendance.entities.Role;
+import udpm.hn.studentattendance.entities.UserAdmin;
 import udpm.hn.studentattendance.entities.UserStaff;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
 import udpm.hn.studentattendance.infrastructure.common.ApiResponse;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.RestApiStatus;
+import udpm.hn.studentattendance.utils.CodeGeneratorUtils;
 
 import java.util.List;
 import java.util.Optional;
@@ -30,6 +33,9 @@ public class AdStaffServiceImpl implements AdStaffService {
     private final AdStaffRepository adStaffRepository;
 
     private final AdStaffRoleRepository adStaffRoleRepository;
+
+    private final AdStaffAdminRepository adStaffAdminRepository;
+
 
     @Override
     public ResponseEntity<?> getAllStaffByFilter(AdStaffRequest adStaffRequest) {
@@ -67,6 +73,15 @@ public class AdStaffServiceImpl implements AdStaffService {
         staff.setEmailFpt(adCreateUpdateStaffRequest.getEmailFpt().trim());
         staff.setStatus(EntityStatus.ACTIVE);
         adStaffRepository.save(staff);
+
+        UserAdmin staffAdmin = new UserAdmin();
+        staffAdmin.setId(CodeGeneratorUtils.generateRandom());
+        staffAdmin.setCode(adCreateUpdateStaffRequest.getStaffCode().trim());
+        staffAdmin.setName(adCreateUpdateStaffRequest.getName().trim());
+        staffAdmin.setEmail(adCreateUpdateStaffRequest.getEmailFe().trim());
+        staffAdmin.setStatus(EntityStatus.INACTIVE);
+        adStaffAdminRepository.save(staffAdmin);
+
         return new ResponseEntity<>(
                 new ApiResponse(
                         RestApiStatus.SUCCESS,
@@ -122,7 +137,7 @@ public class AdStaffServiceImpl implements AdStaffService {
         List<Role> staffRoles = adStaffRoleRepository.findAllByUserStaffId(staffId);
         staffRoles.forEach(staffRole -> staffRole.setStatus(staff.getStatus() == EntityStatus.ACTIVE ? EntityStatus.INACTIVE : EntityStatus.ACTIVE));
         adStaffRoleRepository.saveAll(staffRoles);
-        
+
         adStaffRepository.save(staff);
         return new ResponseEntity<>(
                 new ApiResponse(
@@ -136,7 +151,7 @@ public class AdStaffServiceImpl implements AdStaffService {
     @Override
     public ResponseEntity<?> getStaffById(String staffId) {
         Optional<UserStaff> existStaff = adStaffRepository.findById(staffId);
-        if (existStaff.isPresent()){
+        if (existStaff.isPresent()) {
             return new ResponseEntity<>(
                     new ApiResponse(
                             RestApiStatus.SUCCESS,

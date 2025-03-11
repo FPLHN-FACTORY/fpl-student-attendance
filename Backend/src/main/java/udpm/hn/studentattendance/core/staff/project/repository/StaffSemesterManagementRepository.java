@@ -15,9 +15,9 @@ public interface StaffSemesterManagementRepository extends ProjectRepository {
                 SELECT 
                     ROW_NUMBER() OVER (ORDER BY s.created_at DESC) AS indexs,
                     s.id AS id,
-                    s.name AS name
+                    s.name AS name,
+                    s.code AS code
                 FROM semester s
-                LEFT JOIN facility f ON s.id_facility = f.id
                 WHERE s.status = 1
                 ORDER BY s.created_at DESC
             """, nativeQuery = true)

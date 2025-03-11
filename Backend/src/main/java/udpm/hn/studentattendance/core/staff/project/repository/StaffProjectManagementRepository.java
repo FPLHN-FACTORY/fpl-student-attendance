@@ -21,7 +21,7 @@ public interface StaffProjectManagementRepository extends ProjectRepository {
                         p.name AS name,
                         lp.name AS nameLevelProject,
                         s.name AS nameSubject,
-                        sem.name AS nameSemester,
+                        sem.code AS nameSemester,
                         p.description AS description,
                         p.status AS status
                     FROM project p
