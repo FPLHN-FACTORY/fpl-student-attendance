@@ -7,7 +7,7 @@ import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 
 @Getter
 @Setter
-public class FactoryRequest extends PageableRequest {
+public class Staff_FactoryRequest extends PageableRequest {
     private String idProject;
     private String idStaff;
     private String idFacility;

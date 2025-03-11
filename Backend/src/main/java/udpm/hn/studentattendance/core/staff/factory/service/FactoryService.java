@@ -1,11 +1,11 @@
 package udpm.hn.studentattendance.core.staff.factory.service;
 
 import org.springframework.http.ResponseEntity;
-import udpm.hn.studentattendance.core.staff.factory.model.request.FactoryCreateUpdateRequest;
-import udpm.hn.studentattendance.core.staff.factory.model.request.FactoryRequest;
+import udpm.hn.studentattendance.core.staff.factory.model.request.Staff_FactoryCreateUpdateRequest;
+import udpm.hn.studentattendance.core.staff.factory.model.request.Staff_FactoryRequest;
 
 public interface FactoryService {
-    ResponseEntity<?> getAllFactory(FactoryRequest staffFactoryRequest);
+    ResponseEntity<?> getAllFactory(Staff_FactoryRequest staffFactoryRequest);
 
     ResponseEntity<?> getAllProject();
 
@@ -15,9 +15,9 @@ public interface FactoryService {
 
     ResponseEntity<?> getDetailFactory(String factoryId);
 
-    ResponseEntity<?> createFactory(FactoryCreateUpdateRequest factoryCreateUpdateRequest);
+    ResponseEntity<?> createFactory(Staff_FactoryCreateUpdateRequest factoryCreateUpdateRequest);
 
-    ResponseEntity<?> updateFactory(FactoryCreateUpdateRequest factoryCreateUpdateRequest);
+    ResponseEntity<?> updateFactory(Staff_FactoryCreateUpdateRequest factoryCreateUpdateRequest);
 
     ResponseEntity<?> changeStatus(String factoryId);
 

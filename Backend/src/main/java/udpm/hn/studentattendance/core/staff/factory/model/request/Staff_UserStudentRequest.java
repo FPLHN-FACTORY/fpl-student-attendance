@@ -6,7 +6,7 @@ import udpm.hn.studentattendance.infrastructure.common.PageableRequest;
 
 @Getter
 @Setter
-public class UserStudentRequest extends PageableRequest {
+public class Staff_UserStudentRequest extends PageableRequest {
 
     private String searchQuery;
 }

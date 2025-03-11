@@ -4,7 +4,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
-import udpm.hn.studentattendance.core.staff.factory.model.request.UserStudentRequest;
+import udpm.hn.studentattendance.core.staff.factory.model.request.Staff_UserStudentRequest;
 import udpm.hn.studentattendance.entities.UserStudent;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.repositories.UserStudentRepository;
@@ -47,6 +47,6 @@ public interface UserStudentFactoryExtendRepository extends UserStudentRepositor
                             )
                     """
     )
-    Page<UserStudent> getAllUserStudent(Pageable pageable, String facilityId, EntityStatus userStatus, UserStudentRequest userStudentRequest);
+    Page<UserStudent> getAllUserStudent(Pageable pageable, String facilityId, EntityStatus userStatus, Staff_UserStudentRequest userStudentRequest);
 
 }

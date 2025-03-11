@@ -4,8 +4,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
-import udpm.hn.studentattendance.core.staff.factory.model.request.StudentFactoryRequest;
-import udpm.hn.studentattendance.core.staff.factory.model.response.StudentFactoryResponse;
+import udpm.hn.studentattendance.core.staff.factory.model.request.Staff_StudentFactoryRequest;
+import udpm.hn.studentattendance.core.staff.factory.model.response.Staff_StudentFactoryResponse;
 import udpm.hn.studentattendance.entities.UserStudentFactory;
 import udpm.hn.studentattendance.repositories.UserStudentProjectRepository;
 
@@ -62,8 +62,9 @@ public interface StudentFactoryRepository extends UserStudentProjectRepository {
                             """,
             nativeQuery = true
     )
-    Page<StudentFactoryResponse> getUserStudentInFactory(Pageable pageable, String factoryId, StudentFactoryRequest studentFactoryRequest);
+    Page<Staff_StudentFactoryResponse> getUserStudentInFactory(Pageable pageable, String factoryId, Staff_StudentFactoryRequest studentFactoryRequest);
 
     Optional<UserStudentFactory> getUserStudentFactoriesByUserStudentIdAndFactoryId(String userStudentId, String factoryId);
+
 
 }

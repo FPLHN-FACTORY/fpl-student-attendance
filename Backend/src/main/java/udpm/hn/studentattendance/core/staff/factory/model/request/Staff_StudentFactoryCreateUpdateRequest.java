@@ -5,7 +5,7 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class StudentFactoryCreateUpdateRequest {
+public class Staff_StudentFactoryCreateUpdateRequest {
 
     private String studentId;
 

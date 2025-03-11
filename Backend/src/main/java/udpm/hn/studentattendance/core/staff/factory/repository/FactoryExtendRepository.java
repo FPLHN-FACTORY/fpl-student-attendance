@@ -4,10 +4,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
-import udpm.hn.studentattendance.core.staff.factory.model.request.FactoryRequest;
-import udpm.hn.studentattendance.core.staff.factory.model.response.DetailFactoryResponse;
-import udpm.hn.studentattendance.core.staff.factory.model.response.FactoryResponse;
-import udpm.hn.studentattendance.entities.Factory;
+import udpm.hn.studentattendance.core.staff.factory.model.request.Staff_FactoryRequest;
+import udpm.hn.studentattendance.core.staff.factory.model.response.Staff_DetailFactoryResponse;
+import udpm.hn.studentattendance.core.staff.factory.model.response.Staff_FactoryResponse;
 import udpm.hn.studentattendance.repositories.FactoryRepository;
 
 import java.util.Optional;
@@ -73,7 +72,7 @@ public interface FactoryExtendRepository extends FactoryRepository {
         ))
         AND (:#{#staffFactoryRequest.status} IS NULL OR ft.status = :#{#staffFactoryRequest.status})
 """, nativeQuery = true)
-    Page<FactoryResponse> getAllFactory(Pageable pageable, String facilityId, FactoryRequest staffFactoryRequest);
+    Page<Staff_FactoryResponse> getAllFactory(Pageable pageable, String facilityId, Staff_FactoryRequest staffFactoryRequest);
 
     @Query(
             value = """
@@ -96,6 +95,19 @@ public interface FactoryExtendRepository extends FactoryRepository {
                     f.id = :factoryId
                      """
     )
-    Optional<DetailFactoryResponse> getFactoryById(String factoryId);
+    Optional<Staff_DetailFactoryResponse> getFactoryById(String factoryId);
 
+    @Query
+            (value =
+                    """
+                                        SELECT 
+                                        CASE WHEN COUNT(*) > 0 THEN 'TRUE' ELSE 'FALSE' END 
+                                        FROM 
+                                        factory ft
+                                        WHERE
+                                        ft.name = :name
+                                        AND 
+                                        ft.id_project = :idProject
+                            """, nativeQuery = true)
+    boolean isExistNameAndProject(String name, String idProject);
 }

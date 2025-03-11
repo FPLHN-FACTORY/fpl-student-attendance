@@ -7,7 +7,7 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class FactoryCreateUpdateRequest {
+public class Staff_FactoryCreateUpdateRequest {
     private String id;
     @NotBlank(message = "Tên không được để trống")
     @Size(max = 255, message = "Tên không được vượt quá 255 ký tự")
