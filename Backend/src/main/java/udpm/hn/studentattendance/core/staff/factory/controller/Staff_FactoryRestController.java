@@ -6,7 +6,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import udpm.hn.studentattendance.core.staff.factory.model.request.Staff_FactoryCreateUpdateRequest;
 import udpm.hn.studentattendance.core.staff.factory.model.request.Staff_FactoryRequest;
-import udpm.hn.studentattendance.core.staff.factory.service.FactoryService;
+import udpm.hn.studentattendance.core.staff.factory.service.Staff_FactoryService;
 import udpm.hn.studentattendance.infrastructure.constants.router.RouteStaffConstant;
 
 @RestController
@@ -14,7 +14,7 @@ import udpm.hn.studentattendance.infrastructure.constants.router.RouteStaffConst
 @RequestMapping(RouteStaffConstant.URL_API_FACTORY_MANAGEMENT)
 public class Staff_FactoryRestController {
 
-    private final FactoryService factoryService;
+    private final Staff_FactoryService factoryService;
 
     @GetMapping
     public ResponseEntity<?> getAllFactory(Staff_FactoryRequest staffFactoryRequest) {
