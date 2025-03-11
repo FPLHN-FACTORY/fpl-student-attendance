@@ -35,12 +35,14 @@
   <a-card title="Danh sách chức vụ" :bordered="false" class="cart">
     <!-- Nút mở modal thêm chức vụ -->
     <div style="display: flex; justify-content: flex-end; margin-bottom: 10px">
-      <a-button
-        style="background-color: #fff7e6; color: black; border: 1px solid #ffa940"
-        @click="openRoleModal"
-      >
-        Thêm chức vụ
-      </a-button>
+      <a-tooltip title="Thêm chức vụ cho nhân viên">
+        <a-button
+          style="background-color: #fff7e6; color: black; border: 1px solid #ffa940"
+          @click="openRoleModal"
+        >
+          Thêm chức vụ
+        </a-button>
+      </a-tooltip>
     </div>
     <!-- Bảng hiển thị chức vụ -->
     <a-table :dataSource="roles" :columns="columns" rowKey="roleId" bordered>
@@ -63,13 +65,15 @@
         </template>
         <!-- Cột hành động (xóa) -->
         <template v-else-if="column.key === 'actions'">
-          <a-button
-            type="text"
-            style="background-color: #fff7e6; border: 1px solid #ffa940"
-            @click="handleDeleteRole(record)"
-          >
-            <DeleteOutlined />
-          </a-button>
+          <a-tooltip title="Xóa chức vụ">
+            <a-button
+              type="text"
+              style="background-color: #fff7e6; border: 1px solid #ffa940"
+              @click="handleDeleteRole(record)"
+            >
+              <DeleteOutlined />
+            </a-button>
+          </a-tooltip>
         </template>
         <!-- Mặc định -->
         <template v-else>
@@ -103,26 +107,30 @@
         </template>
         <!-- Combobox chọn cơ sở -->
         <template v-else-if="column.dataIndex === 'facility'">
-          <a-select
-            style="width: 100%"
-            v-model:value="selectedFacilities[record.code]"
-            @change="(value) => updateSelectedFacility(record.code, value)"
-          >
-            <a-select-option
-              v-for="facility in facilitiesList"
-              :key="facility.facilityId"
-              :value="facility.facilityId"
+          <a-tooltip title="Chọn cơ sở tương ứng">
+            <a-select
+              style="width: 100%"
+              v-model:value="selectedFacilities[record.code]"
+              @change="(value) => updateSelectedFacility(record.code, value)"
             >
-              {{ facility.facilityName }}
-            </a-select-option>
-          </a-select>
+              <a-select-option
+                v-for="facility in facilitiesList"
+                :key="facility.facilityId"
+                :value="facility.facilityId"
+              >
+                {{ facility.facilityName }}
+              </a-select-option>
+            </a-select>
+          </a-tooltip>
         </template>
         <!-- Checkbox thay cho nút -->
         <template v-else-if="column.key === 'select'">
-          <a-checkbox
-            :checked="roleChecked[record.code] || false"
-            @change="(e) => handleRoleCheckboxChange(record, e.target.checked)"
-          />
+          <a-tooltip title="Chọn để cập nhật chức vụ">
+            <a-checkbox
+              :checked="roleChecked[record.code] || false"
+              @change="(e) => handleRoleCheckboxChange(record, e.target.checked)"
+            />
+          </a-tooltip>
         </template>
       </template>
     </a-table>
@@ -217,9 +225,10 @@ const staffId = route.query.staffId || route.params.staffId
 
 const roleIdMapping = {
   STAFF: 1,
-  ADMIN: 2,
+  ADMIN: 0,
   TEACHER: 3,
 }
+
 function fetchRoles() {
   requestAPI
     .get(`${API_ROUTES_ADMIN.FETCH_DATA_STAFF_ROLE}/${staffId}`)
@@ -266,7 +275,6 @@ function fetchRoleChecked() {
     })
 }
 
-// API lấy chi tiết nhân viên
 function fetchStaffDetail() {
   requestAPI
     .get(`${API_ROUTES_ADMIN.FETCH_DATA_STAFF}/${staffId}`)
@@ -324,6 +332,7 @@ function handleRoleCheckboxChange(role, isChecked) {
     idStaff: staffDetail.id,
     idRole: roleIdMapping[role.code],
     facilityId: facilityId,
+    staffCode: staffDetail.staffCode,
   }
 
   requestAPI

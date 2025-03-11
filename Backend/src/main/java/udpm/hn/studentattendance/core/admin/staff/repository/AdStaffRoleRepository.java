@@ -24,6 +24,7 @@ public interface AdStaffRoleRepository extends RoleRepository {
                                 r.id as roleId,
                                 r.code as roleCode,
                                 f.name as facilityName
+                                
                             FROM UserStaff s
                             LEFT JOIN Role r ON s.id = r.userStaff.id
                             LEFT JOIN Facility f ON r.facility.id = f.id

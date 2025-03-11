@@ -6,4 +6,6 @@ public interface SemesterResponse {
 
     String getName();
 
+    String getCode();
+
 }
