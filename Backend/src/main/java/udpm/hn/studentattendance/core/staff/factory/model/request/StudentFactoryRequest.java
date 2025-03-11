@@ -2,11 +2,12 @@ package udpm.hn.studentattendance.core.staff.factory.model.request;
 
 import lombok.Getter;
 import lombok.Setter;
+import udpm.hn.studentattendance.infrastructure.common.PageableRequest;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 
 @Getter
 @Setter
-public class StudentFactoryRequest {
+public class StudentFactoryRequest extends PageableRequest {
     private String studentId;
 
     private String factoryId;
@@ -15,5 +16,5 @@ public class StudentFactoryRequest {
     
     private String searchQuery;
 
-    private EntityStatus status;
+    private Integer status;
 }

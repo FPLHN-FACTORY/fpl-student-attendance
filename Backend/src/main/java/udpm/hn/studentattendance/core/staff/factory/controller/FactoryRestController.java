@@ -21,9 +21,14 @@ public class FactoryRestController {
         return factoryService.getAllFactory(staffFactoryRequest);
     }
 
-    @GetMapping("/{factoryId}")
+    @GetMapping("/detail/{factoryId}")
     public ResponseEntity<?> getDetailFactory(@PathVariable("factoryId") String factoryId) {
         return factoryService.getDetailFactory(factoryId);
+    }
+
+    @GetMapping("/{factoryId}")
+    public ResponseEntity<?> infoDetailFactory(@PathVariable("factoryId") String factoryId) {
+        return factoryService.detailFactory(factoryId);
     }
 
     @GetMapping("/project")

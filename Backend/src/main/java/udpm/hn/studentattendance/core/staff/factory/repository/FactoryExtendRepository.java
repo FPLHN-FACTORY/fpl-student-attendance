@@ -17,8 +17,8 @@ public interface FactoryExtendRepository extends FactoryRepository {
     @Query(value = """
     SELECT 
         ROW_NUMBER() OVER (ORDER BY ft.created_at DESC) as rowNumber,
-        ft.id AS factoryId,
-        ft.name AS factoryName,
+        ft.id AS id,
+        ft.name AS name,
         ft.status AS factoryStatus,
         p.name AS projectName,
         sub.code AS subjectCode,
@@ -78,7 +78,7 @@ public interface FactoryExtendRepository extends FactoryRepository {
     @Query(
             value = """
                     SELECT 
-                    f.id as factoryId,
+                    f.id as id,
                     f.name as factoryName,
                     f.description as factoryDescription,
                     p.name as nameProject,

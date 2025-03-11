@@ -235,7 +235,7 @@ const fetchStaffs = () => {
     .catch((error) => {
       message.error(
         (error.response && error.response.data && error.response.data.message) ||
-          'Lỗi khi lấy danh sách nhân viên',
+          'Lỗi khi lấy danh sách nhân viên'
       )
     })
 }
@@ -251,7 +251,7 @@ const fetchFacilitiesList = () => {
     .catch((error) => {
       message.error(
         (error.response && error.response.data && error.response.data.message) ||
-          'Lỗi khi lấy danh sách cơ sở',
+          'Lỗi khi lấy danh sách cơ sở'
       )
     })
 }
@@ -279,7 +279,7 @@ const handleAddStaff = () => {
     .catch((error) => {
       message.error(
         (error.response && error.response.data && error.response.data.message) ||
-          'Lỗi khi thêm nhân viên',
+          'Lỗi khi thêm nhân viên'
       )
     })
 }
@@ -300,7 +300,7 @@ const handleUpdateStaff = (record) => {
     .catch((error) => {
       message.error(
         (error.response && error.response.data && error.response.data.message) ||
-          'Lỗi khi lấy chi tiết nhân viên',
+          'Lỗi khi lấy chi tiết nhân viên'
       )
     })
 }
@@ -326,7 +326,7 @@ const updateStaff = () => {
     .catch((error) => {
       message.error(
         (error.response && error.response.data && error.response.data.message) ||
-          'Lỗi khi cập nhật nhân viên',
+          'Lỗi khi cập nhật nhân viên'
       )
     })
 }
@@ -354,7 +354,7 @@ const handleChangeStatusStaff = (record) => {
         .catch((error) => {
           message.error(
             (error.response && error.response.data && error.response.data.message) ||
-              'Lỗi khi đổi trạng thái nhân viên',
+              'Lỗi khi đổi trạng thái nhân viên'
           )
         })
     },

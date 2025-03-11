@@ -2,8 +2,8 @@ package udpm.hn.studentattendance.core.staff.factory.model.response;
 
 public interface FactoryResponse {
     String getRowNumber();
-    String getFactoryId();
-    String getFactoryName();
+    String getId();
+    String getName();
     Integer getFactoryStatus();
     String getProjectName();
     String getSubjectCode();
