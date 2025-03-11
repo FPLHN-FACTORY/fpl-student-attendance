@@ -12,7 +12,7 @@ import udpm.hn.studentattendance.repositories.FacilityRepository;
 import java.util.Optional;
 
 @Repository
-public interface Admin_FacilityRepository extends FacilityRepository {
+public interface Admin_FacilityExtendRepository extends FacilityRepository {
     @Query(
             value = """
             SELECT 

@@ -11,6 +11,7 @@ import org.springframework.validation.annotation.Validated;
 import udpm.hn.studentattendance.core.staff.factory.model.request.Staff_StudentFactoryCreateUpdateRequest;
 import udpm.hn.studentattendance.core.staff.factory.model.request.Staff_StudentFactoryRequest;
 import udpm.hn.studentattendance.core.staff.factory.model.request.Staff_UserStudentRequest;
+import udpm.hn.studentattendance.core.staff.factory.model.response.Staff_UserStudentResponse;
 import udpm.hn.studentattendance.core.staff.factory.repository.Staff_StudentFactoryRepository;
 import udpm.hn.studentattendance.core.staff.factory.repository.Staff_UserStudentFactoryExtendRepository;
 import udpm.hn.studentattendance.core.staff.factory.service.Staff_StudentFactoryService;
@@ -27,6 +28,7 @@ import udpm.hn.studentattendance.repositories.FactoryRepository;
 import udpm.hn.studentattendance.repositories.UserStudentRepository;
 import udpm.hn.studentattendance.utils.CodeGeneratorUtils;
 
+import java.util.List;
 import java.util.Optional;
 
 
@@ -140,9 +142,16 @@ public class Staff_StudentFactoryServiceImpl implements Staff_StudentFactoryServ
     }
 
     @Override
-    public ResponseEntity<?> getStudentFactoryExist(String studentId, String factoryId) {
-
-        return null;
+    public ResponseEntity<?> getStudentFactoryExist( String factoryId) {
+        List<Staff_UserStudentResponse> listStudentInFactory = userStudentFactoryExtendRepository
+                .getAllUserStudentExistFactory(sessionHelper.getFacilityId(), factoryId);
+        return new ResponseEntity<>(
+                new ApiResponse(
+                        RestApiStatus.SUCCESS,
+                        "Lấy danh sách sinh viên đã tham gia xưởng thành công",
+                        listStudentInFactory
+                ),
+                HttpStatus.OK);
     }
 
     @Override

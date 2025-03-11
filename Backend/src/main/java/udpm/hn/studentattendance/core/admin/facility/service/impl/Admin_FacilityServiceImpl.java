@@ -9,7 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
 import udpm.hn.studentattendance.core.admin.facility.model.request.Admin_CreateUpdateFacilityRequest;
 import udpm.hn.studentattendance.core.admin.facility.model.request.Admin_FacilitySearchRequest;
-import udpm.hn.studentattendance.core.admin.facility.repository.Admin_FacilityRepository;
+import udpm.hn.studentattendance.core.admin.facility.repository.Admin_FacilityExtendRepository;
 import udpm.hn.studentattendance.core.admin.facility.service.Admin_FacilityService;
 import udpm.hn.studentattendance.entities.Facility;
 import udpm.hn.studentattendance.helpers.GenerateNameHelper;
@@ -26,7 +26,7 @@ import java.util.Optional;
 @RequiredArgsConstructor
 @Validated
 public class Admin_FacilityServiceImpl implements Admin_FacilityService {
-    private final Admin_FacilityRepository facilityRepository;
+    private final Admin_FacilityExtendRepository facilityRepository;
 
     @Override
     public ResponseEntity<?> getAllFacility(Admin_FacilitySearchRequest request) {

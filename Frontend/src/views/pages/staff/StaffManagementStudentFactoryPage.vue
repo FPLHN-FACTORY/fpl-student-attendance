@@ -32,7 +32,6 @@
     <!-- Danh sách sinh viên trong nhóm xưởng -->
     <a-card title="Danh sách sinh viên" :bordered="false" class="cart">
       <div style="display: flex; justify-content: flex-end; margin-bottom: 10px">
-        <!-- Nút "Thêm học sinh" mở modal -->
         <a-tooltip title="Thêm học sinh vào nhóm xưởng">
           <a-button
             style="background-color: #fff7e6; color: black; border: 1px solid #ffa940"
@@ -52,7 +51,7 @@
       >
         <template #bodyCell="{ column, record, index }">
           <template v-if="column.dataIndex">
-            <!-- Cột STT: tính từ index + 1 -->
+            <!-- STT -->
             <template v-if="column.dataIndex === 'rowNumber'">
               {{ index + 1 }}
             </template>
@@ -138,7 +137,11 @@
           <!-- Cột checkbox -->
           <template v-else-if="column.key === 'select'">
             <a-checkbox
-              :checked="selectedStudents[record.id] || false"
+              :checked="
+                selectedStudents[record.id] !== undefined
+                  ? selectedStudents[record.id]
+                  : record.checked
+              "
               @change="(e) => handleStudentCheckboxChange(record, e.target.checked)"
             />
           </template>
@@ -155,10 +158,10 @@ import requestAPI from '@/services/requestApiService'
 import { API_ROUTES_STAFF } from '@/constants/staffConstant'
 import { PlusOutlined, DeleteOutlined, SyncOutlined } from '@ant-design/icons-vue'
 import { useRoute } from 'vue-router'
-import { ROUTE_NAMES } from '@/router/staffRoute'
 
 const route = useRoute()
 const factoryId = route.query.factoryId
+
 if (!factoryId) {
   message.error('Không tìm thấy factoryId')
 }
@@ -190,7 +193,11 @@ const columns = ref([
 const fetchStudentFactories = () => {
   requestAPI
     .get(API_ROUTES_STAFF.FETCH_DATA_STUDENT_FACTORY + '/' + factoryId, {
-      params: filter,
+      params: {
+        ...filter,
+        factoryId,
+        'userStudentRequest.searchQuery': filter.searchQuery,
+      },
     })
     .then((response) => {
       const result = response.data.data
@@ -205,58 +212,29 @@ const fetchStudentFactories = () => {
     })
 }
 
-const handleTableChange = (paginationData) => {
-  filter.page = paginationData.current
-  fetchStudentFactories()
-}
+// -------------------- Lấy danh sách sinh viên đã có trong nhóm (để tích checkbox) --------------------
+const existingStudents = ref([])
 
-const confirmDeleteStudent = (record) => {
-  Modal.confirm({
-    title: 'Xác nhận xóa',
-    content: `Bạn có chắc muốn xóa sinh viên ${record.studentName} khỏi nhóm xưởng?`,
-    onOk() {
-      deleteStudentFactory(record.studentFactoryId)
-    },
-  })
-}
-
-const deleteStudentFactory = (studentFactoryId) => {
+const fetchExistingStudents = () => {
+  // Gọi API getStudentFactoryExist: GET /exist-student/{factoryId}
   requestAPI
-    .delete(API_ROUTES_STAFF.DELETE_STUDENT_FACTORY + '/' + studentFactoryId)
+    .get(API_ROUTES_STAFF.FETCH_DATA_STUDENT_FACTORY + '/exist-student/' + factoryId)
     .then((response) => {
-      message.success(response.data.message || 'Xóa sinh viên thành công')
-      fetchStudentFactories()
+      // response.data.data là danh sách sinh viên đã có trong nhóm, chứa studentId
+      existingStudents.value = response.data.data || []
+      // Cập nhật lại danh sách allStudents nếu đã fetch
+      if (allStudents.value.length) {
+        updateAllStudentsCheckStatus()
+      }
     })
     .catch((error) => {
-      message.error(error.response?.data?.message || 'Lỗi khi xóa sinh viên khỏi nhóm xưởng')
+      message.error(
+        error.response?.data?.message || 'Lỗi khi lấy danh sách sinh viên đã có trong nhóm xưởng'
+      )
     })
 }
 
-const confirmChangeStatus = (record) => {
-  Modal.confirm({
-    title: 'Xác nhận đổi trạng thái',
-    content: `Bạn có chắc muốn đổi trạng thái cho sinh viên ${record.studentName}?`,
-    onOk() {
-      changeStatusStudentFactory(record.studentFactoryId)
-    },
-  })
-}
-
-const changeStatusStudentFactory = (studentFactoryId) => {
-  requestAPI
-    .put(API_ROUTES_STAFF.CHANGE_STATUS_STUDENT_FACTORY + '/' + studentFactoryId)
-    .then((response) => {
-      message.success(response.data.message || 'Đổi trạng thái thành công')
-      fetchStudentFactories()
-    })
-    .catch((error) => {
-      message.error(error.response?.data?.message || 'Lỗi khi đổi trạng thái sinh viên')
-    })
-}
-
-// -------------------- Modal "Thêm học sinh vào nhóm xưởng" --------------------
-const isAddStudentModalVisible = ref(false)
-
+// -------------------- Danh sách tất cả sinh viên (modal thêm học sinh) --------------------
 const studentFilter = reactive({
   searchQuery: '',
   page: 1,
@@ -278,21 +256,37 @@ const studentColumns = ref([
 ])
 const selectedStudents = reactive({})
 
+// Hàm cập nhật lại thuộc tính checked dựa trên danh sách sinh viên đã có trong nhóm
+const updateAllStudentsCheckStatus = () => {
+  const existIds = existingStudents.value.map((item) => item.studentId)
+  allStudents.value = allStudents.value.map((item) => ({
+    ...item,
+    // So sánh dựa trên item.id vì API getAllUserStudent trả về field id
+    checked: existIds.includes(item.id),
+  }))
+}
+
 const fetchAllStudents = () => {
-  const facilityId = route.query.facilityId || 'default-facility-id'
   requestAPI
     .get(API_ROUTES_STAFF.FETCH_DATA_STUDENT_FACTORY + '/students', {
       params: {
         ...studentFilter,
-        facilityId,
-        userStatus: 'ACTIVE',
+        factoryId,
+        'userStudentRequest.searchQuery': studentFilter.searchQuery,
       },
     })
     .then((response) => {
       const result = response.data.data
-      allStudents.value = result.data
+      // Map dữ liệu ban đầu
+      allStudents.value = result.data.map((item) => ({
+        ...item,
+        // Ban đầu checked là false, sẽ cập nhật sau
+        checked: false,
+      }))
       studentPagination.total = result.totalPages * studentFilter.pageSize
       studentPagination.current = studentFilter.page
+      // Sau khi fetch allStudents, cập nhật trạng thái checked dựa trên existingStudents
+      updateAllStudentsCheckStatus()
     })
     .catch((error) => {
       message.error(error.response?.data?.message || 'Lỗi khi lấy danh sách sinh viên')
@@ -316,6 +310,8 @@ const handleStudentCheckboxChange = (student, checked) => {
       .then((response) => {
         message.success(response.data.message || 'Thêm sinh viên vào nhóm xưởng thành công')
         fetchStudentFactories() // Reload danh sách sinh viên trong nhóm
+        // Cập nhật lại danh sách sinh viên đã có trong nhóm để tích checkbox
+        fetchExistingStudents()
       })
       .catch((error) => {
         message.error(error.response?.data?.message || 'Lỗi khi thêm sinh viên vào nhóm xưởng')
@@ -338,8 +334,62 @@ const resetStudentModal = () => {
   }
 }
 
+const handleTableChange = (paginationData) => {
+  filter.page = paginationData.current
+  fetchStudentFactories()
+}
+
+const confirmDeleteStudent = (record) => {
+  Modal.confirm({
+    title: 'Xác nhận xóa',
+    content: `Bạn có chắc muốn xóa sinh viên ${record.studentName} khỏi nhóm xưởng?`,
+    onOk() {
+      deleteStudentFactory(record.studentFactoryId)
+    },
+  })
+}
+
+const deleteStudentFactory = (studentFactoryId) => {
+  requestAPI
+    .delete(API_ROUTES_STAFF.FETCH_DATA_STUDENT_FACTORY + '/' + studentFactoryId)
+    .then((response) => {
+      message.success(response.data.message || 'Xóa sinh viên thành công')
+      fetchStudentFactories()
+      fetchExistingStudents() // Cập nhật lại danh sách sinh viên đã có
+    })
+    .catch((error) => {
+      message.error(error.response?.data?.message || 'Lỗi khi xóa sinh viên khỏi nhóm xưởng')
+    })
+}
+
+const confirmChangeStatus = (record) => {
+  Modal.confirm({
+    title: 'Xác nhận đổi trạng thái',
+    content: `Bạn có chắc muốn đổi trạng thái cho sinh viên ${record.studentName}?`,
+    onOk() {
+      changeStatusStudentFactory(record.studentFactoryId)
+    },
+  })
+}
+
+const changeStatusStudentFactory = (studentFactoryId) => {
+  requestAPI
+    .put(API_ROUTES_STAFF.FETCH_DATA_STUDENT_FACTORY + '/' + studentFactoryId)
+    .then((response) => {
+      message.success(response.data.message || 'Đổi trạng thái thành công')
+      fetchStudentFactories()
+      fetchExistingStudents() // Cập nhật lại checkbox nếu cần
+    })
+    .catch((error) => {
+      message.error(error.response?.data?.message || 'Lỗi khi đổi trạng thái sinh viên')
+    })
+}
+
+const isAddStudentModalVisible = ref(false)
+
 onMounted(() => {
   fetchStudentFactories()
+  fetchExistingStudents()
   fetchAllStudents()
 })
 </script>
@@ -351,8 +401,6 @@ onMounted(() => {
 .filter-container {
   margin-bottom: 10px;
 }
-
-/* Các nút hành động có cùng style với module quản lý nhân viên */
 .action-button {
   background-color: #fff7e6;
   color: black;
