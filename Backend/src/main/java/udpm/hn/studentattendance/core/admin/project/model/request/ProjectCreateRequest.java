@@ -21,6 +21,8 @@ public class ProjectCreateRequest {
 
     private String semesterId;
 
-    private String subjectFacilityId;
+    private String subjectId;
+
+    private String facilityId;
 
 }
