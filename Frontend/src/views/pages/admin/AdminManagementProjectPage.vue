@@ -190,12 +190,21 @@
 
       <a-form-item label="Môn học" required>
         <a-select
-          v-model:value="newProject.subjectFacilityId"
+          v-model:value="newProject.subjectId"
           placeholder="Chọn môn học"
           allowClear
+          @change="onSubjectChange"
         >
           <a-select-option v-for="subject in subjects" :key="subject.id" :value="subject.id">
             {{ subject.name }}
+          </a-select-option>
+        </a-select>
+      </a-form-item>
+
+      <a-form-item label="Cơ sở" required>
+        <a-select v-model:value="newProject.facilityId" placeholder="Chọn cơ sở" allowClear>
+          <a-select-option v-for="f in facilities" :key="f.id" :value="f.id">
+            {{ f.name }}
           </a-select-option>
         </a-select>
       </a-form-item>
@@ -309,6 +318,8 @@ export default {
       semesters: [],
       //Danh sách môn học cơ sở
       subjects: [],
+      //
+      facilities: [],
       //Trạng thái modal
       modalAdd: false,
       modalDetail: false,
@@ -319,7 +330,8 @@ export default {
         description: '',
         levelProjectId: null,
         semesterId: null,
-        subjectFacilityId: null,
+        subjectId: null,
+        facilityId: null,
       },
       //Dữ liệu dự án để xem và sửa
       detailProject: {},
@@ -409,13 +421,33 @@ export default {
     //Hiển thị dữ liệu combobox
     fetchSubjects() {
       requestAPI
-        .get(`${API_ROUTES_ADMIN.FETCH_DATA_PROJECT}/subject-facility-combobox`)
+        .get(`${API_ROUTES_ADMIN.FETCH_DATA_PROJECT}/subject-combobox-add`)
         .then((response) => {
           this.subjects = response.data
         })
         .catch(() => {
           message.error('Lỗi khi lấy dữ liệu combobox môn học')
         })
+    },
+
+    fetchFacilities(subjectId) {
+      requestAPI
+        .get(`${API_ROUTES_ADMIN.FETCH_DATA_PROJECT}/facility-combobox/${subjectId}`)
+        .then((response) => {
+          this.facilities = response.data
+        })
+        .catch(() => {
+          message.error('Lỗi khi lấy dữ liệu combobox cơ sở')
+        })
+    },
+
+    onSubjectChange() {
+      // Gọi hàm fetchFacilities khi subjectId thay đổi
+      if (this.newProject.subjectId) {
+        this.fetchFacilities(this.newProject.subjectId)
+      } else {
+        this.facilities = [] // Reset facilities if no subject is selected
+      }
     },
 
     //Phân trang
@@ -444,7 +476,7 @@ export default {
         message.error('Phải chọn học kỳ')
         return
       }
-      if (!this.newProject.subjectFacilityId) {
+      if (!this.newProject.subjectId) {
         message.error('Phải chọn môn học')
         return
       }
