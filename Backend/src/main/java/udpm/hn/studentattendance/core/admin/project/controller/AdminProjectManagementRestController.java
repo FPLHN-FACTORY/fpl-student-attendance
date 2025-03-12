@@ -6,10 +6,12 @@ import org.springframework.web.bind.annotation.*;
 import udpm.hn.studentattendance.core.admin.project.model.request.ProjectCreateRequest;
 import udpm.hn.studentattendance.core.admin.project.model.request.ProjectUpdateRequest;
 import udpm.hn.studentattendance.core.admin.project.model.request.AdminProjectSearchRequest;
+import udpm.hn.studentattendance.core.admin.project.model.response.FacilityResponse;
 import udpm.hn.studentattendance.core.admin.project.model.response.LevelProjectResponse;
 import udpm.hn.studentattendance.core.admin.project.model.response.SemesterResponse;
 import udpm.hn.studentattendance.core.admin.project.model.response.SubjectResponse;
 import udpm.hn.studentattendance.core.admin.project.service.AdminProjectManagementService;
+import udpm.hn.studentattendance.core.admin.project.service.ipml.AdminFacilitySubjectManagementService;
 import udpm.hn.studentattendance.core.admin.project.service.ipml.AdminLevelProjectManagementService;
 import udpm.hn.studentattendance.core.admin.project.service.ipml.AdminSemesterManagementService;
 import udpm.hn.studentattendance.core.admin.project.service.ipml.AdminSubjectFacilityManagementService;
@@ -38,6 +40,9 @@ public class AdminProjectManagementRestController {
 
     @Autowired
     private AdminSubjectFacilityManagementService serviceSubjectFacility;
+
+    @Autowired
+    private AdminFacilitySubjectManagementService adminFacilitySubjectManagementService;
 
     @PostMapping("/list")
     public ResponseEntity<?> getListProject(@RequestBody AdminProjectSearchRequest request) {
@@ -80,4 +85,13 @@ public class AdminProjectManagementRestController {
         return serviceSubjectFacility.getComboboxSubjectFacility(sessionHelper.getFacilityId());
     }
 
+    @GetMapping("/subject-combobox-add")
+    public List<SubjectResponse> getSubjectAdd() {
+        return serviceSubjectFacility.getComboboxSubjectAdd();
+    }
+
+    @GetMapping("/facility-combobox/{id}")
+    public List<FacilityResponse> getFacility(@PathVariable String id) {
+        return adminFacilitySubjectManagementService.getComboboxFacility(id);
+    }
 }

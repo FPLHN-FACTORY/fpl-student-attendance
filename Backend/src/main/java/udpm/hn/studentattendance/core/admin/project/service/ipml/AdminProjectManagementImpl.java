@@ -23,7 +23,7 @@ import udpm.hn.studentattendance.repositories.UserStaffRepository;
 public class AdminProjectManagementImpl implements AdminProjectManagementService {
 
     @Autowired
-    private AdminProjectManagementRepository staffProjectManagementRepository;
+    private AdminProjectManagementRepository repository;
 
     @Autowired
     private LevelProjectRepository levelProjectRepository;
@@ -41,7 +41,7 @@ public class AdminProjectManagementImpl implements AdminProjectManagementService
     public ResponseObject<?> getListProject(AdminProjectSearchRequest request) {
         Pageable pageable = PaginationHelper.createPageable(request, "id");
         return new ResponseObject<>(
-                PageableObject.of(staffProjectManagementRepository.getListProject(pageable, request)),
+                PageableObject.of(repository.getListProject(pageable, request)),
                 HttpStatus.OK,
                 "Lây danh sách dự án thành công"
         );
@@ -51,28 +51,28 @@ public class AdminProjectManagementImpl implements AdminProjectManagementService
     public ResponseObject<?> createProject(ProjectCreateRequest request) {
         Project project = new Project();
         project = convertProjectRequestToProject(request, project);
-        staffProjectManagementRepository.save(project);
+        repository.save(project);
         return new ResponseObject<>(project, HttpStatus.OK, "Thêm dự án thành công");
     }
 
     @Override
     public ResponseObject<?> updateProject(String idProject, ProjectUpdateRequest request) {
-        Project project = staffProjectManagementRepository.findById(idProject).get();
+        Project project = repository.findById(idProject).get();
         project = convertProjectUpdateRequestToProject(request, project);
-        staffProjectManagementRepository.save(project);
+        repository.save(project);
         return new ResponseObject<>(project, HttpStatus.OK, "Sửa dự án thành công");
     }
 
     @Override
     public ResponseObject<?> detailProject(String idProject) {
-        return staffProjectManagementRepository.getDetailProject(idProject)
+        return repository.getDetailProject(idProject)
                 .map(project -> new ResponseObject<>(project, HttpStatus.OK, "Detail thành công!"))
                 .orElseGet(() -> new ResponseObject<>(null, HttpStatus.CONFLICT, "Không tìm thấy dự án!"));
     }
 
     @Override
     public ResponseObject<?> deleteProject(String idProject) {
-        staffProjectManagementRepository.deleteById(idProject);
+        repository.deleteById(idProject);
         return new ResponseObject<>(null, HttpStatus.OK, "Xóa dự án thành công");
     }
 
@@ -81,7 +81,7 @@ public class AdminProjectManagementImpl implements AdminProjectManagementService
         project.setDescription(request.getDescription());
         project.setLevelProject(levelProjectRepository.findById(request.getLevelProjectId()).get());
         project.setSemester(semesterRepository.findById(request.getSemesterId()).get());
-        project.setSubjectFacility(subjectFacilityRepository.findById(request.getSubjectFacilityId()).get());
+        project.setSubjectFacility(repository.getSubjectFacilityById(request.getSubjectId(), request.getFacilityId()));
         project.setStatus(EntityStatus.ACTIVE);
         return project;
     }

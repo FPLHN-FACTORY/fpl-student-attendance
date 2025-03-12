@@ -27,6 +27,17 @@ public interface AdminSubjectManagementRepository extends ProjectRepository {
             """, nativeQuery = true)
     List<SubjectResponse> getSubjectFacility(@Param("facilityId") String facilityId);
 
+
+    @Query(value = """
+                SELECT 
+                    ROW_NUMBER() OVER (ORDER BY created_at DESC) AS indexs,
+                    id AS id,
+                    name AS name
+                FROM subject
+                WHERE status = 1
+            """, nativeQuery = true)
+    List<SubjectResponse> getSubjectFacilityAdd();
+
     @Query(value = """
                 SELECT 
                     sf.id

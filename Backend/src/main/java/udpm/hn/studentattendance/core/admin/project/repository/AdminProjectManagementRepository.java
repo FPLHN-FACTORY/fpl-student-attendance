@@ -7,6 +7,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import udpm.hn.studentattendance.core.admin.project.model.request.AdminProjectSearchRequest;
 import udpm.hn.studentattendance.core.admin.project.model.response.ProjectResponse;
+import udpm.hn.studentattendance.entities.SubjectFacility;
 import udpm.hn.studentattendance.repositories.ProjectRepository;
 
 import java.util.Optional;
@@ -34,7 +35,7 @@ public interface AdminProjectManagementRepository extends ProjectRepository {
                         (:#{#request.name} IS NULL OR p.name LIKE CONCAT('%', :#{#request.name}, '%'))
                         AND (:#{#request.levelProjectId} IS NULL OR lp.id = :#{#request.levelProjectId})
                         AND (:#{#request.semesterId} IS NULL OR sem.id = :#{#request.semesterId})
-                        AND (:#{#request.subjectId} IS NULL OR sf.id = :#{#request.subjectId})
+                        AND (:#{#request.subjectId} IS NULL OR sf.id_subject = :#{#request.subjectId})
                         AND (:#{#request.facilityId} IS NULL OR f.id = :#{#request.facilityId})
                         AND (:#{#request.status} IS NULL OR p.status = :#{#request.status})
                     )
@@ -59,6 +60,12 @@ public interface AdminProjectManagementRepository extends ProjectRepository {
             """, nativeQuery = true)
     Page<ProjectResponse> getListProject(Pageable pageable, @Param("request") AdminProjectSearchRequest request);
 
+    @Query(value = """
+            select *
+            from subject_facility
+            where id_subject = :idSubject and id_facility = :idFacility
+            """, nativeQuery = true)
+    SubjectFacility getSubjectFacilityById(@Param("idSubject")String idSubject,@Param("idFacility") String idFacility);
 
     @Query(value = """
     SELECT 
