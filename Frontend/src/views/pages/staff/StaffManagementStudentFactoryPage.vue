@@ -1,6 +1,6 @@
 <template>
   <div>
-    <h1>Quản lý sinh viên trong nhóm xưởng</h1>
+    <h1>Quản lý sinh viên nhóm xưởng {{ factoryName }}</h1>
 
     <!-- Bộ lọc tìm kiếm -->
     <a-card title="Bộ lọc" :bordered="false" class="cart">
@@ -105,7 +105,7 @@
     >
       <!-- Bộ lọc cho modal danh sách tất cả sinh viên -->
       <a-row :gutter="16" class="filter-container" style="margin-bottom: 16px">
-        <a-col :span="12">
+        <a-col :span="21">
           <a-input
             v-model:value="studentFilter.searchQuery"
             placeholder="Mã, tên hoặc email sinh viên"
@@ -161,6 +161,7 @@ import { useRoute } from 'vue-router'
 
 const route = useRoute()
 const factoryId = route.query.factoryId
+const factoryName = route.query.factoryName
 
 if (!factoryId) {
   message.error('Không tìm thấy factoryId')
@@ -301,6 +302,7 @@ const handleStudentTableChange = (paginationData) => {
 const handleStudentCheckboxChange = (student, checked) => {
   selectedStudents[student.id] = checked
   if (checked) {
+    // Nếu checkbox được tích, gọi API thêm sinh viên vào nhóm
     const payload = {
       studentId: student.id,
       factoryId: factoryId,
@@ -310,12 +312,29 @@ const handleStudentCheckboxChange = (student, checked) => {
       .then((response) => {
         message.success(response.data.message || 'Thêm sinh viên vào nhóm xưởng thành công')
         fetchStudentFactories() // Reload danh sách sinh viên trong nhóm
-        // Cập nhật lại danh sách sinh viên đã có trong nhóm để tích checkbox
-        fetchExistingStudents()
+        fetchExistingStudents() // Cập nhật lại danh sách sinh viên đã có (để checkbox tích sẵn)
       })
       .catch((error) => {
         message.error(error.response?.data?.message || 'Lỗi khi thêm sinh viên vào nhóm xưởng')
       })
+  } else {
+    // Nếu checkbox bị bỏ tích, gọi API xoá sinh viên khỏi nhóm
+    // Lấy thông tin từ danh sách existingStudents để biết được studentFactoryId
+    const existing = existingStudents.value.find((item) => item.studentId === student.id)
+    if (existing && existing.studentFactoryId) {
+      requestAPI
+        .delete(API_ROUTES_STAFF.FETCH_DATA_STUDENT_FACTORY + '/' + existing.studentFactoryId)
+        .then((response) => {
+          message.success(response.data.message || 'Xóa sinh viên khỏi nhóm xưởng thành công')
+          fetchStudentFactories() // Reload danh sách sinh viên trong nhóm
+          fetchExistingStudents() // Cập nhật lại danh sách sinh viên đã có
+        })
+        .catch((error) => {
+          message.error(error.response?.data?.message || 'Lỗi khi xóa sinh viên khỏi nhóm xưởng')
+        })
+    } else {
+      message.warning('Sinh viên này chưa có trong nhóm xưởng')
+    }
   }
 }
 

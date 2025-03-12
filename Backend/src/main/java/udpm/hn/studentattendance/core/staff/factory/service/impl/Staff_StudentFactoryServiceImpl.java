@@ -115,34 +115,26 @@ public class Staff_StudentFactoryServiceImpl implements Staff_StudentFactoryServ
                         (studentFactoryCreateUpdateRequest.getStudentId(), studentFactoryCreateUpdateRequest.getFactoryId());
         Optional<Factory> existFactory = factoryRepository.findById(studentFactoryCreateUpdateRequest.getFactoryId());
         Optional<UserStudent> existUserStudent = userStudentRepository.findById(studentFactoryCreateUpdateRequest.getStudentId());
-        if (existStudentFactory.isPresent()) {
-            studentFactoryRepository.deleteById(existStudentFactory.get().getId());
-            return new ResponseEntity<>(
-                    new ApiResponse(
-                            RestApiStatus.WARNING,
-                            "Xoá sinh viên ra khỏi nhóm xưởng thành công",
-                            null
-                    ),
-                    HttpStatus.BAD_REQUEST);
-        } else {
-            UserStudentFactory userStudentFactory = new UserStudentFactory();
-            userStudentFactory.setId(CodeGeneratorUtils.generateRandom());
-            userStudentFactory.setUserStudent(existUserStudent.get());
-            userStudentFactory.setFactory(existFactory.get());
-            userStudentFactory.setStatus(EntityStatus.ACTIVE);
-            studentFactoryRepository.save(userStudentFactory);
-            return new ResponseEntity<>(
-                    new ApiResponse(
-                            RestApiStatus.WARNING,
-                            "Thêm sinh viên vào nhóm xưởng thành công",
-                            userStudentFactory
-                    ),
-                    HttpStatus.OK);
-        }
+
+        UserStudentFactory userStudentFactory = new UserStudentFactory();
+        userStudentFactory.setId(CodeGeneratorUtils.generateRandom());
+        userStudentFactory.setUserStudent(existUserStudent.get());
+        userStudentFactory.setFactory(existFactory.get());
+        userStudentFactory.setStatus(EntityStatus.ACTIVE);
+        studentFactoryRepository.save(userStudentFactory);
+
+        return new ResponseEntity<>(
+                new ApiResponse(
+                        RestApiStatus.WARNING,
+                        "Thêm sinh viên vào nhóm xưởng thành công",
+                        userStudentFactory
+                ),
+                HttpStatus.OK);
     }
 
+
     @Override
-    public ResponseEntity<?> getStudentFactoryExist( String factoryId) {
+    public ResponseEntity<?> getStudentFactoryExist(String factoryId) {
         List<Staff_UserStudentResponse> listStudentInFactory = userStudentFactoryExtendRepository
                 .getAllUserStudentExistFactory(sessionHelper.getFacilityId(), factoryId);
         return new ResponseEntity<>(
