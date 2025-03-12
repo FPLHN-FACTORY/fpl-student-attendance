@@ -5,7 +5,7 @@
   <a-card title="Bộ lọc" :bordered="false" class="cart">
     <a-row :gutter="16" class="filter-container">
       <!-- Ô nhập tên để tìm kiếm -->
-      <a-col :span="8">
+      <a-col :span="12">
         <a-input
           v-model:value="filter.name"
           placeholder="Tìm kiếm theo tên"
@@ -15,28 +15,18 @@
       </a-col>
 
       <!-- Dropdown chọn trạng thái -->
-      <a-col :span="8">
+      <a-col :span="12">
         <a-select
           v-model:value="filter.status"
           placeholder="Chọn trạng thái"
           allowClear
+          style="width: 100%"
           @change="fetchLevels"
         >
           <a-select-option :value="''">Tất cả trạng thái</a-select-option>
           <a-select-option :value="1">Hoạt động</a-select-option>
           <a-select-option :value="0">Không hoạt động</a-select-option>
         </a-select>
-      </a-col>
-
-      <!-- Nút lọc -->
-      <a-col :span="8">
-        <a-button
-          @click="fetchLevels"
-          style="background-color: #fff7e6; color: black; border: 1px solid #ffa940"
-        >
-          <SearchOutlined />
-          Lọc
-        </a-button>
       </a-col>
     </a-row>
   </a-card>
@@ -286,7 +276,7 @@ export default {
       requestAPI
         .put(
           `${API_ROUTES_ADMIN.FETCH_DATA_LEVEL_PROJECT}/${this.detailLevel.id}`,
-          this.detailLevel,
+          this.detailLevel
         )
         .then(() => {
           message.success('Cập nhật cấp dự án thành công')
