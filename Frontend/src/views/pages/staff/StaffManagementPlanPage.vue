@@ -216,13 +216,13 @@ const fetchSubmitCreate = () => {
 }
 
 const handleClearFilter = () => {
-  dataFilter = {
+  Object.assign(dataFilter, {
     keyword: null,
     level: null,
     semester: null,
     year: null,
     subject: null,
-  }
+  })
   fetchDataList()
 }
 
