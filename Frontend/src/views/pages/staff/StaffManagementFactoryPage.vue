@@ -46,7 +46,7 @@
       <a-table
         :dataSource="factories"
         :columns="columns"
-        rowKey="factoryId"
+        rowKey="id"
         bordered
         :pagination="pagination"
         @change="handleTableChange"
@@ -76,7 +76,7 @@
           <template v-else-if="column.key === 'actions'">
             <a-space>
               <!-- Nút Chi tiết: đẩy sang router khác -->
-              <a-tooltip title="Chi tiết">
+              <a-tooltip title="Chi tiết nhóm xưởng">
                 <a-button type="text" class="action-button" @click="handleDetailFactory(record)">
                   <EyeOutlined />
                 </a-button>
@@ -156,12 +156,11 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { message, Modal } from 'ant-design-vue'
-import { useRouter } from 'vue-router'
+import router from '@/router'
 import requestAPI from '@/services/requestApiService'
 import { API_ROUTES_STAFF } from '@/constants/staffConstant'
 import { PlusOutlined, EyeOutlined, EditOutlined, SyncOutlined } from '@ant-design/icons-vue'
-
-const router = useRouter()
+import { ROUTE_NAMES } from '@/router/staffRoute'
 
 /* ----------------- Data & Reactive Variables ----------------- */
 // Danh sách nhóm xưởng
@@ -190,7 +189,6 @@ const modalUpdate = ref(false)
 
 // Dữ liệu thêm mới nhóm xưởng
 const newFactory = reactive({
-  id: null,
   factoryName: '',
   factoryDescription: '',
   idUserStaff: '',
@@ -213,7 +211,7 @@ const detailFactory = reactive({
 /* ----------------- Column Configuration ----------------- */
 const columns = ref([
   { title: 'STT', dataIndex: 'rowNumber', key: 'rowNumber' },
-  { title: 'Tên nhóm xưởng', dataIndex: 'factoryName', key: 'factoryName' },
+  { title: 'Tên nhóm xưởng', dataIndex: 'name', key: 'name' },
   { title: 'Tên dự án', dataIndex: 'projectName', key: 'projectName' },
   { title: 'Mã bộ môn', dataIndex: 'subjectCode', key: 'subjectCode' },
   { title: 'Tên giảng viên', dataIndex: 'staffName', key: 'staffName' },
@@ -268,15 +266,32 @@ const handleTableChange = (paginationData) => {
   fetchFactories()
 }
 
+const submitAddFactory = () => {
+  if (!newFactory.factoryName || !newFactory.idUserStaff || !newFactory.idProject) {
+    message.error('Vui lòng điền đầy đủ thông tin bắt buộc')
+    return
+  }
+  requestAPI
+    .post(API_ROUTES_STAFF.FETCH_DATA_FACTORY, newFactory)
+    .then((response) => {
+      message.success(response.data.message || 'Thêm nhóm xưởng thành công')
+      modalAdd.value = false
+      fetchFactories()
+    })
+    .catch((error) => {
+      message.error(error.response?.data?.message || 'Lỗi khi tạo nhóm xưởng')
+    })
+}
+
 /* ----- Update Factory ----- */
 // Khi cập nhật, gọi API chi tiết để lấy dữ liệu hiện có
 const handleUpdateFactory = (record) => {
   requestAPI
-    .get(API_ROUTES_STAFF.FETCH_DATA_FACTORY + '/' + record.factoryId)
+    .get(API_ROUTES_STAFF.FETCH_DATA_FACTORY + '/detail/' + record.id)
     .then((response) => {
       const data = response.data.data
       // Mapping dữ liệu theo data detail của bạn
-      detailFactory.id = data.factoryId
+      detailFactory.id = data.id
       detailFactory.factoryName = data.factoryName
       detailFactory.factoryDescription = data.factoryDescription
       detailFactory.idUserStaff = data.staffId
@@ -290,24 +305,6 @@ const handleUpdateFactory = (record) => {
     })
     .catch((error) => {
       message.error(error.response?.data?.message || 'Lỗi khi lấy chi tiết nhóm xưởng')
-    })
-}
-
-const submitAddFactory = () => {
-  if (!newFactory.factoryName || !newFactory.idUserStaff || !newFactory.idProject) {
-    message.error('Vui lòng điền đầy đủ thông tin bắt buộc')
-    return
-  }
-  requestAPI
-    .post(API_ROUTES_STAFF.FETCH_DATA_FACTORY, newFactory)
-    .then((response) => {
-      message.success(response.data.message || 'Thêm nhóm xưởng thành công')
-      modalUpdate.value = false
-      fetchFactories()
-      modalAdd.value = false
-    })
-    .catch((error) => {
-      message.error(error.response?.data?.message || 'Lỗi khi thêm nhóm xưởng')
     })
 }
 
@@ -331,9 +328,14 @@ const submitUpdateFactory = () => {
 /* ----- Detail Factory ----- */
 // Nút "Chi tiết" đẩy sang router khác (chưa có phần hiển thị phân sinh viên vào nhóm xưởng)
 const handleDetailFactory = (record) => {
+  // Kiểm tra cấu trúc của record nếu cần debug
+  console.log('Record detail:', record)
   router.push({
-    name: API_ROUTES_STAFF.FETCH_DATA_FACTORY,
-    query: { factoryId: record.factoryId },
+    name: ROUTE_NAMES.MANAGEMENT_STUDENT_FACTORY,
+    query: {
+      factoryId: record.id,
+      factoryName: record.name,
+    },
   })
 }
 
@@ -343,14 +345,14 @@ const confirmChangeStatus = (record) => {
     title: 'Xác nhận đổi trạng thái',
     content: `Bạn có chắc muốn đổi trạng thái cho nhóm xưởng "${record.factoryName}"?`,
     onOk() {
-      handleChangeStatus(record.factoryId)
+      handleChangeStatus(record.id)
     },
   })
 }
 
-const handleChangeStatus = (factoryId) => {
+const handleChangeStatus = (id) => {
   requestAPI
-    .put(API_ROUTES_STAFF.FETCH_DATA_FACTORY + '/status/' + factoryId)
+    .put(API_ROUTES_STAFF.FETCH_DATA_FACTORY + '/status/' + id)
     .then((response) => {
       message.success(response.data.message || 'Đổi trạng thái thành công')
       fetchFactories()

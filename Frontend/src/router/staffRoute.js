@@ -10,6 +10,7 @@ import {
 export const ROUTE_NAMES = {
   MANAGEMENT_PROJECT: 'route_staff_management_project',
   MANAGEMENT_FACTORY: 'route_staff_management_factory',
+  MANAGEMENT_STUDENT_FACTORY: 'route_staff_management_student_factory',
   MANAGEMENT_PLAN: 'route_staff_management_plan',
   MANAGEMENT_PLAN_DETAIL: 'route_staff_management_plan_detail',
   MANAGEMENT_STUDENT: 'route_staff_management_student',
@@ -75,6 +76,11 @@ export const StaffRoutes = [
           name: 'Quản lý sinh viên',
           icon: UsergroupAddOutlined,
         },
+      },
+      {
+        path: 'management-student-factory',
+        name: ROUTE_NAMES.MANAGEMENT_STUDENT_FACTORY,
+        component: import('@/views/pages/staff/StaffManagementStudentFactoryPage.vue'),
       },
     ],
   },

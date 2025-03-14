@@ -352,7 +352,20 @@ function handleRoleCheckboxChange(role, isChecked) {
 }
 
 function handleDeleteRole(record) {
-  message.info(`Xóa chức vụ ${record.roleCode} chưa triển khai`)
+  requestAPI
+    .delete(`${API_ROUTES_ADMIN.FETCH_DATA_STAFF_ROLE}/${record.roleId}`)
+    .then(() => {
+      message.success(`Xóa chức vụ ${record.roleCode} thành công`)
+      // Refresh lại danh sách chức vụ và trạng thái checkbox nếu cần
+      fetchRoles()
+      fetchRoleChecked()
+    })
+    .catch((error) => {
+      message.error(
+        (error.response && error.response.data && error.response.data.message) ||
+          `Lỗi khi xóa chức vụ ${record.roleCode}`
+      )
+    })
 }
 
 onMounted(() => {
