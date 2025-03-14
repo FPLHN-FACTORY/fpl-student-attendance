@@ -198,11 +198,11 @@ const fetchUpdateItem = () => {
 }
 
 const handleClearFilter = () => {
-  dataFilter = {
+  Object.assign(dataFilter, {
     keyword: null,
     shift: null,
     startDate: null,
-  }
+  })
   fetchDataList()
 }
 
