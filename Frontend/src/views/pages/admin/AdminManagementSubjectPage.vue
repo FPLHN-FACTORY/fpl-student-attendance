@@ -5,7 +5,7 @@
   <a-card title="Bộ lọc" :bordered="false" class="cart">
     <a-row :gutter="16" class="filter-container">
       <!-- Ô nhập tên để tìm kiếm -->
-      <a-col :span="8">
+      <a-col :span="12">
         <a-input
           v-model:value="filter.name"
           placeholder="Tìm kiếm theo tên"
@@ -15,28 +15,18 @@
       </a-col>
 
       <!-- Dropdown chọn trạng thái -->
-      <a-col :span="8">
+      <a-col :span="12">
         <a-select
           v-model:value="filter.status"
           placeholder="Chọn trạng thái"
           allowClear
+          style="width: 100%"
           @change="fetchSubjects"
         >
           <a-select-option :value="''">Tất cả trạng thái</a-select-option>
           <a-select-option :value="1">Hoạt động</a-select-option>
           <a-select-option :value="0">Không hoạt động</a-select-option>
         </a-select>
-      </a-col>
-
-      <!-- Nút lọc -->
-      <a-col :span="8">
-        <a-button
-          @click="fetchSubjects"
-          style="background-color: #fff7e6; color: black; border: 1px solid #ffa940"
-        >
-          <SearchOutlined />
-          Lọc
-        </a-button>
       </a-col>
     </a-row>
   </a-card>
@@ -45,13 +35,15 @@
   <a-card title="Danh sách bộ môn" :bordered="false" class="cart">
     <!-- Nút thêm bộ môn -->
     <div style="display: flex; justify-content: flex-end; margin-bottom: 10px">
-      <a-button
-        style="background-color: #fff7e6; color: black; border: 1px solid #ffa940"
-        @click="ShowAddModal(true)"
-      >
-        <PlusOutlined />
-        Thêm
-      </a-button>
+      <a-tooltip title="Thêm bộ môn">
+        <a-button
+          style="background-color: #fff7e6; color: black; border: 1px solid #ffa940"
+          @click="ShowAddModal(true)"
+        >
+          <PlusOutlined />
+          Thêm
+        </a-button>
+      </a-tooltip>
     </div>
 
     <!-- Bảng hiển thị danh sách -->
@@ -63,7 +55,7 @@
       :pagination="pagination"
       @change="handleTableChange"
     >
-      <!-- Custom cell cho cột trạng thái -->
+      <!-- Custom cell cho cột trạng thái và chức năng -->
       <template #bodyCell="{ column, record }">
         <template v-if="column.dataIndex === 'status'">
           <a-tag :color="record.status === 1 ? 'green' : 'red'">
@@ -73,48 +65,68 @@
 
         <!-- Custom cell cho cột chức năng (actions) -->
         <template v-if="column.key === 'actions'">
-          <!-- Nút xem chi tiết bộ môn cơ sở -->
-          <a-button
-            @click="handleAddSubjectFacility(record)"
-            type="text"
-            :style="{ backgroundColor: '#FFF7E6', marginRight: '8px', border: '1px solid #ffa940' }"
-          >
-            <ClusterOutlined />
-          </a-button>
+          <!-- Nút chuyển hướng bộ môn cơ sở -->
+          <a-tooltip title="Bộ môn cơ sở">
+            <a-button
+              @click="handleAddSubjectFacility(record)"
+              type="text"
+              :style="{
+                backgroundColor: '#FFF7E6',
+                marginRight: '8px',
+                border: '1px solid #ffa940',
+              }"
+            >
+              <ClusterOutlined />
+            </a-button>
+          </a-tooltip>
 
           <!-- Nút xem chi tiết -->
-          <a-button
-            @click="handleDetailSubject(record)"
-            type="text"
-            :style="{ backgroundColor: '#FFF7E6', marginRight: '8px', border: '1px solid #ffa940' }"
-          >
-            <EyeOutlined />
-          </a-button>
+          <a-tooltip title="Xem chi tiết">
+            <a-button
+              @click="handleDetailSubject(record)"
+              type="text"
+              :style="{
+                backgroundColor: '#FFF7E6',
+                marginRight: '8px',
+                border: '1px solid #ffa940',
+              }"
+            >
+              <EyeOutlined />
+            </a-button>
+          </a-tooltip>
 
           <!-- Nút sửa -->
-          <a-button
-            @click="handleUpdateSubject(record)"
-            type="text"
-            :style="{ backgroundColor: '#FFF7E6', marginRight: '8px', border: '1px solid #ffa940' }"
-          >
-            <EditOutlined />
-          </a-button>
+          <a-tooltip title="Sửa bộ môn">
+            <a-button
+              @click="handleUpdateSubject(record)"
+              type="text"
+              :style="{
+                backgroundColor: '#FFF7E6',
+                marginRight: '8px',
+                border: '1px solid #ffa940',
+              }"
+            >
+              <EditOutlined />
+            </a-button>
+          </a-tooltip>
 
           <!-- Nút xóa -->
-          <a-button
-            @click="handleDeleteSubject(record)"
-            type="text"
-            :style="{ backgroundColor: '#FFF7E6', border: '1px solid #ffa940' }"
-          >
-            <DeleteOutlined />
-          </a-button>
+          <a-tooltip title="Xóa bộ môn">
+            <a-button
+              @click="handleDeleteSubject(record)"
+              type="text"
+              :style="{ backgroundColor: '#FFF7E6', border: '1px solid #ffa940' }"
+            >
+              <DeleteOutlined />
+            </a-button>
+          </a-tooltip>
         </template>
       </template>
     </a-table>
   </a-card>
 
   <!-- Modal thêm bộ môn -->
-  <a-modal v-model:visible="ModalAdd" title="Thêm bộ môn" @ok="handleAddSubject">
+  <a-modal v-model:open="ModalAdd" title="Thêm bộ môn" @ok="handleAddSubject">
     <a-form layout="vertical">
       <a-form-item label="Tên" required>
         <a-input v-model:value="newSubject.name" />
@@ -126,7 +138,7 @@
   </a-modal>
 
   <!-- Modal xem chi tiết bộ môn -->
-  <a-modal v-model:visible="ModalDetail" title="Chi tiết bộ môn" footer="">
+  <a-modal v-model:open="ModalDetail" title="Chi tiết bộ môn" footer="">
     <p><strong>Tên:</strong> {{ detailSubject.name }}</p>
     <p><strong>Mã:</strong> {{ detailSubject.code }}</p>
     <p>
@@ -140,7 +152,7 @@
   </a-modal>
 
   <!-- Modal sửa bộ môn -->
-  <a-modal v-model:visible="ModalUpdate" title="Sửa bộ môn" @ok="updateSubject">
+  <a-modal v-model:open="ModalUpdate" title="Sửa bộ môn" @ok="updateSubject">
     <a-form layout="vertical">
       <a-form-item label="Tên" required>
         <a-input v-model:value="detailSubject.name" />

@@ -1,8 +1,6 @@
 package udpm.hn.studentattendance.core.authentication.repositories;
 
-import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
-import udpm.hn.studentattendance.core.authentication.model.response.AuthenticationInfoUserResponse;
 import udpm.hn.studentattendance.entities.UserAdmin;
 import udpm.hn.studentattendance.repositories.UserAdminRepository;
 

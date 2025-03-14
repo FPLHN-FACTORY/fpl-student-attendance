@@ -60,6 +60,11 @@ const showModalSelectFacility = () => (isShowModalSelectFacility.value = true)
 
 const handleSelectFacility = (role) => {
   roleLogin.value = role
+
+  if (authStore.isLogin) {
+    return redirectLoginRole()
+  }
+
   if (role === ROLE.ADMIN) {
     return handleRedirectLogin(true)
   }
@@ -129,7 +134,6 @@ const checkLogin = () => {
 
 onMounted(() => {
   document.body.classList.add('bg-login')
-  sessionStorage.setItem('selectedKeys', JSON.stringify(['1']))
   checkLogin()
   fetchDataFacility()
   loadingPage.hide()
@@ -149,17 +153,21 @@ onMounted(() => {
       <h2 class="title">Đăng nhập</h2>
       <div class="d-flex justify-content-center align-items-center">
         <div class="role-container">
-          <div
-            v-for="role in roles"
-            :key="role.role"
-            class="role-item"
-            @click="handleSelectFacility(role.role)"
-          >
-            <img :src="role.img" class="role-img" />
-            <a-button class="role-button" size="large">
-              <span>{{ role.label }}</span>
-            </a-button>
-          </div>
+          <template v-for="role in roles" :key="role.role">
+            <div
+              class="role-item"
+              @click="handleSelectFacility(role.role)"
+              v-if="
+                !authStore.isLogin ||
+                (authStore.isLogin && authStore.user.role.includes(role.role.toUpperCase()))
+              "
+            >
+              <img :src="role.img" class="role-img" />
+              <a-button class="role-button" size="large">
+                <span>{{ role.label }}</span>
+              </a-button>
+            </div>
+          </template>
         </div>
       </div>
       <p class="footer">Powered by <strong>FPLHN-UDPM</strong></p>
@@ -250,6 +258,15 @@ onMounted(() => {
 .role-button {
   width: 100%;
   margin-top: 10px;
+  background-color: #41395b;
+  border-color: #6b667d;
+  color: white;
+}
+.role-button:hover,
+.role-button:active {
+  background-color: #6b667d;
+  border-color: #6b667d;
+  color: white;
 }
 .footer {
   margin-top: 6rem;
