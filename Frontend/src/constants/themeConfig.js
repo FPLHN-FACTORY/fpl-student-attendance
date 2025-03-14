@@ -1,4 +1,4 @@
-const inputBgColor = '#f1f3f4'
+const inputBgColor = '#f6f8fa'
 const inputBdColor = '#dfdfdf'
 const inputTxtColor = '#444'
 
