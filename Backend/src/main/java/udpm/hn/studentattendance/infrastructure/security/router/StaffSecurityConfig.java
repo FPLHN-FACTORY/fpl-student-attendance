@@ -13,8 +13,7 @@ public class StaffSecurityConfig {
     public void configure(HttpSecurity http) throws Exception {
         http.authorizeHttpRequests(auth -> {
             auth.requestMatchers(appendWildcard(RoutesConstant.PREFIX_API_STAFF_MANAGEMENT)).hasAuthority(RoleConstant.STAFF.name());
-                }
-        );
+        });
     }
 
 }

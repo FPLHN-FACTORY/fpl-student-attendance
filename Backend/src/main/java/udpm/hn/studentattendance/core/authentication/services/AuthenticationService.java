@@ -1,7 +1,7 @@
 package udpm.hn.studentattendance.core.authentication.services;
 
 import org.springframework.web.servlet.view.RedirectView;
-import udpm.hn.studentattendance.core.authentication.model.response.AuthenticationInfoUserResponse;
+import udpm.hn.studentattendance.core.authentication.oauth2.AuthUser;
 import udpm.hn.studentattendance.entities.Facility;
 
 import java.io.IOException;
@@ -13,6 +13,6 @@ public interface AuthenticationService {
 
     List<Facility> getAll();
 
-    AuthenticationInfoUserResponse getInfoUser(String token);
+    AuthUser getInfoUser(String role);
 
 }

@@ -22,16 +22,23 @@ const useAuthStore = defineStore('authUser', () => {
     }
   }
 
+  const setUser = (data) => {
+    user.value = data
+    localStorageUtils.set(AUTHENCATION_STORAGE_USER_DATA, user.value)
+  }
+
+  const setToken = (data) => {
+    token.value = data
+    localStorageUtils.set(AUTHENCATION_STORAGE_TOKEN, token.value)
+  }
+
   const login = (tokenData) => {
     if (tokenData == '') {
       return false
     }
 
-    user.value = decodeToken(tokenData)
-    token.value = tokenData
-
-    localStorageUtils.set(AUTHENCATION_STORAGE_TOKEN, token.value)
-    localStorageUtils.set(AUTHENCATION_STORAGE_USER_DATA, user.value)
+    setUser(decodeToken(tokenData))
+    setToken(tokenData)
 
     if (user.value == null) {
       logout()
@@ -49,7 +56,16 @@ const useAuthStore = defineStore('authUser', () => {
     localStorageUtils.remove(AUTHENCATION_STORAGE_USER_DATA)
   }
 
-  return { user, token, isLogin, login, logout }
+  const updateUser = (data = {}) => {
+    setUser({
+      ...user.value,
+      ...data,
+      picture: user.value.picture,
+      role: user.value.role,
+    })
+  }
+
+  return { user, token, isLogin, login, logout, updateUser }
 })
 
 export default useAuthStore

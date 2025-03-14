@@ -120,34 +120,29 @@ public class FactoryServiceImpl implements FactoryService {
 
     @Override
     public ResponseEntity<?> createFactory(FactoryCreateUpdateRequest factoryCreateUpdateRequest) {
-        Optional<Factory> existFactory = factoryRepository.findById(factoryCreateUpdateRequest.getId());
         Optional<UserStaff> userStaff = staffFactoryExtendRepository.findById(factoryCreateUpdateRequest.getIdUserStaff());
         Optional<Project> project = projectFactoryExtendRepository.findById(factoryCreateUpdateRequest.getIdProject());
-        if (existFactory.isEmpty()) {
-            Factory factory = new Factory();
-            factory.setId(CodeGeneratorUtils.generateRandom());
-            factory.setName(factoryCreateUpdateRequest.getFactoryName());
-            factory.setDescription(factoryCreateUpdateRequest.getFactoryDescription());
-            factory.setUserStaff(userStaff.get());
-            factory.setProject(project.get());
-            factory.setStatus(EntityStatus.ACTIVE);
-            factoryRepository.save(factory);
-            return new ResponseEntity<>(
-                    new ApiResponse(
-                            RestApiStatus.SUCCESS,
-                            "Thêm nhóm xưởng mới thành công",
-                            factory
-                    ),
-                    HttpStatus.CREATED);
-        } else {
-            return new ResponseEntity<>(
-                    new ApiResponse(
-                            RestApiStatus.ERROR,
-                            "Nhóm xưởng đã tồn tại",
-                            null
-                    ),
-                    HttpStatus.CONFLICT);
+        if (userStaff.isEmpty()) {
+            return new ResponseEntity<>(ApiResponse.error("Giảng viên không tồn tại"), HttpStatus.BAD_REQUEST);
         }
+        if (project.isEmpty()) {
+            return new ResponseEntity<>(ApiResponse.error("Dự án không tồn tại"), HttpStatus.BAD_REQUEST);
+        }
+        if (factoryRepository.isExistsNameAndProject(factoryCreateUpdateRequest.getFactoryName(), project.get().getId())) {
+            return new ResponseEntity<>(ApiResponse.error("Nhóm xưởng đã tồn tại trong dự án này"), HttpStatus.BAD_REQUEST);
+        }
+        Factory factory = new Factory();
+        factory.setId(CodeGeneratorUtils.generateRandom());
+        factory.setName(factoryCreateUpdateRequest.getFactoryName());
+        factory.setDescription(factoryCreateUpdateRequest.getFactoryDescription());
+        factory.setUserStaff(userStaff.get());
+        factory.setProject(project.get());
+        factory.setStatus(EntityStatus.ACTIVE);
+        factoryRepository.save(factory);
+
+        return new ResponseEntity<>(
+                ApiResponse.success("Thêm nhóm xưởng mới thành công", factory),
+                HttpStatus.CREATED);
     }
 
     @Override

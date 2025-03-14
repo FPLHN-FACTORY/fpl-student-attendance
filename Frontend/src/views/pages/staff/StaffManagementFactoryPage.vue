@@ -103,10 +103,10 @@
     <a-modal v-model:open="modalAdd" title="Thêm nhóm xưởng" @ok="submitAddFactory">
       <a-form :model="newFactory" layout="vertical">
         <a-form-item label="Tên nhóm xưởng" required>
-          <a-input v-model:value="newFactory.name" />
+          <a-input v-model:value="newFactory.factoryName" />
         </a-form-item>
         <a-form-item label="Mô tả">
-          <a-input v-model:value="newFactory.description" />
+          <a-input v-model:value="newFactory.factoryDescription" />
         </a-form-item>
         <a-form-item label="Giảng viên" required>
           <a-select v-model:value="newFactory.idUserStaff" placeholder="Chọn giảng viên">
@@ -190,8 +190,9 @@ const modalUpdate = ref(false)
 
 // Dữ liệu thêm mới nhóm xưởng
 const newFactory = reactive({
-  name: '',
-  description: '',
+  id: null,
+  factoryName: '',
+  factoryDescription: '',
   idUserStaff: '',
   idProject: '',
 })
@@ -289,6 +290,24 @@ const handleUpdateFactory = (record) => {
     })
     .catch((error) => {
       message.error(error.response?.data?.message || 'Lỗi khi lấy chi tiết nhóm xưởng')
+    })
+}
+
+const submitAddFactory = () => {
+  if (!newFactory.factoryName || !newFactory.idUserStaff || !newFactory.idProject) {
+    message.error('Vui lòng điền đầy đủ thông tin bắt buộc')
+    return
+  }
+  requestAPI
+    .post(API_ROUTES_STAFF.FETCH_DATA_FACTORY, newFactory)
+    .then((response) => {
+      message.success(response.data.message || 'Thêm nhóm xưởng thành công')
+      modalUpdate.value = false
+      fetchFactories()
+      modalAdd.value = false
+    })
+    .catch((error) => {
+      message.error(error.response?.data?.message || 'Lỗi khi thêm nhóm xưởng')
     })
 }
 

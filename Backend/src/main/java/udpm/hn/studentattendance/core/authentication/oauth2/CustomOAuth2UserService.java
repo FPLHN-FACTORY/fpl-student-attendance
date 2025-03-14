@@ -53,7 +53,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
             throw new OAuth2AuthenticationException(new OAuth2Error("invalid_role", "Role đăng nhập không hợp lệ: " + role, null));
         }
 
-        Set<String> roles = new HashSet<>();
+        Set<RoleConstant> roles = new HashSet<>();
 
         switch (roleCode) {
 
@@ -64,7 +64,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
                 }
                 customOAuth2User.setId(userAdmin.get().getId());
                 customOAuth2User.setCode(userAdmin.get().getCode());
-                roles.add(role);
+                roles.add(roleCode);
                 break;
 
             case TEACHER:
@@ -76,22 +76,23 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
                 customOAuth2User.setId(userStaff.get().getId());
                 customOAuth2User.setCode(userStaff.get().getCode());
                 customOAuth2User.setEmailFe(userStaff.get().getEmailFe());
-                customOAuth2User.setEmailFPT(userStaff.get().getEmailFpt());
+                customOAuth2User.setEmailFpt(userStaff.get().getEmailFpt());
 
                 List<Role> lstRole = authenticationRoleRepository.findRolesByUserId(userStaff.get().getId());
                 for (Role r : lstRole) {
-                    roles.add(r.getCode().name());
+                    roles.add(r.getCode());
                 }
+
                 break;
 
             case STUDENT:
-                Optional<UserStudent> userStudent = authenticationUserStudentRepository.findByEmailAndFacility_Id(customOAuth2User.getEmail(), facilityID);
+                Optional<UserStudent> userStudent = getAccountStudent(customOAuth2User.getEmail(), facilityID);
                 if (userStudent.isEmpty()) {
                     throw new OAuth2AuthenticationException(new OAuth2Error("login_failed", "Đăng nhập sinh viên thất bại", null));
                 }
                 customOAuth2User.setId(userStudent.get().getId());
                 customOAuth2User.setCode(userStudent.get().getCode());
-                roles.add(role);
+                roles.add(roleCode);
                 break;
 
             default:
@@ -103,5 +104,11 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         return customOAuth2User;
     }
 
+    private Optional<UserStudent> getAccountStudent(String email, String idFacility) {
+        if (idFacility != null && !idFacility.equalsIgnoreCase("null")) {
+            return authenticationUserStudentRepository.findByEmailAndFacility_Id(email, idFacility);
+        }
+        return authenticationUserStudentRepository.findByEmail(email);
+    }
 
 }

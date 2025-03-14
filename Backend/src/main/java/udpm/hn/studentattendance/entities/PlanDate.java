@@ -26,9 +26,6 @@ import java.io.Serializable;
 @DynamicUpdate
 public class PlanDate extends PrimaryEntity implements Serializable {
 
-    @Column(name = "name", length = EntityProperties.LENGTH_NAME)
-    private String name;
-
     @Column(name = "description", length = EntityProperties.LENGTH_TEXT)
     private String description;
 
@@ -37,6 +34,10 @@ public class PlanDate extends PrimaryEntity implements Serializable {
 
     @Column(name = "shift")
     private Integer shift;
+
+    @Column(name = "late_arrival")
+    private Integer lateArrival;
+
     @ManyToOne
     @JoinColumn(name = "id_factory")
     private Factory factory;

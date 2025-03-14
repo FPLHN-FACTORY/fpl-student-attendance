@@ -1,32 +1,33 @@
 <script setup>
-import { ref, watch, onMounted } from 'vue'
-import { MenuUnfoldOutlined, MenuFoldOutlined, LogoutOutlined } from '@ant-design/icons-vue'
+import { ref, watch } from 'vue'
+import {
+  MenuUnfoldOutlined,
+  MenuFoldOutlined,
+  LogoutOutlined,
+  UserSwitchOutlined,
+} from '@ant-design/icons-vue'
 import imgLogoUdpm from '@/assets/images/logo-udpm.png'
 import useAuthStore from '@/stores/useAuthStore'
+import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
+import { useRouter } from 'vue-router'
+import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
+import useApplicationStore from '@/stores/useApplicationStore'
 
-const selectedKeys = ref(['1'])
+const router = useRouter()
+
 const collapsed = ref(false)
 const authStore = useAuthStore()
+const breadcrumbStore = useBreadcrumbStore()
+const applicationStore = useApplicationStore()
 
 const handleLogout = () => {
   authStore.logout()
   window.location.reload()
 }
 
-onMounted(() => {
-  const savedKeys = sessionStorage.getItem('selectedKeys')
-  if (savedKeys) {
-    selectedKeys.value = JSON.parse(savedKeys)
-  }
-})
-
-watch(
-  selectedKeys,
-  (newValue) => {
-    sessionStorage.setItem('selectedKeys', JSON.stringify(newValue))
-  },
-  { deep: true },
-)
+const handleSwitchRole = () => {
+  router.push({ name: GLOBAL_ROUTE_NAMES.SWITCH_ROLE })
+}
 </script>
 
 <template>
@@ -35,7 +36,7 @@ watch(
       <div class="logo">
         <img :src="imgLogoUdpm" />
       </div>
-      <a-menu v-model:selectedKeys="selectedKeys" theme="light" mode="inline">
+      <a-menu v-model:selectedKeys="applicationStore.selectedKeys" theme="light" mode="inline">
         <slot></slot>
       </a-menu>
     </a-layout-sider>
@@ -64,6 +65,14 @@ watch(
                 <div>{{ authStore.user.sub }}</div>
               </a-menu-item>
               <a-menu-divider />
+              <a-menu-item
+                key="switchRole"
+                @click="handleSwitchRole()"
+                v-if="authStore.user.role.length > 1"
+              >
+                <UserSwitchOutlined />
+                <span class="ms-2">Thay đổi vai trò</span>
+              </a-menu-item>
               <a-menu-item key="logout" @click="handleLogout()">
                 <LogoutOutlined />
                 <span class="ms-2">Đăng xuất</span>
@@ -74,6 +83,18 @@ watch(
       </a-layout-header>
 
       <a-layout-content>
+        <a-breadcrumb
+          class="mb-3 mx-3"
+          :routes="breadcrumbStore.routes"
+          v-if="breadcrumbStore.routes.length > 0"
+        >
+          <template #itemRender="{ route, routes }">
+            <span v-if="routes.indexOf(route) === routes.length - 1">{{
+              route.breadcrumbName
+            }}</span>
+            <router-link v-else :to="{ name: route.name }">{{ route.breadcrumbName }}</router-link>
+          </template>
+        </a-breadcrumb>
         <router-view />
       </a-layout-content>
     </a-layout>
