@@ -98,4 +98,14 @@ public interface FactoryExtendRepository extends FactoryRepository {
     )
     Optional<DetailFactoryResponse> getFactoryById(String factoryId);
 
+    @Query(value = """
+        SELECT
+            CASE WHEN COUNT(*) > 0 THEN 'TRUE' ELSE 'FALSE' END
+        FROM factory
+        WHERE 
+            name = :name AND
+            id_project = :idProject
+    """, nativeQuery = true)
+    boolean isExistsNameAndProject(String name, String idProject);
+
 }

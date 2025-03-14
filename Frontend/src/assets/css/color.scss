@@ -1,0 +1,21 @@
+.text {
+  &-primary {
+    color: var(--primary-color);
+  }
+}
+
+.ant-select-item-option-selected {
+  background-color: #dbdfe2 !important;
+}
+
+.ant-input-affix-wrapper:focus,
+.ant-input-affix-wrapper-focused,
+.ant-select-focused .ant-select-selector,
+.ant-input-number-focused,
+.ant-picker-focused {
+  box-shadow: 0 0 4px 2px #a09ab5b8 !important; /* Màu shadow khi focus */
+}
+
+.ant-select-multiple .ant-select-selection-item {
+  background: rgb(211 204 233);
+}

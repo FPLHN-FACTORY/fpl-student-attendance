@@ -6,4 +6,6 @@ export const API_ROUTES_STAFF = {
   FETCH_DATA_PROJECT: API_URL + '/staff/project-management',
 
   FETCH_DATA_STUDENT: API_URL + '/staff/student-management',
+
+  FETCH_DATA_PLAN_DATE: API_URL + '/staff/plan-management',
 }

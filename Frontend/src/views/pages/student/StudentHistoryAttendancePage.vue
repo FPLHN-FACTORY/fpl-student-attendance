@@ -1,3 +1,31 @@
+<script setup>
+import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
+import { ROUTE_NAMES } from '@/router/studentRoute'
+import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
+import { onMounted, ref } from 'vue'
+
+const breadcrumbStore = useBreadcrumbStore()
+
+const breadcrumb = ref([
+  {
+    name: GLOBAL_ROUTE_NAMES.STAFF_PAGE,
+    breadcrumbName: 'Sinh viên',
+  },
+  {
+    name: ROUTE_NAMES.HISTORY_ATTENDANCE,
+    breadcrumbName: 'Lịch sử điểm danh',
+  },
+])
+
+onMounted(() => {
+  breadcrumbStore.setRoutes(breadcrumb.value)
+})
+</script>
+
 <template>
-  <span>Đây là lịch sử điểm danh</span>
+  <div class="container-fluid">
+    <div class="row g-3">
+      <div class="col-12"></div>
+    </div>
+  </div>
 </template>
