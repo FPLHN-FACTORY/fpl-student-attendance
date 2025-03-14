@@ -24,6 +24,9 @@ import {
 import { SHIFT } from '@/constants/shiftConstant'
 import dayjs from 'dayjs'
 import { formatDate } from '@/utils/utils'
+import useImportExcelStore from '@/stores/useImportExcelStore'
+import ExcelUploadButton from '@/components/excel/ExcelUploadButton.vue'
+import ExcelUploadList from '@/components/excel/ExcelUploadList.vue'
 
 const router = useRouter()
 const breadcrumbStore = useBreadcrumbStore()
@@ -556,7 +559,8 @@ watch(
       <div class="col-12">
         <a-card :bordered="false" class="cart">
           <template #title> <UnorderedListOutlined /> Danh sách kế hoạch </template>
-          <div class="d-flex justify-content-end mb-3">
+          <div class="d-flex justify-content-end mb-3 gap-3">
+            <ExcelUploadButton />
             <a-button type="primary" @click="handleShowModalAdd">
               <PlusOutlined /> Tạo kế hoạch mới
             </a-button>

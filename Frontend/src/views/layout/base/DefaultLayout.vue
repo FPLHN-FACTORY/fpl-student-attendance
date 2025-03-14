@@ -12,6 +12,7 @@ import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
 import { useRouter } from 'vue-router'
 import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
 import useApplicationStore from '@/stores/useApplicationStore'
+import ExcelUploadList from '@/components/excel/ExcelUploadList.vue'
 
 const router = useRouter()
 
@@ -96,6 +97,7 @@ const handleSwitchRole = () => {
           </template>
         </a-breadcrumb>
         <router-view />
+        <ExcelUploadList />
       </a-layout-content>
     </a-layout>
   </a-layout>
