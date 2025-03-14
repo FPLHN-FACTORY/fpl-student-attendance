@@ -1,5 +1,5 @@
 const inputBgColor = '#f6f8fa'
-const inputBdColor = '#dfdfdf'
+const inputBdColor = '#c7c2da'
 const inputTxtColor = '#444'
 
 export const themeConfig = {
