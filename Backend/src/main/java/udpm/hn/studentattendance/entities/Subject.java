@@ -4,10 +4,7 @@ package udpm.hn.studentattendance.entities;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import org.hibernate.annotations.DynamicUpdate;
 import org.hibernate.annotations.Nationalized;
 import udpm.hn.studentattendance.entities.base.PrimaryEntity;
@@ -22,6 +19,7 @@ import java.io.Serializable;
 @NoArgsConstructor
 @Table(name = "subject")
 @DynamicUpdate
+@ToString
 public class Subject extends PrimaryEntity implements Serializable {
 
     @Column(name = "code", length = EntityProperties.LENGTH_NAME)

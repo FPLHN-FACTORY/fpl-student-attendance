@@ -3,7 +3,7 @@
 
   <a-card title="Bộ lọc" :bordered="false" class="filter-card">
     <a-row :gutter="16" class="filter-container">
-      <a-col :span="9">
+      <a-col :span="8">
         <a-input
           v-model:value="filter.name"
           placeholder="Tìm kiếm theo tên"
@@ -13,13 +13,14 @@
         />
       </a-col>
 
-      <a-col :span="3">
+      <a-col :span="8">
         <a-select
           v-model:value="filter.facilityId"
           placeholder="Cơ sở"
           allowClear
           class="filter-select"
           :dropdownMatchSelectWidth="false"
+          style="width: 100%"
           @change="fetchSubjectFacility"
         >
           <a-select-option :value="null">Tất cả cơ sở</a-select-option>
@@ -29,32 +30,20 @@
         </a-select>
       </a-col>
 
-      <a-col :span="3">
+      <a-col :span="8">
         <a-select
           v-model:value="filter.status"
           placeholder="Trạng thái"
           allowClear
           class="filter-select"
           :dropdownMatchSelectWidth="false"
+          style="width: 100%"
           @change="fetchSubjectFacility"
         >
           <a-select-option :value="null">Tất cả trạng thái</a-select-option>
           <a-select-option :value="1">Hoạt động</a-select-option>
           <a-select-option :value="0">Không hoạt động</a-select-option>
         </a-select>
-      </a-col>
-
-      <a-col>
-        <a-tooltip title="Lọc">
-          <a-button
-            @click="fetchSubjectFacility"
-            class="filter-button"
-            :style="{ backgroundColor: '#fff7e6', color: 'black', border: '1px solid #ffa940' }"
-          >
-            <SearchOutlined />
-            Lọc
-          </a-button>
-        </a-tooltip>
       </a-col>
     </a-row>
   </a-card>
