@@ -9,6 +9,8 @@ import java.util.Optional;
 @Repository
 public interface AuthenticationUserStudentRepository extends UserStudentRepository {
 
+    Optional<UserStudent> findByEmail(String email);
+
     Optional<UserStudent> findByEmailAndFacility_Id(String email, String idFacility);
 
 }

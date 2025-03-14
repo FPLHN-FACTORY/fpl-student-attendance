@@ -3,7 +3,7 @@
 
   <a-card title="Bộ lọc" :bordered="false" class="filter-card">
     <a-row :gutter="16" class="filter-container">
-      <a-col :span="9">
+      <a-col :span="8">
         <a-input
           v-model:value="filter.name"
           placeholder="Tìm kiếm theo tên"
@@ -13,13 +13,14 @@
         />
       </a-col>
 
-      <a-col :span="3">
+      <a-col :span="8">
         <a-select
           v-model:value="filter.facilityId"
           placeholder="Cơ sở"
           allowClear
           class="filter-select"
           :dropdownMatchSelectWidth="false"
+          style="width: 100%"
           @change="fetchSubjectFacility"
         >
           <a-select-option :value="null">Tất cả cơ sở</a-select-option>
@@ -29,13 +30,14 @@
         </a-select>
       </a-col>
 
-      <a-col :span="3">
+      <a-col :span="8">
         <a-select
           v-model:value="filter.status"
           placeholder="Trạng thái"
           allowClear
           class="filter-select"
           :dropdownMatchSelectWidth="false"
+          style="width: 100%"
           @change="fetchSubjectFacility"
         >
           <a-select-option :value="null">Tất cả trạng thái</a-select-option>
@@ -43,29 +45,20 @@
           <a-select-option :value="0">Không hoạt động</a-select-option>
         </a-select>
       </a-col>
-
-      <a-col>
-        <a-button
-          @click="fetchSubjectFacility"
-          class="filter-button"
-          :style="{ backgroundColor: '#fff7e6', color: 'black', border: '1px solid #ffa940' }"
-        >
-          <SearchOutlined />
-          Lọc
-        </a-button>
-      </a-col>
     </a-row>
   </a-card>
 
   <a-card title="Danh sách bộ môn cơ sở" :bordered="false" class="cart">
     <div style="display: flex; justify-content: flex-end; margin-bottom: 10px">
-      <a-button
-        style="background-color: #fff7e6; color: black; border: '1px solid #ffa940'"
-        @click="showAddModal()"
-      >
-        <PlusOutlined />
-        Thêm
-      </a-button>
+      <a-tooltip title="Thêm bộ môn cơ sở">
+        <a-button
+          style="background-color: #fff7e6; color: black; border: 1px solid #ffa940"
+          @click="showAddModal()"
+        >
+          <PlusOutlined />
+          Thêm
+        </a-button>
+      </a-tooltip>
     </div>
 
     <a-table
@@ -84,29 +77,43 @@
         </template>
 
         <template v-if="column.key === 'actions'">
-          <a-button
-            @click="handleDetailSubjectFacility(record)"
-            type="text"
-            :style="{ backgroundColor: '#FFF7E6', marginRight: '8px', border: '1px solid #ffa940' }"
-          >
-            <EyeOutlined />
-          </a-button>
+          <a-tooltip title="Xem chi tiết">
+            <a-button
+              @click="handleDetailSubjectFacility(record)"
+              type="text"
+              :style="{
+                backgroundColor: '#FFF7E6',
+                marginRight: '8px',
+                border: '1px solid #ffa940',
+              }"
+            >
+              <EyeOutlined />
+            </a-button>
+          </a-tooltip>
 
-          <a-button
-            @click="handleUpdateProject(record)"
-            type="text"
-            :style="{ backgroundColor: '#FFF7E6', marginRight: '8px', border: '1px solid #ffa940' }"
-          >
-            <EditOutlined />
-          </a-button>
+          <a-tooltip title="Sửa">
+            <a-button
+              @click="handleUpdateProject(record)"
+              type="text"
+              :style="{
+                backgroundColor: '#FFF7E6',
+                marginRight: '8px',
+                border: '1px solid #ffa940',
+              }"
+            >
+              <EditOutlined />
+            </a-button>
+          </a-tooltip>
 
-          <a-button
-            @click="handleDeleteSubjectFacility(record)"
-            type="text"
-            :style="{ backgroundColor: '#FFF7E6', border: '1px solid #ffa940' }"
-          >
-            <DeleteOutlined />
-          </a-button>
+          <a-tooltip title="Xóa">
+            <a-button
+              @click="handleDeleteSubjectFacility(record)"
+              type="text"
+              :style="{ backgroundColor: '#FFF7E6', border: '1px solid #ffa940' }"
+            >
+              <DeleteOutlined />
+            </a-button>
+          </a-tooltip>
         </template>
       </template>
     </a-table>
@@ -114,7 +121,7 @@
 
   <a-modal
     title="Thêm Bộ Môn Cơ Sở"
-    v-model:visible="ModalAdd"
+    v-model:open="ModalAdd"
     @ok="handleAddSubjectFacility"
     @cancel="ModalAdd = false"
   >
@@ -130,8 +137,7 @@
           allowClear
           mode="multiple"
         >
-          <a-select-option :value="null">Tất cả cở sở</a-select-option>
-
+          <a-select-option :value="null">Tất cả cơ sở</a-select-option>
           <a-select-option v-for="f in facilitySubject" :key="f.id" :value="f.id">
             {{ f.name }}
           </a-select-option>
@@ -141,7 +147,7 @@
   </a-modal>
 
   <!-- Modal xem chi tiết bộ môn -->
-  <a-modal v-model:visible="ModalDetail" title="Chi tiết bộ môn cơ sở" footer="">
+  <a-modal v-model:open="ModalDetail" title="Chi tiết bộ môn cơ sở" footer="">
     <p><strong>Tên bộ môn:</strong> {{ detailSubjectFacility.subject.name }}</p>
     <p><strong>Tên cơ sở:</strong> {{ detailSubjectFacility.facility.name }}</p>
     <p>
@@ -155,7 +161,7 @@
   </a-modal>
 
   <!-- Modal sửa bộ môn -->
-  <a-modal v-model:visible="ModalUpdate" title="Sửa bộ môn cơ sở" @ok="updateSubjectFacility">
+  <a-modal v-model:open="ModalUpdate" title="Sửa bộ môn cơ sở" @ok="updateSubjectFacility">
     <p>Chưa nghĩ ra cần sửa cái gì</p>
   </a-modal>
 </template>

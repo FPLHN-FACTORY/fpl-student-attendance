@@ -32,15 +32,7 @@ public class CustomOAuth2SuccessHandler implements AuthenticationSuccessHandler 
 
         String email = oauthUser.getAttribute("email");
 
-        Map<String, Object> dataUser = new HashMap<>();
-        dataUser.put("id", oauthUser.getId());
-        dataUser.put("role", oauthUser.getRole());
-        dataUser.put("facilityID", oauthUser.getIdFacility());
-        dataUser.put("name", oauthUser.getName());
-        dataUser.put("code", oauthUser.getCode());
-        dataUser.put("picture", oauthUser.getPicture());
-
-        String token = jwtUtil.generateToken(email, dataUser);
+        String token = jwtUtil.generateToken(email, oauthUser);
 
         String redirect_uri = (String) httpSession.getAttribute(SessionConstant.LOGIN_REDIRECT);
 

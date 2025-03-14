@@ -1,34 +1,17 @@
 <script setup>
-import { UserOutlined } from '@ant-design/icons-vue'
-import { ROUTE_NAMES } from '@/router/staffRoute'
+import { StaffRoutes } from '@/router/staffRoute'
 import DefaultLayout from './base/DefaultLayout.vue'
 </script>
 
 <template>
   <DefaultLayout>
-    <a-menu-item key="1">
-      <router-link :to="{ name: ROUTE_NAMES.MANAGEMENT_PROJECT }">
-        <user-outlined />
-        <span>Quản lý dự án</span>
-      </router-link>
-    </a-menu-item>
-    <a-menu-item key="2">
-      <router-link :to="{ name: ROUTE_NAMES.MANAGEMENT_FACTORY }">
-        <user-outlined />
-        <span>Quản lý nhóm xưởng</span>
-      </router-link>
-    </a-menu-item>
-    <a-menu-item key="3">
-      <router-link :to="{ name: ROUTE_NAMES.MANAGEMENT_PLAN }">
-        <user-outlined />
-        <span>Phân công kế hoạch</span>
-      </router-link>
-    </a-menu-item>
-    <a-menu-item key="4">
-      <router-link :to="{ name: ROUTE_NAMES.MANAGEMENT_STUDENT }">
-        <user-outlined />
-        <span>Quản lý sinh viên</span>
-      </router-link>
-    </a-menu-item>
+    <template v-for="o in StaffRoutes[0].children" :key="o.name">
+      <a-menu-item v-if="o.meta?.selectedKey" :key="o.meta.selectedKey">
+        <router-link :to="{ name: o.name }">
+          <component :is="o.meta.icon" />
+          <span>{{ o.meta.name }}</span>
+        </router-link>
+      </a-menu-item>
+    </template>
   </DefaultLayout>
 </template>

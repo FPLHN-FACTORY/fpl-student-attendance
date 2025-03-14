@@ -41,7 +41,7 @@
         >
           <a-select-option :value="null">Tất cả học kỳ</a-select-option>
           <a-select-option v-for="semester in semesters" :key="semester.id" :value="semester.id">
-            {{ semester.name }}
+            {{ semester.code }}
           </a-select-option>
         </a-select>
       </a-col>
@@ -136,7 +136,7 @@
   </a-card>
 
   <!-- Modal thêm dự án -->
-  <a-modal v-model:visible="modalAdd" title="Thêm dự án" @ok="handleAddProject" @cancel="resetForm">
+  <a-modal v-model:open="modalAdd" title="Thêm dự án" @ok="handleAddProject" @cancel="resetForm">
     <a-form layout="vertical">
       <a-form-item label="Tên dự án" required>
         <a-input v-model:value="newProject.name" placeholder="Nhập tên dự án" />
@@ -177,7 +177,7 @@
   </a-modal>
 
   <!-- Modal xem chi tiết dự án -->
-  <a-modal v-model:visible="modalDetail" title="Chi tiết dự án" footer="">
+  <a-modal v-model:open="modalDetail" title="Chi tiết dự án" footer="">
     <p><strong>Tên:</strong> {{ detailProject.name }}</p>
     <p><strong>Cấp dự án:</strong> {{ detailProject.nameLevelProject }}</p>
     <p><strong>Học kỳ:</strong> {{ detailProject.nameSemester }}</p>
@@ -201,7 +201,7 @@
   </a-modal>
 
   <!-- Modal sửa dự án -->
-  <a-modal v-model:visible="modalEdit" title="Sửa dự án" @ok="handleUpdateProject">
+  <a-modal v-model:open="modalEdit" title="Sửa dự án" @ok="handleUpdateProject">
     <a-form layout="vertical">
       <a-form-item label="Tên dự án" required>
         <a-input v-model:value="detailProject.name" placeholder="Nhập tên dự án" />
