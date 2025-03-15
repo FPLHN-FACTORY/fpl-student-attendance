@@ -1,19 +1,15 @@
-package udpm.hn.studentattendance.core.staff.factory.repository;
+package udpm.hn.studentattendance.core.teacher.student.repository;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
-import udpm.hn.studentattendance.core.staff.factory.model.request.Staff_StudentFactoryRequest;
-import udpm.hn.studentattendance.core.staff.factory.model.response.Staff_StudentFactoryResponse;
-import udpm.hn.studentattendance.entities.UserStudentFactory;
+import udpm.hn.studentattendance.core.teacher.student.model.request.Teacher_StudentFactoryRequest;
+import udpm.hn.studentattendance.core.teacher.student.model.response.Teacher_StudentFactoryResponse;
 import udpm.hn.studentattendance.repositories.UserStudentFactoryRepository;
 
-import java.util.Optional;
-
 @Repository
-public interface Staff_StudentFactoryRepository extends UserStudentFactoryRepository {
-
+public interface Teacher_StudentFactoryExtendRepository extends UserStudentFactoryRepository {
     @Query(value =
             """
                     SELECT 
@@ -32,12 +28,12 @@ public interface Staff_StudentFactoryRepository extends UserStudentFactoryReposi
                         ft.id = :factoryId
                         AND ft.status = 1
                         AND us.status = 1
-                        AND (:#{#studentFactoryRequest.status} IS NULL OR usf.status = :#{#studentFactoryRequest.status})
+                        AND (:#{#studentRequest.status} IS NULL OR usf.status = :#{#studentRequest.status})
                         AND (
-                            :#{#studentFactoryRequest.searchQuery} IS NULL OR :#{#studentFactoryRequest.searchQuery} = ''
-                            OR us.code LIKE CONCAT('%', :#{#studentFactoryRequest.searchQuery}, '%')
-                            OR us.name LIKE CONCAT('%', :#{#studentFactoryRequest.searchQuery}, '%')
-                            OR us.email LIKE CONCAT('%', :#{#studentFactoryRequest.searchQuery}, '%')
+                            :#{#studentRequest.searchQuery} IS NULL OR :#{#studentRequest.searchQuery} = ''
+                            OR us.code LIKE CONCAT('%', :#{#studentRequest.searchQuery}, '%')
+                            OR us.name LIKE CONCAT('%', :#{#studentRequest.searchQuery}, '%')
+                            OR us.email LIKE CONCAT('%', :#{#studentRequest.searchQuery}, '%')
                         )
                     ORDER BY usf.created_at DESC
                     """,
@@ -51,20 +47,17 @@ public interface Staff_StudentFactoryRepository extends UserStudentFactoryReposi
                                 ft.id = :factoryId
                                 AND ft.status = 1
                                 AND us.status = 1
-                                AND (:#{#studentFactoryRequest.status} IS NULL OR usf.status = :#{#studentFactoryRequest.status})
+                                AND (:#{#studentRequest.status} IS NULL OR usf.status = :#{#studentRequest.status})
                                 AND (
-                                    :#{#studentFactoryRequest.searchQuery} IS NULL OR :#{#studentFactoryRequest.searchQuery} = ''
-                                    OR us.code LIKE CONCAT('%', :#{#studentFactoryRequest.searchQuery}, '%')
-                                    OR us.name LIKE CONCAT('%', :#{#studentFactoryRequest.searchQuery}, '%')
-                                    OR us.email LIKE CONCAT('%', :#{#studentFactoryRequest.searchQuery}, '%')
+                                    :#{#studentRequest.searchQuery} IS NULL OR :#{#studentRequest.searchQuery} = ''
+                                    OR us.code LIKE CONCAT('%', :#{#studentRequest.searchQuery}, '%')
+                                    OR us.name LIKE CONCAT('%', :#{#studentRequest.searchQuery}, '%')
+                                    OR us.email LIKE CONCAT('%', :#{#studentRequest.searchQuery}, '%')
                                 )
                                  
                             """,
             nativeQuery = true
     )
-    Page<Staff_StudentFactoryResponse> getUserStudentInFactory(Pageable pageable, String factoryId, Staff_StudentFactoryRequest studentFactoryRequest);
-
-    Optional<UserStudentFactory> getUserStudentFactoriesByUserStudentIdAndFactoryId(String userStudentId, String factoryId);
-
+    Page<Teacher_StudentFactoryResponse> getUserStudentInFactory(Pageable pageable, String factoryId, Teacher_StudentFactoryRequest studentRequest);
 
 }

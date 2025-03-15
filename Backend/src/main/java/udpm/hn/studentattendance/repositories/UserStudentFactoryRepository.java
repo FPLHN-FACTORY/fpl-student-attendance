@@ -5,5 +5,5 @@ import org.springframework.stereotype.Repository;
 import udpm.hn.studentattendance.entities.UserStudentFactory;
 
 @Repository
-public interface UserStudentProjectRepository extends JpaRepository<UserStudentFactory, String> {
+public interface UserStudentFactoryRepository extends JpaRepository<UserStudentFactory, String> {
 }
