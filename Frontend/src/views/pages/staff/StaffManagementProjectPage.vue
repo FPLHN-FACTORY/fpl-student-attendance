@@ -41,7 +41,7 @@
         >
           <a-select-option :value="null">Tất cả học kỳ</a-select-option>
           <a-select-option v-for="semester in semesters" :key="semester.id" :value="semester.id">
-            {{ semester.name }}
+            {{ semester.code }}
           </a-select-option>
         </a-select>
       </a-col>
@@ -179,12 +179,17 @@
   <!-- Modal xem chi tiết dự án -->
   <a-modal v-model:visible="modalDetail" title="Chi tiết dự án" footer="">
     <p><strong>Tên:</strong> {{ detailProject.name }}</p>
-    <p><strong>Cấp dự án:</strong> {{ detailProject.levelProject.name }}</p>
-    <p><strong>Học kỳ:</strong> {{ detailProject.semester.name }}</p>
-    <p><strong>Môn học:</strong> {{ detailProject.subjectFacility.subject.name }}</p>
+    <p><strong>Cấp dự án:</strong> {{ detailProject.nameLevelProject }}</p>
+    <p><strong>Học kỳ:</strong> {{ detailProject.nameSemester }}</p>
+    <p><strong>Môn học:</strong> {{ detailProject.nameSubject }}</p>
     <p><strong>Mô tả:</strong> {{ detailProject.description }}</p>
-    <p><strong>Ngày tạo:</strong> {{ formatDate(detailProject.createdAt) }}</p>
-    <p><strong>Ngày sửa:</strong> {{ formatDate(detailProject.updatedAt) }}</p>
+    <!-- Nếu createdAt và updatedAt không được trả về, bạn có thể loại bỏ hoặc xử lý kiểm tra tồn tại -->
+    <p v-if="detailProject.createdAt">
+      <strong>Ngày tạo:</strong> {{ formatDate(detailProject.createdAt) }}
+    </p>
+    <p v-if="detailProject.updatedAt">
+      <strong>Ngày sửa:</strong> {{ formatDate(detailProject.updatedAt) }}
+    </p>
     <p><strong>Số nhóm xưởng: COMING SOON</strong></p>
     <p><strong>Giảng viên: COMING SOON</strong></p>
     <p>
@@ -208,7 +213,7 @@
 
       <a-form-item label="Cấp dự án" required>
         <a-select
-          v-model:value="detailProject.levelProject.id"
+          v-model:value="detailProject.levelProjectId"
           placeholder="Chọn cấp dự án"
           allowClear
         >
@@ -219,7 +224,7 @@
       </a-form-item>
 
       <a-form-item label="Học kỳ" required>
-        <a-select v-model:value="detailProject.semester.id" placeholder="Chọn học kỳ" allowClear>
+        <a-select v-model:value="detailProject.semesterId" placeholder="Chọn học kỳ" allowClear>
           <a-select-option v-for="semester in semesters" :key="semester.id" :value="semester.id">
             {{ semester.name }}
           </a-select-option>
@@ -227,11 +232,7 @@
       </a-form-item>
 
       <a-form-item label="Môn học" required>
-        <a-select
-          v-model:value="detailProject.subjectFacility.subject.id"
-          placeholder="Chọn môn học"
-          allowClear
-        >
+        <a-select v-model:value="detailProject.subjectId" placeholder="Chọn môn học" allowClear>
           <a-select-option v-for="subject in subjects" :key="subject.id" :value="subject.id">
             {{ subject.name }}
           </a-select-option>
@@ -258,6 +259,7 @@ import {
 } from '@ant-design/icons-vue'
 import { message, Modal } from 'ant-design-vue'
 import requestAPI from '@/services/requestApiService'
+import { API_ROUTES_STAFF } from '@/constants/staffConstant'
 
 export default {
   components: { SearchOutlined, PlusOutlined, EyeOutlined, EditOutlined, DeleteOutlined },
@@ -332,7 +334,7 @@ export default {
     //Hiển thị dữ liệu dự án
     fetchProjects() {
       requestAPI
-        .post('http://localhost:8765/api/v1/staff-management/project-management/list', this.filter)
+        .post(`${API_ROUTES_STAFF.FETCH_DATA_PROJECT}/list`, this.filter)
         .then((response) => {
           this.projects = response.data.data.data
           this.pagination.total = response.data.data.totalPages * this.filter.pageSize
@@ -346,7 +348,7 @@ export default {
     //Hiển thị dữ liệu combobox
     fetchLevelCombobox() {
       requestAPI
-        .get('http://localhost:8765/api/v1/staff-management/project-management/level-combobox')
+        .get(`${API_ROUTES_STAFF.FETCH_DATA_PROJECT}/level-combobox`)
         .then((response) => {
           this.levels = response.data
         })
@@ -358,7 +360,7 @@ export default {
     //Hiển thị dữ liệu combobox
     fetchSemesters() {
       requestAPI
-        .get('http://localhost:8765/api/v1/staff-management/project-management/semester-combobox')
+        .get(`${API_ROUTES_STAFF.FETCH_DATA_PROJECT}/semester-combobox`)
         .then((response) => {
           this.semesters = response.data
         })
@@ -370,9 +372,7 @@ export default {
     //Hiển thị dữ liệu combobox
     fetchSubjects() {
       requestAPI
-        .get(
-          'http://localhost:8765/api/v1/staff-management/project-management/subject-facility-combobox',
-        )
+        .get(`${API_ROUTES_STAFF.FETCH_DATA_PROJECT}/subject-facility-combobox`)
         .then((response) => {
           this.subjects = response.data
         })
@@ -412,7 +412,7 @@ export default {
         return
       }
       requestAPI
-        .post('http://localhost:8765/api/v1/staff-management/project-management', this.newProject)
+        .post(API_ROUTES_STAFF.FETCH_DATA_PROJECT, this.newProject)
         .then(() => {
           message.success('Thêm dự án thành công')
           this.fetchProjects()
@@ -427,7 +427,7 @@ export default {
     //Chức năng xem
     handleDetailProject(record) {
       requestAPI
-        .get(`http://localhost:8765/api/v1/staff-management/project-management/${record.id}`)
+        .get(`${API_ROUTES_STAFF.FETCH_DATA_PROJECT}/${record.id}`)
         .then((response) => {
           this.detailProject = response.data.data
           this.modalDetail = true
@@ -440,7 +440,7 @@ export default {
     //Mở modal sửa
     handleEditProject(record) {
       requestAPI
-        .get(`http://localhost:8765/api/v1/staff-management/project-management/${record.id}`)
+        .get(`${API_ROUTES_STAFF.FETCH_DATA_PROJECT}/${record.id}`)
         .then((response) => {
           this.detailProject = response.data.data
           this.modalEdit = true
@@ -456,15 +456,15 @@ export default {
         message.error('Tên dự án không được bỏ trống')
         return
       }
-      if (!this.detailProject.levelProject.id) {
+      if (!this.detailProject.levelProjectId) {
         message.error('Phải chọn cấp dự án')
         return
       }
-      if (!this.detailProject.semester.id) {
+      if (!this.detailProject.semesterId) {
         message.error('Phải chọn học kỳ')
         return
       }
-      if (!this.detailProject.subjectFacility.subject.id) {
+      if (!this.detailProject.subjectId) {
         message.error('Phải chọn môn học')
         return
       }
@@ -475,16 +475,13 @@ export default {
       let req = {
         name: this.detailProject.name,
         description: this.detailProject.description,
-        idLevelProject: this.detailProject.levelProject.id,
-        idSemester: this.detailProject.semester.id,
-        idSubject: this.detailProject.subjectFacility.subject.id,
+        idLevelProject: this.detailProject.levelProjectId,
+        idSemester: this.detailProject.semesterId,
+        idSubject: this.detailProject.subjectId,
         status: this.detailProject.status,
       }
       requestAPI
-        .put(
-          `http://localhost:8765/api/v1/staff-management/project-management/${this.detailProject.id}`,
-          req,
-        )
+        .put(`${API_ROUTES_STAFF.FETCH_DATA_PROJECT}/${this.detailProject.id}`, req)
         .then(() => {
           message.success('Cập nhật dự án thành công')
           this.modalEdit = false
@@ -502,7 +499,7 @@ export default {
         content: 'Bạn có chắc chắn muốn xóa dự án này?',
         onOk: () => {
           requestAPI
-            .delete(`http://localhost:8765/api/v1/staff-management/project-management/${record.id}`)
+            .delete(`${API_ROUTES_STAFF.FETCH_DATA_PROJECT}/${record.id}`)
             .then(() => {
               message.success('Xóa dự án thành công')
               this.fetchProjects()

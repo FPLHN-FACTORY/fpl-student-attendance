@@ -19,6 +19,7 @@ import java.io.Serializable;
 @NoArgsConstructor
 @Table(name = "subject")
 @DynamicUpdate
+@ToString
 public class Subject extends PrimaryEntity implements Serializable {
 
     @Column(name = "code", length = EntityProperties.LENGTH_NAME)

@@ -2,9 +2,10 @@ import { createRouter, createWebHistory } from 'vue-router'
 import { AuthenticationRoutes, ROUTE_NAMES as RouteNameAuth } from './authenticationRoute'
 import { AdminRoutes } from './adminRoute'
 import { StaffRoutes } from './staffRoute'
+import { TeacherRoutes } from './teacherRoute'
 import { StudentRoutes } from './studentRoute'
-import useAuthStore from '@/stores/useAuthStore'
 import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
+import useAuthStore from '@/stores/useAuthStore'
 
 const routes = [
   { path: '/:pathMatch(.*)*', component: import('@/views/pages/errors/Error404Page.vue') },
@@ -16,6 +17,7 @@ const routes = [
   ...AuthenticationRoutes,
   ...AdminRoutes,
   ...StaffRoutes,
+  ...TeacherRoutes,
   ...StudentRoutes,
 ]
 
@@ -37,7 +39,7 @@ router.beforeEach((to, from, next) => {
     return next({ name: RouteNameAuth.LOGIN_PAGE })
   }
 
-  if (requireRole && requireRole.toLowerCase() !== user.role.toLowerCase()) {
+  if (requireRole && !user.role.includes(requireRole.toUpperCase())) {
     return next({ name: GLOBAL_ROUTE_NAMES.ERROR_403_PAGE })
   }
 

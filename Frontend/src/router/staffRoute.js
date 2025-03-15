@@ -4,8 +4,8 @@ import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
 export const ROUTE_NAMES = {
   MANAGEMENT_PROJECT: 'route_staff_management_project',
   MANAGEMENT_FACTORY: 'route_staff_management_factory',
+  MANAGEMENT_STUDENT_FACTORY: 'route_staff_management_student_factory',
   MANAGEMENT_PLAN: 'route_staff_management_plan',
-  MANAGEMENT_LEVEL_PROJECT: 'route_staff_management_level_project',
   MANAGEMENT_STUDENT: 'route_staff_management_student',
 }
 
@@ -36,14 +36,14 @@ export const StaffRoutes = [
         component: import('@/views/pages/staff/StaffManagementPlanPage.vue'),
       },
       {
-        path: 'management-level-project',
-        name: ROUTE_NAMES.MANAGEMENT_LEVEL_PROJECT,
-        component: import('@/views/pages/staff/StaffManagementLevelProjectPage.vue'),
-      },
-      {
         path: 'management-student',
         name: ROUTE_NAMES.MANAGEMENT_STUDENT,
         component: import('@/views/pages/staff/StaffManagementStudentPage.vue'),
+      },
+      {
+        path: 'management-student-factory',
+        name: ROUTE_NAMES.MANAGEMENT_STUDENT_FACTORY,
+        component: import('@/views/pages/staff/StaffManagementStudentFactoryPage.vue'),
       },
     ],
   },

@@ -1,19 +1,14 @@
 package udpm.hn.studentattendance.core.authentication.oauth2;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
-import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
-import udpm.hn.studentattendance.core.authentication.router.RouteAuthentication;
+import udpm.hn.studentattendance.infrastructure.constants.router.RouteAuthenticationConstant;
 import udpm.hn.studentattendance.infrastructure.common.ApiResponse;
 import udpm.hn.studentattendance.infrastructure.constants.SessionConstant;
 
@@ -35,7 +30,7 @@ public class CustomOAuth2FailureHandler implements AuthenticationFailureHandler 
         String data = Base64.getEncoder().encodeToString(json.getBytes(StandardCharsets.UTF_8));
         String redirect_uri = (String) httpSession.getAttribute(SessionConstant.LOGIN_REDIRECT);
 
-        response.sendRedirect(redirect_uri + "?" + RouteAuthentication.PARAM_LOGIN_FAILURE + "=" + data);
+        response.sendRedirect(redirect_uri + "?" + RouteAuthenticationConstant.PARAM_LOGIN_FAILURE + "=" + data);
     }
 
 }

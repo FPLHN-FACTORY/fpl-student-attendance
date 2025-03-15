@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import udpm.hn.studentattendance.core.authentication.model.response.AuthenticationInfoUserResponse;
-import udpm.hn.studentattendance.core.authentication.router.RouteAuthentication;
+import udpm.hn.studentattendance.infrastructure.constants.router.RouteAuthenticationConstant;
 import udpm.hn.studentattendance.core.authentication.services.AuthenticationService;
 import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.infrastructure.common.ApiResponse;
@@ -21,13 +21,13 @@ public class AuthenticationRestController {
 
     private final AuthenticationService authenticationService;
 
-    @GetMapping(RouteAuthentication.API_GET_ALL_FACILITY)
+    @GetMapping(RouteAuthenticationConstant.API_GET_ALL_FACILITY)
     public ResponseEntity<ApiResponse> getAllFacility() {
         ApiResponse response = ApiResponse.success("Tải dữ liệu danh sách cơ sở thành công", authenticationService.getAll());
         return RouterHelper.createResponseApi(response, HttpStatus.OK);
     }
 
-    @GetMapping(RouteAuthentication.API_GET_INFO_USER + "/{token}")
+    @GetMapping(RouteAuthenticationConstant.API_GET_INFO_USER + "/{token}")
     public ResponseEntity<ApiResponse> getInfoUser(@PathVariable("token") String token) {
         AuthenticationInfoUserResponse userData = authenticationService.getInfoUser(token);
 

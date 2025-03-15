@@ -5,7 +5,7 @@
   <a-card title="Bộ lọc" :bordered="false" class="cart">
     <a-row :gutter="16" class="filter-container">
       <!-- Ô nhập tên để tìm kiếm -->
-      <a-col :span="8">
+      <a-col :span="12">
         <a-input
           v-model:value="filter.name"
           placeholder="Tìm kiếm theo tên"
@@ -15,28 +15,18 @@
       </a-col>
 
       <!-- Dropdown chọn trạng thái -->
-      <a-col :span="8">
+      <a-col :span="12">
         <a-select
           v-model:value="filter.status"
           placeholder="Chọn trạng thái"
           allowClear
+          style="width: 100%"
           @change="fetchLevels"
         >
           <a-select-option :value="''">Tất cả trạng thái</a-select-option>
           <a-select-option :value="1">Hoạt động</a-select-option>
           <a-select-option :value="0">Không hoạt động</a-select-option>
         </a-select>
-      </a-col>
-
-      <!-- Nút lọc -->
-      <a-col :span="8">
-        <a-button
-          @click="fetchLevels"
-          style="background-color: #fff7e6; color: black; border: 1px solid #ffa940"
-        >
-          <SearchOutlined />
-          Lọc
-        </a-button>
       </a-col>
     </a-row>
   </a-card>
@@ -166,6 +156,7 @@ import {
 } from '@ant-design/icons-vue'
 import { message, Modal } from 'ant-design-vue'
 import requestAPI from '@/services/requestApiService'
+import { API_ROUTES_ADMIN } from '@/constants/adminConstant'
 
 export default {
   components: { SearchOutlined, PlusOutlined, EyeOutlined, EditOutlined, DeleteOutlined },
@@ -203,10 +194,7 @@ export default {
     //Load table
     fetchLevels() {
       requestAPI
-        .post(
-          'http://localhost:8765/api/v1/admin-management/level-project-management/list',
-          this.filter,
-        )
+        .post(`${API_ROUTES_ADMIN.FETCH_DATA_LEVEL_PROJECT}/list`, this.filter)
         .then((response) => {
           this.levels = response.data.data.data
           this.pagination.total = response.data.data.totalPages * this.filter.pageSize
@@ -241,10 +229,7 @@ export default {
         return
       }
       requestAPI
-        .post(
-          'http://localhost:8765/api/v1/admin-management/level-project-management',
-          this.newLevel,
-        )
+        .post(API_ROUTES_ADMIN.FETCH_DATA_LEVEL_PROJECT, this.newLevel)
         .then(() => {
           message.success('Thêm cấp dự án thành công')
           this.ShowAddModal(false)
@@ -259,7 +244,7 @@ export default {
     //Detail
     HandelDetailLevel(record) {
       requestAPI
-        .get(`http://localhost:8765/api/v1/admin-management/level-project-management/${record.id}`)
+        .get(`${API_ROUTES_ADMIN.FETCH_DATA_LEVEL_PROJECT}/${record.id}`)
         .then((response) => {
           this.ShowDetailModal(true)
           this.detailLevel = response.data.data
@@ -272,7 +257,7 @@ export default {
     //Update
     HandelUpdateLevel(record) {
       requestAPI
-        .get(`http://localhost:8765/api/v1/admin-management/level-project-management/${record.id}`)
+        .get(`${API_ROUTES_ADMIN.FETCH_DATA_LEVEL_PROJECT}/${record.id}`)
         .then((response) => {
           this.detailLevel = response.data.data
           this.ShowUpdateModal(true)
@@ -290,8 +275,8 @@ export default {
       }
       requestAPI
         .put(
-          `http://localhost:8765/api/v1/admin-management/level-project-management/${this.detailLevel.id}`,
-          this.detailLevel,
+          `${API_ROUTES_ADMIN.FETCH_DATA_LEVEL_PROJECT}/${this.detailLevel.id}`,
+          this.detailLevel
         )
         .then(() => {
           message.success('Cập nhật cấp dự án thành công')
@@ -311,9 +296,7 @@ export default {
         content: `Bạn có chắc chắn muốn xóa cấp dự án ${record.name} không?`,
         onOk: () => {
           requestAPI
-            .delete(
-              `http://localhost:8765/api/v1/admin-management/level-project-management/${record.id}`,
-            )
+            .delete(`${API_ROUTES_ADMIN.FETCH_DATA_LEVEL_PROJECT}/${record.id}`)
             .then(() => {
               message.success('Xóa cấp dự án thành công')
               this.fetchLevels()

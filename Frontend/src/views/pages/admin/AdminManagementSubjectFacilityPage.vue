@@ -3,7 +3,7 @@
 
   <a-card title="Bộ lọc" :bordered="false" class="filter-card">
     <a-row :gutter="16" class="filter-container">
-      <a-col :span="9">
+      <a-col :span="8">
         <a-input
           v-model:value="filter.name"
           placeholder="Tìm kiếm theo tên"
@@ -13,13 +13,14 @@
         />
       </a-col>
 
-      <a-col :span="3">
+      <a-col :span="8">
         <a-select
           v-model:value="filter.facilityId"
           placeholder="Cơ sở"
           allowClear
           class="filter-select"
           :dropdownMatchSelectWidth="false"
+          style="width: 100%"
           @change="fetchSubjectFacility"
         >
           <a-select-option :value="null">Tất cả cơ sở</a-select-option>
@@ -29,13 +30,14 @@
         </a-select>
       </a-col>
 
-      <a-col :span="3">
+      <a-col :span="8">
         <a-select
           v-model:value="filter.status"
           placeholder="Trạng thái"
           allowClear
           class="filter-select"
           :dropdownMatchSelectWidth="false"
+          style="width: 100%"
           @change="fetchSubjectFacility"
         >
           <a-select-option :value="null">Tất cả trạng thái</a-select-option>
@@ -43,29 +45,20 @@
           <a-select-option :value="0">Không hoạt động</a-select-option>
         </a-select>
       </a-col>
-
-      <a-col>
-        <a-button
-          @click="fetchSubjectFacility"
-          class="filter-button"
-          :style="{ backgroundColor: '#fff7e6', color: 'black', border: '1px solid #ffa940' }"
-        >
-          <SearchOutlined />
-          Lọc
-        </a-button>
-      </a-col>
     </a-row>
   </a-card>
 
   <a-card title="Danh sách bộ môn cơ sở" :bordered="false" class="cart">
     <div style="display: flex; justify-content: flex-end; margin-bottom: 10px">
-      <a-button
-        style="background-color: #fff7e6; color: black; border: '1px solid #ffa940'"
-        @click="showAddModal()"
-      >
-        <PlusOutlined />
-        Thêm
-      </a-button>
+      <a-tooltip title="Thêm bộ môn cơ sở">
+        <a-button
+          style="background-color: #fff7e6; color: black; border: 1px solid #ffa940"
+          @click="showAddModal()"
+        >
+          <PlusOutlined />
+          Thêm
+        </a-button>
+      </a-tooltip>
     </div>
 
     <a-table
@@ -84,29 +77,43 @@
         </template>
 
         <template v-if="column.key === 'actions'">
-          <a-button
-            @click="handleDetailSubjectFacility(record)"
-            type="text"
-            :style="{ backgroundColor: '#FFF7E6', marginRight: '8px', border: '1px solid #ffa940' }"
-          >
-            <EyeOutlined />
-          </a-button>
+          <a-tooltip title="Xem chi tiết">
+            <a-button
+              @click="handleDetailSubjectFacility(record)"
+              type="text"
+              :style="{
+                backgroundColor: '#FFF7E6',
+                marginRight: '8px',
+                border: '1px solid #ffa940',
+              }"
+            >
+              <EyeOutlined />
+            </a-button>
+          </a-tooltip>
 
-          <a-button
-            @click="handleUpdateProject(record)"
-            type="text"
-            :style="{ backgroundColor: '#FFF7E6', marginRight: '8px', border: '1px solid #ffa940' }"
-          >
-            <EditOutlined />
-          </a-button>
+          <a-tooltip title="Sửa">
+            <a-button
+              @click="handleUpdateProject(record)"
+              type="text"
+              :style="{
+                backgroundColor: '#FFF7E6',
+                marginRight: '8px',
+                border: '1px solid #ffa940',
+              }"
+            >
+              <EditOutlined />
+            </a-button>
+          </a-tooltip>
 
-          <a-button
-            @click="handleDeleteSubjectFacility(record)"
-            type="text"
-            :style="{ backgroundColor: '#FFF7E6', border: '1px solid #ffa940' }"
-          >
-            <DeleteOutlined />
-          </a-button>
+          <a-tooltip title="Xóa">
+            <a-button
+              @click="handleDeleteSubjectFacility(record)"
+              type="text"
+              :style="{ backgroundColor: '#FFF7E6', border: '1px solid #ffa940' }"
+            >
+              <DeleteOutlined />
+            </a-button>
+          </a-tooltip>
         </template>
       </template>
     </a-table>
@@ -130,8 +137,7 @@
           allowClear
           mode="multiple"
         >
-          <a-select-option :value="null">Tất cả cở sở</a-select-option>
-
+          <a-select-option :value="null">Tất cả cơ sở</a-select-option>
           <a-select-option v-for="f in facilitySubject" :key="f.id" :value="f.id">
             {{ f.name }}
           </a-select-option>
@@ -151,19 +157,14 @@
       </a-tag>
     </p>
     <p><strong>Ngày tạo:</strong> {{ formatDate(detailSubjectFacility.createdAt) }}</p>
-    <p><strong>Ngày cập nhật:</strong> {{ formatDate(detailSubjectFacility.updatedAt) }}</p> 
+    <p><strong>Ngày cập nhật:</strong> {{ formatDate(detailSubjectFacility.updatedAt) }}</p>
   </a-modal>
-
 
   <!-- Modal sửa bộ môn -->
   <a-modal v-model:visible="ModalUpdate" title="Sửa bộ môn cơ sở" @ok="updateSubjectFacility">
     <p>Chưa nghĩ ra cần sửa cái gì</p>
   </a-modal>
-
-
 </template>
-
-
 
 <script>
 import {
@@ -175,6 +176,7 @@ import {
 } from '@ant-design/icons-vue'
 import { message, Modal } from 'ant-design-vue'
 import requestAPI from '@/services/requestApiService'
+import { API_ROUTES_ADMIN } from '@/constants/adminConstant'
 
 export default {
   components: { SearchOutlined, PlusOutlined, EyeOutlined, EditOutlined, DeleteOutlined },
@@ -227,10 +229,7 @@ export default {
   methods: {
     fetchSubjectFacility() {
       requestAPI
-        .post(
-          'http://localhost:8765/api/v1/admin-management/subject-facility-management/list',
-          this.filter,
-        )
+        .post(`${API_ROUTES_ADMIN.FETCH_DATA_SUBJECT_FACILITY}/list`, this.filter)
         .then((response) => {
           this.subjectFacility = response.data.data.data
           this.pagination.total = response.data.data.totalPages * this.filter.pageSize
@@ -243,9 +242,7 @@ export default {
 
     fetchSubject() {
       requestAPI
-        .get(
-          `http://localhost:8765/api/v1/admin-management/subject-management/${this.filter.subjectId}`,
-        )
+        .get(`${API_ROUTES_ADMIN.FETCH_DATA_SUBJECT}/${this.filter.subjectId}`)
         .then((response) => {
           this.subject = response.data.data
         })
@@ -256,9 +253,7 @@ export default {
 
     fetchFacilityCombobox() {
       requestAPI
-        .get(
-          'http://localhost:8765/api/v1/admin-management/subject-facility-management/facility-combobox',
-        )
+        .get(`${API_ROUTES_ADMIN.FETCH_DATA_SUBJECT_FACILITY}/facility-combobox`)
         .then((response) => {
           this.facility = response.data
         })
@@ -269,10 +264,7 @@ export default {
 
     fetchFacilitySubjectCombobox() {
       requestAPI
-        .post(
-          'http://localhost:8765/api/v1/admin-management/subject-facility-management/facility-combobox',
-          this.filter,
-        )
+        .post(`${API_ROUTES_ADMIN.FETCH_DATA_SUBJECT_FACILITY}/facility-combobox`, this.filter)
         .then((response) => {
           this.facilitySubject = response.data
         })
@@ -300,11 +292,9 @@ export default {
             facilityId: f.id,
             subjectId: this.subject.id,
           }
-          requestAPI
-            .post('http://localhost:8765/api/v1/admin-management/subject-facility-management', req)
-            .then(() => {
-              this.fetchSubjectFacility()
-            })
+          requestAPI.post(API_ROUTES_ADMIN.FETCH_DATA_SUBJECT_FACILITY, req).then(() => {
+            this.fetchSubjectFacility()
+          })
         })
         message.success('Thêm bộ môn cơ sở thành công')
         this.ModalAdd = false
@@ -314,18 +304,16 @@ export default {
             facilityId: f,
             subjectId: this.subject.id,
           }
-          requestAPI
-            .post('http://localhost:8765/api/v1/admin-management/subject-facility-management', req)
-            .then(() => {
-              this.fetchSubjectFacility()
-            })
+          requestAPI.post(API_ROUTES_ADMIN.FETCH_DATA_SUBJECT_FACILITY, req).then(() => {
+            this.fetchSubjectFacility()
+          })
         })
         message.success('Thêm bộ môn cơ sở thành công')
         this.ModalAdd = false
       }
     },
 
-    handleUpdateProject(record){
+    handleUpdateProject(record) {
       this.ModalUpdate = true
     },
 
@@ -335,27 +323,23 @@ export default {
         content: `Bạn có chắc chắn muốn xóa bộ môn ${record.subjectName} cơ sở ${record.facilityName}  không?`,
         onOk: () => {
           requestAPI
-            .delete(`http://localhost:8765/api/v1/admin-management/subject-facility-management/${record.id}`)
+            .delete(`${API_ROUTES_ADMIN.FETCH_DATA_SUBJECT_FACILITY}/${record.id}`)
             .then(() => {
               message.success('Xóa bộ môn thành công')
               this.fetchSubjectFacility()
             })
-            .catch(() => {
-            })
+            .catch(() => {})
         },
       })
     },
 
-    handleDetailSubjectFacility(record){
+    handleDetailSubjectFacility(record) {
       this.ModalDetail = true
       requestAPI
-        .get(
-          `http://localhost:8765/api/v1/admin-management/subject-facility-management/${record.id}`,
-        )
+        .get(`${API_ROUTES_ADMIN.FETCH_DATA_SUBJECT_FACILITY}/${record.id}`)
         .then((response) => {
           this.detailSubjectFacility = response.data.data
-          console.log(this.detailSubjectFacility);
-          
+          console.log(this.detailSubjectFacility)
         })
         .catch(() => {
           message.error('Lỗi khi lấy dữ liệu combobox cơ sở')
