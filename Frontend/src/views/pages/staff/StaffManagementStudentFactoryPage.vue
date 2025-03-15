@@ -1,6 +1,6 @@
 <template>
   <div>
-    <h1>Quản lý sinh viên nhóm xưởng {{ factoryName }}</h1>
+    <h1>Quản lý sinh viên nhóm: {{ factoryName }}</h1>
 
     <!-- Bộ lọc tìm kiếm -->
     <a-card title="Bộ lọc" :bordered="false" class="cart">
@@ -188,7 +188,7 @@ const columns = ref([
   { title: 'Tên sinh viên', dataIndex: 'studentName', key: 'studentName' },
   { title: 'Email sinh viên', dataIndex: 'studentEmail', key: 'studentEmail' },
   { title: 'Trạng thái', dataIndex: 'statusStudentFactory', key: 'statusStudentFactory' },
-  { title: 'Chức năng', key: 'actions' },
+  { title: 'Chức năng', key: 'actions', width: 80 },
 ])
 
 const fetchStudentFactories = () => {

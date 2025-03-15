@@ -238,13 +238,6 @@
           </a-select-option>
         </a-select>
       </a-form-item>
-
-      <a-form-item label="Trạng thái">
-        <a-select v-model:value="detailProject.status" placeholder="Chọn trạng thái">
-          <a-select-option value="ACTIVE">Hoạt động</a-select-option>
-          <a-select-option value="INACTIVE">Không hoạt động</a-select-option>
-        </a-select>
-      </a-form-item>
     </a-form>
   </a-modal>
 </template>
@@ -468,17 +461,12 @@ export default {
         message.error('Phải chọn môn học')
         return
       }
-      if (!this.detailProject.status) {
-        message.error('Phải chọn trạng thái')
-        return
-      }
       let req = {
         name: this.detailProject.name,
         description: this.detailProject.description,
         idLevelProject: this.detailProject.levelProjectId,
         idSemester: this.detailProject.semesterId,
         idSubject: this.detailProject.subjectId,
-        status: this.detailProject.status,
       }
       requestAPI
         .put(`${API_ROUTES_STAFF.FETCH_DATA_PROJECT}/${this.detailProject.id}`, req)
