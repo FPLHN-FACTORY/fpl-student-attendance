@@ -21,28 +21,24 @@ import java.io.Serializable;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-@Table(name = "plan_date")
+@Table(name = "plan")
 @DynamicUpdate
-public class PlanDate extends PrimaryEntity implements Serializable {
+public class Plan extends PrimaryEntity implements Serializable {
+
+    @Column(name = "name", length = EntityProperties.LENGTH_NAME)
+    private String name;
 
     @Column(name = "description", length = EntityProperties.LENGTH_TEXT)
     private String description;
 
-    @Column(name = "start_date")
-    private Long startDate;
+    @Column(name = "from_date")
+    private Long fromDate;
 
-    @Column(name = "shift")
-    private Integer shift;
-
-    @Column(name = "late_arrival")
-    private Integer lateArrival;
+    @Column(name = "to_date")
+    private Long toDate;
 
     @ManyToOne
-    @JoinColumn(name = "id_plan")
-    private Plan plan;
-
-    @ManyToOne
-    @JoinColumn(name = "id_factory")
-    private Factory factory;
+    @JoinColumn(name = "id_project")
+    private Project project;
 
 }

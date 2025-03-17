@@ -11,15 +11,19 @@ import udpm.hn.studentattendance.infrastructure.common.PageableRequest;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class SPDFilterPlanDateRequest extends PageableRequest {
+public class SPDFilterPlanRequest extends PageableRequest {
 
     private String idFacility;
 
     @Size(max = 255, message = "Keyword không được vượt quá 255 ký tự")
     private String keyword;
 
-    private Long fromDate;
+    private String level;
 
-    private Long toDate;
+    private String semester;
+
+    private Integer year;
+
+    private String subject;
 
 }

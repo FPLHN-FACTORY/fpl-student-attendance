@@ -8,6 +8,7 @@ import org.springframework.stereotype.Repository;
 import udpm.hn.studentattendance.core.staff.plan.model.request.SPDFilterCreatePlanDateRequest;
 import udpm.hn.studentattendance.core.staff.plan.model.request.SPDFilterPlanDateDetailRequest;
 import udpm.hn.studentattendance.core.staff.plan.model.request.SPDFilterPlanDateRequest;
+import udpm.hn.studentattendance.core.staff.plan.model.response.SPDFactoryResponse;
 import udpm.hn.studentattendance.core.staff.plan.model.response.SPDPlanDateDetailResponse;
 import udpm.hn.studentattendance.core.staff.plan.model.response.SPDPlanDateResponse;
 import udpm.hn.studentattendance.repositories.PlanDateRepository;
@@ -45,15 +46,14 @@ public interface SPDPlanDateRepository extends PlanDateRepository {
             p.status = 1 AND
             sf.status = 1 AND
             s.status = 1 AND
+            s2.status = 1 AND
             pd.id IS NOT NULL AND
             sf.id_facility = :#{#request.idFacility} AND
             (NULLIF(TRIM(:#{#request.keyword}), '') IS NULL OR 
-                f.name LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%') OR
-                p.name LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%')) AND
-            (:#{#request.level} IS NULL OR lp.id = :#{#request.level}) AND
-            (:#{#request.semester} IS NULL OR s.name = :#{#request.semester}) AND
-            (:#{#request.year} IS NULL OR s.year = :#{#request.year}) AND
-            (:#{#request.subject} IS NULL OR s2.id = :#{#request.subject})
+                BINARY f.name LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%') OR
+                BINARY p.name LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%')) AND
+            (:#{#request.fromDate} IS NULL OR pd.start_date >= :#{#request.fromDate}) AND 
+            (:#{#request.toDate} IS NULL OR pd.start_date <= :#{#request.toDate})
         GROUP BY 
             f.id,
             f.name, 
@@ -81,15 +81,14 @@ public interface SPDPlanDateRepository extends PlanDateRepository {
             p.status = 1 AND
             sf.status = 1 AND
             s.status = 1 AND
+            s2.status = 1 AND
             pd.id IS NOT NULL AND
             sf.id_facility = :#{#request.idFacility} AND
             (NULLIF(TRIM(:#{#request.keyword}), '') IS NULL OR 
-                f.name LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%') OR
-                p.name LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%')) AND
-            (:#{#request.level} IS NULL OR lp.id = :#{#request.level}) AND
-            (:#{#request.semester} IS NULL OR s.name = :#{#request.semester}) AND
-            (:#{#request.year} IS NULL OR s.year = :#{#request.year}) AND
-            (:#{#request.subject} IS NULL OR s2.id = :#{#request.subject})
+                BINARY f.name LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%') OR 
+                BINARY p.name LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%')) AND
+            (:#{#request.fromDate} IS NULL OR pd.start_date >= :#{#request.fromDate}) AND 
+            (:#{#request.toDate} IS NULL OR pd.start_date <= :#{#request.toDate})
     """, nativeQuery = true)
     Page<SPDPlanDateResponse> getAllByFilter(Pageable pageable, SPDFilterPlanDateRequest request);
 
@@ -97,8 +96,10 @@ public interface SPDPlanDateRepository extends PlanDateRepository {
         SELECT 
             1 as orderNumber,
             f.id,
+            pl.id AS planId,
             f.name AS factoryName,
             p.name AS projectName,
+            pl.name AS planName,
             lp.name AS level,
             s.to_date AS toDate,
             s.from_date AS fromDate,
@@ -114,20 +115,23 @@ public interface SPDPlanDateRepository extends PlanDateRepository {
         LEFT JOIN subject s2 ON s2.id = sf.id_subject
         LEFT JOIN user_staff us ON us.id = f.id_user_staff
         JOIN plan_date pd ON pd.id_factory = f.id
+        JOIN plan pl ON pl.id = pd.id_plan
         WHERE 
             f.status = 1 AND
             p.status = 1 AND
             sf.status = 1 AND
             s.status = 1 AND
-            pd.id IS NOT NULL AND
+            s2.status = 1 AND
             sf.id_facility = :idFacility AND
             f.id = :idFactory
         GROUP BY 
             f.id,
+            pl.id,
             f.created_at, 
             f.name, 
             p.name, 
             lp.name, 
+            pl.name, 
             s.name, 
             s.year, 
             s2.name, 
@@ -281,52 +285,5 @@ public interface SPDPlanDateRepository extends PlanDateRepository {
     """, nativeQuery = true)
     boolean isExistsShiftInPlanDate(String idUserStaff, String idPlanDate, Long startDate, Integer shift);
 
-    @Query(value = """
-        SELECT 
-            ROW_NUMBER() OVER (ORDER BY f.created_at DESC) as orderNumber,
-            f.id,
-            f.name AS factoryName,
-            p.name AS projectName,
-            lp.name AS level,
-            CONCAT(s.name, ' - ', s.year) AS semesterName,
-            s2.name AS subjectName,
-            CONCAT(us.code, ' - ', us.name) AS staffName,
-            s.to_date AS toDate,
-            s.from_date AS fromDate
-        FROM factory f
-        JOIN project p ON p.id = f.id_project
-        LEFT JOIN level_project lp ON lp.id = p.id_level_project
-        LEFT JOIN semester s ON s.id = p.id_semester
-        LEFT JOIN subject_facility sf ON sf.id = p.id_subject_facility
-        LEFT JOIN subject s2 ON s2.id = sf.id_subject
-        LEFT JOIN user_staff us ON us.id = f.id_user_staff
-        LEFT JOIN plan_date pd ON pd.id_factory = f.id
-        WHERE 
-            f.status = 1 AND
-            p.status = 1 AND
-            sf.status = 1 AND
-            s.status = 1 AND
-            pd.id IS NULL AND
-            sf.id_facility = :#{#request.idFacility} AND
-            (:#{#request.level} IS NULL OR lp.id = :#{#request.level}) AND
-            (:#{#request.semester} IS NULL OR s.name = :#{#request.semester}) AND
-            (:#{#request.year} IS NULL OR s.year = :#{#request.year}) AND
-            (:#{#request.subject} IS NULL OR s2.id = :#{#request.subject})
-        GROUP BY 
-            f.created_at,
-            f.id,
-            f.name,
-            p.name,
-            us.code,
-            us.name,
-            s.to_date,
-            s.from_date,
-            lp.name,
-            s2.name,
-            s.year,
-            s.name
-        ORDER BY f.created_at DESC 
-    """, nativeQuery = true)
-    List<SPDPlanDateResponse> getListFactory(SPDFilterCreatePlanDateRequest request);
 
 }

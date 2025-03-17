@@ -1,4 +1,4 @@
-import { ROLE } from '@/constants/roleConstant'
+import { ROLE } from '@/constants'
 import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
 import {
   FileTextOutlined,
@@ -13,6 +13,7 @@ export const ROUTE_NAMES = {
   MANAGEMENT_STUDENT_FACTORY: 'route_staff_management_student_factory',
   MANAGEMENT_PLAN: 'route_staff_management_plan',
   MANAGEMENT_PLAN_DETAIL: 'route_staff_management_plan_detail',
+  MANAGEMENT_PLAN_FACTORY: 'route_staff_management_plan_factory',
   MANAGEMENT_STUDENT: 'route_staff_management_student',
 }
 
@@ -52,17 +53,25 @@ export const StaffRoutes = [
       {
         path: 'management-plan',
         name: ROUTE_NAMES.MANAGEMENT_PLAN,
-        component: () => import('@/views/pages/staff/StaffManagementPlanPage.vue'),
+        component: () => import('@/views/pages/staff/plan-management/SPMPlanPage.vue'),
         meta: {
           selectedKey: selectedKey++,
-          name: 'Phân công kế hoạch',
+          name: 'Danh sách kế hoạch',
           icon: FileTextOutlined,
         },
       },
       {
         path: 'management-plan/:id',
         name: ROUTE_NAMES.MANAGEMENT_PLAN_DETAIL,
-        component: () => import('@/views/pages/staff/StaffManagementPlanDetailPage.vue'),
+        component: () => import('@/views/pages/staff/plan-management/SPMPlanDatePage.vue'),
+        meta: {
+          name: 'Chi tiết kế hoạch',
+        },
+      },
+      {
+        path: 'management-plan-factory/:id',
+        name: ROUTE_NAMES.MANAGEMENT_PLAN_FACTORY,
+        component: () => import('@/views/pages/staff/plan-management/SPMPlanDateDetailPage.vue'),
         meta: {
           name: 'Phân công kế hoạch',
         },

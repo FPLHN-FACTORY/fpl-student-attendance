@@ -10,18 +10,23 @@ import {
 } from '@ant-design/icons-vue'
 import { message, Modal } from 'ant-design-vue'
 import requestAPI from '@/services/requestApiService'
-import { DEFAULT_PAGINATION, PAGINATION_SIZE } from '@/constants/paginationConstant'
+import { DEFAULT_PAGINATION } from '@/constants'
 import { API_ROUTES_STAFF } from '@/constants/staffConstant'
 import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
-import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
+import { API_ROUTES_EXCEL, GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
 import { ROUTE_NAMES } from '@/router/staffRoute'
 import useLoadingStore from '@/stores/useLoadingStore'
 import { useRoute, useRouter } from 'vue-router'
-import { SHIFT } from '@/constants/shiftConstant'
-import { DEFAULT_DATE_FORMAT, DEFAULT_LATE_ARRIVAL, DEFAULT_MAX_LATE_ARRIVAL } from '@/constants'
-import { STATUS_PLAN_DATE_DETAIL } from '@/constants/statusConstant'
+import {
+  DEFAULT_DATE_FORMAT,
+  DEFAULT_LATE_ARRIVAL,
+  DEFAULT_MAX_LATE_ARRIVAL,
+  SHIFT,
+  STATUS_PLAN_DATE_DETAIL,
+} from '@/constants'
 import { dayOfWeek, formatDate } from '@/utils/utils'
 import dayjs from 'dayjs'
+import ExcelUploadButton from '@/components/excel/ExcelUploadButton.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -76,6 +81,7 @@ const formRefAddOrUpdate = ref(null)
 
 const formData = reactive({
   id: null,
+  idPlan: null,
   description: null,
   shift: Object.keys(SHIFT)[0],
   startDate: null,
@@ -99,14 +105,20 @@ const fetchDataDetail = () => {
     .get(`${API_ROUTES_STAFF.FETCH_DATA_PLAN_DATE}/${route.params.id}`)
     .then(({ data: response }) => {
       _detail.value = response.data
+      formData.idPlan = _detail.value.planId
       breadcrumbStore.push({
-        breadcrumbName: _detail.value.factoryName + ' - ' + _detail.value.projectName,
+        name: ROUTE_NAMES.MANAGEMENT_PLAN_DETAIL,
+        params: { id: _detail.value.planId },
+        breadcrumbName: _detail.value.planName,
+      })
+      breadcrumbStore.push({
+        breadcrumbName: _detail.value.factoryName,
       })
       fetchDataList()
     })
     .catch((error) => {
       message.error(error?.response?.data?.message || 'Không thể tải thông tin kế hoạch')
-      router.push({ name: ROUTE_NAMES.MANAGEMENT_PLAN })
+      router.push({ name: ROUTE_NAMES.MANAGEMENT_PLAN_FACTORY, params: { id: route.params?.id } })
     })
     .finally(() => {
       loadingStore.hide()
@@ -410,6 +422,7 @@ watch(
           <template #title> <FilterFilled /> Bộ lọc </template>
           <div class="row g-2">
             <div class="col-lg-6 col-md-12 col-sm-8">
+              <div class="label-title">Từ khoá:</div>
               <a-input
                 v-model:value="dataFilter.keyword"
                 placeholder="Tìm theo mô tả..."
@@ -421,6 +434,7 @@ watch(
               </a-input>
             </div>
             <div class="col-lg-2 col-md-4 col-sm-4">
+              <div class="label-title">Trạng thái:</div>
               <a-select
                 v-model:value="dataFilter.status"
                 class="w-100"
@@ -439,6 +453,7 @@ watch(
               </a-select>
             </div>
             <div class="col-lg-2 col-md-4 col-sm-6">
+              <div class="label-title">Ca học:</div>
               <a-select
                 v-model:value="dataFilter.shift"
                 class="w-100"
@@ -453,6 +468,7 @@ watch(
               </a-select>
             </div>
             <div class="col-lg-2 col-md-4 col-sm-6">
+              <div class="label-title">Ngày diễn ra:</div>
               <a-date-picker
                 class="w-100"
                 placeholder="-- Tất cả các ngày --"
@@ -478,10 +494,22 @@ watch(
             <UnorderedListOutlined /> Danh sách kế hoạch
             {{ `(${formatDate(_detail?.fromDate)} - ${formatDate(_detail?.toDate)})` }}
           </template>
-          <div class="d-flex justify-content-end mb-3">
-            <a-button type="primary" @click="handleShowAdd">
-              <PlusOutlined /> Thêm chi tiết kế hoạch
-            </a-button>
+          <div class="d-flex justify-content-end mb-3 flex-wrap gap-3">
+            <ExcelUploadButton
+              :fetchUrl="API_ROUTES_EXCEL.FETCH_IMPORT_PLAN_DATE"
+              :onSuccess="
+                () => {
+                  fetchDataList()
+                }
+              "
+              :onError="
+                () => {
+                  message.error('Không thể xử lý file excel')
+                }
+              "
+              show-download-template
+            />
+            <a-button type="primary" @click="handleShowAdd"> <PlusOutlined /> Thêm mới </a-button>
           </div>
 
           <div>

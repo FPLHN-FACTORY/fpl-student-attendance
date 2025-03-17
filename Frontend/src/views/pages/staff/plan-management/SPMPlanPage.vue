@@ -6,24 +6,18 @@ import {
   UnorderedListOutlined,
   SearchOutlined,
   EyeFilled,
+  AlignLeftOutlined,
 } from '@ant-design/icons-vue'
 import { message, Modal } from 'ant-design-vue'
 import requestAPI from '@/services/requestApiService'
-import { DEFAULT_PAGINATION } from '@/constants/paginationConstant'
+import { DEFAULT_DATE_FORMAT, DEFAULT_PAGINATION } from '@/constants'
 import { API_ROUTES_STAFF } from '@/constants/staffConstant'
 import { useRouter } from 'vue-router'
 import { ROUTE_NAMES } from '@/router/staffRoute'
 import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
 import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
-import {
-  DAY_OF_WEEK,
-  DEFAULT_DATE_FORMAT,
-  DEFAULT_LATE_ARRIVAL,
-  DEFAULT_MAX_LATE_ARRIVAL,
-} from '@/constants'
-import { SHIFT } from '@/constants/shiftConstant'
-import dayjs from 'dayjs'
 import { formatDate } from '@/utils/utils'
+import dayjs from 'dayjs'
 
 const router = useRouter()
 const breadcrumbStore = useBreadcrumbStore()
@@ -45,19 +39,18 @@ const optYear = ref([])
 const lstData = ref([])
 const lstDataAdd = ref([])
 
-const maxRangeDate = ref(dayjs())
-
 const formRefAdd = ref(null)
+
+const maxRangeDate = ref(dayjs())
 
 const columns = ref([
   { title: '#', dataIndex: 'orderNumber', key: 'orderNumber', width: 50 },
-  { title: 'Nhóm xưởng', dataIndex: 'factoryName', key: 'factoryName', width: 120 },
+  { title: 'Tên kế hoạch', dataIndex: 'planName', key: 'planName', width: 120 },
   { title: 'Tên dự án', dataIndex: 'projectName', key: 'projectName' },
-  { title: 'Cấp độ', dataIndex: 'level', key: 'level', width: 120 },
-  { title: 'Học kỳ', dataIndex: 'semesterName', key: 'semesterName' },
   { title: 'Bộ môn', dataIndex: 'subjectName', key: 'subjectName' },
-  { title: 'Giảng viên', dataIndex: 'staffName', key: 'staffName' },
-  { title: 'Số buổi', dataIndex: 'totalShift', key: 'totalShift' },
+  { title: 'Cấp độ', dataIndex: 'level', key: 'level', width: 120 },
+  { title: 'Ngày diễn ra', dataIndex: 'semesterName', key: 'semesterName' },
+  { title: 'Trạng thái', dataIndex: 'status', key: 'status' },
   { title: '', key: 'actions' },
 ])
 
@@ -68,7 +61,7 @@ const breadcrumb = ref([
   },
   {
     name: ROUTE_NAMES.MANAGEMENT_PLAN,
-    breadcrumbName: 'Phân công kế hoạch',
+    breadcrumbName: 'Danh sách kế hoạch',
   },
 ])
 
@@ -90,24 +83,26 @@ const dataFilterAdd = reactive({
 })
 
 const formDataAdd = reactive({
-  idFactory: null,
-  days: [],
+  idProject: null,
+  name: null,
+  description: null,
   rangeDate: [],
-  shift: Object.keys(SHIFT)[0],
-  lateArrival: DEFAULT_LATE_ARRIVAL,
 })
 
 const formRules = reactive({
-  idFactory: [{ required: true, message: 'Vui lòng chọn 1 nhóm xưởng - dự án!' }],
-  days: [{ required: true, message: 'Vui lòng chọn ít nhất 1 ngày trong tuần!' }],
-  shift: [{ required: true, message: 'Vui lòng chọn 1 ca học!' }],
-  lateArrival: [{ required: true, message: 'Vui lòng nhập mục này!' }],
+  idProject: [{ required: true, message: 'Vui lòng chọn 1 dự án!' }],
+  name: [{ required: true, message: 'Vui lòng nhập mục này!' }],
+  description: [{ required: true, message: 'Vui lòng nhập mục này!' }],
   rangeDate: [{ required: true, message: 'Vui lòng nhập mục này!' }],
 })
 
+const disabledDate = (current) => {
+  return current.isBefore(dayjs(), 'day') || current.isAfter(maxRangeDate.value, 'day')
+}
+
 const fetchDataSubject = () => {
   requestAPI
-    .get(`${API_ROUTES_STAFF.FETCH_DATA_PLAN_DATE}/list/subject`)
+    .get(`${API_ROUTES_STAFF.FETCH_DATA_PLAN}/list/subject`)
     .then(({ data: response }) => {
       optSubject.value = response.data
     })
@@ -118,7 +113,7 @@ const fetchDataSubject = () => {
 
 const fetchDataLevel = () => {
   requestAPI
-    .get(`${API_ROUTES_STAFF.FETCH_DATA_PLAN_DATE}/list/level-project`)
+    .get(`${API_ROUTES_STAFF.FETCH_DATA_PLAN}/list/level-project`)
     .then(({ data: response }) => {
       optLevel.value = response.data
     })
@@ -129,7 +124,7 @@ const fetchDataLevel = () => {
 
 const fetchDataSemester = () => {
   requestAPI
-    .get(`${API_ROUTES_STAFF.FETCH_DATA_PLAN_DATE}/list/semester`)
+    .get(`${API_ROUTES_STAFF.FETCH_DATA_PLAN}/list/semester`)
     .then(({ data: response }) => {
       optSemester.value = response.data
     })
@@ -140,7 +135,7 @@ const fetchDataSemester = () => {
 
 const fetchDataYear = () => {
   requestAPI
-    .get(`${API_ROUTES_STAFF.FETCH_DATA_PLAN_DATE}/list/year`)
+    .get(`${API_ROUTES_STAFF.FETCH_DATA_PLAN}/list/year`)
     .then(({ data: response }) => {
       optYear.value = response.data
     })
@@ -156,7 +151,7 @@ const fetchDataList = () => {
 
   isLoading.value = true
   requestAPI
-    .get(`${API_ROUTES_STAFF.FETCH_DATA_PLAN_DATE}`, {
+    .get(`${API_ROUTES_STAFF.FETCH_DATA_PLAN}`, {
       params: {
         page: pagination.value.current,
         size: pagination.value.pageSize,
@@ -175,10 +170,10 @@ const fetchDataList = () => {
     })
 }
 
-const fetchDataFactoryList = () => {
+const fetchDataProjectList = () => {
   modalAdd.isLoading = true
   requestAPI
-    .get(`${API_ROUTES_STAFF.FETCH_DATA_PLAN_DATE}/list/factory`, {
+    .get(`${API_ROUTES_STAFF.FETCH_DATA_PLAN}/list/project`, {
       params: {
         ...dataFilterAdd,
       },
@@ -187,7 +182,7 @@ const fetchDataFactoryList = () => {
       lstDataAdd.value = response.data
     })
     .catch((error) => {
-      message.error(error?.response?.data?.message || 'Không thể tải danh sách dữ liệu nhóm xưởng')
+      message.error(error?.response?.data?.message || 'Không thể tải danh sách dữ liệu dự án')
     })
     .finally(() => {
       modalAdd.isLoading = false
@@ -201,7 +196,7 @@ const fetchSubmitCreate = () => {
   }
   modalAdd.isLoading = true
   requestAPI
-    .post(`${API_ROUTES_STAFF.FETCH_DATA_PLAN_DATE}/create`, data)
+    .post(`${API_ROUTES_STAFF.FETCH_DATA_PLAN}/create`, data)
     .then(({ data: response }) => {
       message.success(response.message)
       modalAdd.isShow = false
@@ -240,8 +235,8 @@ const handleSubmitFilterAdd = () => {
   ) {
     return
   }
-  formDataAdd.idFactory = null
-  fetchDataFactoryList()
+  formDataAdd.idProject = null
+  fetchDataProjectList()
 }
 
 const handleSubmitAdd = async () => {
@@ -266,9 +261,9 @@ const handleTableChange = (page) => {
   fetchDataList()
 }
 
-const handleChangeFactoryId = (id) => {
-  const factory = lstDataAdd.value.find((o) => o.id === id)
-  maxRangeDate.value = dayjs(factory.toDate)
+const handleChangeProjectId = (id) => {
+  const project = lstDataAdd.value.find((o) => o.id === id)
+  maxRangeDate.value = dayjs(project.toDate)
   formDataAdd.rangeDate = [dayjs(), maxRangeDate.value]
 }
 
@@ -288,15 +283,10 @@ const handleShowModalAdd = () => {
 
   lstDataAdd.value = []
 
-  formDataAdd.idFactory = null
-  formDataAdd.lateArrival = DEFAULT_LATE_ARRIVAL
-  formDataAdd.shift = Object.keys(SHIFT)[0]
+  formDataAdd.idProject = null
+  formDataAdd.name = null
+  formDataAdd.description = null
   formDataAdd.rangeDate = []
-  formDataAdd.days = []
-}
-
-const disabledDate = (current) => {
-  return current.isBefore(dayjs(), 'day') || current.isAfter(maxRangeDate.value, 'day')
 }
 
 onMounted(() => {
@@ -395,39 +385,27 @@ watch(
           </a-select-option>
         </a-select>
       </a-form-item>
+
       <a-form-item
-        class="col-12"
-        :label="`Nhóm xưởng - dự án (${lstDataAdd.length})`"
-        name="idFactory"
-        :rules="formRules.idFactory"
+        class="col-sm-6"
+        :label="`Dự án (${lstDataAdd.length})`"
+        name="idProject"
+        :rules="formRules.idProject"
       >
         <a-select
-          v-model:value="formDataAdd.idFactory"
-          placeholder="-- Chọn 1 nhóm xưởng --"
+          v-model:value="formDataAdd.idProject"
+          placeholder="-- Chọn 1 dự án --"
           class="w-100"
           :disabled="modalAdd.isLoading"
-          @change="handleChangeFactoryId"
+          @change="handleChangeProjectId"
         >
           <a-select-option v-for="o in lstDataAdd" :key="o.id" :value="o.id">
-            {{ `${o.factoryName} - ${o.projectName} (${o.staffName})` }}
-          </a-select-option>
-        </a-select>
-      </a-form-item>
-      <a-form-item class="col-sm-7" label="Ngày học trong tuần" name="days" :rules="formRules.days">
-        <a-select
-          v-model:value="formDataAdd.days"
-          class="w-100"
-          mode="multiple"
-          allow-clear
-          :disabled="modalAdd.isLoading"
-        >
-          <a-select-option v-for="(name, id) in DAY_OF_WEEK" :key="id" :value="id">
-            {{ name }}
+            {{ o.name }}
           </a-select-option>
         </a-select>
       </a-form-item>
       <a-form-item
-        class="col-sm-5"
+        class="col-sm-6"
         label="Thời gian diễn ra"
         name="rangeDate"
         :rules="formRules.rangeDate"
@@ -441,26 +419,27 @@ watch(
           :disabled="modalAdd.isLoading"
         />
       </a-form-item>
-      <a-form-item class="col-sm-5" label="Ca học" name="shift" :rules="formRules.shift">
-        <a-select class="w-100" v-model:value="formDataAdd.shift" :disabled="modalAdd.isLoading">
-          <a-select-option v-for="(name, id) in SHIFT" :key="id" :value="id">
-            {{ name }}
-          </a-select-option>
-        </a-select>
-      </a-form-item>
-      <a-form-item
-        class="col-sm-7"
-        label="Điểm danh muộn tối đa (phút)"
-        name="lateArrival"
-        :rules="formRules.lateArrival"
-      >
-        <a-input-number
+
+      <a-form-item class="col-sm-12" label="Tên kế hoạch" name="name" :rules="formRules.name">
+        <a-input
           class="w-100"
-          v-model:value="formDataAdd.lateArrival"
-          :min="0"
-          :max="DEFAULT_MAX_LATE_ARRIVAL"
-          :step="1"
+          v-model:value="formDataAdd.name"
           :disabled="modalAdd.isLoading"
+          allowClear
+        />
+      </a-form-item>
+
+      <a-form-item
+        class="col-sm-12"
+        label="Nội dung kế hoạch"
+        name="description"
+        :rules="formRules.description"
+      >
+        <a-textarea
+          class="w-100"
+          v-model:value="formDataAdd.description"
+          :disabled="modalAdd.isLoading"
+          :rows="4"
           allowClear
         />
       </a-form-item>
@@ -474,10 +453,11 @@ watch(
         <a-card :bordered="false" class="cart">
           <template #title> <FilterFilled /> Bộ lọc </template>
           <div class="row g-2">
-            <div class="col-md-7 col-sm-12">
+            <div class="col-md-8 col-sm-12">
+              <div class="label-title">Từ khoá:</div>
               <a-input
                 v-model:value="dataFilter.keyword"
-                placeholder="Tìm theo tên dự án, nhóm xưởng..."
+                placeholder="Tìm theo tên kế hoạch..."
                 allowClear
               >
                 <template #prefix>
@@ -485,7 +465,8 @@ watch(
                 </template>
               </a-input>
             </div>
-            <div class="col-md-5 col-sm-6">
+            <div class="col-md-4 col-sm-6">
+              <div class="label-title">Bộ môn:</div>
               <a-select
                 v-model:value="dataFilter.subject"
                 class="w-100"
@@ -500,6 +481,7 @@ watch(
               </a-select>
             </div>
             <div class="col-md-4 col-sm-6">
+              <div class="label-title">Cấp độ dự án:</div>
               <a-select
                 v-model:value="dataFilter.level"
                 class="w-100"
@@ -514,6 +496,7 @@ watch(
               </a-select>
             </div>
             <div class="col-md-4 col-sm-6">
+              <div class="label-title">Học kỳ:</div>
               <a-select
                 v-model:value="dataFilter.semester"
                 class="w-100"
@@ -528,6 +511,7 @@ watch(
               </a-select>
             </div>
             <div class="col-md-4 col-sm-6">
+              <div class="label-title">Năm học:</div>
               <a-select
                 v-model:value="dataFilter.year"
                 class="w-100"
@@ -556,7 +540,7 @@ watch(
       <div class="col-12">
         <a-card :bordered="false" class="cart">
           <template #title> <UnorderedListOutlined /> Danh sách kế hoạch </template>
-          <div class="d-flex justify-content-end mb-3">
+          <div class="d-flex justify-content-end mb-3 gap-3">
             <a-button type="primary" @click="handleShowModalAdd">
               <PlusOutlined /> Tạo kế hoạch mới
             </a-button>
@@ -574,16 +558,19 @@ watch(
           >
             <template #bodyCell="{ column, record }">
               <template v-if="column.dataIndex === 'semesterName'">
-                <div>{{ record.semesterName }}</div>
-                <a-tag>{{ formatDate(record.fromDate) }} - {{ formatDate(record.toDate) }}</a-tag>
+                <span class="text-info">{{ formatDate(record.fromDate) }}</span> -
+                <span class="text-danger">{{ formatDate(record.toDate) }}</span>
+                <a-tag class="ms-2">{{ record.semesterName }}</a-tag>
               </template>
-              <template v-if="column.dataIndex === 'totalShift'">
-                <a-tag color="orange"> {{ record.totalShift }} buổi </a-tag>
+              <template v-if="column.dataIndex === 'status'">
+                <a-tag :color="record.status === 1 ? 'green' : 'red'">{{
+                  record.status === 1 ? 'Đang triển khai' : 'Không triển khai'
+                }}</a-tag>
               </template>
               <template v-if="column.key === 'actions'">
-                <a-tooltip title="Chi tiết Kế hoạch">
+                <a-tooltip title="Chi tiết kế hoạch">
                   <a-button class="btn-outline-primary" @click="handleShowDetail(record.id)">
-                    <EyeFilled />
+                    <AlignLeftOutlined />
                   </a-button>
                 </a-tooltip>
               </template>

@@ -66,7 +66,7 @@ public class DateTimeUtils {
     public static Long getCurrentTimeMillis() {
         LocalDate currentDate = LocalDate.now();
         LocalDateTime startOfDay = currentDate.atStartOfDay();
-        ZonedDateTime zonedDateTime = startOfDay.atZone(ZoneId.systemDefault());
+        ZonedDateTime zonedDateTime = startOfDay.atZone(ZoneId.of("Asia/Ho_Chi_Minh"));
         Instant instant = zonedDateTime.toInstant();
         return instant.toEpochMilli();
     }
