@@ -106,7 +106,12 @@ body {
   background-repeat: no-repeat;
   background-size: cover;
 }
-
+.label-title {
+  color: rgb(53 49 68);
+  font-weight: 500;
+  font-size: 0.8rem;
+  margin-bottom: 6px;
+}
 .ant-layout {
   background: #fff;
   &-header {

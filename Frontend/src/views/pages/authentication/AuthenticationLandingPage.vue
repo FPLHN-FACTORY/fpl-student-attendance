@@ -16,7 +16,7 @@ import useLoadingStore from '@/stores/useLoadingStore'
 import { decodeBase64 } from '@/utils/utils'
 import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
 import { ROUTE_NAMES_API } from '@/router/authenticationRoute'
-import { ROLE } from '@/constants/roleConstant'
+import { ROLE } from '@/constants'
 
 const router = useRouter()
 const route = useRoute()
