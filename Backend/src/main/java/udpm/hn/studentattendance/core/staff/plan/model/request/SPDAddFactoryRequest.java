@@ -2,7 +2,6 @@ package udpm.hn.studentattendance.core.staff.plan.model.request;
 
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -14,13 +13,13 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class SPDCreatePlanDateRequest {
+public class SPDAddFactoryRequest {
+
+    private String idPlan;
 
     private String idFactory;
 
     private List<Integer> days;
-
-    private List<Long> rangeDate;
 
     @Min(value = 1, message = "Ca học sớm nhất là ca 1")
     @Max(value = 6, message = "Ca học muộn nhất là ca 6")
