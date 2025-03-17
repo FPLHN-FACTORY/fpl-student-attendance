@@ -1,3 +1,5 @@
+import requestAPI from '@/services/requestApiService'
+import { message } from 'ant-design-vue'
 import { defineStore } from 'pinia'
 import { reactive, ref } from 'vue'
 
@@ -7,8 +9,14 @@ const useImportExcelStore = defineStore('importExcel', () => {
     UPLOADING: 1,
     COMPLETE: 2,
     ERROR: 3,
+    CANCEL: 4,
   }
 
+  const STATUS_LOG = {
+    SUCCESS: 0,
+    FAILED: 1,
+  }
+  const urlDownloadTemplate = ref(null)
   const queue = ref([])
 
   const status = reactive({
@@ -16,33 +24,40 @@ const useImportExcelStore = defineStore('importExcel', () => {
     isStopped: false,
   })
 
-  async function fakeUpload(file) {
-    console.log(`🔄 Đang upload: ${file.name}...`)
-    return new Promise(
-      (resolve) => setTimeout(() => resolve(`Uploaded ${file.name}`), 2000), // Giả lập delay 2s
-    )
-  }
-
   const generateTimeUUID = () => {
     return Date.now().toString(36) + '-' + Math.random().toString(36).substr(2, 9)
   }
 
-  const wrapperDataFile = (file) => {
+  const wrapperDataFile = (file, { fetchUrl, onSuccess, onError, meta }) => {
     return {
       id: generateTimeUUID(),
+      options: {
+        meta,
+        fetchUrl,
+        onSuccess,
+        onError,
+      },
       file,
-      data: [],
-      error: 0,
-      success: 0,
+      items: [],
+      percent: 0,
       status: STATUS_PROCESS.PENDING,
     }
   }
 
-  const enqueue = (file) => {
+  const wrapperDataItems = (index, data) => {
+    return {
+      index,
+      data,
+      status: null,
+      message: null,
+      isComplete: false,
+    }
+  }
+
+  const enqueue = (file, options) => {
     status.isStopped = false
 
-    queue.value.push(wrapperDataFile(file))
-    console.log('Đã thêm ' + file.name + ' vào hàng đợi')
+    queue.value.push(wrapperDataFile(file, options))
 
     if (!status.isProcessing) {
       processQueue()
@@ -61,25 +76,82 @@ const useImportExcelStore = defineStore('importExcel', () => {
       if (status.isStopped) {
         queue.value = []
         status.isProcessing = false
-        return console.log('🛑 Hàng đợi bị dừng hẳn')
+        return
       }
 
       const task = queue.value.find((o) => o.status === STATUS_PROCESS.PENDING)
 
       if (!task) {
         status.isProcessing = false
-        return console.log('upload hoàn thành')
+        return
       }
 
       task.status = STATUS_PROCESS.UPLOADING
 
+      const formData = new FormData()
+      formData.append('id', task.id)
+      formData.append('name', task.file.name)
+      formData.append('file', task.file)
+
       try {
-        await fakeUpload(task.file)
-        task.status = STATUS_PROCESS.COMPLETE
-        console.log(`✅ Upload thành công: ${task.file}`)
+        const { data: response } = await requestAPI.post(
+          `${task.options.fetchUrl}/upload`,
+          formData,
+          {
+            headers: {
+              'Content-Type': 'multipart/form-data',
+            },
+          },
+        )
+
+        if (response.data.length < 1) {
+          task.status = STATUS_PROCESS.ERROR
+          continue
+        }
+
+        response.data.forEach((o, i) => {
+          task.items.push(wrapperDataItems(++i, o))
+        })
+
+        while (true) {
+          if (status.isStopped) {
+            queue.value = []
+            status.isProcessing = false
+            return
+          }
+
+          if (task.status !== STATUS_PROCESS.UPLOADING) {
+            break
+          }
+
+          const item = task.items.find((o) => !o.isComplete)
+          if (!item) {
+            task.status = STATUS_PROCESS.COMPLETE
+            break
+          }
+          task.percent = (task.items.filter((o) => o.isComplete).length / task.items.length) * 100
+
+          await requestAPI
+            .post(`${task.options.fetchUrl}/import/${task.id}`, {
+              meta: item.meta,
+              data: item.data,
+            })
+            .then(async ({ data: response }) => {
+              item.message = response.message || 'Import thành công'
+              item.status = STATUS_LOG.SUCCESS
+            })
+            .catch((error) => {
+              item.message = error?.response?.data?.message || 'Import thất bại'
+              item.status = STATUS_LOG.FAILED
+            })
+            .finally(() => {
+              item.isComplete = true
+            })
+        }
+        typeof task.options.onSuccess == 'function' && task.options.onSuccess(task)
       } catch (error) {
         task.status = STATUS_PROCESS.ERROR
-        console.error(`❌ Upload thất bại: ${task.file}`, error)
+        typeof task.options.onError == 'function' && task.options.onError(error?.response)
       }
     }
   }
@@ -89,11 +161,32 @@ const useImportExcelStore = defineStore('importExcel', () => {
   }
 
   const stop = () => {
-    status.isStopped = true
     if (!status.isProcessing) {
       queue.value = []
     }
-    console.log('🛑 Hàng đợi đã bị dừng hẳn.')
+    status.isStopped = true
+    status.isProcessing = false
+  }
+
+  const cancelTask = (id) => {
+    const task = queue.value.find(
+      (o) =>
+        o.id === id &&
+        (o.status === STATUS_PROCESS.UPLOADING || o.status === STATUS_PROCESS.PENDING),
+    )
+    if (task) {
+      task.status = STATUS_PROCESS.CANCEL
+    }
+  }
+
+  const retryTask = (id) => {
+    const task = queue.value.find((o) => o.id === id && o.status === STATUS_PROCESS.ERROR)
+    if (task) {
+      task.status = STATUS_PROCESS.PENDING
+      if (!status.isProcessing) {
+        processQueue()
+      }
+    }
   }
 
   const isProcessing = () => {
@@ -104,7 +197,68 @@ const useImportExcelStore = defineStore('importExcel', () => {
     return status.isStopped
   }
 
-  return { queue, enqueue, stop, size, isProcessing, isStoped }
+  const countProcessing = () => {
+    return queue.value.filter(
+      (o) => o.status === STATUS_PROCESS.PENDING || o.status === STATUS_PROCESS.UPLOADING,
+    ).length
+  }
+
+  const countComplete = () => {
+    return queue.value.filter((o) => o.status === STATUS_PROCESS.COMPLETE).length
+  }
+
+  const setUrlDownloadTemplate = (url) => (urlDownloadTemplate.value = url)
+
+  const downloadTemplate = async () => {
+    if (urlDownloadTemplate.value) {
+      await requestAPI
+        .get(`${urlDownloadTemplate.value}/download-template`, {
+          responseType: 'blob',
+        })
+        .then((response) => {
+          const blob = new Blob([response.data], {
+            type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          })
+          const contentDisposition = response.headers['content-disposition']
+          let filename = 'template-download'
+          if (contentDisposition) {
+            const match = contentDisposition.match(/filename="(.+)"/)
+            if (match) {
+              filename = match[1]
+            }
+          }
+          const url = window.URL.createObjectURL(blob)
+          const a = document.createElement('a')
+          a.href = url
+          a.download = filename
+          document.body.appendChild(a)
+          a.click()
+          document.body.removeChild(a)
+
+          window.URL.revokeObjectURL(url)
+        })
+        .catch((error) => {
+          message.error(error?.response?.data?.message || 'Không thể tải xuống template')
+        })
+    }
+  }
+
+  return {
+    queue,
+    enqueue,
+    stop,
+    size,
+    isProcessing,
+    isStoped,
+    cancelTask,
+    retryTask,
+    STATUS_PROCESS,
+    STATUS_LOG,
+    countProcessing,
+    countComplete,
+    downloadTemplate,
+    setUrlDownloadTemplate,
+  }
 })
 
 export default useImportExcelStore

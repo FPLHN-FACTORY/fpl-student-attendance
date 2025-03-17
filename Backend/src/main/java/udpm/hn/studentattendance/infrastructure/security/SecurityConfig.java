@@ -16,6 +16,7 @@ import udpm.hn.studentattendance.infrastructure.security.router.AdminSecurityCon
 import udpm.hn.studentattendance.infrastructure.security.router.AuthenticationSecurityConfig;
 import udpm.hn.studentattendance.infrastructure.security.exception.CustomAccessDeniedHandler;
 import udpm.hn.studentattendance.infrastructure.security.exception.CustomAuthenticationEntryPoint;
+import udpm.hn.studentattendance.infrastructure.security.router.ExcelSecurityConfig;
 import udpm.hn.studentattendance.infrastructure.security.router.StaffSecurityConfig;
 import udpm.hn.studentattendance.infrastructure.security.router.StudentSecurityConfig;
 import udpm.hn.studentattendance.infrastructure.security.router.TeacherSecurityConfig;
@@ -40,6 +41,8 @@ public class SecurityConfig {
     private final StudentSecurityConfig studentSecurityConfig;
 
     private final TeacherSecurityConfig teacherSecurityConfig;
+
+    private final ExcelSecurityConfig excelSecurityConfig;
 
     @Value("${allowed.origin}")
     public String ALLOWED_ORIGIN;
@@ -74,6 +77,7 @@ public class SecurityConfig {
         adminSecurityConfig.configure(http);
         studentSecurityConfig.configure(http);
         teacherSecurityConfig.configure(http);
+        excelSecurityConfig.configure(http);
 
         http.authorizeHttpRequests(auth -> auth.anyRequest().authenticated());
         return http.build();

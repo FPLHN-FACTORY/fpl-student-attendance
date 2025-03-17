@@ -93,7 +93,9 @@ const handleSwitchRole = () => {
             <span v-if="routes.indexOf(route) === routes.length - 1">{{
               route.breadcrumbName
             }}</span>
-            <router-link v-else :to="{ name: route.name }">{{ route.breadcrumbName }}</router-link>
+            <router-link v-else :to="{ name: route.name, params: route?.params }">{{
+              route.breadcrumbName
+            }}</router-link>
           </template>
         </a-breadcrumb>
         <router-view />

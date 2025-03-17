@@ -28,6 +28,22 @@ public class RouterHelper {
         return new ResponseEntity<>(response, status);
     }
 
+    public static ResponseEntity<ApiResponse> responseSuccess(String message) {
+        return responseSuccess(message, null);
+    }
+
+    public static ResponseEntity<ApiResponse> responseSuccess(String message, Object data) {
+        return createResponseApi(ApiResponse.success(message, data), HttpStatus.OK);
+    }
+
+    public static ResponseEntity<ApiResponse> responseError(String message) {
+        return responseError(message, null);
+    }
+
+    public static ResponseEntity<ApiResponse> responseError(String message, Object data) {
+        return createResponseApi(ApiResponse.error(message, data), HttpStatus.BAD_REQUEST);
+    }
+
     public static RoleConstant getRequiredRoleForUrl(String url) {
         if (url.startsWith(RoutesConstant.PREFIX_API_ADMIN_MANAGEMENT)) {
             return RoleConstant.ADMIN;

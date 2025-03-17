@@ -13,3 +13,7 @@ export const GLOBAL_ROUTE_NAMES = {
   TEACHER_PAGE: 'teacher_page',
   STUDENT_PAGE: 'student_page',
 }
+
+export const API_ROUTES_EXCEL = {
+  FETCH_IMPORT_PLAN_DATE: API_URL + '/excel/plan-date',
+}
