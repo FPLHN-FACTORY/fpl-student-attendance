@@ -126,7 +126,7 @@
   </a-card>
 
   <!-- Modal thêm bộ môn -->
-  <a-modal v-model:visible="ModalAdd" title="Thêm bộ môn" @ok="handleAddSubject">
+  <a-modal v-model:open="ModalAdd" title="Thêm bộ môn" @ok="handleAddSubject">
     <a-form layout="vertical">
       <a-form-item label="Tên" required>
         <a-input v-model:value="newSubject.name" />
@@ -138,7 +138,7 @@
   </a-modal>
 
   <!-- Modal xem chi tiết bộ môn -->
-  <a-modal v-model:visible="ModalDetail" title="Chi tiết bộ môn" footer="">
+  <a-modal v-model:open="ModalDetail" title="Chi tiết bộ môn" footer="">
     <p><strong>Tên:</strong> {{ detailSubject.name }}</p>
     <p><strong>Mã:</strong> {{ detailSubject.code }}</p>
     <p>
@@ -152,7 +152,7 @@
   </a-modal>
 
   <!-- Modal sửa bộ môn -->
-  <a-modal v-model:visible="ModalUpdate" title="Sửa bộ môn" @ok="updateSubject">
+  <a-modal v-model:open="ModalUpdate" title="Sửa bộ môn" @ok="updateSubject">
     <a-form layout="vertical">
       <a-form-item label="Tên" required>
         <a-input v-model:value="detailSubject.name" />

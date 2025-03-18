@@ -1,171 +1,38 @@
-<template>
-  <h1>Quản lý nhân viên</h1>
-
-  <!-- Bộ lọc tìm kiếm -->
-  <a-card title="Bộ lọc" :bordered="false" class="cart">
-    <a-row :gutter="16" class="filter-container">
-      <!-- Input tìm kiếm theo mã nhân viên -->
-      <a-col :span="8">
-        <a-input
-          v-model:value="filter.searchQuery"
-          placeholder="Tìm kiếm theo mã, tên, email"
-          allowClear
-          @change="fetchStaffs"
-        />
-      </a-col>
-      <!-- Combobox trạng thái -->
-      <a-col :span="8">
-        <a-select
-          v-model:value="filter.status"
-          placeholder="Chọn trạng thái"
-          allowClear
-          style="width: 100%"
-          @change="fetchStaffs"
-        >
-          <a-select-option :value="''">Tất cả trạng thái</a-select-option>
-          <a-select-option value="ACTIVE">Hoạt động</a-select-option>
-          <a-select-option value="INACTIVE">Không hoạt động</a-select-option>
-        </a-select>
-      </a-col>
-      <!-- Combobox cơ sở được fetch từ backend -->
-      <a-col :span="8">
-        <a-select
-          v-model:value="filter.idFacility"
-          placeholder="Chọn cơ sở"
-          allowClear
-          style="width: 100%"
-          @change="fetchStaffs"
-        >
-          <a-select-option :value="''">Tất cả cơ sở</a-select-option>
-          <a-select-option
-            v-for="facility in facilitiesList"
-            :key="facility.facilityId"
-            :value="facility.facilityId"
-          >
-            {{ facility.facilityName }}
-          </a-select-option>
-        </a-select>
-      </a-col>
-    </a-row>
-  </a-card>
-
-  <!-- Danh sách nhân viên -->
-  <a-card title="Danh sách nhân viên" :bordered="false" class="cart">
-    <div style="display: flex; justify-content: flex-end; margin-bottom: 10px">
-      <!-- Nút thêm nhân viên với tooltip -->
-      <a-tooltip title="Thêm mới nhân viên">
-        <a-button
-          style="background-color: #fff7e6; color: black; border: 1px solid #ffa940"
-          @click="() => (modalAdd = true)"
-        >
-          <PlusOutlined />
-          Thêm
-        </a-button>
-      </a-tooltip>
-    </div>
-    <a-table
-      :dataSource="staffs"
-      :columns="columns"
-      rowKey="id"
-      bordered
-      :pagination="pagination"
-      @change="handleTableChange"
-    >
-      <template #bodyCell="{ column, record }">
-        <!-- Hiển thị trạng thái -->
-        <template v-if="column.dataIndex === 'staffStatus'">
-          <a-tag
-            :color="record.staffStatus === 'ACTIVE' || record.staffStatus === 1 ? 'green' : 'red'"
-          >
-            {{
-              record.staffStatus === 'ACTIVE' || record.staffStatus === 1
-                ? 'Hoạt động'
-                : 'Không hoạt động'
-            }}
-          </a-tag>
-        </template>
-        <!-- Các nút chức năng có tooltip -->
-        <template v-else-if="column.key === 'actions'">
-          <a-tooltip title="Sửa nhân viên">
-            <a-button
-              @click="handleUpdateStaff(record)"
-              type="text"
-              style="background-color: #fff7e6; margin-right: 8px; border: 1px solid #ffa940"
-            >
-              <EditOutlined />
-            </a-button>
-          </a-tooltip>
-          <a-tooltip title="Chức vụ/ cơ sở/ bộ môn">
-            <a-button
-              @click="handleDetailStaff(record)"
-              type="text"
-              style="background-color: #fff7e6; margin-right: 8px; border: 1px solid #ffa940"
-            >
-              <EyeOutlined />
-            </a-button>
-          </a-tooltip>
-          <a-tooltip title="Đổi trạng thái nhân viên">
-            <a-button
-              @click="handleChangeStatusStaff(record)"
-              type="text"
-              style="background-color: #fff7e6; border: 1px solid #ffa940"
-            >
-              <SwapOutlined />
-            </a-button>
-          </a-tooltip>
-        </template>
-        <template v-else>
-          {{ record[column.dataIndex] }}
-        </template>
-      </template>
-    </a-table>
-  </a-card>
-
-  <!-- Modal thêm nhân viên -->
-  <a-modal v-model:open="modalAdd" title="Thêm nhân viên" @ok="handleAddStaff">
-    <a-form layout="vertical">
-      <a-form-item label="Mã nhân viên" required>
-        <a-input v-model:value="newStaff.staffCode" />
-      </a-form-item>
-      <a-form-item label="Tên nhân viên" required>
-        <a-input v-model:value="newStaff.name" />
-      </a-form-item>
-      <a-form-item label="Email FE" required>
-        <a-input v-model:value="newStaff.emailFe" />
-      </a-form-item>
-      <a-form-item label="Email FPT" required>
-        <a-input v-model:value="newStaff.emailFpt" />
-      </a-form-item>
-    </a-form>
-  </a-modal>
-
-  <!-- Modal cập nhật nhân viên -->
-  <a-modal v-model:open="modalUpdate" title="Cập nhật nhân viên" @ok="updateStaff">
-    <a-form layout="vertical">
-      <a-form-item label="Mã nhân viên" required>
-        <a-input v-model:value="detailStaff.staffCode" />
-      </a-form-item>
-      <a-form-item label="Tên nhân viên" required>
-        <a-input v-model:value="detailStaff.name" />
-      </a-form-item>
-      <a-form-item label="Email FE" required>
-        <a-input v-model:value="detailStaff.emailFe" />
-      </a-form-item>
-      <a-form-item label="Email FPT" required>
-        <a-input v-model:value="detailStaff.emailFpt" />
-      </a-form-item>
-    </a-form>
-  </a-modal>
-</template>
-
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { message, Modal } from 'ant-design-vue'
-import { PlusOutlined, EditOutlined, SwapOutlined, EyeOutlined } from '@ant-design/icons-vue'
+import {
+  PlusOutlined,
+  EditOutlined,
+  SwapOutlined,
+  EyeOutlined,
+  EditFilled,
+  EyeFilled,
+  SyncOutlined,
+  UnorderedListOutlined,
+  FilterFilled,
+} from '@ant-design/icons-vue'
 import requestAPI from '@/services/requestApiService'
 import { ROUTE_NAMES } from '@/router/adminRoute'
 import router from '@/router'
+import { useRouter } from 'vue-router'
 import { API_ROUTES_ADMIN } from '@/constants/adminConstant'
+import { DEFAULT_PAGINATION } from '@/constants/paginationConstant'
+import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
+import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
+
+const breadcrumbStore = useBreadcrumbStore()
+
+const breadcrumb = ref([
+  {
+    name: GLOBAL_ROUTE_NAMES.ADMIN_PAGE,
+    breadcrumbName: 'Ban đào tạo',
+  },
+  {
+    name: ROUTE_NAMES.MANAGEMENT_STAFF,
+    breadcrumbName: 'Giảng viên',
+  },
+])
 
 // Danh sách nhân viên
 const staffs = ref([])
@@ -184,10 +51,7 @@ const filter = reactive({
 
 // Dữ liệu phân trang
 const pagination = reactive({
-  current: 1,
-  pageSize: 5,
-  total: 0,
-  showSizeChanger: false,
+  ...DEFAULT_PAGINATION,
 })
 
 // Modal hiển thị
@@ -213,13 +77,13 @@ const detailStaff = reactive({
 
 // Cấu hình cột cho bảng
 const columns = ref([
-  { title: 'STT', dataIndex: 'rowNumber', key: 'rowNumber' },
-  { title: 'Mã nhân viên', dataIndex: 'staffCode', key: 'staffCode' },
-  { title: 'Tên nhân viên', dataIndex: 'staffName', key: 'staffName' },
-  { title: 'Email FE', dataIndex: 'staffEmailFe', key: 'staffEmailFe' },
-  { title: 'Email FPT', dataIndex: 'staffEmailFpt', key: 'staffEmailFpt' },
-  { title: 'Cơ sở', dataIndex: 'facilityName', key: 'facilityName' },
-  { title: 'Trạng thái', dataIndex: 'staffStatus', key: 'staffStatus' },
+  { title: '#', dataIndex: 'rowNumber', key: 'rowNumber', width: 50 },
+  { title: 'Mã nhân viên', dataIndex: 'staffCode', key: 'staffCode', width: 250 },
+  { title: 'Tên nhân viên', dataIndex: 'staffName', key: 'staffName', width: 350 },
+  { title: 'Email FE', dataIndex: 'staffEmailFe', key: 'staffEmailFe', width: 250 },
+  { title: 'Email FPT', dataIndex: 'staffEmailFpt', key: 'staffEmailFpt', width: 250 },
+  { title: 'Cơ sở', dataIndex: 'facilityName', key: 'facilityName', width: 80 },
+  { title: 'Trạng thái', dataIndex: 'staffStatus', key: 'staffStatus', width: 80 },
   { title: 'Chức năng', key: 'actions' },
 ])
 
@@ -257,8 +121,9 @@ const fetchFacilitiesList = () => {
 }
 
 // Sự kiện thay đổi trang bảng
-const handleTableChange = (paginationData) => {
-  filter.page = paginationData.current
+const handleTableChange = (page) => {
+  pagination.page = page.current
+  pagination.pageSize = page.pageSize
   fetchStaffs()
 }
 
@@ -369,16 +234,182 @@ const clearNewStaffForm = () => {
 }
 
 onMounted(() => {
+  breadcrumbStore.setRoutes(breadcrumb.value)
   fetchStaffs()
   fetchFacilitiesList()
 })
 </script>
 
-<style scoped>
-.cart {
-  margin-top: 5px;
-}
-.filter-container {
-  margin-bottom: 5px;
-}
-</style>
+<template>
+  <div class="container-fluid">
+    <!-- Card Bộ lọc tìm kiếm -->
+    <div class="row g-3">
+      <div class="col-12">
+        <a-card :bordered="false" class="cart mb-3">
+          <template #title> <FilterFilled /> Bộ lọc </template>
+          <a-row :gutter="16" class="filter-container">
+            <!-- Input tìm kiếm theo mã, tên, email -->
+            <a-col :span="8" class="col">
+              <a-input
+                v-model:value="filter.searchQuery"
+                placeholder="Tìm kiếm theo mã, tên, email"
+                allowClear
+                @change="fetchStaffs"
+              />
+            </a-col>
+            <!-- Combobox trạng thái -->
+            <a-col :span="8" class="col">
+              <a-select
+                v-model:value="filter.status"
+                placeholder="Chọn trạng thái"
+                allowClear
+                style="width: 100%"
+                @change="fetchStaffs"
+              >
+                <a-select-option :value="''">Tất cả trạng thái</a-select-option>
+                <a-select-option value="ACTIVE">Hoạt động</a-select-option>
+                <a-select-option value="INACTIVE">Không hoạt động</a-select-option>
+              </a-select>
+            </a-col>
+            <!-- Combobox cơ sở (fetch từ backend) -->
+            <a-col :span="8" class="col">
+              <a-select
+                v-model:value="filter.idFacility"
+                placeholder="Chọn cơ sở"
+                allowClear
+                style="width: 100%"
+                @change="fetchStaffs"
+              >
+                <a-select-option :value="''">Tất cả cơ sở</a-select-option>
+                <a-select-option
+                  v-for="facility in facilitiesList"
+                  :key="facility.facilityId"
+                  :value="facility.facilityId"
+                >
+                  {{ facility.facilityName }}
+                </a-select-option>
+              </a-select>
+            </a-col>
+          </a-row>
+        </a-card>
+      </div>
+    </div>
+
+    <!-- Card Danh sách nhân viên -->
+    <div class="row g-3">
+      <div class="col-12">
+        <a-card :bordered="false" class="cart">
+          <template #title> <UnorderedListOutlined /> Danh sách nhân viên </template>
+          <div class="d-flex justify-content-end mb-3">
+            <a-tooltip title="Thêm mới nhân viên">
+              <!-- Sử dụng kiểu filled cho nút Thêm -->
+              <a-button type="primary" @click="modalAdd = true">
+                <PlusOutlined />
+                Thêm
+              </a-button>
+            </a-tooltip>
+          </div>
+          <a-table
+            :dataSource="staffs"
+            :columns="columns"
+            rowKey="id"
+            :loading="isLoading"
+            :pagination="pagination"
+            :scroll="{ y: 500, x: 'auto' }"
+            @change="handleTableChange"
+          >
+            <template #bodyCell="{ column, record }">
+              <!-- Hiển thị trạng thái -->
+              <template v-if="column.dataIndex === 'staffStatus'">
+                <a-tag
+                  :color="
+                    record.staffStatus === 'ACTIVE' || record.staffStatus === 1 ? 'green' : 'red'
+                  "
+                >
+                  {{
+                    record.staffStatus === 'ACTIVE' || record.staffStatus === 1
+                      ? 'Hoạt động'
+                      : 'Không hoạt động'
+                  }}
+                </a-tag>
+              </template>
+              <!-- Các nút chức năng có tooltip -->
+              <template v-else-if="column.key === 'actions'">
+                <a-space>
+                  <a-tooltip title="Chức vụ/ cơ sở/ bộ môn">
+                    <a-button
+                      @click="handleDetailStaff(record)"
+                      type="text"
+                      class="btn-outline-primary me-2"
+                    >
+                      <EyeFilled />
+                    </a-button>
+                  </a-tooltip>
+                  <a-tooltip title="Sửa nhân viên">
+                    <a-button
+                      @click="handleUpdateStaff(record)"
+                      type="text"
+                      class="btn-outline-info me-2"
+                    >
+                      <EditFilled />
+                    </a-button>
+                  </a-tooltip>
+
+                  <a-tooltip title="Đổi trạng thái nhân viên">
+                    <a-button
+                      @click="handleChangeStatusStaff(record)"
+                      type="text"
+                      class="btn-outline-warning"
+                    >
+                      <SyncOutlined />
+                    </a-button>
+                  </a-tooltip>
+                </a-space>
+              </template>
+              <template v-else>
+                {{ record[column.dataIndex] }}
+              </template>
+            </template>
+          </a-table>
+        </a-card>
+      </div>
+    </div>
+
+    <!-- Modal Thêm nhân viên -->
+    <!-- Modal Thêm nhân viên -->
+    <a-modal v-model:open="modalAdd" title="Thêm nhân viên" @ok="handleAddStaff">
+      <a-form layout="vertical">
+        <a-form-item label="Mã nhân viên" required>
+          <a-input v-model:value="newStaff.staffCode" placeholder="Nhập mã nhân viên" />
+        </a-form-item>
+        <a-form-item label="Tên nhân viên" required>
+          <a-input v-model:value="newStaff.name" placeholder="Nhập tên nhân viên" />
+        </a-form-item>
+        <a-form-item label="Email FE" required>
+          <a-input v-model:value="newStaff.emailFe" placeholder="Nhập email FE" />
+        </a-form-item>
+        <a-form-item label="Email FPT" required>
+          <a-input v-model:value="newStaff.emailFpt" placeholder="Nhập email FPT" />
+        </a-form-item>
+      </a-form>
+    </a-modal>
+
+    <!-- Modal Cập nhật nhân viên -->
+    <a-modal v-model:open="modalUpdate" title="Cập nhật nhân viên" @ok="updateStaff">
+      <a-form layout="vertical">
+        <a-form-item label="Mã nhân viên" required>
+          <a-input v-model:value="detailStaff.staffCode" placeholder="Nhập mã nhân viên" />
+        </a-form-item>
+        <a-form-item label="Tên nhân viên" required>
+          <a-input v-model:value="detailStaff.name" placeholder="Nhập tên nhân viên" />
+        </a-form-item>
+        <a-form-item label="Email FE" required>
+          <a-input v-model:value="detailStaff.emailFe" placeholder="Nhập email FE" />
+        </a-form-item>
+        <a-form-item label="Email FPT" required>
+          <a-input v-model:value="detailStaff.emailFpt" placeholder="Nhập email FPT" />
+        </a-form-item>
+      </a-form>
+    </a-modal>
+  </div>
+</template>

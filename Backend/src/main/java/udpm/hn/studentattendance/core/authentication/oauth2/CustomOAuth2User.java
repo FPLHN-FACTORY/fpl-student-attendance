@@ -17,21 +17,9 @@ import java.util.Set;
 
 @Getter
 @Setter
-public class CustomOAuth2User implements OAuth2User {
+public class CustomOAuth2User extends AuthUser implements OAuth2User {
 
     private OAuth2User oauth2User;
-
-    private String id;
-
-    private Set<String> role;
-
-    private String code;
-
-    private String emailFe;
-
-    private String emailFPT;
-
-    private String idFacility;
 
     public CustomOAuth2User(OAuth2User oauth2User) {
         this.oauth2User = oauth2User;
@@ -45,8 +33,8 @@ public class CustomOAuth2User implements OAuth2User {
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         List<GrantedAuthority> authorities = new ArrayList<>();
-        for(String r: role) {
-            authorities.add(new SimpleGrantedAuthority(r));
+        for(RoleConstant r: this.role) {
+            authorities.add(new SimpleGrantedAuthority(r.name()));
         }
         return authorities;
     }
