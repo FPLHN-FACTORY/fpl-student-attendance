@@ -1,150 +1,31 @@
-<template>
-  <!-- Thông tin nhân viên (4 ô input trên 1 hàng) -->
-  <a-card title="Thông tin nhân viên" :bordered="false" class="cart">
-    <a-form layout="vertical">
-      <a-row :gutter="16">
-        <!-- Mã nhân viên -->
-        <a-col :span="6">
-          <a-form-item label="Mã nhân viên">
-            <a-input :value="staffDetail.staffCode" disabled />
-          </a-form-item>
-        </a-col>
-        <!-- Tên nhân viên -->
-        <a-col :span="6">
-          <a-form-item label="Tên nhân viên">
-            <a-input :value="staffDetail.name" disabled />
-          </a-form-item>
-        </a-col>
-        <!-- Email FE -->
-        <a-col :span="6">
-          <a-form-item label="Email FE">
-            <a-input :value="staffDetail.emailFe" disabled />
-          </a-form-item>
-        </a-col>
-        <!-- Email FPT -->
-        <a-col :span="6">
-          <a-form-item label="Email FPT">
-            <a-input :value="staffDetail.emailFpt" disabled />
-          </a-form-item>
-        </a-col>
-      </a-row>
-    </a-form>
-  </a-card>
-
-  <!-- Danh sách chức vụ -->
-  <a-card title="Danh sách chức vụ" :bordered="false" class="cart">
-    <!-- Nút mở modal thêm chức vụ -->
-    <div style="display: flex; justify-content: flex-end; margin-bottom: 10px">
-      <a-tooltip title="Thêm chức vụ cho nhân viên">
-        <a-button
-          style="background-color: #fff7e6; color: black; border: 1px solid #ffa940"
-          @click="openRoleModal"
-        >
-          Thêm chức vụ
-        </a-button>
-      </a-tooltip>
-    </div>
-    <!-- Bảng hiển thị chức vụ -->
-    <a-table :dataSource="roles" :columns="columns" rowKey="roleId" bordered>
-      <template #bodyCell="{ column, record, index }">
-        <!-- STT -->
-        <template v-if="column.dataIndex === 'index'">
-          {{ index + 1 }}
-        </template>
-        <!-- Mã chức vụ -->
-        <template v-else-if="column.dataIndex === 'roleCode'">
-          {{ record.roleCode }}
-        </template>
-        <!-- Tên chức vụ (map từ roleCode) -->
-        <template v-else-if="column.dataIndex === 'roleName'">
-          {{ mapRoleCodeToName(record.roleCode) }}
-        </template>
-        <!-- Tên cơ sở -->
-        <template v-else-if="column.dataIndex === 'facilityName'">
-          {{ record.facilityName }}
-        </template>
-        <!-- Cột hành động (xóa) -->
-        <template v-else-if="column.key === 'actions'">
-          <a-tooltip title="Xóa chức vụ">
-            <a-button
-              type="text"
-              style="background-color: #fff7e6; border: 1px solid #ffa940"
-              @click="handleDeleteRole(record)"
-            >
-              <DeleteOutlined />
-            </a-button>
-          </a-tooltip>
-        </template>
-        <!-- Mặc định -->
-        <template v-else>
-          {{ record[column.dataIndex] }}
-        </template>
-      </template>
-    </a-table>
-  </a-card>
-
-  <!-- Modal thêm chức vụ -->
-  <a-modal
-    v-model:visible="isRoleModalVisible"
-    title="Thêm chức vụ cho nhân viên"
-    @cancel="closeRoleModal"
-    width="60%"
-    :footer="null"
-  >
-    <a-table :dataSource="defaultRoles" :columns="roleModalColumns" rowKey="code" bordered>
-      <template #bodyCell="{ column, record, index }">
-        <!-- STT -->
-        <template v-if="column.dataIndex === 'index'">
-          {{ index + 1 }}
-        </template>
-        <!-- Mã chức vụ -->
-        <template v-else-if="column.dataIndex === 'code'">
-          {{ record.code }}
-        </template>
-        <!-- Tên chức vụ -->
-        <template v-else-if="column.dataIndex === 'name'">
-          {{ record.name }}
-        </template>
-        <!-- Combobox chọn cơ sở -->
-        <template v-else-if="column.dataIndex === 'facility'">
-          <a-tooltip title="Chọn cơ sở tương ứng">
-            <a-select
-              style="width: 100%"
-              v-model:value="selectedFacilities[record.code]"
-              @change="(value) => updateSelectedFacility(record.code, value)"
-            >
-              <a-select-option
-                v-for="facility in facilitiesList"
-                :key="facility.facilityId"
-                :value="facility.facilityId"
-              >
-                {{ facility.facilityName }}
-              </a-select-option>
-            </a-select>
-          </a-tooltip>
-        </template>
-        <!-- Checkbox thay cho nút -->
-        <template v-else-if="column.key === 'select'">
-          <a-tooltip title="Chọn để cập nhật chức vụ">
-            <a-checkbox
-              :checked="roleChecked[record.code] || false"
-              @change="(e) => handleRoleCheckboxChange(record, e.target.checked)"
-            />
-          </a-tooltip>
-        </template>
-      </template>
-    </a-table>
-  </a-modal>
-</template>
-
 <script setup>
 import { reactive, ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { message } from 'ant-design-vue'
 import requestAPI from '@/services/requestApiService'
-import { DeleteOutlined } from '@ant-design/icons-vue'
+import { DeleteFilled, DeleteOutlined } from '@ant-design/icons-vue'
 import { API_ROUTES_ADMIN } from '@/constants/adminConstant'
+import { DEFAULT_PAGINATION } from '@/constants/paginationConstant'
+import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
+import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
+import { ROUTE_NAMES } from '@/router/adminRoute'
 
+const breadcrumbStore = useBreadcrumbStore()
+
+const breadcrumb = ref([
+  {
+    name: GLOBAL_ROUTE_NAMES.ADMIN_PAGE,
+    breadcrumbName: 'Ban đào tạo',
+  },
+  {
+    name: ROUTE_NAMES.MANAGEMENT_STAFF,
+    breadcrumbName: 'Giảng viên',
+  },
+  {
+    name: ROUTE_NAMES.MANAGEMENT_STAFF_ROLE,
+    breadcrumbName: 'Chức vụ',
+  },
+])
 const staffDetail = reactive({
   id: '',
   staffCode: '',
@@ -156,7 +37,7 @@ const staffDetail = reactive({
 const roles = ref([])
 
 const columns = ref([
-  { title: 'STT', dataIndex: 'index', key: 'index' },
+  { title: '#', dataIndex: 'index', key: 'index' },
   { title: 'Mã chức vụ', dataIndex: 'roleCode', key: 'roleCode' },
   { title: 'Tên chức vụ', dataIndex: 'roleName', key: 'roleName' },
   { title: 'Tên cơ sở', dataIndex: 'facilityName', key: 'facilityName' },
@@ -179,7 +60,7 @@ function mapRoleCodeToName(code) {
 const groups = ref([])
 
 const groupColumns = ref([
-  { title: 'STT', dataIndex: 'index', key: 'index' },
+  { title: '#', dataIndex: 'index', key: 'index' },
   { title: 'Mã nhóm xưởng', dataIndex: 'groupCode', key: 'groupCode' },
   { title: 'Tên nhóm xưởng', dataIndex: 'groupName', key: 'groupName' },
   { title: 'Tên cơ sở', dataIndex: 'facilityName', key: 'facilityName' },
@@ -213,7 +94,7 @@ function closeRoleModal() {
 }
 
 const roleModalColumns = ref([
-  { title: 'STT', dataIndex: 'index', key: 'index' },
+  { title: '#', dataIndex: 'index', key: 'index' },
   { title: 'Mã chức vụ', dataIndex: 'code', key: 'code' },
   { title: 'Tên chức vụ', dataIndex: 'name', key: 'name' },
   { title: 'Chọn cơ sở', dataIndex: 'facility', key: 'facility' },
@@ -372,6 +253,7 @@ onMounted(() => {
   if (!staffId) {
     message.warning('Không tìm thấy staffId')
   } else {
+    breadcrumbStore.setRoutes(breadcrumb.value)
     fetchStaffDetail()
     fetchRoles()
     fetchRoleChecked()
@@ -380,8 +262,164 @@ onMounted(() => {
 })
 </script>
 
-<style scoped>
-.cart {
-  margin-top: 5px;
-}
-</style>
+<template>
+  <div class="container-fluid">
+    <!-- Thông tin nhân viên -->
+    <div class="row g-3">
+      <div class="col-12">
+        <a-card title="Thông tin nhân viên" :bordered="false" class="cart mb-3">
+          <a-form layout="vertical">
+            <a-row :gutter="16">
+              <!-- Mã nhân viên -->
+              <a-col :span="6" class="col">
+                <a-form-item label="Mã nhân viên">
+                  <a-input :value="staffDetail.staffCode" disabled placeholder="Không có dữ liệu" />
+                </a-form-item>
+              </a-col>
+              <!-- Tên nhân viên -->
+              <a-col :span="6" class="col">
+                <a-form-item label="Tên nhân viên">
+                  <a-input :value="staffDetail.name" disabled placeholder="Không có dữ liệu" />
+                </a-form-item>
+              </a-col>
+              <!-- Email FE -->
+              <a-col :span="6" class="col">
+                <a-form-item label="Email FE">
+                  <a-input :value="staffDetail.emailFe" disabled placeholder="Không có dữ liệu" />
+                </a-form-item>
+              </a-col>
+              <!-- Email FPT -->
+              <a-col :span="6" class="col">
+                <a-form-item label="Email FPT">
+                  <a-input :value="staffDetail.emailFpt" disabled placeholder="Không có dữ liệu" />
+                </a-form-item>
+              </a-col>
+            </a-row>
+          </a-form>
+        </a-card>
+      </div>
+    </div>
+
+    <!-- Danh sách chức vụ -->
+    <div class="row g-3">
+      <div class="col-12">
+        <a-card title="Danh sách chức vụ" :bordered="false" class="cart">
+          <!-- Nút mở modal thêm chức vụ -->
+          <div class="d-flex justify-content-end mb-3">
+            <a-tooltip title="Thêm chức vụ cho nhân viên">
+              <!-- Nút chuyển sang kiểu filled (ví dụ: type primary hoặc giữ nguyên style nếu mẫu quy định) -->
+              <a-button type="primary" @click="openRoleModal"> Thêm chức vụ </a-button>
+            </a-tooltip>
+          </div>
+          <!-- Bảng hiển thị chức vụ -->
+          <a-table
+            class="nowrap"
+            :loading="isLoading"
+            :dataSource="roles"
+            :columns="columns"
+            :scroll="{ y: 500, x: 'auto' }"
+            rowKey="roleId"
+          >
+            <template #bodyCell="{ column, record, index }">
+              <!-- STT -->
+              <template v-if="column.dataIndex === 'index'">
+                {{ index + 1 }}
+              </template>
+              <!-- Mã chức vụ -->
+              <template v-else-if="column.dataIndex === 'roleCode'">
+                {{ record.roleCode }}
+              </template>
+              <!-- Tên chức vụ (map từ roleCode) -->
+              <template v-else-if="column.dataIndex === 'roleName'">
+                {{ mapRoleCodeToName(record.roleCode) }}
+              </template>
+              <!-- Tên cơ sở -->
+              <template v-else-if="column.dataIndex === 'facilityName'">
+                {{ record.facilityName }}
+              </template>
+              <!-- Cột hành động (xóa) -->
+              <template v-else-if="column.key === 'actions'">
+                <a-tooltip title="Xóa chức vụ">
+                  <a-button
+                    type="text"
+                    class="btn-outline-danger"
+                    @click="handleDeleteRole(record)"
+                  >
+                    <DeleteFilled />
+                  </a-button>
+                </a-tooltip>
+              </template>
+              <!-- Mặc định -->
+              <template v-else>
+                {{ record[column.dataIndex] }}
+              </template>
+            </template>
+          </a-table>
+        </a-card>
+      </div>
+    </div>
+
+    <!-- Modal thêm chức vụ -->
+    <a-modal
+      v-model:open="isRoleModalVisible"
+      title="Thêm chức vụ cho nhân viên"
+      @cancel="closeRoleModal"
+      width="60%"
+      :footer="null"
+    >
+      <a-table
+        class="nowrap"
+        :loading="isLoading"
+        :dataSource="defaultRoles"
+        :columns="roleModalColumns"
+        rowKey="code"
+        bordered
+        :scroll="{ y: 500, x: 'auto' }"
+      >
+        <template #bodyCell="{ column, record, index }">
+          <!-- STT -->
+          <template v-if="column.dataIndex === 'index'">
+            {{ index + 1 }}
+          </template>
+          <!-- Mã chức vụ -->
+          <template v-else-if="column.dataIndex === 'code'">
+            {{ record.code }}
+          </template>
+          <!-- Tên chức vụ -->
+          <template v-else-if="column.dataIndex === 'name'">
+            {{ record.name }}
+          </template>
+          <!-- Combobox chọn cơ sở -->
+          <template v-else-if="column.dataIndex === 'facility'">
+            <a-tooltip title="Chọn cơ sở tương ứng">
+              <a-select
+                style="width: 100%"
+                v-model:value="selectedFacilities[record.code]"
+                placeholder="Chọn cơ sở"
+                allowClear
+                @change="(value) => updateSelectedFacility(record.code, value)"
+              >
+                <a-select-option
+                  v-for="facility in facilitiesList"
+                  :key="facility.facilityId"
+                  :value="facility.facilityId"
+                >
+                  {{ facility.facilityName }}
+                </a-select-option>
+              </a-select>
+            </a-tooltip>
+          </template>
+          <!-- Checkbox thay cho nút -->
+          <template v-else-if="column.key === 'select'">
+            <a-tooltip title="Chọn để cập nhật chức vụ">
+              <a-checkbox
+                :checked="roleChecked[record.code] || false"
+                @change="(e) => handleRoleCheckboxChange(record, e.target.checked)"
+              />
+            </a-tooltip>
+          </template>
+        </template>
+      </a-table>
+    </a-modal>
+  </div>
+</template>

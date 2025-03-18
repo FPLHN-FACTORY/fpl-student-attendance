@@ -3,6 +3,7 @@ package udpm.hn.studentattendance.helpers;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import udpm.hn.studentattendance.infrastructure.common.ApiResponse;
+import udpm.hn.studentattendance.infrastructure.constants.RoleConstant;
 import udpm.hn.studentattendance.infrastructure.constants.RoutesConstant;
 
 public class RouterHelper {
@@ -25,6 +26,19 @@ public class RouterHelper {
 
     public static ResponseEntity<ApiResponse> createResponseApi(ApiResponse response, HttpStatus status) {
         return new ResponseEntity<>(response, status);
+    }
+
+    public static RoleConstant getRequiredRoleForUrl(String url) {
+        if (url.startsWith(RoutesConstant.PREFIX_API_ADMIN_MANAGEMENT)) {
+            return RoleConstant.ADMIN;
+        } else if (url.startsWith(RoutesConstant.PREFIX_API_STAFF_MANAGEMENT)) {
+            return RoleConstant.STAFF;
+        } else if (url.startsWith(RoutesConstant.PREFIX_API_TEACHER_MANAGEMENT)) {
+            return RoleConstant.TEACHER;
+        } else if (url.startsWith(RoutesConstant.PREFIX_API_STUDENT_MANAGEMENT)){
+            return RoleConstant.STUDENT;
+        }
+        return null;
     }
 
 }

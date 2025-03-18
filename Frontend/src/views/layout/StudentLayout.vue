@@ -1,22 +1,17 @@
 <script setup>
-import { UserOutlined } from '@ant-design/icons-vue'
-import { ROUTE_NAMES } from '@/router/studentRoute'
+import { StudentRoutes } from '@/router/studentRoute'
 import DefaultLayout from './base/DefaultLayout.vue'
 </script>
 
 <template>
   <DefaultLayout>
-    <a-menu-item key="1">
-      <router-link :to="{ name: ROUTE_NAMES.ATTENDANCE }">
-        <user-outlined />
-        <span>Điểm danh</span>
-      </router-link>
-    </a-menu-item>
-    <a-menu-item key="2">
-      <router-link :to="{ name: ROUTE_NAMES.HISTORY_ATTENDANCE }">
-        <user-outlined />
-        <span>Lịch sử điểm danh</span>
-      </router-link>
-    </a-menu-item>
+    <template v-for="o in StudentRoutes[0].children" :key="o.name">
+      <a-menu-item v-if="o.meta?.selectedKey" :key="o.meta.selectedKey">
+        <router-link :to="{ name: o.name }">
+          <component :is="o.meta.icon" />
+          <span>{{ o.meta.name }}</span>
+        </router-link>
+      </a-menu-item>
+    </template>
   </DefaultLayout>
 </template>

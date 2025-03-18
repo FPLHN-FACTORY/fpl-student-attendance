@@ -83,5 +83,9 @@ public class DateTimeUtils {
         return ZonedDateTime.ofInstant(date.toInstant(), ZoneId.systemDefault()).toLocalDate();
     }
 
+    public static LocalDate convertTimestampToLocalDate(long timestamp) {
+        Instant instant = Instant.ofEpochMilli(timestamp);
+        return instant.atZone(ZoneId.of("Asia/Ho_Chi_Minh")).toLocalDate();
+    }
 
 }
