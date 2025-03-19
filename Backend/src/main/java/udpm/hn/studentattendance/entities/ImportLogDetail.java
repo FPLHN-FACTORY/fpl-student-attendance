@@ -10,6 +10,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.ToString;
 import org.hibernate.annotations.DynamicUpdate;
 import udpm.hn.studentattendance.entities.base.PrimaryEntity;
 import udpm.hn.studentattendance.infrastructure.constants.EntityProperties;
@@ -21,24 +22,19 @@ import java.io.Serializable;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-@Table(name = "plan_date")
+@Table(name = "import_log_detail")
 @DynamicUpdate
-public class PlanDate extends PrimaryEntity implements Serializable {
+@ToString
+public class ImportLogDetail extends PrimaryEntity implements Serializable {
 
-    @Column(name = "description", length = EntityProperties.LENGTH_TEXT)
-    private String description;
+    @Column(name = "line")
+    private Integer line;
 
-    @Column(name = "start_date")
-    private Long startDate;
-
-    @Column(name = "shift")
-    private Integer shift;
-
-    @Column(name = "late_arrival")
-    private Integer lateArrival;
+    @Column(name = "message", length = EntityProperties.LENGTH_TEXT)
+    private String message;
 
     @ManyToOne
-    @JoinColumn(name = "id_plan_factory")
-    private PlanFactory planFactory;
+    @JoinColumn(name = "id_import_log", nullable = false)
+    private ImportLog importLog;
 
 }

@@ -4,10 +4,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import udpm.hn.studentattendance.core.staff.plan.model.request.SPDCreatePlanRequest;
+import udpm.hn.studentattendance.core.staff.plan.model.request.SDPAddOrUpdatePlanRequest;
 import udpm.hn.studentattendance.core.staff.plan.model.request.SPDFilterCreatePlanRequest;
 import udpm.hn.studentattendance.core.staff.plan.model.request.SPDFilterPlanRequest;
-import udpm.hn.studentattendance.core.staff.plan.model.response.SPDFactoryResponse;
 import udpm.hn.studentattendance.core.staff.plan.model.response.SPDLevelProjectResponse;
 import udpm.hn.studentattendance.core.staff.plan.model.response.SPDPlanResponse;
 import udpm.hn.studentattendance.core.staff.plan.model.response.SPDProjectResponse;
@@ -101,18 +100,7 @@ public class SPDPlanServiceImpl implements SPDPlanService {
     }
 
     @Override
-    public ResponseEntity<?> getListFactory(String idPlan) {
-        Plan plan = spdPlanRepository.findById(idPlan).orElse(null);
-        if (plan == null
-            || !Objects.equals(plan.getProject().getSubjectFacility().getFacility().getId(), sessionHelper.getFacilityId())) {
-            return RouterHelper.responseError("Kế hoạch không tồn tại hoặc đã bị xoá");
-        }
-        List<SPDFactoryResponse> data = spdPlanRepository.getListFactory(plan.getProject().getId());
-        return RouterHelper.responseSuccess("Lấy danh sách dữ liệu thành công", data);
-    }
-
-    @Override
-    public ResponseEntity<?> createPlan(SPDCreatePlanRequest request) {
+    public ResponseEntity<?> createPlan(SDPAddOrUpdatePlanRequest request) {
 
         Project project = spdProjectRepository.findById(request.getIdProject()).orElse(null);
 
@@ -123,31 +111,104 @@ public class SPDPlanServiceImpl implements SPDPlanService {
             return RouterHelper.responseError("Không tìm thấy dự án");
         }
 
-        Long startDate = request.getRangeDate().get(0);
-        Long endDate = request.getRangeDate().get(1);
+        if (spdPlanRepository.isExistsProjectInPlan(project.getId(), null)) {
+            return RouterHelper.responseError("Dự án " + project.getName() + " đã được triển khai trong 1 kế hoạch khác");
+        }
 
-        if (startDate < DateTimeUtils.getCurrentTimeMillis()) {
+        long startDate = DateTimeUtils.toStartOfDay(request.getRangeDate().get(0));
+        long endDate = DateTimeUtils.toEndOfDay(request.getRangeDate().get(1));
+
+        if (startDate < DateTimeUtils.toStartOfDay(DateTimeUtils.getCurrentTimeMillis())) {
             return RouterHelper.responseError("Ngày bắt đầu diễn ra phải lớn hơn hoặc bằng ngày hiện tại");
         }
 
-        if (endDate < DateTimeUtils.getCurrentTimeMillis()) {
+        if (endDate < DateTimeUtils.toStartOfDay(DateTimeUtils.getCurrentTimeMillis())) {
             return RouterHelper.responseError("Ngày kết thúc diễn ra phải lớn hơn hoặc bằng ngày hiện tại");
         }
 
         Semester semester = project.getSemester();
 
-        if (startDate < semester.getFromDate() || startDate > semester.getToDate()) {
-            return RouterHelper.responseError("Ngày học diễn ra phải trong khoảng từ " + DateTimeUtils.convertMillisToDate(semester.getFromDate()) + " đến " + DateTimeUtils.convertMillisToDate(semester.getToDate()));
+        if (startDate < DateTimeUtils.toStartOfDay(semester.getFromDate()) || startDate > DateTimeUtils.toEndOfDay(semester.getToDate())) {
+            return RouterHelper.responseError("Thời gian diễn ra phải trong khoảng từ " + DateTimeUtils.convertMillisToDate(semester.getFromDate()) + " đến " + DateTimeUtils.convertMillisToDate(semester.getToDate()));
         }
 
         Plan plan = new Plan();
         plan.setName(request.getName());
         plan.setDescription(request.getDescription());
-        plan.setFromDate(startDate);
-        plan.setToDate(endDate);
+        plan.setFromDate(DateTimeUtils.toStartOfDay(startDate));
+        plan.setToDate(DateTimeUtils.toEndOfDay(endDate));
         plan.setProject(project);
 
         return RouterHelper.responseSuccess("Tạo mới kế hoạch thành công", spdPlanRepository.save(plan));
+    }
+
+    @Override
+    public ResponseEntity<?> changeStatus(String id) {
+        Plan plan = spdPlanRepository.findById(id).orElse(null);
+        if (plan == null) {
+            return RouterHelper.responseError("Không tìm thấy kế hoạch");
+        }
+
+        if (plan.getStatus() == EntityStatus.INACTIVE && spdPlanRepository.isExistsProjectInPlan(plan.getProject().getId(), null)) {
+            return RouterHelper.responseError("Dự án " + plan.getProject().getName() + " đã được triển khai trong một kế hoạch khác");
+        }
+
+        plan.setStatus(plan.getStatus() == EntityStatus.ACTIVE ? EntityStatus.INACTIVE : EntityStatus.ACTIVE);
+        return RouterHelper.responseSuccess("Thay đổi trạng thái kế hoạch thành công", spdPlanRepository.save(plan));
+    }
+
+    @Override
+    public ResponseEntity<?> deletePlan(String id) {
+        Plan plan = spdPlanRepository.findById(id).orElse(null);
+        if (plan == null) {
+            return RouterHelper.responseError("Không tìm thấy kế hoạch");
+        }
+
+        if (plan.getStatus() != EntityStatus.INACTIVE) {
+            return RouterHelper.responseError("Không thể xoá kế hoạch đang triển khai");
+        }
+
+        spdPlanRepository.deleteAllAttendanceByIdPlan(plan.getId());
+        spdPlanRepository.deleteAllPlanDateByIdPlan(plan.getId());
+        spdPlanRepository.deleteAllPlanFactoryByIdPlan(plan.getId());
+        spdPlanRepository.delete(plan);
+        return RouterHelper.responseSuccess("Xoá thành công kế hoạch: " + plan.getName());
+    }
+
+    @Override
+    public ResponseEntity<?> updatePlan(SDPAddOrUpdatePlanRequest request) {
+        Plan plan = spdPlanRepository.findById(request.getId()).orElse(null);
+        if (plan == null) {
+            return RouterHelper.responseError("Không tìm thấy kế hoạch muốn cập nhật");
+        }
+
+        Project project = spdProjectRepository.findById(request.getIdProject()).orElse(null);
+
+        if (project == null
+                || !Objects.equals(project.getSubjectFacility().getFacility().getId(), sessionHelper.getFacilityId())) {
+            return RouterHelper.responseError("Không tìm thấy dự án");
+        }
+
+        if (plan.getStatus() == EntityStatus.ACTIVE && spdPlanRepository.isExistsProjectInPlan(project.getId(), plan.getId())) {
+            return RouterHelper.responseError("Dự án " + project.getName() + " đã được triển khai trong 1 kế hoạch khác");
+        }
+
+        long startDate = DateTimeUtils.toStartOfDay(request.getRangeDate().get(0));
+        long endDate = DateTimeUtils.toEndOfDay(request.getRangeDate().get(1));
+
+        Semester semester = project.getSemester();
+
+        if (startDate < DateTimeUtils.toStartOfDay(semester.getFromDate()) || startDate > DateTimeUtils.toEndOfDay(semester.getToDate())) {
+            return RouterHelper.responseError("Thời gian diễn ra phải trong khoảng từ " + DateTimeUtils.convertMillisToDate(semester.getFromDate()) + " đến " + DateTimeUtils.convertMillisToDate(semester.getToDate()));
+        }
+
+        plan.setName(request.getName());
+        plan.setDescription(request.getDescription());
+        plan.setFromDate(DateTimeUtils.toStartOfDay(startDate));
+        plan.setToDate(DateTimeUtils.toEndOfDay(endDate));
+        plan.setProject(project);
+
+        return RouterHelper.responseSuccess("Cập nhật kế hoạch thành công", spdPlanRepository.save(plan));
     }
 
 }

@@ -13,7 +13,7 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class SPDAddFactoryRequest {
+public class SPDAddPlanFactoryRequest {
 
     private String idPlan;
 

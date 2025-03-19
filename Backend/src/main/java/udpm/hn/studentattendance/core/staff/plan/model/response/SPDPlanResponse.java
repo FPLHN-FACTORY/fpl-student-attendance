@@ -7,6 +7,8 @@ public interface SPDPlanResponse extends IsIdentify, HasOrderNumber {
 
     String getPlanName();
 
+    String getProjectId();
+
     String getProjectName();
 
     String getLevel();
@@ -18,6 +20,12 @@ public interface SPDPlanResponse extends IsIdentify, HasOrderNumber {
     Long getFromDate();
 
     Long getToDate();
+
+    Long getFromDateSemester();
+
+    Long getToDateSemester();
+
+    String getDescription();
 
     Integer getStatus();
 

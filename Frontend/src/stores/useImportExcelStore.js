@@ -2,6 +2,7 @@ import requestAPI from '@/services/requestApiService'
 import { message } from 'ant-design-vue'
 import { defineStore } from 'pinia'
 import { reactive, ref } from 'vue'
+import { toast } from 'vue3-toastify'
 
 const useImportExcelStore = defineStore('importExcel', () => {
   const STATUS_PROCESS = {
@@ -16,7 +17,8 @@ const useImportExcelStore = defineStore('importExcel', () => {
     SUCCESS: 0,
     FAILED: 1,
   }
-  const urlDownloadTemplate = ref(null)
+  const urlFetch = ref(null)
+  const dataFetch = ref(null)
   const queue = ref([])
 
   const status = reactive({
@@ -28,11 +30,11 @@ const useImportExcelStore = defineStore('importExcel', () => {
     return Date.now().toString(36) + '-' + Math.random().toString(36).substr(2, 9)
   }
 
-  const wrapperDataFile = (file, { fetchUrl, onSuccess, onError, meta }) => {
+  const wrapperDataFile = (file, { fetchUrl, onSuccess, onError, data }) => {
     return {
       id: generateTimeUUID(),
       options: {
-        meta,
+        data,
         fetchUrl,
         onSuccess,
         onError,
@@ -106,6 +108,7 @@ const useImportExcelStore = defineStore('importExcel', () => {
 
         if (response.data.length < 1) {
           task.status = STATUS_PROCESS.ERROR
+          toast.warning('Template không hợp lệ: ' + task.file.name)
           continue
         }
 
@@ -132,9 +135,12 @@ const useImportExcelStore = defineStore('importExcel', () => {
           task.percent = (task.items.filter((o) => o.isComplete).length / task.items.length) * 100
 
           await requestAPI
-            .post(`${task.options.fetchUrl}/import/${task.id}`, {
-              meta: item.meta,
-              data: item.data,
+            .post(`${task.options.fetchUrl}/import`, {
+              code: task.id,
+              fileName: task.file.name,
+              line: item.index,
+              data: task.options.data,
+              item: item.data,
             })
             .then(async ({ data: response }) => {
               item.message = response.message || 'Import thành công'
@@ -151,7 +157,7 @@ const useImportExcelStore = defineStore('importExcel', () => {
         typeof task.options.onSuccess == 'function' && task.options.onSuccess(task)
       } catch (error) {
         task.status = STATUS_PROCESS.ERROR
-        typeof task.options.onError == 'function' && task.options.onError(error?.response)
+        typeof task.options.onError == 'function' && task.options.onError(error?.response || error)
       }
     }
   }
@@ -207,12 +213,15 @@ const useImportExcelStore = defineStore('importExcel', () => {
     return queue.value.filter((o) => o.status === STATUS_PROCESS.COMPLETE).length
   }
 
-  const setUrlDownloadTemplate = (url) => (urlDownloadTemplate.value = url)
+  const setUrlFetch = (url) => (urlFetch.value = url)
+  const setData = (data) => {
+    dataFetch.value = data
+  }
 
   const downloadTemplate = async () => {
-    if (urlDownloadTemplate.value) {
+    if (urlFetch.value) {
       await requestAPI
-        .get(`${urlDownloadTemplate.value}/download-template`, {
+        .post(`${urlFetch.value}/download-template`, dataFetch.value, {
           responseType: 'blob',
         })
         .then((response) => {
@@ -243,6 +252,18 @@ const useImportExcelStore = defineStore('importExcel', () => {
     }
   }
 
+  const getHistoryLogs = (pagination) => {
+    return requestAPI.post(`${urlFetch.value}/history-log`, {
+      ...dataFetch.value,
+      page: pagination.value.current,
+      size: pagination.value.pageSize,
+    })
+  }
+
+  const getHistoryLogsDetail = (id) => {
+    return requestAPI.post(`${urlFetch.value}/history-log/${id}`, dataFetch.value)
+  }
+
   return {
     queue,
     enqueue,
@@ -257,7 +278,10 @@ const useImportExcelStore = defineStore('importExcel', () => {
     countProcessing,
     countComplete,
     downloadTemplate,
-    setUrlDownloadTemplate,
+    getHistoryLogs,
+    getHistoryLogsDetail,
+    setUrlFetch,
+    setData,
   }
 })
 
