@@ -4,8 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import lombok.ToString;
-import org.springframework.web.multipart.MultipartFile;
+import udpm.hn.studentattendance.infrastructure.common.PageableRequest;
 
 import java.util.Map;
 
@@ -13,16 +12,8 @@ import java.util.Map;
 @Getter
 @AllArgsConstructor
 @NoArgsConstructor
-public class EXImportRequest {
-
-    private String code;
-
-    private String fileName;
-
-    private int line;
+public class EXDataRequest extends PageableRequest {
 
     private Map<String, Object> data;
-
-    private Map<String, String> item;
 
 }

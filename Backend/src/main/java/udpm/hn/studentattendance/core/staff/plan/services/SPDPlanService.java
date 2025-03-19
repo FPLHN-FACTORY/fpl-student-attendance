@@ -1,7 +1,7 @@
 package udpm.hn.studentattendance.core.staff.plan.services;
 
 import org.springframework.http.ResponseEntity;
-import udpm.hn.studentattendance.core.staff.plan.model.request.SPDCreatePlanRequest;
+import udpm.hn.studentattendance.core.staff.plan.model.request.SDPAddOrUpdatePlanRequest;
 import udpm.hn.studentattendance.core.staff.plan.model.request.SPDFilterCreatePlanRequest;
 import udpm.hn.studentattendance.core.staff.plan.model.request.SPDFilterPlanRequest;
 
@@ -21,8 +21,11 @@ public interface SPDPlanService {
 
     ResponseEntity<?> getListProject(SPDFilterCreatePlanRequest request);
 
-    ResponseEntity<?> getListFactory(String idPlan);
+    ResponseEntity<?> createPlan(SDPAddOrUpdatePlanRequest request);
 
-    ResponseEntity<?> createPlan(SPDCreatePlanRequest request);
+    ResponseEntity<?> changeStatus(String id);
 
+    ResponseEntity<?> deletePlan(String id);
+
+    ResponseEntity<?> updatePlan(SDPAddOrUpdatePlanRequest request);
 }

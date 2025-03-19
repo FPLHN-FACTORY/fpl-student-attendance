@@ -18,9 +18,7 @@ public class SPDAddOrUpdatePlanDateRequest {
 
     private String idFacility;
 
-    private String idPlan;
-
-    private String idFactory;
+    private String idPlanFactory;
 
     private String id;
 
