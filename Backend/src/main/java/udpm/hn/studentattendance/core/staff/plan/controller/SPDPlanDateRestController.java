@@ -12,8 +12,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import udpm.hn.studentattendance.core.staff.plan.model.request.SPDAddOrUpdatePlanDateRequest;
-import udpm.hn.studentattendance.core.staff.plan.model.request.SPDAddFactoryRequest;
-import udpm.hn.studentattendance.core.staff.plan.model.request.SPDFilterPlanDateDetailRequest;
+import udpm.hn.studentattendance.core.staff.plan.model.request.SPDDeletePlanDateRequest;
 import udpm.hn.studentattendance.core.staff.plan.model.request.SPDFilterPlanDateRequest;
 import udpm.hn.studentattendance.core.staff.plan.services.SPDPlanDateService;
 import udpm.hn.studentattendance.infrastructure.constants.router.RouteStaffConstant;
@@ -25,20 +24,20 @@ public class SPDPlanDateRestController {
 
     private final SPDPlanDateService spdPlanDateService;
 
-    @GetMapping
-    public ResponseEntity<?> getAllList(@Valid SPDFilterPlanDateRequest request) {
+    @GetMapping("/{idPlanFactory}")
+    public ResponseEntity<?> getDetail(@PathVariable("idPlanFactory") String idPlanFactory) {
+        return spdPlanDateService.getDetail(idPlanFactory);
+    }
+
+    @GetMapping("/{idPlanFactory}/list")
+    public ResponseEntity<?> getAllList(@PathVariable("idPlanFactory") String idPlanFactory, @Valid SPDFilterPlanDateRequest request) {
+        request.setIdPlanFactory(idPlanFactory);
         return spdPlanDateService.getAllList(request);
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<?> getDetail(@PathVariable("id") String id) {
-        return spdPlanDateService.getDetail(id);
-    }
-
-    @GetMapping("/{id}/list")
-    public ResponseEntity<?> getDetail(@PathVariable("id") String idFactory, @Valid SPDFilterPlanDateDetailRequest request) {
-        request.setIdFactory(idFactory);
-        return spdPlanDateService.getAllDetailList(request);
+    @DeleteMapping("/{idFactory}/delete")
+    public ResponseEntity<?> deleteMultiplePlanDate(@RequestBody SPDDeletePlanDateRequest request, @PathVariable String idFactory) {
+        return spdPlanDateService.deleteMultiplePlanDate(request);
     }
 
     @DeleteMapping("/{idFactory}/delete/{idPlanDate}")
@@ -46,14 +45,9 @@ public class SPDPlanDateRestController {
         return spdPlanDateService.deletePlanDate(idPlanDate);
     }
 
-    @PostMapping("/create")
-    public ResponseEntity<?> createPlanDate(@Valid @RequestBody SPDAddFactoryRequest request) {
-        return spdPlanDateService.addFactory(request);
-    }
-
-    @PostMapping("/{idFactory}/add")
-    public ResponseEntity<?> addPlanDate(@PathVariable("idFactory") String idFactory, @Valid @RequestBody SPDAddOrUpdatePlanDateRequest request) {
-        request.setIdFactory(idFactory);
+    @PostMapping("/{idPlanFactory}/add")
+    public ResponseEntity<?> addPlanDate(@PathVariable("idPlanFactory") String idPlanFactory, @Valid @RequestBody SPDAddOrUpdatePlanDateRequest request) {
+        request.setIdPlanFactory(idPlanFactory);
         return spdPlanDateService.addPlanDate(request);
     }
 

@@ -2,12 +2,11 @@ package udpm.hn.studentattendance.infrastructure.excel.controller;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import udpm.hn.studentattendance.infrastructure.constants.router.RouteExcelConstant;
+import udpm.hn.studentattendance.infrastructure.excel.common.IEXDefaultController;
+import udpm.hn.studentattendance.infrastructure.excel.model.request.EXDataRequest;
 import udpm.hn.studentattendance.infrastructure.excel.model.request.EXImportRequest;
 import udpm.hn.studentattendance.infrastructure.excel.model.request.EXUploadRequest;
 import udpm.hn.studentattendance.infrastructure.excel.service.EXPlanDateService;
@@ -15,23 +14,33 @@ import udpm.hn.studentattendance.infrastructure.excel.service.EXPlanDateService;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping(RouteExcelConstant.URL_API_PLAN_DATE)
-public class EXPlanDateRestController {
+public class EXPlanDateRestController implements IEXDefaultController {
 
     private final EXPlanDateService exPlanDateService;
 
-    @PostMapping(RouteExcelConstant.DEFAULT_UPLOAD)
-    private ResponseEntity<?> getDataFromFile(@ModelAttribute EXUploadRequest request) {
+    @Override
+    public ResponseEntity<?> getDataFromFile(EXUploadRequest request) {
         return exPlanDateService.getDataFromFile(request);
     }
 
-    @PostMapping(RouteExcelConstant.DEFAULT_IMPORT)
-    private ResponseEntity<?> importItem(@ModelAttribute EXImportRequest request) {
+    @Override
+    public ResponseEntity<?> importItem(EXImportRequest request) {
         return exPlanDateService.importItem(request);
     }
 
-    @GetMapping(RouteExcelConstant.DEFAULT_DOWNLOAD_TEMPLATE)
-    private ResponseEntity<?> downloadTemplate() {
-        return exPlanDateService.downloadTemplate();
+    @Override
+    public ResponseEntity<?> downloadTemplate(EXDataRequest request) {
+        return exPlanDateService.downloadTemplate(request);
+    }
+
+    @Override
+    public ResponseEntity<?> historyLog(EXDataRequest request) {
+        return exPlanDateService.historyLog(request);
+    }
+
+    @Override
+    public ResponseEntity<?> historyLogDetail(EXDataRequest request, String id) {
+        return exPlanDateService.historyLogDetail(request, id);
     }
 
 }

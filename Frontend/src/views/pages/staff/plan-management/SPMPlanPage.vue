@@ -1,12 +1,14 @@
 <script setup>
-import { ref, onMounted, watch, reactive } from 'vue'
+import { ref, onMounted, watch, reactive, h } from 'vue'
 import {
   PlusOutlined,
   FilterFilled,
   UnorderedListOutlined,
   SearchOutlined,
-  EyeFilled,
   AlignLeftOutlined,
+  PoweroffOutlined,
+  DeleteFilled,
+  EditFilled,
 } from '@ant-design/icons-vue'
 import { message, Modal } from 'ant-design-vue'
 import requestAPI from '@/services/requestApiService'
@@ -23,7 +25,7 @@ const router = useRouter()
 const breadcrumbStore = useBreadcrumbStore()
 
 const isLoading = ref(false)
-const modalAdd = reactive({
+const modalAddOrUpdate = reactive({
   isShow: false,
   isLoading: false,
   okText: 'Xác nhận',
@@ -37,16 +39,20 @@ const optLevel = ref([])
 const optSemester = ref([])
 const optYear = ref([])
 const lstData = ref([])
-const lstDataAdd = ref([])
+const lstDataProject = ref([])
 
-const formRefAdd = ref(null)
+const formRefAddOrUpdate = ref(null)
 
+const minRangeDate = ref(dayjs())
 const maxRangeDate = ref(dayjs())
+
+const currentProject = ref(null)
 
 const columns = ref([
   { title: '#', dataIndex: 'orderNumber', key: 'orderNumber', width: 50 },
   { title: 'Tên kế hoạch', dataIndex: 'planName', key: 'planName', width: 120 },
   { title: 'Tên dự án', dataIndex: 'projectName', key: 'projectName' },
+  { title: 'Nội dung', dataIndex: 'description', key: 'description' },
   { title: 'Bộ môn', dataIndex: 'subjectName', key: 'subjectName' },
   { title: 'Cấp độ', dataIndex: 'level', key: 'level', width: 120 },
   { title: 'Ngày diễn ra', dataIndex: 'semesterName', key: 'semesterName' },
@@ -69,6 +75,7 @@ const pagination = ref({ ...DEFAULT_PAGINATION })
 
 const dataFilter = reactive({
   keyword: null,
+  status: null,
   level: null,
   semester: null,
   year: null,
@@ -82,7 +89,8 @@ const dataFilterAdd = reactive({
   subject: null,
 })
 
-const formDataAdd = reactive({
+const formData = reactive({
+  id: null,
   idProject: null,
   name: null,
   description: null,
@@ -97,7 +105,7 @@ const formRules = reactive({
 })
 
 const disabledDate = (current) => {
-  return current.isBefore(dayjs(), 'day') || current.isAfter(maxRangeDate.value, 'day')
+  return current.isBefore(minRangeDate.value, 'day') || current.isAfter(maxRangeDate.value, 'day')
 }
 
 const fetchDataSubject = () => {
@@ -171,7 +179,7 @@ const fetchDataList = () => {
 }
 
 const fetchDataProjectList = () => {
-  modalAdd.isLoading = true
+  modalAddOrUpdate.isLoading = true
   requestAPI
     .get(`${API_ROUTES_STAFF.FETCH_DATA_PLAN}/list/project`, {
       params: {
@@ -179,40 +187,102 @@ const fetchDataProjectList = () => {
       },
     })
     .then(({ data: response }) => {
-      lstDataAdd.value = response.data
+      lstDataProject.value = response.data
+      if (currentProject.value) {
+        lstDataProject.value.push(currentProject.value)
+        formData.idProject = currentProject.value.id
+      }
     })
     .catch((error) => {
       message.error(error?.response?.data?.message || 'Không thể tải danh sách dữ liệu dự án')
     })
     .finally(() => {
-      modalAdd.isLoading = false
+      modalAddOrUpdate.isLoading = false
     })
 }
 
 const fetchSubmitCreate = () => {
   const data = {
-    ...formDataAdd,
-    rangeDate: [Date.parse(formDataAdd.rangeDate[0]), Date.parse(formDataAdd.rangeDate[1])],
+    ...formData,
+    rangeDate: [Date.parse(formData.rangeDate[0]), Date.parse(formData.rangeDate[1])],
   }
-  modalAdd.isLoading = true
+  modalAddOrUpdate.isLoading = true
   requestAPI
-    .post(`${API_ROUTES_STAFF.FETCH_DATA_PLAN}/create`, data)
+    .post(`${API_ROUTES_STAFF.FETCH_DATA_PLAN}`, data)
     .then(({ data: response }) => {
       message.success(response.message)
-      modalAdd.isShow = false
+      modalAddOrUpdate.isShow = false
       fetchDataList()
     })
     .catch((error) => {
       message.error(error?.response?.data?.message || 'Không thể tạo mới kế hoạch')
     })
     .finally(() => {
-      modalAdd.isLoading = false
+      modalAddOrUpdate.isLoading = false
     })
+}
+
+const fetchSubmitUpdate = () => {
+  const data = {
+    ...formData,
+    rangeDate: [Date.parse(formData.rangeDate[0]), Date.parse(formData.rangeDate[1])],
+  }
+  modalAddOrUpdate.isLoading = true
+  requestAPI
+    .put(`${API_ROUTES_STAFF.FETCH_DATA_PLAN}`, data)
+    .then(({ data: response }) => {
+      message.success(response.message)
+      modalAddOrUpdate.isShow = false
+      fetchDataList()
+    })
+    .catch((error) => {
+      message.error(error?.response?.data?.message || 'Không thể cập nhật kế hoạch')
+    })
+    .finally(() => {
+      modalAddOrUpdate.isLoading = false
+    })
+}
+
+const fetchSubmitChangeStatus = (id) => {
+  requestAPI
+    .put(`${API_ROUTES_STAFF.FETCH_DATA_PLAN}/${id}/change-status`)
+    .then(({ data: response }) => {
+      message.success(response.message)
+      fetchDataList()
+    })
+    .catch((error) => {
+      message.error(error?.response?.data?.message || 'Không thể thay đổi trạng thái kế hoạch')
+    })
+}
+
+const fetchSubmitDelete = (id) => {
+  requestAPI
+    .delete(`${API_ROUTES_STAFF.FETCH_DATA_PLAN}/${id}`)
+    .then(({ data: response }) => {
+      message.success(response.message)
+      fetchDataList()
+    })
+    .catch((error) => {
+      message.error(error?.response?.data?.message || 'Không thể xoá kế hoạch này')
+    })
+}
+
+const handleShowDescription = (text) => {
+  Modal.info({
+    title: 'Nội dung kế hoạch',
+    type: 'info',
+    content: text,
+    okText: 'Đóng',
+    okButtonProps: {
+      class: 'btn-gray',
+    },
+  })
 }
 
 const handleClearFilter = () => {
   Object.assign(dataFilter, {
     keyword: null,
+    status: null,
     level: null,
     semester: null,
     year: null,
@@ -235,13 +305,13 @@ const handleSubmitFilterAdd = () => {
   ) {
     return
   }
-  formDataAdd.idProject = null
+  formData.idProject = null
   fetchDataProjectList()
 }
 
 const handleSubmitAdd = async () => {
   try {
-    await formRefAdd.value.validate()
+    await formRefAddOrUpdate.value.validate()
     Modal.confirm({
       title: `Xác nhận thêm mới`,
       type: 'info',
@@ -255,6 +325,48 @@ const handleSubmitAdd = async () => {
   } catch (error) {}
 }
 
+const handleSubmitUpdate = async () => {
+  try {
+    await formRefAddOrUpdate.value.validate()
+    Modal.confirm({
+      title: `Xác nhận cập nhật`,
+      type: 'info',
+      content: `Bạn có chắc muốn cập nhật kế hoạch này?`,
+      okText: 'Tiếp tục',
+      cancelText: 'Hủy bỏ',
+      onOk() {
+        fetchSubmitUpdate()
+      },
+    })
+  } catch (error) {}
+}
+
+const handleChangeStatus = (id) => {
+  Modal.confirm({
+    title: `Xác nhận thay đổi trạng thái`,
+    type: 'info',
+    content: `Bạn có chắc muốn thay đổi trạng thái kế hoạch này?`,
+    okText: 'Tiếp tục',
+    cancelText: 'Hủy bỏ',
+    onOk() {
+      fetchSubmitChangeStatus(id)
+    },
+  })
+}
+
+const handleDelete = (id) => {
+  Modal.confirm({
+    title: `Xác nhận xoá kế hoạch`,
+    type: 'warning',
+    content: `Mọi dữ liệu điểm danh sẽ bị xoá. Bạn vẫn muốn tiếp tục?`,
+    okText: 'Tiếp tục',
+    cancelText: 'Hủy bỏ',
+    onOk() {
+      fetchSubmitDelete(id)
+    },
+  })
+}
+
 const handleTableChange = (page) => {
   pagination.value.current = page.current
   pagination.value.pageSize = page.pageSize
@@ -262,18 +374,29 @@ const handleTableChange = (page) => {
 }
 
 const handleChangeProjectId = (id) => {
-  const project = lstDataAdd.value.find((o) => o.id === id)
+  const project = lstDataProject.value.find((o) => o.id === id)
+  minRangeDate.value = dayjs(project.fromDate)
   maxRangeDate.value = dayjs(project.toDate)
-  formDataAdd.rangeDate = [dayjs(), maxRangeDate.value]
+  formData.rangeDate = [currentProject.value ? minRangeDate.value : dayjs(), maxRangeDate.value]
 }
 
 const handleShowDetail = (id) => {
-  router.push({ name: ROUTE_NAMES.MANAGEMENT_PLAN_DETAIL, params: { id: id } })
+  router.push({ name: ROUTE_NAMES.MANAGEMENT_PLAN_FACTORY, params: { id: id } })
 }
 
 const handleShowModalAdd = () => {
-  modalAdd.isShow = true
+  modalAddOrUpdate.isShow = true
+  modalAddOrUpdate.isLoading = false
+  modalAddOrUpdate.title = h('span', [
+    h(PlusOutlined, { class: 'me-2 text-primary' }),
+    'Tạo kế hoạch mới',
+  ])
+  modalAddOrUpdate.okText = 'Thêm ngay'
+  modalAddOrUpdate.onOk = () => handleSubmitAdd()
 
+  currentProject.value = null
+
+  minRangeDate.value = dayjs()
   maxRangeDate.value = dayjs()
 
   dataFilterAdd.level = null
@@ -281,12 +404,47 @@ const handleShowModalAdd = () => {
   dataFilterAdd.subject = null
   dataFilterAdd.year = null
 
-  lstDataAdd.value = []
+  lstDataProject.value = []
 
-  formDataAdd.idProject = null
-  formDataAdd.name = null
-  formDataAdd.description = null
-  formDataAdd.rangeDate = []
+  formData.id = null
+  formData.idProject = null
+  formData.name = null
+  formData.description = null
+  formData.rangeDate = []
+}
+
+const handleShowModalUpdate = (item) => {
+  modalAddOrUpdate.isShow = true
+  modalAddOrUpdate.isLoading = false
+  modalAddOrUpdate.title = h('span', [
+    h(EditFilled, { class: 'me-2 text-primary' }),
+    'Chỉnh sửa kế hoạch',
+  ])
+  modalAddOrUpdate.okText = 'Lưu lại'
+  modalAddOrUpdate.onOk = () => handleSubmitUpdate()
+
+  currentProject.value = {
+    id: item.projectId,
+    name: item.projectName + ' (hiện tại)',
+    toDate: item.toDateSemester,
+    fromDate: item.fromDateSemester,
+  }
+
+  minRangeDate.value = dayjs(item.fromDateSemester)
+  maxRangeDate.value = dayjs(item.toDateSemester)
+
+  dataFilterAdd.level = null
+  dataFilterAdd.semester = null
+  dataFilterAdd.subject = null
+  dataFilterAdd.year = null
+
+  lstDataProject.value = [currentProject.value]
+
+  formData.id = item.id
+  formData.idProject = item.projectId
+  formData.name = item.planName
+  formData.description = item.description
+  formData.rangeDate = [dayjs(item.fromDate), dayjs(item.toDate)]
 }
 
 onMounted(() => {
@@ -317,17 +475,16 @@ watch(
 
 <template>
   <a-modal
-    v-model:open="modalAdd.isShow"
-    v-bind="modalAdd"
-    :okButtonProps="{ loading: modalAdd.isLoading }"
+    v-model:open="modalAddOrUpdate.isShow"
+    v-bind="modalAddOrUpdate"
+    :okButtonProps="{ loading: modalAddOrUpdate.isLoading }"
   >
-    <template #title> <PlusOutlined class="text-primary" /> Tạo kế hoạch mới </template>
     <a-form
-      ref="formRefAdd"
+      ref="formRefAddOrUpdate"
       class="row mt-3"
       layout="vertical"
       autocomplete="off"
-      :model="formDataAdd"
+      :model="formData"
     >
       <a-form-item class="col-sm-3" label="Học kỳ">
         <a-select
@@ -336,7 +493,7 @@ watch(
           :dropdownMatchSelectWidth="false"
           placeholder="-- Chọn 1 học kỳ --"
           allowClear
-          :disabled="modalAdd.isLoading"
+          :disabled="modalAddOrUpdate.isLoading"
         >
           <a-select-option v-for="o in optSemester" :key="o" :value="o">
             {{ o }}
@@ -350,7 +507,7 @@ watch(
           :dropdownMatchSelectWidth="false"
           placeholder="-- Chọn 1 năm --"
           allowClear
-          :disabled="modalAdd.isLoading"
+          :disabled="modalAddOrUpdate.isLoading"
         >
           <a-select-option v-for="o in optYear" :key="o" :value="o">
             {{ o }}
@@ -364,7 +521,7 @@ watch(
           :dropdownMatchSelectWidth="false"
           placeholder="-- Chọn 1 bộ môn --"
           allowClear
-          :disabled="modalAdd.isLoading"
+          :disabled="modalAddOrUpdate.isLoading"
         >
           <a-select-option v-for="o in optSubject" :key="o.id" :value="o.id">
             {{ `${o.code} - ${o.name}` }}
@@ -378,7 +535,7 @@ watch(
           :dropdownMatchSelectWidth="false"
           placeholder="-- Chọn 1 cấp độ --"
           allowClear
-          :disabled="modalAdd.isLoading"
+          :disabled="modalAddOrUpdate.isLoading"
         >
           <a-select-option v-for="o in optLevel" :key="o.id" :value="o.id">
             {{ `${o.code} - ${o.name}` }}
@@ -388,18 +545,18 @@ watch(
 
       <a-form-item
         class="col-sm-6"
-        :label="`Dự án (${lstDataAdd.length})`"
+        :label="`Dự án (${lstDataProject.length})`"
         name="idProject"
         :rules="formRules.idProject"
       >
         <a-select
-          v-model:value="formDataAdd.idProject"
+          v-model:value="formData.idProject"
           placeholder="-- Chọn 1 dự án --"
           class="w-100"
-          :disabled="modalAdd.isLoading"
+          :disabled="modalAddOrUpdate.isLoading"
           @change="handleChangeProjectId"
         >
-          <a-select-option v-for="o in lstDataAdd" :key="o.id" :value="o.id">
+          <a-select-option v-for="o in lstDataProject" :key="o.id" :value="o.id">
             {{ o.name }}
           </a-select-option>
         </a-select>
@@ -413,18 +570,18 @@ watch(
         <a-range-picker
           class="w-100"
           :placeholder="[DEFAULT_DATE_FORMAT, DEFAULT_DATE_FORMAT]"
-          v-model:value="formDataAdd.rangeDate"
+          v-model:value="formData.rangeDate"
           :format="DEFAULT_DATE_FORMAT"
           :disabledDate="disabledDate"
-          :disabled="modalAdd.isLoading"
+          :disabled="modalAddOrUpdate.isLoading"
         />
       </a-form-item>
 
       <a-form-item class="col-sm-12" label="Tên kế hoạch" name="name" :rules="formRules.name">
         <a-input
           class="w-100"
-          v-model:value="formDataAdd.name"
-          :disabled="modalAdd.isLoading"
+          v-model:value="formData.name"
+          :disabled="modalAddOrUpdate.isLoading"
           allowClear
         />
       </a-form-item>
@@ -437,8 +594,8 @@ watch(
       >
         <a-textarea
           class="w-100"
-          v-model:value="formDataAdd.description"
-          :disabled="modalAdd.isLoading"
+          v-model:value="formData.description"
+          :disabled="modalAddOrUpdate.isLoading"
           :rows="4"
           allowClear
         />
@@ -453,7 +610,7 @@ watch(
         <a-card :bordered="false" class="cart">
           <template #title> <FilterFilled /> Bộ lọc </template>
           <div class="row g-2">
-            <div class="col-md-8 col-sm-12">
+            <div class="col-md-4 col-sm-12">
               <div class="label-title">Từ khoá:</div>
               <a-input
                 v-model:value="dataFilter.keyword"
@@ -464,6 +621,20 @@ watch(
                   <SearchOutlined />
                 </template>
               </a-input>
+            </div>
+            <div class="col-md-4 col-sm-6">
+              <div class="label-title">Trạng thái:</div>
+              <a-select
+                v-model:value="dataFilter.status"
+                class="w-100"
+                :dropdownMatchSelectWidth="false"
+                placeholder="-- Tất cả trạng thái --"
+                allowClear
+              >
+                <a-select-option :value="null">-- Tất cả trạng thái --</a-select-option>
+                <a-select-option :value="1">Đang triển khai</a-select-option>
+                <a-select-option :value="0">Ngừng triển khai</a-select-option>
+              </a-select>
             </div>
             <div class="col-md-4 col-sm-6">
               <div class="label-title">Bộ môn:</div>
@@ -557,20 +728,69 @@ watch(
             @change="handleTableChange"
           >
             <template #bodyCell="{ column, record }">
+              <template v-if="column.dataIndex === 'description'">
+                <a-typography-link @click="handleShowDescription(record.description)"
+                  >Chi tiết</a-typography-link
+                >
+              </template>
+              <template v-if="column.key === 'planName'">
+                <RouterLink
+                  :to="{ name: ROUTE_NAMES.MANAGEMENT_PLAN_FACTORY, params: { id: record.id } }"
+                >
+                  {{ record.planName }}
+                </RouterLink>
+              </template>
+
               <template v-if="column.dataIndex === 'semesterName'">
-                <span class="text-info">{{ formatDate(record.fromDate) }}</span> -
-                <span class="text-danger">{{ formatDate(record.toDate) }}</span>
+                <span>{{ formatDate(record.fromDate) }}</span> -
+                <span>{{ formatDate(record.toDate) }}</span>
                 <a-tag class="ms-2">{{ record.semesterName }}</a-tag>
               </template>
               <template v-if="column.dataIndex === 'status'">
                 <a-tag :color="record.status === 1 ? 'green' : 'red'">{{
-                  record.status === 1 ? 'Đang triển khai' : 'Không triển khai'
+                  record.status === 1 ? 'Đang triển khai' : 'Ngừng triển khai'
                 }}</a-tag>
               </template>
               <template v-if="column.key === 'actions'">
                 <a-tooltip title="Chi tiết kế hoạch">
-                  <a-button class="btn-outline-primary" @click="handleShowDetail(record.id)">
+                  <a-button
+                    class="btn-outline-primary border-0 me-2"
+                    @click="handleShowDetail(record.id)"
+                  >
                     <AlignLeftOutlined />
+                  </a-button>
+                </a-tooltip>
+                <a-tooltip title="Chỉnh sửa kế hoạch">
+                  <a-button
+                    class="btn-outline-info border-0"
+                    @click="handleShowModalUpdate(record)"
+                  >
+                    <EditFilled />
+                  </a-button>
+                </a-tooltip>
+                <a-tooltip title="Ngừng triển khai" v-if="record.status === 1">
+                  <a-button
+                    class="btn-outline-danger ms-2 border-0"
+                    @click="handleChangeStatus(record.id)"
+                  >
+                    <PoweroffOutlined />
+                  </a-button>
+                </a-tooltip>
+                <a-tooltip title="Đang triển khai" v-else>
+                  <a-button
+                    class="btn-outline-success ms-2 border-0"
+                    @click="handleChangeStatus(record.id)"
+                  >
+                    <PoweroffOutlined />
+                  </a-button>
+                </a-tooltip>
+
+                <a-tooltip title="Xoá kế hoạch" v-if="record.status !== 1">
+                  <a-button
+                    class="btn-outline-danger border-0 ms-2"
+                    @click="handleDelete(record.id)"
+                  >
+                    <DeleteFilled />
                   </a-button>
                 </a-tooltip>
               </template>

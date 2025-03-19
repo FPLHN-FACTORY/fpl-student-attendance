@@ -19,7 +19,7 @@ const isShowLog = ref(false)
 const itemLog = ref(false)
 
 const columns = ref([
-  { title: '#', dataIndex: 'index', key: 'index', width: 50 },
+  { title: 'Dòng', dataIndex: 'index', key: 'index', width: 80 },
   { title: 'Trạng thái', dataIndex: 'status', key: 'status', width: 120 },
   { title: 'Nội dung', dataIndex: 'message', key: 'message' },
 ])
@@ -60,7 +60,7 @@ const handleShowLog = (item) => {
 </script>
 
 <template>
-  <a-modal v-model:open="isShowLog">
+  <a-modal v-model:open="isShowLog" :width="800">
     <template #title><InfoCircleFilled class="text-primary" /> {{ itemLog.file.name }} </template>
     <template #footer>
       <a-button @click="isShowLog = false" class="btn-gray">Đóng</a-button>

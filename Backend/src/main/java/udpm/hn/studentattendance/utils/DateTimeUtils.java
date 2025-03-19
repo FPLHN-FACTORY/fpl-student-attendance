@@ -7,11 +7,14 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
 
 public class DateTimeUtils {
 
     public static String DATE_FORMAT = "dd/MM/yyyy";
+    
+    private static final String ZONE_ID = "Asia/Ho_Chi_Minh";
 
     public static Long parseStringToLong(String date) {
         return parseStringToLong(date, DATE_FORMAT);
@@ -59,16 +62,47 @@ public class DateTimeUtils {
         return sdf.format(new Date(millis));
     }
 
+    public static long convertStringToTimeMillis(String dateString) {
+        return convertStringToTimeMillis(dateString, DATE_FORMAT);
+    }
+
+    public static long convertStringToTimeMillis(String dateString, String formatDate) {
+        boolean hasTime = dateString.contains(":");
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern(formatDate);
+        LocalDateTime localDateTime;
+        if (hasTime) {
+            localDateTime = LocalDateTime.parse(dateString, formatter);
+        } else {
+            localDateTime = LocalDate.parse(dateString, formatter).atStartOfDay();
+        }
+        ZonedDateTime dateTime = localDateTime.atZone(ZoneId.of(ZONE_ID));
+        return dateTime.toInstant().toEpochMilli();
+    }
+
     public static Long getCurrentTime() {
         return new Date().getTime();
     }
 
     public static Long getCurrentTimeMillis() {
-        LocalDate currentDate = LocalDate.now();
-        LocalDateTime startOfDay = currentDate.atStartOfDay();
-        ZonedDateTime zonedDateTime = startOfDay.atZone(ZoneId.of("Asia/Ho_Chi_Minh"));
-        Instant instant = zonedDateTime.toInstant();
-        return instant.toEpochMilli();
+        ZonedDateTime now = ZonedDateTime.now(ZoneId.of(ZONE_ID));
+        return now.toInstant().toEpochMilli();
+    }
+
+    public static long toStartOfDay(long timestamp) {
+        LocalDateTime dateTime = Instant.ofEpochMilli(timestamp)
+                .atZone(ZoneId.of(ZONE_ID))
+                .toLocalDateTime();
+        LocalDateTime startOfDay = dateTime.toLocalDate().atStartOfDay();
+        return startOfDay.atZone(ZoneId.of(ZONE_ID)).toInstant().toEpochMilli();
+    }
+
+    public static long toEndOfDay(long timestamp) {
+        LocalDateTime dateTime = Instant.ofEpochMilli(timestamp)
+                .atZone(ZoneId.of(ZONE_ID))
+                .toLocalDateTime();
+        LocalDateTime endOfDay = dateTime.toLocalDate()
+                .atTime(23, 59, 59, 999_999_999);
+        return endOfDay.atZone(ZoneId.of(ZONE_ID)).toInstant().toEpochMilli();
     }
 
     public static Long getCurrentDateWithoutTime() {
@@ -85,7 +119,7 @@ public class DateTimeUtils {
 
     public static LocalDate convertTimestampToLocalDate(long timestamp) {
         Instant instant = Instant.ofEpochMilli(timestamp);
-        return instant.atZone(ZoneId.of("Asia/Ho_Chi_Minh")).toLocalDate();
+        return instant.atZone(ZoneId.of(ZONE_ID)).toLocalDate();
     }
 
 }

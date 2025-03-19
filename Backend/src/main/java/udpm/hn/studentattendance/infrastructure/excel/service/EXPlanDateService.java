@@ -1,16 +1,7 @@
 package udpm.hn.studentattendance.infrastructure.excel.service;
 
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.multipart.MultipartFile;
-import udpm.hn.studentattendance.infrastructure.excel.model.request.EXImportRequest;
-import udpm.hn.studentattendance.infrastructure.excel.model.request.EXUploadRequest;
+import udpm.hn.studentattendance.infrastructure.excel.common.IEXDefaultService;
 
-public interface EXPlanDateService {
-
-    ResponseEntity<?> getDataFromFile(EXUploadRequest request);
-
-    ResponseEntity<?> importItem(EXImportRequest request);
-
-    ResponseEntity<?> downloadTemplate();
+public interface EXPlanDateService extends IEXDefaultService {
 
 }

@@ -20,6 +20,8 @@ public class SPDFilterPlanRequest extends PageableRequest {
 
     private String level;
 
+    private Integer status;
+
     private String semester;
 
     private Integer year;
