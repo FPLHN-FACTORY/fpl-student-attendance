@@ -1,59 +1,73 @@
 <script setup>
-import { ref, onMounted, watch, reactive } from 'vue'
+import { ref, onMounted, watch, reactive, h, computed, unref } from 'vue'
 import {
   PlusOutlined,
   FilterFilled,
   UnorderedListOutlined,
   SearchOutlined,
-  EyeFilled,
+  EditFilled,
+  DeleteFilled,
 } from '@ant-design/icons-vue'
 import { message, Modal } from 'ant-design-vue'
 import requestAPI from '@/services/requestApiService'
 import { DEFAULT_PAGINATION } from '@/constants'
 import { API_ROUTES_STAFF } from '@/constants/staffConstant'
-import { useRoute, useRouter } from 'vue-router'
-import { ROUTE_NAMES } from '@/router/staffRoute'
-import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
 import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
+import { API_ROUTES_EXCEL, GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
+import { ROUTE_NAMES } from '@/router/staffRoute'
+import useLoadingStore from '@/stores/useLoadingStore'
+import { useRoute, useRouter } from 'vue-router'
 import {
-  DAY_OF_WEEK,
   DEFAULT_DATE_FORMAT,
   DEFAULT_LATE_ARRIVAL,
   DEFAULT_MAX_LATE_ARRIVAL,
   SHIFT,
+  STATUS_PLAN_DATE_DETAIL,
 } from '@/constants'
+import { dayOfWeek, formatDate, rowSelectTable } from '@/utils/utils'
 import dayjs from 'dayjs'
-import { formatDate } from '@/utils/utils'
-import useLoadingStore from '@/stores/useLoadingStore'
+import ExcelUploadButton from '@/components/excel/ExcelUploadButton.vue'
 
-const router = useRouter()
 const route = useRoute()
+const router = useRouter()
 
 const breadcrumbStore = useBreadcrumbStore()
 const loadingStore = useLoadingStore()
 
-const _detail = ref(null)
-
 const isLoading = ref(false)
-const modalAdd = reactive({
+
+const configImportExcel = {
+  fetchUrl: API_ROUTES_EXCEL.FETCH_IMPORT_PLAN_DATE,
+  onSuccess: () => {
+    fetchDataList()
+  },
+  onError: () => {
+    message.error('Không thể xử lý file excel')
+  },
+  data: { idPlanFactory: route.params?.id },
+  showDownloadTemplate: true,
+  showHistoryLog: true,
+}
+
+const modalAddOrUpdate = reactive({
   isShow: false,
   isLoading: false,
+  title: null,
+  cancelText: 'Hủy bỏ',
   okText: 'Xác nhận',
-  cancelText: 'Huỷ bỏ',
-  onOk: () => handleSubmitAdd(),
+  onOk: null,
 })
 
+const _detail = ref(null)
 const lstData = ref([])
-const lstDataAdd = ref([])
-
-const formRefAdd = ref(null)
 
 const columns = ref([
-  { title: '#', dataIndex: 'orderNumber', key: 'orderNumber', width: 50 },
-  { title: 'Tên nhóm xưởng', dataIndex: 'factoryName', key: 'factoryName' },
-  { title: 'Giảng viên', dataIndex: 'staffName', key: 'staffName' },
-  { title: 'Thời gian diễn ra', key: 'time' },
-  { title: 'Số buổi', dataIndex: 'totalShift', key: 'totalShift' },
+  { title: 'Buổi', dataIndex: 'orderNumber', key: 'orderNumber', width: 50 },
+  { title: 'Ngày học', dataIndex: 'startDate', key: 'startDate' },
+  { title: 'Ca học', dataIndex: 'shift', key: 'shift' },
+  { title: 'Nội dung', dataIndex: 'description', key: 'description', width: 300 },
+  { title: 'Điểm danh trễ', dataIndex: 'lateArrival', key: 'lateArrival', width: 130 },
+  { title: 'Trạng thái', dataIndex: 'status', key: 'status' },
   { title: '', key: 'actions' },
 ])
 
@@ -72,38 +86,53 @@ const pagination = ref({ ...DEFAULT_PAGINATION })
 
 const dataFilter = reactive({
   keyword: null,
-  rangeDate: [],
+  status: null,
+  shift: null,
+  startDate: null,
 })
 
-const formDataAdd = reactive({
-  idPlan: route.params?.id,
-  idFactory: null,
-  days: [],
+const formRefAddOrUpdate = ref(null)
+
+const formData = reactive({
+  id: null,
+  idPlan: null,
+  description: null,
   shift: Object.keys(SHIFT)[0],
+  startDate: null,
   lateArrival: DEFAULT_LATE_ARRIVAL,
 })
 
 const formRules = reactive({
-  idFactory: [{ required: true, message: 'Vui lòng chọn 1 nhóm xưởng - dự án!' }],
-  days: [{ required: true, message: 'Vui lòng chọn ít nhất 1 ngày trong tuần!' }],
-  shift: [{ required: true, message: 'Vui lòng chọn 1 ca học!' }],
-  lateArrival: [{ required: true, message: 'Vui lòng nhập mục này!' }],
+  startDate: [{ required: true, message: 'Vui lòng chọn ngày học diễn ra!' }],
+  shift: [{ required: true, message: 'Vui lòng chọn ca học!' }],
+  lateArrival: [{ required: true, message: 'Vui lòng nhập thời gian điểm danh muộn tối đa!' }],
+  description: [{ required: true, message: 'Vui lòng nhập nội dung buổi học!' }],
 })
+
+const disabledDate = (current) => {
+  return current.isBefore(dayjs(), 'day') || current.isAfter(dayjs(_detail.value?.toDate), 'day')
+}
 
 const fetchDataDetail = () => {
   loadingStore.show()
   requestAPI
-    .get(`${API_ROUTES_STAFF.FETCH_DATA_PLAN}/${route.params.id}`)
+    .get(`${API_ROUTES_STAFF.FETCH_DATA_PLAN_DATE}/${route.params.id}`)
     .then(({ data: response }) => {
       _detail.value = response.data
+      formData.idPlan = _detail.value.planId
       breadcrumbStore.push({
+        name: ROUTE_NAMES.MANAGEMENT_PLAN_FACTORY,
+        params: { id: _detail.value.planId },
         breadcrumbName: _detail.value.planName,
+      })
+      breadcrumbStore.push({
+        breadcrumbName: _detail.value.factoryName,
       })
       fetchDataList()
     })
     .catch((error) => {
       message.error(error?.response?.data?.message || 'Không thể tải thông tin kế hoạch')
-      router.push({ name: ROUTE_NAMES.MANAGEMENT_PLAN })
+      router.push({ name: ROUTE_NAMES.MANAGEMENT_PLAN_FACTORY, params: { id: route.params?.id } })
     })
     .finally(() => {
       loadingStore.hide()
@@ -117,13 +146,12 @@ const fetchDataList = () => {
 
   isLoading.value = true
   requestAPI
-    .get(`${API_ROUTES_STAFF.FETCH_DATA_PLAN_DATE}`, {
+    .get(`${API_ROUTES_STAFF.FETCH_DATA_PLAN_DATE}/${_detail.value.id}/list`, {
       params: {
         page: pagination.value.current,
         size: pagination.value.pageSize,
-        keyword: dataFilter.keyword,
-        fromDate: dataFilter.rangeDate[0] ? Date.parse(dataFilter.rangeDate[0]) : null,
-        toDate: dataFilter.rangeDate[1] ? Date.parse(dataFilter.rangeDate[1]) : null,
+        ...dataFilter,
+        startDate: (dataFilter.startDate && Date.parse(dataFilter.startDate)) || null,
       },
     })
     .then(({ data: response }) => {
@@ -138,42 +166,91 @@ const fetchDataList = () => {
     })
 }
 
-const fetchDataFactoryList = () => {
-  modalAdd.isLoading = true
-  requestAPI
-    .get(`${API_ROUTES_STAFF.FETCH_DATA_PLAN}/${_detail.value.id}/list/factory`)
-    .then(({ data: response }) => {
-      lstDataAdd.value = response.data
-    })
-    .catch((error) => {
-      message.error(error?.response?.data?.message || 'Không thể tải danh sách dữ liệu nhóm xưởng')
-    })
-    .finally(() => {
-      modalAdd.isLoading = false
-    })
-}
+const fetchDeleteItem = (id) => {
+  loadingStore.show()
 
-const fetchSubmitCreate = () => {
-  modalAdd.isLoading = true
   requestAPI
-    .post(`${API_ROUTES_STAFF.FETCH_DATA_PLAN_DATE}/create`, formDataAdd)
+    .delete(`${API_ROUTES_STAFF.FETCH_DATA_PLAN_DATE}/${_detail.value.id}/delete/${id}`)
     .then(({ data: response }) => {
       message.success(response.message)
-      modalAdd.isShow = false
       fetchDataList()
     })
     .catch((error) => {
-      message.error(error?.response?.data?.message || 'Không thể thêm nhóm xưởng vào kế hoạch')
+      message.error(error?.response?.data?.message || 'Không thể xoá mục này')
     })
     .finally(() => {
-      modalAdd.isLoading = false
+      loadingStore.hide()
+    })
+}
+
+const fetchDeleteMultipleItem = (ids) => {
+  loadingStore.show()
+
+  requestAPI
+    .delete(`${API_ROUTES_STAFF.FETCH_DATA_PLAN_DATE}/${_detail.value.id}/delete`, {
+      data: {
+        ids: ids,
+      },
+    })
+    .then(({ data: response }) => {
+      message.success(response.message)
+      selectedRowKeys.value = []
+      fetchDataList()
+    })
+    .catch((error) => {
+      message.error(error?.response?.data?.message || 'Không thể xoá mục đã chọn')
+    })
+    .finally(() => {
+      loadingStore.hide()
+    })
+}
+
+const fetchAddItem = () => {
+  modalAddOrUpdate.isLoading = true
+  requestAPI
+    .post(`${API_ROUTES_STAFF.FETCH_DATA_PLAN_DATE}/${_detail.value.id}/add`, {
+      ...formData,
+      startDate: Date.parse(formData.startDate),
+    })
+    .then(({ data: response }) => {
+      message.success(response.message)
+      modalAddOrUpdate.isShow = false
+      fetchDataList()
+    })
+    .catch((error) => {
+      message.error(error?.response?.data?.message || 'Không thể thêm mới mục này')
+    })
+    .finally(() => {
+      modalAddOrUpdate.isLoading = false
+    })
+}
+
+const fetchUpdateItem = () => {
+  modalAddOrUpdate.isLoading = true
+  requestAPI
+    .put(`${API_ROUTES_STAFF.FETCH_DATA_PLAN_DATE}/${_detail.value.id}/update`, {
+      ...formData,
+      startDate: Date.parse(formData.startDate),
+    })
+    .then(({ data: response }) => {
+      message.success(response.message)
+      modalAddOrUpdate.isShow = false
+      fetchDataList()
+    })
+    .catch((error) => {
+      message.error(error?.response?.data?.message || 'Không thể cập nhật mục này')
+    })
+    .finally(() => {
+      modalAddOrUpdate.isLoading = false
     })
 }
 
 const handleClearFilter = () => {
   Object.assign(dataFilter, {
     keyword: null,
-    rangeDate: [],
+    status: null,
+    shift: null,
+    startDate: null,
   })
   fetchDataList()
 }
@@ -183,52 +260,140 @@ const handleSubmitFilter = () => {
   fetchDataList()
 }
 
-const handleSubmitAdd = async () => {
-  try {
-    await formRefAdd.value.validate()
-    Modal.confirm({
-      title: `Xác nhận phân công`,
-      type: 'info',
-      content: `Bạn có chắc muốn thêm nhóm xưởng vào kế hoạch này?`,
-      okText: 'Tiếp tục',
-      cancelText: 'Hủy bỏ',
-      onOk() {
-        fetchSubmitCreate()
-      },
-    })
-  } catch (error) {}
-}
-
 const handleTableChange = (page) => {
   pagination.value.current = page.current
   pagination.value.pageSize = page.pageSize
   fetchDataList()
 }
 
-const handleShowDetail = (id) => {
-  router.push({
-    name: ROUTE_NAMES.MANAGEMENT_PLAN_FACTORY,
-    params: { id: id },
+const handleShowAdd = () => {
+  modalAddOrUpdate.isShow = true
+  modalAddOrUpdate.isLoading = false
+  modalAddOrUpdate.title = h('span', [
+    h(PlusOutlined, { class: 'me-2 text-primary' }),
+    'Thêm kế hoạch mới',
+  ])
+  modalAddOrUpdate.okText = 'Thêm ngay'
+  modalAddOrUpdate.onOk = () => handleSubmitAdd()
+
+  formData.id = null
+  formData.startDate = dayjs()
+  formData.shift = Object.keys(SHIFT)[0]
+  formData.lateArrival = DEFAULT_LATE_ARRIVAL
+  formData.description = null
+}
+
+const handleShowUpdate = (item) => {
+  modalAddOrUpdate.isShow = true
+  modalAddOrUpdate.isLoading = false
+  modalAddOrUpdate.title = h('span', [
+    h(EditFilled, { class: 'me-2 text-primary' }),
+    'Chỉnh sửa kế hoạch',
+  ])
+  modalAddOrUpdate.okText = 'Lưu lại'
+  modalAddOrUpdate.onOk = () => handleSubmitUpdate()
+
+  formData.id = item.id
+  formData.startDate = dayjs(item.startDate)
+  formData.shift = item.shift
+  formData.lateArrival = item.lateArrival
+  formData.description = item.description
+}
+
+const handleSubmitAdd = async () => {
+  try {
+    await formRefAddOrUpdate.value.validate()
+    Modal.confirm({
+      title: `Xác nhận thêm mới`,
+      type: 'info',
+      content: `Bạn có chắc muốn thêm mới kế hoạch này?`,
+      okText: 'Tiếp tục',
+      cancelText: 'Hủy bỏ',
+      onOk() {
+        fetchAddItem()
+      },
+    })
+  } catch (error) {}
+}
+
+const handleSubmitUpdate = async () => {
+  try {
+    await formRefAddOrUpdate.value.validate()
+    Modal.confirm({
+      title: `Xác nhận cập nhật`,
+      type: 'info',
+      content: `Bạn có chắc muốn lưu lại thay đổi?`,
+      okText: 'Tiếp tục',
+      cancelText: 'Hủy bỏ',
+      onOk() {
+        fetchUpdateItem()
+      },
+    })
+  } catch (error) {}
+}
+
+const handleShowAlertDelete = (item) => {
+  Modal.confirm({
+    title: `Xoá kế hoạch: ${dayOfWeek(item.startDate)} - ${formatDate(item.startDate)}`,
+    type: 'error',
+    content: `Bạn có chắc muốn xoá kế hoạch chi tiết này?`,
+    okText: 'Tiếp tục',
+    cancelText: 'Hủy bỏ',
+    okButtonProps: {
+      class: 'btn-danger',
+    },
+    cancelButtonProps: {
+      class: 'btn-gray',
+    },
+    onOk() {
+      fetchDeleteItem(item.id)
+    },
   })
 }
 
-const handleShowModalAdd = () => {
-  fetchDataFactoryList()
-
-  modalAdd.isShow = true
-
-  lstDataAdd.value = []
-
-  formDataAdd.idFactory = null
-  formDataAdd.lateArrival = DEFAULT_LATE_ARRIVAL
-  formDataAdd.shift = Object.keys(SHIFT)[0]
-  formDataAdd.days = []
+const handleShowAlertMultipleDelete = () => {
+  Modal.confirm({
+    title: `Xoá kế hoạch đã chọn`,
+    type: 'error',
+    content: `Bạn có chắc muốn xoá ${selectedRowKeys.value.length} kế hoạch đã chọn?`,
+    okText: 'Tiếp tục',
+    cancelText: 'Hủy bỏ',
+    okButtonProps: {
+      class: 'btn-danger',
+    },
+    cancelButtonProps: {
+      class: 'btn-gray',
+    },
+    onOk() {
+      fetchDeleteMultipleItem(selectedRowKeys.value)
+    },
+  })
 }
+
+const handleShowDescription = (text) => {
+  Modal.info({
+    title: 'Nội dung chi tiết',
+    type: 'info',
+    content: text,
+    okText: 'Đóng',
+    okButtonProps: {
+      class: 'btn-gray',
+    },
+  })
+}
+
+const selectedRowKeys = ref([])
+
+const isDisabledSelectTable = (key) => {
+  const record = lstData.value.find((item) => item.id === key)
+  return record?.status === 'DA_DIEN_RA'
+}
+
+const rowSelection = computed(() => rowSelectTable(selectedRowKeys, isDisabledSelectTable))
 
 onMounted(() => {
   breadcrumbStore.setRoutes(breadcrumb.value)
   fetchDataDetail()
-  fetchDataList()
 })
 
 watch(
@@ -242,73 +407,72 @@ watch(
 
 <template>
   <a-modal
-    v-model:open="modalAdd.isShow"
-    v-bind="modalAdd"
-    :okButtonProps="{ loading: modalAdd.isLoading }"
+    v-model:open="modalAddOrUpdate.isShow"
+    v-bind="modalAddOrUpdate"
+    :okButtonProps="{ loading: modalAddOrUpdate.isLoading }"
   >
-    <template #title> <PlusOutlined class="text-primary" /> Phân công nhóm xưởng </template>
     <a-form
-      ref="formRefAdd"
+      ref="formRefAddOrUpdate"
       class="row mt-3"
       layout="vertical"
       autocomplete="off"
-      :model="formDataAdd"
+      :model="formData"
     >
       <a-form-item
-        class="col-12"
-        :label="`Nhóm xưởng (${lstDataAdd.length})`"
-        name="idFactory"
-        :rules="formRules.idFactory"
+        class="col-sm-8"
+        label="Ngày học diễn ra"
+        name="startDate"
+        :rules="formRules.startDate"
       >
-        <a-select
-          v-model:value="formDataAdd.idFactory"
-          placeholder="-- Chọn 1 nhóm xưởng --"
+        <a-date-picker
           class="w-100"
-          :disabled="modalAdd.isLoading"
-        >
-          <a-select-option v-for="o in lstDataAdd" :key="o.id" :value="o.id">
-            {{ `${o.factoryName} / (${o.staffName})` }}
-          </a-select-option>
-        </a-select>
+          :placeholder="DEFAULT_DATE_FORMAT"
+          v-model:value="formData.startDate"
+          :format="DEFAULT_DATE_FORMAT"
+          :disabledDate="disabledDate"
+          :disabled="modalAddOrUpdate.isLoading"
+        />
       </a-form-item>
-      <a-form-item
-        class="col-sm-12"
-        label="Ngày học trong tuần"
-        name="days"
-        :rules="formRules.days"
-      >
+      <a-form-item class="col-sm-4" label="Ca học" name="shift" :rules="formRules.shift">
         <a-select
-          v-model:value="formDataAdd.days"
           class="w-100"
-          mode="multiple"
-          allow-clear
-          :disabled="modalAdd.isLoading"
+          v-model:value="formData.shift"
+          :disabled="modalAddOrUpdate.isLoading"
         >
-          <a-select-option v-for="(name, id) in DAY_OF_WEEK" :key="id" :value="id">
-            {{ name }}
-          </a-select-option>
-        </a-select>
-      </a-form-item>
-      <a-form-item class="col-sm-5" label="Ca học" name="shift" :rules="formRules.shift">
-        <a-select class="w-100" v-model:value="formDataAdd.shift" :disabled="modalAdd.isLoading">
           <a-select-option v-for="(name, id) in SHIFT" :key="id" :value="id">
             {{ name }}
           </a-select-option>
         </a-select>
       </a-form-item>
+
       <a-form-item
-        class="col-sm-7"
+        class="col-sm-12"
         label="Điểm danh muộn tối đa (phút)"
         name="lateArrival"
         :rules="formRules.lateArrival"
       >
         <a-input-number
           class="w-100"
-          v-model:value="formDataAdd.lateArrival"
+          v-model:value="formData.lateArrival"
           :min="0"
           :max="DEFAULT_MAX_LATE_ARRIVAL"
           :step="1"
-          :disabled="modalAdd.isLoading"
+          :disabled="modalAddOrUpdate.isLoading"
+          allowClear
+        />
+      </a-form-item>
+
+      <a-form-item
+        class="col-sm-12"
+        label="Nội dung buổi học"
+        name="description"
+        :rules="formRules.description"
+      >
+        <a-textarea
+          :rows="4"
+          class="w-100"
+          v-model:value="formData.description"
+          :disabled="modalAddOrUpdate.isLoading"
           allowClear
         />
       </a-form-item>
@@ -322,11 +486,11 @@ watch(
         <a-card :bordered="false" class="cart">
           <template #title> <FilterFilled /> Bộ lọc </template>
           <div class="row g-2">
-            <div class="col-md-7 col-sm-12">
+            <div class="col-lg-6 col-md-12 col-sm-8">
               <div class="label-title">Từ khoá:</div>
               <a-input
                 v-model:value="dataFilter.keyword"
-                placeholder="Tìm theo tên nhóm xưởng, giảng viên..."
+                placeholder="Tìm theo mô tả..."
                 allowClear
               >
                 <template #prefix>
@@ -334,12 +498,46 @@ watch(
                 </template>
               </a-input>
             </div>
-            <div class="col-md-5 col-sm-12">
-              <div class="label-title">Thời gian diễn ra:</div>
-              <a-range-picker
+            <div class="col-lg-2 col-md-4 col-sm-4">
+              <div class="label-title">Trạng thái:</div>
+              <a-select
+                v-model:value="dataFilter.status"
                 class="w-100"
-                :placeholder="['Ngày bắt đầu', 'Ngày kết thúc']"
-                v-model:value="dataFilter.rangeDate"
+                :dropdownMatchSelectWidth="false"
+                placeholder="-- Tất cả trạng thái --"
+                allowClear
+              >
+                <a-select-option :value="null">-- Tất cả trạng thái --</a-select-option>
+                <a-select-option
+                  v-for="(name, id) in STATUS_PLAN_DATE_DETAIL"
+                  :key="id"
+                  :value="id"
+                >
+                  {{ name }}
+                </a-select-option>
+              </a-select>
+            </div>
+            <div class="col-lg-2 col-md-4 col-sm-6">
+              <div class="label-title">Ca học:</div>
+              <a-select
+                v-model:value="dataFilter.shift"
+                class="w-100"
+                :dropdownMatchSelectWidth="false"
+                placeholder="-- Tất cả ca học --"
+                allowClear
+              >
+                <a-select-option :value="null">-- Tất cả ca học --</a-select-option>
+                <a-select-option v-for="(name, id) in SHIFT" :key="id" :value="id">
+                  {{ name }}
+                </a-select-option>
+              </a-select>
+            </div>
+            <div class="col-lg-2 col-md-4 col-sm-6">
+              <div class="label-title">Ngày diễn ra:</div>
+              <a-date-picker
+                class="w-100"
+                placeholder="-- Tất cả các ngày --"
+                v-model:value="dataFilter.startDate"
                 :format="DEFAULT_DATE_FORMAT"
               />
             </div>
@@ -357,41 +555,82 @@ watch(
 
       <div class="col-12">
         <a-card :bordered="false" class="cart">
-          <template #title> <UnorderedListOutlined /> Danh sách kế hoạch - nhóm xưởng </template>
-          <div class="d-flex justify-content-end mb-3 gap-3">
-            <a-button type="primary" @click="handleShowModalAdd">
-              <PlusOutlined /> Phân công nhóm xưởng
-            </a-button>
+          <template #title>
+            <UnorderedListOutlined /> Danh sách kế hoạch
+            {{ `(${formatDate(_detail?.fromDate)} - ${formatDate(_detail?.toDate)})` }}
+          </template>
+          <div class="d-flex justify-content-end mb-3 flex-wrap gap-3">
+            <a-button
+              v-show="selectedRowKeys.length > 0"
+              class="btn-outline-danger"
+              @click="handleShowAlertMultipleDelete"
+              ><DeleteFilled /> Xoá mục đã chọn</a-button
+            >
+            <ExcelUploadButton v-bind="configImportExcel" />
+            <a-button type="primary" @click="handleShowAdd"> <PlusOutlined /> Thêm mới </a-button>
           </div>
 
-          <a-table
-            rowKey="id"
-            class="nowrap"
-            :dataSource="lstData"
-            :columns="columns"
-            :loading="isLoading"
-            :pagination="pagination"
-            :scroll="{ y: 500, x: 'auto' }"
-            @change="handleTableChange"
-          >
-            <template #bodyCell="{ column, record }">
-              <template v-if="column.key === 'time'">
-                <a-tag color="blue">{{ formatDate(record.fromDate) }}</a-tag
-                >->
-                <a-tag color="red">{{ formatDate(record.toDate) }}</a-tag>
+          <div>
+            <a-table
+              rowKey="id"
+              class="nowrap"
+              :dataSource="lstData"
+              :columns="columns"
+              :loading="isLoading"
+              :pagination="pagination"
+              :scroll="{ y: 500, x: 'auto' }"
+              :row-selection="rowSelection"
+              @change="handleTableChange"
+            >
+              <template #bodyCell="{ column, record }">
+                <template v-if="column.dataIndex === 'description' && record.description">
+                  <a-typography-link @click="handleShowDescription(record.description)"
+                    >Chi tiết</a-typography-link
+                  >
+                </template>
+                <template v-if="column.dataIndex === 'lateArrival'">
+                  {{ `${record.lateArrival} phút` }}
+                </template>
+                <template v-if="column.dataIndex === 'startDate'">
+                  {{
+                    `${dayOfWeek(record.startDate)} - ${formatDate(record.startDate, DEFAULT_DATE_FORMAT + ' HH:mm')}`
+                  }}
+                </template>
+                <template v-if="column.dataIndex === 'shift'">
+                  <a-tag color="purple">
+                    {{ SHIFT[record.shift] }}
+                  </a-tag>
+                </template>
+                <template v-if="column.dataIndex === 'status'">
+                  <a-badge :status="record.status === 'DA_DIEN_RA' ? 'error' : 'success'" />
+                  {{ STATUS_PLAN_DATE_DETAIL[record.status] }}
+                </template>
+                <template v-if="column.dataIndex === 'totalShift'">
+                  <a-tag>
+                    {{ record.totalShift }}
+                  </a-tag>
+                </template>
+                <template v-if="column.key === 'actions'">
+                  <template v-if="record.status !== 'DA_DIEN_RA'">
+                    <a-tooltip title="Chỉnh sửa phân công">
+                      <a-button class="btn-outline-info border-0" @click="handleShowUpdate(record)">
+                        <EditFilled />
+                      </a-button>
+                    </a-tooltip>
+                    <a-tooltip title="Xoá kế hoạch chi tiết">
+                      <a-button
+                        class="btn-outline-danger border-0 ms-2"
+                        @click="handleShowAlertDelete(record)"
+                      >
+                        <DeleteFilled />
+                      </a-button>
+                    </a-tooltip>
+                  </template>
+                  <a-tag v-else>Không thể chỉnh sửa mục này</a-tag>
+                </template>
               </template>
-              <template v-if="column.dataIndex === 'totalShift'">
-                <a-tag color="green"> {{ record.totalShift }} buổi </a-tag>
-              </template>
-              <template v-if="column.key === 'actions'">
-                <a-tooltip title="Chi tiết phân công">
-                  <a-button class="btn-outline-primary" @click="handleShowDetail(record.id)">
-                    <EyeFilled />
-                  </a-button>
-                </a-tooltip>
-              </template>
-            </template>
-          </a-table>
+            </a-table>
+          </div>
         </a-card>
       </div>
     </div>

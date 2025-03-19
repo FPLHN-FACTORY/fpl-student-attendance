@@ -278,6 +278,20 @@ body {
     background: #f6f8fa;
   }
 }
+
+.ant-table-wrapper {
+  .ant-table-tbody {
+    & > tr.ant-table-row-selected {
+      & > td {
+        background: #e3dcec;
+      }
+      &:hover > td {
+        background: #dbcfec;
+      }
+    }
+  }
+}
+
 @import url(color.scss);
 @import url(button.scss);
 @import url(flex-box.scss);
