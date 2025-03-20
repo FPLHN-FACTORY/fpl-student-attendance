@@ -22,12 +22,12 @@ const breadcrumb = ref([
 
 onMounted(() => {
   breadcrumbStore.setRoutes(breadcrumb.value)
-  requestAPI
-    .get(`${API_ROUTES_STUDENT.FETCH_DATA_TEST}`)
-    .then(({ data: response }) => {
-      console.log(response)
-    })
-    .catch((error) => {})
+  // requestAPI
+  //   .get(`${API_ROUTES_STUDENT.FETCH_DATA_TEST}`)
+  //   .then(({ data: response }) => {
+  //     console.log(response)
+  //   })
+  //   .catch((error) => {})
 })
 </script>
 

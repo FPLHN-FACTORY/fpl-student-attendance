@@ -12,6 +12,7 @@ export const GLOBAL_ROUTE_NAMES = {
   STAFF_PAGE: 'staff_page',
   TEACHER_PAGE: 'teacher_page',
   STUDENT_PAGE: 'student_page',
+  STUDENT_REGISTER_PAGE: 'student_register_page',
 }
 
 export const API_ROUTES_EXCEL = {

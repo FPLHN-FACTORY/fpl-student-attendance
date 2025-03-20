@@ -5,9 +5,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import udpm.hn.studentattendance.core.authentication.model.request.AuthenticationStudentRegisterRequest;
 import udpm.hn.studentattendance.core.authentication.oauth2.AuthUser;
 import udpm.hn.studentattendance.infrastructure.constants.router.RouteAuthenticationConstant;
 import udpm.hn.studentattendance.core.authentication.services.AuthenticationService;
@@ -44,4 +46,8 @@ public class AuthenticationRestController {
         return RouterHelper.createResponseApi(response, HttpStatus.OK);
     }
 
+    @PutMapping(RouteAuthenticationConstant.API_STUDENT_REGISTER)
+    public ResponseEntity<?> studentRegister(@RequestBody AuthenticationStudentRegisterRequest requestBody) {
+        return authenticationService.studentRegister(requestBody);
+    }
 }
