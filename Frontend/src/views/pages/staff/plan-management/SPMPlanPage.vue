@@ -461,7 +461,7 @@ watch(
   () => {
     handleSubmitFilter()
   },
-  { deep: true },
+  { deep: true }
 )
 
 watch(
@@ -469,7 +469,7 @@ watch(
   () => {
     handleSubmitFilterAdd()
   },
-  { deep: true },
+  { deep: true }
 )
 </script>
 

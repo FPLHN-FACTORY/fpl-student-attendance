@@ -125,7 +125,7 @@ public class Staff_StudentFactoryServiceImpl implements Staff_StudentFactoryServ
 
         return new ResponseEntity<>(
                 new ApiResponse(
-                        RestApiStatus.WARNING,
+                        RestApiStatus.SUCCESS,
                         "Thêm sinh viên vào nhóm xưởng thành công",
                         userStudentFactory
                 ),
@@ -154,7 +154,7 @@ public class Staff_StudentFactoryServiceImpl implements Staff_StudentFactoryServ
                         (pageable, sessionHelper.getFacilityId(), EntityStatus.ACTIVE, userStudentRequest));
         return new ResponseEntity<>(
                 new ApiResponse(
-                        RestApiStatus.WARNING,
+                        RestApiStatus.SUCCESS,
                         "Lấy tất cả sinh viên theo cơ sở thành công",
                         listStudent
                 ),

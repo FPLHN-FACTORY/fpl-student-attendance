@@ -10,7 +10,7 @@ import java.util.List;
 public interface SPDSemesterRepository extends SemesterRepository {
 
     @Query(value = """
-        SELECT 
+        SELECT DISTINCT 
             year
         FROM semester
         WHERE

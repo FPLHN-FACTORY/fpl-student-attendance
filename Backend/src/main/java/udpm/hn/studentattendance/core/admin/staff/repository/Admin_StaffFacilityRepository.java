@@ -3,6 +3,7 @@ package udpm.hn.studentattendance.core.admin.staff.repository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 import udpm.hn.studentattendance.core.admin.role.model.response.Admin_RoleFacilityResponse;
+import udpm.hn.studentattendance.entities.Facility;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.repositories.FacilityRepository;
 
@@ -21,4 +22,15 @@ public interface Admin_StaffFacilityRepository extends FacilityRepository {
                                                         """
             )
     List<Admin_RoleFacilityResponse> getFacilities(EntityStatus status);
+
+    @Query
+            (
+                    value = """
+                            SELECT 
+                            f
+                            FROM Facility f
+                            WHERE f.status = :status
+                                                        """
+            )
+    List<Facility> getFacility(EntityStatus status);
 }

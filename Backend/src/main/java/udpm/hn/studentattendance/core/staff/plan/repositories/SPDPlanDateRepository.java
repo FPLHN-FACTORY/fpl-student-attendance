@@ -155,7 +155,7 @@ public interface SPDPlanDateRepository extends PlanDateRepository {
         SELECT 
             CASE WHEN COUNT(*) > 0 THEN 'TRUE' ELSE 'FALSE' END 
         FROM plan_date pd
-        JOIN factory f ON pd.id_factory = f.id
+        JOIN factory f ON pd.id_plan_factory = f.id
         WHERE 
             pd.status = 1 AND
             f.status = 1 AND

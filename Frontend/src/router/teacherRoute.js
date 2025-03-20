@@ -5,6 +5,7 @@ import { CalendarOutlined, UsergroupAddOutlined } from '@ant-design/icons-vue'
 export const ROUTE_NAMES = {
   MANAGEMENT_STUDENT: 'route_teacher_management_student',
   MANAGEMENT_SCHEDULE: 'route_teacher_management_schedule',
+  MANAGEMENT_STUDENT_FACTORY: 'route_teacher_management_student_factory'
 }
 
 let selectedKey = 1
@@ -39,6 +40,11 @@ export const TeacherRoutes = [
           name: 'Quản lý sinh viên',
           icon: UsergroupAddOutlined,
         },
+      },
+      {
+        path: 'management-student-factory',
+        name: ROUTE_NAMES.MANAGEMENT_STUDENT_FACTORY,
+        component: import('@/views/pages/teacher/TeacherStudentFactory.vue'),
       },
     ],
   },

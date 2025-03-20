@@ -17,4 +17,6 @@ public interface Admin_StaffResponse extends IsIdentify, HasOrderNumber {
     String getFacilityName();
 
     Integer getStaffStatus();
+
+    String getRoleCode();
 }
