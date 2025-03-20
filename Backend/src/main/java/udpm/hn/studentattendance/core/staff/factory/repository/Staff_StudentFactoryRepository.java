@@ -7,12 +7,12 @@ import org.springframework.stereotype.Repository;
 import udpm.hn.studentattendance.core.staff.factory.model.request.Staff_StudentFactoryRequest;
 import udpm.hn.studentattendance.core.staff.factory.model.response.Staff_StudentFactoryResponse;
 import udpm.hn.studentattendance.entities.UserStudentFactory;
-import udpm.hn.studentattendance.repositories.UserStudentProjectRepository;
+import udpm.hn.studentattendance.repositories.UserStudentFactoryRepository;
 
 import java.util.Optional;
 
 @Repository
-public interface Staff_StudentFactoryRepository extends UserStudentProjectRepository {
+public interface Staff_StudentFactoryRepository extends UserStudentFactoryRepository {
 
     @Query(value =
             """

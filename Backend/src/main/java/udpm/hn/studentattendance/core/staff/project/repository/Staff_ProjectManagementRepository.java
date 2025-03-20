@@ -61,21 +61,25 @@ public interface Staff_ProjectManagementRepository extends ProjectRepository {
 
 
     @Query(value = """
-    SELECT 
-    p.id as id,
-    p.name as name,
-    p.semester.semesterName as nameSemester,
-    p.levelProject.name as nameLevelProject,
-    p.subjectFacility.subject.code as nameSubject,
-    p.description as description,
-    p.status as status,
-    p.levelProject.id as levelProjectId,
-    p.semester.id as semesterId,
-    p.subjectFacility.subject.id as subjectId
-    FROM Project p
-    WHERE 
-    p.id = :projectId
-""")
+                SELECT\s
+                                     p.id as id,
+                                     p.name as name,
+                                     s.name as nameSemester,
+                                     lp.name as nameLevelProject,
+                                     sb.name as nameSubject,
+                                     p.description as description,
+                                     p.status as status,
+                                 	 lp.id as levelProjectId,
+                                     s.id AS semesterId,
+                                     sf.id as subjectId
+                                     FROM project p
+                                     LEFT JOIN semester s ON p.id_semester = s.id
+                                     LEFT JOIN subject_facility sf ON p.id_subject_facility = sf.id
+                                     LEFT JOIN level_project lp ON p.id_level_project = lp.id
+                                     LEFT JOIN subject sb ON sf.id_subject = sb.id
+                                     WHERE\s
+                                     p.id = :projectId
+            """, nativeQuery = true)
     Optional<Staff_ProjectResponse> getDetailProject(String projectId);
 
 }

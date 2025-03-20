@@ -22,8 +22,11 @@ public interface Staff_ProjectResponse {
     String getFacilityName();
 
     String getLevelProjectId();
+
     String getSemesterId();
 
     String getSubjectId();
+
+    String getSubjectFacilityId();
 
 }

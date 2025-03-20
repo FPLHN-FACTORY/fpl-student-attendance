@@ -40,4 +40,14 @@ public class Admin_StaffRestController {
         return adStaffService.changeStaffStatus(id);
     }
 
+    @GetMapping("/role")
+    public ResponseEntity<?> getAllRole() {
+        return adStaffService.getAllRole();
+    }
+
+    @GetMapping("/facility")
+    public ResponseEntity<?> getAllFacility() {
+        return adStaffService.getAllFacility();
+    }
+
 }

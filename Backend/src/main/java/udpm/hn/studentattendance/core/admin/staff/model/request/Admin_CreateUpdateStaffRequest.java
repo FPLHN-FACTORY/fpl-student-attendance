@@ -5,6 +5,8 @@ import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.validator.constraints.Length;
 
+import java.util.List;
+
 @Getter
 @Setter
 public class Admin_CreateUpdateStaffRequest {
@@ -28,4 +30,8 @@ public class Admin_CreateUpdateStaffRequest {
     @Length(max = 100, message = "Tài khoản FPT phải ít hơn 100 ký tự")
     @Pattern(regexp = "^[A-Za-z0-9._%+-]+@fpt\\.edu\\.vn$", message = "Không chứa khoảng trắng và kết thúc bằng @fpt.edu.vn")
     private String emailFpt;
+
+    private String facilityId;
+
+    private List<String> roleCodes;
 }
