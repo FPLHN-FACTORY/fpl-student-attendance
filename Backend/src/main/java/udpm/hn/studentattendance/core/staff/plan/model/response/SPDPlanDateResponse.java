@@ -5,21 +5,18 @@ import udpm.hn.studentattendance.infrastructure.common.IsIdentify;
 
 public interface SPDPlanDateResponse extends IsIdentify, HasOrderNumber {
 
-    String getFactoryName();
+    Long getStartDate();
 
-    String getProjectName();
+    String getShift();
 
-    String getLevel();
+    String getDescription();
 
-    String getSemesterName();
+    Integer getLateArrival();
 
-    String getSubjectName();
-
-    String getStaffName();
-
-    Integer getTotalShift();
+    String getStatus();
 
     Long getFromDate();
 
     Long getToDate();
+
 }

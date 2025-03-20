@@ -106,7 +106,12 @@ body {
   background-repeat: no-repeat;
   background-size: cover;
 }
-
+.label-title {
+  color: rgb(53 49 68);
+  font-weight: 500;
+  font-size: 0.8rem;
+  margin-bottom: 6px;
+}
 .ant-layout {
   background: #fff;
   &-header {
@@ -273,6 +278,20 @@ body {
     background: #f6f8fa;
   }
 }
+
+.ant-table-wrapper {
+  .ant-table-tbody {
+    & > tr.ant-table-row-selected {
+      & > td {
+        background: #e3dcec;
+      }
+      &:hover > td {
+        background: #dbcfec;
+      }
+    }
+  }
+}
+
 @import url(color.scss);
 @import url(button.scss);
 @import url(flex-box.scss);

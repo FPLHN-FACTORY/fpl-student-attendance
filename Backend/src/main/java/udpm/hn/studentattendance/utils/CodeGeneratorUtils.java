@@ -20,6 +20,7 @@ public class CodeGeneratorUtils {
         name = name.trim().toUpperCase();
         String normalizedString = Normalizer.normalize(name, Normalizer.Form.NFD);
         name = normalizedString.replaceAll("\\p{M}", "");
+        name = name.replace("Đ", "D");
         name = name.replaceAll("[^a-zA-Z0-9\\s]", "");
         name = name.replaceAll("\\s+", "_");
         return name;

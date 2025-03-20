@@ -13,14 +13,16 @@ import { message, Modal } from 'ant-design-vue'
 import requestAPI from '@/services/requestApiService'
 import dayjs from 'dayjs'
 import { API_ROUTES_ADMIN } from '@/constants/adminConstant'
-import { DEFAULT_PAGINATION } from '@/constants/paginationConstant'
+import { DEFAULT_PAGINATION } from '@/constants'
 import { useRouter } from 'vue-router'
 import { ROUTE_NAMES } from '@/router/adminRoute'
 import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
 import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
+import useLoadingStore from '@/stores/useLoadingStore'
 
 const router = useRouter()
 const breadcrumbStore = useBreadcrumbStore()
+const loadingStore = useLoadingStore()
 
 const breadcrumb = ref([
   {
@@ -28,23 +30,32 @@ const breadcrumb = ref([
     breadcrumbName: 'Ban đào tạo',
   },
   {
-    name: ROUTE_NAMES.MANAGEMENT_STAFF,
-    breadcrumbName: 'Giảng viên',
+    name: ROUTE_NAMES.MANAGEMENT_SEMESTER,
+    breadcrumbName: 'Học kỳ',
   },
 ])
-// State
+
+// Danh sách học kỳ
 const semesters = ref([])
+// Dùng filter để lưu trạng thái tìm kiếm & phân trang (không chứa thông tin phân trang)
 const filter = reactive({
   semesterCode: '',
   status: '',
   dateRange: null, // Giá trị RangePicker (mảng [start, end])
-  page: 1,
-  pageSize: 5,
+  // Các tham số phân trang sẽ được lấy từ đối tượng pagination
 })
+
+// Đối tượng pagination dùng cho component a-table (đã được làm reactive)
 const pagination = reactive({
   ...DEFAULT_PAGINATION,
 })
 
+// Biến loading cho bảng và modal
+const isLoading = ref(false)
+const modalAddLoading = ref(false)
+const modalUpdateLoading = ref(false)
+
+// Modal hiển thị
 const modalAdd = ref(false)
 const modalUpdate = ref(false)
 
@@ -56,7 +67,7 @@ const newSemester = reactive({
 })
 const detailSemester = ref({})
 
-// Columns cho bảng
+// Cấu hình cột cho bảng
 const columns = ref([
   { title: '#', dataIndex: 'semesterIndex', key: 'semesterIndex' },
   { title: 'Mã học kỳ', dataIndex: 'semesterCode', key: 'semesterCode' },
@@ -67,7 +78,7 @@ const columns = ref([
   { title: 'Chức năng', key: 'actions' },
 ])
 
-// Hàm định dạng epoch sang định dạng "DD/MM/YYYY" sử dụng dayjs
+// Hàm định dạng epoch sang "DD/MM/YYYY"
 const formatEpochToDate = (epoch) => {
   if (!epoch) return ''
   return dayjs(epoch).format('DD/MM/YYYY')
@@ -84,21 +95,34 @@ const handleDateRangeChange = (range) => {
     filter.fromDateSemester = null
     filter.toDateSemester = null
   }
+  // Đặt lại trang về 1 và gọi lại fetchSemesters
+  pagination.current = 1
   fetchSemesters()
 }
 
+// Hàm lấy danh sách học kỳ, truyền phân trang từ pagination
 const fetchSemesters = () => {
-  // Tạo một bản sao của filter, sau đó loại bỏ dateRange
-  const { dateRange, ...params } = filter
+  if (isLoading.value) return
+  loadingStore.show()
+  isLoading.value = true
+
+  // Tạo bản sao của filter, chuyển đổi ngày nếu cần
+  const params = { ...filter }
   params.fromDateSemester = filter.fromDateSemester ? filter.fromDateSemester.valueOf() : null
   params.toDateSemester = filter.toDateSemester ? filter.toDateSemester.valueOf() : null
+  params.page = pagination.current
+  params.size = pagination.pageSize
 
   requestAPI
     .get(API_ROUTES_ADMIN.FETCH_DATA_SEMESTER, { params })
     .then((response) => {
       semesters.value = response.data.data.data
-      pagination.total = response.data.data.totalPages * filter.pageSize
-      pagination.current = filter.page
+      // Cập nhật tổng số bản ghi: nếu có totalRecords, dùng luôn, nếu không dùng totalPages * pageSize
+      if (response.data.data.totalRecords !== undefined) {
+        pagination.total = response.data.data.totalRecords
+      } else {
+        pagination.total = response.data.data.totalPages * pagination.pageSize
+      }
     })
     .catch((error) => {
       message.error(
@@ -106,11 +130,16 @@ const fetchSemesters = () => {
           'Lỗi khi lấy dữ liệu học kỳ'
       )
     })
+    .finally(() => {
+      isLoading.value = false
+      loadingStore.hide()
+    })
 }
 
-const handleTableChange = (page) => {
-  pagination.page = page.current
-  pagination.pageSize = page.pageSize
+// Hàm xử lý thay đổi trang (cập nhật current và pageSize rồi gọi lại API)
+const handleTableChange = (pageInfo) => {
+  pagination.current = pageInfo.current
+  pagination.pageSize = pageInfo.pageSize
   fetchSemesters()
 }
 
@@ -119,6 +148,8 @@ const handleAddSemester = () => {
     message.error('Vui lòng nhập đầy đủ thông tin')
     return
   }
+  modalAddLoading.value = true
+  loadingStore.show()
   const payload = {
     ...newSemester,
     fromDate: newSemester.fromDate.valueOf(),
@@ -138,9 +169,14 @@ const handleAddSemester = () => {
           'Lỗi khi thêm học kỳ'
       )
     })
+    .finally(() => {
+      modalAddLoading.value = false
+      loadingStore.hide()
+    })
 }
 
 const handleUpdateSemester = (record) => {
+  loadingStore.show()
   requestAPI
     .get(`${API_ROUTES_ADMIN.FETCH_DATA_SEMESTER}/${record.id}`)
     .then((response) => {
@@ -159,6 +195,9 @@ const handleUpdateSemester = (record) => {
           'Lỗi khi lấy chi tiết học kỳ'
       )
     })
+    .finally(() => {
+      loadingStore.hide()
+    })
 }
 
 const updateSemester = () => {
@@ -170,6 +209,8 @@ const updateSemester = () => {
     message.error('Vui lòng nhập đầy đủ thông tin')
     return
   }
+  modalUpdateLoading.value = true
+  loadingStore.show()
   const payload = {
     ...detailSemester.value,
     fromDate: detailSemester.value.fromDate.valueOf(),
@@ -188,13 +229,18 @@ const updateSemester = () => {
           'Lỗi khi cập nhật học kỳ'
       )
     })
+    .finally(() => {
+      modalUpdateLoading.value = false
+      loadingStore.hide()
+    })
 }
 
 const handleChangeStatusSemester = (record) => {
   Modal.confirm({
     title: 'Xác nhận thay đổi trạng thái',
-    content: `Bạn có chắc chắn muốn thay đổi trạng thái của học kỳ ${record.semesterName}?`,
+    content: `Bạn có chắc muốn thay đổi trạng thái của học kỳ ${record.semesterName}?`,
     onOk: () => {
+      loadingStore.show()
       requestAPI
         .put(`${API_ROUTES_ADMIN.FETCH_DATA_SEMESTER}/status/${record.id}`)
         .then(() => {
@@ -206,6 +252,9 @@ const handleChangeStatusSemester = (record) => {
             (error.response && error.response.data && error.response.data.message) ||
               'Lỗi khi cập nhật trạng thái học kỳ'
           )
+        })
+        .finally(() => {
+          loadingStore.hide()
         })
     },
   })
@@ -279,14 +328,13 @@ onMounted(() => {
           <!-- Nút Thêm học kỳ -->
           <div class="d-flex justify-content-end mb-3">
             <a-tooltip title="Thêm học kỳ mới">
-              <!-- Nút chuyển sang kiểu filled (primary) -->
               <a-button type="primary" @click="modalAdd = true">
                 <PlusOutlined />
                 Thêm
               </a-button>
             </a-tooltip>
           </div>
-          <!-- Bảng hiển thị danh sách học kỳ -->
+          <!-- Bảng hiển thị danh sách học kỳ với chỉ báo loading -->
           <a-table
             class="nowrap"
             :dataSource="semesters"
@@ -355,7 +403,12 @@ onMounted(() => {
     </div>
 
     <!-- Modal Thêm Học Kỳ -->
-    <a-modal v-model:open="modalAdd" title="Thêm học kỳ" @ok="handleAddSemester">
+    <a-modal
+      v-model:open="modalAdd"
+      title="Thêm học kỳ"
+      @ok="handleAddSemester"
+      :okButtonProps="{ loading: modalAddLoading }"
+    >
       <a-form layout="vertical">
         <a-form-item label="Tên học kỳ" required>
           <a-select
@@ -388,7 +441,12 @@ onMounted(() => {
     </a-modal>
 
     <!-- Modal Cập Nhật Học Kỳ -->
-    <a-modal v-model:open="modalUpdate" title="Cập nhật học kỳ" @ok="updateSemester">
+    <a-modal
+      v-model:open="modalUpdate"
+      title="Cập nhật học kỳ"
+      @ok="updateSemester"
+      :okButtonProps="{ loading: modalUpdateLoading }"
+    >
       <a-form layout="vertical">
         <a-form-item label="Tên học kỳ" required>
           <a-select

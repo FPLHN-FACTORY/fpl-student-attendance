@@ -12,4 +12,6 @@ public class RoutesConstant {
 
     public final static String PREFIX_API_STUDENT_MANAGEMENT = API_PREFIX + "/student";
 
+    public final static String PREFIX_API_EXCEL = API_PREFIX + "/excel";
+
 }

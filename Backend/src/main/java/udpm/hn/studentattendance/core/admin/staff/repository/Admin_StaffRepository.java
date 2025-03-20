@@ -45,8 +45,8 @@ public interface Admin_StaffRepository extends UserStaffRepository {
         ORDER BY s.created_at DESC
         """,
             countQuery = """
-                            SELECT COUNT(*)
-                            FROM user_staff s
+                    SELECT COUNT(DISTINCT s.id)
+                    FROM user_staff s
                          LEFT JOIN role r on r.id_user_staff = s.id
                          LEFT JOIN facility f on r.id_facility = f.id
                     WHERE (trim(:#{#adStaffRequest.searchQuery}) IS NULL 
@@ -55,10 +55,10 @@ public interface Admin_StaffRepository extends UserStaffRepository {
                            OR s.code LIKE concat('%', trim(:#{#adStaffRequest.searchQuery}), '%')
                            OR s.email_fe LIKE concat('%', trim(:#{#adStaffRequest.searchQuery}), '%')
                            OR s.email_fpt LIKE concat('%', trim(:#{#adStaffRequest.searchQuery}), '%'))
-                      AND (trim(:#{#adStaffRequest.idFacility}) IS NULL 
+                    AND (trim(:#{#adStaffRequest.idFacility}) IS NULL 
                            OR trim(:#{#adStaffRequest.idFacility}) = '' 
                            OR f.id = trim(:#{#adStaffRequest.idFacility}))
-                      AND (:#{#adStaffRequest.status} IS NULL OR s.status = :#{#adStaffRequest.status})
+                    AND (:#{#adStaffRequest.status} IS NULL OR s.status = :#{#adStaffRequest.status})
                             """, nativeQuery = true)
     Page<Admin_StaffResponse> getAllStaff(Pageable pageable, Admin_StaffRequest adStaffRequest);
 

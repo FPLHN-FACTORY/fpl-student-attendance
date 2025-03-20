@@ -1,4 +1,4 @@
-import { ROLE } from '@/constants/roleConstant'
+import { ROLE } from '@/constants'
 import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
 import {
   ApartmentOutlined,

@@ -16,11 +16,13 @@ import {
   FilterFilled,
 } from '@ant-design/icons-vue'
 import { ROUTE_NAMES } from '@/router/staffRoute'
-import { DEFAULT_PAGINATION } from '@/constants/paginationConstant'
+import { DEFAULT_PAGINATION } from '@/constants'
 import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
+import useLoadingStore from '@/stores/useLoadingStore'
 
 const breadcrumbStore = useBreadcrumbStore()
-const isLoading = ref(false)
+const loadingStore = useLoadingStore()
+
 /* ----------------- Data & Reactive Variables ----------------- */
 // Danh sách nhóm xưởng
 const factories = ref([])
@@ -28,13 +30,13 @@ const factories = ref([])
 const projects = ref([])
 const staffs = ref([])
 
-// Filter & phân trang (cấu trúc giống như bên student)
+// Filter (không chứa thông số phân trang)
 const filter = reactive({
   searchQuery: '',
   status: '',
-  page: 1,
-  pageSize: 5,
 })
+
+// Đối tượng phân trang (sử dụng cấu trúc từ DEFAULT_PAGINATION)
 const pagination = reactive({
   ...DEFAULT_PAGINATION,
 })
@@ -47,8 +49,8 @@ const modalUpdate = ref(false)
 const newFactory = reactive({
   factoryName: '',
   factoryDescription: '',
-  idUserStaff: '',
-  idProject: '',
+  idUserStaff: null,
+  idProject: null,
 })
 
 // Dữ liệu chi tiết nhóm xưởng dùng cho cập nhật (được load qua API chi tiết)
@@ -64,7 +66,7 @@ const detailFactory = reactive({
   staffName: '',
 })
 
-/* ----------------- Column Configuration ----------------- */
+// Cấu hình cột cho bảng
 const columns = ref([
   { title: '#', dataIndex: 'rowNumber', key: 'rowNumber', width: 50 },
   { title: 'Tên nhóm xưởng', dataIndex: 'name', key: 'name', width: 200 },
@@ -86,24 +88,49 @@ const breadcrumb = ref([
     breadcrumbName: 'Nhóm xưởng',
   },
 ])
+
 /* ----------------- Methods ----------------- */
-// Lấy danh sách nhóm xưởng từ backend
+// Lấy danh sách nhóm xưởng từ backend (có phân trang động)
 const fetchFactories = () => {
+  loadingStore.show()
   requestAPI
-    .get(API_ROUTES_STAFF.FETCH_DATA_FACTORY, { params: filter })
+    .get(API_ROUTES_STAFF.FETCH_DATA_FACTORY, {
+      params: {
+        ...filter,
+        page: pagination.current,
+        size: pagination.pageSize,
+      },
+    })
     .then((response) => {
       const result = response.data.data
       factories.value = result.data
-      pagination.total = result.totalPages * filter.pageSize
-      pagination.current = filter.page
+      // Nếu API có trường totalRecords, dùng luôn; nếu không thì tính bằng totalPages * pageSize
+      if (result.totalRecords !== undefined) {
+        pagination.total = result.totalRecords
+      } else {
+        pagination.total = result.totalPages * pagination.pageSize
+      }
+      // Đồng bộ current nếu cần (ví dụ: filter.page)
+      // Nếu backend không trả về current thì giữ nguyên pagination.current
     })
     .catch((error) => {
       message.error(error.response?.data?.message || 'Lỗi khi lấy danh sách nhóm xưởng')
     })
+    .finally(() => {
+      loadingStore.hide()
+    })
+}
+
+const clearData = () => {
+  newFactory.factoryName = ''
+  newFactory.factoryDescription = ''
+  newFactory.idProject = null
+  newFactory.idUserStaff = null
 }
 
 // Lấy danh sách dự án
 const fetchProjects = () => {
+  loadingStore.show()
   requestAPI
     .get(API_ROUTES_STAFF.FETCH_DATA_FACTORY + '/project')
     .then((response) => {
@@ -112,10 +139,14 @@ const fetchProjects = () => {
     .catch((error) => {
       message.error(error.response?.data?.message || 'Lỗi khi lấy danh sách dự án')
     })
+    .finally(() => {
+      loadingStore.hide()
+    })
 }
 
 // Lấy danh sách giảng viên
 const fetchStaffs = () => {
+  loadingStore.show()
   requestAPI
     .get(API_ROUTES_STAFF.FETCH_DATA_FACTORY + '/staff')
     .then((response) => {
@@ -124,12 +155,18 @@ const fetchStaffs = () => {
     .catch((error) => {
       message.error(error.response?.data?.message || 'Lỗi khi lấy danh sách giảng viên')
     })
+    .finally(() => {
+      loadingStore.hide()
+    })
 }
 
-// Sự kiện thay đổi trang bảng
-const handleTableChange = (page) => {
-  pagination.current = page.current
-  pagination.pageSize = page.pageSize
+// Sự kiện thay đổi trang bảng: cập nhật current và pageSize rồi gọi lại fetchFactories
+const handleTableChange = (pageInfo) => {
+  // Cập nhật cả filter và pagination để giữ trạng thái trang
+  filter.page = pageInfo.current
+  filter.pageSize = pageInfo.pageSize
+  pagination.current = pageInfo.current
+  pagination.pageSize = pageInfo.pageSize
   fetchFactories()
 }
 
@@ -138,40 +175,45 @@ const submitAddFactory = () => {
     message.error('Vui lòng điền đầy đủ thông tin bắt buộc')
     return
   }
+  loadingStore.show()
   requestAPI
     .post(API_ROUTES_STAFF.FETCH_DATA_FACTORY, newFactory)
     .then((response) => {
       message.success(response.data.message || 'Thêm nhóm xưởng thành công')
       modalAdd.value = false
       fetchFactories()
+      clearData()
     })
     .catch((error) => {
       message.error(error.response?.data?.message || 'Lỗi khi tạo nhóm xưởng')
     })
+    .finally(() => {
+      loadingStore.hide()
+    })
 }
 
-/* ----- Update Factory ----- */
-// Khi cập nhật, gọi API chi tiết để lấy dữ liệu hiện có
 const handleUpdateFactory = (record) => {
+  loadingStore.show()
   requestAPI
     .get(API_ROUTES_STAFF.FETCH_DATA_FACTORY + '/detail/' + record.id)
     .then((response) => {
       const data = response.data.data
-      // Mapping dữ liệu theo data detail của bạn
+      // Mapping dữ liệu chi tiết theo định dạng mong muốn
       detailFactory.id = data.id
       detailFactory.factoryName = data.factoryName
       detailFactory.factoryDescription = data.factoryDescription
       detailFactory.idUserStaff = data.staffId
       detailFactory.idProject = data.projectId
       detailFactory.projectName = data.nameProject
-      detailFactory.subjectCode = data.subjectCode // có thể null
+      detailFactory.subjectCode = data.subjectCode
       detailFactory.staffName = data.staffName
-      // Nếu cần hiển thị staffCode, có thể lưu vào trường khác
-      // detailFactory.staffCode = data.staffCode;
       modalUpdate.value = true
     })
     .catch((error) => {
       message.error(error.response?.data?.message || 'Lỗi khi lấy chi tiết nhóm xưởng')
+    })
+    .finally(() => {
+      loadingStore.hide()
     })
 }
 
@@ -180,6 +222,7 @@ const submitUpdateFactory = () => {
     message.error('Vui lòng điền đầy đủ thông tin bắt buộc')
     return
   }
+  loadingStore.show()
   requestAPI
     .put(API_ROUTES_STAFF.FETCH_DATA_FACTORY, detailFactory)
     .then((response) => {
@@ -190,13 +233,12 @@ const submitUpdateFactory = () => {
     .catch((error) => {
       message.error(error.response?.data?.message || 'Lỗi khi cập nhật nhóm xưởng')
     })
+    .finally(() => {
+      loadingStore.hide()
+    })
 }
 
-/* ----- Detail Factory ----- */
-// Nút "Chi tiết" đẩy sang router khác (chưa có phần hiển thị phân sinh viên vào nhóm xưởng)
 const handleDetailFactory = (record) => {
-  // Kiểm tra cấu trúc của record nếu cần debug
-  console.log('Record detail:', record)
   router.push({
     name: ROUTE_NAMES.MANAGEMENT_STUDENT_FACTORY,
     query: {
@@ -206,7 +248,6 @@ const handleDetailFactory = (record) => {
   })
 }
 
-/* ----- Change Status ----- */
 const confirmChangeStatus = (record) => {
   Modal.confirm({
     title: 'Xác nhận đổi trạng thái',
@@ -218,6 +259,7 @@ const confirmChangeStatus = (record) => {
 }
 
 const handleChangeStatus = (id) => {
+  loadingStore.show()
   requestAPI
     .put(API_ROUTES_STAFF.FETCH_DATA_FACTORY + '/status/' + id)
     .then((response) => {
@@ -226,6 +268,9 @@ const handleChangeStatus = (id) => {
     })
     .catch((error) => {
       message.error(error.response?.data?.message || 'Lỗi khi đổi trạng thái')
+    })
+    .finally(() => {
+      loadingStore.hide()
     })
 }
 
@@ -237,6 +282,8 @@ onMounted(() => {
   fetchStaffs()
 })
 </script>
+
+
 
 <template>
   <!-- Modal Thêm nhóm xưởng -->
