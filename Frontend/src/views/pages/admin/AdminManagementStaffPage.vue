@@ -15,7 +15,6 @@ import {
 import requestAPI from '@/services/requestApiService'
 import { ROUTE_NAMES } from '@/router/adminRoute'
 import router from '@/router'
-import { useRouter } from 'vue-router'
 import { API_ROUTES_ADMIN } from '@/constants/adminConstant'
 import { DEFAULT_PAGINATION } from '@/constants/paginationConstant'
 import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
@@ -40,7 +39,38 @@ const staffs = ref([])
 // Danh sách cơ sở (để hiển thị trong select option)
 const facilitiesList = ref([])
 
-// Biến lọc: backend mong đợi searchQuery, idFacility và status
+const facilitiesListCombobox = ref([])
+
+// Danh sách vai trò (cố định dựa trên backend)
+// Cập nhật tên hiển thị theo yêu cầu
+const rolesList = ref([
+  { code: '0', name: 'Ban đào tạo' },
+  { code: '1', name: 'Phụ trách xưởng' },
+  { code: '3', name: 'Giảng viên' },
+])
+
+// Hàm mapping để chuyển đổi mã vai trò thành tên hiển thị
+const roleMapping = {
+  0: 'Ban đào tạo',
+  1: 'Phụ trách xưởng',
+  3: 'Giảng viên',
+}
+const convertRole = (roleCodes) => {
+  // Nếu roleCodes là chuỗi chứa nhiều mã, ví dụ "0, 1"
+  if (typeof roleCodes === 'string') {
+    return roleCodes
+      .split(',')
+      .map((code) => roleMapping[code.trim()] || code.trim())
+      .join(', ')
+  }
+  // Nếu roleCodes là mảng
+  if (Array.isArray(roleCodes)) {
+    return roleCodes.map((code) => roleMapping[code] || code).join(', ')
+  }
+  return roleCodes
+}
+
+// Biến lọc
 const filter = reactive({
   searchQuery: '',
   idFacility: '',
@@ -58,12 +88,14 @@ const pagination = reactive({
 const modalAdd = ref(false)
 const modalUpdate = ref(false)
 
-// Dữ liệu thêm mới nhân viên
+// Dữ liệu thêm mới nhân viên (thêm facilityId và roleCodes)
 const newStaff = reactive({
   staffCode: '',
   name: '',
   emailFe: '',
   emailFpt: '',
+  facilityId: null,
+  roleCodes: [],
 })
 
 // Dữ liệu chi tiết nhân viên (cập nhật)
@@ -73,16 +105,20 @@ const detailStaff = reactive({
   name: '',
   emailFe: '',
   emailFpt: '',
+  facilityId: null,
+  roleCodes: [],
 })
 
 // Cấu hình cột cho bảng
 const columns = ref([
-  { title: '#', dataIndex: 'rowNumber', key: 'rowNumber', width: 50 },
+  { title: '#', dataIndex: 'orderNumber', key: 'orderNumber', width: 50 },
   { title: 'Mã nhân viên', dataIndex: 'staffCode', key: 'staffCode', width: 250 },
   { title: 'Tên nhân viên', dataIndex: 'staffName', key: 'staffName', width: 350 },
   { title: 'Email FE', dataIndex: 'staffEmailFe', key: 'staffEmailFe', width: 250 },
   { title: 'Email FPT', dataIndex: 'staffEmailFpt', key: 'staffEmailFpt', width: 250 },
-  { title: 'Cơ sở', dataIndex: 'facilityName', key: 'facilityName', width: 80 },
+  { title: 'Cơ sở', dataIndex: 'facilityName', key: 'facilityName', width: 380 },
+  // Cột vai trò sẽ hiển thị tên thay vì mã
+  { title: 'Vai trò', dataIndex: 'roleCode', key: 'roleCode', width: 380 },
   { title: 'Trạng thái', dataIndex: 'staffStatus', key: 'staffStatus', width: 80 },
   { title: 'Chức năng', key: 'actions' },
 ])
@@ -109,7 +145,6 @@ const fetchFacilitiesList = () => {
   requestAPI
     .get(`${API_ROUTES_ADMIN.FETCH_DATA_STAFF_ROLE}/facilities`)
     .then((response) => {
-      // Giả sử API trả về { data: { data: [ { id, name }, ... ] } }
       facilitiesList.value = response.data.data.data || response.data.data
     })
     .catch((error) => {
@@ -119,7 +154,19 @@ const fetchFacilitiesList = () => {
       )
     })
 }
-
+const fetchFacilitiesListCombobox = () => {
+  requestAPI
+    .get(`${API_ROUTES_ADMIN.FETCH_DATA_STAFF}/facility`)
+    .then((response) => {
+      facilitiesListCombobox.value = response.data.data.data || response.data.data
+    })
+    .catch((error) => {
+      message.error(
+        (error.response && error.response.data && error.response.data.message) ||
+          'Lỗi khi lấy danh sách cơ sở'
+      )
+    })
+}
 // Sự kiện thay đổi trang bảng
 const handleTableChange = (page) => {
   pagination.page = page.current
@@ -129,8 +176,15 @@ const handleTableChange = (page) => {
 
 // Hàm thêm nhân viên
 const handleAddStaff = () => {
-  if (!newStaff.staffCode || !newStaff.name || !newStaff.emailFe || !newStaff.emailFpt) {
-    message.error('Vui lòng nhập đầy đủ thông tin')
+  if (
+    !newStaff.staffCode ||
+    !newStaff.name ||
+    !newStaff.emailFe ||
+    !newStaff.emailFpt ||
+    !newStaff.facilityId ||
+    newStaff.roleCodes.length === 0
+  ) {
+    message.error('Vui lòng nhập đầy đủ thông tin, bao gồm cơ sở và ít nhất một vai trò')
     return
   }
   requestAPI
@@ -149,17 +203,19 @@ const handleAddStaff = () => {
     })
 }
 
-// Hàm mở modal cập nhật, load chi tiết nhân viên
 const handleUpdateStaff = (record) => {
   requestAPI
     .get(`${API_ROUTES_ADMIN.FETCH_DATA_STAFF}/${record.id}`)
     .then((response) => {
       const staff = response.data.data
       detailStaff.id = staff.id
-      detailStaff.staffCode = staff.code
-      detailStaff.name = staff.name
-      detailStaff.emailFe = staff.emailFe
-      detailStaff.emailFpt = staff.emailFpt
+      detailStaff.staffCode = staff.staffCode
+      detailStaff.name = staff.staffName
+      detailStaff.emailFe = staff.staffEmailFe
+      detailStaff.emailFpt = staff.staffEmailFpt
+      detailStaff.facilityId = staff.facilityId
+      // Chuyển đổi roleCode từ chuỗi thành mảng
+      detailStaff.roleCodes = staff.roleCode.split(',').map((role) => role.trim())
       modalUpdate.value = true
     })
     .catch((error) => {
@@ -170,15 +226,16 @@ const handleUpdateStaff = (record) => {
     })
 }
 
-// Hàm submit cập nhật nhân viên
 const updateStaff = () => {
   if (
     !detailStaff.staffCode ||
     !detailStaff.name ||
     !detailStaff.emailFe ||
-    !detailStaff.emailFpt
+    !detailStaff.emailFpt ||
+    !detailStaff.facilityId ||
+    detailStaff.roleCodes.length === 0
   ) {
-    message.error('Vui lòng nhập đầy đủ thông tin')
+    message.error('Vui lòng nhập đầy đủ thông tin, bao gồm cơ sở và vai trò')
     return
   }
   requestAPI
@@ -196,7 +253,7 @@ const updateStaff = () => {
     })
 }
 
-// Hàm xem chi tiết nhân viên (ví dụ)
+// Hàm xem chi tiết nhân viên
 const handleDetailStaff = (record) => {
   router.push({
     name: ROUTE_NAMES.MANAGEMENT_STAFF_ROLE,
@@ -231,11 +288,14 @@ const clearNewStaffForm = () => {
   newStaff.name = ''
   newStaff.emailFe = ''
   newStaff.emailFpt = ''
+  newStaff.facilityId = ''
+  newStaff.roleCodes = []
 }
 
 onMounted(() => {
   breadcrumbStore.setRoutes(breadcrumb.value)
   fetchStaffs()
+  fetchFacilitiesListCombobox()
   fetchFacilitiesList()
 })
 </script>
@@ -333,6 +393,10 @@ onMounted(() => {
                   }}
                 </a-tag>
               </template>
+              <!-- Cột Vai trò: sử dụng hàm convertRole để chuyển đổi mã thành tên hiển thị -->
+              <template v-else-if="column.dataIndex === 'roleCode'">
+                {{ convertRole(record.roleCode) }}
+              </template>
               <!-- Các nút chức năng có tooltip -->
               <template v-else-if="column.key === 'actions'">
                 <a-space>
@@ -376,7 +440,6 @@ onMounted(() => {
     </div>
 
     <!-- Modal Thêm nhân viên -->
-    <!-- Modal Thêm nhân viên -->
     <a-modal v-model:open="modalAdd" title="Thêm nhân viên" @ok="handleAddStaff">
       <a-form layout="vertical">
         <a-form-item label="Mã nhân viên" required>
@@ -391,9 +454,26 @@ onMounted(() => {
         <a-form-item label="Email FPT" required>
           <a-input v-model:value="newStaff.emailFpt" placeholder="Nhập email FPT" />
         </a-form-item>
+        <a-form-item label="Cơ sở" required>
+          <a-select v-model:value="newStaff.facilityId" placeholder="Chọn cơ sở">
+            <a-select-option
+              v-for="facility in facilitiesListCombobox"
+              :key="facility.id"
+              :value="facility.id"
+            >
+              {{ facility.name }}
+            </a-select-option>
+          </a-select>
+        </a-form-item>
+        <a-form-item label="Vai trò" required>
+          <a-select v-model:value="newStaff.roleCodes" mode="multiple" placeholder="Chọn vai trò">
+            <a-select-option v-for="role in rolesList" :key="role.code" :value="role.code">
+              {{ role.name }}
+            </a-select-option>
+          </a-select>
+        </a-form-item>
       </a-form>
     </a-modal>
-
     <!-- Modal Cập nhật nhân viên -->
     <a-modal v-model:open="modalUpdate" title="Cập nhật nhân viên" @ok="updateStaff">
       <a-form layout="vertical">
@@ -408,6 +488,28 @@ onMounted(() => {
         </a-form-item>
         <a-form-item label="Email FPT" required>
           <a-input v-model:value="detailStaff.emailFpt" placeholder="Nhập email FPT" />
+        </a-form-item>
+        <a-form-item label="Cơ sở" required>
+          <a-select v-model:value="detailStaff.facilityId" placeholder="Chọn cơ sở">
+            <a-select-option
+              v-for="facility in facilitiesListCombobox"
+              :key="facility.id"
+              :value="facility.id"
+            >
+              {{ facility.name }}
+            </a-select-option>
+          </a-select>
+        </a-form-item>
+        <a-form-item label="Vai trò" required>
+          <a-select
+            v-model:value="detailStaff.roleCodes"
+            mode="multiple"
+            placeholder="Chọn vai trò"
+          >
+            <a-select-option v-for="role in rolesList" :key="role.code" :value="role.code">
+              {{ role.name }}
+            </a-select-option>
+          </a-select>
         </a-form-item>
       </a-form>
     </a-modal>

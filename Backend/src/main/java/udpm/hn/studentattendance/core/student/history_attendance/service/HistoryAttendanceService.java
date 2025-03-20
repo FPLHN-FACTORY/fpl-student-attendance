@@ -6,4 +6,8 @@ import udpm.hn.studentattendance.core.student.history_attendance.model.request.H
 public interface HistoryAttendanceService {
 
     ResponseEntity<?> getAllHistoryAttendanceByStudent(HistoryAttendanceRequest historyAttendanceRequest);
+
+    ResponseEntity<?> getAllSemester();
+
+    ResponseEntity<?> getAllFactoryByUserStudent();
 }

@@ -338,7 +338,6 @@ onMounted(() => {
           </div>
           <a-table
             rowKey="id"
-            class="nowrap"
             :dataSource="factories"
             :columns="columns"
             :pagination="pagination"

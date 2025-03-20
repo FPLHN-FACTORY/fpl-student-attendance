@@ -1,114 +1,43 @@
-<template>
-  <div>
-    <h1>Quản lý sinh viên nhóm: {{ factoryName }}</h1>
-
-    <!-- Bộ lọc tìm kiếm -->
-    <a-card title="Bộ lọc tìm kiếm" :bordered="false" class="cart">
-      <a-row gutter="16" class="filter-container">
-        <!-- Tìm kiếm theo mã, tên, email học sinh -->
-        <a-col :span="12">
-          <div class="form-group">
-            <label class="form-label">Tìm kiếm</label>
-            <a-input
-              v-model:value="filter.searchQuery"
-              placeholder="Nhập mã, tên hoặc email học sinh"
-              allowClear
-              @change="fetchStudentFactory"
-            />
-          </div>
-        </a-col>
-        <!-- Lọc theo trạng thái (nếu có) -->
-        <a-col :span="12">
-          <div class="form-group">
-            <label class="form-label">Trạng thái</label>
-            <a-select
-              v-model:value="filter.status"
-              placeholder="Chọn trạng thái"
-              allowClear
-              style="width: 100%"
-              @change="fetchStudentFactory"
-            >
-              <a-select-option :value="''">Tất cả trạng thái</a-select-option>
-              <a-select-option value="1">Hoạt động</a-select-option>
-              <a-select-option value="0">Không hoạt động</a-select-option>
-            </a-select>
-          </div>
-        </a-col>
-      </a-row>
-    </a-card>
-
-    <!-- Danh sách học sinh trong nhóm xưởng -->
-    <a-card title="Danh sách học sinh" :bordered="false" class="cart">
-      <a-table
-        :dataSource="students"
-        :columns="columns"
-        rowKey="studentFactoryId"
-        bordered
-        :pagination="pagination"
-        @change="handleTableChange"
-      >
-        <template #bodyCell="{ column, record, index }">
-          <template v-if="column.dataIndex">
-            <template v-if="column.dataIndex === 'rowNumber'">
-              {{ index + 1 }}
-            </template>
-            <template v-else-if="column.dataIndex === 'statusStudentFactory'">
-              <a-tag
-                :color="
-                  record.statusStudentFactory === 'ACTIVE' || record.statusStudentFactory === 1
-                    ? 'green'
-                    : 'red'
-                "
-              >
-                {{
-                  record.statusStudentFactory === 'ACTIVE' || record.statusStudentFactory === 1
-                    ? 'Hoạt động'
-                    : 'Không hoạt động'
-                }}
-              </a-tag>
-            </template>
-            <template v-else>
-              {{ record[column.dataIndex] }}
-            </template>
-          </template>
-          <template v-else-if="column.key === 'actions'">
-            <a-space>
-              <a-tooltip title="Xoá học sinh">
-                <a-button type="text" class="action-button" @click="confirmDeleteStudent(record)">
-                  <DeleteOutlined />
-                </a-button>
-              </a-tooltip>
-              <a-tooltip title="Đổi trạng thái">
-                <a-button
-                  type="text"
-                  class="action-button"
-                  @click="toggleStatusStudentFactory(record)"
-                >
-                  <SyncOutlined />
-                </a-button>
-              </a-tooltip>
-            </a-space>
-          </template>
-        </template>
-      </a-table>
-    </a-card>
-  </div>
-</template>
-
 <script setup>
-import { DeleteOutlined, SyncOutlined } from '@ant-design/icons-vue'
+import {
+  DeleteFilled,
+  DeleteOutlined,
+  FilterFilled,
+  SyncOutlined,
+  UnorderedListOutlined,
+} from '@ant-design/icons-vue'
 import { ref, reactive, onMounted } from 'vue'
 import { message, Modal } from 'ant-design-vue'
 import { useRoute } from 'vue-router'
 import requestAPI from '@/services/requestApiService'
 import { API_ROUTES_TEACHER } from '@/constants/teacherConstant'
-
+import { ROUTE_NAMES } from '@/router/teacherRoute'
+import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
+import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
+import { DEFAULT_PAGINATION } from '@/constants/paginationConstant'
 // Giả sử route cho trang Student Factory được định nghĩa trong ROUTE_NAMES
 // (không cần chuyển hướng trong component này vì đây chính là trang hiển thị danh sách học sinh)
 
 const route = useRoute()
 const factoryId = route.query.factoryId
 const factoryName = route.query.factoryName
+
+const breadcrumbStore = useBreadcrumbStore()
+
+const breadcrumb = ref([
+  {
+    name: GLOBAL_ROUTE_NAMES.TEACHER_PAGE,
+    breadcrumbName: 'Giảng viên',
+  },
+  {
+    name: ROUTE_NAMES.MANAGEMENT_STUDENT,
+    breadcrumbName: 'Nhóm xưởng',
+  },
+  {
+    name: ROUTE_NAMES.MANAGEMENT_STUDENT_FACTORY,
+    breadcrumbName: 'Sinh viên nhóm: ' + factoryName,
+  },
+])
 
 // Danh sách học sinh thuộc nhóm xưởng
 const students = ref([])
@@ -121,15 +50,12 @@ const filter = reactive({
   pageSize: 5,
 })
 const pagination = reactive({
-  current: 1,
-  pageSize: 5,
-  total: 0,
-  showSizeChanger: false,
+  ...DEFAULT_PAGINATION,
 })
 
 // Cấu hình cột cho bảng
 const columns = ref([
-  { title: 'STT', dataIndex: 'rowNumber', key: 'rowNumber', width: 50 },
+  { title: '#', dataIndex: 'rowNumber', key: 'rowNumber', width: 50 },
   { title: 'Mã học sinh', dataIndex: 'studentCode', key: 'studentCode', width: 150 },
   { title: 'Tên học sinh', dataIndex: 'studentName', key: 'studentName', width: 200 },
   { title: 'Email', dataIndex: 'studentEmail', key: 'studentEmail', width: 250 },
@@ -158,8 +84,9 @@ const fetchStudentFactory = () => {
 }
 
 // Xử lý thay đổi trang bảng
-const handleTableChange = (paginationData) => {
-  filter.page = paginationData.current
+const handleTableChange = (page) => {
+  pagination.page = page.current
+  pagination.pageSize = page.pageSize
   fetchStudentFactory()
 }
 
@@ -204,29 +131,119 @@ const toggleStatusStudentFactory = (record) => {
 }
 
 onMounted(() => {
+  breadcrumbStore.setRoutes(breadcrumb.value)
   fetchStudentFactory()
 })
 </script>
 
-<style scoped>
-.cart {
-  margin-top: 10px;
-}
-.filter-container {
-  margin-bottom: 10px;
-}
-.form-group {
-  margin-bottom: 12px;
-}
-.form-label {
-  display: block;
-  margin-bottom: 4px;
-  font-weight: 500;
-}
-.action-button {
-  background-color: #fff7e6;
-  color: black;
-  border: 1px solid #ffa940;
-  margin-right: 8px;
-}
-</style>
+<template>
+  <div class="container-fluid">
+    <!-- Bộ lọc tìm kiếm -->
+    <div class="row g-3">
+      <div class="col-12">
+        <a-card :bordered="false" class="cart mb-3">
+          <template #title> <FilterFilled /> Bộ lọc tìm kiếm </template>
+          <a-row :gutter="16" class="filter-container">
+            <a-col :span="12" class="col">
+              <div class="form-group">
+                <label class="form-label">Tìm kiếm</label>
+                <a-input
+                  v-model:value="filter.searchQuery"
+                  placeholder="Nhập mã, tên hoặc email học sinh"
+                  allowClear
+                  @change="fetchStudentFactory"
+                />
+              </div>
+            </a-col>
+            <a-col :span="12" class="col">
+              <div class="form-group">
+                <label class="form-label">Trạng thái</label>
+                <a-select
+                  v-model:value="filter.status"
+                  placeholder="Chọn trạng thái"
+                  allowClear
+                  style="width: 100%"
+                  @change="fetchStudentFactory"
+                >
+                  <a-select-option :value="''">Tất cả trạng thái</a-select-option>
+                  <a-select-option value="1">Hoạt động</a-select-option>
+                  <a-select-option value="0">Không hoạt động</a-select-option>
+                </a-select>
+              </div>
+            </a-col>
+          </a-row>
+        </a-card>
+      </div>
+    </div>
+
+    <!-- Danh sách học sinh trong nhóm xưởng -->
+    <div class="row g-3">
+      <div class="col-12">
+        <a-card :bordered="false" class="cart">
+          <template #title> <UnorderedListOutlined /> Danh sách học sinh </template>
+          <a-table
+            :loading="isLoading"
+            :dataSource="students"
+            :columns="columns"
+            rowKey="studentFactoryId"
+            :pagination="pagination"
+            @change="handleTableChange"
+            :scroll="{ y: 500, x: 'auto' }"
+          >
+            <template #bodyCell="{ column, record, index }">
+              <template v-if="column.dataIndex">
+                <!-- STT -->
+                <template v-if="column.dataIndex === 'rowNumber'">
+                  {{ index + 1 }}
+                </template>
+                <!-- Hiển thị trạng thái -->
+                <template v-else-if="column.dataIndex === 'statusStudentFactory'">
+                  <a-tag
+                    :color="
+                      record.statusStudentFactory === 'ACTIVE' || record.statusStudentFactory === 1
+                        ? 'green'
+                        : 'red'
+                    "
+                  >
+                    {{
+                      record.statusStudentFactory === 'ACTIVE' || record.statusStudentFactory === 1
+                        ? 'Hoạt động'
+                        : 'Không hoạt động'
+                    }}
+                  </a-tag>
+                </template>
+                <!-- Các cột khác -->
+                <template v-else>
+                  {{ record[column.dataIndex] }}
+                </template>
+              </template>
+              <!-- Các nút hành động -->
+              <template v-else-if="column.key === 'actions'">
+                <a-space>
+                  <a-tooltip title="Xoá học sinh">
+                    <a-button
+                      type="text"
+                      class="btn-outline-danger me-2"
+                      @click="confirmDeleteStudent(record)"
+                    >
+                      <DeleteFilled />
+                    </a-button>
+                  </a-tooltip>
+                  <a-tooltip title="Đổi trạng thái">
+                    <a-button
+                      type="text"
+                      class="btn-outline-warning"
+                      @click="toggleStatusStudentFactory(record)"
+                    >
+                      <SyncOutlined />
+                    </a-button>
+                  </a-tooltip>
+                </a-space>
+              </template>
+            </template>
+          </a-table>
+        </a-card>
+      </div>
+    </div>
+  </div>
+</template>

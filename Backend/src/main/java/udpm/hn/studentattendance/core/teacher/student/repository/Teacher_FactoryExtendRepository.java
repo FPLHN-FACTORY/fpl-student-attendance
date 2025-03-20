@@ -17,6 +17,7 @@ public interface Teacher_FactoryExtendRepository extends FactoryRepository {
                 ft.id AS factoryId,
                 us.id AS userStaffId,
                 ft.name AS factoryName,
+                p.id AS projectId,
                 p.name AS projectName,
                 ft.description AS factoryDescription,
                 ft.status as factoryStatus

@@ -15,4 +15,9 @@ public interface Admin_StaffService {
     ResponseEntity<?> changeStaffStatus(String staffId);
 
     ResponseEntity<?> getStaffById(String staffId);
+
+    ResponseEntity<?> getAllRole();
+
+    ResponseEntity<?> getAllFacility();
+
 }
