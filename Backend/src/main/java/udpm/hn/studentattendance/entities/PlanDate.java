@@ -11,7 +11,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.DynamicUpdate;
-import org.hibernate.annotations.Nationalized;
 import udpm.hn.studentattendance.entities.base.PrimaryEntity;
 import udpm.hn.studentattendance.infrastructure.constants.EntityProperties;
 
@@ -39,7 +38,7 @@ public class PlanDate extends PrimaryEntity implements Serializable {
     private Integer lateArrival;
 
     @ManyToOne
-    @JoinColumn(name = "id_factory")
-    private Factory factory;
+    @JoinColumn(name = "id_plan_factory")
+    private PlanFactory planFactory;
 
 }

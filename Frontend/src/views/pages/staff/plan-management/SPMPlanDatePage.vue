@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, watch, reactive, h } from 'vue'
+import { ref, onMounted, watch, reactive, h, computed, unref } from 'vue'
 import {
   PlusOutlined,
   FilterFilled,
@@ -10,18 +10,23 @@ import {
 } from '@ant-design/icons-vue'
 import { message, Modal } from 'ant-design-vue'
 import requestAPI from '@/services/requestApiService'
-import { DEFAULT_PAGINATION, PAGINATION_SIZE } from '@/constants/paginationConstant'
+import { DEFAULT_PAGINATION } from '@/constants'
 import { API_ROUTES_STAFF } from '@/constants/staffConstant'
 import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
-import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
+import { API_ROUTES_EXCEL, GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
 import { ROUTE_NAMES } from '@/router/staffRoute'
 import useLoadingStore from '@/stores/useLoadingStore'
 import { useRoute, useRouter } from 'vue-router'
-import { SHIFT } from '@/constants/shiftConstant'
-import { DEFAULT_DATE_FORMAT, DEFAULT_LATE_ARRIVAL, DEFAULT_MAX_LATE_ARRIVAL } from '@/constants'
-import { STATUS_PLAN_DATE_DETAIL } from '@/constants/statusConstant'
-import { dayOfWeek, formatDate } from '@/utils/utils'
+import {
+  DEFAULT_DATE_FORMAT,
+  DEFAULT_LATE_ARRIVAL,
+  DEFAULT_MAX_LATE_ARRIVAL,
+  SHIFT,
+  STATUS_PLAN_DATE_DETAIL,
+} from '@/constants'
+import { dayOfWeek, formatDate, rowSelectTable } from '@/utils/utils'
 import dayjs from 'dayjs'
+import ExcelUploadButton from '@/components/excel/ExcelUploadButton.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -30,6 +35,19 @@ const breadcrumbStore = useBreadcrumbStore()
 const loadingStore = useLoadingStore()
 
 const isLoading = ref(false)
+
+const configImportExcel = {
+  fetchUrl: API_ROUTES_EXCEL.FETCH_IMPORT_PLAN_DATE,
+  onSuccess: () => {
+    fetchDataList()
+  },
+  onError: () => {
+    message.error('Không thể xử lý file excel')
+  },
+  data: { idPlanFactory: route.params?.id },
+  showDownloadTemplate: true,
+  showHistoryLog: true,
+}
 
 const modalAddOrUpdate = reactive({
   isShow: false,
@@ -60,7 +78,7 @@ const breadcrumb = ref([
   },
   {
     name: ROUTE_NAMES.MANAGEMENT_PLAN,
-    breadcrumbName: 'Phân công kế hoạch',
+    breadcrumbName: 'Danh sách kế hoạch',
   },
 ])
 
@@ -68,6 +86,7 @@ const pagination = ref({ ...DEFAULT_PAGINATION })
 
 const dataFilter = reactive({
   keyword: null,
+  status: null,
   shift: null,
   startDate: null,
 })
@@ -76,6 +95,7 @@ const formRefAddOrUpdate = ref(null)
 
 const formData = reactive({
   id: null,
+  idPlan: null,
   description: null,
   shift: Object.keys(SHIFT)[0],
   startDate: null,
@@ -99,14 +119,20 @@ const fetchDataDetail = () => {
     .get(`${API_ROUTES_STAFF.FETCH_DATA_PLAN_DATE}/${route.params.id}`)
     .then(({ data: response }) => {
       _detail.value = response.data
+      formData.idPlan = _detail.value.planId
       breadcrumbStore.push({
-        breadcrumbName: _detail.value.factoryName + ' - ' + _detail.value.projectName,
+        name: ROUTE_NAMES.MANAGEMENT_PLAN_FACTORY,
+        params: { id: _detail.value.planId },
+        breadcrumbName: _detail.value.planName,
+      })
+      breadcrumbStore.push({
+        breadcrumbName: _detail.value.factoryName,
       })
       fetchDataList()
     })
     .catch((error) => {
       message.error(error?.response?.data?.message || 'Không thể tải thông tin kế hoạch')
-      router.push({ name: ROUTE_NAMES.MANAGEMENT_PLAN })
+      router.push({ name: ROUTE_NAMES.MANAGEMENT_PLAN_FACTORY, params: { id: route.params?.id } })
     })
     .finally(() => {
       loadingStore.hide()
@@ -157,6 +183,28 @@ const fetchDeleteItem = (id) => {
     })
 }
 
+const fetchDeleteMultipleItem = (ids) => {
+  loadingStore.show()
+
+  requestAPI
+    .delete(`${API_ROUTES_STAFF.FETCH_DATA_PLAN_DATE}/${_detail.value.id}/delete`, {
+      data: {
+        ids: ids,
+      },
+    })
+    .then(({ data: response }) => {
+      message.success(response.message)
+      selectedRowKeys.value = []
+      fetchDataList()
+    })
+    .catch((error) => {
+      message.error(error?.response?.data?.message || 'Không thể xoá mục đã chọn')
+    })
+    .finally(() => {
+      loadingStore.hide()
+    })
+}
+
 const fetchAddItem = () => {
   modalAddOrUpdate.isLoading = true
   requestAPI
@@ -200,6 +248,7 @@ const fetchUpdateItem = () => {
 const handleClearFilter = () => {
   Object.assign(dataFilter, {
     keyword: null,
+    status: null,
     shift: null,
     startDate: null,
   })
@@ -302,6 +351,25 @@ const handleShowAlertDelete = (item) => {
   })
 }
 
+const handleShowAlertMultipleDelete = () => {
+  Modal.confirm({
+    title: `Xoá kế hoạch đã chọn`,
+    type: 'error',
+    content: `Bạn có chắc muốn xoá ${selectedRowKeys.value.length} kế hoạch đã chọn?`,
+    okText: 'Tiếp tục',
+    cancelText: 'Hủy bỏ',
+    okButtonProps: {
+      class: 'btn-danger',
+    },
+    cancelButtonProps: {
+      class: 'btn-gray',
+    },
+    onOk() {
+      fetchDeleteMultipleItem(selectedRowKeys.value)
+    },
+  })
+}
+
 const handleShowDescription = (text) => {
   Modal.info({
     title: 'Nội dung chi tiết',
@@ -313,6 +381,15 @@ const handleShowDescription = (text) => {
     },
   })
 }
+
+const selectedRowKeys = ref([])
+
+const isDisabledSelectTable = (key) => {
+  const record = lstData.value.find((item) => item.id === key)
+  return record?.status === 'DA_DIEN_RA'
+}
+
+const rowSelection = computed(() => rowSelectTable(selectedRowKeys, isDisabledSelectTable))
 
 onMounted(() => {
   breadcrumbStore.setRoutes(breadcrumb.value)
@@ -410,6 +487,7 @@ watch(
           <template #title> <FilterFilled /> Bộ lọc </template>
           <div class="row g-2">
             <div class="col-lg-6 col-md-12 col-sm-8">
+              <div class="label-title">Từ khoá:</div>
               <a-input
                 v-model:value="dataFilter.keyword"
                 placeholder="Tìm theo mô tả..."
@@ -421,6 +499,7 @@ watch(
               </a-input>
             </div>
             <div class="col-lg-2 col-md-4 col-sm-4">
+              <div class="label-title">Trạng thái:</div>
               <a-select
                 v-model:value="dataFilter.status"
                 class="w-100"
@@ -439,6 +518,7 @@ watch(
               </a-select>
             </div>
             <div class="col-lg-2 col-md-4 col-sm-6">
+              <div class="label-title">Ca học:</div>
               <a-select
                 v-model:value="dataFilter.shift"
                 class="w-100"
@@ -453,6 +533,7 @@ watch(
               </a-select>
             </div>
             <div class="col-lg-2 col-md-4 col-sm-6">
+              <div class="label-title">Ngày diễn ra:</div>
               <a-date-picker
                 class="w-100"
                 placeholder="-- Tất cả các ngày --"
@@ -478,10 +559,15 @@ watch(
             <UnorderedListOutlined /> Danh sách kế hoạch
             {{ `(${formatDate(_detail?.fromDate)} - ${formatDate(_detail?.toDate)})` }}
           </template>
-          <div class="d-flex justify-content-end mb-3">
-            <a-button type="primary" @click="handleShowAdd">
-              <PlusOutlined /> Thêm chi tiết kế hoạch
-            </a-button>
+          <div class="d-flex justify-content-end mb-3 flex-wrap gap-3">
+            <a-button
+              v-show="selectedRowKeys.length > 0"
+              class="btn-outline-danger"
+              @click="handleShowAlertMultipleDelete"
+              ><DeleteFilled /> Xoá mục đã chọn</a-button
+            >
+            <ExcelUploadButton v-bind="configImportExcel" />
+            <a-button type="primary" @click="handleShowAdd"> <PlusOutlined /> Thêm mới </a-button>
           </div>
 
           <div>
@@ -493,6 +579,7 @@ watch(
               :loading="isLoading"
               :pagination="pagination"
               :scroll="{ y: 500, x: 'auto' }"
+              :row-selection="rowSelection"
               @change="handleTableChange"
             >
               <template #bodyCell="{ column, record }">
@@ -528,14 +615,14 @@ watch(
                 </template>
                 <template v-if="column.key === 'actions'">
                   <template v-if="record.status !== 'DA_DIEN_RA'">
-                    <a-tooltip title="Chỉnh sửa kế hoạch chi tiết">
-                      <a-button class="btn-outline-info" @click="handleShowUpdate(record)">
+                    <a-tooltip title="Chỉnh sửa phân công">
+                      <a-button class="btn-outline-info border-0" @click="handleShowUpdate(record)">
                         <EditFilled />
                       </a-button>
                     </a-tooltip>
                     <a-tooltip title="Xoá kế hoạch chi tiết">
                       <a-button
-                        class="btn-outline-danger ms-2"
+                        class="btn-outline-danger border-0 ms-2"
                         @click="handleShowAlertDelete(record)"
                       >
                         <DeleteFilled />

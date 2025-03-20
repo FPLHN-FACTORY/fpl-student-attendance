@@ -16,11 +16,13 @@ import requestAPI from '@/services/requestApiService'
 import { ROUTE_NAMES } from '@/router/adminRoute'
 import router from '@/router'
 import { API_ROUTES_ADMIN } from '@/constants/adminConstant'
-import { DEFAULT_PAGINATION } from '@/constants/paginationConstant'
+import { DEFAULT_PAGINATION } from '@/constants'
 import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
 import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
+import useLoadingStore from '@/stores/useLoadingStore'
 
 const breadcrumbStore = useBreadcrumbStore()
+const loadingStore = useLoadingStore()
 
 const breadcrumb = ref([
   {
@@ -38,11 +40,9 @@ const staffs = ref([])
 
 // Danh sách cơ sở (để hiển thị trong select option)
 const facilitiesList = ref([])
-
 const facilitiesListCombobox = ref([])
 
 // Danh sách vai trò (cố định dựa trên backend)
-// Cập nhật tên hiển thị theo yêu cầu
 const rolesList = ref([
   { code: '0', name: 'Ban đào tạo' },
   { code: '1', name: 'Phụ trách xưởng' },
@@ -56,39 +56,38 @@ const roleMapping = {
   3: 'Giảng viên',
 }
 const convertRole = (roleCodes) => {
-  // Nếu roleCodes là chuỗi chứa nhiều mã, ví dụ "0, 1"
   if (typeof roleCodes === 'string') {
     return roleCodes
       .split(',')
       .map((code) => roleMapping[code.trim()] || code.trim())
       .join(', ')
   }
-  // Nếu roleCodes là mảng
   if (Array.isArray(roleCodes)) {
     return roleCodes.map((code) => roleMapping[code] || code).join(', ')
   }
   return roleCodes
 }
 
-// Biến lọc
+// Biến lọc và phân trang gửi lên API
 const filter = reactive({
   searchQuery: '',
   idFacility: '',
   status: '',
-  page: 1,
-  pageSize: 5,
 })
 
-// Dữ liệu phân trang
-const pagination = reactive({
-  ...DEFAULT_PAGINATION,
-})
+// Sử dụng pagination dưới dạng ref giống mẫu plandate
+const pagination = ref({ ...DEFAULT_PAGINATION })
+
+// Biến loading cho bảng và modal
+const isLoading = ref(false)
+const modalAddLoading = ref(false)
+const modalUpdateLoading = ref(false)
 
 // Modal hiển thị
 const modalAdd = ref(false)
 const modalUpdate = ref(false)
 
-// Dữ liệu thêm mới nhân viên (thêm facilityId và roleCodes)
+// Dữ liệu thêm mới nhân viên
 const newStaff = reactive({
   staffCode: '',
   name: '',
@@ -98,7 +97,7 @@ const newStaff = reactive({
   roleCodes: [],
 })
 
-// Dữ liệu chi tiết nhân viên (cập nhật)
+// Dữ liệu cập nhật nhân viên
 const detailStaff = reactive({
   id: '',
   staffCode: '',
@@ -117,20 +116,28 @@ const columns = ref([
   { title: 'Email FE', dataIndex: 'staffEmailFe', key: 'staffEmailFe', width: 250 },
   { title: 'Email FPT', dataIndex: 'staffEmailFpt', key: 'staffEmailFpt', width: 250 },
   { title: 'Cơ sở', dataIndex: 'facilityName', key: 'facilityName', width: 380 },
-  // Cột vai trò sẽ hiển thị tên thay vì mã
   { title: 'Vai trò', dataIndex: 'roleCode', key: 'roleCode', width: 380 },
   { title: 'Trạng thái', dataIndex: 'staffStatus', key: 'staffStatus', width: 80 },
   { title: 'Chức năng', key: 'actions' },
 ])
 
-// Hàm lấy danh sách nhân viên từ backend
+// Hàm lấy danh sách nhân viên, dùng pagination.value.current và pagination.value.pageSize
 const fetchStaffs = () => {
+  if (isLoading.value) return
+  loadingStore.show()
+  isLoading.value = true
   requestAPI
-    .get(API_ROUTES_ADMIN.FETCH_DATA_STAFF, { params: filter })
+    .get(API_ROUTES_ADMIN.FETCH_DATA_STAFF, {
+      params: {
+        ...filter,
+        page: pagination.value.current,
+        size: pagination.value.pageSize,
+      },
+    })
     .then((response) => {
       staffs.value = response.data.data.data
-      pagination.total = response.data.data.totalPages * filter.pageSize
-      pagination.current = filter.page
+      // Tính tổng số bản ghi theo mẫu plandate: totalPages * pageSize
+      pagination.value.total = response.data.data.totalPages * pagination.value.pageSize
     })
     .catch((error) => {
       message.error(
@@ -138,9 +145,13 @@ const fetchStaffs = () => {
           'Lỗi khi lấy danh sách nhân viên'
       )
     })
+    .finally(() => {
+      isLoading.value = false
+      loadingStore.hide()
+    })
 }
 
-// Hàm lấy danh sách cơ sở để hiển thị trong combobox
+// Hàm lấy danh sách cơ sở cho combobox
 const fetchFacilitiesList = () => {
   requestAPI
     .get(`${API_ROUTES_ADMIN.FETCH_DATA_STAFF_ROLE}/facilities`)
@@ -167,10 +178,11 @@ const fetchFacilitiesListCombobox = () => {
       )
     })
 }
-// Sự kiện thay đổi trang bảng
-const handleTableChange = (page) => {
-  pagination.page = page.current
-  pagination.pageSize = page.pageSize
+
+// Sự kiện thay đổi trang bảng, cập nhật cả current và pageSize rồi gọi lại fetchStaffs
+const handleTableChange = (pageInfo) => {
+  pagination.value.current = pageInfo.current
+  pagination.value.pageSize = pageInfo.pageSize
   fetchStaffs()
 }
 
@@ -187,6 +199,8 @@ const handleAddStaff = () => {
     message.error('Vui lòng nhập đầy đủ thông tin, bao gồm cơ sở và ít nhất một vai trò')
     return
   }
+  modalAddLoading.value = true
+  loadingStore.show()
   requestAPI
     .post(API_ROUTES_ADMIN.FETCH_DATA_STAFF, newStaff)
     .then(() => {
@@ -201,9 +215,15 @@ const handleAddStaff = () => {
           'Lỗi khi thêm nhân viên'
       )
     })
+    .finally(() => {
+      modalAddLoading.value = false
+      loadingStore.hide()
+    })
 }
 
+// Hàm lấy chi tiết nhân viên để cập nhật
 const handleUpdateStaff = (record) => {
+  loadingStore.show()
   requestAPI
     .get(`${API_ROUTES_ADMIN.FETCH_DATA_STAFF}/${record.id}`)
     .then((response) => {
@@ -214,7 +234,6 @@ const handleUpdateStaff = (record) => {
       detailStaff.emailFe = staff.staffEmailFe
       detailStaff.emailFpt = staff.staffEmailFpt
       detailStaff.facilityId = staff.facilityId
-      // Chuyển đổi roleCode từ chuỗi thành mảng
       detailStaff.roleCodes = staff.roleCode.split(',').map((role) => role.trim())
       modalUpdate.value = true
     })
@@ -224,8 +243,12 @@ const handleUpdateStaff = (record) => {
           'Lỗi khi lấy chi tiết nhân viên'
       )
     })
+    .finally(() => {
+      loadingStore.hide()
+    })
 }
 
+// Hàm cập nhật nhân viên
 const updateStaff = () => {
   if (
     !detailStaff.staffCode ||
@@ -238,6 +261,8 @@ const updateStaff = () => {
     message.error('Vui lòng nhập đầy đủ thông tin, bao gồm cơ sở và vai trò')
     return
   }
+  modalUpdateLoading.value = true
+  loadingStore.show()
   requestAPI
     .put(API_ROUTES_ADMIN.FETCH_DATA_STAFF, detailStaff)
     .then(() => {
@@ -251,14 +276,10 @@ const updateStaff = () => {
           'Lỗi khi cập nhật nhân viên'
       )
     })
-}
-
-// Hàm xem chi tiết nhân viên
-const handleDetailStaff = (record) => {
-  router.push({
-    name: ROUTE_NAMES.MANAGEMENT_STAFF_ROLE,
-    query: { staffId: record.id },
-  })
+    .finally(() => {
+      modalUpdateLoading.value = false
+      loadingStore.hide()
+    })
 }
 
 // Hàm đổi trạng thái nhân viên
@@ -267,6 +288,7 @@ const handleChangeStatusStaff = (record) => {
     title: 'Xác nhận thay đổi trạng thái',
     content: `Bạn có chắc chắn muốn đổi trạng thái cho nhân viên ${record.staffName}?`,
     onOk: () => {
+      loadingStore.show()
       requestAPI
         .put(`${API_ROUTES_ADMIN.FETCH_DATA_STAFF}/status/${record.id}`)
         .then(() => {
@@ -279,6 +301,9 @@ const handleChangeStatusStaff = (record) => {
               'Lỗi khi đổi trạng thái nhân viên'
           )
         })
+        .finally(() => {
+          loadingStore.hide()
+        })
     },
   })
 }
@@ -288,7 +313,7 @@ const clearNewStaffForm = () => {
   newStaff.name = ''
   newStaff.emailFe = ''
   newStaff.emailFpt = ''
-  newStaff.facilityId = ''
+  newStaff.facilityId = null
   newStaff.roleCodes = []
 }
 
@@ -299,6 +324,10 @@ onMounted(() => {
   fetchFacilitiesList()
 })
 </script>
+
+
+
+
 
 <template>
   <div class="container-fluid">
@@ -331,7 +360,7 @@ onMounted(() => {
                 <a-select-option value="INACTIVE">Không hoạt động</a-select-option>
               </a-select>
             </a-col>
-            <!-- Combobox cơ sở (fetch từ backend) -->
+            <!-- Combobox cơ sở -->
             <a-col :span="8" class="col">
               <a-select
                 v-model:value="filter.idFacility"
@@ -362,11 +391,7 @@ onMounted(() => {
           <template #title> <UnorderedListOutlined /> Danh sách nhân viên </template>
           <div class="d-flex justify-content-end mb-3">
             <a-tooltip title="Thêm mới nhân viên">
-              <!-- Sử dụng kiểu filled cho nút Thêm -->
-              <a-button type="primary" @click="modalAdd = true">
-                <PlusOutlined />
-                Thêm
-              </a-button>
+              <a-button type="primary" @click="modalAdd = true"> <PlusOutlined /> Thêm </a-button>
             </a-tooltip>
           </div>
           <a-table
@@ -393,7 +418,7 @@ onMounted(() => {
                   }}
                 </a-tag>
               </template>
-              <!-- Cột Vai trò: sử dụng hàm convertRole để chuyển đổi mã thành tên hiển thị -->
+              <!-- Cột Vai trò: hiển thị tên thay vì mã -->
               <template v-else-if="column.dataIndex === 'roleCode'">
                 {{ convertRole(record.roleCode) }}
               </template>
@@ -418,7 +443,6 @@ onMounted(() => {
                       <EditFilled />
                     </a-button>
                   </a-tooltip>
-
                   <a-tooltip title="Đổi trạng thái nhân viên">
                     <a-button
                       @click="handleChangeStatusStaff(record)"
@@ -440,7 +464,12 @@ onMounted(() => {
     </div>
 
     <!-- Modal Thêm nhân viên -->
-    <a-modal v-model:open="modalAdd" title="Thêm nhân viên" @ok="handleAddStaff">
+    <a-modal
+      v-model:open="modalAdd"
+      title="Thêm nhân viên"
+      @ok="handleAddStaff"
+      :okButtonProps="{ loading: modalAddLoading }"
+    >
       <a-form layout="vertical">
         <a-form-item label="Mã nhân viên" required>
           <a-input v-model:value="newStaff.staffCode" placeholder="Nhập mã nhân viên" />
@@ -474,8 +503,14 @@ onMounted(() => {
         </a-form-item>
       </a-form>
     </a-modal>
+
     <!-- Modal Cập nhật nhân viên -->
-    <a-modal v-model:open="modalUpdate" title="Cập nhật nhân viên" @ok="updateStaff">
+    <a-modal
+      v-model:open="modalUpdate"
+      title="Cập nhật nhân viên"
+      @ok="updateStaff"
+      :okButtonProps="{ loading: modalUpdateLoading }"
+    >
       <a-form layout="vertical">
         <a-form-item label="Mã nhân viên" required>
           <a-input v-model:value="detailStaff.staffCode" placeholder="Nhập mã nhân viên" />

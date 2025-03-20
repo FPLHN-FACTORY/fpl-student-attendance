@@ -16,11 +16,13 @@ import {
 import { ROUTE_NAMES } from '@/router/teacherRoute'
 import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
 import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
-import { DEFAULT_PAGINATION } from '@/constants/paginationConstant'
+import useLoadingStore from '@/stores/useLoadingStore'
+import { DEFAULT_PAGINATION } from '@/constants'
+
 const router = useRouter()
-
 const breadcrumbStore = useBreadcrumbStore()
-
+const loadingStore = useLoadingStore()
+const isLoading = ref(false)
 const breadcrumb = ref([
   {
     name: GLOBAL_ROUTE_NAMES.TEACHER_PAGE,
@@ -31,6 +33,7 @@ const breadcrumb = ref([
     breadcrumbName: 'Nhóm xưởng',
   },
 ])
+
 // Danh sách nhóm xưởng
 const factories = ref([])
 // Danh sách dự án, giảng viên (để hiển thị trong combobox filter)
@@ -59,22 +62,31 @@ const columns = ref([
 
 // Fetch danh sách nhóm xưởng do giảng viên quản lý
 const fetchFactoryByTeacher = () => {
+  loadingStore.show()
   requestAPI
-    .get(API_ROUTES_TEACHER.FETCH_DATA_STUDENT, { params: filter })
+    .get(API_ROUTES_TEACHER.FETCH_DATA_STUDENT, {
+      params: { ...filter, page: pagination.current, size: pagination.pageSize },
+    })
     .then((response) => {
       console.log('Factory response:', response.data)
       const result = response.data.data
       factories.value = result.data
+      // Nếu API trả về tổng số trang, sử dụng:
       pagination.total = result.totalPages * filter.pageSize
+      // Nếu trả về tổng số bản ghi, thay thế bằng: pagination.total = result.totalRecords
       pagination.current = filter.page
     })
     .catch((error) => {
       message.error(error.response?.data?.message || 'Lỗi khi lấy danh sách nhóm xưởng')
     })
+    .finally(() => {
+      loadingStore.hide()
+    })
 }
 
 // Fetch danh sách dự án theo cơ sở
 const fetchProjectByFacility = () => {
+  loadingStore.show()
   requestAPI
     .get(API_ROUTES_TEACHER.FETCH_DATA_STUDENT + '/projects')
     .then((response) => {
@@ -85,12 +97,17 @@ const fetchProjectByFacility = () => {
     .catch((error) => {
       message.error(error.response?.data?.message || 'Lỗi khi lấy danh sách dự án')
     })
+    .finally(() => {
+      loadingStore.hide()
+    })
 }
 
 // Xử lý phân trang
-const handleTableChange = (page) => {
-  pagination.page = page.current
-  pagination.pageSize = page.pageSize
+const handleTableChange = (pageInfo) => {
+  pagination.current = pageInfo.current
+  pagination.pageSize = pageInfo.pageSize
+  filter.page = pageInfo.current
+  filter.pageSize = pageInfo.pageSize // Đồng bộ pageSize cho filter
   fetchFactoryByTeacher()
 }
 
@@ -112,7 +129,6 @@ onMounted(() => {
   fetchProjectByFacility()
 })
 </script>
-
 
 <template>
   <div class="container-fluid">

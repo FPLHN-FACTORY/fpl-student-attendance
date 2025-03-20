@@ -2,6 +2,18 @@
   &-primary {
     color: var(--primary-color);
   }
+  &-info {
+    color: #03a9f4;
+  }
+  &-success {
+    color: #4caf50;
+  }
+  &-danger {
+    color: #ff0039;
+  }
+  &-gray {
+    color: #7f7c7c;
+  }
 }
 
 .ant-select-item-option-selected {

@@ -14,9 +14,8 @@ import { API_ROUTES_TEACHER } from '@/constants/teacherConstant'
 import { ROUTE_NAMES } from '@/router/teacherRoute'
 import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
 import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
-import { DEFAULT_PAGINATION } from '@/constants/paginationConstant'
-// Giả sử route cho trang Student Factory được định nghĩa trong ROUTE_NAMES
-// (không cần chuyển hướng trong component này vì đây chính là trang hiển thị danh sách học sinh)
+import useLoadingStore from '@/stores/useLoadingStore'
+import { DEFAULT_PAGINATION } from '@/constants'
 
 const route = useRoute()
 const factoryId = route.query.factoryId
@@ -68,25 +67,41 @@ const columns = ref([
   { title: 'Chức năng', key: 'actions', width: 80 },
 ])
 
+const loadingStore = useLoadingStore()
+
 // Hàm lấy danh sách học sinh trong nhóm xưởng
 const fetchStudentFactory = () => {
+  loadingStore.show()
   requestAPI
-    .get(API_ROUTES_TEACHER.FETCH_DATA_STUDENT_FACTORY, { params: filter })
+    .get(API_ROUTES_TEACHER.FETCH_DATA_STUDENT_FACTORY, {
+      params: {
+        ...filter,
+        page: pagination.current,
+        size: pagination.pageSize,
+      },
+    })
     .then((response) => {
       const result = response.data.data
       students.value = result.data
+      // Nếu API trả về tổng số trang, sử dụng:
       pagination.total = result.totalPages * filter.pageSize
+      // Nếu trả về tổng số bản ghi, thay thế bằng: pagination.total = result.totalRecords
       pagination.current = filter.page
     })
     .catch((error) => {
       message.error(error.response?.data?.message || 'Lỗi khi lấy danh sách học sinh')
     })
+    .finally(() => {
+      loadingStore.hide()
+    })
 }
 
 // Xử lý thay đổi trang bảng
-const handleTableChange = (page) => {
-  pagination.page = page.current
-  pagination.pageSize = page.pageSize
+const handleTableChange = (pageInfo) => {
+  pagination.current = pageInfo.current
+  pagination.pageSize = pageInfo.pageSize
+  filter.page = pageInfo.current
+  filter.pageSize = pageInfo.pageSize // Đồng bộ pageSize cho filter
   fetchStudentFactory()
 }
 
@@ -102,6 +117,7 @@ const confirmDeleteStudent = (record) => {
 }
 
 const deleteStudentFactory = (studentFactoryId) => {
+  loadingStore.show()
   requestAPI
     .delete(API_ROUTES_TEACHER.FETCH_DATA_STUDENT_FACTORY + '/' + studentFactoryId)
     .then((response) => {
@@ -111,12 +127,17 @@ const deleteStudentFactory = (studentFactoryId) => {
     .catch((error) => {
       message.error(error.response?.data?.message || 'Lỗi khi xoá học sinh')
     })
+    .finally(() => {
+      loadingStore.hide()
+    })
 }
+
 const toggleStatusStudentFactory = (record) => {
   Modal.confirm({
     title: 'Xác nhận đổi trạng thái',
     content: `Bạn có chắc muốn thay đổi trạng thái của học sinh ${record.studentName}?`,
     onOk() {
+      loadingStore.show()
       requestAPI
         .put(API_ROUTES_TEACHER.FETCH_DATA_STUDENT_FACTORY + '/' + record.studentFactoryId)
         .then((response) => {
@@ -125,6 +146,9 @@ const toggleStatusStudentFactory = (record) => {
         })
         .catch((error) => {
           message.error(error.response?.data?.message || 'Lỗi khi đổi trạng thái sinh viên')
+        })
+        .finally(() => {
+          loadingStore.hide()
         })
     },
   })

@@ -23,4 +23,6 @@ public interface HistoryAttendanceResponse {
 
     String getPlanDateDescription();
 
+    Integer getLateArrival();
+
 }

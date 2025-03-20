@@ -3,20 +3,22 @@ package udpm.hn.studentattendance.core.staff.plan.model.response;
 import udpm.hn.studentattendance.infrastructure.common.HasOrderNumber;
 import udpm.hn.studentattendance.infrastructure.common.IsIdentify;
 
-public interface SPDPlanDateDetailResponse extends IsIdentify, HasOrderNumber {
+public interface SPDPlanFactoryResponse extends IsIdentify, HasOrderNumber {
 
-    Long getStartDate();
+    String getPlanId();
 
-    String getShift();
+    String getPlanName();
 
-    String getDescription();
+    String getFactoryName();
 
-    Integer getLateArrival();
+    String getStaffName();
 
-    String getStatus();
+    Integer getTotalShift();
 
     Long getFromDate();
 
     Long getToDate();
+
+    Integer getStatus();
 
 }

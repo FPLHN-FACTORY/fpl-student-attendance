@@ -2,16 +2,22 @@
 import { ref, computed, onMounted, reactive } from 'vue'
 import dayjs from 'dayjs'
 import { dayOfWeek, formatDate } from '@/utils/utils'
-import { FilterFilled, UnorderedListOutlined, EyeOutlined, EyeFilled } from '@ant-design/icons-vue'
+import {
+  FilterFilled,
+  UnorderedListOutlined,
+  EyeOutlined,
+  EyeFilled,
+  ExclamationCircleOutlined,
+} from '@ant-design/icons-vue'
 import { message } from 'ant-design-vue'
 import requestAPI from '@/services/requestApiService'
 import { API_ROUTES_STUDENT } from '@/constants/studentConstant'
 import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
 import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
 import { ROUTE_NAMES } from '@/router/studentRoute'
-import { SHIFT } from '@/constants/shiftConstant'
+import { SHIFT } from '@/constants'
 import { DEFAULT_DATE_FORMAT } from '@/constants'
-
+import { DEFAULT_PAGINATION } from '@/constants'
 const breadcrumbStore = useBreadcrumbStore()
 const breadcrumb = ref([
   { name: GLOBAL_ROUTE_NAMES.STUDENT_PAGE, breadcrumbName: 'Sinh viên' },
@@ -34,6 +40,12 @@ const columns = [
   { title: 'Ngày học', dataIndex: 'planDateStartDate', key: 'planDateStartDate', width: 180 },
   { title: 'Ca học', dataIndex: 'planDateShift', key: 'planDateShift', width: 30 },
   { title: 'Nội dung', dataIndex: 'planDateDescription', key: 'planDateDescription', width: 250 },
+  {
+    title: 'Điểm danh muộn tối đa (phút)',
+    dataIndex: 'lateArrival',
+    key: 'lateArrival',
+    width: 100,
+  },
   { title: 'Trạng thái đi học', dataIndex: 'statusAttendance', key: 'statusAttendance', width: 80 },
   { title: 'Hành động', key: 'actions', width: 100 },
 ]
@@ -215,6 +227,12 @@ onMounted(() => {
                     {{ SHIFT[record.planDateShift] }}
                   </a-tag>
                 </template>
+                <template v-else-if="column.dataIndex === 'lateArrival'">
+                  <a-tag :color="record.lateArrival > 0 ? 'gold' : 'green'">
+                    {{ record.lateArrival }}
+                    <ExclamationCircleOutlined />
+                  </a-tag>
+                </template>
                 <template v-else-if="column.dataIndex === 'planDateDescription'">
                   {{
                     record.planDateDescription
@@ -241,7 +259,11 @@ onMounted(() => {
               <template v-else-if="column.key === 'actions'">
                 <a-space>
                   <a-tooltip title="Xem chi tiết">
-                    <a-button type="text" @click="handleDetail(record)" class="btn-outline-primary">
+                    <a-button
+                      type="text"
+                      @click="handleDetail(record)"
+                      class="btn-outline-secondary"
+                    >
                       <EyeFilled />
                     </a-button>
                   </a-tooltip>
