@@ -6,11 +6,10 @@ import udpm.hn.studentattendance.entities.Factory;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.repositories.FactoryRepository;
 
-import javax.swing.text.html.parser.Entity;
 import java.util.List;
 
 @Repository
-public interface HistoryAttendanceFactoryExtendRepository extends FactoryRepository {
+public interface Student_HistoryAttendanceFactoryExtendRepository extends FactoryRepository {
     @Query(
             value = """
             SELECT 

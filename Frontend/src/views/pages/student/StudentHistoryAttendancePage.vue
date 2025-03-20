@@ -9,7 +9,7 @@ import {
   EyeFilled,
   ExclamationCircleOutlined,
 } from '@ant-design/icons-vue'
-import { message } from 'ant-design-vue'
+import { message, Modal } from 'ant-design-vue'
 import requestAPI from '@/services/requestApiService'
 import { API_ROUTES_STUDENT } from '@/constants/studentConstant'
 import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
@@ -18,11 +18,15 @@ import { ROUTE_NAMES } from '@/router/studentRoute'
 import { SHIFT } from '@/constants'
 import { DEFAULT_DATE_FORMAT } from '@/constants'
 import { DEFAULT_PAGINATION } from '@/constants'
+import useLoadingStore from '@/stores/useLoadingStore'
+
 const breadcrumbStore = useBreadcrumbStore()
 const breadcrumb = ref([
   { name: GLOBAL_ROUTE_NAMES.STUDENT_PAGE, breadcrumbName: 'Sinh viên' },
   { name: ROUTE_NAMES.HISTORY_ATTENDANCE, breadcrumbName: 'Lịch sử điểm danh' },
 ])
+const loadingStore = useLoadingStore()
+const isLoading = ref(false)
 
 const filter = reactive({
   semesterId: '',
@@ -37,9 +41,9 @@ const paginations = ref({})
 
 const columns = [
   { title: 'Bài học', dataIndex: 'rowNumber', key: 'rowNumber', width: 50 },
-  { title: 'Ngày học', dataIndex: 'planDateStartDate', key: 'planDateStartDate', width: 180 },
+  { title: 'Ngày học', dataIndex: 'planDateStartDate', key: 'planDateStartDate', width: 150 },
   { title: 'Ca học', dataIndex: 'planDateShift', key: 'planDateShift', width: 30 },
-  { title: 'Nội dung', dataIndex: 'planDateDescription', key: 'planDateDescription', width: 250 },
+  { title: 'Nội dung', dataIndex: 'planDateDescription', key: 'planDateDescription', width: 80 },
   {
     title: 'Điểm danh muộn tối đa (phút)',
     dataIndex: 'lateArrival',
@@ -54,7 +58,7 @@ const semesters = ref([])
 const factories = ref([])
 
 const fetchAllAttendanceHistory = async () => {
-  loading.value = true
+  loadingStore.show()
   try {
     const firstResponse = await requestAPI.get(API_ROUTES_STUDENT.FETCH_DATA_HISTORY_ATTENDANCE, {
       params: { ...filter, page: 1 },
@@ -92,10 +96,20 @@ const fetchAllAttendanceHistory = async () => {
   } catch (error) {
     message.error(error.response?.data?.message || 'Lỗi khi tải dữ liệu lịch sử điểm danh')
   } finally {
-    loading.value = false
+    loadingStore.hide()
   }
 }
-
+const handleShowDescription = (text) => {
+  Modal.info({
+    title: 'Nội dung buổi học',
+    type: 'info',
+    content: text || 'Buổi học chưa có nội dung',
+    okText: 'Đóng',
+    okButtonProps: {
+      class: 'btn-gray',
+    },
+  })
+}
 const fetchSemesters = () => {
   requestAPI
     .get(API_ROUTES_STUDENT.FETCH_DATA_HISTORY_ATTENDANCE + '/semesters')
@@ -162,8 +176,9 @@ onMounted(() => {
       <div class="col-12">
         <a-card :bordered="false" class="card mb-3">
           <template #title> <FilterFilled /> Bộ lọc </template>
-          <a-row :gutter="16" class="filter-container">
+          <a-row :gutter="16" class="row g-2">
             <a-col :xs="24" :md="12">
+              <div class="label-title">Học kỳ:</div>
               <a-select
                 v-model:value="filter.semesterId"
                 placeholder="Chọn học kỳ"
@@ -182,6 +197,7 @@ onMounted(() => {
               </a-select>
             </a-col>
             <a-col :xs="24" :md="12">
+              <div class="label-title">Nhóm xưởng:</div>
               <a-select
                 v-model:value="filter.factoryId"
                 placeholder="Chọn xưởng"
@@ -234,11 +250,9 @@ onMounted(() => {
                   </a-tag>
                 </template>
                 <template v-else-if="column.dataIndex === 'planDateDescription'">
-                  {{
-                    record.planDateDescription
-                      ? record.planDateDescription
-                      : 'Buổi học này chưa có mô tả'
-                  }}
+                  <a-typography-link @click="handleShowDescription(record.description)"
+                    >Chi tiết</a-typography-link
+                  >
                 </template>
                 <template v-else-if="column.dataIndex === 'statusAttendance'">
                   <a-badge

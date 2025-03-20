@@ -4,12 +4,12 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
-import udpm.hn.studentattendance.core.student.history_attendance.model.request.HistoryAttendanceRequest;
-import udpm.hn.studentattendance.core.student.history_attendance.model.response.HistoryAttendanceResponse;
+import udpm.hn.studentattendance.core.student.history_attendance.model.request.Student_HistoryAttendanceRequest;
+import udpm.hn.studentattendance.core.student.history_attendance.model.response.Student_HistoryAttendanceResponse;
 import udpm.hn.studentattendance.repositories.FactoryRepository;
 
 @Repository
-public interface HistoryAttendanceExtendRepository extends FactoryRepository {
+public interface Student_HistoryAttendanceExtendRepository extends FactoryRepository {
 
     @Query(
             value = """
@@ -79,9 +79,9 @@ public interface HistoryAttendanceExtendRepository extends FactoryRepository {
                     """,
             nativeQuery = true
     )
-    Page<HistoryAttendanceResponse> getAllFactoryAttendance(
+    Page<Student_HistoryAttendanceResponse> getAllFactoryAttendance(
             String userStudentId,
             Pageable pageable,
-            HistoryAttendanceRequest attendanceRequest
+            Student_HistoryAttendanceRequest attendanceRequest
     );
 }

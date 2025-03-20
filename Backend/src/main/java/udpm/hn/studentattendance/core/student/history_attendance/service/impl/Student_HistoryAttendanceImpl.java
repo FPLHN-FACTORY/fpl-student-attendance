@@ -6,11 +6,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
-import udpm.hn.studentattendance.core.student.history_attendance.model.request.HistoryAttendanceRequest;
-import udpm.hn.studentattendance.core.student.history_attendance.repository.HistoryAttendanceExtendRepository;
-import udpm.hn.studentattendance.core.student.history_attendance.repository.HistoryAttendanceFactoryExtendRepository;
-import udpm.hn.studentattendance.core.student.history_attendance.repository.HistoryAttendanceSemesterExtendRepository;
-import udpm.hn.studentattendance.core.student.history_attendance.service.HistoryAttendanceService;
+import udpm.hn.studentattendance.core.student.history_attendance.model.request.Student_HistoryAttendanceRequest;
+import udpm.hn.studentattendance.core.student.history_attendance.repository.Student_HistoryAttendanceExtendRepository;
+import udpm.hn.studentattendance.core.student.history_attendance.repository.Student_HistoryAttendanceFactoryExtendRepository;
+import udpm.hn.studentattendance.core.student.history_attendance.repository.Student_HistoryAttendanceSemesterExtendRepository;
+import udpm.hn.studentattendance.core.student.history_attendance.service.Student_HistoryAttendanceService;
 import udpm.hn.studentattendance.entities.Factory;
 import udpm.hn.studentattendance.entities.Semester;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
@@ -25,17 +25,17 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 @Validated
-public class HistoryAttendanceImpl implements HistoryAttendanceService {
-    private final HistoryAttendanceExtendRepository historyAttendanceExtendRepository;
+public class Student_HistoryAttendanceImpl implements Student_HistoryAttendanceService {
+    private final Student_HistoryAttendanceExtendRepository historyAttendanceExtendRepository;
 
     private final SessionHelper sessionHelper;
 
-    private final HistoryAttendanceSemesterExtendRepository historyAttendanceSemesterExtendRepository;
+    private final Student_HistoryAttendanceSemesterExtendRepository historyAttendanceSemesterExtendRepository;
 
-    private final HistoryAttendanceFactoryExtendRepository historyAttendanceFactoryExtendRepository;
+    private final Student_HistoryAttendanceFactoryExtendRepository historyAttendanceFactoryExtendRepository;
 
     @Override
-    public ResponseEntity<?> getAllHistoryAttendanceByStudent(HistoryAttendanceRequest historyAttendanceRequest) {
+    public ResponseEntity<?> getAllHistoryAttendanceByStudent(Student_HistoryAttendanceRequest historyAttendanceRequest) {
         Pageable pageable = PaginationHelper.createPageable(historyAttendanceRequest, "createdAt");
         PageableObject list = PageableObject.of(historyAttendanceExtendRepository.getAllFactoryAttendance(sessionHelper.getCurrentUser().getId(), pageable, historyAttendanceRequest));
         return new ResponseEntity<>(

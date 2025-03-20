@@ -6,11 +6,10 @@ import udpm.hn.studentattendance.entities.Semester;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.repositories.SemesterRepository;
 
-import javax.swing.text.html.parser.Entity;
 import java.util.List;
 
 @Repository
-public interface HistoryAttendanceSemesterExtendRepository extends SemesterRepository {
+public interface Student_HistoryAttendanceSemesterExtendRepository extends SemesterRepository {
     @Query(
             value =
                     """
