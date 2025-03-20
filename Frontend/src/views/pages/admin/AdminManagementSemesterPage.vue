@@ -283,6 +283,7 @@ onMounted(() => {
           <!-- Hàng 1: Input tìm kiếm & Select trạng thái -->
           <a-row :gutter="16" class="filter-container">
             <a-col :span="12" class="col">
+              <div class="label-title">Tìm kiếm mã học kỳ :</div>
               <a-input
                 v-model:value="filter.semesterCode"
                 placeholder="Tìm kiếm theo mã học kỳ"
@@ -291,6 +292,7 @@ onMounted(() => {
               />
             </a-col>
             <a-col :span="12" class="col">
+              <div class="label-title">Trạng thái :</div>
               <a-select
                 v-model:value="filter.status"
                 placeholder="Chọn trạng thái"
@@ -307,6 +309,7 @@ onMounted(() => {
           <!-- Hàng 2: RangePicker để chọn khoảng ngày -->
           <a-row :gutter="16" class="filter-container second-row mt-3">
             <a-col :span="24" class="col">
+              <div class="label-title">Tìm kiếm theo khoảng ngày :</div>
               <a-range-picker
                 v-model:value="filter.dateRange"
                 placeholder="Chọn khoảng ngày bắt đầu và kết thúc"

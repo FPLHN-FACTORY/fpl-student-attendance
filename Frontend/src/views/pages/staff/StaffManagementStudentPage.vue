@@ -1,38 +1,39 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { message, Modal } from 'ant-design-vue'
-import {
-  PlusOutlined,
-  EditOutlined,
-  SwapOutlined,
-  EyeOutlined,
-  EditFilled,
-  EyeFilled,
-  SyncOutlined,
-  FilterFilled,
-  UnorderedListOutlined,
-} from '@ant-design/icons-vue'
+import router from '@/router'
 import requestAPI from '@/services/requestApiService'
 import { API_ROUTES_STAFF } from '@/constants/staffConstant'
 import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
+import {
+  PlusOutlined,
+  EyeOutlined,
+  EditOutlined,
+  SyncOutlined,
+  EyeFilled,
+  EditFilled,
+  UnorderedListOutlined,
+  FilterFilled,
+} from '@ant-design/icons-vue'
 import { ROUTE_NAMES } from '@/router/staffRoute'
-import { DEFAULT_PAGINATION } from '@/constants/paginationConstant'
+import { DEFAULT_PAGINATION } from '@/constants'
 import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
+import useLoadingStore from '@/stores/useLoadingStore'
 
 const breadcrumbStore = useBreadcrumbStore()
-const isLoading = ref(false)
+const loadingStore = useLoadingStore()
+
+/* ----------------- Data & Reactive Variables ----------------- */
 // Danh sách sinh viên
 const students = ref([])
 
-// Biến lọc: backend mong đợi searchQuery, studentStatus, page và pageSize
+// Filter: backend mong đợi searchQuery, studentStatus, page và pageSize
 const filter = reactive({
   searchQuery: '',
   studentStatus: '',
-  page: 1,
-  pageSize: 5,
 })
 
-// Dữ liệu phân trang
+// Dữ liệu phân trang, sử dụng cấu trúc từ DEFAULT_PAGINATION
 const pagination = reactive({
   ...DEFAULT_PAGINATION,
 })
@@ -42,7 +43,7 @@ const modalAdd = ref(false)
 const modalUpdate = ref(false)
 const modalDetail = ref(false)
 
-// Dữ liệu thêm mới sinh viên (StudentCreateUpdateRequest: code, name, email)
+// Dữ liệu thêm mới sinh viên
 const newStudent = reactive({
   code: '',
   name: '',
@@ -77,14 +78,28 @@ const breadcrumb = ref([
     breadcrumbName: 'Sinh viên',
   },
 ])
-// Hàm lấy danh sách sinh viên từ backend
+
+/* ----------------- Methods ----------------- */
+// Lấy danh sách sinh viên từ backend, truyền phân trang động
 const fetchStudents = () => {
+  loadingStore.show()
   requestAPI
-    .get(API_ROUTES_STAFF.FETCH_DATA_STUDENT, { params: filter })
+    .get(API_ROUTES_STAFF.FETCH_DATA_STUDENT, {
+      params: {
+        ...filter,
+        page: pagination.current,
+        size: pagination.pageSize,
+      },
+    })
     .then((response) => {
       students.value = response.data.data.data
-      pagination.total = response.data.data.totalPages * filter.pageSize
-      pagination.current = filter.page
+      // Tính tổng số bản ghi: nếu có totalRecords thì dùng luôn, nếu không nhân totalPages với pageSize
+      if (response.data.data.totalRecords !== undefined) {
+        pagination.total = response.data.data.totalRecords
+      } else {
+        pagination.total = response.data.data.totalPages * pagination.pageSize
+      }
+      // Đồng bộ current nếu cần (ở đây giữ nguyên giá trị của filter hoặc pagination)
     })
     .catch((error) => {
       message.error(
@@ -92,12 +107,19 @@ const fetchStudents = () => {
           'Lỗi khi lấy danh sách sinh viên'
       )
     })
+    .finally(() => {
+      loadingStore.hide()
+    })
 }
 
-// Sự kiện thay đổi trang bảng
-const handleTableChange = (page) => {
-  pagination.page = page.current
-  pagination.pageSize = page.pageSize
+// Sự kiện thay đổi trang bảng: cập nhật pagination rồi gọi lại API
+const handleTableChange = (pageInfo) => {
+  // Cập nhật current và pageSize
+  pagination.current = pageInfo.current
+  pagination.pageSize = pageInfo.pageSize
+  // Nếu muốn đồng bộ với filter, bạn có thể cập nhật:
+  filter.page = pageInfo.current
+  filter.pageSize = pageInfo.pageSize
   fetchStudents()
 }
 
@@ -107,6 +129,7 @@ const handleAddStudent = () => {
     message.error('Vui lòng nhập đầy đủ thông tin')
     return
   }
+  loadingStore.show()
   requestAPI
     .post(API_ROUTES_STAFF.FETCH_DATA_STUDENT, newStudent)
     .then(() => {
@@ -121,10 +144,14 @@ const handleAddStudent = () => {
           'Lỗi khi thêm sinh viên'
       )
     })
+    .finally(() => {
+      loadingStore.hide()
+    })
 }
 
 // Hàm mở modal cập nhật và load chi tiết sinh viên
 const handleUpdateStudent = (record) => {
+  loadingStore.show()
   requestAPI
     .get(`${API_ROUTES_STAFF.FETCH_DATA_STUDENT}/${record.studentId}`)
     .then((response) => {
@@ -141,10 +168,14 @@ const handleUpdateStudent = (record) => {
           'Lỗi khi lấy chi tiết sinh viên'
       )
     })
+    .finally(() => {
+      loadingStore.hide()
+    })
 }
 
 // Hàm hiển thị chi tiết sinh viên (không chuyển router)
 const handleDetailStudent = (record) => {
+  loadingStore.show()
   requestAPI
     .get(`${API_ROUTES_STAFF.FETCH_DATA_STUDENT}/${record.studentId}`)
     .then((response) => {
@@ -161,6 +192,9 @@ const handleDetailStudent = (record) => {
           'Lỗi khi lấy chi tiết sinh viên'
       )
     })
+    .finally(() => {
+      loadingStore.hide()
+    })
 }
 
 // Hàm submit cập nhật sinh viên
@@ -169,6 +203,7 @@ const updateStudent = () => {
     message.error('Vui lòng nhập đầy đủ thông tin')
     return
   }
+  loadingStore.show()
   requestAPI
     .put(API_ROUTES_STAFF.FETCH_DATA_STUDENT, detailStudent)
     .then(() => {
@@ -182,6 +217,9 @@ const updateStudent = () => {
           'Lỗi khi cập nhật sinh viên'
       )
     })
+    .finally(() => {
+      loadingStore.hide()
+    })
 }
 
 // Hàm đổi trạng thái sinh viên
@@ -190,6 +228,7 @@ const handleChangeStatusStudent = (record) => {
     title: 'Xác nhận thay đổi trạng thái',
     content: `Bạn có chắc chắn muốn đổi trạng thái cho sinh viên ${record.studentName}?`,
     onOk: () => {
+      loadingStore.show()
       requestAPI
         .put(`${API_ROUTES_STAFF.FETCH_DATA_STUDENT}/status/${record.studentId}`)
         .then(() => {
@@ -201,6 +240,9 @@ const handleChangeStatusStudent = (record) => {
             (error.response && error.response.data && error.response.data.message) ||
               'Lỗi khi đổi trạng thái sinh viên'
           )
+        })
+        .finally(() => {
+          loadingStore.hide()
         })
     },
   })
@@ -218,6 +260,7 @@ onMounted(() => {
 })
 </script>
 
+
 <template>
   <div class="container-fluid">
     <!-- Bộ lọc tìm kiếm -->
@@ -227,7 +270,9 @@ onMounted(() => {
           <template #title> <FilterFilled /> Bộ lọc </template>
           <a-row :gutter="16" class="filter-container">
             <!-- Input tìm kiếm theo mã, tên, email -->
+
             <a-col :span="12" class="col">
+              <div class="label-title">Tìm kiếm mã, tên, email:</div>
               <a-input
                 v-model:value="filter.searchQuery"
                 placeholder="Tìm kiếm theo mã, tên, email"
@@ -237,6 +282,7 @@ onMounted(() => {
             </a-col>
             <!-- Combobox trạng thái -->
             <a-col :span="12" class="col">
+              <div class="label-title">Trạng thái:</div>
               <a-select
                 v-model:value="filter.studentStatus"
                 placeholder="Chọn trạng thái"

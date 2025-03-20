@@ -72,8 +72,14 @@ public class AdminProjectManagementImpl implements AdminProjectManagementService
 
     @Override
     public ResponseObject<?> deleteProject(String idProject) {
-        repository.deleteById(idProject);
-        return new ResponseObject<>(null, HttpStatus.OK, "Xóa dự án thành công");
+        Project project = repository.findById(idProject).get();
+        if (project.getStatus() == EntityStatus.ACTIVE) {
+            project.setStatus(EntityStatus.INACTIVE);
+        } else {
+            project.setStatus(EntityStatus.ACTIVE);
+        }
+        repository.save(project);
+        return new ResponseObject<>(project, HttpStatus.OK, "Chuyển trạng thái thành công");
     }
 
     private Project convertProjectRequestToProject(ProjectCreateRequest request, Project project) {

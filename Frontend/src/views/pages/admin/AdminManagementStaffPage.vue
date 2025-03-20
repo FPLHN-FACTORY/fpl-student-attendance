@@ -339,6 +339,7 @@ onMounted(() => {
           <a-row :gutter="16" class="filter-container">
             <!-- Input tìm kiếm theo mã, tên, email -->
             <a-col :span="8" class="col">
+              <div class="label-title">Tìm kiếm theo mã, tên, email :</div>
               <a-input
                 v-model:value="filter.searchQuery"
                 placeholder="Tìm kiếm theo mã, tên, email"
@@ -348,6 +349,7 @@ onMounted(() => {
             </a-col>
             <!-- Combobox trạng thái -->
             <a-col :span="8" class="col">
+              <div class="label-title">Trạng thái :</div>
               <a-select
                 v-model:value="filter.status"
                 placeholder="Chọn trạng thái"
@@ -362,6 +364,7 @@ onMounted(() => {
             </a-col>
             <!-- Combobox cơ sở -->
             <a-col :span="8" class="col">
+              <div class="label-title">Cơ sở :</div>
               <a-select
                 v-model:value="filter.idFacility"
                 placeholder="Chọn cơ sở"

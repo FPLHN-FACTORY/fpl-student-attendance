@@ -6,7 +6,7 @@ import udpm.hn.studentattendance.infrastructure.common.PageableRequest;
 
 @Getter
 @Setter
-public class HistoryAttendanceRequest extends PageableRequest {
+public class Student_HistoryAttendanceRequest extends PageableRequest {
 
     private String studentFactoryId;
     private String factoryId;

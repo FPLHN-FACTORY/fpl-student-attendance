@@ -349,6 +349,7 @@ onMounted(() => {
           <template #title> <FilterFilled /> Bộ lọc </template>
           <div class="row g-2">
             <div class="col-md-6 col-sm-12">
+              <div class="label-title">Tìm kiếm tên xưởng, dự án, giảng viên:</div>
               <a-input
                 v-model:value="filter.searchQuery"
                 placeholder="Tên xưởng, dự án, bộ môn, giảng viên"
@@ -358,6 +359,7 @@ onMounted(() => {
               />
             </div>
             <div class="col-md-6 col-sm-12">
+              <div class="label-title">Trạng thái:</div>
               <a-select
                 v-model:value="filter.status"
                 placeholder="Chọn trạng thái"

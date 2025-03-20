@@ -56,8 +56,14 @@ public class Admin_LevelProjectManagementServiceImpl implements Admin_LevelProje
 
     @Override
     public ResponseObject<?> deleteLevelProject(String id) {
-        repository.deleteById(id);
-        return new ResponseObject<>(null, HttpStatus.OK, "Xóa cấp dự án thành công");
+        LevelProject lv = repository.findById(id).get();
+        if (lv.getStatus() == EntityStatus.ACTIVE) {
+            lv.setStatus(EntityStatus.INACTIVE);
+        } else {
+            lv.setStatus(EntityStatus.ACTIVE);
+        }
+        repository.save(lv);
+        return new ResponseObject<>(lv, HttpStatus.OK, "Chuyển trạng thái cấp dự án thành công");
     }
 
     private LevelProject convertAdd(Admin_LevelProjectCreateRequest request, LevelProject lv) {
