@@ -35,6 +35,6 @@ public class Attendance extends PrimaryEntity implements Serializable {
     private UserStudent userStudent;
 
     @Column(name = "attendance_status")
-    private AttendanceStatus attendanceStatus = AttendanceStatus.ABSENT;
+    private AttendanceStatus attendanceStatus = AttendanceStatus.NOTCHECKIN;
 
 }

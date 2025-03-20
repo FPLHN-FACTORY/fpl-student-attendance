@@ -43,3 +43,10 @@ export const ROLE = {
   TEACHER: 'TEACHER',
   STUDENT: 'STUDENT',
 }
+
+export const ATTENDANCE_STATUS = {
+  NOTCHECKIN: { id: 0, name: 'Chưa điểm danh' },
+  ABSENT: { id: 1, name: 'Vắng mặt' },
+  CHECKIN: { id: 2, name: 'Đã checkin' },
+  PRESENT: { id: 3, name: 'Có mặt' },
+}

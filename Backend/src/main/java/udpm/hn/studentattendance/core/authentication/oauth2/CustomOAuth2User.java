@@ -44,6 +44,12 @@ public class CustomOAuth2User extends AuthUser implements OAuth2User {
         return oauth2User.getAttribute("name");
     }
 
+    @Override
+    public String getCode() {
+        String[] split = getEmail().trim().split("@");
+        return split[0];
+    }
+
     public String getEmail() {
         return oauth2User.getAttribute("email");
     }

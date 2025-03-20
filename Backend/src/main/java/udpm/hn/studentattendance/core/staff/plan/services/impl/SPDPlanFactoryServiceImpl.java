@@ -89,21 +89,6 @@ public class SPDPlanFactoryServiceImpl implements SPDPlanFactoryService {
             return RouterHelper.responseError("Ca học không hợp lệ");
         }
 
-        long startDate = ShiftConstant.getShiftTimeStart(plan.getFromDate(), shift);
-        long endDate = ShiftConstant.getShiftTimeStart(plan.getToDate(), shift);
-
-        if (startDate < DateTimeUtils.getCurrentTimeMillis()) {
-            return RouterHelper.responseError("Ngày bắt đầu diễn ra phải lớn hơn hoặc bằng ngày hiện tại");
-        }
-
-        if (endDate < DateTimeUtils.getCurrentTimeMillis()) {
-            return RouterHelper.responseError("Ngày kết thúc diễn ra phải lớn hơn hoặc bằng ngày hiện tại");
-        }
-
-        if (startDate < DateTimeUtils.toStartOfDay(plan.getFromDate()) || startDate > DateTimeUtils.toEndOfDay(plan.getToDate())) {
-            return RouterHelper.responseError("Ngày học diễn ra phải trong khoảng từ " + DateTimeUtils.convertMillisToDate(plan.getFromDate()) + " đến " + DateTimeUtils.convertMillisToDate(plan.getToDate()));
-        }
-
         PlanFactory planFactory = spdPlanFactoryRepository.save(new PlanFactory(plan, factory));
 
         if (planFactory.getId() == null) {
@@ -112,25 +97,33 @@ public class SPDPlanFactoryServiceImpl implements SPDPlanFactoryService {
 
         List<PlanDate> lstPlanDate = new ArrayList<>();
 
-        LocalDate fromDate = DateTimeUtils.convertTimestampToLocalDate(startDate);
-        LocalDate toDate = DateTimeUtils.convertTimestampToLocalDate(endDate);
+        LocalDate fromDate = DateTimeUtils.convertTimestampToLocalDate(plan.getFromDate());
+        LocalDate toDate = DateTimeUtils.convertTimestampToLocalDate(plan.getToDate());
 
         LocalDate current = fromDate;
 
         while (!current.isAfter(toDate)) {
             DayOfWeek dayOfWeek = current.getDayOfWeek();
+            Long date = ShiftConstant.getShiftTimeStart(current, shift);
+            current = current.plusDays(1);
+
             if (request.getDays().contains(dayOfWeek.getValue())) {
-                Long date = ShiftConstant.getShiftTimeStart(current, shift);
+                if (date < DateTimeUtils.getCurrentTimeMillis()) {
+                    continue;
+                }
+                if (date < DateTimeUtils.getCurrentTimeMillis()) {
+                    continue;
+                }
 
                 if (date < DateTimeUtils.getCurrentTimeMillis()) {
                     continue;
                 }
 
                 if (spdPlanDateRepository.isExistsShiftInFactory(planFactory.getId(), null, date, request.getShift())) {
-                    return RouterHelper.responseError("Đã tồn tại ca " + request.getShift() + " trong ngày " + DateTimeUtils.convertMillisToDate(startDate));
+                    return RouterHelper.responseError("Đã tồn tại ca " + request.getShift() + " trong ngày " + DateTimeUtils.convertMillisToDate(date));
                 }
                 if (spdPlanDateRepository.isExistsTeacherOnShift(factory.getUserStaff().getId(), date, request.getShift())) {
-                    return RouterHelper.responseError("Giảng viên " + factory.getUserStaff().getName() + " - " + factory.getUserStaff().getCode() + " đã đứng lớp tại ca " + request.getShift() + " trong ngày " + DateTimeUtils.convertMillisToDate(startDate));
+                    return RouterHelper.responseError("Giảng viên " + factory.getUserStaff().getName() + " - " + factory.getUserStaff().getCode() + " đã đứng lớp tại ca " + request.getShift() + " trong ngày " + DateTimeUtils.convertMillisToDate(date));
                 }
                 PlanDate planDate = new PlanDate();
                 planDate.setPlanFactory(planFactory);
@@ -140,7 +133,6 @@ public class SPDPlanFactoryServiceImpl implements SPDPlanFactoryService {
                 planDate.setLateArrival(request.getLateArrival());
                 lstPlanDate.add(planDate);
             }
-            current = current.plusDays(1);
         }
 
         if (lstPlanDate.isEmpty()) {

@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch } from 'vue'
+import { onMounted, ref, watch } from 'vue'
 import {
   MenuUnfoldOutlined,
   MenuFoldOutlined,
@@ -29,6 +29,12 @@ const handleLogout = () => {
 const handleSwitchRole = () => {
   router.push({ name: GLOBAL_ROUTE_NAMES.SWITCH_ROLE })
 }
+
+onMounted(() => {
+  if (!authStore.user?.facilityID) {
+    return router.push({ name: GLOBAL_ROUTE_NAMES.STUDENT_REGISTER_PAGE })
+  }
+})
 </script>
 
 <template>

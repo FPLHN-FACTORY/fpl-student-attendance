@@ -40,6 +40,9 @@ public class UserStudent extends PrimaryEntity implements Serializable {
     @Column(name = "image", length = EntityProperties.LENGTH_TEXT)
     private String image;
 
+    @Column(name = "face_embedding", length = EntityProperties.LENGTH_TEXT)
+    private String faceEmbedding;
+
     @ManyToOne
     @JsonIgnore
     @JoinColumn(name = "id_facility")
