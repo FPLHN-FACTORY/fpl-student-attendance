@@ -58,9 +58,13 @@ public class Staff_ProjectManagementImpl implements Staff_ProjectManagementServi
     @Override
     public ResponseObject<?> updateProject(String idProject, Staff_ProjectUpdateRequest request) {
         Project project = staffProjectManagementRepository.findById(idProject).get();
-        project = convertProjectUpdateRequestToProject(request, project);
+        if (project.getStatus() == EntityStatus.ACTIVE) {
+            project.setStatus(EntityStatus.INACTIVE);
+        } else {
+            project.setStatus(EntityStatus.ACTIVE);
+        }
         staffProjectManagementRepository.save(project);
-        return new ResponseObject<>(project, HttpStatus.OK, "Sửa dự án thành công");
+        return new ResponseObject<>(project, HttpStatus.OK, "Chuyển trạng thái thành công");
     }
 
     @Override
@@ -72,8 +76,14 @@ public class Staff_ProjectManagementImpl implements Staff_ProjectManagementServi
 
     @Override
     public ResponseObject<?> deleteProject(String idProject) {
-        staffProjectManagementRepository.deleteById(idProject);
-        return new ResponseObject<>(null, HttpStatus.OK, "Xóa dự án thành công");
+        Project project = staffProjectManagementRepository.findById(idProject).get();
+        if (project.getStatus() == EntityStatus.ACTIVE) {
+            project.setStatus(EntityStatus.INACTIVE);
+        } else {
+            project.setStatus(EntityStatus.ACTIVE);
+        }
+        staffProjectManagementRepository.save(project);
+        return new ResponseObject<>(project, HttpStatus.OK, "Chuyển trạng thái thành công");
     }
 
     private Project convertProjectRequestToProject(Staff_ProjectCreateRequest request, Project project) {
@@ -92,11 +102,11 @@ public class Staff_ProjectManagementImpl implements Staff_ProjectManagementServi
         project.setLevelProject(levelProjectRepository.findById(request.getIdLevelProject()).get());
         project.setSemester(semesterRepository.findById(request.getIdSemester()).get());
         project.setSubjectFacility(subjectFacilityRepository.findById(request.getIdSubject()).get());
-        if (request.getStatus().equals("ACTIVE")) {
-            project.setStatus(EntityStatus.ACTIVE);
-        } else {
-            project.setStatus(EntityStatus.INACTIVE);
-        }
+//        if (request.getStatus().equals("ACTIVE")) {
+//            project.setStatus(EntityStatus.ACTIVE);
+//        } else {
+//            project.setStatus(EntityStatus.INACTIVE);
+//        }
         return project;
     }
 }

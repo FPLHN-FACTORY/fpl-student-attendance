@@ -19,6 +19,4 @@ public class Staff_ProjectUpdateRequest {
 
     private String idSubject;
 
-    private String status;
-
 }

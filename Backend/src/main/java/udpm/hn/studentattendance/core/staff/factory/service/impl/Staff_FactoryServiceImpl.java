@@ -122,7 +122,7 @@ public class Staff_FactoryServiceImpl implements Staff_FactoryService {
     public ResponseEntity<?> createFactory(Staff_FactoryCreateUpdateRequest factoryCreateUpdateRequest) {
         Optional<UserStaff> userStaff = staffFactoryExtendRepository.findById(factoryCreateUpdateRequest.getIdUserStaff());
         Optional<Project> project = projectFactoryExtendRepository.findById(factoryCreateUpdateRequest.getIdProject());
-        if (userStaff.isEmpty()){
+        if (userStaff.isEmpty()) {
             return new ResponseEntity<>(
                     new ApiResponse(
                             RestApiStatus.ERROR,
@@ -131,7 +131,7 @@ public class Staff_FactoryServiceImpl implements Staff_FactoryService {
                     ),
                     HttpStatus.BAD_REQUEST);
         }
-        if (project.isEmpty()){
+        if (project.isEmpty()) {
             return new ResponseEntity<>(
                     new ApiResponse(
                             RestApiStatus.ERROR,
@@ -140,7 +140,7 @@ public class Staff_FactoryServiceImpl implements Staff_FactoryService {
                     ),
                     HttpStatus.BAD_REQUEST);
         }
-        if (factoryRepository.isExistNameAndProject(factoryCreateUpdateRequest.getFactoryName(), project.get().getId())){
+        if (factoryRepository.isExistNameAndProject(factoryCreateUpdateRequest.getFactoryName(), project.get().getId())) {
             return new ResponseEntity<>(
                     new ApiResponse(
                             RestApiStatus.ERROR,
@@ -177,7 +177,7 @@ public class Staff_FactoryServiceImpl implements Staff_FactoryService {
         if (existFactory.isPresent()) {
             Factory factory = existFactory.get();
             factory.setName(factoryCreateUpdateRequest.getFactoryName());
-            factory.setDescription(factory.getDescription());
+            factory.setDescription(factoryCreateUpdateRequest.getFactoryDescription());
             factory.setUserStaff(userStaff.get());
             factory.setProject(project.get());
             factoryRepository.save(factory);
