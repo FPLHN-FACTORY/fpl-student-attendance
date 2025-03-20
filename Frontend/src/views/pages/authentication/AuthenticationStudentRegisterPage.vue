@@ -254,7 +254,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <a-modal v-model:open="isShowCamera" title="Đăng ký khuôn mặt" @cancel="stopVideo" :footer="null">
+  <a-modal v-model:open="isShowCamera" title="Checkin khuôn mặt" @cancel="stopVideo" :footer="null">
     <div class="video-container">
       <canvas ref="canvas"></canvas>
       <video ref="video" autoplay muted></video>
