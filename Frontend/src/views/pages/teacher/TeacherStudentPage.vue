@@ -1,99 +1,36 @@
-<template>
-  <div>
-    <h1>Quản lý nhóm xưởng</h1>
-    <!-- Bộ lọc tìm kiếm -->
-    <a-card title="Bộ lọc tìm kiếm" :bordered="false" class="cart">
-      <a-row gutter="16" class="filter-container">
-        <a-col :span="12">
-          <div class="form-group">
-            <label class="form-label">Tên nhóm xưởng</label>
-            <a-input
-              v-model:value="filter.factoryName"
-              placeholder="Nhập tên nhóm xưởng"
-              allowClear
-              @change="fetchFactoryByTeacher"
-            />
-          </div>
-        </a-col>
-        <a-col :span="12">
-          <div class="form-group">
-            <label class="form-label">Tên dự án</label>
-            <a-select
-              v-model:value="filter.projectName"
-              placeholder="Chọn dự án"
-              allowClear
-              style="width: 100%"
-              @change="fetchProjectByFacility"
-            >
-              <a-select-option :value="''">Tất cả dự án</a-select-option>
-              <a-select-option v-for="item in projects" :key="item.id" :value="item.name">
-                {{ item.name }}
-              </a-select-option>
-            </a-select>
-          </div>
-        </a-col>
-      </a-row>
-    </a-card>
-
-    <!-- Danh sách nhóm xưởng -->
-    <a-card title="Danh sách nhóm xưởng" :bordered="false" class="cart">
-      <a-table
-        :dataSource="factories"
-        :columns="columns"
-        rowKey="factoryId"
-        bordered
-        :pagination="pagination"
-        @change="handleTableChange"
-      >
-        <template #bodyCell="{ column, record, index }">
-          <template v-if="column.dataIndex">
-            <template v-if="column.dataIndex === 'rowNumber'">
-              {{ index + 1 }}
-            </template>
-            <template v-else-if="column.dataIndex === 'factoryStatus'">
-              <a-tag
-                :color="
-                  record.factoryStatus === 'ACTIVE' || record.factoryStatus === 1 ? 'green' : 'red'
-                "
-              >
-                {{
-                  record.factoryStatus === 'ACTIVE' || record.factoryStatus === 1
-                    ? 'Hoạt động'
-                    : 'Không hoạt động'
-                }}
-              </a-tag>
-            </template>
-            <template v-else>
-              {{ record[column.dataIndex] }}
-            </template>
-          </template>
-          <template v-else-if="column.key === 'actions'">
-            <a-space>
-              <!-- Nút Chi tiết: chuyển sang trang quản lý sinh viên của nhóm xưởng -->
-              <a-tooltip title="Quản lý sinh viên nhóm xưởng">
-                <a-button type="text" class="action-button" @click="handleDetailFactory(record)">
-                  <EyeOutlined />
-                </a-button>
-              </a-tooltip>
-            </a-space>
-          </template>
-        </template>
-      </a-table>
-    </a-card>
-  </div>
-</template>
-
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { message } from 'ant-design-vue'
 import { useRouter } from 'vue-router'
 import requestAPI from '@/services/requestApiService'
 import { API_ROUTES_TEACHER } from '@/constants/teacherConstant'
-import { PlusOutlined, EyeOutlined, EditOutlined, SyncOutlined } from '@ant-design/icons-vue'
+import {
+  PlusOutlined,
+  EyeOutlined,
+  EditOutlined,
+  SyncOutlined,
+  EyeFilled,
+  FilterFilled,
+  UnorderedListOutlined,
+} from '@ant-design/icons-vue'
 import { ROUTE_NAMES } from '@/router/teacherRoute'
-
+import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
+import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
+import { DEFAULT_PAGINATION } from '@/constants/paginationConstant'
 const router = useRouter()
 
+const breadcrumbStore = useBreadcrumbStore()
+
+const breadcrumb = ref([
+  {
+    name: GLOBAL_ROUTE_NAMES.TEACHER_PAGE,
+    breadcrumbName: 'Giảng viên',
+  },
+  {
+    name: ROUTE_NAMES.MANAGEMENT_STUDENT,
+    breadcrumbName: 'Nhóm xưởng',
+  },
+])
 // Danh sách nhóm xưởng
 const factories = ref([])
 // Danh sách dự án, giảng viên (để hiển thị trong combobox filter)
@@ -102,20 +39,17 @@ const projects = ref([])
 // Filter & phân trang
 const filter = reactive({
   factoryName: '',
-  projectName: '',
+  projectId: '',
   page: 1,
   pageSize: 5,
 })
 const pagination = reactive({
-  current: 1,
-  pageSize: 5,
-  total: 0,
-  showSizeChanger: false,
+  ...DEFAULT_PAGINATION,
 })
 
 // Column configuration
 const columns = ref([
-  { title: 'STT', dataIndex: 'rowNumber', key: 'rowNumber', width: 50 },
+  { title: '#', dataIndex: 'rowNumber', key: 'rowNumber', width: 50 },
   { title: 'Tên nhóm xưởng', dataIndex: 'factoryName', key: 'factoryName', width: 150 },
   { title: 'Tên dự án', dataIndex: 'projectName', key: 'projectName', width: 300 },
   { title: 'Mô tả', dataIndex: 'factoryDescription', key: 'factoryDescription', width: 300 },
@@ -154,8 +88,9 @@ const fetchProjectByFacility = () => {
 }
 
 // Xử lý phân trang
-const handleTableChange = (paginationData) => {
-  filter.page = paginationData.current
+const handleTableChange = (page) => {
+  pagination.page = page.current
+  pagination.pageSize = page.pageSize
   fetchFactoryByTeacher()
 }
 
@@ -172,30 +107,109 @@ const handleDetailFactory = (record) => {
 }
 
 onMounted(() => {
+  breadcrumbStore.setRoutes(breadcrumb.value)
   fetchFactoryByTeacher()
   fetchProjectByFacility()
 })
 </script>
 
-<style scoped>
-.cart {
-  margin-top: 10px;
-}
-.filter-container {
-  margin-bottom: 10px;
-}
-.form-group {
-  margin-bottom: 12px;
-}
-.form-label {
-  display: block;
-  margin-bottom: 4px;
-  font-weight: 500;
-}
-.action-button {
-  background-color: #fff7e6;
-  color: black;
-  border: 1px solid #ffa940;
-  margin-right: 8px;
-}
-</style>
+
+<template>
+  <div class="container-fluid">
+    <!-- Bộ lọc tìm kiếm -->
+    <div class="row g-3">
+      <div class="col-12">
+        <a-card :bordered="false" class="cart mb-3">
+          <template #title> <FilterFilled /> Bộ lọc tìm kiếm </template>
+          <a-row :gutter="16" class="filter-container">
+            <a-col :span="12" class="col">
+              <div class="form-group">
+                <label class="form-label">Tên nhóm xưởng</label>
+                <a-input
+                  v-model:value="filter.factoryName"
+                  placeholder="Nhập tên nhóm xưởng"
+                  allowClear
+                  @change="fetchFactoryByTeacher"
+                />
+              </div>
+            </a-col>
+            <a-col :span="12" class="col">
+              <div class="form-group">
+                <label class="form-label">Tên dự án</label>
+                <a-select
+                  v-model:value="filter.projectId"
+                  placeholder="Chọn dự án"
+                  allowClear
+                  style="width: 100%"
+                  @change="fetchFactoryByTeacher"
+                >
+                  <a-select-option :value="''">Tất cả dự án</a-select-option>
+                  <a-select-option v-for="item in projects" :key="item.id" :value="item.id">
+                    {{ item.name }}
+                  </a-select-option>
+                </a-select>
+              </div>
+            </a-col>
+          </a-row>
+        </a-card>
+      </div>
+    </div>
+
+    <!-- Danh sách nhóm xưởng -->
+    <div class="row g-3">
+      <div class="col-12">
+        <a-card :bordered="false" class="cart">
+          <template #title> <UnorderedListOutlined /> Danh sách nhóm xưởng </template>
+          <a-table
+            :loading="isLoading"
+            :dataSource="factories"
+            :columns="columns"
+            rowKey="factoryId"
+            :pagination="pagination"
+            :scroll="{ y: 500, x: 'auto' }"
+            @change="handleTableChange"
+          >
+            <template #bodyCell="{ column, record, index }">
+              <template v-if="column.dataIndex">
+                <template v-if="column.dataIndex === 'rowNumber'">
+                  {{ index + 1 }}
+                </template>
+                <template v-else-if="column.dataIndex === 'factoryStatus'">
+                  <a-tag
+                    :color="
+                      record.factoryStatus === 'ACTIVE' || record.factoryStatus === 1
+                        ? 'green'
+                        : 'red'
+                    "
+                  >
+                    {{
+                      record.factoryStatus === 'ACTIVE' || record.factoryStatus === 1
+                        ? 'Hoạt động'
+                        : 'Không hoạt động'
+                    }}
+                  </a-tag>
+                </template>
+                <template v-else>
+                  {{ record[column.dataIndex] }}
+                </template>
+              </template>
+              <template v-else-if="column.key === 'actions'">
+                <a-space>
+                  <a-tooltip title="Quản lý sinh viên nhóm xưởng">
+                    <a-button
+                      type="text"
+                      class="btn-outline-primary"
+                      @click="handleDetailFactory(record)"
+                    >
+                      <EyeFilled />
+                    </a-button>
+                  </a-tooltip>
+                </a-space>
+              </template>
+            </template>
+          </a-table>
+        </a-card>
+      </div>
+    </div>
+  </div>
+</template>

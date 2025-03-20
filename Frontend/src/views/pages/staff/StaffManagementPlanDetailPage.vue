@@ -324,7 +324,7 @@ watch(
   () => {
     handleSubmitFilter()
   },
-  { deep: true },
+  { deep: true }
 )
 </script>
 
@@ -506,7 +506,10 @@ watch(
                 </template>
                 <template v-if="column.dataIndex === 'startDate'">
                   {{
-                    `${dayOfWeek(record.startDate)} - ${formatDate(record.startDate, DEFAULT_DATE_FORMAT + ' HH:mm')}`
+                    `${dayOfWeek(record.startDate)} - ${formatDate(
+                      record.startDate,
+                      DEFAULT_DATE_FORMAT + ' HH:mm'
+                    )}`
                   }}
                 </template>
                 <template v-if="column.dataIndex === 'shift'">

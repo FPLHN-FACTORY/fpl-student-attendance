@@ -39,71 +39,79 @@ public interface Admin_StaffRoleRepository extends RoleRepository {
 
     @Query(
             value = """
-            SELECT 
-                   r.id AS idRole,
-                   r.code AS roleCode,
-                   f.name AS facilityName,
-                   CASE
-                       WHEN r.id IN (
-                            SELECT role.id 
-                            FROM UserStaff s JOIN s.roles role
-                            WHERE s.id = :#{#adStaffRoleRequest.staffId} 
-                              AND s.status = :statusRole
-                       )
-                       THEN 'true'
-                       ELSE 'false'
-                   END as checked
-            FROM Role r
-            JOIN Facility f ON f.id = r.facility.id 
-            WHERE r.status = :statusRole
-              AND f.status = :statusFacility
-              AND (
-                    :#{#adStaffRoleRequest.roleCode} IS NULL
-                 OR :#{#adStaffRoleRequest.roleCode} = ''
-                 OR cast(r.code as string) LIKE CONCAT('%', :#{#adStaffRoleRequest.roleCode}, '%')
-              )
-              AND (
-                    :#{#adStaffRoleRequest.idFacility} IS NULL
-                 OR TRIM(:#{#adStaffRoleRequest.idFacility}) = ''
-                 OR f.id = TRIM(:#{#adStaffRoleRequest.idFacility})
-              )
-            ORDER BY r.updatedAt DESC
-            """,
+                    SELECT 
+                           r.id AS idRole,
+                           r.code AS roleCode,
+                           f.name AS facilityName,
+                           CASE
+                               WHEN r.id IN (
+                                    SELECT role.id 
+                                    FROM UserStaff s JOIN s.roles role
+                                    WHERE s.id = :#{#adStaffRoleRequest.staffId} 
+                                      AND s.status = :statusRole
+                               )
+                               THEN 'true'
+                               ELSE 'false'
+                           END as checked
+                    FROM Role r
+                    JOIN Facility f ON f.id = r.facility.id 
+                    WHERE r.status = :statusRole
+                      AND f.status = :statusFacility
+                      AND (
+                            :#{#adStaffRoleRequest.roleCode} IS NULL
+                         OR :#{#adStaffRoleRequest.roleCode} = ''
+                         OR cast(r.code as string) LIKE CONCAT('%', :#{#adStaffRoleRequest.roleCode}, '%')
+                      )
+                      AND (
+                            :#{#adStaffRoleRequest.idFacility} IS NULL
+                         OR TRIM(:#{#adStaffRoleRequest.idFacility}) = ''
+                         OR f.id = TRIM(:#{#adStaffRoleRequest.idFacility})
+                      )
+                    ORDER BY r.updatedAt DESC
+                    """,
             countQuery = """
-             SELECT COUNT(r)
-             FROM Role r
-             JOIN Facility f ON f.id = r.facility.id 
-             WHERE r.status = :statusRole
-              AND f.status = :statusFacility
-               AND (
-                    :#{#adStaffRoleRequest.roleCode} IS NULL
-                 OR :#{#adStaffRoleRequest.roleCode} = ''
-                 OR cast(r.code as string) LIKE CONCAT('%', :#{#adStaffRoleRequest.roleCode}, '%')
-               )
-               AND (
-                    :#{#adStaffRoleRequest.idFacility} IS NULL
-                 OR TRIM(:#{#adStaffRoleRequest.idFacility}) = ''
-                 OR f.id = TRIM(:#{#adStaffRoleRequest.idFacility})
-               )
-             ORDER BY r.updatedAt DESC
-            """
+                     SELECT COUNT(r)
+                     FROM Role r
+                     JOIN Facility f ON f.id = r.facility.id 
+                     WHERE r.status = :statusRole
+                      AND f.status = :statusFacility
+                       AND (
+                            :#{#adStaffRoleRequest.roleCode} IS NULL
+                         OR :#{#adStaffRoleRequest.roleCode} = ''
+                         OR cast(r.code as string) LIKE CONCAT('%', :#{#adStaffRoleRequest.roleCode}, '%')
+                       )
+                       AND (
+                            :#{#adStaffRoleRequest.idFacility} IS NULL
+                         OR TRIM(:#{#adStaffRoleRequest.idFacility}) = ''
+                         OR f.id = TRIM(:#{#adStaffRoleRequest.idFacility})
+                       )
+                     ORDER BY r.updatedAt DESC
+                    """
     )
     Page<Admin_CheckStaffRoleResponse> getRolesChecked(Pageable pageable, Admin_StaffRoleRequest adStaffRoleRequest, EntityStatus statusRole, EntityStatus statusFacility);
 
 
     @Query("""
-    SELECT 
-    r
-    FROM Role r
-    LEFT JOIN UserStaff us on r.userStaff.id = us.id
-    WHERE 
-    r.code = :roleCode
-    AND us.id= :staffId
-    
-""")
+                SELECT 
+                r
+                FROM Role r
+                LEFT JOIN UserStaff us on r.userStaff.id = us.id
+                WHERE 
+                r.code = :roleCode
+                AND us.id= :staffId
+                
+            """)
     List<Role> findAllByCodeAndUserStaffId(RoleConstant roleCode, String staffId);
 
     List<Role> findAllByUserStaffIdAndStatus(String staffId, EntityStatus status);
 
     List<Role> findAllByUserStaffId(String staffId);
+
+    @Query
+            ("""
+                    SELECT 
+                    r
+                    FROM Role r
+                    """)
+    List<Role> getAllRole();
 }

@@ -17,47 +17,49 @@ import java.util.Optional;
 public interface Admin_StaffRepository extends UserStaffRepository {
 
     @Query(value = """
-            SELECT 
-                 ROW_NUMBER() OVER (ORDER BY s.createdAt DESC) AS rowNumber,
-                 s.id AS id,
-                 s.name AS staffName,
-                 s.code AS staffCode,
-                 s.emailFe AS staffEmailFe,
-                 s.emailFpt AS staffEmailFpt,
-                 s.status AS staffStatus,
-                 min(f.name) AS facilityName
-            FROM UserStaff s
-                 LEFT JOIN Role r on r.userStaff.id = s.id
-                 LEFT JOIN Facility  f on r.facility.id = f.id
-            WHERE (trim(:#{#adStaffRequest.searchQuery}) IS NULL 
-                   OR trim(:#{#adStaffRequest.searchQuery}) = '' 
-                   OR s.name LIKE concat('%', trim(:#{#adStaffRequest.searchQuery}), '%')
-                   OR s.code LIKE concat('%', trim(:#{#adStaffRequest.searchQuery}), '%')
-                   OR s.emailFe LIKE concat('%', trim(:#{#adStaffRequest.searchQuery}), '%')
-                   OR s.emailFpt LIKE concat('%', trim(:#{#adStaffRequest.searchQuery}), '%'))
-              AND (trim(:#{#adStaffRequest.idFacility}) IS NULL 
-                   OR trim(:#{#adStaffRequest.idFacility}) = '' 
-                   OR f.id = trim(:#{#adStaffRequest.idFacility}))
-              AND (:#{#adStaffRequest.status} IS NULL OR s.status = :#{#adStaffRequest.status})
-            GROUP BY s.id, s.name, s.code, s.emailFe, s.emailFpt, s.status, s.createdAt
-            ORDER BY s.createdAt DESC
-            """,
+             SELECT 
+             ROW_NUMBER() OVER (ORDER BY s.created_at DESC) AS orderNumber,
+             s.id AS id,
+             s.name AS staffName,
+             s.code AS staffCode,
+             s.email_fe AS staffEmailFe,
+             s.email_fpt AS staffEmailFpt,
+             s.status AS staffStatus,
+             MIN(f.name) AS facilityName,
+             f.id AS facilityId,
+             GROUP_CONCAT(DISTINCT r.code ORDER BY r.code SEPARATOR ', ') AS roleCode
+        FROM user_staff s
+             LEFT JOIN role r on r.id_user_staff = s.id
+             LEFT JOIN facility f on r.id_facility = f.id
+        WHERE (trim(:#{#adStaffRequest.searchQuery}) IS NULL 
+               OR trim(:#{#adStaffRequest.searchQuery}) = '' 
+               OR s.name LIKE concat('%', trim(:#{#adStaffRequest.searchQuery}), '%')
+               OR s.code LIKE concat('%', trim(:#{#adStaffRequest.searchQuery}), '%')
+               OR s.email_fe LIKE concat('%', trim(:#{#adStaffRequest.searchQuery}), '%')
+               OR s.email_fpt LIKE concat('%', trim(:#{#adStaffRequest.searchQuery}), '%'))
+          AND (trim(:#{#adStaffRequest.idFacility}) IS NULL 
+               OR trim(:#{#adStaffRequest.idFacility}) = '' 
+               OR f.id = trim(:#{#adStaffRequest.idFacility}))
+          AND (:#{#adStaffRequest.status} IS NULL OR s.status = :#{#adStaffRequest.status})
+        GROUP BY s.id, s.name, s.code, s.email_fe, s.email_fpt, s.status, s.created_at, f.id
+        ORDER BY s.created_at DESC
+        """,
             countQuery = """
-                    SELECT COUNT(DISTINCT s.id)
-                    FROM UserStaff s
-                         LEFT JOIN Role r on r.userStaff.id = s.id
-                         LEFT JOIN Facility  f on r.facility.id = f.id
+                            SELECT COUNT(*)
+                            FROM user_staff s
+                         LEFT JOIN role r on r.id_user_staff = s.id
+                         LEFT JOIN facility f on r.id_facility = f.id
                     WHERE (trim(:#{#adStaffRequest.searchQuery}) IS NULL 
                            OR trim(:#{#adStaffRequest.searchQuery}) = '' 
                            OR s.name LIKE concat('%', trim(:#{#adStaffRequest.searchQuery}), '%')
                            OR s.code LIKE concat('%', trim(:#{#adStaffRequest.searchQuery}), '%')
-                           OR s.emailFe LIKE concat('%', trim(:#{#adStaffRequest.searchQuery}), '%')
-                           OR s.emailFpt LIKE concat('%', trim(:#{#adStaffRequest.searchQuery}), '%'))
+                           OR s.email_fe LIKE concat('%', trim(:#{#adStaffRequest.searchQuery}), '%')
+                           OR s.email_fpt LIKE concat('%', trim(:#{#adStaffRequest.searchQuery}), '%'))
                       AND (trim(:#{#adStaffRequest.idFacility}) IS NULL 
                            OR trim(:#{#adStaffRequest.idFacility}) = '' 
                            OR f.id = trim(:#{#adStaffRequest.idFacility}))
                       AND (:#{#adStaffRequest.status} IS NULL OR s.status = :#{#adStaffRequest.status})
-                    """)
+                            """, nativeQuery = true)
     Page<Admin_StaffResponse> getAllStaff(Pageable pageable, Admin_StaffRequest adStaffRequest);
 
 
@@ -70,16 +72,25 @@ public interface Admin_StaffRepository extends UserStaffRepository {
     @Query(
             value =
                     """
-                                   SELECT
-                                   s.id as id,
-                                   s.code as staffCode,
-                                   s.name as staffName,
-                                   s.emailFe as staffEmailFe,
-                                   s.emailFpt as staffEmailFpt
-                                   FROM UserStaff AS s
-                                   WHERE s.id  = :id
-                            """)
+                SELECT
+                                                   s.id as id,
+                                                   s.code as staffCode,
+                                                   s.name as staffName,
+                                                   s.email_fe as staffEmailFe,
+                                                   s.email_fpt as staffEmailFpt,
+                                                   GROUP_CONCAT(DISTINCT r.code ORDER BY r.code SEPARATOR ', ') AS roleCode,
+                                                   f.id as facilityId,
+                                                   f.name as facilityName
+                                                   FROM user_staff AS s
+                                                   LEFT JOIN role AS r ON r.id_user_staff = s.id
+                                                   LEFT JOIN facility AS f ON f.id = r.id_facility
+                                                   WHERE s.id  = :id
+                                                   AND f.status = 1
+                                                   AND r.status = 1
+                                                   GROUP BY s.id, s.code, s.name, s.email_fe, s.email_fpt, f.name, f.id
+                            """, nativeQuery = true)
     Optional<Admin_StaffDetailResponse> getDetailStaff(String id);
 
     Optional<UserStaff> findUserStaffByIdAndStatus(String staffId, EntityStatus status);
+
 }

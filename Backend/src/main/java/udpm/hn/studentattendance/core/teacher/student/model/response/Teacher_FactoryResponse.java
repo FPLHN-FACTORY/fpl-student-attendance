@@ -6,6 +6,8 @@ public interface Teacher_FactoryResponse {
 
     String getFactoryId();
 
+    String getProjectId();
+
     String getUserStaffId();
 
     String getFactoryName();

@@ -49,9 +49,9 @@ function mapRoleCodeToName(code) {
     case 'TEACHER':
       return 'Giảng Viên'
     case 'STAFF':
-      return 'Phụ trách xưởng'
+      return 'Phụ Trách Xưởng'
     case 'ADMIN':
-      return 'Ban đào tạo'
+      return 'Ban Đào Tạo'
     default:
       return code
   }

@@ -12,67 +12,69 @@ import udpm.hn.studentattendance.repositories.FactoryRepository;
 public interface HistoryAttendanceExtendRepository extends FactoryRepository {
     @Query(
             value = """
-                    SELECT 
-                        usf.id_user_student AS userStudentFactoryId,
-                        usf.id_factory AS factoryId,
-                        ft.name AS factoryName,
-                        p.name AS projectName,
-                        pd.start_date AS planDateStartDate,
-                        pd.shift AS planDateShift,
-                        CASE
-                            WHEN UNIX_TIMESTAMP(NOW()) * 1000 < (pd.start_date + 7200) THEN 'CHUA_DIEN_RA'
-                            WHEN ad.id_user_student IS NOT NULL THEN 'CO_MAT'
-                            ELSE 'VANG_MAT'
-                        END AS statusAttendance,
-                        pd.name AS planDateName,
-                        pd.description AS planDateDescription
-                    FROM
-                        user_student us 
-                        LEFT JOIN user_student_factory usf ON usf.id_user_student = us.id
-                        LEFT JOIN factory ft ON usf.id_factory = ft.id
-                        LEFT JOIN plan_date pd ON pd.id_factory = ft.id
-                        LEFT JOIN attendance ad ON ad.id_user_student = us.id 
-                        LEFT JOIN project p ON ft.id_project = p.id
-                        LEFT JOIN semester s ON p.id_semester = s.id
-                    WHERE
-                        usf.id_user_student = :userStudentId
-                        AND (:#{#attendanceRequest.semesterId} IS NULL OR s.id = :#{#attendanceRequest.semesterId})
-                        AND (:#{#attendanceRequest.factoryId} IS NULL OR ft.id = :#{#attendanceRequest.factoryId})
-                        AND ft.status = 1
-                        AND pd.status = 1
-                        AND p.status = 1
-                        AND s.status = 1
-                        AND usf.status = 1
-                    ORDER BY pd.start_date ASC
-                    """,
+            SELECT 
+                ROW_NUMBER() OVER (PARTITION BY ft.id ORDER BY pd.start_date ASC) AS rowNumber,
+                usf.id_user_student AS userStudentFactoryId,
+                usf.id_factory AS factoryId,
+                ft.name AS factoryName,
+                p.name AS projectName,
+                pd.start_date AS planDateStartDate,
+                pd.shift AS planDateShift,
+                s.id AS semesterId,
+                CASE
+                    WHEN UNIX_TIMESTAMP(NOW()) * 1000 < (pd.start_date + 7200) THEN 'CHUA_DIEN_RA'
+                    WHEN ad.id_user_student IS NOT NULL THEN 'CO_MAT'
+                    ELSE 'VANG_MAT'
+                END AS statusAttendance,
+                pd.name AS planDateName,
+                pd.description AS planDateDescription
+            FROM
+                user_student us 
+                LEFT JOIN user_student_factory usf ON usf.id_user_student = us.id
+                LEFT JOIN factory ft ON usf.id_factory = ft.id
+                LEFT JOIN plan_date pd ON pd.id_factory = ft.id
+                LEFT JOIN attendance ad ON ad.id_user_student = us.id 
+                LEFT JOIN project p ON ft.id_project = p.id
+                LEFT JOIN semester s ON p.id_semester = s.id
+            WHERE
+                us.id = :userStudentId
+                AND ft.status = 1
+                AND pd.status = 1
+                AND p.status = 1
+                AND s.status = 1
+                AND usf.status = 1
+                AND (:#{#attendanceRequest.semesterId} IS NULL OR s.id = :#{#attendanceRequest.semesterId})
+                AND (:#{#attendanceRequest.factoryId} IS NULL OR ft.id = :#{#attendanceRequest.factoryId})
+            ORDER BY ft.id ASC, pd.start_date ASC
+            """,
             countQuery = """
-                    SELECT COUNT(*)
-                    FROM
-                        user_student us 
-                        LEFT JOIN user_student_factory usf ON usf.id_user_student = us.id
-                        LEFT JOIN factory ft ON usf.id_factory = ft.id
-                        LEFT JOIN plan_date pd ON pd.id_factory = ft.id
-                        LEFT JOIN attendance ad ON ad.id_user_student = us.id 
-                        LEFT JOIN project p ON ft.id_project = p.id
-                        LEFT JOIN semester s ON p.id_semester = s.id
-                    WHERE
-                        usf.id_user_student = :userStudentId
-                        AND (:#{#attendanceRequest.semesterId} IS NULL OR s.id = :#{#attendanceRequest.semesterId})
-                        AND (:#{#attendanceRequest.factoryId} IS NULL OR ft.id = :#{#attendanceRequest.factoryId})
-                        AND ft.status = 1
-                        AND pd.status = 1
-                        AND p.status = 1
-                        AND s.status = 1
-                        AND usf.status = 1
-                    """,
+            SELECT COUNT(*)
+            FROM
+                user_student us 
+                LEFT JOIN user_student_factory usf ON usf.id_user_student = us.id
+                LEFT JOIN factory ft ON usf.id_factory = ft.id
+                LEFT JOIN plan_date pd ON pd.id_factory = ft.id
+                LEFT JOIN attendance ad ON ad.id_user_student = us.id 
+                LEFT JOIN project p ON ft.id_project = p.id
+                LEFT JOIN semester s ON p.id_semester = s.id
+            WHERE
+                us.id = :userStudentId
+                AND ft.status = 1
+                AND pd.status = 1
+                AND p.status = 1
+                AND s.status = 1
+                AND usf.status = 1
+                AND (:#{#attendanceRequest.semesterId} IS NULL OR s.id = :#{#attendanceRequest.semesterId})
+                AND (:#{#attendanceRequest.factoryId} IS NULL OR ft.id = :#{#attendanceRequest.factoryId})
+            """,
             nativeQuery = true
     )
     Page<HistoryAttendanceResponse> getAllFactoryAttendance(
-            Pageable pageable,
             String userStudentId,
+            Pageable pageable,
             HistoryAttendanceRequest attendanceRequest
-
     );
+
 
 
 }

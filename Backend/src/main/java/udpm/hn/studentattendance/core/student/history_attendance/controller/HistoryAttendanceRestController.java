@@ -20,5 +20,14 @@ public class HistoryAttendanceRestController {
         return historyAttendanceService.getAllHistoryAttendanceByStudent(historyAttendanceRequest);
     }
 
+    @GetMapping("/semesters")
+    public ResponseEntity<?> getAllSemester(){
+        return historyAttendanceService.getAllSemester();
+    }
+
+    @GetMapping("/factories")
+    public ResponseEntity<?> getAllFactory(){
+        return historyAttendanceService.getAllFactoryByUserStudent();
+    }
 
 }
