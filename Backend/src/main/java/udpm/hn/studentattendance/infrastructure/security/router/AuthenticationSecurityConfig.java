@@ -9,6 +9,7 @@ import udpm.hn.studentattendance.core.authentication.oauth2.CustomOAuth2FailureH
 import udpm.hn.studentattendance.core.authentication.oauth2.CustomOAuth2SuccessHandler;
 import udpm.hn.studentattendance.core.authentication.oauth2.CustomOAuth2UserService;
 import udpm.hn.studentattendance.core.authentication.oauth2.JwtAuthenticationFilter;
+import udpm.hn.studentattendance.infrastructure.constants.RoleConstant;
 import udpm.hn.studentattendance.infrastructure.constants.router.RouteAuthenticationConstant;
 
 import static udpm.hn.studentattendance.helpers.RouterHelper.appendPrefixApi;
@@ -40,6 +41,7 @@ public class AuthenticationSecurityConfig {
         http.authorizeHttpRequests(authorization -> {
             authorization.requestMatchers(appendPrefixApi(RouteAuthenticationConstant.API_GET_ALL_FACILITY)).permitAll();
             authorization.requestMatchers(appendPrefixApi(RouteAuthenticationConstant.API_GET_INFO_USER, "/*")).authenticated();
+            authorization.requestMatchers(appendPrefixApi(RouteAuthenticationConstant.API_STUDENT_REGISTER, "/*")).hasAuthority(RoleConstant.STUDENT.name());
             authorization.requestMatchers(RouteAuthenticationConstant.REDIRECT_LOGIN).permitAll();
         });
 

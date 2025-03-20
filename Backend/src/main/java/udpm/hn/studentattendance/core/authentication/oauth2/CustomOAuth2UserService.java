@@ -46,6 +46,8 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         String role = (String) httpSession.getAttribute(SessionConstant.LOGIN_ROLE);
         String facilityID = (String) httpSession.getAttribute(SessionConstant.LOGIN_FACILITY);
 
+        customOAuth2User.setIdFacility(facilityID);
+
         RoleConstant roleCode;
         try {
              roleCode = RoleConstant.valueOf(role.toUpperCase());
@@ -86,12 +88,21 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
                 break;
 
             case STUDENT:
-                Optional<UserStudent> userStudent = getAccountStudent(customOAuth2User.getEmail(), facilityID);
-                if (userStudent.isEmpty()) {
+                UserStudent userStudent = authenticationUserStudentRepository.findByEmail(customOAuth2User.getEmail()).orElse(null);
+                if (userStudent == null) {
+                    UserStudent newUserStudent = new UserStudent();
+                    newUserStudent.setEmail(customOAuth2User.getEmail());
+                    newUserStudent.setCode(customOAuth2User.getCode());
+                    newUserStudent.setName(customOAuth2User.getName());
+                    newUserStudent.setImage(customOAuth2User.getPicture());
+                    userStudent = authenticationUserStudentRepository.save(newUserStudent);
+                }
+                if (userStudent.getFacility() != null && !facilityID.equalsIgnoreCase(userStudent.getFacility().getId())) {
                     throw new OAuth2AuthenticationException(new OAuth2Error("login_failed", "Đăng nhập sinh viên thất bại", null));
                 }
-                customOAuth2User.setId(userStudent.get().getId());
-                customOAuth2User.setCode(userStudent.get().getCode());
+                customOAuth2User.setId(userStudent.getId());
+                customOAuth2User.setCode(userStudent.getCode());
+                customOAuth2User.setIdFacility(userStudent.getFacility() == null ? null : userStudent.getFacility().getId());
                 roles.add(roleCode);
                 break;
 
@@ -100,15 +111,10 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         }
 
         customOAuth2User.setRole(roles);
-        customOAuth2User.setIdFacility(facilityID);
-        return customOAuth2User;
-    }
 
-    private Optional<UserStudent> getAccountStudent(String email, String idFacility) {
-        if (idFacility != null && !idFacility.equalsIgnoreCase("null")) {
-            return authenticationUserStudentRepository.findByEmailAndFacility_Id(email, idFacility);
-        }
-        return authenticationUserStudentRepository.findByEmail(email);
+        System.out.println(customOAuth2User.getIdFacility());
+
+        return customOAuth2User;
     }
 
 }
