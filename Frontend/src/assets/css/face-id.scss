@@ -137,6 +137,14 @@
         }
       }
     }
+    &.fullStep {
+      @for $i from 1 through 36 {
+        & > div:nth-child(#{$i}) {
+          animation: step1 1.2s alternate forwards;
+          animation-delay: #{($i - 1.99) * 0.01}s;
+        }
+      }
+    }
   }
 }
 
