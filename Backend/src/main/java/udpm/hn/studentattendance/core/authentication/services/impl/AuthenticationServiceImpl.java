@@ -2,8 +2,10 @@ package udpm.hn.studentattendance.core.authentication.services.impl;
 
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.view.RedirectView;
+import udpm.hn.studentattendance.core.authentication.model.request.AuthenticationStudentRegisterRequest;
 import udpm.hn.studentattendance.core.authentication.oauth2.AuthUser;
 import udpm.hn.studentattendance.core.authentication.repositories.AuthenticationFacilityRepository;
 import udpm.hn.studentattendance.core.authentication.repositories.AuthenticationRoleRepository;
@@ -14,6 +16,7 @@ import udpm.hn.studentattendance.core.authentication.utils.JwtUtil;
 import udpm.hn.studentattendance.entities.UserAdmin;
 import udpm.hn.studentattendance.entities.UserStaff;
 import udpm.hn.studentattendance.entities.UserStudent;
+import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.helpers.SessionHelper;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.RoleConstant;
@@ -87,6 +90,37 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         }
 
         return userData;
+    }
+
+    @Override
+    public ResponseEntity<?> studentRegister(AuthenticationStudentRegisterRequest request) {
+        UserStudent student = authenticationUserStudentRepository.findById(request.getId()).orElse(null);
+        if (student == null) {
+            return RouterHelper.responseError("Không tìm thấy sinh viên");
+        }
+
+        if (student.getFacility() != null) {
+            return RouterHelper.responseError("Sinh viên đã tồn tại trên hệ thống");
+        }
+
+        Facility facility = authenticationFacilityRepository.findById(request.getIdFacility()).orElse(null);
+
+        if (facility == null) {
+            return RouterHelper.responseError("Cơ sở không tồn tại");
+        }
+
+        if (authenticationUserStudentRepository.isExistsCode(request.getCode(), student.getId(), facility.getId())) {
+            return RouterHelper.responseError("Mã số sinh viên đã tồn tại trên cơ sở này");
+        }
+
+        if (request.getFaceEmbedding() == null || request.getFaceEmbedding().isEmpty()) {
+            return RouterHelper.responseError("Thông tin khuôn mặt không hợp lệ");
+        }
+        student.setFacility(facility);
+        student.setCode(request.getCode());
+        student.setName(request.getName());
+        student.setFaceEmbedding(request.getFaceEmbedding());
+        return RouterHelper.responseSuccess("Đăng ký thông tin sinh viên thành công", authenticationUserStudentRepository.save(student));
     }
 
 }

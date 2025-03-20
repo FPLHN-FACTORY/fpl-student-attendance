@@ -17,4 +17,6 @@ public final class RouteAuthenticationConstant {
 
     public final static String API_GET_INFO_USER = "/get-info-user";
 
+    public final static String API_STUDENT_REGISTER = "/student-register";
+
 }
