@@ -93,7 +93,6 @@
     @for $i from 1 through 36 {
       & > div:nth-child(#{$i}) {
         transform: rotate(#{($i - 1) * 10}deg);
-        animation-delay: #{($i - 0.9) * 0.1}s;
       }
     }
 
@@ -107,8 +106,8 @@
     &.step1 {
       @for $i from 1 through 9 {
         & > div:nth-child(#{$i}) {
-          animation: step1 1.2s alternate forwards;
-          animation-delay: #{($i - 1.99) * 0.01}s;
+          animation: step1 0s alternate forwards;
+          animation-delay: #{$i / 50}s;
         }
       }
     }
@@ -116,32 +115,32 @@
     &.step2 {
       @for $i from 10 through 18 {
         & > div:nth-child(#{$i}) {
-          animation: step1 1.2s alternate forwards;
-          animation-delay: #{($i - 10.99) * 0.01}s;
+          animation: step1 0s alternate forwards;
+          animation-delay: #{($i - 9) / 50}s;
         }
       }
     }
     &.step3 {
       @for $i from 19 through 27 {
         & > div:nth-child(#{$i}) {
-          animation: step1 1.2s alternate forwards;
-          animation-delay: #{($i - 19.99) * 0.01}s;
+          animation: step1 0s alternate forwards;
+          animation-delay: #{($i - 18) / 50}s;
         }
       }
     }
     &.step4 {
       @for $i from 28 through 36 {
         & > div:nth-child(#{$i}) {
-          animation: step1 1.2s alternate forwards;
-          animation-delay: #{($i - 28.99) * 0.01}s;
+          animation: step1 0s alternate forwards;
+          animation-delay: #{($i - 27) / 50}s;
         }
       }
     }
     &.fullStep {
       @for $i from 1 through 36 {
         & > div:nth-child(#{$i}) {
-          animation: step1 1.2s alternate forwards;
-          animation-delay: #{($i - 1.99) * 0.01}s;
+          animation: step1 0s alternate forwards;
+          animation-delay: #{$i / 50}s;
         }
       }
     }
