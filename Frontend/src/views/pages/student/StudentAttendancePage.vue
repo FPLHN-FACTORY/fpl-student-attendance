@@ -26,6 +26,7 @@ const isLoading = ref(false)
 const lstData = ref([])
 
 const isShowCamera = ref(false)
+const isRunScan = ref(false)
 
 const video = ref(null)
 const canvas = ref(null)
@@ -170,6 +171,7 @@ const startVideo = async () => {
 }
 
 const stopVideo = () => {
+  isRunScan.value = false
   const stream = video.value.srcObject
 
   if (stream) {
@@ -180,14 +182,14 @@ const stopVideo = () => {
 }
 
 const loadModels = async () => {
-  await faceapi.nets.ssdMobilenetv1.loadFromUri('/models')
+  await faceapi.nets.tinyFaceDetector.loadFromUri('/models')
   await faceapi.nets.faceLandmark68Net.loadFromUri('/models')
   await faceapi.nets.faceRecognitionNet.loadFromUri('/models')
   await faceapi.nets.faceExpressionNet.loadFromUri('/models')
 }
 
 const detectFace = async () => {
-  const options = new faceapi.SsdMobilenetv1Options({ minConfidence: 0.5 })
+  const options = new faceapi.TinyFaceDetectorOptions({ minConfidence: 0.5 })
   const displaySize = { width: video.value.videoWidth, height: video.value.videoHeight }
 
   faceapi.matchDimensions(canvas.value, displaySize)
@@ -206,14 +208,15 @@ const detectFace = async () => {
     const noseX = nose[0].x
     const faceCenterX = (leftEye[0].x + rightEye[3].x) / 2
 
-    if (noseX < faceCenterX - 15) {
+    if (noseX < faceCenterX - 8) {
       return -1
-    } else if (noseX > faceCenterX + 15) {
+    } else if (noseX > faceCenterX + 8) {
       return 1
     }
     return Math.abs(eyeAngle) < 5 ? 0 : -2
   }
-  let run = setInterval(async () => {
+
+  const runTask = async () => {
     const detections = await faceapi
       .detectAllFaces(video.value, options)
       .withFaceLandmarks()
@@ -222,7 +225,7 @@ const detectFace = async () => {
     if (detections.length === 1) {
       const detection = detections[0]
       const landmarks = detection.landmarks
-      const descriptor = detection.descriptor // Đặc trưng khuôn mặt
+      const descriptor = detection.descriptor
 
       const angle = getFaceAngle(landmarks)
 
@@ -234,9 +237,10 @@ const detectFace = async () => {
       if (faceDescriptor) {
         const distance = faceapi.euclideanDistance(faceDescriptor, descriptor)
         if (distance > 0.5) {
-          return (faceDescriptor = null)
+          return
         }
 
+        renderTextStep()
         if (step.value === 0 && angle === 0) {
           step.value = 1
         } else if (step.value === 1 && angle === -1) {
@@ -246,10 +250,10 @@ const detectFace = async () => {
         } else if (step.value === 3 && angle === 0) {
           step.value = 4
           formData.faceEmbedding = JSON.stringify(Array.from(descriptor))
-          stopVideo()
           handleSubmitAttendance()
+          stopVideo()
           isShowCamera.value = false
-          clearInterval(run)
+          isRunScan.value = false
         } else {
           faceDescriptor = null
         }
@@ -263,16 +267,30 @@ const detectFace = async () => {
         step.value = 0
       }
     }
-  }, 500)
+  }
+
+  while (isRunScan.value) {
+    if (
+      faceapi.nets.tinyFaceDetector.isLoaded &&
+      faceapi.nets.faceLandmark68Net.isLoaded &&
+      faceapi.nets.faceRecognitionNet.isLoaded &&
+      faceapi.nets.faceExpressionNet.isLoaded &&
+      video.value.readyState === 4
+    ) {
+      await runTask()
+    }
+    await new Promise((resolve) => setTimeout(resolve, 200))
+  }
 }
 
 const handleCheckin = async (item) => {
   formData.idPlanDate = item.idPlanDate
 
   isShowCamera.value = true
+  isRunScan.value = true
   step.value = 0
   await nextTick()
-  startVideo().then(detectFace())
+  await startVideo().then(detectFace)
 }
 
 onMounted(async () => {

@@ -37,7 +37,7 @@ export const TeacherRoutes = [
         component: () => import('@/views/pages/teacher/TeacherStudentPage.vue'),
         meta: {
           selectedKey: selectedKey++,
-          name: 'Quản lý nhóm xưởng',
+          name: 'Nhóm xưởng của tôi',
           icon: UsergroupAddOutlined,
         },
       },
