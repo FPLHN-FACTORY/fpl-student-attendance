@@ -64,7 +64,7 @@ public class DBGenerator {
 
     private void generateFacility() {
         String[] list = facilityName.split(",");
-        for (String name: list) {
+        for (String name : list) {
             String code = CodeGeneratorUtils.generateCodeFromString(name);
             Facility getFacility = dbGeneratorFacilityRepository.findByCode(code).orElse(null);
 
@@ -109,6 +109,7 @@ public class DBGenerator {
 
     }
 
+
     private void generateUserStaff() {
 
         if (!StringUtils.hasText(userName) || !StringUtils.hasText(userCode) || !StringUtils.hasText(userEmail)) {
@@ -133,7 +134,13 @@ public class DBGenerator {
                 role.setUserStaff(saveUser);
                 role.setFacility(facility);
 
+                Role role2 = new Role();
+                role2.setCode(RoleConstant.TEACHER);
+                role2.setUserStaff(saveUser);
+                role2.setFacility(facility);
+
                 dbGeneratorRoleRepository.save(role);
+                dbGeneratorRoleRepository.save(role2);
             }
         }
 
