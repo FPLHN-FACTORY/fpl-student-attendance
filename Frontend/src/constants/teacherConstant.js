@@ -6,4 +6,9 @@ export const API_ROUTES_TEACHER = {
 
   FETCH_DATA_STUDENT_FACTORY: API_URL + '/teacher/student-management/factory',
 
+  FETCH_DATA_SCHEDULE: API_URL + '/teacher/teaching-schedule',
+
+
+
+
 }

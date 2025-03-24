@@ -96,9 +96,9 @@ const fetchDataList = () => {
   requestAPI
     .get(`${API_ROUTES_STUDENT.FETCH_DATA_ATTENDANCE}`, {
       params: {
+        ...dataFilter,
         page: pagination.value.current,
         size: pagination.value.pageSize,
-        ...dataFilter,
       },
     })
     .then(({ data: response }) => {
@@ -286,7 +286,7 @@ watch(
   () => {
     handleSubmitFilter()
   },
-  { deep: true },
+  { deep: true }
 )
 </script>
 
@@ -411,7 +411,10 @@ watch(
             <template #bodyCell="{ column, record }">
               <template v-if="column.dataIndex === 'date'">
                 {{
-                  `${dayOfWeek(record.date)} - ${formatDate(record.date, DEFAULT_DATE_FORMAT + ' HH:mm')}`
+                  `${dayOfWeek(record.date)} - ${formatDate(
+                    record.date,
+                    DEFAULT_DATE_FORMAT + ' HH:mm'
+                  )}`
                 }}
               </template>
               <template v-if="column.dataIndex === 'status'">
