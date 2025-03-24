@@ -75,7 +75,7 @@ const columns = ref([
   { title: 'Tên giảng viên', dataIndex: 'staffName', key: 'staffName', width: 100 },
   { title: 'Mô tả', dataIndex: 'factoryDescription', key: 'factoryDescription', width: 200 },
   { title: 'Trạng thái', dataIndex: 'factoryStatus', key: 'factoryStatus', width: 80 },
-  { title: 'Chức năng', key: 'actions' },
+  { title: 'Chức năng', key: 'actions', width: 100 },
 ])
 
 const breadcrumb = ref([
