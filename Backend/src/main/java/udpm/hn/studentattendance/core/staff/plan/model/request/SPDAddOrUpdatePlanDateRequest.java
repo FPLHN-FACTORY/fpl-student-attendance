@@ -28,6 +28,8 @@ public class SPDAddOrUpdatePlanDateRequest {
     @Max(value = 6, message = "Ca học muộn nhất là ca 6")
     private Integer shift;
 
+    private Integer type;
+
     @Min(value = 0, message = "Thời gian điểm danh muộn nhất phải lớn hơn 0")
     @Max(value = 60, message = "Thời gian điểm danh muộn nhất không quá 60 phút")
     private Integer lateArrival;

@@ -1,13 +1,16 @@
 package udpm.hn.studentattendance.core.student.attendance.service.impl;
 
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 import udpm.hn.studentattendance.core.student.attendance.model.request.SACheckinAttendanceRequest;
 import udpm.hn.studentattendance.core.student.attendance.model.request.SAFilterAttendanceRequest;
 import udpm.hn.studentattendance.core.student.attendance.model.response.SAAttendanceResponse;
 import udpm.hn.studentattendance.core.student.attendance.repositories.SAAttendanceRepository;
+import udpm.hn.studentattendance.core.student.attendance.repositories.SAFacilityIPRepository;
 import udpm.hn.studentattendance.core.student.attendance.repositories.SAPlanDateRepository;
 import udpm.hn.studentattendance.core.student.attendance.repositories.SAUserStudentFactoryRepository;
 import udpm.hn.studentattendance.core.student.attendance.service.SAAttendanceService;
@@ -18,12 +21,15 @@ import udpm.hn.studentattendance.entities.UserStudentFactory;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
 import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.helpers.SessionHelper;
+import udpm.hn.studentattendance.helpers.ValidateHelper;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.constants.AttendanceStatus;
+import udpm.hn.studentattendance.infrastructure.constants.ShiftType;
 import udpm.hn.studentattendance.utils.DateTimeUtils;
 import udpm.hn.studentattendance.utils.FaceRecognitionUtils;
 
 import java.util.Objects;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -36,6 +42,10 @@ public class SAAttendanceServiceImpl implements SAAttendanceService {
     private final SAPlanDateRepository planDateRepository;
 
     private final SAUserStudentFactoryRepository userStudentFactoryRepository;
+
+    private final SAFacilityIPRepository facilityIPRepository;
+
+    private final HttpServletRequest httpServletRequest;
 
     @Override
     public ResponseEntity<?> getAllList(SAFilterAttendanceRequest request) {
@@ -60,6 +70,24 @@ public class SAAttendanceServiceImpl implements SAAttendanceService {
             return RouterHelper.responseError("Ca học không tồn tại");
         }
 
+        if (planDate.getType() != ShiftType.ONLINE) {
+            String clientIP = ValidateHelper.getClientIP(httpServletRequest);
+            if (clientIP == null) {
+                return RouterHelper.responseError("IP đăng nhập không hợp lệ");
+            }
+
+            Set<String> allowIPs = facilityIPRepository.getAllIP(sessionHelper.getFacilityId());
+            if (!allowIPs.isEmpty() && !ValidateHelper.isAllowedIP(clientIP, allowIPs)) {
+                return RouterHelper.responseError("Vui lòng kết nối bằng mạng trường để có thể Checkin");
+            }
+        }
+
+        UserStudent userStudent = userStudentFactory.getUserStudent();
+
+        if (!StringUtils.hasText(userStudent.getFaceEmbedding())) {
+            return RouterHelper.responseError("Tài khoản chưa đăng ký thông tin khuôn mặt");
+        }
+
         if (DateTimeUtils.getCurrentTimeMillis() <= planDate.getStartDate() - 10 * 60 * 1000) {
             return RouterHelper.responseError("Chưa đến giờ checkin");
         }
@@ -67,8 +95,6 @@ public class SAAttendanceServiceImpl implements SAAttendanceService {
         if (DateTimeUtils.getCurrentTimeMillis() > planDate.getStartDate() + planDate.getLateArrival() * 60 * 1000) {
             return RouterHelper.responseError("Đã quá giờ checkin");
         }
-
-        UserStudent userStudent = userStudentFactory.getUserStudent();
 
         Attendance attendance = attendanceRepository.findByUserStudent_IdAndPlanDate_Id(userStudent.getId(), planDate.getId()).orElse(null);
         if (attendance != null) {

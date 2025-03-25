@@ -9,5 +9,5 @@ import java.util.List;
 
 @Repository
 public interface AuthenticationFacilityRepository extends FacilityRepository {
-    List<Facility> getFacilitiesByStatus(EntityStatus status);
+    List<Facility> findAllByStatusOrderByPositionAsc(EntityStatus status);
 }

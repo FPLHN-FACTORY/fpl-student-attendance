@@ -1,5 +1,11 @@
 <script setup>
-import { ATTENDANCE_STATUS, DEFAULT_DATE_FORMAT, DEFAULT_PAGINATION } from '@/constants'
+import {
+  ATTENDANCE_STATUS,
+  DEFAULT_DATE_FORMAT,
+  DEFAULT_PAGINATION,
+  SHIFT,
+  TYPE_SHIFT,
+} from '@/constants'
 import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
 import { API_ROUTES_STUDENT } from '@/constants/studentConstant'
 import { ROUTE_NAMES } from '@/router/studentRoute'
@@ -8,17 +14,18 @@ import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
 import { dayOfWeek, formatDate } from '@/utils/utils'
 import {
   CheckOutlined,
+  ExclamationCircleOutlined,
   FilterFilled,
   SearchOutlined,
   UnorderedListOutlined,
 } from '@ant-design/icons-vue'
-import { message } from 'ant-design-vue'
-import { nextTick, onMounted, reactive, ref, watch } from 'vue'
-import * as faceapi from 'face-api.js'
-import useAuthStore from '@/stores/useAuthStore'
+import { message, Modal } from 'ant-design-vue'
+import { createVNode, nextTick, onMounted, reactive, ref, watch } from 'vue'
 import useLoadingStore from '@/stores/useLoadingStore'
+import useFaceIDStore from '@/stores/useFaceIDStore'
+import { ROUTE_NAMES_API } from '@/router/authenticationRoute'
 
-const authStore = useAuthStore()
+const faceIDStore = useFaceIDStore()
 const loadingPage = useLoadingStore()
 
 const isLoading = ref(false)
@@ -26,12 +33,9 @@ const isLoading = ref(false)
 const lstData = ref([])
 
 const isShowCamera = ref(false)
-const isRunScan = ref(false)
 
 const video = ref(null)
 const canvas = ref(null)
-const step = ref(0)
-const textStep = ref('Vui lòng đợi camera...')
 
 const formData = reactive({
   idPlanDate: null,
@@ -66,27 +70,8 @@ const pagination = ref({ ...DEFAULT_PAGINATION })
 const dataFilter = reactive({
   keyword: null,
   status: null,
+  type: null,
 })
-
-const renderTextStep = (text) => {
-  if (text) {
-    return (textStep.value = text)
-  }
-  switch (step.value) {
-    case 0:
-      return (textStep.value = 'Vui lòng nhìn thẳng')
-    case 1:
-      return (textStep.value = 'Vui lòng quay mặt sang phải')
-    case 2:
-      return (textStep.value = 'Vui lòng quay mặt sang trái')
-    case 3:
-      return (textStep.value = 'Vui lòng nhìn thẳng')
-    case 4:
-      return (textStep.value = 'Xác minh hoàn tất')
-    default:
-      return (textStep.value = 'Vui lòng nhìn vào camera')
-  }
-}
 
 const fetchDataList = () => {
   if (isLoading.value === true) {
@@ -114,10 +99,34 @@ const fetchDataList = () => {
     })
 }
 
+const fetchDataStudentInfo = () => {
+  requestAPI
+    .get(`${ROUTE_NAMES_API.FETCH_DATA_STUDENT_INFO}`)
+    .then(({ data: response }) => {
+      if (response?.data?.faceEmbedding !== 'OK') {
+        Modal.confirm({
+          title: 'Yêu cầu cập nhật khuôn mặt',
+          icon: createVNode(ExclamationCircleOutlined),
+          content: 'Vui lòng cập nhật khuôn mặt để sử dụng hệ thống!!!',
+          okText: 'Cập nhật ngay',
+          cancelText: 'Huỷ bỏ',
+          onOk: () => {
+            handleUpdateInfo()
+          },
+        })
+      }
+    })
+    .catch((error) => {
+      console.log(error)
+      message.error(error?.response?.data?.message || 'Không thể tải thông tin sinh viên')
+    })
+}
+
 const handleClearFilter = () => {
   Object.assign(dataFilter, {
     keyword: null,
     status: null,
+    type: null,
   })
   fetchDataList()
 }
@@ -149,154 +158,49 @@ const handleSubmitAttendance = () => {
     })
 }
 
-const startVideo = async () => {
-  try {
-    const constraints = {
-      video: { facingMode: 'environment' },
-    }
-    const stream = await navigator.mediaDevices.getUserMedia(constraints)
-    if (video.value) video.value.srcObject = stream
-  } catch (err) {
-    Modal.confirm({
-      title: `Cảnh báo`,
-      type: 'error',
-      content: `Không thể kết nối tới Webcam. Vui lòng tải lại trang.`,
-      okText: 'Thử lại',
-      cancelText: 'Hủy bỏ',
-      onOk() {
-        window.location.reload()
-      },
+const handleSubmitUpdateInfo = () => {
+  loadingPage.show()
+  requestAPI
+    .put(`${ROUTE_NAMES_API.FETCH_DATA_UPDATE_FACEID}`, formData)
+    .then(({ data: response }) => {
+      message.success(response.message)
     })
-  }
+    .catch((error) => {
+      message.error(error?.response?.data?.message || 'Không thể cập nhật khuôn mặt')
+    })
+    .finally(() => {
+      loadingPage.hide()
+    })
 }
 
-const stopVideo = () => {
-  isRunScan.value = false
-  const stream = video.value.srcObject
-
-  if (stream) {
-    const tracks = stream.getTracks()
-    tracks.forEach((track) => track.stop())
-    video.value.srcObject = null
-  }
-}
-
-const loadModels = async () => {
-  await faceapi.nets.tinyFaceDetector.loadFromUri('/models')
-  await faceapi.nets.faceLandmark68Net.loadFromUri('/models')
-  await faceapi.nets.faceRecognitionNet.loadFromUri('/models')
-  await faceapi.nets.faceExpressionNet.loadFromUri('/models')
-}
-
-const detectFace = async () => {
-  const options = new faceapi.TinyFaceDetectorOptions({ minConfidence: 0.5 })
-  const displaySize = { width: video.value.videoWidth, height: video.value.videoHeight }
-
-  faceapi.matchDimensions(canvas.value, displaySize)
-
-  let faceDescriptor = null
-
-  const getFaceAngle = (landmarks) => {
-    const leftEye = landmarks.getLeftEye()
-    const rightEye = landmarks.getRightEye()
-    const nose = landmarks.getNose()
-
-    const deltaX = rightEye[0].x - leftEye[0].x
-    const deltaY = rightEye[0].y - leftEye[0].y
-    const eyeAngle = Math.atan2(deltaY, deltaX) * (180 / Math.PI)
-
-    const noseX = nose[0].x
-    const faceCenterX = (leftEye[0].x + rightEye[3].x) / 2
-
-    if (noseX < faceCenterX - 8) {
-      return -1
-    } else if (noseX > faceCenterX + 8) {
-      return 1
-    }
-    return Math.abs(eyeAngle) < 5 ? 0 : -2
-  }
-
-  const runTask = async () => {
-    const detections = await faceapi
-      .detectAllFaces(video.value, options)
-      .withFaceLandmarks()
-      .withFaceDescriptors()
-
-    if (detections.length === 1) {
-      const detection = detections[0]
-      const landmarks = detection.landmarks
-      const descriptor = detection.descriptor
-
-      const angle = getFaceAngle(landmarks)
-
-      if (!faceDescriptor && angle === 0) {
-        faceDescriptor = descriptor
-        return renderTextStep()
-      }
-
-      if (faceDescriptor) {
-        const distance = faceapi.euclideanDistance(faceDescriptor, descriptor)
-        if (distance > 0.5) {
-          return
-        }
-
-        renderTextStep()
-        if (step.value === 0 && angle === 0) {
-          step.value = 1
-        } else if (step.value === 1 && angle === -1) {
-          step.value = 2
-        } else if (step.value === 2 && angle === 1) {
-          step.value = 3
-        } else if (step.value === 3 && angle === 0) {
-          step.value = 4
-          formData.faceEmbedding = JSON.stringify(Array.from(descriptor))
-          handleSubmitAttendance()
-          stopVideo()
-          isShowCamera.value = false
-          isRunScan.value = false
-        } else {
-          faceDescriptor = null
-        }
-      }
-    } else {
-      if (detections.length > 1) {
-        renderTextStep('Có quá nhiều khuôn mặt!')
-      } else {
-        renderTextStep('Vui lòng nhìn vào camera')
-        faceDescriptor = null
-        step.value = 0
-      }
-    }
-  }
-
-  while (isRunScan.value) {
-    if (
-      faceapi.nets.tinyFaceDetector.isLoaded &&
-      faceapi.nets.faceLandmark68Net.isLoaded &&
-      faceapi.nets.faceRecognitionNet.isLoaded &&
-      faceapi.nets.faceExpressionNet.isLoaded &&
-      video.value.readyState === 4
-    ) {
-      await runTask()
-    }
-    await new Promise((resolve) => setTimeout(resolve, 200))
-  }
+const handleUpdateInfo = async () => {
+  isShowCamera.value = true
+  faceIDStore.init(video, canvas, (descriptor) => {
+    isShowCamera.value = false
+    formData.faceEmbedding = JSON.stringify(Array.from(descriptor))
+    handleSubmitUpdateInfo()
+  })
+  await nextTick()
+  await faceIDStore.startVideo()
 }
 
 const handleCheckin = async (item) => {
   formData.idPlanDate = item.idPlanDate
-
   isShowCamera.value = true
-  isRunScan.value = true
-  step.value = 0
+  faceIDStore.init(video, canvas, (descriptor) => {
+    isShowCamera.value = false
+    formData.faceEmbedding = JSON.stringify(Array.from(descriptor))
+    handleSubmitAttendance()
+  })
   await nextTick()
-  await startVideo().then(detectFace)
+  await faceIDStore.startVideo()
 }
 
 onMounted(async () => {
   breadcrumbStore.setRoutes(breadcrumb.value)
+  fetchDataStudentInfo()
   fetchDataList()
-  await loadModels()
+  await faceIDStore.loadModels()
 })
 
 watch(
@@ -309,20 +213,16 @@ watch(
 </script>
 
 <template>
-  <a-modal v-model:open="isShowCamera" title="Đăng ký khuôn mặt" @cancel="stopVideo" :footer="null">
+  <a-modal
+    v-model:open="isShowCamera"
+    title="Xác nhận khuôn mặt"
+    @cancel="faceIDStore.stopVideo()"
+    :footer="null"
+  >
     <div class="video-container">
       <canvas ref="canvas"></canvas>
       <video ref="video" autoplay muted></video>
-      <div
-        class="face-id-loading"
-        :class="{
-          checking: step > 0,
-          step1: step > 0,
-          step2: step > 1,
-          step3: step > 2,
-          step4: step > 3,
-        }"
-      >
+      <div class="face-id-step" :class="faceIDStore.renderStyle()">
         <div></div>
         <div></div>
         <div></div>
@@ -360,9 +260,16 @@ watch(
         <div></div>
         <div></div>
       </div>
+      <div class="face-id-loading" v-show="faceIDStore.isLoading">
+        <div class="bg-loading">
+          <div></div>
+          <div></div>
+          <div></div>
+        </div>
+      </div>
     </div>
-    <div class="face-id-text" v-show="textStep != null">
-      {{ textStep }}
+    <div class="face-id-text" v-show="faceIDStore.textStep != null">
+      {{ faceIDStore.textStep }}
     </div>
   </a-modal>
 
@@ -373,7 +280,7 @@ watch(
         <a-card :bordered="false" class="cart">
           <template #title> <FilterFilled /> Bộ lọc </template>
           <div class="row g-2">
-            <div class="col-md-8 col-sm-12">
+            <div class="col-md-6 col-sm-12">
               <div class="label-title">Từ khoá:</div>
               <a-input
                 v-model:value="dataFilter.keyword"
@@ -385,7 +292,7 @@ watch(
                 </template>
               </a-input>
             </div>
-            <div class="col-md-4 col-sm-12">
+            <div class="col-md-3 col-sm-6">
               <div class="label-title">Trạng thái:</div>
               <a-select
                 v-model:value="dataFilter.status"
@@ -398,6 +305,21 @@ watch(
                 <a-select-option v-for="o in ATTENDANCE_STATUS" :value="o.id">{{
                   o.name
                 }}</a-select-option>
+              </a-select>
+            </div>
+            <div class="col-lg-3 col-md-4 col-sm-6">
+              <div class="label-title">Hình thức học:</div>
+              <a-select
+                v-model:value="dataFilter.type"
+                class="w-100"
+                :dropdownMatchSelectWidth="false"
+                placeholder="-- Tất cả hình thức --"
+                allowClear
+              >
+                <a-select-option :value="null">-- Tất cả hình thức --</a-select-option>
+                <a-select-option v-for="(name, id) in TYPE_SHIFT" :key="id" :value="id">
+                  {{ name }}
+                </a-select-option>
               </a-select>
             </div>
             <div class="col-12">
@@ -427,6 +349,11 @@ watch(
             @change="handleTableChange"
           >
             <template #bodyCell="{ column, record }">
+              <template v-if="column.dataIndex === 'shift'">
+                <a-tag :color="record.type === 1 ? 'blue' : 'purple'">
+                  {{ `${SHIFT[record.shift]} - ${TYPE_SHIFT[record.type]}` }}
+                </a-tag>
+              </template>
               <template v-if="column.dataIndex === 'date'">
                 {{
                   `${dayOfWeek(record.date)} - ${formatDate(record.date, DEFAULT_DATE_FORMAT + ' HH:mm')}`

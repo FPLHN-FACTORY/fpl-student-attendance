@@ -22,6 +22,7 @@ import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.helpers.SessionHelper;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.constants.ShiftConstant;
+import udpm.hn.studentattendance.infrastructure.constants.ShiftType;
 import udpm.hn.studentattendance.utils.DateTimeUtils;
 
 import java.util.List;
@@ -103,6 +104,13 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
             return RouterHelper.responseError("Ca học không hợp lệ");
         }
 
+        ShiftType type;
+        try {
+            type = ShiftType.fromKey(request.getType());
+        } catch (Exception e) {
+            return RouterHelper.responseError("Hình thức học không hợp lệ");
+        }
+
         Long startDate = ShiftConstant.getShiftTimeStart(request.getStartDate(), shift);
 
         if (startDate < DateTimeUtils.getCurrentTimeMillis()) {
@@ -125,6 +133,7 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
 
         planDate.setStartDate(startDate);
         planDate.setShift(request.getShift());
+        planDate.setType(type);
         planDate.setDescription(request.getDescription());
         planDate.setLateArrival(request.getLateArrival());
 
@@ -162,6 +171,13 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
             return RouterHelper.responseError("Ca học không hợp lệ");
         }
 
+        ShiftType type;
+        try {
+            type = ShiftType.fromKey(request.getType());
+        } catch (Exception e) {
+            return RouterHelper.responseError("Hình thức học không hợp lệ");
+        }
+
         Long startDate = ShiftConstant.getShiftTimeStart(request.getStartDate(), shift);
 
         if (startDate < DateTimeUtils.getCurrentTimeMillis()) {
@@ -184,6 +200,7 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
         planDate.setPlanFactory(planFactory);
         planDate.setStartDate(startDate);
         planDate.setShift(request.getShift());
+        planDate.setType(type);
         planDate.setDescription(request.getDescription());
         planDate.setLateArrival(request.getLateArrival());
 
