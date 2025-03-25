@@ -9,6 +9,7 @@ import org.springframework.validation.annotation.Validated;
 import udpm.hn.studentattendance.core.teacher.student.model.request.Teacher_StudentFactoryRequest;
 import udpm.hn.studentattendance.core.teacher.student.repository.Teacher_StudentFactoryExtendRepository;
 import udpm.hn.studentattendance.core.teacher.student.service.Teacher_StudentFactoryService;
+import udpm.hn.studentattendance.entities.UserStudent;
 import udpm.hn.studentattendance.entities.UserStudentFactory;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
 import udpm.hn.studentattendance.helpers.SessionHelper;
@@ -16,6 +17,7 @@ import udpm.hn.studentattendance.infrastructure.common.ApiResponse;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.RestApiStatus;
+import udpm.hn.studentattendance.repositories.UserStudentRepository;
 
 import java.util.Optional;
 
@@ -25,6 +27,8 @@ import java.util.Optional;
 @Validated
 public class Teacher_StudentFactoryServiceImpl implements Teacher_StudentFactoryService {
     private final Teacher_StudentFactoryExtendRepository teacherStudentFactoryExtendRepository;
+
+    private final UserStudentRepository userStudentRepository;
 
     private final SessionHelper sessionHelper;
 
@@ -79,6 +83,30 @@ public class Teacher_StudentFactoryServiceImpl implements Teacher_StudentFactory
                             null
                     ),
                     HttpStatus.OK);
+        }
+        return new ResponseEntity<>(
+                new ApiResponse(
+                        RestApiStatus.ERROR,
+                        "Sinh viên không tồn tại",
+                        null
+                ),
+                HttpStatus.BAD_REQUEST);
+    }
+
+    @Override
+    public ResponseEntity<?> deleteFaceStudentFactory(String studentId) {
+        Optional<UserStudent> existUserStudent = userStudentRepository.findById(studentId);
+        if (existUserStudent.isPresent()){
+            UserStudent userStudent = existUserStudent.get();
+            userStudent.setFaceEmbedding(null);
+            userStudentRepository.save(userStudent);
+            return new ResponseEntity<>(
+                    new ApiResponse(
+                            RestApiStatus.SUCCESS,
+                            "Cấp quyền thay đổi mặt thành công",
+                            userStudent
+                    ),
+            HttpStatus.OK);
         }
         return new ResponseEntity<>(
                 new ApiResponse(

@@ -20,6 +20,10 @@ public class Teacher_TeachingScheduleRestController {
         return service.getAllTeachingScheduleByStaff(request);
     }
 
+    @GetMapping("/schedule-present")
+    public ResponseEntity<?> getTeachingScheduleByPresent(Teacher_TeachingScheduleRequest request) {
+        return service.getAllTeachingSchedulePresent(request);
+    }
 
     @GetMapping("/factories")
     public ResponseEntity<?> getAllFactoriesStaff() {
@@ -37,12 +41,12 @@ public class Teacher_TeachingScheduleRestController {
     }
 
     @GetMapping("/{planDateId}")
-    public ResponseEntity<?> getDetailPlanDate(@PathVariable("planDateId") String planDateId){
+    public ResponseEntity<?> getDetailPlanDate(@PathVariable("planDateId") String planDateId) {
         return service.getDetailPlanDate(planDateId);
     }
 
     @PutMapping()
-    public ResponseEntity<?> updatePlanDate(@RequestBody Teacher_TSPlanDateUpdateRequest planDateUpdateRequest){
+    public ResponseEntity<?> updatePlanDate(@RequestBody Teacher_TSPlanDateUpdateRequest planDateUpdateRequest) {
         return service.updatePlanDate(planDateUpdateRequest);
     }
 }

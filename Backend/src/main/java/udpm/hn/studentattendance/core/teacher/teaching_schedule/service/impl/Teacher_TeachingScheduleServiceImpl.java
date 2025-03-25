@@ -148,4 +148,20 @@ public class Teacher_TeachingScheduleServiceImpl implements Teacher_TeachingSche
                 ),
                 HttpStatus.BAD_REQUEST);
     }
+
+    @Override
+    public ResponseEntity<?> getAllTeachingSchedulePresent(Teacher_TeachingScheduleRequest teachingScheduleRequest) {
+        Pageable pageable = PaginationHelper.createPageable(teachingScheduleRequest);
+        PageableObject list = PageableObject.of
+                (teacherTeachingScheduleExtendRepository
+                        .getAllTeachingSchedulePresent
+                                (sessionHelper.getUserId(), pageable, teachingScheduleRequest));
+        return new ResponseEntity<>(
+                new ApiResponse(
+                        RestApiStatus.SUCCESS,
+                        "Lấy lịch dạy hôm nay của giảng viên " + sessionHelper.getUserId() + " thành công",
+                        list
+                ),
+        HttpStatus.OK);
+    }
 }
