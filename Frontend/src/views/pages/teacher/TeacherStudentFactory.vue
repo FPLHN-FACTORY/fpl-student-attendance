@@ -1,10 +1,11 @@
 <script setup>
 import {
   DeleteFilled,
-  DeleteOutlined,
   FilterFilled,
   SyncOutlined,
   UnorderedListOutlined,
+  UserDeleteOutlined,
+  UserOutlined, // <-- Import icon mới
 } from '@ant-design/icons-vue'
 import { ref, reactive, onMounted } from 'vue'
 import { message, Modal } from 'ant-design-vue'
@@ -64,7 +65,7 @@ const columns = ref([
     key: 'statusStudentFactory',
     width: 120,
   },
-  { title: 'Chức năng', key: 'actions', width: 80 },
+  { title: 'Chức năng', key: 'actions', width: 120 }, // Có thể tăng width nếu cần
 ])
 
 const loadingStore = useLoadingStore()
@@ -146,6 +147,30 @@ const toggleStatusStudentFactory = (record) => {
         })
         .catch((error) => {
           message.error(error.response?.data?.message || 'Lỗi khi đổi trạng thái sinh viên')
+        })
+        .finally(() => {
+          loadingStore.hide()
+        })
+    },
+  })
+}
+
+// <-- Thêm hàm changeFaceStudent
+const changeFaceStudent = (record) => {
+  Modal.confirm({
+    title: 'Xác nhận đổi mặt',
+    content: `Bạn có chắc muốn đổi mặt của học sinh ${record.studentName}?`,
+    onOk() {
+      loadingStore.show()
+      // Giả sử record chứa studentId, nếu không hãy thay đổi cho phù hợp
+      requestAPI
+        .put(API_ROUTES_TEACHER.FETCH_DATA_STUDENT_FACTORY + '/change-face/' + record.studentId)
+        .then((response) => {
+          message.success(response.data.message || 'Đổi mặt học sinh thành công')
+          fetchStudentFactory() // Làm mới danh sách sau khi đổi mặt
+        })
+        .catch((error) => {
+          message.error(error.response?.data?.message || 'Lỗi khi đổi mặt học sinh')
         })
         .finally(() => {
           loadingStore.hide()
@@ -256,10 +281,20 @@ onMounted(() => {
                   <a-tooltip title="Đổi trạng thái">
                     <a-button
                       type="text"
-                      class="btn-outline-warning"
+                      class="btn-outline-warning me-2"
                       @click="toggleStatusStudentFactory(record)"
                     >
                       <SyncOutlined />
+                    </a-button>
+                  </a-tooltip>
+                  <!-- Nút đổi mặt học sinh -->
+                  <a-tooltip title="Đổi mặt học sinh">
+                    <a-button
+                      type="text"
+                      class="btn-outline-info"
+                      @click="changeFaceStudent(record)"
+                    >
+                      <UserDeleteOutlined />
                     </a-button>
                   </a-tooltip>
                 </a-space>

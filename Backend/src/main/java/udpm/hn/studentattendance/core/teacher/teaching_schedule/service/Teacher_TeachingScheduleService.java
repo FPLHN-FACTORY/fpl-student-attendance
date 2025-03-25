@@ -18,4 +18,6 @@ public interface Teacher_TeachingScheduleService {
     ResponseEntity<?> updatePlanDate(Teacher_TSPlanDateUpdateRequest planDateUpdateRequest);
 
     ResponseEntity<?> getDetailPlanDate(String planDateId);
+
+    ResponseEntity<?> getAllTeachingSchedulePresent(Teacher_TeachingScheduleRequest teachingScheduleRequest);
 }

@@ -82,6 +82,63 @@ public interface Teacher_TeachingScheduleExtendRepository extends PlanDateReposi
     Page<Teacher_TeachingScheduleResponse> getAllTeachingScheduleByStaff(
             String userId, Pageable pageable, Teacher_TeachingScheduleRequest teachingScheduleRequest);
 
+    @Query(
+            value = """
+                                SELECT
+                                        ROW_NUMBER() OVER (ORDER BY pd.start_date ASC) AS indexs,
+                                            pd.id AS idPlanDate,
+                                            pd.start_date AS teachingDay,
+                                            pd.shift AS shift,
+                                            sb.code AS subjectCode,
+                                            ft.name AS factoryName,
+                                            p.name AS projectName,
+                                            pd.late_arrival AS lateArrival,
+                                            pd.description AS description
+                                        FROM
+                                            plan_date pd
+                                            LEFT JOIN plan_factory pf ON pf.id = pd.id_plan_factory
+                                            LEFT JOIN factory ft ON ft.id = pf.id_factory
+                                            LEFT JOIN user_staff us ON us.id = ft.id_user_staff
+                                            LEFT JOIN project p ON p.id = ft.id_project
+                                            LEFT JOIN subject_facility sf ON sf.id = p.id_subject_facility
+                                            LEFT JOIN subject sb ON sb.id = sf.id_subject
+                                        WHERE
+                                            us.id = :userId
+                                            AND us.status = 1
+                                            AND pd.status = 1
+                                            AND ft.status = 1
+                                            AND p.status = 1
+                                            AND sf.status = 1
+                                            AND sb.status = 1
+                                            AND pf.status = 1
+                                            AND DATE(FROM_UNIXTIME(pd.start_date / 1000)) = CURDATE()
+                                        ORDER BY pd.start_date ASC 
+                                
+                    """,
+            countQuery = """
+                    SELECT COUNT(*)
+                    FROM
+                        plan_date pd
+                        LEFT JOIN plan_factory pf ON pf.id = pd.id_plan_factory
+                        LEFT JOIN factory ft ON ft.id = pf.id_factory
+                        LEFT JOIN user_staff us ON us.id = ft.id_user_staff
+                        LEFT JOIN project p ON p.id = ft.id_project
+                        LEFT JOIN subject_facility sf ON sf.id = p.id_subject_facility
+                        LEFT JOIN subject sb ON sb.id = sf.id_subject
+                    WHERE
+                        us.id = :userId
+                        AND us.status = 1
+                        AND pd.status = 1
+                        AND ft.status = 1
+                        AND p.status = 1
+                        AND sf.status = 1
+                        AND sb.status = 1
+                        AND pf.status = 1
+                        AND DATE(FROM_UNIXTIME(pd.start_date / 1000)) = CURDATE()
+                    """, nativeQuery = true
+    )
+    Page<Teacher_TeachingScheduleResponse> getAllTeachingSchedulePresent(String userId, Pageable pageable, Teacher_TeachingScheduleRequest teachingScheduleRequest);
+
     @Query
             (value = """
                     SELECT 
