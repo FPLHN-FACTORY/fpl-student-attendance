@@ -54,6 +54,9 @@ const computedEndDate = computed(() => {
   return type === 'future' ? Date.now() + days * 24 * 60 * 60 * 1000 : Date.now()
 })
 
+// Dữ liệu lịch dạy hôm nay
+const teachingSchedulePresent = ref([])
+const presentPagination = ref({ ...DEFAULT_PAGINATION })
 // Dữ liệu lịch dạy và phân trang
 const teachingScheduleRecords = ref([])
 const pagination = ref({ ...DEFAULT_PAGINATION })
@@ -75,6 +78,23 @@ const columns = [
   { title: 'Mô tả / Hành động', dataIndex: 'description', key: 'description', width: 100 },
 ]
 
+// phần lịch dạy hiện tại để quản lý điểm danh cho sinh viên
+const columnsTeachingPresent = [
+  { title: '#', dataIndex: 'indexs', key: 'indexs', width: 50 },
+  { title: 'Ngày dạy', dataIndex: 'teachingDay', key: 'teachingDay', width: 100 },
+  { title: 'Ca học', dataIndex: 'shift', key: 'shift', width: 50 },
+  {
+    title: 'Điểm danh muộn tối đa (phút)',
+    dataIndex: 'lateArrival',
+    key: 'lateArrival',
+    width: 50,
+  },
+  { title: 'Mã môn', dataIndex: 'subjectCode', key: 'subjectCode', width: 50 },
+  { title: 'Xưởng', dataIndex: 'factoryName', key: 'factoryName', width: 100 },
+  { title: 'Dự án', dataIndex: 'projectName', key: 'projectName', width: 180 },
+  { title: 'Mô tả / Hành động', dataIndex: 'description', key: 'description', width: 80 },
+  { title: 'Điểm danh', dataIndex: 'attendance', key: 'action', width: 80 },
+]
 // Các danh sách dropdown
 const subjects = ref([])
 const factories = ref([])
@@ -93,6 +113,29 @@ const prepareFilterParams = (params) => {
     }
   })
   return copy
+}
+const fetchTeachingSchedulePresent = () => {
+  loadingStore.show()
+  requestAPI
+    .get(API_ROUTES_TEACHER.FETCH_DATA_SCHEDULE + '/schedule-present', {
+      params: {
+        page: presentPagination.value.current,
+        size: presentPagination.value.pageSize,
+      },
+    })
+    .then((response) => {
+      const result = response.data.data
+      teachingSchedulePresent.value = result.data
+      presentPagination.value.total =
+        result.totalRecords || result.totalPages * presentPagination.value.pageSize
+      presentPagination.value.current = result.page || presentPagination.value.current
+    })
+    .catch((error) => {
+      message.error(error.response?.data?.message || 'Lỗi khi tải dữ liệu lịch dạy hôm nay')
+    })
+    .finally(() => {
+      loadingStore.hide()
+    })
 }
 
 // Lấy dữ liệu lịch dạy
@@ -161,6 +204,13 @@ const fetchProjects = () => {
     .catch((error) => {
       message.error(error.response?.data?.message || 'Lỗi khi tải danh sách dự án')
     })
+}
+const handlePresentTableChange = (paginationData) => {
+  filter.page = paginationData.current
+  filter.pageSize = paginationData.pageSize
+  presentPagination.value.current = paginationData.current
+  presentPagination.value.pageSize = paginationData.pageSize
+  fetchTeachingSchedulePresent()
 }
 
 // Xử lý phân trang
@@ -250,6 +300,7 @@ const durationOptions = [
 onMounted(() => {
   breadcrumbStore.setRoutes(breadcrumb.value)
   fetchTeachingSchedule()
+  fetchTeachingSchedulePresent()
   fetchSubjects()
   fetchFactories()
   fetchProjects()
@@ -347,6 +398,66 @@ onMounted(() => {
               </a-select>
             </div>
           </div>
+        </a-card>
+      </div>
+    </div>
+    <!-- Row cho table lịch dạy hôm nay -->
+    <div class="row g-4 mb-3">
+      <div class="col-12">
+        <a-card :bordered="false" class="cart">
+          <template #title> <UnorderedListOutlined /> Lịch dạy hôm nay </template>
+          <a-table
+            :dataSource="teachingSchedulePresent"
+            :columns="columnsTeachingPresent"
+            :rowKey="(record) => record.idPlanDate"
+            :pagination="presentPagination"
+            @change="handlePresentTableChange"
+            :loading="isLoading"
+            :scroll="{ y: 500, x: 'auto' }"
+          >
+            <template #bodyCell="{ column, record, index }">
+              <template v-if="column.dataIndex">
+                <!-- Cột số thứ tự -->
+                <template v-if="column.dataIndex === 'indexs'">
+                  {{ (presentPagination.current - 1) * presentPagination.pageSize + index + 1 }}
+                </template>
+                <!-- Cột ngày dạy -->
+                <template v-else-if="column.dataIndex === 'teachingDay'">
+                  {{
+                    `${dayOfWeek(record.teachingDay)} - ${formatDate(
+                      record.teachingDay,
+                      DEFAULT_DATE_FORMAT + ' HH:mm'
+                    )}`
+                  }}
+                </template>
+                <!-- Cột ca học -->
+                <template v-else-if="column.dataIndex === 'shift'">
+                  <a-tag color="purple">
+                    {{ SHIFT[record.shift] }}
+                  </a-tag>
+                </template>
+                <!-- Cột điểm danh muộn -->
+                <template v-else-if="column.dataIndex === 'lateArrival'">
+                  <a-tag :color="record.lateArrival > 0 ? 'gold' : 'green'">
+                    {{ record.lateArrival }}
+                    <ExclamationCircleOutlined />
+                  </a-tag>
+                </template>
+                <!-- Cột mô tả / hành động -->
+                <template v-else-if="column.dataIndex === 'description'">
+                  <a-tooltip title="Xem, sửa mô tả">
+                    <a-typography-link @click="handleShowDescription(record)">
+                      Chi tiết
+                    </a-typography-link>
+                  </a-tooltip>
+                </template>
+                <!-- Các cột khác -->
+                <template v-else>
+                  {{ record[column.dataIndex] }}
+                </template>
+              </template>
+            </template>
+          </a-table>
         </a-card>
       </div>
     </div>

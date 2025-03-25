@@ -407,7 +407,6 @@ onMounted(() => {
             @change="handleTableChange"
           >
             <template #bodyCell="{ column, record }">
-              <!-- Hiển thị trạng thái -->
               <template v-if="column.dataIndex === 'staffStatus'">
                 <a-tag
                   :color="
@@ -421,14 +420,12 @@ onMounted(() => {
                   }}
                 </a-tag>
               </template>
-              <!-- Cột Vai trò: hiển thị tên thay vì mã -->
               <template v-else-if="column.dataIndex === 'roleCode'">
                 {{ convertRole(record.roleCode) }}
               </template>
-              <!-- Các nút chức năng có tooltip -->
               <template v-else-if="column.key === 'actions'">
                 <a-space>
-                  <a-tooltip title="Chức vụ/ cơ sở/ bộ môn">
+                  <!-- <a-tooltip title="Chức vụ/ cơ sở/ bộ môn">
                     <a-button
                       @click="handleDetailStaff(record)"
                       type="text"
@@ -436,7 +433,7 @@ onMounted(() => {
                     >
                       <EyeFilled />
                     </a-button>
-                  </a-tooltip>
+                  </a-tooltip> -->
                   <a-tooltip title="Sửa nhân viên">
                     <a-button
                       @click="handleUpdateStaff(record)"
