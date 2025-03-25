@@ -7,7 +7,7 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class Admin_CreateUpdateFacilityRequest {
+public class AFCreateUpdateFacilityRequest {
     @NotBlank(message = "Tên cơ sở không được để trống")
     @Size(min = 3, message = "Tên cơ sở phải có ít nhất 3 kí tự")
     @Size(max = 50, message = "Tên cơ sở phải ít hơn 50 kí tự")

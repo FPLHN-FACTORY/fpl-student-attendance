@@ -10,7 +10,7 @@ import {
 } from '@ant-design/icons-vue'
 import { message, Modal } from 'ant-design-vue'
 import requestAPI from '@/services/requestApiService'
-import { DEFAULT_PAGINATION } from '@/constants'
+import { DEFAULT_PAGINATION, TYPE_SHIFT } from '@/constants'
 import { API_ROUTES_STAFF } from '@/constants/staffConstant'
 import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
 import { API_ROUTES_EXCEL, GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
@@ -88,6 +88,7 @@ const dataFilter = reactive({
   keyword: null,
   status: null,
   shift: null,
+  type: null,
   startDate: null,
 })
 
@@ -98,6 +99,7 @@ const formData = reactive({
   idPlan: null,
   description: null,
   shift: Object.keys(SHIFT)[0],
+  type: null,
   startDate: null,
   lateArrival: DEFAULT_LATE_ARRIVAL,
 })
@@ -105,6 +107,7 @@ const formData = reactive({
 const formRules = reactive({
   startDate: [{ required: true, message: 'Vui lòng chọn ngày học diễn ra!' }],
   shift: [{ required: true, message: 'Vui lòng chọn ca học!' }],
+  type: [{ required: true, message: 'Vui lòng chọn hình thức học!' }],
   lateArrival: [{ required: true, message: 'Vui lòng nhập thời gian điểm danh muộn tối đa!' }],
   description: [{ required: true, message: 'Vui lòng nhập nội dung buổi học!' }],
 })
@@ -250,6 +253,7 @@ const handleClearFilter = () => {
     keyword: null,
     status: null,
     shift: null,
+    type: null,
     startDate: null,
   })
   fetchDataList()
@@ -279,6 +283,7 @@ const handleShowAdd = () => {
   formData.id = null
   formData.startDate = dayjs()
   formData.shift = Object.keys(SHIFT)[0]
+  formData.type = null
   formData.lateArrival = DEFAULT_LATE_ARRIVAL
   formData.description = null
 }
@@ -296,6 +301,7 @@ const handleShowUpdate = (item) => {
   formData.id = item.id
   formData.startDate = dayjs(item.startDate)
   formData.shift = item.shift
+  formData.type = String(item.type)
   formData.lateArrival = item.lateArrival
   formData.description = item.description
 }
@@ -401,7 +407,7 @@ watch(
   () => {
     handleSubmitFilter()
   },
-  { deep: true }
+  { deep: true },
 )
 </script>
 
@@ -445,8 +451,22 @@ watch(
         </a-select>
       </a-form-item>
 
+      <a-form-item class="col-sm-5" label="Hình thức học" name="type" :rules="formRules.type">
+        <a-select
+          v-model:value="formData.type"
+          class="w-100"
+          :dropdownMatchSelectWidth="false"
+          placeholder="-- Hình thức học --"
+          allowClear
+        >
+          <a-select-option v-for="(name, id) in TYPE_SHIFT" :key="id" :value="id">
+            {{ name }}
+          </a-select-option>
+        </a-select>
+      </a-form-item>
+
       <a-form-item
-        class="col-sm-12"
+        class="col-sm-7"
         label="Điểm danh muộn tối đa (phút)"
         name="lateArrival"
         :rules="formRules.lateArrival"
@@ -486,7 +506,7 @@ watch(
         <a-card :bordered="false" class="cart">
           <template #title> <FilterFilled /> Bộ lọc </template>
           <div class="row g-2">
-            <div class="col-lg-6 col-md-12 col-sm-8">
+            <div class="col-lg-8 col-md-8 col-sm-12">
               <div class="label-title">Từ khoá:</div>
               <a-input
                 v-model:value="dataFilter.keyword"
@@ -498,7 +518,7 @@ watch(
                 </template>
               </a-input>
             </div>
-            <div class="col-lg-2 col-md-4 col-sm-4">
+            <div class="col-lg-4 col-md-4 col-sm-6">
               <div class="label-title">Trạng thái:</div>
               <a-select
                 v-model:value="dataFilter.status"
@@ -517,7 +537,22 @@ watch(
                 </a-select-option>
               </a-select>
             </div>
-            <div class="col-lg-2 col-md-4 col-sm-6">
+            <div class="col-lg-4 col-md-4 col-sm-6">
+              <div class="label-title">Hình thức học:</div>
+              <a-select
+                v-model:value="dataFilter.type"
+                class="w-100"
+                :dropdownMatchSelectWidth="false"
+                placeholder="-- Tất cả hình thức --"
+                allowClear
+              >
+                <a-select-option :value="null">-- Tất cả hình thức --</a-select-option>
+                <a-select-option v-for="(name, id) in TYPE_SHIFT" :key="id" :value="id">
+                  {{ name }}
+                </a-select-option>
+              </a-select>
+            </div>
+            <div class="col-lg-4 col-md-4 col-sm-6">
               <div class="label-title">Ca học:</div>
               <a-select
                 v-model:value="dataFilter.shift"
@@ -532,7 +567,7 @@ watch(
                 </a-select-option>
               </a-select>
             </div>
-            <div class="col-lg-2 col-md-4 col-sm-6">
+            <div class="col-lg-4 col-md-4 col-sm-6">
               <div class="label-title">Ngày diễn ra:</div>
               <a-date-picker
                 class="w-100"
@@ -595,13 +630,13 @@ watch(
                   {{
                     `${dayOfWeek(record.startDate)} - ${formatDate(
                       record.startDate,
-                      DEFAULT_DATE_FORMAT + ' HH:mm'
+                      DEFAULT_DATE_FORMAT + ' HH:mm',
                     )}`
                   }}
                 </template>
                 <template v-if="column.dataIndex === 'shift'">
-                  <a-tag color="purple">
-                    {{ SHIFT[record.shift] }}
+                  <a-tag :color="record.type === 1 ? 'blue' : 'purple'">
+                    {{ `${SHIFT[record.shift]} - ${TYPE_SHIFT[record.type]}` }}
                   </a-tag>
                 </template>
                 <template v-if="column.dataIndex === 'status'">

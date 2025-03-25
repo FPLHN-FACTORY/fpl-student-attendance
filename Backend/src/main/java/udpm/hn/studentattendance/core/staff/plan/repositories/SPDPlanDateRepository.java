@@ -22,6 +22,7 @@ public interface SPDPlanDateRepository extends PlanDateRepository {
             pd.id,
             pd.start_date,
             pd.shift,
+            pd.type,
             pd.late_arrival,
             pd.description,
             CASE
@@ -33,17 +34,13 @@ public interface SPDPlanDateRepository extends PlanDateRepository {
         JOIN plan_factory pf ON pd.id_plan_factory = pf.id
         JOIN factory f ON f.id = pf.id_factory
         JOIN project p ON p.id = f.id_project
-        JOIN semester s ON p.id_semester = s.id
         JOIN subject_facility sf ON sf.id = p.id_subject_facility
         WHERE 
-            f.status = 1 AND
-            p.status = 1 AND
-            sf.status = 1 AND
-            s.status = 1 AND
             sf.id_facility = :#{#request.idFacility} AND
             pf.id = :#{#request.idPlanFactory} AND
             (NULLIF(TRIM(:#{#request.keyword}), '') IS NULL OR pd.description LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%')) AND
             (:#{#request.shift} IS NULL OR pd.shift = :#{#request.shift}) AND
+            (:#{#request.type} IS NULL OR pd.type = :#{#request.type}) AND
             (:#{#request.startDate} IS NULL OR (
                 DAY(FROM_UNIXTIME(pd.start_date / 1000)) = DAY(FROM_UNIXTIME(:#{#request.startDate} / 1000)) AND
                 MONTH(FROM_UNIXTIME(pd.start_date / 1000)) = MONTH(FROM_UNIXTIME(:#{#request.startDate} / 1000)) AND
@@ -64,17 +61,13 @@ public interface SPDPlanDateRepository extends PlanDateRepository {
         JOIN plan_factory pf ON pd.id_plan_factory = pf.id
         JOIN factory f ON f.id = pf.id_factory
         JOIN project p ON p.id = f.id_project
-        JOIN semester s ON p.id_semester = s.id
         JOIN subject_facility sf ON sf.id = p.id_subject_facility
         WHERE 
-            f.status = 1 AND
-            p.status = 1 AND
-            sf.status = 1 AND
-            s.status = 1 AND
             sf.id_facility = :#{#request.idFacility} AND
             pf.id = :#{#request.idPlanFactory} AND
             (NULLIF(TRIM(:#{#request.keyword}), '') IS NULL OR pd.description LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%')) AND
             (:#{#request.shift} IS NULL OR pd.shift = :#{#request.shift}) AND
+            (:#{#request.type} IS NULL OR pd.type = :#{#request.type}) AND
             (:#{#request.startDate} IS NULL OR (
                 DAY(FROM_UNIXTIME(pd.start_date / 1000)) = DAY(FROM_UNIXTIME(:#{#request.startDate} / 1000)) AND
                 MONTH(FROM_UNIXTIME(pd.start_date / 1000)) = MONTH(FROM_UNIXTIME(:#{#request.startDate} / 1000)) AND
@@ -109,14 +102,8 @@ public interface SPDPlanDateRepository extends PlanDateRepository {
         JOIN plan pl ON pl.id = pf.id_plan
         JOIN factory f ON f.id = pf.id_factory
         JOIN project p ON p.id = f.id_project
-        JOIN semester s ON p.id_semester = s.id
         JOIN subject_facility sf ON sf.id = p.id_subject_facility
         WHERE 
-            f.status = 1 AND
-            pl.status = 1 AND
-            p.status = 1 AND
-            sf.status = 1 AND
-            s.status = 1 AND
             sf.id_facility = :idFacility AND
             pd.id = :idPlanDate
     """, nativeQuery = true)

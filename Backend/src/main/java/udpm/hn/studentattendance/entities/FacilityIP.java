@@ -10,10 +10,11 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.ToString;
 import org.hibernate.annotations.DynamicUpdate;
 import udpm.hn.studentattendance.entities.base.PrimaryEntity;
 import udpm.hn.studentattendance.infrastructure.constants.EntityProperties;
-import udpm.hn.studentattendance.infrastructure.constants.ShiftType;
+import udpm.hn.studentattendance.infrastructure.constants.IPType;
 
 import java.io.Serializable;
 
@@ -22,27 +23,19 @@ import java.io.Serializable;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-@Table(name = "plan_date")
+@Table(name = "facility_ip")
 @DynamicUpdate
-public class PlanDate extends PrimaryEntity implements Serializable {
-
-    @Column(name = "description", length = EntityProperties.LENGTH_TEXT)
-    private String description;
-
-    @Column(name = "start_date")
-    private Long startDate;
-
-    @Column(name = "shift")
-    private Integer shift;
-
-    @Column(name = "late_arrival")
-    private Integer lateArrival;
+@ToString
+public class FacilityIP extends PrimaryEntity implements Serializable {
 
     @Column(name = "type")
-    private ShiftType type = ShiftType.OFFLINE;
+    private IPType type;
+
+    @Column(name = "ip", length = EntityProperties.LENGTH_NAME)
+    private String ip;
 
     @ManyToOne
-    @JoinColumn(name = "id_plan_factory")
-    private PlanFactory planFactory;
+    @JoinColumn(name = "id_facility", nullable = false)
+    private Facility facility;
 
 }
