@@ -3,12 +3,17 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import * as faceapi from 'face-api.js'
 
+const DEEP_CHECK = true
+const TIME_LOOP_RECHECK = 400
+const THRESHOLDS_IDENTIFY = 8
+
 const useFaceIDStore = defineStore('faceID', () => {
   let video = null
   let canvas = null
   let onSuccess = null
 
   const isRunScan = ref(false)
+  const isLoading = ref(true)
 
   const step = ref(0)
   const textStep = ref('Vui lòng đợi camera...')
@@ -44,6 +49,7 @@ const useFaceIDStore = defineStore('faceID', () => {
     step.value = 0
     dataImage.value = null
     isRunScan.value = true
+    isLoading.value = true
     try {
       const constraints = {
         video: { facingMode: 'environment' },
@@ -69,8 +75,8 @@ const useFaceIDStore = defineStore('faceID', () => {
 
   const stopVideo = () => {
     isRunScan.value = false
+    isLoading.value = false
     const stream = video.value.srcObject
-
     if (stream) {
       const tracks = stream.getTracks()
       tracks.forEach((track) => track.stop())
@@ -79,14 +85,17 @@ const useFaceIDStore = defineStore('faceID', () => {
   }
 
   const loadModels = async () => {
-    await faceapi.nets.tinyFaceDetector.loadFromUri('/models')
+    DEEP_CHECK && (await faceapi.nets.ssdMobilenetv1.loadFromUri('/models'))
+    !DEEP_CHECK && (await faceapi.nets.tinyFaceDetector.loadFromUri('/models'))
     await faceapi.nets.faceLandmark68Net.loadFromUri('/models')
     await faceapi.nets.faceRecognitionNet.loadFromUri('/models')
     await faceapi.nets.faceExpressionNet.loadFromUri('/models')
   }
 
   const detectFace = async () => {
-    const options = new faceapi.TinyFaceDetectorOptions({ minConfidence: 0.5 })
+    const options = DEEP_CHECK
+      ? new faceapi.SsdMobilenetv1Options({ minConfidence: 0.5 })
+      : new faceapi.TinyFaceDetectorOptions()
     const displaySize = { width: video.value.videoWidth, height: video.value.videoHeight }
 
     faceapi.matchDimensions(canvas.value, displaySize)
@@ -105,9 +114,9 @@ const useFaceIDStore = defineStore('faceID', () => {
       const noseX = nose[0].x
       const faceCenterX = (leftEye[0].x + rightEye[3].x) / 2
 
-      if (noseX < faceCenterX - 8) {
+      if (noseX < faceCenterX - THRESHOLDS_IDENTIFY) {
         return -1
-      } else if (noseX > faceCenterX + 8) {
+      } else if (noseX > faceCenterX + THRESHOLDS_IDENTIFY) {
         return 1
       }
       return Math.abs(eyeAngle) < 5 ? 0 : -2
@@ -160,6 +169,7 @@ const useFaceIDStore = defineStore('faceID', () => {
             typeof onSuccess == 'function' && onSuccess(descriptor)
             isRunScan.value = false
           } else {
+            // faceDescriptor = null
           }
         }
       } else if (detections.length > 1) {
@@ -172,16 +182,20 @@ const useFaceIDStore = defineStore('faceID', () => {
     }
 
     while (isRunScan.value) {
+      const model = DEEP_CHECK
+        ? faceapi.nets.ssdMobilenetv1.isLoaded
+        : faceapi.nets.tinyFaceDetector.isLoaded
       if (
-        faceapi.nets.tinyFaceDetector.isLoaded &&
+        model &&
         faceapi.nets.faceLandmark68Net.isLoaded &&
         faceapi.nets.faceRecognitionNet.isLoaded &&
         faceapi.nets.faceExpressionNet.isLoaded &&
         video.value?.readyState === 4
       ) {
         await runTask()
+        isLoading.value && (isLoading.value = false)
       }
-      await new Promise((resolve) => setTimeout(resolve, 800))
+      await new Promise((resolve) => setTimeout(resolve, TIME_LOOP_RECHECK))
     }
   }
 
@@ -205,6 +219,7 @@ const useFaceIDStore = defineStore('faceID', () => {
     dataImage,
     step,
     textStep,
+    isLoading,
   }
 })
 

@@ -24,7 +24,6 @@ const video = ref(null)
 const canvas = ref(null)
 
 const formData = reactive({
-  id: authStore.user.id,
   idFacility: null,
   name: authStore.user.name,
   code: authStore.user.code,
@@ -115,7 +114,7 @@ onMounted(async () => {
     <div class="video-container">
       <canvas ref="canvas"></canvas>
       <video ref="video" autoplay muted></video>
-      <div class="face-id-loading" :class="faceIDStore.renderStyle()">
+      <div class="face-id-step" :class="faceIDStore.renderStyle()">
         <div></div>
         <div></div>
         <div></div>
@@ -152,6 +151,13 @@ onMounted(async () => {
         <div></div>
         <div></div>
         <div></div>
+      </div>
+      <div class="face-id-loading" v-show="faceIDStore.isLoading">
+        <div class="bg-loading">
+          <div></div>
+          <div></div>
+          <div></div>
+        </div>
       </div>
     </div>
     <div class="face-id-text" v-show="faceIDStore.textStep != null">

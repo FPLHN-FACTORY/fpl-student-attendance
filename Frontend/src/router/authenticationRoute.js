@@ -5,6 +5,8 @@ export const ROUTE_NAMES_API = {
   FETCH_DATA_FACILITY: API_URL + '/get-all-facility',
   FETCH_DATA_INFO_USER: API_URL + '/get-info-user',
   FETCH_DATA_REGISTER: API_URL + '/student-register',
+  FETCH_DATA_UPDATE_FACEID: API_URL + '/student-update-face-id',
+  FETCH_DATA_STUDENT_INFO: API_URL + '/student-info',
 }
 
 export const ROUTE_NAMES = {

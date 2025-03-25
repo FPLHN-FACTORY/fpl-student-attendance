@@ -42,9 +42,6 @@ public interface SPDPlanRepository extends PlanRepository {
         LEFT JOIN subject_facility sf ON sf.id = p.id_subject_facility
         LEFT JOIN subject s2 ON s2.id = sf.id_subject
         WHERE 
-            sf.status = 1 AND
-            s.status = 1 AND
-            s2.status = 1 AND
             sf.id_facility = :#{#request.idFacility} AND
             (NULLIF(TRIM(:#{#request.keyword}), '') IS NULL OR BINARY pl.name LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%')) AND
             (:#{#request.level} IS NULL OR lp.id = :#{#request.level}) AND
@@ -63,10 +60,6 @@ public interface SPDPlanRepository extends PlanRepository {
         LEFT JOIN subject_facility sf ON sf.id = p.id_subject_facility
         LEFT JOIN subject s2 ON s2.id = sf.id_subject
         WHERE 
-            p.status = 1 AND
-            sf.status = 1 AND
-            s.status = 1 AND
-            s2.status = 1 AND
             sf.id_facility = :#{#request.idFacility} AND
             (NULLIF(TRIM(:#{#request.keyword}), '') IS NULL OR BINARY pl.name LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%')) AND
             (:#{#request.level} IS NULL OR lp.id = :#{#request.level}) AND
@@ -100,10 +93,6 @@ public interface SPDPlanRepository extends PlanRepository {
         LEFT JOIN subject_facility sf ON sf.id = p.id_subject_facility
         LEFT JOIN subject s2 ON s2.id = sf.id_subject
         WHERE 
-            p.status = 1 AND
-            sf.status = 1 AND
-            s.status = 1 AND
-            s2.status = 1 AND
             sf.id_facility = :idFacility AND
             pl.id = :idPlan
     """, nativeQuery = true)
@@ -121,10 +110,6 @@ public interface SPDPlanRepository extends PlanRepository {
         LEFT JOIN subject_facility sf ON sf.id = p.id_subject_facility
         LEFT JOIN subject s2 ON s2.id = sf.id_subject
         WHERE 
-            p.status = 1 AND
-            sf.status = 1 AND
-            s.status = 1 AND
-            s2.status = 1 AND
             (SELECT COUNT(*) FROM plan pl WHERE pl.id_project = p.id AND pl.status = 0) < 1 AND
             sf.id_facility = :#{#request.idFacility} AND
             (:#{#request.level} IS NULL OR lp.id = :#{#request.level}) AND
