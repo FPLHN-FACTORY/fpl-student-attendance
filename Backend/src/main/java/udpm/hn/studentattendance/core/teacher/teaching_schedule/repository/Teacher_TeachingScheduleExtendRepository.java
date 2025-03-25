@@ -25,6 +25,8 @@ public interface Teacher_TeachingScheduleExtendRepository extends PlanDateReposi
                         pd.shift AS shift,
                         sb.code AS subjectCode,
                         ft.name AS factoryName,
+                        ft.id AS factoryId,
+                        us.id AS userId,
                         p.name AS projectName,
                         pd.late_arrival AS lateArrival,
                         pd.description AS description
@@ -91,6 +93,8 @@ public interface Teacher_TeachingScheduleExtendRepository extends PlanDateReposi
                                             pd.shift AS shift,
                                             sb.code AS subjectCode,
                                             ft.name AS factoryName,
+                                            ft.id AS factoryId,
+                                            us.id AS userId,
                                             p.name AS projectName,
                                             pd.late_arrival AS lateArrival,
                                             pd.description AS description

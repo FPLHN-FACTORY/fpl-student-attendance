@@ -6,6 +6,7 @@ import {
   EyeFilled,
   EditFilled,
   ExclamationCircleOutlined,
+  CheckOutlined,
 } from '@ant-design/icons-vue'
 import { message, Modal } from 'ant-design-vue'
 import requestAPI from '@/services/requestApiService'
@@ -17,6 +18,7 @@ import { DEFAULT_DATE_FORMAT, DEFAULT_PAGINATION, SHIFT } from '@/constants'
 import { formatDate, dayOfWeek } from '@/utils/utils'
 import useLoadingStore from '@/stores/useLoadingStore'
 import dayjs from 'dayjs'
+import router from '@/router'
 
 // Khởi tạo breadcrumb
 const breadcrumbStore = useBreadcrumbStore()
@@ -61,7 +63,7 @@ const presentPagination = ref({ ...DEFAULT_PAGINATION })
 const teachingScheduleRecords = ref([])
 const pagination = ref({ ...DEFAULT_PAGINATION })
 
-// Cột hiển thị trong table
+// Cột hiển thị trong table lịch dạy chung
 const columns = [
   { title: '#', dataIndex: 'indexs', key: 'indexs', width: 50 },
   { title: 'Ngày dạy', dataIndex: 'teachingDay', key: 'teachingDay', width: 100 },
@@ -78,7 +80,7 @@ const columns = [
   { title: 'Mô tả / Hành động', dataIndex: 'description', key: 'description', width: 100 },
 ]
 
-// phần lịch dạy hiện tại để quản lý điểm danh cho sinh viên
+// Cột hiển thị cho table lịch dạy hôm nay (columnsTeachingPresent) đã được bổ sung cột "Hành động"
 const columnsTeachingPresent = [
   { title: '#', dataIndex: 'indexs', key: 'indexs', width: 50 },
   { title: 'Ngày dạy', dataIndex: 'teachingDay', key: 'teachingDay', width: 100 },
@@ -92,9 +94,10 @@ const columnsTeachingPresent = [
   { title: 'Mã môn', dataIndex: 'subjectCode', key: 'subjectCode', width: 50 },
   { title: 'Xưởng', dataIndex: 'factoryName', key: 'factoryName', width: 100 },
   { title: 'Dự án', dataIndex: 'projectName', key: 'projectName', width: 180 },
-  { title: 'Mô tả / Hành động', dataIndex: 'description', key: 'description', width: 80 },
-  { title: 'Điểm danh', dataIndex: 'attendance', key: 'action', width: 80 },
+  { title: 'Mô tả / Hành động', dataIndex: 'description', key: 'description', width: 100 },
+  { title: 'Điểm danh', key: 'action', width: 100 }, // <-- Cột "Hành động" mới
 ]
+
 // Các danh sách dropdown
 const subjects = ref([])
 const factories = ref([])
@@ -114,6 +117,8 @@ const prepareFilterParams = (params) => {
   })
   return copy
 }
+
+// Lấy dữ liệu lịch dạy hôm nay
 const fetchTeachingSchedulePresent = () => {
   loadingStore.show()
   requestAPI
@@ -205,6 +210,8 @@ const fetchProjects = () => {
       message.error(error.response?.data?.message || 'Lỗi khi tải danh sách dự án')
     })
 }
+
+// Xử lý phân trang cho bảng lịch dạy hôm nay
 const handlePresentTableChange = (paginationData) => {
   filter.page = paginationData.current
   filter.pageSize = paginationData.pageSize
@@ -213,7 +220,7 @@ const handlePresentTableChange = (paginationData) => {
   fetchTeachingSchedulePresent()
 }
 
-// Xử lý phân trang
+// Xử lý phân trang cho bảng lịch dạy chung
 const handleTableChange = (paginationData) => {
   filter.page = paginationData.current
   filter.pageSize = paginationData.pageSize
@@ -279,12 +286,22 @@ const handleUpdatePlanDate = () => {
       isUpdateModalVisible.value = false
       isDetailModalVisible.value = false
       fetchTeachingSchedule()
+      fetchTeachingSchedulePresent()
     })
     .catch((error) => {
       message.error(error.response?.data?.message || 'Lỗi khi cập nhật buổi học')
     })
 }
-
+const handleAttendance = (record) => {
+  console.log('Detail record:', record)
+  router.push({
+    name: ROUTE_NAMES.MANAGEMENT_STUDENT_ATTENDANCE,
+    query: {
+      factoryId: record.factoryId,
+      userId: record.userId,
+    },
+  })
+}
 // Danh sách chọn ngày tới/ngày trước
 const durationOptions = [
   { label: '7 ngày tới', value: 'future_7' },
@@ -443,7 +460,7 @@ onMounted(() => {
                     <ExclamationCircleOutlined />
                   </a-tag>
                 </template>
-                <!-- Cột mô tả / hành động -->
+                <!-- Cột mô tả -->
                 <template v-else-if="column.dataIndex === 'description'">
                   <a-tooltip title="Xem, sửa mô tả">
                     <a-typography-link @click="handleShowDescription(record)">
@@ -456,13 +473,29 @@ onMounted(() => {
                   {{ record[column.dataIndex] }}
                 </template>
               </template>
+              <template v-else-if="column.key === 'action'">
+                <span v-if="Date.now() <= record.teachingDay - 10 * 60 * 1000">
+                  <a-badge status="warning"></a-badge>Chưa đến giờ điểm danh
+                </span>
+                <span v-else-if="Date.now() > record.teachingDay + record.lateArrival * 60 * 1000">
+                  <a-badge status="error"></a-badge>Đã quá giờ điểm danh
+                </span>
+                <a-tooltip title="Điểm danh" v-else>
+                  <a-button
+                    type="primary"
+                    class="btn-info ms-2 border-0"
+                    @click="handleAttendance(record)"
+                  >
+                    <CheckOutlined /> Điểm danh
+                  </a-button>
+                </a-tooltip>
+              </template>
             </template>
           </a-table>
         </a-card>
       </div>
     </div>
-
-    <!-- Row cho bảng lịch dạy -->
+    <!-- Row cho bảng lịch dạy chung -->
     <div class="row g-4">
       <div class="col-12">
         <a-card :bordered="false" class="cart">
@@ -473,7 +506,6 @@ onMounted(() => {
               {{ formatDate(computedEndDate, DEFAULT_DATE_FORMAT) }})
             </span>
           </template>
-
           <!-- Sử dụng slot bodyCell để tạo index động và hiển thị các cột -->
           <a-table
             :dataSource="teachingScheduleRecords"
@@ -512,7 +544,7 @@ onMounted(() => {
                     <ExclamationCircleOutlined />
                   </a-tag>
                 </template>
-                <!-- Cột mô tả / hành động -->
+                <!-- Cột mô tả -->
                 <template v-else-if="column.dataIndex === 'description'">
                   <a-tooltip title="Xem, sửa mô tả">
                     <a-typography-link @click="handleShowDescription(record)">
@@ -564,3 +596,5 @@ onMounted(() => {
     </a-modal>
   </div>
 </template>
+
+
