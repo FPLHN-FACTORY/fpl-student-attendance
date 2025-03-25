@@ -42,6 +42,7 @@ public class AuthenticationSecurityConfig {
             authorization.requestMatchers(appendPrefixApi(RouteAuthenticationConstant.API_GET_ALL_FACILITY)).permitAll();
             authorization.requestMatchers(appendPrefixApi(RouteAuthenticationConstant.API_GET_INFO_USER, "/*")).authenticated();
             authorization.requestMatchers(appendPrefixApi(RouteAuthenticationConstant.API_STUDENT_REGISTER, "/*")).hasAuthority(RoleConstant.STUDENT.name());
+            authorization.requestMatchers(appendPrefixApi(RouteAuthenticationConstant.API_STUDENT_INFO, "/*")).hasAuthority(RoleConstant.STUDENT.name());
             authorization.requestMatchers(RouteAuthenticationConstant.REDIRECT_LOGIN).permitAll();
         });
 

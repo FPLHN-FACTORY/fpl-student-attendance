@@ -461,7 +461,7 @@ watch(
   () => {
     handleSubmitFilter()
   },
-  { deep: true }
+  { deep: true },
 )
 
 watch(
@@ -469,7 +469,7 @@ watch(
   () => {
     handleSubmitFilterAdd()
   },
-  { deep: true }
+  { deep: true },
 )
 </script>
 
@@ -747,6 +747,11 @@ watch(
                 <a-tag class="ms-2">{{ record.semesterName }}</a-tag>
               </template>
               <template v-if="column.dataIndex === 'status'">
+                <a-switch
+                  class="me-2"
+                  :checked="record.status === 1"
+                  @change="handleChangeStatus(record.id)"
+                />
                 <a-tag :color="record.status === 1 ? 'green' : 'red'">{{
                   record.status === 1 ? 'Đang triển khai' : 'Ngừng triển khai'
                 }}</a-tag>
@@ -766,22 +771,6 @@ watch(
                     @click="handleShowModalUpdate(record)"
                   >
                     <EditFilled />
-                  </a-button>
-                </a-tooltip>
-                <a-tooltip title="Ngừng triển khai" v-if="record.status === 1">
-                  <a-button
-                    class="btn-outline-danger ms-2 border-0"
-                    @click="handleChangeStatus(record.id)"
-                  >
-                    <PoweroffOutlined />
-                  </a-button>
-                </a-tooltip>
-                <a-tooltip title="Đang triển khai" v-else>
-                  <a-button
-                    class="btn-outline-success ms-2 border-0"
-                    @click="handleChangeStatus(record.id)"
-                  >
-                    <PoweroffOutlined />
                   </a-button>
                 </a-tooltip>
 

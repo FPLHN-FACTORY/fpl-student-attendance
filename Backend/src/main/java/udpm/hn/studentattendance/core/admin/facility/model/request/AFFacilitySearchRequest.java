@@ -7,7 +7,7 @@ import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 
 @Getter
 @Setter
-public class Admin_FacilitySearchRequest extends PageableRequest {
+public class AFFacilitySearchRequest extends PageableRequest {
     private String name;
 
     private EntityStatus status;

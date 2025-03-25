@@ -462,6 +462,11 @@ watch(
                 <a-tag> {{ record.totalShift }} buổi </a-tag>
               </template>
               <template v-if="column.dataIndex === 'status'">
+                <a-switch
+                  class="me-2"
+                  :checked="record.status === 1"
+                  @change="handleChangeStatus(record.id)"
+                />
                 <a-tag :color="record.status === 1 ? 'green' : 'red'">{{
                   record.status === 1 ? 'Đang triển khai' : 'Ngừng triển khai'
                 }}</a-tag>
@@ -473,23 +478,6 @@ watch(
                     @click="handleShowDetail(record.id)"
                   >
                     <EyeFilled />
-                  </a-button>
-                </a-tooltip>
-
-                <a-tooltip title="Ngừng triển khai" v-if="record.status === 1">
-                  <a-button
-                    class="btn-outline-danger border-0"
-                    @click="handleChangeStatus(record.id)"
-                  >
-                    <PoweroffOutlined />
-                  </a-button>
-                </a-tooltip>
-                <a-tooltip title="Đang triển khai" v-else>
-                  <a-button
-                    class="btn-outline-success border-0"
-                    @click="handleChangeStatus(record.id)"
-                  >
-                    <PoweroffOutlined />
                   </a-button>
                 </a-tooltip>
 

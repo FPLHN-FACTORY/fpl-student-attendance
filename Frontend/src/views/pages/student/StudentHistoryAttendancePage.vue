@@ -74,7 +74,7 @@ const fetchAllAttendanceHistory = async () => {
         promises.push(
           requestAPI.get(API_ROUTES_STUDENT.FETCH_DATA_HISTORY_ATTENDANCE, {
             params: { ...filter, page },
-          })
+          }),
         )
       }
       const responses = await Promise.all(promises)
@@ -260,8 +260,8 @@ onMounted(() => {
                       record.statusAttendance === 'CHUA_DIEN_RA'
                         ? 'warning'
                         : record.statusAttendance === 'CO_MAT'
-                        ? 'success'
-                        : 'error'
+                          ? 'success'
+                          : 'error'
                     "
                     :text="record.statusAttendance"
                   />

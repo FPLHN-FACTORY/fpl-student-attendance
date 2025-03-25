@@ -6,7 +6,7 @@ import udpm.hn.studentattendance.infrastructure.common.PageableRequest;
 
 @Getter
 @Setter
-public class Admin_FacilityRequest extends PageableRequest {
+public class AFFacilityRequest extends PageableRequest {
     private String id;
 
     private String code;
