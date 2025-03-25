@@ -19,4 +19,9 @@ public interface Teacher_TeachingScheduleResponse {
 
     Integer getLateArrival();
 
+    String getFactoryId();
+
+    String getUserId();
+
+
 }
