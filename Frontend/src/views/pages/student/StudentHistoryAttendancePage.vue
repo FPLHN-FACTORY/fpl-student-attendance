@@ -43,15 +43,14 @@ const columns = [
   { title: 'Bài học', dataIndex: 'rowNumber', key: 'rowNumber', width: 50 },
   { title: 'Ngày học', dataIndex: 'planDateStartDate', key: 'planDateStartDate', width: 150 },
   { title: 'Ca học', dataIndex: 'planDateShift', key: 'planDateShift', width: 30 },
-  { title: 'Nội dung', dataIndex: 'planDateDescription', key: 'planDateDescription', width: 80 },
   {
     title: 'Điểm danh muộn tối đa (phút)',
     dataIndex: 'lateArrival',
     key: 'lateArrival',
     width: 100,
   },
+  { title: 'Nội dung', dataIndex: 'planDateDescription', key: 'planDateDescription', width: 80 },
   { title: 'Trạng thái đi học', dataIndex: 'statusAttendance', key: 'statusAttendance', width: 80 },
-  { title: 'Hành động', key: 'actions', width: 100 },
 ]
 
 const semesters = ref([])
@@ -269,19 +268,6 @@ onMounted(() => {
                 <template v-else>
                   {{ record[column.dataIndex] }}
                 </template>
-              </template>
-              <template v-else-if="column.key === 'actions'">
-                <a-space>
-                  <a-tooltip title="Xem chi tiết">
-                    <a-button
-                      type="text"
-                      @click="handleDetail(record)"
-                      class="btn-outline-secondary"
-                    >
-                      <EyeFilled />
-                    </a-button>
-                  </a-tooltip>
-                </a-space>
               </template>
             </template>
           </a-table>
