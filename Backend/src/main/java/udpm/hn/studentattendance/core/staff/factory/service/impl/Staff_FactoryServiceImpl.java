@@ -9,23 +9,19 @@ import org.springframework.validation.annotation.Validated;
 import udpm.hn.studentattendance.core.staff.factory.model.request.Staff_FactoryCreateUpdateRequest;
 import udpm.hn.studentattendance.core.staff.factory.model.request.Staff_FactoryRequest;
 import udpm.hn.studentattendance.core.staff.factory.model.response.Staff_DetailFactoryResponse;
-import udpm.hn.studentattendance.core.staff.factory.repository.Staff_FactoryExtendRepository;
-import udpm.hn.studentattendance.core.staff.factory.repository.Staff_ProjectFactoryExtendRepository;
-import udpm.hn.studentattendance.core.staff.factory.repository.Staff_StaffFactoryExtendRepository;
-import udpm.hn.studentattendance.core.staff.factory.repository.Staff_SubjectFacilityFactoryExtendRepository;
+import udpm.hn.studentattendance.core.staff.factory.repository.*;
 import udpm.hn.studentattendance.core.staff.factory.service.Staff_FactoryService;
-import udpm.hn.studentattendance.entities.Factory;
-import udpm.hn.studentattendance.entities.Project;
-import udpm.hn.studentattendance.entities.SubjectFacility;
-import udpm.hn.studentattendance.entities.UserStaff;
+import udpm.hn.studentattendance.entities.*;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
 import udpm.hn.studentattendance.helpers.SessionHelper;
 import udpm.hn.studentattendance.infrastructure.common.ApiResponse;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.RestApiStatus;
+import udpm.hn.studentattendance.repositories.SemesterRepository;
 import udpm.hn.studentattendance.utils.CodeGeneratorUtils;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
@@ -41,6 +37,10 @@ public class Staff_FactoryServiceImpl implements Staff_FactoryService {
     private final Staff_StaffFactoryExtendRepository staffFactoryExtendRepository;
 
     private final Staff_SubjectFacilityFactoryExtendRepository subjectFacilityFactoryExtendRepository;
+
+    private final Staff_FactoryPlanExtendRepository factoryPlanExtendRepository;
+
+    private final SemesterRepository semesterRepository;
 
     private final SessionHelper sessionHelper;
 
@@ -229,5 +229,61 @@ public class Staff_FactoryServiceImpl implements Staff_FactoryService {
                 ),
                 HttpStatus.NOT_FOUND);
     }
+
+    @Override
+    public ResponseEntity<?> existsPlanByFactoryId(String factoryId) {
+        boolean exists = factoryPlanExtendRepository.existsPlanByFactoryId(factoryId);
+        return new ResponseEntity<>(
+                new ApiResponse(
+                        RestApiStatus.SUCCESS,
+                        "Lấy thông tin nhóm xưởng thành công",
+                        exists
+                ),
+                HttpStatus.OK);
+    }
+
+    @Override
+    public ResponseEntity<?> changeAllStatusByFactory() {
+        Long now = new Date().getTime();
+        String semesterId = null;
+
+        // Lấy kỳ học đã kết thúc (toDate < now)
+        for (Semester semester : semesterRepository.findAll()) {
+            if (semester.getToDate() < now) {
+                semesterId = semester.getId();
+                break;
+            }
+        }
+
+        if (semesterId == null) {
+            return new ResponseEntity<>(
+                    new ApiResponse(RestApiStatus.ERROR, "Không có kỳ học nào đã kết thúc", null),
+                    HttpStatus.BAD_REQUEST
+            );
+        }
+
+        // Lấy các Factory thuộc kỳ học đã kết thúc
+        List<Factory> factories = factoryRepository.getAllFactoryBySemester(sessionHelper.getFacilityId(), semesterId);
+
+        if (factories.isEmpty()) {
+            return new ResponseEntity<>(
+                    new ApiResponse(RestApiStatus.SUCCESS, "Không có nhóm xưởng nào thuộc kỳ học đã kết thúc", factories),
+                    HttpStatus.OK
+            );
+        }
+
+        // Đổi trạng thái cho từng Factory
+        for (Factory factory : factories) {
+            // Nếu đang ACTIVE thì chuyển sang INACTIVE, ngược lại
+            factory.setStatus(factory.getStatus() == EntityStatus.ACTIVE ? EntityStatus.INACTIVE : EntityStatus.ACTIVE);
+            factoryRepository.save(factory);
+        }
+
+        return new ResponseEntity<>(
+                new ApiResponse(RestApiStatus.SUCCESS, "Đổi trạng thái nhóm xưởng kỳ trước thành công", factories),
+                HttpStatus.OK
+        );
+    }
+
 
 }

@@ -80,4 +80,47 @@ public interface Staff_UserStudentFactoryExtendRepository extends UserStudentRep
                                         String facilityId,
                                         EntityStatus userStatus,
                                         Staff_UserStudentRequest userStudentRequest);
+
+    @Query
+            (value = """
+                    SELECT 
+                    CASE WHEN COUNT(*) > 20 THEN 'TRUE' ELSE 'FALSE' END 
+                    FROM 
+                    user_student_factory usf
+                    WHERE
+                    usf.id_factory = :idProject
+                    """, nativeQuery = true)
+    boolean isStudentGreaterThanTwenty(String factoryId);
+
+
+    @Query(value = """
+                SELECT
+                CASE WHEN COUNT(distinct pd2.id) > 0 THEN 'TRUE' ELSE 'FALSE' END
+                FROM plan_date pd
+                JOIN plan_factory pf ON pf.id = pd.id_plan_factory
+                JOIN factory f ON pf.id_factory = f.id
+                JOIN user_student_factory usf ON usf.id_factory = f.id
+                JOIN plan p ON pf.id_plan = p.id
+                JOIN project pj ON f.id_project = pj.id
+                JOIN subject_facility sf ON sf.id = pj.id_subject_facility
+                JOIN facility f2 ON sf.id_facility = f2.id
+                JOIN user_student us ON usf.id_user_student = us.id
+                JOIN user_student_factory usf2 ON usf2.id_user_student = us.id
+                JOIN plan_factory pf2 ON pf2.id_factory = usf2.id_factory
+                JOIN plan_date pd2 ON pd2.id_plan_factory = pf2.id
+                WHERE
+                    pd.status = 1 AND
+                    pf.status = 1 AND
+                    p.status = 1 AND
+                    f.status = 1 AND
+                    f2.status = 1 AND
+                    usf.status = 1 AND
+                    usf2.status = 1 AND
+                    pd.start_date = pd2.start_date AND
+                    pd.shift = pd2.shift AND
+                    f.id <> :idFactory AND
+                    usf.id_user_student = :idUserStudent AND
+                    f2.id = :idFacility
+            """, nativeQuery = true)
+    boolean isStudentExistsShift(String idFacility, String idFactory, String idUserStudent);
 }
