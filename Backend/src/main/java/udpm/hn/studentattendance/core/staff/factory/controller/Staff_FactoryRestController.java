@@ -61,4 +61,13 @@ public class Staff_FactoryRestController {
         return factoryService.changeStatus(factoryId);
     }
 
+    @GetMapping("/exist-plan/{factoryId}")
+    public ResponseEntity<?> getPlanByFactory(@PathVariable("factoryId") String factoryId) {
+        return factoryService.existsPlanByFactoryId(factoryId);
+    }
+
+    @PutMapping("/change-all-status")
+    public ResponseEntity<?> changeAllStatusBySemester(){
+        return factoryService.changeAllStatusByFactory();
+    }
 }

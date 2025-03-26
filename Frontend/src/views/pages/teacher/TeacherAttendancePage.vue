@@ -1,2 +1,4 @@
 <script setup></script>
-<template></template>
+<template>
+  <h1>Đây là trang điểm danh sinh viên role giảng viên</h1>
+</template>

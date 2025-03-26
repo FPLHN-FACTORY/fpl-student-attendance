@@ -12,6 +12,7 @@ import udpm.hn.studentattendance.core.staff.factory.model.request.Staff_StudentF
 import udpm.hn.studentattendance.core.staff.factory.model.request.Staff_StudentFactoryRequest;
 import udpm.hn.studentattendance.core.staff.factory.model.request.Staff_UserStudentRequest;
 import udpm.hn.studentattendance.core.staff.factory.model.response.Staff_UserStudentResponse;
+import udpm.hn.studentattendance.core.staff.factory.repository.Staff_FactoryExtendRepository;
 import udpm.hn.studentattendance.core.staff.factory.repository.Staff_StudentFactoryRepository;
 import udpm.hn.studentattendance.core.staff.factory.repository.Staff_UserStudentFactoryExtendRepository;
 import udpm.hn.studentattendance.core.staff.factory.service.Staff_StudentFactoryService;
@@ -111,26 +112,56 @@ public class Staff_StudentFactoryServiceImpl implements Staff_StudentFactoryServ
     @Transactional
     public ResponseEntity<?> createOrDeleteStudentFactory(Staff_StudentFactoryCreateUpdateRequest studentFactoryCreateUpdateRequest) {
         Optional<UserStudentFactory> existStudentFactory = studentFactoryRepository
-                .getUserStudentFactoriesByUserStudentIdAndFactoryId
-                        (studentFactoryCreateUpdateRequest.getStudentId(), studentFactoryCreateUpdateRequest.getFactoryId());
+                .getUserStudentFactoriesByUserStudentIdAndFactoryId(
+                        studentFactoryCreateUpdateRequest.getStudentId(),
+                        studentFactoryCreateUpdateRequest.getFactoryId());
+
         Optional<Factory> existFactory = factoryRepository.findById(studentFactoryCreateUpdateRequest.getFactoryId());
         Optional<UserStudent> existUserStudent = userStudentRepository.findById(studentFactoryCreateUpdateRequest.getStudentId());
 
-        UserStudentFactory userStudentFactory = new UserStudentFactory();
-        userStudentFactory.setId(CodeGeneratorUtils.generateRandom());
-        userStudentFactory.setUserStudent(existUserStudent.get());
-        userStudentFactory.setFactory(existFactory.get());
-        userStudentFactory.setStatus(EntityStatus.ACTIVE);
-        studentFactoryRepository.save(userStudentFactory);
+        // Lấy kết quả từ 2 truy vấn kiểm tra
+        boolean isGreaterThanTwenty = userStudentFactoryExtendRepository
+                .isStudentGreaterThanTwenty(studentFactoryCreateUpdateRequest.getFactoryId());
+        boolean isExistsShift = userStudentFactoryExtendRepository
+                .isStudentExistsShift(sessionHelper.getFacilityId(),
+                        studentFactoryCreateUpdateRequest.getFactoryId(),
+                        studentFactoryCreateUpdateRequest.getStudentId());
+
+        // Nếu 1 trong 2 điều kiện đúng thì cho phép thêm sinh viên
+        if (isGreaterThanTwenty || isExistsShift) {
+            UserStudentFactory userStudentFactory = new UserStudentFactory();
+            userStudentFactory.setId(CodeGeneratorUtils.generateRandom());
+            userStudentFactory.setUserStudent(existUserStudent.get());
+            userStudentFactory.setFactory(existFactory.get());
+            userStudentFactory.setStatus(EntityStatus.ACTIVE);
+            studentFactoryRepository.save(userStudentFactory);
+            return new ResponseEntity<>(
+                    new ApiResponse(
+                            RestApiStatus.SUCCESS,
+                            "Thêm sinh viên vào nhóm xưởng thành công",
+                            userStudentFactory
+                    ),
+                    HttpStatus.OK);
+        }
+
+        // Nếu cả 2 đều false thì hiển thị thông báo phù hợp
+        StringBuilder messageBuilder = new StringBuilder("Thêm sinh viên vào nhóm xưởng thất bại. ");
+        if (!isGreaterThanTwenty) {
+            messageBuilder.append("Số lượng sinh viên vượt quá 20. ");
+        }
+        if (!isExistsShift) {
+            messageBuilder.append("Sinh viên đang trùng lịch học của nhóm xưởng khác. ");
+        }
 
         return new ResponseEntity<>(
                 new ApiResponse(
-                        RestApiStatus.SUCCESS,
-                        "Thêm sinh viên vào nhóm xưởng thành công",
-                        userStudentFactory
+                        RestApiStatus.ERROR,
+                        messageBuilder.toString(),
+                        null
                 ),
                 HttpStatus.OK);
     }
+
 
 
     @Override

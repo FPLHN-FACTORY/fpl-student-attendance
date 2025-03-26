@@ -71,7 +71,7 @@ public interface Staff_ProjectManagementRepository extends ProjectRepository {
                                      p.status as status,
                                  	 lp.id as levelProjectId,
                                      s.id AS semesterId,
-                                     sf.id as subjectId
+                                     sf.id as subjectFacilityId
                                      FROM project p
                                      LEFT JOIN semester s ON p.id_semester = s.id
                                      LEFT JOIN subject_facility sf ON p.id_subject_facility = sf.id
