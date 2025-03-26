@@ -229,7 +229,7 @@ export default {
         message.error('Phải chọn học kỳ')
         return
       }
-      if (!this.detailProject.subjectId) {
+      if (!this.detailProject.subjectFacilityId) {
         message.error('Phải chọn môn học')
         return
       }
@@ -238,7 +238,7 @@ export default {
         description: this.detailProject.description,
         idLevelProject: this.detailProject.levelProjectId,
         idSemester: this.detailProject.semesterId,
-        idSubject: this.detailProject.subjectId,
+        idSubjectFacility: this.detailProject.subjectFacilityId,
       }
       requestAPI
         .put(`${API_ROUTES_STAFF.FETCH_DATA_PROJECT}/${this.detailProject.id}`, req)
@@ -527,7 +527,12 @@ export default {
           </a-select>
         </a-form-item>
         <a-form-item label="Môn học" required>
-          <a-select v-model:value="detailProject.subjectId" placeholder="Chọn môn học" allowClear>
+          <!-- Sửa ở đây: sử dụng subjectFacilityId thay vì subjectId -->
+          <a-select
+            v-model:value="detailProject.subjectFacilityId"
+            placeholder="Chọn môn học"
+            allowClear
+          >
             <a-select-option v-for="subject in subjects" :key="subject.id" :value="subject.id">
               {{ subject.name }}
             </a-select-option>

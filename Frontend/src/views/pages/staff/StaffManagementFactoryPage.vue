@@ -239,15 +239,37 @@ const submitUpdateFactory = () => {
 }
 
 const handleDetailFactory = (record) => {
-  router.push({
-    name: ROUTE_NAMES.MANAGEMENT_STUDENT_FACTORY,
-    query: {
-      factoryId: record.id,
-      factoryName: record.name,
-    },
-  })
+  loadingStore.show()
+  requestAPI
+    .get(API_ROUTES_STAFF.FETCH_DATA_FACTORY + '/exist-plan/' + record.id)
+    .then((response) => {
+      const existsPlan = response.data.data
+      if (!existsPlan) {
+        Modal.info({
+          title: 'Thông báo',
+          content: 'Nhóm xưởng chưa có kế hoạch',
+          onOk() {},
+        })
+      } else {
+        router.push({
+          name: ROUTE_NAMES.MANAGEMENT_STUDENT_FACTORY,
+          query: {
+            factoryId: record.id,
+            factoryName: record.name,
+          },
+        })
+      }
+    })
+    .catch((error) => {
+      Modal.error({
+        title: 'Lỗi',
+        content: error.response?.data?.message || 'Lỗi khi kiểm tra kế hoạch của nhóm xưởng',
+      })
+    })
+    .finally(() => {
+      loadingStore.hide()
+    })
 }
-
 const confirmChangeStatus = (record) => {
   Modal.confirm({
     title: 'Xác nhận đổi trạng thái',
@@ -272,6 +294,27 @@ const handleChangeStatus = (id) => {
     .finally(() => {
       loadingStore.hide()
     })
+}
+const changeAllStatusBySemester = () => {
+  Modal.confirm({
+    title: 'Xác nhận đổi trạng thái',
+    content: 'Bạn có chắc muốn đổi trạng thái cho tất cả các nhóm xưởng của kỳ trước?',
+    onOk() {
+      loadingStore.show()
+      requestAPI
+        .put(API_ROUTES_STAFF.FETCH_DATA_FACTORY + '/change-all-status') // Đảm bảo rằng API_ROUTES_STAFF.CHANGE_ALL_STATUS đã được khai báo trong constants, ví dụ: '/change-all-status'
+        .then((response) => {
+          message.success(response.data.message || 'Đổi trạng thái nhóm xưởng kỳ trước thành công')
+          fetchFactories() // Cập nhật lại danh sách sau khi đổi trạng thái
+        })
+        .catch((error) => {
+          message.error(error.response?.data?.message || 'Lỗi khi đổi trạng thái nhóm xưởng')
+        })
+        .finally(() => {
+          loadingStore.hide()
+        })
+    },
+  })
 }
 
 /* ----------------- Lifecycle Hook ----------------- */
@@ -381,6 +424,15 @@ onMounted(() => {
         <a-card :bordered="false" class="cart">
           <template #title> <UnorderedListOutlined /> Danh sách nhóm xưởng </template>
           <div class="d-flex justify-content-end mb-3">
+            <a-tooltip title="Đổi trạng thái tất cả nhóm xưởng kỳ trước">
+              <a-button
+                type="default"
+                @click="changeAllStatusBySemester"
+                class="btn-outline-warning me-2"
+              >
+                <SyncOutlined /> Đổi trạng thái
+              </a-button>
+            </a-tooltip>
             <a-tooltip title="Thêm nhóm xưởng">
               <a-button type="primary" @click="modalAdd = true"> <PlusOutlined /> Thêm </a-button>
             </a-tooltip>
