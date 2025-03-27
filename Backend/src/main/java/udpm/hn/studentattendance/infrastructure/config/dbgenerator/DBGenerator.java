@@ -72,6 +72,7 @@ public class DBGenerator {
                 Facility dataFacility = new Facility();
                 dataFacility.setName(name);
                 dataFacility.setCode(code);
+                dataFacility.setPosition(dbGeneratorFacilityRepository.getLastPosition() + 1);
 
                 Facility saveFacility = dbGeneratorFacilityRepository.save(dataFacility);
 

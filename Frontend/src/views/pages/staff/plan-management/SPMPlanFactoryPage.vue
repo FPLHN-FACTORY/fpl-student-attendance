@@ -7,11 +7,10 @@ import {
   SearchOutlined,
   EyeFilled,
   DeleteFilled,
-  PoweroffOutlined,
 } from '@ant-design/icons-vue'
 import { message, Modal } from 'ant-design-vue'
 import requestAPI from '@/services/requestApiService'
-import { DEFAULT_PAGINATION } from '@/constants'
+import { DEFAULT_PAGINATION, TYPE_SHIFT } from '@/constants'
 import { API_ROUTES_STAFF } from '@/constants/staffConstant'
 import { useRoute, useRouter } from 'vue-router'
 import { ROUTE_NAMES } from '@/router/staffRoute'
@@ -24,7 +23,6 @@ import {
   DEFAULT_MAX_LATE_ARRIVAL,
   SHIFT,
 } from '@/constants'
-import dayjs from 'dayjs'
 import { formatDate } from '@/utils/utils'
 import useLoadingStore from '@/stores/useLoadingStore'
 
@@ -81,6 +79,7 @@ const dataFilter = reactive({
 
 const formDataAdd = reactive({
   idFactory: null,
+  type: Object.keys(TYPE_SHIFT)[0],
   days: [],
   shift: Object.keys(SHIFT)[0],
   lateArrival: DEFAULT_LATE_ARRIVAL,
@@ -90,6 +89,7 @@ const formRules = reactive({
   idFactory: [{ required: true, message: 'Vui lòng chọn 1 nhóm xưởng - dự án!' }],
   days: [{ required: true, message: 'Vui lòng chọn ít nhất 1 ngày trong tuần!' }],
   shift: [{ required: true, message: 'Vui lòng chọn 1 ca học!' }],
+  type: [{ required: true, message: 'Vui lòng chọn 1 hình thức!' }],
   lateArrival: [{ required: true, message: 'Vui lòng nhập mục này!' }],
 })
 
@@ -251,6 +251,7 @@ const handleShowModalAdd = () => {
   lstDataAdd.value = []
 
   formDataAdd.idFactory = null
+  formDataAdd.type = Object.keys(TYPE_SHIFT)[0]
   formDataAdd.lateArrival = DEFAULT_LATE_ARRIVAL
   formDataAdd.shift = Object.keys(SHIFT)[0]
   formDataAdd.days = []
@@ -346,7 +347,19 @@ watch(
           </a-select-option>
         </a-select>
       </a-form-item>
-      <a-form-item class="col-sm-5" label="Ca học" name="shift" :rules="formRules.shift">
+      <a-form-item class="col-sm-3" label="Hình thức học" name="type" :rules="formRules.type">
+        <a-select
+          v-model:value="formDataAdd.type"
+          class="w-100"
+          :dropdownMatchSelectWidth="false"
+          placeholder="-- Hình thức học --"
+        >
+          <a-select-option v-for="(name, id) in TYPE_SHIFT" :key="id" :value="id">
+            {{ name }}
+          </a-select-option>
+        </a-select>
+      </a-form-item>
+      <a-form-item class="col-sm-3" label="Ca học" name="shift" :rules="formRules.shift">
         <a-select class="w-100" v-model:value="formDataAdd.shift" :disabled="modalAdd.isLoading">
           <a-select-option v-for="(name, id) in SHIFT" :key="id" :value="id">
             {{ name }}
@@ -354,7 +367,7 @@ watch(
         </a-select>
       </a-form-item>
       <a-form-item
-        class="col-sm-7"
+        class="col-sm-6"
         label="Điểm danh muộn tối đa (phút)"
         name="lateArrival"
         :rules="formRules.lateArrival"

@@ -40,8 +40,8 @@ const facilities = ref([])
 
 // Biến lọc gửi lên API (không chứa thông tin phân trang)
 const filter = reactive({
-  name: '',
-  status: '',
+  name: null,
+  status: null,
 })
 
 // Sử dụng pagination dưới dạng reactive (theo mẫu plandate)
@@ -105,6 +105,19 @@ const fetchFacilities = () => {
       isLoading.value = false
       loadingStore.hide()
     })
+}
+
+const handleClearFilter = () => {
+  Object.assign(filter, {
+    name: null,
+    status: null,
+  })
+  fetchFacilities()
+}
+
+const handleSubmitFilter = () => {
+  pagination.value.current = 1
+  fetchFacilities()
 }
 
 // Sự kiện thay đổi phân trang (dynamic)
@@ -274,8 +287,8 @@ onMounted(() => {
         <!-- Bộ lọc tìm kiếm -->
         <a-card :bordered="false" class="cart">
           <template #title> <FilterFilled /> Bộ lọc </template>
-          <a-row :gutter="16" class="filter-container">
-            <a-col :xs="24" :md="12" class="col">
+          <div class="row g-2">
+            <div class="col-xxl-6 col-md-8 col-sm-8">
               <div class="label-title">Tìm kiếm tên:</div>
               <a-input
                 v-model:value="filter.name"
@@ -287,8 +300,8 @@ onMounted(() => {
                   <SearchOutlined />
                 </template>
               </a-input>
-            </a-col>
-            <a-col :xs="24" :md="12" class="col">
+            </div>
+            <div class="col-xxl-2 col-md-4 col-sm-4">
               <div class="label-title">Trạng thái:</div>
               <a-select
                 v-model:value="filter.status"
@@ -297,12 +310,20 @@ onMounted(() => {
                 style="width: 100%"
                 @change="fetchFacilities"
               >
-                <a-select-option :value="''">Tất cả trạng thái</a-select-option>
+                <a-select-option :value="null">Tất cả trạng thái</a-select-option>
                 <a-select-option value="ACTIVE">Hoạt động</a-select-option>
                 <a-select-option value="INACTIVE">Không hoạt động</a-select-option>
               </a-select>
-            </a-col>
-          </a-row>
+            </div>
+            <div class="col-12">
+              <div class="d-flex justify-content-center flex-wrap gap-2 mt-3">
+                <a-button class="btn-light" @click="handleSubmitFilter">
+                  <FilterFilled /> Lọc
+                </a-button>
+                <a-button class="btn-gray" @click="handleClearFilter"> Huỷ lọc </a-button>
+              </div>
+            </div>
+          </div>
         </a-card>
       </div>
 
