@@ -83,6 +83,7 @@ const fetchSubmitRegister = () => {
         name: formData.name,
         code: formData.code,
       })
+      authStore.setToken(response.data)
       router.push({ name: GLOBAL_ROUTE_NAMES.STUDENT_PAGE })
     })
     .catch((error) => {

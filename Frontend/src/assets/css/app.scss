@@ -133,17 +133,26 @@ body {
       min-width: 32px;
       min-height: 32px;
     }
-    .username {
-      margin-left: 8px;
-      font-weight: 500;
-      color: #333;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+    .user-deital {
+      margin-left: 10px;
+      line-height: 1rem;
+      .username {
+        font-weight: 500;
+        color: #333;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        margin-bottom: 4px;
+      }
+      .email {
+        opacity: 0.8;
+        color: #333;
+      }
       @media (max-width: 912px) {
         display: none;
       }
     }
+
     .user-menu {
       display: flex;
       align-items: center;

@@ -506,7 +506,7 @@ watch(
         <a-card :bordered="false" class="cart">
           <template #title> <FilterFilled /> Bộ lọc </template>
           <div class="row g-2">
-            <div class="col-lg-8 col-md-8 col-sm-12">
+            <div class="col-xxl-4 col-lg-8 col-md-8 col-sm-12">
               <div class="label-title">Từ khoá:</div>
               <a-input
                 v-model:value="dataFilter.keyword"
@@ -518,7 +518,7 @@ watch(
                 </template>
               </a-input>
             </div>
-            <div class="col-lg-4 col-md-4 col-sm-6">
+            <div class="col-xxl-2 col-lg-4 col-md-4 col-sm-6">
               <div class="label-title">Trạng thái:</div>
               <a-select
                 v-model:value="dataFilter.status"
@@ -537,7 +537,7 @@ watch(
                 </a-select-option>
               </a-select>
             </div>
-            <div class="col-lg-4 col-md-4 col-sm-6">
+            <div class="col-xxl-2 col-lg-4 col-md-4 col-sm-6">
               <div class="label-title">Hình thức học:</div>
               <a-select
                 v-model:value="dataFilter.type"
@@ -552,7 +552,7 @@ watch(
                 </a-select-option>
               </a-select>
             </div>
-            <div class="col-lg-4 col-md-4 col-sm-6">
+            <div class="col-xxl-2 col-lg-4 col-md-4 col-sm-6">
               <div class="label-title">Ca học:</div>
               <a-select
                 v-model:value="dataFilter.shift"
@@ -567,7 +567,7 @@ watch(
                 </a-select-option>
               </a-select>
             </div>
-            <div class="col-lg-4 col-md-4 col-sm-6">
+            <div class="col-xxl-2 col-lg-4 col-md-4 col-sm-6">
               <div class="label-title">Ngày diễn ra:</div>
               <a-date-picker
                 class="w-100"
