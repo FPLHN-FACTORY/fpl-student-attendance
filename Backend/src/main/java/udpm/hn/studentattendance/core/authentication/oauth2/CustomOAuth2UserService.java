@@ -112,8 +112,6 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
         customOAuth2User.setRole(roles);
 
-        System.out.println(customOAuth2User.getIdFacility());
-
         return customOAuth2User;
     }
 
