@@ -17,9 +17,10 @@ import { ROUTE_NAMES } from '@/router/adminRoute'
 import router from '@/router'
 import { API_ROUTES_ADMIN } from '@/constants/adminConstant'
 import { DEFAULT_PAGINATION } from '@/constants'
-import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
+import { API_ROUTES_EXCEL, GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
 import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
 import useLoadingStore from '@/stores/useLoadingStore'
+import ExcelUploadButton from '@/components/excel/ExcelUploadButton.vue'
 
 const breadcrumbStore = useBreadcrumbStore()
 const loadingStore = useLoadingStore()
@@ -316,7 +317,17 @@ const clearNewStaffForm = () => {
   newStaff.facilityId = null
   newStaff.roleCodes = []
 }
-
+const configImportExcel = {
+  fetchUrl: API_ROUTES_EXCEL.FETCH_IMPORT_STAFF,
+  onSuccess: () => {
+    fetchStaffs()
+  },
+  onError: () => {
+    message.error('Không thể xử lý file excel')
+  },
+  showDownloadTemplate: true,
+  showHistoryLog: true,
+}
 onMounted(() => {
   breadcrumbStore.setRoutes(breadcrumb.value)
   fetchStaffs()
@@ -392,7 +403,8 @@ onMounted(() => {
       <div class="col-12">
         <a-card :bordered="false" class="cart">
           <template #title> <UnorderedListOutlined /> Danh sách nhân viên </template>
-          <div class="d-flex justify-content-end mb-3">
+          <div class="d-flex justify-content-end mb-3 flex-wrap gap-3">
+            <ExcelUploadButton v-bind="configImportExcel" />
             <a-tooltip title="Thêm mới nhân viên">
               <a-button type="primary" @click="modalAdd = true"> <PlusOutlined /> Thêm </a-button>
             </a-tooltip>
