@@ -119,49 +119,53 @@ public class Staff_StudentFactoryServiceImpl implements Staff_StudentFactoryServ
         Optional<Factory> existFactory = factoryRepository.findById(studentFactoryCreateUpdateRequest.getFactoryId());
         Optional<UserStudent> existUserStudent = userStudentRepository.findById(studentFactoryCreateUpdateRequest.getStudentId());
 
-        // Lấy kết quả từ 2 truy vấn kiểm tra
         boolean isGreaterThanTwenty = userStudentFactoryExtendRepository
                 .isStudentGreaterThanTwenty(studentFactoryCreateUpdateRequest.getFactoryId());
         boolean isExistsShift = userStudentFactoryExtendRepository
-                .isStudentExistsShift(sessionHelper.getFacilityId(),
+                .isStudentExistsShift(
+                        sessionHelper.getFacilityId(),
                         studentFactoryCreateUpdateRequest.getFactoryId(),
                         studentFactoryCreateUpdateRequest.getStudentId());
-
-        // Nếu 1 trong 2 điều kiện đúng thì cho phép thêm sinh viên
-        if (isGreaterThanTwenty || isExistsShift) {
-            UserStudentFactory userStudentFactory = new UserStudentFactory();
-            userStudentFactory.setId(CodeGeneratorUtils.generateRandom());
-            userStudentFactory.setUserStudent(existUserStudent.get());
-            userStudentFactory.setFactory(existFactory.get());
-            userStudentFactory.setStatus(EntityStatus.ACTIVE);
-            studentFactoryRepository.save(userStudentFactory);
+        if (existStudentFactory.isPresent()) {
             return new ResponseEntity<>(
                     new ApiResponse(
-                            RestApiStatus.SUCCESS,
-                            "Thêm sinh viên vào nhóm xưởng thành công",
-                            userStudentFactory
-                    ),
-                    HttpStatus.OK);
+                            RestApiStatus.ERROR,
+                            "Thêm sinh viên thất bại: Sinh viên đã có trong nhóm xưởng",
+                            null),
+                    HttpStatus.BAD_REQUEST);
+        }
+        if (!isGreaterThanTwenty) {
+            return new ResponseEntity<>(
+                    new ApiResponse(
+                            RestApiStatus.ERROR,
+                            "Thêm sinh viên thất bại: Số lượng sinh viên trong nhóm  vượt quá 20",
+                            null),
+                    HttpStatus.BAD_REQUEST);
         }
 
-        // Nếu cả 2 đều false thì hiển thị thông báo phù hợp
-        StringBuilder messageBuilder = new StringBuilder("Thêm sinh viên vào nhóm xưởng thất bại. ");
-        if (!isGreaterThanTwenty) {
-            messageBuilder.append("Số lượng sinh viên vượt quá 20. ");
-        }
         if (!isExistsShift) {
-            messageBuilder.append("Sinh viên đang trùng lịch học của nhóm xưởng khác. ");
+            return new ResponseEntity<>(
+                    new ApiResponse(
+                            RestApiStatus.ERROR,
+                            "Thêm sinh viên thất bại: Sinh viên  tồn tại ở ca khác",
+                            null),
+                    HttpStatus.BAD_REQUEST);
         }
+
+        UserStudentFactory userStudentFactory = new UserStudentFactory();
+        userStudentFactory.setId(CodeGeneratorUtils.generateRandom());
+        userStudentFactory.setUserStudent(existUserStudent.get());
+        userStudentFactory.setFactory(existFactory.get());
+        userStudentFactory.setStatus(EntityStatus.ACTIVE);
+        studentFactoryRepository.save(userStudentFactory);
 
         return new ResponseEntity<>(
                 new ApiResponse(
-                        RestApiStatus.ERROR,
-                        messageBuilder.toString(),
-                        null
-                ),
+                        RestApiStatus.SUCCESS,
+                        "Thêm sinh viên vào nhóm xưởng thành công",
+                        userStudentFactory),
                 HttpStatus.OK);
     }
-
 
 
     @Override

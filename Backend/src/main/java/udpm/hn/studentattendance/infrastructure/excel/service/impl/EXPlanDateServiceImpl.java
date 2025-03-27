@@ -21,6 +21,7 @@ import udpm.hn.studentattendance.infrastructure.common.ApiResponse;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.constants.ImportLogType;
 import udpm.hn.studentattendance.infrastructure.constants.RestApiStatus;
+import udpm.hn.studentattendance.infrastructure.constants.ShiftType;
 import udpm.hn.studentattendance.infrastructure.excel.model.request.EXDataRequest;
 import udpm.hn.studentattendance.infrastructure.excel.model.request.EXImportRequest;
 import udpm.hn.studentattendance.infrastructure.excel.model.request.EXUploadRequest;
@@ -81,6 +82,7 @@ public class EXPlanDateServiceImpl implements EXPlanDateService {
         addOrUpdatePlanDateRequest.setIdPlanFactory(idPlanFactory);
         addOrUpdatePlanDateRequest.setStartDate(DateTimeUtils.convertStringToTimeMillis(item.get("NGAY_DIEN_RA")));
         addOrUpdatePlanDateRequest.setShift((int) Double.parseDouble(item.get("CA_HOC")));
+        addOrUpdatePlanDateRequest.setType(ShiftType.valueOf(item.get("HINH_THUC_HOC")).ordinal());
         addOrUpdatePlanDateRequest.setDescription(item.get("NOI_DUNG_BUOI_HOC"));
         addOrUpdatePlanDateRequest.setLateArrival((int) Double.parseDouble(item.get("DIEM_DANH_MUON_TOI_DA")));
 
@@ -100,7 +102,7 @@ public class EXPlanDateServiceImpl implements EXPlanDateService {
     public ResponseEntity<byte[]> downloadTemplate(EXDataRequest request) {
         String filename = "template-import-plan-date.xlsx";
 
-        List<String> headers = List.of("Ngày diễn ra", "Ca học", "Điểm danh muộn tối đa", "Nội dung buổi học");
+        List<String> headers = List.of("Ngày diễn ra", "Hình thức học", "Ca học", "Điểm danh muộn tối đa", "Nội dung buổi học");
         byte[] data = ExcelHelper.createExcelStream("plan-date", headers, new ArrayList<>());
         if (data == null) {
             return null;

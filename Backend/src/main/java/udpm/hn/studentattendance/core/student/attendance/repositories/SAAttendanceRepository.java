@@ -25,6 +25,7 @@ public interface SAAttendanceRepository extends AttendanceRepository {
             a.created_at AS timeCheckin,
             pd.late_arrival AS lateArrival,
             pd.shift AS shift,
+            pd.type AS type,
             f.name AS factoryName,
             CONCAT(us.code, ' - ', us.name) AS teacherName,
             COALESCE(a.attendance_status, 0) AS status
@@ -49,6 +50,7 @@ public interface SAAttendanceRepository extends AttendanceRepository {
             f2.status = 1 AND
             (NULLIF(TRIM(:#{#request.keyword}), '') IS NULL OR BINARY f.name LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%')) AND
             (:#{#request.status} IS NULL OR a.status = :#{#request.status}) AND
+            (:#{#request.type} IS NULL OR pd.type = :#{#request.type}) AND
             DATE(FROM_UNIXTIME(pd.start_date / 1000)) = CURDATE() AND
             usf.id_user_student = :#{#request.idUserStudent} AND
             f2.id = :#{#request.idFacility}
@@ -78,6 +80,7 @@ public interface SAAttendanceRepository extends AttendanceRepository {
             f2.status = 1 AND
             (NULLIF(TRIM(:#{#request.keyword}), '') IS NULL OR BINARY f.name LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%')) AND
             (:#{#request.status} IS NULL OR a.status = :#{#request.status}) AND
+            (:#{#request.type} IS NULL OR pd.type = :#{#request.type}) AND
             DATE(FROM_UNIXTIME(pd.start_date / 1000)) = CURDATE() AND
             usf.id_user_student = :#{#request.idUserStudent} AND
             f2.id = :#{#request.idFacility}

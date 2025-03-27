@@ -7,13 +7,14 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
-import udpm.hn.studentattendance.core.admin.facility.model.request.Admin_CreateUpdateFacilityRequest;
-import udpm.hn.studentattendance.core.admin.facility.model.request.Admin_FacilitySearchRequest;
-import udpm.hn.studentattendance.core.admin.facility.repository.Admin_FacilityExtendRepository;
-import udpm.hn.studentattendance.core.admin.facility.service.Admin_FacilityService;
+import udpm.hn.studentattendance.core.admin.facility.model.request.AFCreateUpdateFacilityRequest;
+import udpm.hn.studentattendance.core.admin.facility.model.request.AFFacilitySearchRequest;
+import udpm.hn.studentattendance.core.admin.facility.repository.AFFacilityExtendRepository;
+import udpm.hn.studentattendance.core.admin.facility.service.AFFacilityService;
 import udpm.hn.studentattendance.entities.Facility;
 import udpm.hn.studentattendance.helpers.GenerateNameHelper;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
+import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.infrastructure.common.ApiResponse;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
@@ -25,11 +26,11 @@ import java.util.Optional;
 @Service
 @RequiredArgsConstructor
 @Validated
-public class Admin_FacilityServiceImpl implements Admin_FacilityService {
-    private final Admin_FacilityExtendRepository facilityRepository;
+public class AFFacilityServiceImpl implements AFFacilityService {
+    private final AFFacilityExtendRepository facilityRepository;
 
     @Override
-    public ResponseEntity<?> getAllFacility(Admin_FacilitySearchRequest request) {
+    public ResponseEntity<?> getAllFacility(AFFacilitySearchRequest request) {
         Pageable pageable = PaginationHelper.createPageable(request, "createdAt");
         PageableObject facilities = PageableObject.of(facilityRepository.getAllFacility(pageable, request));
         return new ResponseEntity<>(
@@ -41,9 +42,9 @@ public class Admin_FacilityServiceImpl implements Admin_FacilityService {
     }
 
     @Override
-    public ResponseEntity<?> createFacility(@Valid Admin_CreateUpdateFacilityRequest request) {
+    public ResponseEntity<?> createFacility(@Valid AFCreateUpdateFacilityRequest request) {
         Optional<Facility> existFacility = facilityRepository.findByName(request.getFacilityName().trim());
-        if (!existFacility.isEmpty()) {
+        if (existFacility.isPresent()) {
             return new ResponseEntity<>(
                     new ApiResponse(
                             RestApiStatus.WARNING,
@@ -53,10 +54,12 @@ public class Admin_FacilityServiceImpl implements Admin_FacilityService {
                     HttpStatus.BAD_REQUEST);
         }
         String code = GenerateNameHelper.generateCodeFromName(request.getFacilityName());
+        int position = facilityRepository.getLastPosition() + 1;
         Facility facility = new Facility();
         facility.setCode(code);
         facility.setName(GenerateNameHelper.replaceManySpaceToOneSpace(request.getFacilityName()));
         facility.setCreatedAt(System.currentTimeMillis());
+        facility.setPosition(position);
         facility.setStatus(EntityStatus.ACTIVE);
         facilityRepository.save(facility);
         return new ResponseEntity<>(
@@ -69,7 +72,7 @@ public class Admin_FacilityServiceImpl implements Admin_FacilityService {
     }
 
     @Override
-    public ResponseEntity<?> updateFacility(String facilityId, @Valid Admin_CreateUpdateFacilityRequest request) {
+    public ResponseEntity<?> updateFacility(String facilityId, @Valid AFCreateUpdateFacilityRequest request) {
 //        if (!facilityRepository.existsByNameAndId(request.getFacilityName(), facilityId)) {
 //            return new ResponseEntity<>(
 //                    new ApiResponse(
@@ -158,5 +161,37 @@ public class Admin_FacilityServiceImpl implements Admin_FacilityService {
                                 HttpStatus.NOT_FOUND)
                 );
 
+    }
+
+    @Override
+    public ResponseEntity<?> up(String facilityId) {
+        Facility facility = facilityRepository.findById(facilityId).orElse(null);
+        if (facility == null) {
+            return RouterHelper.responseError("Không tìm thấy cơ sở");
+        }
+
+        if (facility.getPosition() <= 1) {
+            return RouterHelper.responseError("Cơ sở đã đang ở mức ưu tiên hiển thị cao nhất");
+        }
+
+        facility.setPosition(Math.max(1, facility.getPosition() - 1));
+        facilityRepository.updatePositionPreUp(facility.getPosition(), facilityId);
+        return RouterHelper.responseSuccess("Tăng mức ưu tiên hiển thị thành công", facilityRepository.save(facility));
+    }
+
+    @Override
+    public ResponseEntity<?> down(String facilityId) {
+        Facility facility = facilityRepository.findById(facilityId).orElse(null);
+        if (facility == null) {
+            return RouterHelper.responseError("Không tìm thấy cơ sở");
+        }
+        int maxPosition = facilityRepository.getLastPosition();
+        if (facility.getPosition() >= maxPosition) {
+            return RouterHelper.responseError("Cơ sở đã đang ở mức ưu tiên hiển thị thấp nhất");
+        }
+
+        facility.setPosition(Math.min(maxPosition, facility.getPosition() + 1));
+        facilityRepository.updatePositionNextDown(facility.getPosition(), facilityId);
+        return RouterHelper.responseSuccess("Giảm mức ưu tiên hiển thị thành công", facilityRepository.save(facility));
     }
 }

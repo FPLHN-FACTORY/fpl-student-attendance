@@ -10,6 +10,7 @@ import {
 
 export const ROUTE_NAMES = {
   MANAGEMENT_FACILITY: 'route_admin_management_facility',
+  MANAGEMENT_FACILITY_IP: 'route_admin_management_facility_ip',
   MANAGEMENT_SEMESTER: 'route_admin_management_semester',
   MANAGEMENT_SUBJECT: 'route_admin_management_subject',
   MANAGEMENT_SUBJECT_FACILITY: 'route_admin_management_subject_facility',
@@ -33,11 +34,19 @@ export const AdminRoutes = [
       {
         path: 'management-facility',
         name: ROUTE_NAMES.MANAGEMENT_FACILITY,
-        component: () => import('@/views/pages/admin/AdminManagementFacilityPage.vue'),
+        component: () => import('@/views/pages/admin/facility/AFFacilityPage.vue'),
         meta: {
           selectedKey: selectedKey++,
           name: 'Quản lý cơ sở',
           icon: ApartmentOutlined,
+        },
+      },
+      {
+        path: 'management-facility/:id',
+        name: ROUTE_NAMES.MANAGEMENT_FACILITY_IP,
+        component: () => import('@/views/pages/admin/facility/AFFacilityIPPage.vue'),
+        meta: {
+          name: 'Quản lý cơ sở',
         },
       },
       {

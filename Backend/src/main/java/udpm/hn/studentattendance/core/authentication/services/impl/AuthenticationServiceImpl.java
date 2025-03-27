@@ -4,8 +4,10 @@ import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 import org.springframework.web.servlet.view.RedirectView;
 import udpm.hn.studentattendance.core.authentication.model.request.AuthenticationStudentRegisterRequest;
+import udpm.hn.studentattendance.core.authentication.model.request.AuthenticationStudentUpdateFaceIDRequest;
 import udpm.hn.studentattendance.core.authentication.oauth2.AuthUser;
 import udpm.hn.studentattendance.core.authentication.repositories.AuthenticationFacilityRepository;
 import udpm.hn.studentattendance.core.authentication.repositories.AuthenticationRoleRepository;
@@ -55,8 +57,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     }
 
     @Override
-    public List<Facility> getAll() {
-        return authenticationFacilityRepository.getFacilitiesByStatus(EntityStatus.ACTIVE);
+    public List<Facility> getAllFacility() {
+        return authenticationFacilityRepository.findAllByStatusOrderByPositionAsc(EntityStatus.ACTIVE);
     }
 
     @Override
@@ -94,7 +96,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
     @Override
     public ResponseEntity<?> studentRegister(AuthenticationStudentRegisterRequest request) {
-        UserStudent student = authenticationUserStudentRepository.findById(request.getId()).orElse(null);
+        UserStudent student = authenticationUserStudentRepository.findById(sessionHelper.getUserId()).orElse(null);
         if (student == null) {
             return RouterHelper.responseError("Không tìm thấy sinh viên");
         }
@@ -121,6 +123,41 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         student.setName(request.getName());
         student.setFaceEmbedding(request.getFaceEmbedding());
         return RouterHelper.responseSuccess("Đăng ký thông tin sinh viên thành công", authenticationUserStudentRepository.save(student));
+    }
+
+    @Override
+    public ResponseEntity<?> studentInfo() {
+        UserStudent student = authenticationUserStudentRepository.findById(sessionHelper.getUserId()).orElse(null);
+        if (student == null
+                || student.getFacility() == null
+                || !student.getFacility().getId().equals(sessionHelper.getFacilityId())) {
+            return RouterHelper.responseError("Không tìm thấy thông tin sinh viên");
+        }
+
+        if (StringUtils.hasText(student.getFaceEmbedding())) {
+            student.setFaceEmbedding("OK");
+        }
+
+        return RouterHelper.responseSuccess("Lấy thông tinh sinh viên thành công", student);
+    }
+
+    @Override
+    public ResponseEntity<?> studentUpdateFaceID(AuthenticationStudentUpdateFaceIDRequest request) {
+        UserStudent student = authenticationUserStudentRepository.findById(sessionHelper.getUserId()).orElse(null);
+        if (student == null) {
+            return RouterHelper.responseError("Không tìm thấy sinh viên");
+        }
+
+        if (student.getFaceEmbedding() != null) {
+            return RouterHelper.responseError("Không thể cập nhật khuôn mặt tài khoản này");
+        }
+
+        if (request.getFaceEmbedding() == null || request.getFaceEmbedding().isEmpty()) {
+            return RouterHelper.responseError("Thông tin khuôn mặt không hợp lệ");
+        }
+
+        student.setFaceEmbedding(request.getFaceEmbedding());
+        return RouterHelper.responseSuccess("Cập nhật khuôn mặt thành công", authenticationUserStudentRepository.save(student));
     }
 
 }

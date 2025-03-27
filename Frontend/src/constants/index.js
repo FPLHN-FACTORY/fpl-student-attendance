@@ -28,6 +28,16 @@ export const STATUS_PLAN_DATE_DETAIL = {
   CHUA_DIEN_RA: 'Chưa diễn ra',
 }
 
+export const STATUS_FACILITY_IP = {
+  0: 'Không áp dụng',
+  1: 'Đang áp dụng',
+}
+
+export const TYPE_FACILITY_IP = {
+  0: 'IPv4',
+  1: 'IPv6',
+}
+
 export const SHIFT = {
   1: 'Ca 1',
   2: 'Ca 2',
@@ -35,6 +45,11 @@ export const SHIFT = {
   4: 'Ca 4',
   5: 'Ca 5',
   6: 'Ca 6',
+}
+
+export const TYPE_SHIFT = {
+  0: 'Offline',
+  1: 'Online',
 }
 
 export const ROLE = {
