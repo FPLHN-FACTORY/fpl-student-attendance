@@ -1,5 +1,6 @@
 package udpm.hn.studentattendance.infrastructure.constants;
 
 public enum ImportLogType {
-    PLAN_DATE
+    PLAN_DATE,
+    STAFF
 }

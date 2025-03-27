@@ -407,7 +407,7 @@ watch(
   () => {
     handleSubmitFilter()
   },
-  { deep: true },
+  { deep: true }
 )
 </script>
 
@@ -630,7 +630,7 @@ watch(
                   {{
                     `${dayOfWeek(record.startDate)} - ${formatDate(
                       record.startDate,
-                      DEFAULT_DATE_FORMAT + ' HH:mm',
+                      DEFAULT_DATE_FORMAT + ' HH:mm'
                     )}`
                   }}
                 </template>

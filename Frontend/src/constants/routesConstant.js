@@ -17,4 +17,5 @@ export const GLOBAL_ROUTE_NAMES = {
 
 export const API_ROUTES_EXCEL = {
   FETCH_IMPORT_PLAN_DATE: API_URL + '/excel/plan-date',
+  FETCH_IMPORT_STAFF: API_URL + '/excel/staff',
 }
