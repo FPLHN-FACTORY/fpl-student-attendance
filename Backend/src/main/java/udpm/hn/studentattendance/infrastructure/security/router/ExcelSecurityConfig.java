@@ -14,6 +14,7 @@ public class ExcelSecurityConfig {
     public void configure(HttpSecurity http) throws Exception {
         http.authorizeHttpRequests(auth -> {
             auth.requestMatchers(appendWildcard(RouteExcelConstant.URL_API_PLAN_DATE)).hasAuthority(RoleConstant.STAFF.name());
+            auth.requestMatchers(appendWildcard(RouteExcelConstant.URL_API_STAFF)).hasAuthority(RoleConstant.ADMIN.name());
         });
     }
 

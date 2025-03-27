@@ -1,10 +1,13 @@
 package udpm.hn.studentattendance.core.admin.staff.service.impl;
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 import udpm.hn.studentattendance.core.admin.role.model.response.Admin_RoleFacilityResponse;
 import udpm.hn.studentattendance.core.admin.staff.model.request.Admin_CreateUpdateStaffRequest;
@@ -42,6 +45,8 @@ public class Admin_StaffServiceImpl implements Admin_StaffService {
 
     private final Admin_StaffFacilityRepository adminStaffFacilityRepository;
 
+    @PersistenceContext
+    private EntityManager entityManager;
 
     @Override
     public ResponseEntity<?> getAllStaffByFilter(Admin_StaffRequest adStaffRequest) {
@@ -97,6 +102,7 @@ public class Admin_StaffServiceImpl implements Admin_StaffService {
 //                HttpStatus.CREATED);
 //    }
     @Override
+    @Transactional
     public ResponseEntity<?> createStaff(Admin_CreateUpdateStaffRequest adCreateUpdateStaffRequest) {
         // Kiểm tra nhân viên đã tồn tại chưa
         UserStaff staffExist = isStaffExist(
@@ -120,8 +126,7 @@ public class Admin_StaffServiceImpl implements Admin_StaffService {
         staff.setStatus(EntityStatus.ACTIVE);
         staff = adStaffRepository.save(staff);
 
-        // Kiểm tra cơ sở tồn tại
-        Optional<Facility> existFacility = adminStaffFacilityRepository.findById(adCreateUpdateStaffRequest.getFacilityId().trim());
+        Optional<Facility> existFacility = adminStaffFacilityRepository.findById(adCreateUpdateStaffRequest.getFacilityId());
         if (existFacility.isEmpty()) {
             return new ResponseEntity<>(
                     new ApiResponse(RestApiStatus.ERROR, "Cơ sở không tồn tại", null),
@@ -129,6 +134,10 @@ public class Admin_StaffServiceImpl implements Admin_StaffService {
             );
         }
         Facility facility = existFacility.get();
+        if (!entityManager.contains(facility)) {
+            facility = entityManager.merge(facility);
+            System.out.println("After merge, is Facility managed? " + entityManager.contains(facility));
+        }
 
         // Tạo các vai trò
         List<String> roleCodes = adCreateUpdateStaffRequest.getRoleCodes();
