@@ -61,6 +61,10 @@ public class ExcelHelper {
             Facility facility = new Facility();
             facility.setId(sessionHelper.getFacilityId());
 
+            if (facility.getId() == null) {
+                facility = null;
+            }
+
             ImportLog newImportLog = new ImportLog();
             newImportLog.setIdUser(sessionHelper.getUserId());
             newImportLog.setFacility(facility);
