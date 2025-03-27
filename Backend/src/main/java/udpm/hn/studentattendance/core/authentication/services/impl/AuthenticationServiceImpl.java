@@ -30,6 +30,7 @@ import udpm.hn.studentattendance.infrastructure.constants.SessionConstant;
 import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -38,6 +39,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     private final HttpSession httpSession;
 
     private final SessionHelper sessionHelper;
+
+    private final JwtUtil jwtUtil;
 
     private final AuthenticationFacilityRepository authenticationFacilityRepository;
 
@@ -122,7 +125,10 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         student.setCode(request.getCode());
         student.setName(request.getName());
         student.setFaceEmbedding(request.getFaceEmbedding());
-        return RouterHelper.responseSuccess("Đăng ký thông tin sinh viên thành công", authenticationUserStudentRepository.save(student));
+        authenticationUserStudentRepository.save(student);
+
+        String token = jwtUtil.generateToken(student.getEmail(), sessionHelper.buildAuthUser(student, Set.of(RoleConstant.STUDENT), student.getFacility().getId()));
+        return RouterHelper.responseSuccess("Đăng ký thông tin sinh viên thành công", token);
     }
 
     @Override
@@ -131,7 +137,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         if (student == null
                 || student.getFacility() == null
                 || !student.getFacility().getId().equals(sessionHelper.getFacilityId())) {
-            return RouterHelper.responseError("Không tìm thấy thông tin sinh viên");
+            return RouterHelper.responseError("Vui lòng đăng ký thông tin sinh viên");
         }
 
         if (StringUtils.hasText(student.getFaceEmbedding())) {
