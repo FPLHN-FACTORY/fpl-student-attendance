@@ -102,7 +102,6 @@ public class Admin_StaffServiceImpl implements Admin_StaffService {
 //                HttpStatus.CREATED);
 //    }
     @Override
-    @Transactional
     public ResponseEntity<?> createStaff(Admin_CreateUpdateStaffRequest adCreateUpdateStaffRequest) {
         // Kiểm tra nhân viên đã tồn tại chưa
         UserStaff staffExist = isStaffExist(
@@ -126,16 +125,18 @@ public class Admin_StaffServiceImpl implements Admin_StaffService {
         staff.setStatus(EntityStatus.ACTIVE);
         staff = adStaffRepository.save(staff);
 
-        Optional<Facility> existFacility = adminStaffFacilityRepository.findById(adCreateUpdateStaffRequest.getFacilityId());
-        if (existFacility.isEmpty()) {
+        Facility facility = entityManager.find(Facility.class, adCreateUpdateStaffRequest.getFacilityId());
+        if (facility == null) {
             return new ResponseEntity<>(
                     new ApiResponse(RestApiStatus.ERROR, "Cơ sở không tồn tại", null),
                     HttpStatus.BAD_REQUEST
             );
         }
-        Facility facility = existFacility.get();
+        System.out.println(facility);
+        System.out.println("Loaded Facility: id = " + facility.getId() + ", managed? " + entityManager.contains(facility));
         if (!entityManager.contains(facility)) {
             facility = entityManager.merge(facility);
+            entityManager.flush();
             System.out.println("After merge, is Facility managed? " + entityManager.contains(facility));
         }
 
@@ -161,6 +162,15 @@ public class Admin_StaffServiceImpl implements Admin_StaffService {
                     break;
                 case "3":
                     roleConstant = RoleConstant.TEACHER;
+                    break;
+                case "ADMIN":
+                    roleConstant = RoleConstant.ADMIN;
+                    break;
+                case "STAFF":
+                    roleConstant = RoleConstant.STAFF;
+                    break;
+                case "STUDENT":
+                    roleConstant = RoleConstant.STUDENT;
                     break;
                 default:
                     return new ResponseEntity<>(

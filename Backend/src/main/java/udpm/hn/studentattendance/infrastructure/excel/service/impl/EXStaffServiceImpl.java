@@ -1,6 +1,5 @@
 package udpm.hn.studentattendance.infrastructure.excel.service.impl;
 
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.util.CellRangeAddressList;
@@ -8,6 +7,7 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import udpm.hn.studentattendance.core.admin.staff.model.request.Admin_CreateUpdateStaffRequest;
 import udpm.hn.studentattendance.core.admin.staff.repository.Admin_StaffFacilityRepository;
@@ -75,7 +75,6 @@ public class EXStaffServiceImpl implements EXStaffService {
     }
 
     @Override
-    @Transactional
     public ResponseEntity<?> importItem(EXImportRequest request) {
         Map<String, Object> data = request.getData();
         Map<String, String> item = request.getItem();
