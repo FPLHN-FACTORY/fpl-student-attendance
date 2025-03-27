@@ -35,17 +35,10 @@ public interface SPDPlanFactoryRepository extends PlanFactoryRepository {
         JOIN plan pl ON pf.id_plan = pl.id
         JOIN factory f ON pf.id_factory = f.id
         JOIN project p ON p.id = f.id_project
-        LEFT JOIN semester s ON s.id = p.id_semester
         LEFT JOIN subject_facility sf ON sf.id = p.id_subject_facility
-        LEFT JOIN subject s2 ON s2.id = sf.id_subject
         LEFT JOIN user_staff us ON us.id = f.id_user_staff
         LEFT JOIN plan_date pd ON pd.id_plan_factory = pf.id
         WHERE 
-            f.status = 1 AND
-            p.status = 1 AND
-            sf.status = 1 AND
-            s.status = 1 AND
-            s2.status = 1 AND
             pf.id_plan = :#{#request.idPlan} AND
             sf.id_facility = :#{#request.idFacility} AND
             (NULLIF(TRIM(:#{#request.keyword}), '') IS NULL OR 
@@ -64,17 +57,10 @@ public interface SPDPlanFactoryRepository extends PlanFactoryRepository {
         JOIN plan pl ON pf.id_plan = pl.id
         JOIN factory f on f.id = pf.id_factory
         JOIN project p ON p.id = f.id_project
-        LEFT JOIN semester s ON s.id = p.id_semester
         LEFT JOIN subject_facility sf ON sf.id = p.id_subject_facility
-        LEFT JOIN subject s2 ON s2.id = sf.id_subject
         LEFT JOIN user_staff us ON us.id = f.id_user_staff
         LEFT JOIN plan_date pd ON pd.id_plan_factory = pf.id
         WHERE 
-            f.status = 1 AND
-            p.status = 1 AND
-            sf.status = 1 AND
-            s.status = 1 AND
-            s2.status = 1 AND
             pf.id_plan = :#{#request.idPlan} AND
             sf.id_facility = :#{#request.idFacility} AND
             (NULLIF(TRIM(:#{#request.keyword}), '') IS NULL OR 
@@ -102,21 +88,14 @@ public interface SPDPlanFactoryRepository extends PlanFactoryRepository {
         JOIN plan pl ON pf.id_plan = pl.id
         JOIN factory f ON pf.id_factory = f.id
         JOIN project p ON p.id = f.id_project
-        LEFT JOIN semester s ON s.id = p.id_semester
         LEFT JOIN subject_facility sf ON sf.id = p.id_subject_facility
-        LEFT JOIN subject s2 ON s2.id = sf.id_subject
         LEFT JOIN user_staff us ON us.id = f.id_user_staff
         LEFT JOIN plan_date pd ON pd.id_plan_factory = pf.id
         WHERE 
-            f.status = 1 AND
-            p.status = 1 AND
-            sf.status = 1 AND
-            s.status = 1 AND
-            s2.status = 1 AND
             pf.id = :idPlanFactory AND
             sf.id_facility = :idFacility
         GROUP BY 
-            pf.id, f.name, us.code, us.name, pf.id_plan, pf.status
+            pf.id, f.name, us.code, us.name, pf.id_plan, pf.status, pl.name
     """, nativeQuery = true)
     Optional<SPDPlanFactoryResponse> getDetail(String idPlanFactory, String idFacility);
 

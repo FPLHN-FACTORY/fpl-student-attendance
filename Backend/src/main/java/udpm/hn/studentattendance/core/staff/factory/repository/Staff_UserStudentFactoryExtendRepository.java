@@ -84,18 +84,18 @@ public interface Staff_UserStudentFactoryExtendRepository extends UserStudentRep
     @Query
             (value = """
                     SELECT 
-                    CASE WHEN COUNT(*) > 20 THEN 'TRUE' ELSE 'FALSE' END 
+                    CASE WHEN COUNT(*) > 20 THEN 'FALSE' ELSE 'TRUE' END 
                     FROM 
                     user_student_factory usf
                     WHERE
-                    usf.id_factory = :idProject
+                    usf.id_factory = :factoryId
                     """, nativeQuery = true)
     boolean isStudentGreaterThanTwenty(String factoryId);
 
 
     @Query(value = """
                 SELECT
-                CASE WHEN COUNT(distinct pd2.id) > 0 THEN 'TRUE' ELSE 'FALSE' END
+                CASE WHEN COUNT(distinct pd2.id) > 0 THEN 'FALSE' ELSE 'TRUE' END
                 FROM plan_date pd
                 JOIN plan_factory pf ON pf.id = pd.id_plan_factory
                 JOIN factory f ON pf.id_factory = f.id
@@ -123,4 +123,5 @@ public interface Staff_UserStudentFactoryExtendRepository extends UserStudentRep
                     f2.id = :idFacility
             """, nativeQuery = true)
     boolean isStudentExistsShift(String idFacility, String idFactory, String idUserStudent);
+
 }

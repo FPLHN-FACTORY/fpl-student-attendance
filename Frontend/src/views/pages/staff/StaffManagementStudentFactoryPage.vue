@@ -108,9 +108,12 @@ const fetchExistingStudents = () => {
     .get(API_ROUTES_STAFF.FETCH_DATA_STUDENT_FACTORY + '/exist-student/' + factoryId)
     .then((response) => {
       existingStudents.value = response.data.data || []
-      breadcrumbStore.push({
-        breadcrumbName: factoryName,
-      })
+      // Kiểm tra xem breadcrumb đã tồn tại chưa, nếu chưa thì mới push
+      if (!breadcrumbStore.routes.some((item) => item.breadcrumbName === factoryName)) {
+        breadcrumbStore.push({
+          breadcrumbName: factoryName,
+        })
+      }
       if (allStudents.value.length) {
         updateAllStudentsCheckStatus()
       }
@@ -259,7 +262,7 @@ const handleTableChange = (pageInfo) => {
   pagination.pageSize = pageInfo.pageSize
   // Nếu muốn đồng bộ với filter, bạn có thể cập nhật:
   filter.page = pageInfo.current
-  filter.pageSize = pageInfo.pageSize // <-- Đã thêm dòng này
+  filter.pageSize = pageInfo.pageSize
   fetchStudentFactories()
 }
 
@@ -280,6 +283,7 @@ const deleteStudentFactory = (studentFactoryId) => {
     .delete(API_ROUTES_STAFF.FETCH_DATA_STUDENT_FACTORY + '/' + studentFactoryId)
     .then((response) => {
       message.success(response.data.message || 'Xóa sinh viên thành công')
+      fetchExistingStudents()
       fetchStudentFactories()
     })
     .catch((error) => {
@@ -319,12 +323,13 @@ const changeStatusStudentFactory = (studentFactoryId) => {
 
 /* -------------------- Quản lý modal thêm sinh viên -------------------- */
 const isAddStudentModalVisible = ref(false)
-// Reset dữ liệu và phân trang khi modal mở
 watch(isAddStudentModalVisible, (newVal) => {
   if (newVal) {
     studentFilter.searchQuery = ''
     studentFilter.page = 1
     studentPagination.current = 1
+    // Cập nhật cả danh sách sinh viên tổng và danh sách đã có trong nhóm
+    fetchExistingStudents()
     fetchAllStudents()
   }
 })

@@ -67,4 +67,6 @@ public interface Staff_StudentFactoryRepository extends UserStudentFactoryReposi
     Optional<UserStudentFactory> getUserStudentFactoriesByUserStudentIdAndFactoryId(String userStudentId, String factoryId);
 
 
+
+
 }

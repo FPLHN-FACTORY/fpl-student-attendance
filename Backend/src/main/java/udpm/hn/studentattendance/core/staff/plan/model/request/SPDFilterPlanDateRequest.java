@@ -22,6 +22,8 @@ public class SPDFilterPlanDateRequest extends PageableRequest {
 
     private Integer shift;
 
+    private Integer type;
+
     private Long startDate;
 
     private String status;

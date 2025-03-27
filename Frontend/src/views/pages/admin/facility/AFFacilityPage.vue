@@ -2,12 +2,13 @@
 import { ref, reactive, onMounted } from 'vue'
 import {
   PlusOutlined,
-  EditOutlined,
-  SwapOutlined,
   FilterFilled,
   UnorderedListOutlined,
   EditFilled,
-  SyncOutlined,
+  GlobalOutlined,
+  ArrowUpOutlined,
+  ArrowDownOutlined,
+  SearchOutlined,
 } from '@ant-design/icons-vue'
 import { message, Modal } from 'ant-design-vue'
 import requestAPI from '@/services/requestApiService'
@@ -30,7 +31,7 @@ const breadcrumb = ref([
   },
   {
     name: ROUTE_NAMES.MANAGEMENT_FACILITY,
-    breadcrumbName: 'Cơ sở',
+    breadcrumbName: 'Quản lý cơ sở',
   },
 ])
 
@@ -97,7 +98,7 @@ const fetchFacilities = () => {
     .catch((error) => {
       message.error(
         (error.response && error.response.data && error.response.data.message) ||
-          'Lỗi khi lấy dữ liệu cơ sở'
+          'Lỗi khi lấy dữ liệu cơ sở',
       )
     })
     .finally(() => {
@@ -132,7 +133,7 @@ const handleAddFacility = () => {
     .catch((error) => {
       message.error(
         (error.response && error.response.data && error.response.data.message) ||
-          'Lỗi khi thêm cơ sở'
+          'Lỗi khi thêm cơ sở',
       )
     })
     .finally(() => {
@@ -153,7 +154,7 @@ const handleUpdateFacility = (record) => {
     .catch((error) => {
       message.error(
         (error.response && error.response.data && error.response.data.message) ||
-          'Lỗi khi lấy chi tiết cơ sở'
+          'Lỗi khi lấy chi tiết cơ sở',
       )
     })
     .finally(() => {
@@ -179,13 +180,17 @@ const updateFacility = () => {
     .catch((error) => {
       message.error(
         (error.response && error.response.data && error.response.data.message) ||
-          'Lỗi khi cập nhật cơ sở'
+          'Lỗi khi cập nhật cơ sở',
       )
     })
     .finally(() => {
       modalUpdateLoading.value = false
       loadingStore.hide()
     })
+}
+
+const handleShowIP = (id) => {
+  router.push({ name: ROUTE_NAMES.MANAGEMENT_FACILITY_IP, params: { id: id } })
 }
 
 // Hàm đổi trạng thái cơ sở
@@ -204,7 +209,7 @@ const handleChangeStatusFacility = (record) => {
         .catch((error) => {
           message.error(
             (error.response && error.response.data && error.response.data.message) ||
-              'Lỗi khi cập nhật trạng thái cơ sở'
+              'Lỗi khi cập nhật trạng thái cơ sở',
           )
         })
         .finally(() => {
@@ -212,6 +217,44 @@ const handleChangeStatusFacility = (record) => {
         })
     },
   })
+}
+
+const handleUp = (id) => {
+  loadingStore.show()
+  requestAPI
+    .put(`${API_ROUTES_ADMIN.FETCH_DATA_FACILITY}/up/${id}`)
+    .then(({ data: response }) => {
+      message.success(response.message || 'Tăng mức ưu tiên hiển thị thành công')
+      fetchFacilities()
+    })
+    .catch((error) => {
+      message.error(
+        (error.response && error.response.data && error.response.data.message) ||
+          'Có lỗi xảy ra. Vui lòng thử lại sau ít phút',
+      )
+    })
+    .finally(() => {
+      loadingStore.hide()
+    })
+}
+
+const handleDown = (id) => {
+  loadingStore.show()
+  requestAPI
+    .put(`${API_ROUTES_ADMIN.FETCH_DATA_FACILITY}/down/${id}`)
+    .then(({ data: response }) => {
+      message.success(response.message || 'Giảm mức ưu tiên hiển thị thành công')
+      fetchFacilities()
+    })
+    .catch((error) => {
+      message.error(
+        (error.response && error.response.data && error.response.data.message) ||
+          'Có lỗi xảy ra. Vui lòng thử lại sau ít phút',
+      )
+    })
+    .finally(() => {
+      loadingStore.hide()
+    })
 }
 
 const clearFormAdd = () => {
@@ -223,8 +266,6 @@ onMounted(() => {
   fetchFacilities()
 })
 </script>
-
-
 
 <template>
   <div class="container-fluid">
@@ -241,7 +282,11 @@ onMounted(() => {
                 placeholder="Tìm kiếm theo tên"
                 allowClear
                 @change="fetchFacilities"
-              />
+              >
+                <template #prefix>
+                  <SearchOutlined />
+                </template>
+              </a-input>
             </a-col>
             <a-col :xs="24" :md="12" class="col">
               <div class="label-title">Trạng thái:</div>
@@ -283,19 +328,26 @@ onMounted(() => {
           >
             <template #bodyCell="{ column, record }">
               <template v-if="column.dataIndex === 'facilityStatus'">
-                <a-tag
-                  :color="
-                    record.facilityStatus === 'ACTIVE' || record.facilityStatus === 1
-                      ? 'green'
-                      : 'red'
-                  "
-                >
-                  {{
-                    record.facilityStatus === 'ACTIVE' || record.facilityStatus === 1
-                      ? 'Hoạt động'
-                      : 'Không hoạt động'
-                  }}
-                </a-tag>
+                <span class="nowrap">
+                  <a-switch
+                    class="me-2"
+                    :checked="record.facilityStatus === 'ACTIVE' || record.facilityStatus === 1"
+                    @change="handleChangeStatusFacility(record)"
+                  />
+                  <a-tag
+                    :color="
+                      record.facilityStatus === 'ACTIVE' || record.facilityStatus === 1
+                        ? 'green'
+                        : 'red'
+                    "
+                  >
+                    {{
+                      record.facilityStatus === 'ACTIVE' || record.facilityStatus === 1
+                        ? 'Hoạt động'
+                        : 'Không hoạt động'
+                    }}
+                  </a-tag>
+                </span>
               </template>
               <template v-else-if="column.key === 'actions'">
                 <a-space>
@@ -303,18 +355,27 @@ onMounted(() => {
                     <a-button
                       @click="handleUpdateFacility(record)"
                       type="text"
-                      class="btn-outline-info me-2"
+                      class="btn-outline-info border-0 me-2"
                     >
                       <EditFilled />
                     </a-button>
                   </a-tooltip>
-                  <a-tooltip title="Đổi trạng thái cơ sở">
+                  <a-tooltip title="Quản lý ip cơ sở">
                     <a-button
-                      @click="handleChangeStatusFacility(record)"
-                      type="text"
-                      class="btn-outline-warning"
+                      class="btn-outline-primary border-0 me-2"
+                      @click="handleShowIP(record.id)"
                     >
-                      <SyncOutlined />
+                      <GlobalOutlined />
+                    </a-button>
+                  </a-tooltip>
+                  <a-tooltip title="Lên trên" v-if="record.facilityIndex > 1">
+                    <a-button class="btn-outline border-0 me-2" @click="handleUp(record.id)">
+                      <ArrowUpOutlined />
+                    </a-button>
+                  </a-tooltip>
+                  <a-tooltip title="Xuống dưới" v-if="record.facilityIndex < record.maxPosition">
+                    <a-button class="btn-outline border-0 me-2" @click="handleDown(record.id)">
+                      <ArrowDownOutlined />
                     </a-button>
                   </a-tooltip>
                 </a-space>
