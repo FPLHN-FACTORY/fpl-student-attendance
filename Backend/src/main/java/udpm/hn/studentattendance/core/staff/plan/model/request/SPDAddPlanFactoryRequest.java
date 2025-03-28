@@ -21,6 +21,8 @@ public class SPDAddPlanFactoryRequest {
 
     private List<Integer> days;
 
+    private Integer type;
+
     @Min(value = 1, message = "Ca học sớm nhất là ca 1")
     @Max(value = 6, message = "Ca học muộn nhất là ca 6")
     private Integer shift;

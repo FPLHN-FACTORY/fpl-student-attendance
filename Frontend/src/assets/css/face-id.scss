@@ -1,3 +1,5 @@
+@use 'sass:math';
+
 .face-id-input {
   display: flex;
   justify-content: center;
@@ -148,7 +150,7 @@
       @for $i from 1 through 9 {
         & > div:nth-child(#{$i}) {
           animation: step1 0s alternate forwards;
-          animation-delay: #{$i / 50}s;
+          animation-delay: #{math.div($i, 50)}s;
         }
       }
     }
@@ -157,7 +159,7 @@
       @for $i from 10 through 18 {
         & > div:nth-child(#{$i}) {
           animation: step1 0s alternate forwards;
-          animation-delay: #{($i - 9) / 50}s;
+          animation-delay: #{math.div($i - 9, 50)}s;
         }
       }
     }
@@ -165,7 +167,7 @@
       @for $i from 19 through 27 {
         & > div:nth-child(#{$i}) {
           animation: step1 0s alternate forwards;
-          animation-delay: #{($i - 18) / 50}s;
+          animation-delay: #{math.div($i - 18, 50)}s;
         }
       }
     }
@@ -173,7 +175,7 @@
       @for $i from 28 through 36 {
         & > div:nth-child(#{$i}) {
           animation: step1 0s alternate forwards;
-          animation-delay: #{($i - 27) / 50}s;
+          animation-delay: #{math.div($i - 27, 50)}s;
         }
       }
     }
@@ -181,7 +183,7 @@
       @for $i from 1 through 36 {
         & > div:nth-child(#{$i}) {
           animation: step1 0s alternate forwards;
-          animation-delay: #{$i / 50}s;
+          animation-delay: #{math.div($i, 50)}s;
         }
       }
     }

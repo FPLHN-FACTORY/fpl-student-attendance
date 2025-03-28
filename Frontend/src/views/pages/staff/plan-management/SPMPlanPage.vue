@@ -610,7 +610,7 @@ watch(
         <a-card :bordered="false" class="cart">
           <template #title> <FilterFilled /> Bộ lọc </template>
           <div class="row g-2">
-            <div class="col-md-4 col-sm-12">
+            <div class="col-xxl-2 col-md-4 col-sm-12">
               <div class="label-title">Từ khoá:</div>
               <a-input
                 v-model:value="dataFilter.keyword"
@@ -622,7 +622,7 @@ watch(
                 </template>
               </a-input>
             </div>
-            <div class="col-md-4 col-sm-6">
+            <div class="col-xxl-2 col-md-4 col-sm-6">
               <div class="label-title">Trạng thái:</div>
               <a-select
                 v-model:value="dataFilter.status"
@@ -636,7 +636,7 @@ watch(
                 <a-select-option :value="0">Ngừng triển khai</a-select-option>
               </a-select>
             </div>
-            <div class="col-md-4 col-sm-6">
+            <div class="col-xxl-2 col-md-4 col-sm-6">
               <div class="label-title">Bộ môn:</div>
               <a-select
                 v-model:value="dataFilter.subject"
@@ -651,7 +651,7 @@ watch(
                 </a-select-option>
               </a-select>
             </div>
-            <div class="col-md-4 col-sm-6">
+            <div class="col-xxl-2 col-md-4 col-sm-6">
               <div class="label-title">Cấp độ dự án:</div>
               <a-select
                 v-model:value="dataFilter.level"
@@ -666,7 +666,7 @@ watch(
                 </a-select-option>
               </a-select>
             </div>
-            <div class="col-md-4 col-sm-6">
+            <div class="col-xxl-2 col-md-4 col-sm-6">
               <div class="label-title">Học kỳ:</div>
               <a-select
                 v-model:value="dataFilter.semester"
@@ -681,7 +681,7 @@ watch(
                 </a-select-option>
               </a-select>
             </div>
-            <div class="col-md-4 col-sm-6">
+            <div class="col-xxl-2 col-md-4 col-sm-6">
               <div class="label-title">Năm học:</div>
               <a-select
                 v-model:value="dataFilter.year"

@@ -96,6 +96,9 @@ const fetchDataFacility = async () => {
   try {
     const response = await requestAPI.get(ROUTE_NAMES_API.FETCH_DATA_FACILITY)
     lstFacility.value = response.data.data
+    if (lstFacility.value.length > 0) {
+      facilityID.value = lstFacility.value[0].id
+    }
   } catch (error) {
     toast.error('Không thể tải danh sách cơ sở')
   }
