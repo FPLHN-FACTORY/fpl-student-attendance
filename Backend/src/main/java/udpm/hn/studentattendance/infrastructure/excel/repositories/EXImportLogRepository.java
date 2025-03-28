@@ -26,7 +26,7 @@ public interface EXImportLogRepository extends ImportLogRepository {
         WHERE
             il.type = :type AND
             il.id_user = :userId AND
-            il.id_facility = :facilityId
+            (:facilityId IS NULL OR il.id_facility = :facilityId)
         ORDER BY il.created_at DESC 
     """, countQuery = """
         SELECT 
@@ -35,7 +35,7 @@ public interface EXImportLogRepository extends ImportLogRepository {
         WHERE
             il.type = :type AND
             il.id_user = :userId AND
-            il.id_facility = :facilityId
+            (:facilityId IS NULL OR il.id_facility = :facilityId)
     """, nativeQuery = true)
     Page<ExImportLogResponse> getListHistory(Pageable pageable, int type, String userId, String facilityId);
 

@@ -34,12 +34,12 @@ public interface SAAttendanceRepository extends AttendanceRepository {
         JOIN plan_factory pf ON f.id = pf.id_factory
         JOIN plan_date pd ON pd.id_plan_factory = pf.id
         JOIN plan p ON pf.id_plan = p.id
-        LEFT JOIN user_staff us ON f.id_user_staff = us.id
         JOIN project pj ON f.id_project = pj.id
         JOIN subject_facility sf ON sf.id = pj.id_subject_facility
         JOIN facility f2 ON sf.id_facility = f2.id
         JOIN semester s ON pj.id_semester = s.id
-        LEFT JOIN attendance a ON pd.id = a.id_plan_date
+        LEFT JOIN user_staff us ON f.id_user_staff = us.id
+        LEFT JOIN attendance a ON pd.id = a.id_plan_date AND a.id_user_student = usf.id_user_student
         WHERE
             pd.status = 1 AND
             pf.status = 1 AND
@@ -64,12 +64,12 @@ public interface SAAttendanceRepository extends AttendanceRepository {
         JOIN plan_factory pf ON f.id = pf.id_factory
         JOIN plan_date pd ON pd.id_plan_factory = pf.id
         JOIN plan p ON pf.id_plan = p.id
-        LEFT JOIN user_staff us ON f.id_user_staff = us.id
         JOIN project pj ON f.id_project = pj.id
         JOIN subject_facility sf ON sf.id = pj.id_subject_facility
         JOIN facility f2 ON sf.id_facility = f2.id
         JOIN semester s ON pj.id_semester = s.id
-        LEFT JOIN attendance a ON pd.id = a.id_plan_date
+        LEFT JOIN user_staff us ON f.id_user_staff = us.id
+        LEFT JOIN attendance a ON pd.id = a.id_plan_date AND a.id_user_student = usf.id_user_student
         WHERE
             pd.status = 1 AND
             pf.status = 1 AND
