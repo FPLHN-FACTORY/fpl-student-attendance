@@ -169,8 +169,8 @@ public class Admin_StaffServiceImpl implements Admin_StaffService {
                 case "STAFF":
                     roleConstant = RoleConstant.STAFF;
                     break;
-                case "STUDENT":
-                    roleConstant = RoleConstant.STUDENT;
+                case "TEACHER":
+                    roleConstant = RoleConstant.TEACHER;
                     break;
                 default:
                     return new ResponseEntity<>(
