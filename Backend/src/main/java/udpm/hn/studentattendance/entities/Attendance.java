@@ -6,10 +6,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import org.hibernate.annotations.DynamicUpdate;
 import udpm.hn.studentattendance.entities.base.PrimaryEntity;
 import udpm.hn.studentattendance.infrastructure.constants.EntityProperties;
@@ -24,6 +21,7 @@ import java.io.Serializable;
 @NoArgsConstructor
 @Table(name = "attendance")
 @DynamicUpdate
+@ToString
 public class Attendance extends PrimaryEntity implements Serializable {
 
     @ManyToOne
