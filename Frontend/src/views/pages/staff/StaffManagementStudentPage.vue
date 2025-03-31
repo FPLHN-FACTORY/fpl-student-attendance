@@ -4,7 +4,7 @@ import { message, Modal } from 'ant-design-vue'
 import router from '@/router'
 import requestAPI from '@/services/requestApiService'
 import { API_ROUTES_STAFF } from '@/constants/staffConstant'
-import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
+import { API_ROUTES_EXCEL, GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
 import {
   PlusOutlined,
   EyeOutlined,
@@ -19,6 +19,7 @@ import { ROUTE_NAMES } from '@/router/staffRoute'
 import { DEFAULT_PAGINATION } from '@/constants'
 import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
 import useLoadingStore from '@/stores/useLoadingStore'
+import ExcelUploadButton from '@/components/excel/ExcelUploadButton.vue'
 
 const breadcrumbStore = useBreadcrumbStore()
 const loadingStore = useLoadingStore()
@@ -248,6 +249,18 @@ const handleChangeStatusStudent = (record) => {
   })
 }
 
+const configImportExcel = {
+  fetchUrl: API_ROUTES_EXCEL.FETCH_IMPORT_STUDENT,
+  onSuccess: () => {
+    fetchStudents()
+  },
+  onError: () => {
+    message.error('Không thể xử lý file excel')
+  },
+  showDownloadTemplate: true,
+  showHistoryLog: true,
+}
+
 const clearNewStudentForm = () => {
   newStudent.code = ''
   newStudent.name = ''
@@ -305,7 +318,9 @@ onMounted(() => {
       <div class="col-12">
         <a-card :bordered="false" class="cart">
           <template #title> <UnorderedListOutlined /> Danh sách sinh viên </template>
-          <div class="d-flex justify-content-end mb-3">
+          <div class="d-flex justify-content-end mb-3 flex-wrap gap-3">
+            <ExcelUploadButton v-bind="configImportExcel" />
+
             <a-tooltip title="Thêm mới sinh viên">
               <!-- Sử dụng nút primary kiểu filled -->
               <a-button type="primary" @click="modalAdd = true"> <PlusOutlined /> Thêm </a-button>

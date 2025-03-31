@@ -293,12 +293,18 @@ const handleUpdatePlanDate = () => {
     })
 }
 const handleAttendance = (record) => {
-  console.log('Detail record:', record)
+  console.log('Id Plan Date:' + record.idPlanDate);
+  requestAPI
+    .get(`${API_ROUTES_TEACHER.FETCH_DATA_STUDENT_PLAN_DATE}/${record.idPlanDate}`)
+    .then(() => {
+    })
+
   router.push({
     name: ROUTE_NAMES.MANAGEMENT_STUDENT_ATTENDANCE,
     query: {
       factoryId: record.factoryId,
       userId: record.userId,
+      planDateId: record.idPlanDate,
     },
   })
 }

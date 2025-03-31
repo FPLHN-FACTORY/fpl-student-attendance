@@ -1,6 +1,7 @@
 package udpm.hn.studentattendance.core.staff.factory.service;
 
 import org.springframework.http.ResponseEntity;
+import udpm.hn.studentattendance.core.staff.factory.model.request.Staff_StudentFactoryAddRequest;
 import udpm.hn.studentattendance.core.staff.factory.model.request.Staff_StudentFactoryCreateUpdateRequest;
 import udpm.hn.studentattendance.core.staff.factory.model.request.Staff_StudentFactoryRequest;
 import udpm.hn.studentattendance.core.staff.factory.model.request.Staff_UserStudentRequest;
@@ -17,5 +18,7 @@ public interface Staff_StudentFactoryService {
     ResponseEntity<?> getStudentFactoryExist( String factoryId);
 
     ResponseEntity<?> getAllStudent(Staff_UserStudentRequest userStudentRequest);
+
+    ResponseEntity<?> createStudent(Staff_StudentFactoryAddRequest staffStudentFactoryAddRequest);
 
 }
