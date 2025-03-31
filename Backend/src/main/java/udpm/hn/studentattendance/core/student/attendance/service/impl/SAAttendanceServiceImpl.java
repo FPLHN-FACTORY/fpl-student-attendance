@@ -103,7 +103,7 @@ public class SAAttendanceServiceImpl implements SAAttendanceService {
 
         double[] inputEmbedding = FaceRecognitionUtils.parseEmbedding(request.getFaceEmbedding());
         double[] storedEmbedding = FaceRecognitionUtils.parseEmbedding(userStudent.getFaceEmbedding());
-        boolean isMatch = FaceRecognitionUtils.isSameFace(inputEmbedding, storedEmbedding, 0.6);
+        boolean isMatch = FaceRecognitionUtils.isSameFace(inputEmbedding, storedEmbedding);
         if (!isMatch) {
             return RouterHelper.responseError("Xác thực khuôn mặt thất bại");
         }
