@@ -29,6 +29,7 @@ import java.util.Optional;
 public class Staff_StudentServiceImpl implements Staff_StudentService {
 
     private final Staff_StudentExtendRepository studentExtendRepository;
+
     private final SessionHelper sessionHelper;
 
     private final FacilityRepository facilityRepository;
@@ -38,6 +39,7 @@ public class Staff_StudentServiceImpl implements Staff_StudentService {
         Pageable pageable = PaginationHelper.createPageable(studentRequest, "createdAt");
         PageableObject pageableObject = PageableObject.of
                 (studentExtendRepository.getAllStudentByFacility(pageable, studentRequest, sessionHelper.getFacilityId()));
+
         return new ResponseEntity<>(
                 new ApiResponse(
                         RestApiStatus.SUCCESS,
@@ -50,6 +52,7 @@ public class Staff_StudentServiceImpl implements Staff_StudentService {
     @Override
     public ResponseEntity<?> getDetailStudent(String studentId) {
         Optional<UserStudent> userStudent = studentExtendRepository.findById(studentId);
+
         if (userStudent.isPresent()) {
             return new ResponseEntity<>(
                     new ApiResponse(
@@ -59,6 +62,7 @@ public class Staff_StudentServiceImpl implements Staff_StudentService {
                     ),
                     HttpStatus.OK);
         }
+        
         return new ResponseEntity<>(
                 new ApiResponse(
                         RestApiStatus.ERROR,
@@ -70,9 +74,12 @@ public class Staff_StudentServiceImpl implements Staff_StudentService {
 
     @Override
     public ResponseEntity<?> createStudent(Staff_StudentCreateUpdateRequest studentCreateUpdateRequest) {
-        Optional<UserStudent> existStudent = studentExtendRepository.getUserStudentByCode(studentCreateUpdateRequest.getCode());
+        Optional<UserStudent> existStudentCode = studentExtendRepository.getUserStudentByCode(studentCreateUpdateRequest.getCode());
+        Optional<UserStudent> existStudentEmail = studentExtendRepository.getUserStudentByEmail(studentCreateUpdateRequest.getEmail());
+
         Optional<Facility> facility = facilityRepository.findById(sessionHelper.getFacilityId());
-        if (existStudent.isEmpty()) {
+
+        if (existStudentCode.isEmpty() || existStudentEmail.isEmpty()) {
             UserStudent userStudent = new UserStudent();
             userStudent.setId(CodeGeneratorUtils.generateRandom());
             userStudent.setCode(studentCreateUpdateRequest.getCode());
@@ -102,6 +109,7 @@ public class Staff_StudentServiceImpl implements Staff_StudentService {
     @Override
     public ResponseEntity<?> updateStudent(Staff_StudentCreateUpdateRequest studentCreateUpdateRequest) {
         Optional<UserStudent> existStudent = studentExtendRepository.getStudentById(studentCreateUpdateRequest.getId());
+
         if (existStudent.isPresent()) {
             UserStudent userStudent = existStudent.get();
             userStudent.setCode(studentCreateUpdateRequest.getCode());
@@ -129,6 +137,7 @@ public class Staff_StudentServiceImpl implements Staff_StudentService {
     @Override
     public ResponseEntity<?> changeStatusStudent(String studentId) {
         Optional<UserStudent> existStudent = studentExtendRepository.findById(studentId);
+
         if (existStudent.isPresent()) {
             UserStudent userStudent = existStudent.get();
             userStudent.setStatus(userStudent.getStatus() == EntityStatus.ACTIVE ? EntityStatus.INACTIVE : EntityStatus.ACTIVE);

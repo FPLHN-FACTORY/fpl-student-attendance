@@ -7,7 +7,6 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import udpm.hn.studentattendance.core.admin.staff.model.request.Admin_CreateUpdateStaffRequest;
 import udpm.hn.studentattendance.core.admin.staff.repository.Admin_StaffFacilityRepository;
@@ -30,7 +29,6 @@ import udpm.hn.studentattendance.infrastructure.excel.model.response.ExImportLog
 import udpm.hn.studentattendance.infrastructure.excel.repositories.EXImportLogDetailRepository;
 import udpm.hn.studentattendance.infrastructure.excel.repositories.EXImportLogRepository;
 import udpm.hn.studentattendance.infrastructure.excel.service.EXStaffService;
-import udpm.hn.studentattendance.repositories.FacilityRepository;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -88,30 +86,31 @@ public class EXStaffServiceImpl implements EXStaffService {
                     .collect(Collectors.toList());
         }
 
-        String facilityName = item.get("CO_SO");
-
-        List<String> roleCodes = roleFriendlyNames.stream()
-                .map(name -> FRIENDLY_TO_ENUM_MAPPING.getOrDefault(name.toLowerCase(), name))
-                .collect(Collectors.toList());
-
-        Map<String, String> facilityMapping = facilityRepository.findAll()
-                .stream()
-                .collect(Collectors.toMap(facility -> facility.getName(), facility -> facility.getId()));
-
-        if (!facilityMapping.containsKey(facilityName)) {
-            return RouterHelper.responseError("Cơ sở '" + facilityName + "' không tồn tại.", HttpStatus.BAD_REQUEST);
+        String facilityValue = item.get("CO_SO");
+        if (facilityValue == null || facilityValue.trim().isEmpty()) {
+            return RouterHelper.responseError("Thông tin cơ sở không hợp lệ.", HttpStatus.BAD_REQUEST);
         }
-        String facilityId = facilityMapping.get(facilityName);
+        // Tách lấy id từ chuỗi theo định dạng "Tên cơ sở (ID)"
+        int startIndex = facilityValue.lastIndexOf("(");
+        int endIndex = facilityValue.lastIndexOf(")");
+        if (startIndex < 0 || endIndex < 0 || startIndex >= endIndex) {
+            return RouterHelper.responseError("Định dạng cơ sở không hợp lệ. Vui lòng chọn giá trị từ menu sổ xuống.", HttpStatus.BAD_REQUEST);
+        }
+        String facilityId = facilityValue.substring(startIndex + 1, endIndex);
+
         Facility facility = facilityRepository.findById(facilityId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy Facility với id: " + facilityId));
-        System.out.println(facilityId);
-        Admin_CreateUpdateStaffRequest createUpdateStaffRequest = new Admin_CreateUpdateStaffRequest();
 
+        Admin_CreateUpdateStaffRequest createUpdateStaffRequest = new Admin_CreateUpdateStaffRequest();
         createUpdateStaffRequest.setFacilityId(facility.getId());
         createUpdateStaffRequest.setStaffCode(item.get("MA_NHAN_VIEN"));
         createUpdateStaffRequest.setEmailFe(item.get("EMAIL_FE"));
         createUpdateStaffRequest.setEmailFpt(item.get("EMAIL_FPT"));
         createUpdateStaffRequest.setName(item.get("TEN_NHAN_VIEN"));
+
+        List<String> roleCodes = roleFriendlyNames.stream()
+                .map(name -> FRIENDLY_TO_ENUM_MAPPING.getOrDefault(name.toLowerCase(), name))
+                .collect(Collectors.toList());
         createUpdateStaffRequest.setRoleCodes(roleCodes);
 
         ResponseEntity<ApiResponse> result = (ResponseEntity<ApiResponse>) staffService.createStaff(createUpdateStaffRequest);
@@ -123,7 +122,6 @@ public class EXStaffServiceImpl implements EXStaffService {
         }
         return result;
     }
-
 
     @Override
     public ResponseEntity<?> downloadTemplate(EXDataRequest request) {
@@ -138,7 +136,7 @@ public class EXStaffServiceImpl implements EXStaffService {
 
         List<String> facilityList = facilityRepository.findAll()
                 .stream()
-                .map(facility -> facility.getName())
+                .map(facility -> facility.getName() + " (" + facility.getId() + ")")
                 .collect(Collectors.toList());
 
         byte[] data;
@@ -159,24 +157,14 @@ public class EXStaffServiceImpl implements EXStaffService {
     @Override
     public ResponseEntity<?> historyLog(EXDataRequest request) {
         Pageable pageable = PaginationHelper.createPageable(request);
-        PageableObject<ExImportLogResponse> data = PageableObject.of(
-                importLogRepository.getListHistory(
-                        pageable,
-                        ImportLogType.STAFF.ordinal(),
-                        sessionHelper.getUserId(),
-                        sessionHelper.getFacilityId()
-                )
-        );
+        PageableObject<ExImportLogResponse> data = PageableObject.of(importLogRepository.getListHistory(pageable, ImportLogType.STAFF.ordinal(), sessionHelper.getUserId(), sessionHelper.getFacilityId()));
+        System.out.println(sessionHelper.getFacilityId());
         return RouterHelper.responseSuccess("Lấy danh sách dữ liệu thành công", data);
     }
 
     @Override
     public ResponseEntity<?> historyLogDetail(EXDataRequest request, String id) {
-        List<ExImportLogDetailResponse> data = importLogDetailRepository.getAllList(
-                id,
-                sessionHelper.getUserId(),
-                sessionHelper.getFacilityId()
-        );
+        List<ExImportLogDetailResponse> data = importLogDetailRepository.getAllList(id, sessionHelper.getUserId(), sessionHelper.getFacilityId());
         return RouterHelper.responseSuccess("Lấy danh sách dữ liệu thành công", data);
     }
 
@@ -188,7 +176,7 @@ public class EXStaffServiceImpl implements EXStaffService {
      * @param headers      danh sách header của sheet chính
      * @param data         dữ liệu (nếu có) của sheet chính
      * @param roleList     danh sách tên vai trò (tên hiển thị thân thiện)
-     * @param facilityList danh sách tên cơ sở (lấy từ DB)
+     * @param facilityList danh sách cơ sở với định dạng "Tên cơ sở (ID)"
      * @return mảng byte của file Excel
      * @throws IOException nếu có lỗi khi tạo file Excel
      */

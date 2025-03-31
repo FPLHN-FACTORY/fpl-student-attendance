@@ -20,7 +20,7 @@ public interface EXImportLogDetailRepository extends ImportLogDetailRepository {
         WHERE
             il.id = :idImportLog AND
             il.id_user = :userId AND
-            il.id_facility = :facilityId
+            (:facilityId IS NULL OR il.id_facility = :facilityId)
         ORDER BY ild.line ASC
     """, nativeQuery = true)
     List<ExImportLogDetailResponse> getAllList(String idImportLog, String userId, String facilityId);

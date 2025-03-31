@@ -12,6 +12,7 @@ import {
   EyeFilled,
   FilterFilled,
   UnorderedListOutlined,
+  AlignLeftOutlined,
 } from '@ant-design/icons-vue'
 import { ROUTE_NAMES } from '@/router/teacherRoute'
 import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
@@ -217,7 +218,7 @@ onMounted(() => {
                       class="btn-outline-primary"
                       @click="handleDetailFactory(record)"
                     >
-                      <EyeFilled />
+                      <AlignLeftOutlined />
                     </a-button>
                   </a-tooltip>
                 </a-space>
