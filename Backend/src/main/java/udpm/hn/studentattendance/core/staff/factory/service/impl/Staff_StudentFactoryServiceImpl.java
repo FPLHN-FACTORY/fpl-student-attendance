@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
+import udpm.hn.studentattendance.core.staff.factory.model.request.Staff_StudentFactoryAddRequest;
 import udpm.hn.studentattendance.core.staff.factory.model.request.Staff_StudentFactoryCreateUpdateRequest;
 import udpm.hn.studentattendance.core.staff.factory.model.request.Staff_StudentFactoryRequest;
 import udpm.hn.studentattendance.core.staff.factory.model.request.Staff_UserStudentRequest;
@@ -193,6 +194,75 @@ public class Staff_StudentFactoryServiceImpl implements Staff_StudentFactoryServ
                         "Lấy tất cả sinh viên theo cơ sở thành công",
                         listStudent
                 ),
+                HttpStatus.OK);
+    }
+
+    @Override
+    public ResponseEntity<?> createStudent(Staff_StudentFactoryAddRequest addRequest) {
+
+        Optional<UserStudent> existUserStudentByCode = userStudentFactoryExtendRepository.getUserStudentByCode(addRequest.getStudentCode());
+        Optional<UserStudentFactory> existStudentFactory = studentFactoryRepository
+                .getUserStudentFactoriesByUserStudentIdAndFactoryId(
+                        existUserStudentByCode.get().getId(),
+                        addRequest.getFactoryId());
+
+        Optional<Factory> existFactory = factoryRepository.findById(addRequest.getFactoryId());
+        Optional<UserStudent> existUserStudent = userStudentRepository.findById(existUserStudentByCode.get().getId());
+
+        boolean isGreaterThanTwenty = userStudentFactoryExtendRepository
+                .isStudentGreaterThanTwenty(addRequest.getFactoryId());
+        boolean isExistsShift = userStudentFactoryExtendRepository
+                .isStudentExistsShift(
+                        sessionHelper.getFacilityId(),
+                        addRequest.getFactoryId(),
+                        existUserStudentByCode.get().getId());
+
+        if (existUserStudent.isEmpty()) {
+            return new ResponseEntity<>(
+                    new ApiResponse(
+                            RestApiStatus.ERROR,
+                            "Thêm sinh viên thất bại: Sinh viên không tồn tại trong cơ sở",
+                            null),
+                    HttpStatus.BAD_REQUEST);
+        }
+        if (existStudentFactory.isPresent()) {
+            return new ResponseEntity<>(
+                    new ApiResponse(
+                            RestApiStatus.ERROR,
+                            "Thêm sinh viên thất bại: Sinh viên đã có trong nhóm xưởng",
+                            null),
+                    HttpStatus.BAD_REQUEST);
+        }
+        if (!isGreaterThanTwenty) {
+            return new ResponseEntity<>(
+                    new ApiResponse(
+                            RestApiStatus.ERROR,
+                            "Thêm sinh viên thất bại: Số lượng sinh viên trong nhóm  vượt quá 20",
+                            null),
+                    HttpStatus.BAD_REQUEST);
+        }
+
+        if (!isExistsShift) {
+            return new ResponseEntity<>(
+                    new ApiResponse(
+                            RestApiStatus.ERROR,
+                            "Thêm sinh viên thất bại: Sinh viên  tồn tại ở ca khác",
+                            null),
+                    HttpStatus.BAD_REQUEST);
+        }
+
+        UserStudentFactory userStudentFactory = new UserStudentFactory();
+        userStudentFactory.setId(CodeGeneratorUtils.generateRandom());
+        userStudentFactory.setUserStudent(existUserStudent.get());
+        userStudentFactory.setFactory(existFactory.get());
+        userStudentFactory.setStatus(EntityStatus.ACTIVE);
+        studentFactoryRepository.save(userStudentFactory);
+
+        return new ResponseEntity<>(
+                new ApiResponse(
+                        RestApiStatus.SUCCESS,
+                        "Thêm sinh viên vào nhóm xưởng thành công",
+                        userStudentFactory),
                 HttpStatus.OK);
     }
 }

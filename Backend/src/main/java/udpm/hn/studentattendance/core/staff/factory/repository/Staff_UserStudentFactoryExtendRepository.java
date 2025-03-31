@@ -11,6 +11,7 @@ import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.repositories.UserStudentRepository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface Staff_UserStudentFactoryExtendRepository extends UserStudentRepository {
@@ -124,4 +125,5 @@ public interface Staff_UserStudentFactoryExtendRepository extends UserStudentRep
             """, nativeQuery = true)
     boolean isStudentExistsShift(String idFacility, String idFactory, String idUserStudent);
 
+    Optional<UserStudent> getUserStudentByCode(String code);
 }

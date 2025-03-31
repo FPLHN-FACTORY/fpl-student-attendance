@@ -9,38 +9,37 @@ import udpm.hn.studentattendance.infrastructure.excel.common.IEXDefaultControlle
 import udpm.hn.studentattendance.infrastructure.excel.model.request.EXDataRequest;
 import udpm.hn.studentattendance.infrastructure.excel.model.request.EXImportRequest;
 import udpm.hn.studentattendance.infrastructure.excel.model.request.EXUploadRequest;
-import udpm.hn.studentattendance.infrastructure.excel.service.EXStudentService;
+import udpm.hn.studentattendance.infrastructure.excel.service.EXStudentFactoryService;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping(RouteExcelConstant.URL_API_STUDENT)
-public class EXStudentRestController implements IEXDefaultController {
+@RequestMapping(RouteExcelConstant.URL_API_STUDENT_FACTORY)
+public class EXStudentFactoryRestController implements IEXDefaultController {
 
-    private final EXStudentService exStudentService;
+    private final EXStudentFactoryService exStudentFactoryService;
 
     @Override
     public ResponseEntity<?> getDataFromFile(EXUploadRequest request) {
-        return exStudentService.getDataFromFile(request);
+        return exStudentFactoryService.getDataFromFile(request);
     }
 
     @Override
     public ResponseEntity<?> importItem(EXImportRequest request) {
-
-        return exStudentService.importItem(request);
+        return exStudentFactoryService.importItem(request);
     }
 
     @Override
     public ResponseEntity<?> downloadTemplate(EXDataRequest request) {
-        return exStudentService.downloadTemplate(request);
+        return exStudentFactoryService.downloadTemplate(request);
     }
 
     @Override
     public ResponseEntity<?> historyLog(EXDataRequest request) {
-        return exStudentService.historyLog(request);
+        return exStudentFactoryService.historyLog(request);
     }
 
     @Override
     public ResponseEntity<?> historyLogDetail(EXDataRequest request, String id) {
-        return exStudentService.historyLogDetail(request, id);
+        return exStudentFactoryService.historyLogDetail(request, id);
     }
 }

@@ -9,5 +9,6 @@ public final class RouteTeacherConstant {
 
     public static final String URL_API_TEACHING_SCHEDULE_MANAGEMENT = PREFIX_API_TEACHER_MANAGEMENT + "/teaching-schedule";
 
+    public static final String URL_API_STUDENT_ATTENDANCE = PREFIX_API_TEACHER_MANAGEMENT + "/student-attendance";
 
 }

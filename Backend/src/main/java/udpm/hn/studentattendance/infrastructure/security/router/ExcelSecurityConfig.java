@@ -17,6 +17,7 @@ public class ExcelSecurityConfig {
             auth.requestMatchers(appendWildcard(RouteExcelConstant.URL_API_STAFF)).hasAuthority(RoleConstant.ADMIN.name());
             auth.requestMatchers(appendWildcard(RouteExcelConstant.URL_API_FACTORY)).hasAuthority(RoleConstant.STAFF.name());
             auth.requestMatchers(appendWildcard(RouteExcelConstant.URL_API_STUDENT)).hasAuthority(RoleConstant.STAFF.name());
+            auth.requestMatchers(appendWildcard(RouteExcelConstant.URL_API_STUDENT_FACTORY)).hasAuthority(RoleConstant.STAFF.name());
         });
     }
 
