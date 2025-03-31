@@ -11,4 +11,5 @@ import java.util.Optional;
 public interface SAUserStudentFactoryRepository extends UserStudentFactoryRepository {
 
     Optional<UserStudentFactory> findByUserStudent_IdAndFactory_Id(String idUser, String idFactory);
+
 }

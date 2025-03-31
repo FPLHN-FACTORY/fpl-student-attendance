@@ -1,5 +1,8 @@
 package udpm.hn.studentattendance.core.authentication.services.impl;
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.Query;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -26,6 +29,7 @@ import udpm.hn.studentattendance.infrastructure.constants.router.RouteAuthentica
 import udpm.hn.studentattendance.core.authentication.services.AuthenticationService;
 import udpm.hn.studentattendance.entities.Facility;
 import udpm.hn.studentattendance.infrastructure.constants.SessionConstant;
+import udpm.hn.studentattendance.utils.FaceRecognitionUtils;
 
 import java.io.IOException;
 import java.util.List;
@@ -35,6 +39,9 @@ import java.util.Set;
 @Service
 @RequiredArgsConstructor
 public class AuthenticationServiceImpl implements AuthenticationService {
+
+    @PersistenceContext
+    private EntityManager entityManager;
 
     private final HttpSession httpSession;
 
@@ -121,6 +128,12 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         if (request.getFaceEmbedding() == null || request.getFaceEmbedding().isEmpty()) {
             return RouterHelper.responseError("Thông tin khuôn mặt không hợp lệ");
         }
+
+        double[] faceEmbedding = FaceRecognitionUtils.parseEmbedding(request.getFaceEmbedding());
+        if (isFaceExists(faceEmbedding)) {
+            return RouterHelper.responseError("Đã tồn tại khuôn mặt trên hệ thống");
+        }
+
         student.setFacility(facility);
         student.setCode(request.getCode());
         student.setName(request.getName());
@@ -154,7 +167,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             return RouterHelper.responseError("Không tìm thấy sinh viên");
         }
 
-        if (student.getFaceEmbedding() != null) {
+        if (StringUtils.hasText(student.getFaceEmbedding())) {
             return RouterHelper.responseError("Không thể cập nhật khuôn mặt tài khoản này");
         }
 
@@ -162,8 +175,36 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             return RouterHelper.responseError("Thông tin khuôn mặt không hợp lệ");
         }
 
+        double[] faceEmbedding = FaceRecognitionUtils.parseEmbedding(request.getFaceEmbedding());
+        if (isFaceExists(faceEmbedding)) {
+            return RouterHelper.responseError("Đã tồn tại khuôn mặt trên hệ thống");
+        }
+
         student.setFaceEmbedding(request.getFaceEmbedding());
         return RouterHelper.responseSuccess("Cập nhật khuôn mặt thành công", authenticationUserStudentRepository.save(student));
+    }
+
+    private boolean isFaceExists(double[] embedding) {
+        StringBuilder queryBuilder = new StringBuilder("SELECT COUNT(*) > 0 FROM user_student WHERE face_embedding IS NOT NULL AND face_embedding <> '' AND ");
+
+        queryBuilder.append("SQRT(");
+        for (int i = 0; i < embedding.length; i++) {
+            if (i > 0) queryBuilder.append(" + ");
+            queryBuilder.append("POW(IFNULL(JSON_EXTRACT(face_embedding, '$[").append(i).append("]'), 0) - :e")
+                    .append(i).append(", 2)");
+        }
+        queryBuilder.append(") < :threshold");
+
+        Query query = entityManager.createNativeQuery(queryBuilder.toString());
+
+        for (int i = 0; i < embedding.length; i++) {
+            query.setParameter("e" + i, embedding[i]);
+        }
+
+        query.setParameter("threshold", FaceRecognitionUtils.THRESHOLD);
+
+        Number count = (Number) query.getSingleResult();
+        return count != null && count.longValue() > 0;
     }
 
 }
