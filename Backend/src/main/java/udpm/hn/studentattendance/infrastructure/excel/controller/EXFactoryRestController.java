@@ -9,33 +9,40 @@ import udpm.hn.studentattendance.infrastructure.excel.common.IEXDefaultControlle
 import udpm.hn.studentattendance.infrastructure.excel.model.request.EXDataRequest;
 import udpm.hn.studentattendance.infrastructure.excel.model.request.EXImportRequest;
 import udpm.hn.studentattendance.infrastructure.excel.model.request.EXUploadRequest;
+import udpm.hn.studentattendance.infrastructure.excel.service.EXFactoryService;
 
 @RestController
 @RequiredArgsConstructor
 @RequestMapping(RouteExcelConstant.URL_API_FACTORY)
 public class EXFactoryRestController implements IEXDefaultController {
+
+    private final EXFactoryService factoryService;
+
     @Override
     public ResponseEntity<?> getDataFromFile(EXUploadRequest request) {
-        return null;
+        return factoryService.getDataFromFile(request);
     }
 
     @Override
     public ResponseEntity<?> importItem(EXImportRequest request) {
-        return null;
+
+        return factoryService.importItem(request);
     }
 
     @Override
     public ResponseEntity<?> downloadTemplate(EXDataRequest request) {
-        return null;
+
+        return factoryService.downloadTemplate(request);
     }
 
     @Override
     public ResponseEntity<?> historyLog(EXDataRequest request) {
-        return null;
+        return factoryService.historyLog(request);
     }
 
     @Override
     public ResponseEntity<?> historyLogDetail(EXDataRequest request, String id) {
-        return null;
+
+        return factoryService.historyLogDetail(request, id);
     }
 }

@@ -4,7 +4,7 @@ import { message, Modal } from 'ant-design-vue'
 import router from '@/router'
 import requestAPI from '@/services/requestApiService'
 import { API_ROUTES_STAFF } from '@/constants/staffConstant'
-import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
+import { API_ROUTES_EXCEL, GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
 import {
   PlusOutlined,
   EyeOutlined,
@@ -14,11 +14,13 @@ import {
   EditFilled,
   UnorderedListOutlined,
   FilterFilled,
+  AlignLeftOutlined,
 } from '@ant-design/icons-vue'
 import { ROUTE_NAMES } from '@/router/staffRoute'
 import { DEFAULT_PAGINATION } from '@/constants'
 import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
 import useLoadingStore from '@/stores/useLoadingStore'
+import ExcelUploadButton from '@/components/excel/ExcelUploadButton.vue'
 
 const breadcrumbStore = useBreadcrumbStore()
 const loadingStore = useLoadingStore()
@@ -317,6 +319,17 @@ const changeAllStatusBySemester = () => {
   })
 }
 
+const configImportExcel = {
+  fetchUrl: API_ROUTES_EXCEL.FETCH_IMPORT_FACTORY,
+  onSuccess: () => {
+    fetchFactories()
+  },
+  onError: () => {
+    message.error('Không thể xử lý file excel')
+  },
+  showDownloadTemplate: true,
+  showHistoryLog: true,
+}
 /* ----------------- Lifecycle Hook ----------------- */
 onMounted(() => {
   breadcrumbStore.setRoutes(breadcrumb.value)
@@ -423,7 +436,8 @@ onMounted(() => {
       <div class="col-12">
         <a-card :bordered="false" class="cart">
           <template #title> <UnorderedListOutlined /> Danh sách nhóm xưởng </template>
-          <div class="d-flex justify-content-end mb-3">
+          <div class="d-flex justify-content-end mb-3 flex-wrap gap-3">
+            <ExcelUploadButton v-bind="configImportExcel" />
             <a-tooltip title="Đổi trạng thái tất cả nhóm xưởng kỳ trước">
               <a-button
                 type="default"
@@ -478,7 +492,7 @@ onMounted(() => {
                       class="btn-outline-primary"
                       @click="handleDetailFactory(record)"
                     >
-                      <EyeFilled />
+                      <AlignLeftOutlined />
                     </a-button>
                   </a-tooltip>
                   <a-tooltip title="Chỉnh sửa">

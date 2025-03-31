@@ -132,13 +132,7 @@ public class Admin_StaffServiceImpl implements Admin_StaffService {
                     HttpStatus.BAD_REQUEST
             );
         }
-        System.out.println(facility);
-        System.out.println("Loaded Facility: id = " + facility.getId() + ", managed? " + entityManager.contains(facility));
-        if (!entityManager.contains(facility)) {
-            facility = entityManager.merge(facility);
-            entityManager.flush();
-            System.out.println("After merge, is Facility managed? " + entityManager.contains(facility));
-        }
+
 
         // Tạo các vai trò
         List<String> roleCodes = adCreateUpdateStaffRequest.getRoleCodes();
@@ -153,23 +147,14 @@ public class Admin_StaffServiceImpl implements Admin_StaffService {
         for (String roleCode : roleCodes) {
             RoleConstant roleConstant;
             switch (roleCode.trim()) {
-                case "0":
+                case "0", "ADMIN":
                     roleConstant = RoleConstant.ADMIN;
                     isAdmin = true;
                     break;
-                case "1":
+                case "1", "STAFF":
                     roleConstant = RoleConstant.STAFF;
                     break;
-                case "3":
-                    roleConstant = RoleConstant.TEACHER;
-                    break;
-                case "ADMIN":
-                    roleConstant = RoleConstant.ADMIN;
-                    break;
-                case "STAFF":
-                    roleConstant = RoleConstant.STAFF;
-                    break;
-                case "TEACHER":
+                case "3", "TEACHER":
                     roleConstant = RoleConstant.TEACHER;
                     break;
                 default:
@@ -349,7 +334,6 @@ public class Admin_StaffServiceImpl implements Admin_StaffService {
                 HttpStatus.OK
         );
     }
-
 
 
     @Override
