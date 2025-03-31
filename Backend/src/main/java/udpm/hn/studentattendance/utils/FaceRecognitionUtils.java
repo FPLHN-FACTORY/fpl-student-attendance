@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class FaceRecognitionUtils {
 
+    public final static double THRESHOLD = 0.6;
+
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
     public static double[] parseEmbedding(String embeddingStr) {
@@ -24,6 +26,10 @@ public class FaceRecognitionUtils {
             sum += Math.pow(emb1[i] - emb2[i], 2);
         }
         return Math.sqrt(sum);
+    }
+
+    public static boolean isSameFace(double[] emb1, double[] emb2) {
+        return isSameFace(emb1, emb2, THRESHOLD);
     }
 
     public static boolean isSameFace(double[] emb1, double[] emb2, double threshold) {
