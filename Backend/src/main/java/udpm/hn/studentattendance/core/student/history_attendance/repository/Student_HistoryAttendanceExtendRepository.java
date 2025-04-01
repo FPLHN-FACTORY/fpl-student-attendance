@@ -24,7 +24,10 @@ public interface Student_HistoryAttendanceExtendRepository extends FactoryReposi
                         s.id AS semesterId,
                         CASE
                             WHEN UNIX_TIMESTAMP(NOW()) * 1000 < (pd.start_date + 7200) THEN 'CHUA_DIEN_RA'
-                            WHEN ad.id_user_student IS NOT NULL THEN 'CO_MAT'
+                            WHEN ad.id_user_student IS NOT NULL 
+                            AND DATE(FROM_UNIXTIME(pd.start_date / 1000)) = CURDATE()
+                            AND pd.shift = pd.shift
+                            THEN 'CO_MAT'
                             ELSE 'VANG_MAT'
                         END AS statusAttendance,
                         pl.name AS planDateName,

@@ -4,7 +4,7 @@ import { message, Modal } from 'ant-design-vue'
 import router from '@/router'
 import requestAPI from '@/services/requestApiService'
 import { API_ROUTES_STAFF } from '@/constants/staffConstant'
-import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
+import { API_ROUTES_EXCEL, GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
 import {
   PlusOutlined,
   DeleteOutlined,
@@ -19,6 +19,7 @@ import { DEFAULT_PAGINATION } from '@/constants'
 import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
 import useLoadingStore from '@/stores/useLoadingStore'
 import { ROUTE_NAMES } from '@/router/staffRoute'
+import ExcelUploadButton from '@/components/excel/ExcelUploadButton.vue'
 
 const route = useRoute()
 const factoryId = route.query.factoryId
@@ -321,6 +322,19 @@ const changeStatusStudentFactory = (studentFactoryId) => {
     })
 }
 
+const configImportExcel = {
+  fetchUrl: API_ROUTES_EXCEL.FETCH_IMPORT_STUDENT_FACTORY,
+  onSuccess: () => {
+    fetchStudentFactories()
+  },
+  onError: () => {
+    message.error('Không thể xử lý file excel')
+  },
+  data: { idFactory: factoryId },
+  showDownloadTemplate: true,
+  showHistoryLog: true,
+}
+
 /* -------------------- Quản lý modal thêm sinh viên -------------------- */
 const isAddStudentModalVisible = ref(false)
 watch(isAddStudentModalVisible, (newVal) => {
@@ -383,7 +397,8 @@ onMounted(() => {
       <div class="col-12">
         <a-card :bordered="false" class="cart">
           <template #title> <UnorderedListOutlined /> Danh sách sinh viên </template>
-          <div class="d-flex justify-content-end mb-3">
+          <div class="d-flex justify-content-end mb-3 flex-wrap gap-3">
+            <ExcelUploadButton v-bind="configImportExcel" />
             <a-tooltip title="Thêm học sinh vào nhóm xưởng">
               <a-button type="primary" @click="isAddStudentModalVisible = true">
                 <PlusOutlined /> Thêm học sinh
