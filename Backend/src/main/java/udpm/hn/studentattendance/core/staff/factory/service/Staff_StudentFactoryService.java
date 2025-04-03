@@ -21,4 +21,7 @@ public interface Staff_StudentFactoryService {
 
     ResponseEntity<?> createStudent(Staff_StudentFactoryAddRequest staffStudentFactoryAddRequest);
 
+    ResponseEntity<?> deleteFaceStudentFactory(String studentId);
+
+
 }

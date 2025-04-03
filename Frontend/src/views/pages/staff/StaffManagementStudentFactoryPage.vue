@@ -13,6 +13,7 @@ import {
   EyeFilled,
   FilterFilled,
   UnorderedListOutlined,
+  UserDeleteOutlined,
 } from '@ant-design/icons-vue'
 import { useRoute } from 'vue-router'
 import { DEFAULT_PAGINATION } from '@/constants'
@@ -278,23 +279,6 @@ const confirmDeleteStudent = (record) => {
   })
 }
 
-const deleteStudentFactory = (studentFactoryId) => {
-  loadingStore.show()
-  requestAPI
-    .delete(API_ROUTES_STAFF.FETCH_DATA_STUDENT_FACTORY + '/' + studentFactoryId)
-    .then((response) => {
-      message.success(response.data.message || 'Xóa sinh viên thành công')
-      fetchExistingStudents()
-      fetchStudentFactories()
-    })
-    .catch((error) => {
-      message.error(error.response?.data?.message || 'Lỗi khi xóa sinh viên khỏi nhóm xưởng')
-    })
-    .finally(() => {
-      loadingStore.hide()
-    })
-}
-
 /* -------------------- Xử lý đổi trạng thái sinh viên -------------------- */
 const confirmChangeStatus = (record) => {
   Modal.confirm({
@@ -334,7 +318,28 @@ const configImportExcel = {
   showDownloadTemplate: true,
   showHistoryLog: true,
 }
-
+const changeFaceStudent = (record) => {
+  Modal.confirm({
+    title: 'Xác nhận đổi mặt',
+    content: `Bạn có chắc muốn đổi mặt của học sinh ${record.studentName}?`,
+    onOk() {
+      loadingStore.show()
+      // Giả sử record chứa studentId, nếu không hãy thay đổi cho phù hợp
+      requestAPI
+        .put(API_ROUTES_STAFF.FETCH_DATA_STUDENT_FACTORY + '/change-face/' + record.studentId)
+        .then((response) => {
+          message.success(response.data.message || 'Đổi mặt học sinh thành công')
+          fetchStudentFactories() // Làm mới danh sách sau khi đổi mặt
+        })
+        .catch((error) => {
+          message.error(error.response?.data?.message || 'Lỗi khi đổi mặt học sinh')
+        })
+        .finally(() => {
+          loadingStore.hide()
+        })
+    },
+  })
+}
 /* -------------------- Quản lý modal thêm sinh viên -------------------- */
 const isAddStudentModalVisible = ref(false)
 watch(isAddStudentModalVisible, (newVal) => {
@@ -383,8 +388,8 @@ onMounted(() => {
                 @change="fetchStudentFactories"
               >
                 <a-select-option :value="''">Tất cả trạng thái</a-select-option>
-                <a-select-option value="1">Hoạt động</a-select-option>
-                <a-select-option value="0">Không hoạt động</a-select-option>
+                <a-select-option value="1">Đang học</a-select-option>
+                <a-select-option value="0">Ngưng học</a-select-option>
               </a-select>
             </a-col>
           </a-row>
@@ -420,19 +425,31 @@ onMounted(() => {
                   {{ index + 1 }}
                 </template>
                 <template v-else-if="column.dataIndex === 'statusStudentFactory'">
-                  <a-tag
-                    :color="
-                      record.statusStudentFactory === 'ACTIVE' || record.statusStudentFactory === 1
-                        ? 'green'
-                        : 'red'
-                    "
-                  >
-                    {{
-                      record.statusStudentFactory === 'ACTIVE' || record.statusStudentFactory === 1
-                        ? 'Hoạt động'
-                        : 'Không hoạt động'
-                    }}
-                  </a-tag>
+                  <span class="nowrap">
+                    <a-switch
+                      class="me-2"
+                      :checked="
+                        record.statusStudentFactory === 'ACTIVE' ||
+                        record.statusStudentFactory === 1
+                      "
+                      @change="confirmChangeStatus(record)"
+                    />
+                    <a-tag
+                      :color="
+                        record.statusStudentFactory === 'ACTIVE' ||
+                        record.statusStudentFactory === 1
+                          ? 'green'
+                          : 'red'
+                      "
+                    >
+                      {{
+                        record.statusStudentFactory === 'ACTIVE' ||
+                        record.statusStudentFactory === 1
+                          ? 'Đang học'
+                          : 'Ngưng học'
+                      }}
+                    </a-tag>
+                  </span>
                 </template>
                 <template v-else>
                   {{ record[column.dataIndex] }}
@@ -440,22 +457,13 @@ onMounted(() => {
               </template>
               <template v-else-if="column.key === 'actions'">
                 <a-space>
-                  <a-tooltip title="Xóa sinh viên khỏi nhóm xưởng">
+                  <a-tooltip title="Cấp quyền thay đổi mặt sinh viên">
                     <a-button
                       type="text"
-                      class="btn-outline-danger"
-                      @click="confirmDeleteStudent(record)"
+                      class="btn-outline-info"
+                      @click="changeFaceStudent(record)"
                     >
-                      <DeleteFilled />
-                    </a-button>
-                  </a-tooltip>
-                  <a-tooltip title="Đổi trạng thái sinh viên">
-                    <a-button
-                      type="text"
-                      class="btn-outline-warning"
-                      @click="confirmChangeStatus(record)"
-                    >
-                      <SyncOutlined />
+                      <UserDeleteOutlined />
                     </a-button>
                   </a-tooltip>
                 </a-space>

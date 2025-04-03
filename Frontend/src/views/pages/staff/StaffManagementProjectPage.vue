@@ -256,12 +256,12 @@ export default {
     handleDeleteProject(record) {
       Modal.confirm({
         title: 'Xác nhận',
-        content: 'Bạn có chắc chắn muốn xóa dự án này?',
+        content: 'Bạn có chắc chắn muốn thay đổi trạng thái của dự án này?',
         onOk: () => {
           requestAPI
             .delete(`${API_ROUTES_STAFF.FETCH_DATA_PROJECT}/${record.id}`)
             .then(() => {
-              message.success('Xóa dự án thành công')
+              message.success('Thay đổi trạng thái dự án thành công')
               this.fetchProjects()
             })
             .catch(() => {
@@ -372,7 +372,7 @@ export default {
                 @change="fetchProjects"
               >
                 <a-select-option :value="null">Tất cả trạng thái</a-select-option>
-                <a-select-option :value="1">Hoạt động</a-select-option>
+                <a-select-option :value="1">Đang triển khai</a-select-option>
                 <a-select-option :value="0">Không hoạt động</a-select-option>
               </a-select>
             </a-col>
@@ -393,16 +393,22 @@ export default {
             :dataSource="projects"
             :columns="columns"
             rowKey="id"
-            bordered
             :pagination="pagination"
             @change="handleTableChange"
           >
             <template #bodyCell="{ column, record }">
               <!-- Hiển thị trạng thái -->
               <template v-if="column.dataIndex === 'status'">
-                <a-tag :color="record.status == 1 ? 'green' : 'red'">
-                  {{ record.status == 1 ? 'Hoạt động' : 'Không hoạt động' }}
-                </a-tag>
+                <span class="nowrap">
+                  <a-switch
+                    class="me-2"
+                    :checked="record.status == 'ACTIVE' || record.status == 1"
+                    @change="handleDeleteProject(record)"
+                  />
+                  <a-tag :color="record.status == 1 ? 'green' : 'red'">
+                    {{ record.status == 1 ? 'Đang triển khai' : 'Không hoạt động' }}
+                  </a-tag>
+                </span>
               </template>
               <!-- Các nút chức năng -->
               <template v-else-if="column.key === 'actions'">
@@ -416,13 +422,6 @@ export default {
                   </a-button>
                   <a-button @click="handleEditProject(record)" type="text" class="btn-outline-info">
                     <EditFilled />
-                  </a-button>
-                  <a-button
-                    @click="handleDeleteProject(record)"
-                    type="text"
-                    class="btn-outline-danger"
-                  >
-                    <DeleteFilled />
                   </a-button>
                 </a-space>
               </template>

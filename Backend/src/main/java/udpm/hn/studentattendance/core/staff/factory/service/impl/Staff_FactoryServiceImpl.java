@@ -61,7 +61,7 @@ public class Staff_FactoryServiceImpl implements Staff_FactoryService {
     @Override
     public ResponseEntity<?> getAllProject() {
         List<Project> projects = projectFactoryExtendRepository.getAllProject
-                (EntityStatus.ACTIVE, EntityStatus.ACTIVE, EntityStatus.ACTIVE, sessionHelper.getFacilityId());
+                (EntityStatus.ACTIVE, EntityStatus.ACTIVE, EntityStatus.ACTIVE, EntityStatus.ACTIVE, sessionHelper.getFacilityId());
         return new ResponseEntity<>(
                 new ApiResponse(
                         RestApiStatus.SUCCESS,

@@ -50,8 +50,8 @@ public interface Student_HistoryAttendanceExtendRepository extends FactoryReposi
                         AND pf.status = 1
                         AND pl.status = 1
                         AND p.status = 1
-                        AND usf.status = 1
                         AND s.status = 1
+                        AND (usf.status = 1 OR (usf.status = 0 AND pd.start_date <= usf.updated_at))
                         AND (:#{#attendanceRequest.semesterId} IS NULL OR s.id = :#{#attendanceRequest.semesterId})
                         AND (:#{#attendanceRequest.factoryId} IS NULL OR ft.id = :#{#attendanceRequest.factoryId})
                     ORDER BY ft.id ASC, pd.start_date ASC
@@ -76,7 +76,7 @@ public interface Student_HistoryAttendanceExtendRepository extends FactoryReposi
                         AND pl.status = 1
                         AND p.status = 1
                         AND s.status = 1
-                        AND usf.status = 1
+                        AND (usf.status = 1 OR (usf.status = 0 AND pd.start_date <= usf.updated_at))
                         AND (:#{#attendanceRequest.semesterId} IS NULL OR s.id = :#{#attendanceRequest.semesterId})
                         AND (:#{#attendanceRequest.factoryId} IS NULL OR ft.id = :#{#attendanceRequest.factoryId})
                     """,

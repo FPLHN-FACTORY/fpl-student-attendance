@@ -339,19 +339,26 @@ onMounted(() => {
             <template #bodyCell="{ column, record }">
               <!-- Hiển thị trạng thái -->
               <template v-if="column.dataIndex === 'studentStatus'">
-                <a-tag
-                  :color="
-                    record.studentStatus === 'ACTIVE' || record.studentStatus === 1
-                      ? 'green'
-                      : 'red'
-                  "
-                >
-                  {{
-                    record.studentStatus === 'ACTIVE' || record.studentStatus === 1
-                      ? 'Hoạt động'
-                      : 'Không hoạt động'
-                  }}
-                </a-tag>
+                <span class="nowrap">
+                  <a-switch
+                    class="me-2"
+                    :checked="record.studentStatus === 'ACTIVE' || record.studentStatus === 1"
+                    @change="handleChangeStatusStudent(record)"
+                  />
+                  <a-tag
+                    :color="
+                      record.studentStatus === 'ACTIVE' || record.studentStatus === 1
+                        ? 'green'
+                        : 'red'
+                    "
+                  >
+                    {{
+                      record.studentStatus === 'ACTIVE' || record.studentStatus === 1
+                        ? 'Hoạt động'
+                        : 'Không hoạt động'
+                    }}
+                  </a-tag>
+                </span>
               </template>
               <!-- Các nút chức năng có tooltip -->
               <template v-else-if="column.key === 'actions'">
@@ -372,15 +379,6 @@ onMounted(() => {
                       @click="handleUpdateStudent(record)"
                     >
                       <EditFilled />
-                    </a-button>
-                  </a-tooltip>
-                  <a-tooltip title="Đổi trạng thái sinh viên">
-                    <a-button
-                      type="text"
-                      class="btn-outline-warning"
-                      @click="handleChangeStatusStudent(record)"
-                    >
-                      <SyncOutlined />
                     </a-button>
                   </a-tooltip>
                 </a-space>
