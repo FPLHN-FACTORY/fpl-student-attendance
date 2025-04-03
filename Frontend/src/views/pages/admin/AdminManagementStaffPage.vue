@@ -113,13 +113,13 @@ const detailStaff = reactive({
 const columns = ref([
   { title: '#', dataIndex: 'orderNumber', key: 'orderNumber', width: 50 },
   { title: 'Mã nhân viên', dataIndex: 'staffCode', key: 'staffCode', width: 250 },
-  { title: 'Tên nhân viên', dataIndex: 'staffName', key: 'staffName', width: 350 },
+  { title: 'Tên nhân viên', dataIndex: 'staffName', key: 'staffName', width: 250 },
   { title: 'Email FE', dataIndex: 'staffEmailFe', key: 'staffEmailFe', width: 250 },
   { title: 'Email FPT', dataIndex: 'staffEmailFpt', key: 'staffEmailFpt', width: 250 },
-  { title: 'Cơ sở', dataIndex: 'facilityName', key: 'facilityName', width: 380 },
-  { title: 'Vai trò', dataIndex: 'roleCode', key: 'roleCode', width: 380 },
-  { title: 'Trạng thái', dataIndex: 'staffStatus', key: 'staffStatus', width: 80 },
-  { title: 'Chức năng', key: 'actions' },
+  { title: 'Cơ sở', dataIndex: 'facilityName', key: 'facilityName', width: 200 },
+  { title: 'Vai trò', dataIndex: 'roleCode', key: 'roleCode', width: 300 },
+  { title: 'Trạng thái', dataIndex: 'staffStatus', key: 'staffStatus', width: 180 },
+  { title: 'Chức năng', key: 'actions', width: 120 },
 ])
 
 // Hàm lấy danh sách nhân viên, dùng pagination.value.current và pagination.value.pageSize
@@ -369,8 +369,8 @@ onMounted(() => {
                 @change="fetchStaffs"
               >
                 <a-select-option :value="''">Tất cả trạng thái</a-select-option>
-                <a-select-option value="ACTIVE">Hoạt động</a-select-option>
-                <a-select-option value="INACTIVE">Không hoạt động</a-select-option>
+                <a-select-option value="ACTIVE">Đang hoạt động</a-select-option>
+                <a-select-option value="INACTIVE">Ngừng hoạt động</a-select-option>
               </a-select>
             </a-col>
             <!-- Combobox cơ sở -->
@@ -420,17 +420,24 @@ onMounted(() => {
           >
             <template #bodyCell="{ column, record }">
               <template v-if="column.dataIndex === 'staffStatus'">
-                <a-tag
-                  :color="
-                    record.staffStatus === 'ACTIVE' || record.staffStatus === 1 ? 'green' : 'red'
-                  "
-                >
-                  {{
-                    record.staffStatus === 'ACTIVE' || record.staffStatus === 1
-                      ? 'Hoạt động'
-                      : 'Không hoạt động'
-                  }}
-                </a-tag>
+                <span class="nowrap">
+                  <a-switch
+                    class="me-2"
+                    :checked="record.staffStatus === 'ACTIVE' || record.staffStatus === 1"
+                    @change="handleChangeStatusStaff(record)"
+                  />
+                  <a-tag
+                    :color="
+                      record.staffStatus === 'ACTIVE' || record.staffStatus === 1 ? 'green' : 'red'
+                    "
+                  >
+                    {{
+                      record.staffStatus === 'ACTIVE' || record.staffStatus === 1
+                        ? 'Đang hoạt động'
+                        : 'Ngừng hoạt động'
+                    }}
+                  </a-tag>
+                </span>
               </template>
               <template v-else-if="column.dataIndex === 'roleCode'">
                 {{ convertRole(record.roleCode) }}
@@ -453,15 +460,6 @@ onMounted(() => {
                       class="btn-outline-info me-2"
                     >
                       <EditFilled />
-                    </a-button>
-                  </a-tooltip>
-                  <a-tooltip title="Đổi trạng thái nhân viên">
-                    <a-button
-                      @click="handleChangeStatusStaff(record)"
-                      type="text"
-                      class="btn-outline-warning"
-                    >
-                      <SyncOutlined />
                     </a-button>
                   </a-tooltip>
                 </a-space>

@@ -116,7 +116,7 @@ public class EXFactoryServiceImpl implements EXFactoryService {
         List<String> headers = List.of("Tên Nhóm Xưởng", "Mô Tả", "Dự Án", "Giảng Viên");
 
         List<String> projectByFacility = projectFactoryExtendRepository
-                .getAllProject(EntityStatus.ACTIVE, EntityStatus.ACTIVE, EntityStatus.ACTIVE, sessionHelper.getFacilityId())
+                .getAllProject(EntityStatus.ACTIVE, EntityStatus.ACTIVE, EntityStatus.ACTIVE, EntityStatus.ACTIVE, sessionHelper.getFacilityId())
                 .stream()
                 .map(project -> project.getName() + " (" + project.getId() + ")")
                 .collect(Collectors.toList());

@@ -7,6 +7,7 @@ import {
   EditFilled,
   ExclamationCircleOutlined,
   CheckOutlined,
+  DownloadOutlined,
 } from '@ant-design/icons-vue'
 import { message, Modal } from 'ant-design-vue'
 import requestAPI from '@/services/requestApiService'
@@ -32,7 +33,6 @@ const loadingStore = useLoadingStore()
 const isLoading = ref(false)
 
 // Đối tượng filter
-// durationOption có format "future_7" hoặc "past_14", ...
 const filter = reactive({
   idSubject: '',
   idFactory: '',
@@ -80,7 +80,7 @@ const columns = [
   { title: 'Mô tả / Hành động', dataIndex: 'description', key: 'description', width: 100 },
 ]
 
-// Cột hiển thị cho table lịch dạy hôm nay (columnsTeachingPresent) đã được bổ sung cột "Hành động"
+// Cột hiển thị cho table lịch dạy hôm nay
 const columnsTeachingPresent = [
   { title: '#', dataIndex: 'indexs', key: 'indexs', width: 50 },
   { title: 'Ngày dạy', dataIndex: 'teachingDay', key: 'teachingDay', width: 100 },
@@ -95,7 +95,7 @@ const columnsTeachingPresent = [
   { title: 'Xưởng', dataIndex: 'factoryName', key: 'factoryName', width: 100 },
   { title: 'Dự án', dataIndex: 'projectName', key: 'projectName', width: 180 },
   { title: 'Mô tả / Hành động', dataIndex: 'description', key: 'description', width: 100 },
-  { title: 'Điểm danh', key: 'action', width: 100 }, // <-- Cột "Hành động" mới
+  { title: 'Điểm danh', key: 'action', width: 100 },
 ]
 
 // Các danh sách dropdown
@@ -146,7 +146,6 @@ const fetchTeachingSchedulePresent = () => {
 // Lấy dữ liệu lịch dạy
 const fetchTeachingSchedule = () => {
   loadingStore.show()
-  // Tách durationOption ra, và chuẩn hóa các giá trị filter
   const { durationOption, ...rest } = filter
   const filterParams = prepareFilterParams(rest)
   requestAPI
@@ -162,8 +161,6 @@ const fetchTeachingSchedule = () => {
     .then((response) => {
       const result = response.data.data
       teachingScheduleRecords.value = result.data
-      // Cập nhật pagination: nếu API trả về totalRecords thì dùng nó,
-      // nếu không thì nhân với pageSize
       pagination.value.total = result.totalRecords || result.totalPages * filter.pageSize
       pagination.value.current = filter.page
     })
@@ -292,22 +289,38 @@ const handleUpdatePlanDate = () => {
       message.error(error.response?.data?.message || 'Lỗi khi cập nhật buổi học')
     })
 }
-const handleAttendance = (record) => {
-  console.log('Id Plan Date:' + record.idPlanDate);
-  requestAPI
-    .get(`${API_ROUTES_TEACHER.FETCH_DATA_STUDENT_PLAN_DATE}/${record.idPlanDate}`)
-    .then(() => {
-    })
 
-  router.push({
-    name: ROUTE_NAMES.MANAGEMENT_STUDENT_ATTENDANCE,
-    query: {
-      factoryId: record.factoryId,
-      userId: record.userId,
-      planDateId: record.idPlanDate,
-    },
-  })
+// Hàm xử lý xuất PDF
+const handleExportPDF = () => {
+  loadingStore.show()
+  const { page, pageSize, durationOption, ...rest } = filter
+  const filterParams = prepareFilterParams(rest)
+  const params = {
+    ...filterParams,
+    startDate: computedStartDate.value,
+    endDate: computedEndDate.value,
+  }
+  requestAPI
+    .get(API_ROUTES_TEACHER.FETCH_DATA_SCHEDULE + '/export-pdf', {
+      params,
+      responseType: 'blob',
+    })
+    .then((response) => {
+      const blob = new Blob([response.data], { type: 'application/pdf' })
+      const link = document.createElement('a')
+      link.href = window.URL.createObjectURL(blob)
+      link.download = 'lich-day.pdf'
+      link.click()
+      message.success('Xuất file PDF thành công')
+    })
+    .catch((error) => {
+      message.error('Lỗi khi xuất file PDF: ' + (error.response?.data?.message || error.message))
+    })
+    .finally(() => {
+      loadingStore.hide()
+    })
 }
+
 // Danh sách chọn ngày tới/ngày trước
 const durationOptions = [
   { label: '7 ngày tới', value: 'future_7' },
@@ -440,11 +453,9 @@ onMounted(() => {
           >
             <template #bodyCell="{ column, record, index }">
               <template v-if="column.dataIndex">
-                <!-- Cột số thứ tự -->
                 <template v-if="column.dataIndex === 'indexs'">
                   {{ (presentPagination.current - 1) * presentPagination.pageSize + index + 1 }}
                 </template>
-                <!-- Cột ngày dạy -->
                 <template v-else-if="column.dataIndex === 'teachingDay'">
                   {{
                     `${dayOfWeek(record.teachingDay)} - ${formatDate(
@@ -453,20 +464,17 @@ onMounted(() => {
                     )}`
                   }}
                 </template>
-                <!-- Cột ca học -->
                 <template v-else-if="column.dataIndex === 'shift'">
                   <a-tag color="purple">
                     {{ SHIFT[record.shift] }}
                   </a-tag>
                 </template>
-                <!-- Cột điểm danh muộn -->
                 <template v-else-if="column.dataIndex === 'lateArrival'">
                   <a-tag :color="record.lateArrival > 0 ? 'gold' : 'green'">
                     {{ record.lateArrival }}
                     <ExclamationCircleOutlined />
                   </a-tag>
                 </template>
-                <!-- Cột mô tả -->
                 <template v-else-if="column.dataIndex === 'description'">
                   <a-tooltip title="Xem, sửa mô tả">
                     <a-typography-link @click="handleShowDescription(record)">
@@ -474,7 +482,6 @@ onMounted(() => {
                     </a-typography-link>
                   </a-tooltip>
                 </template>
-                <!-- Các cột khác -->
                 <template v-else>
                   {{ record[column.dataIndex] }}
                 </template>
@@ -506,13 +513,21 @@ onMounted(() => {
       <div class="col-12">
         <a-card :bordered="false" class="cart">
           <template #title>
-            <UnorderedListOutlined /> Danh sách lịch dạy
-            <span v-if="filter.durationOption">
-              ({{ formatDate(computedStartDate, DEFAULT_DATE_FORMAT) }} -
-              {{ formatDate(computedEndDate, DEFAULT_DATE_FORMAT) }})
-            </span>
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <UnorderedListOutlined /> Danh sách lịch dạy
+                <span v-if="filter.durationOption">
+                  ({{ formatDate(computedStartDate, DEFAULT_DATE_FORMAT) }} -
+                  {{ formatDate(computedEndDate, DEFAULT_DATE_FORMAT) }})
+                </span>
+              </div>
+              <div>
+                <a-button type="primary" @click="handleExportPDF">
+                  <DownloadOutlined /> Xuất PDF
+                </a-button>
+              </div>
+            </div>
           </template>
-          <!-- Sử dụng slot bodyCell để tạo index động và hiển thị các cột -->
           <a-table
             :dataSource="teachingScheduleRecords"
             :columns="columns"
@@ -524,11 +539,9 @@ onMounted(() => {
           >
             <template #bodyCell="{ column, record, index }">
               <template v-if="column.dataIndex">
-                <!-- Cột số thứ tự -->
                 <template v-if="column.dataIndex === 'indexs'">
                   {{ (pagination.current - 1) * pagination.pageSize + index + 1 }}
                 </template>
-                <!-- Cột ngày dạy -->
                 <template v-else-if="column.dataIndex === 'teachingDay'">
                   {{
                     `${dayOfWeek(record.teachingDay)} - ${formatDate(
@@ -537,20 +550,17 @@ onMounted(() => {
                     )}`
                   }}
                 </template>
-                <!-- Cột ca học -->
                 <template v-else-if="column.dataIndex === 'shift'">
                   <a-tag color="purple">
                     {{ SHIFT[record.shift] }}
                   </a-tag>
                 </template>
-                <!-- Cột điểm danh muộn -->
                 <template v-else-if="column.dataIndex === 'lateArrival'">
                   <a-tag :color="record.lateArrival > 0 ? 'gold' : 'green'">
                     {{ record.lateArrival }}
                     <ExclamationCircleOutlined />
                   </a-tag>
                 </template>
-                <!-- Cột mô tả -->
                 <template v-else-if="column.dataIndex === 'description'">
                   <a-tooltip title="Xem, sửa mô tả">
                     <a-typography-link @click="handleShowDescription(record)">
@@ -558,7 +568,6 @@ onMounted(() => {
                     </a-typography-link>
                   </a-tooltip>
                 </template>
-                <!-- Các cột khác -->
                 <template v-else>
                   {{ record[column.dataIndex] }}
                 </template>
@@ -602,5 +611,3 @@ onMounted(() => {
     </a-modal>
   </div>
 </template>
-
-

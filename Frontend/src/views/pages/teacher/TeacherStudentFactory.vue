@@ -215,8 +215,8 @@ onMounted(() => {
                   @change="fetchStudentFactory"
                 >
                   <a-select-option :value="''">Tất cả trạng thái</a-select-option>
-                  <a-select-option value="1">Hoạt động</a-select-option>
-                  <a-select-option value="0">Không hoạt động</a-select-option>
+                  <a-select-option value="1">Đang học</a-select-option>
+                  <a-select-option value="0">Ngưng học</a-select-option>
                 </a-select>
               </div>
             </a-col>
@@ -247,6 +247,16 @@ onMounted(() => {
                 </template>
                 <!-- Hiển thị trạng thái -->
                 <template v-else-if="column.dataIndex === 'statusStudentFactory'">
+                  <span class="nowrap">
+                    <a-switch
+                      class="me-2"
+                      :checked="
+                        record.statusStudentFactory === 'ACTIVE' ||
+                        record.statusStudentFactory === 1
+                      "
+                      @change="toggleStatusStudentFactory(record)"
+                    />
+                  </span>
                   <a-tag
                     :color="
                       record.statusStudentFactory === 'ACTIVE' || record.statusStudentFactory === 1
@@ -256,8 +266,8 @@ onMounted(() => {
                   >
                     {{
                       record.statusStudentFactory === 'ACTIVE' || record.statusStudentFactory === 1
-                        ? 'Hoạt động'
-                        : 'Không hoạt động'
+                        ? 'Đang học'
+                        : 'Ngưng học'
                     }}
                   </a-tag>
                 </template>
@@ -269,26 +279,8 @@ onMounted(() => {
               <!-- Các nút hành động -->
               <template v-else-if="column.key === 'actions'">
                 <a-space>
-                  <a-tooltip title="Xoá học sinh">
-                    <a-button
-                      type="text"
-                      class="btn-outline-danger me-2"
-                      @click="confirmDeleteStudent(record)"
-                    >
-                      <DeleteFilled />
-                    </a-button>
-                  </a-tooltip>
-                  <a-tooltip title="Đổi trạng thái">
-                    <a-button
-                      type="text"
-                      class="btn-outline-warning me-2"
-                      @click="toggleStatusStudentFactory(record)"
-                    >
-                      <SyncOutlined />
-                    </a-button>
-                  </a-tooltip>
                   <!-- Nút đổi mặt học sinh -->
-                  <a-tooltip title="Đổi mặt học sinh">
+                  <a-tooltip title="Cấp quyền thay đổi mặt sinh viên">
                     <a-button
                       type="text"
                       class="btn-outline-info"

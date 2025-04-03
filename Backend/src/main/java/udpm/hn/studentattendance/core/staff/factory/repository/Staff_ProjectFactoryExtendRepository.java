@@ -21,13 +21,17 @@ public interface Staff_ProjectFactoryExtendRepository extends ProjectRepository 
                                 SubjectFacility sf on p.subjectFacility.id = sf.id
                                 LEFT JOIN 
                                 Facility f on f.id = sf.facility.id
+                                LEFT JOIN 
+                                LevelProject lp on lp.id = p.levelProject.id
                                 WHERE 
                                 p.status = :projectStatus
                                 AND sf.status = :subjecFacilityStatus
                                 AND f.status = :facilityStatus
+                                AND lp.status = :levelProjectStatus
                                 AND f.id = :facilityId
+                                
                                 
                             """)
     List<Project> getAllProject
-            (EntityStatus projectStatus, EntityStatus subjecFacilityStatus, EntityStatus facilityStatus, String facilityId);
+            (EntityStatus projectStatus, EntityStatus subjecFacilityStatus, EntityStatus facilityStatus, EntityStatus levelProjectStatus, String facilityId);
 }

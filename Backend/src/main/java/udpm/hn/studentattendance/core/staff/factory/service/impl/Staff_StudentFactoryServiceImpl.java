@@ -66,6 +66,7 @@ public class Staff_StudentFactoryServiceImpl implements Staff_StudentFactoryServ
     public ResponseEntity<?> deleteStudentInFactory(String userStudentFactoryId) {
         Optional<UserStudentFactory> existStudentFactory = studentFactoryRepository.findById(userStudentFactoryId);
         if (existStudentFactory.isPresent()) {
+            UserStudentFactory userStudentFactory = existStudentFactory.get();
             studentFactoryRepository.deleteById(userStudentFactoryId);
             return new ResponseEntity<>(
                     new ApiResponse(
@@ -264,5 +265,30 @@ public class Staff_StudentFactoryServiceImpl implements Staff_StudentFactoryServ
                         "Thêm sinh viên vào nhóm xưởng thành công",
                         userStudentFactory),
                 HttpStatus.OK);
+    }
+
+    @Override
+    public ResponseEntity<?> deleteFaceStudentFactory(String studentId) {
+        Optional<UserStudent> existUserStudent = userStudentRepository.findById(studentId);
+        if (existUserStudent.isPresent()) {
+            UserStudent userStudent = existUserStudent.get();
+            userStudent.setFaceEmbedding(null);
+            userStudentRepository.save(userStudent);
+            return new ResponseEntity<>(
+                    new ApiResponse(
+                            RestApiStatus.SUCCESS,
+                            "Cấp quyền thay đổi mặt thành công",
+                            userStudent
+                    ),
+                    HttpStatus.OK);
+        }
+        return new ResponseEntity<>(
+                new ApiResponse(
+                        RestApiStatus.ERROR,
+                        "Sinh viên không tồn tại",
+                        null
+                ),
+                HttpStatus.BAD_REQUEST);
+
     }
 }

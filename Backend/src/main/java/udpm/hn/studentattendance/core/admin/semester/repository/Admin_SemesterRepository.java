@@ -19,7 +19,7 @@ public interface Admin_SemesterRepository extends SemesterRepository {
             value = """
         SELECT  
             DISTINCT 
-            ROW_NUMBER() OVER (ORDER BY s.toDate desc ) AS semesterIndex, 
+            ROW_NUMBER() OVER (ORDER BY s.createdAt desc ) AS semesterIndex, 
             s.id AS id,
             s.code AS semesterCode,
             s.semesterName AS semesterName,
