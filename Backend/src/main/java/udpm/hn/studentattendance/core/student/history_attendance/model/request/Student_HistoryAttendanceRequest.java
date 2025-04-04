@@ -14,7 +14,6 @@ public class Student_HistoryAttendanceRequest extends PageableRequest {
 
     private String semesterId;
 
-    private Integer shift;
 
     public String getFactoryId() {
         return (factoryId == null || factoryId.trim().isEmpty()) ? null : factoryId;
