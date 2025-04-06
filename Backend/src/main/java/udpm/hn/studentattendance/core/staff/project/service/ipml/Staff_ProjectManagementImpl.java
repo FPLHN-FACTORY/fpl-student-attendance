@@ -75,7 +75,7 @@ public class Staff_ProjectManagementImpl implements Staff_ProjectManagementServi
     }
 
     @Override
-    public ResponseObject<?> deleteProject(String idProject) {
+    public ResponseObject<?> changeStatus(String idProject) {
         Project project = staffProjectManagementRepository.findById(idProject).get();
         if (project.getStatus() == EntityStatus.ACTIVE) {
             project.setStatus(EntityStatus.INACTIVE);

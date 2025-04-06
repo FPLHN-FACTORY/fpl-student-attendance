@@ -39,7 +39,7 @@ public class Admin_LevelProjectResController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteLevelProject(@PathVariable String id) {
-        return PaginationHelper.createResponseEntity(service.deleteLevelProject(id));
+        return PaginationHelper.createResponseEntity(service.changeStatus(id));
     }
 
 }
