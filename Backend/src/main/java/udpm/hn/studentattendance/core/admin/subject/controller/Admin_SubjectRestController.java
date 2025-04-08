@@ -39,7 +39,7 @@ public class Admin_SubjectRestController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteSubject(@PathVariable String id) {
-        return PaginationHelper.createResponseEntity(service.deleteSubject(id));
+        return PaginationHelper.createResponseEntity(service.changeStatus(id));
     }
 
 }

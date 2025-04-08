@@ -48,7 +48,7 @@ public class Admin_SubjectFacilityRestController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteSubjectFacility(@PathVariable String id) {
-        return PaginationHelper.createResponseEntity(adminSubjectFacilityService.deleteSubjectFacility(id));
+        return PaginationHelper.createResponseEntity(adminSubjectFacilityService.changeStatus(id));
     }
 
     @GetMapping("/{id}")
