@@ -358,7 +358,7 @@ onMounted(() => {
             {{ item.code + ' - ' + item.name }}
           </a-select-option>
         </a-select>
-        <div v-else>Đang tải danh sách giảng viên...</div>
+        <div v-else>Cơ sở chưa có giảng viên nào!</div>
       </a-form-item>
       <a-form-item label="Dự án" required>
         <a-select
@@ -382,7 +382,7 @@ onMounted(() => {
             {{ item.name + ' - ' + item.levelProject.name }}
           </a-select-option>
         </a-select>
-        <div v-else>Đang tải danh sách dự án...</div>
+        <div v-else>Cơ sở chưa có dự án nào!</div>
       </a-form-item>
     </a-form>
   </a-modal>
@@ -418,7 +418,7 @@ onMounted(() => {
             {{ item.code + ' - ' + item.name }}
           </a-select-option>
         </a-select>
-        <div v-else>Đang tải danh sách giảng viên...</div>
+        <div v-else>Cơ sở chưa có giảng viên nào!</div>
       </a-form-item>
       <a-form-item label="Dự án" required>
         <a-select
@@ -442,7 +442,7 @@ onMounted(() => {
             {{ item.name + ' - ' + item.levelProject.name }}
           </a-select-option>
         </a-select>
-        <div v-else>Đang tải danh sách dự án...</div>
+        <div v-else>Cơ sở chưa có dự án nào!</div>
       </a-form-item>
     </a-form>
   </a-modal>

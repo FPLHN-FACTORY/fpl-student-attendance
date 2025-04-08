@@ -1,5 +1,6 @@
 package udpm.hn.studentattendance.core.admin.levelproject.service;
 
+import org.springframework.http.ResponseEntity;
 import udpm.hn.studentattendance.core.admin.levelproject.model.request.Admin_LevelProjectCreateRequest;
 import udpm.hn.studentattendance.core.admin.levelproject.model.request.Admin_LevelProjectUpdateRequest;
 import udpm.hn.studentattendance.core.admin.levelproject.model.request.Admin_LevelProjectSearchRequest;
@@ -15,6 +16,6 @@ public interface Admin_LevelProjectManagementService {
 
     ResponseObject<?> detailLevelProject(String id);
 
-    ResponseObject<?> deleteLevelProject(String id);
+    ResponseObject<?> changeStatus(String id);
 
 }

@@ -15,6 +15,6 @@ public interface Staff_ProjectManagementService {
 
     ResponseObject<?> detailProject(String id);
 
-    ResponseObject<?> deleteProject(String id);
+    ResponseObject<?> changeStatus(String id);
 
 }

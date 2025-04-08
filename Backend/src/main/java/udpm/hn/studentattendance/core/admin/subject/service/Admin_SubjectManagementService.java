@@ -15,6 +15,6 @@ public interface Admin_SubjectManagementService {
 
     ResponseObject<?> detailSubject(String id);
 
-    ResponseObject<?> deleteSubject(String id);
+    ResponseObject<?> changeStatus(String id);
 
 }
