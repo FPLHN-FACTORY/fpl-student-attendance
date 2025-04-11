@@ -23,7 +23,9 @@ public interface Admin_LevelProjectRepository extends LevelProjectRepository {
         from
             level_project
         WHERE
-            (:#{#request.name} IS NULL OR name LIKE CONCAT('%', :#{#request.name}, '%') )
+            (:#{#request.name} IS NULL OR name LIKE CONCAT('%', :#{#request.name}, '%') 
+                or code LIKE CONCAT('%', :#{#request.name}, '%')
+                )
             AND (:#{#request.status} IS NULL OR status = :#{#request.status})
         ORDER BY created_at DESC
 """, countQuery = """
@@ -32,7 +34,8 @@ public interface Admin_LevelProjectRepository extends LevelProjectRepository {
         from
             level_project
         WHERE
-            (:#{#request.name} IS NULL OR name LIKE CONCAT('%', :#{#request.name}, '%') )
+            (:#{#request.name} IS NULL OR name LIKE CONCAT('%', :#{#request.name}, '%') 
+                or code LIKE CONCAT('%', :#{#request.name}, '%') )
             AND (:#{#request.status} IS NULL OR status = :#{#request.status})
 """, nativeQuery = true)
     Page<Admin_LevelProjectResponse> getAll(Pageable pageable, Admin_LevelProjectSearchRequest request);

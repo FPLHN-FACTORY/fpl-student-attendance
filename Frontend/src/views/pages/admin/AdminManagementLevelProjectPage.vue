@@ -25,7 +25,7 @@ const loadingStore = useLoadingStore()
 const levels = ref([])
 
 const filter = reactive({
-  searchQuery: '',
+  name: '',
   status: null, // Sử dụng null thay vì chuỗi rỗng để phù hợp với số
 })
 
@@ -77,22 +77,21 @@ const breadcrumb = ref([
 const fetchLevels = () => {
   loadingStore.show()
   requestAPI
-    .post(
-      `${API_ROUTES_ADMIN.FETCH_DATA_LEVEL_PROJECT}/list`,
-      {
+    .get(`${API_ROUTES_ADMIN.FETCH_DATA_LEVEL_PROJECT}/list`, {
+      params: {
         ...filter,
+        page: pagination.current,
+        size: pagination.pageSize,
       },
-      {
-        params: {
-          page: pagination.current,
-          size: pagination.pageSize,
-        },
-      }
-    )
+    })
     .then((response) => {
+      console.log(filter);
+      
       const result = response.data.data
       levels.value = result.data
-      pagination.total = result.totalPages * pagination.pageSize
+      // Tổng số bản ghi
+      pagination.total =
+        result.totalElements || result.totalItems || (result.totalPages * pagination.pageSize)
     })
     .catch((error) => {
       message.error(error.response?.data?.message || 'Lỗi khi lấy danh sách cấp dự án')
@@ -102,6 +101,7 @@ const fetchLevels = () => {
     })
 }
 
+
 const clearNewLevelForm = () => {
   newLevel.name = ''
   newLevel.code = ''
@@ -109,13 +109,14 @@ const clearNewLevelForm = () => {
 }
 
 const handleTableChange = (pageInfo) => {
+  
   pagination.current = pageInfo.current
   pagination.pageSize = pageInfo.pageSize
   fetchLevels()
 }
 
 const submitAddLevel = () => {
-  if (!newLevel.name) {
+  if (!newLevel.name || !newLevel.name.trim()) {
     message.error('Vui lòng nhập tên cấp dự án')
     return
   }
@@ -192,7 +193,7 @@ const submitUpdateLevel = () => {
 const confirmChangeStatus = (record) => {
   Modal.confirm({
     title: 'Xác nhận đổi trạng thái',
-    content: `Bạn có chắc muốn đổi trạng thái cho cấp dự án "${record.name}"?`,
+    content: `Bạn có chắc muốn đổi trạng thái cho cấp dự án "${record.name}" ?`,
     onOk() {
       changeStatus(record.id)
     },
@@ -204,11 +205,11 @@ const changeStatus = (id) => {
   requestAPI
     .delete(`${API_ROUTES_ADMIN.FETCH_DATA_LEVEL_PROJECT}/${id}`)
     .then((response) => {
-      message.success(response.data.message || 'Xóa cấp dự án thành công')
+      message.success(response.data.message || 'Chuyển trạng thái cấp dự án thành công')
       fetchLevels()
     })
     .catch((error) => {
-      message.error(error.response?.data?.message || 'Lỗi khi xóa cấp dự án')
+      message.error(error.response?.data?.message || 'Lỗi khi thay đổi trạng thái cấp dự án')
     })
     .finally(() => {
       loadingStore.hide()
@@ -221,12 +222,13 @@ const formatDate = (timestamp) => {
 }
 
 const getStatusText = (status) => {
-  return status === 1 ? 'Hoạt động' : 'Không hoạt động'
+  return status === 'ACTIVE' ? 'Hoạt động' : 'Không hoạt động'
 }
 
 const getStatusColor = (status) => {
-  return status === 1 ? 'green' : 'red'
+  return status === 'ACTIVE' ? 'green' : 'red'
 }
+
 
 onMounted(() => {
   breadcrumbStore.setRoutes(breadcrumb.value)
@@ -264,8 +266,8 @@ onMounted(() => {
       </a-form-item>
       <a-form-item label="Trạng thái">
         <a-select v-model:value="detailLevel.status" placeholder="Chọn trạng thái">
-          <a-select-option :value="1">Hoạt động</a-select-option>
-          <a-select-option :value="0">Không hoạt động</a-select-option>
+          <a-select-option value="ACTIVE">Hoạt động</a-select-option>
+          <a-select-option value="INACTIVE">Không hoạt động</a-select-option>
         </a-select>
       </a-form-item>
     </a-form>
@@ -297,7 +299,7 @@ onMounted(() => {
             <div class="col-md-6 col-sm-12">
               <div class="label-title">Tìm kiếm theo tên, mã:</div>
               <a-input
-                v-model:value="filter.searchQuery"
+                v-model:value="filter.name"
                 placeholder="Tên hoặc mã cấp dự án"
                 allowClear
                 @change="fetchLevels"
@@ -348,10 +350,11 @@ onMounted(() => {
                   {{ index + 1 }}
                 </template>
                 <template v-else-if="column.dataIndex === 'status'">
-                  <a-tag :color="getStatusColor(record.status)">
-                    {{ getStatusText(record.status) }}
+                  <a-tag :color="record.status === 1 ? 'green' : 'red'">
+                    {{ record.status === 1 ? 'Hoạt động' : 'Không hoạt động' }}
                   </a-tag>
                 </template>
+
                 <template v-else>
                   {{ record[column.dataIndex] }}
                 </template>
