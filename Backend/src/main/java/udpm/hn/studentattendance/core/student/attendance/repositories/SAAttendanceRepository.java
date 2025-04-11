@@ -26,6 +26,7 @@ public interface SAAttendanceRepository extends AttendanceRepository {
             pd.late_arrival AS lateArrival,
             pd.shift AS shift,
             pd.type AS type,
+            pd.link AS link,
             f.name AS factoryName,
             CONCAT(us.code, ' - ', us.name) AS teacherName,
             COALESCE(a.attendance_status, 0) AS status

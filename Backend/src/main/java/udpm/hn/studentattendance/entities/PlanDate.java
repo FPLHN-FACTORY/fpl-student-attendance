@@ -38,6 +38,9 @@ public class PlanDate extends PrimaryEntity implements Serializable {
     @Column(name = "late_arrival")
     private Integer lateArrival;
 
+    @Column(name = "link", length = EntityProperties.LENGTH_TEXT)
+    private String link;
+
     @Column(name = "type")
     private ShiftType type = ShiftType.OFFLINE;
 

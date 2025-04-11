@@ -82,6 +82,7 @@ const formDataAdd = reactive({
   type: Object.keys(TYPE_SHIFT)[0],
   days: [],
   shift: Object.keys(SHIFT)[0],
+  link: null,
   lateArrival: DEFAULT_LATE_ARRIVAL,
 })
 
@@ -378,6 +379,15 @@ watch(
           :min="0"
           :max="DEFAULT_MAX_LATE_ARRIVAL"
           :step="1"
+          :disabled="modalAdd.isLoading"
+          allowClear
+        />
+      </a-form-item>
+      <a-form-item class="col-sm-12" label="Link học online" name="link">
+        <a-input
+          class="w-100"
+          v-model:value="formDataAdd.link"
+          placeholder="https://"
           :disabled="modalAdd.isLoading"
           allowClear
         />

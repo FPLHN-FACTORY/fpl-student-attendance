@@ -110,7 +110,7 @@ public interface SPDPlanRepository extends PlanRepository {
         LEFT JOIN subject_facility sf ON sf.id = p.id_subject_facility
         LEFT JOIN subject s2 ON s2.id = sf.id_subject
         WHERE 
-            (SELECT COUNT(*) FROM plan pl WHERE pl.id_project = p.id AND pl.status = 0) < 1 AND
+            (SELECT COUNT(*) FROM plan pl WHERE pl.id_project = p.id AND pl.status = 1) < 1 AND
             sf.id_facility = :#{#request.idFacility} AND
             (:#{#request.level} IS NULL OR lp.id = :#{#request.level}) AND
             (:#{#request.semester} IS NULL OR s.name = :#{#request.semester}) AND
