@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 import udpm.hn.studentattendance.core.staff.plan.model.request.SPDAddPlanFactoryRequest;
 import udpm.hn.studentattendance.core.staff.plan.model.request.SPDFilterPlanFactoryRequest;
 import udpm.hn.studentattendance.core.staff.plan.model.response.SPDFactoryResponse;
@@ -20,6 +21,7 @@ import udpm.hn.studentattendance.entities.PlanFactory;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
 import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.helpers.SessionHelper;
+import udpm.hn.studentattendance.helpers.ValidateHelper;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.ShiftConstant;
@@ -97,6 +99,10 @@ public class SPDPlanFactoryServiceImpl implements SPDPlanFactoryService {
             return RouterHelper.responseError("Hinh thức học không hợp lệ");
         }
 
+        if (StringUtils.hasText(request.getLink()) && !ValidateHelper.isValidURL(request.getLink())) {
+            return RouterHelper.responseError("Link học online không hợp lệ");
+        }
+
         PlanFactory planFactory = spdPlanFactoryRepository.save(new PlanFactory(plan, factory));
 
         if (planFactory.getId() == null) {
@@ -135,11 +141,15 @@ public class SPDPlanFactoryServiceImpl implements SPDPlanFactoryService {
                     spdPlanFactoryRepository.delete(planFactory);
                     return RouterHelper.responseError("Giảng viên " + factory.getUserStaff().getName() + " - " + factory.getUserStaff().getCode() + " đã đứng lớp tại ca " + request.getShift() + " trong ngày " + DateTimeUtils.convertMillisToDate(date));
                 }
+
+                String link = StringUtils.hasText(request.getLink()) ? request.getLink().trim() : null;
+
                 PlanDate planDate = new PlanDate();
                 planDate.setPlanFactory(planFactory);
                 planDate.setStartDate(date);
                 planDate.setShift(request.getShift());
                 planDate.setType(type);
+                planDate.setLink(link);
                 planDate.setDescription(null);
                 planDate.setLateArrival(request.getLateArrival());
                 lstPlanDate.add(planDate);

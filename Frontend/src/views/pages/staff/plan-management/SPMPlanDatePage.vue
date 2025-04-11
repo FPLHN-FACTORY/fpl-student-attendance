@@ -66,6 +66,7 @@ const columns = ref([
   { title: 'Ngày học', dataIndex: 'startDate', key: 'startDate' },
   { title: 'Ca học', dataIndex: 'shift', key: 'shift' },
   { title: 'Nội dung', dataIndex: 'description', key: 'description', width: 300 },
+  { title: 'Link Online', dataIndex: 'link', key: 'link', width: 100 },
   { title: 'Điểm danh trễ', dataIndex: 'lateArrival', key: 'lateArrival', width: 130 },
   { title: 'Trạng thái', dataIndex: 'status', key: 'status' },
   { title: '', key: 'actions' },
@@ -99,6 +100,7 @@ const formData = reactive({
   idPlan: null,
   description: null,
   shift: Object.keys(SHIFT)[0],
+  link: null,
   type: null,
   startDate: null,
   lateArrival: DEFAULT_LATE_ARRIVAL,
@@ -283,6 +285,7 @@ const handleShowAdd = () => {
   formData.id = null
   formData.startDate = dayjs()
   formData.shift = Object.keys(SHIFT)[0]
+  formData.link = null
   formData.type = null
   formData.lateArrival = DEFAULT_LATE_ARRIVAL
   formData.description = null
@@ -301,6 +304,7 @@ const handleShowUpdate = (item) => {
   formData.id = item.id
   formData.startDate = dayjs(item.startDate)
   formData.shift = item.shift
+  formData.link = item.link
   formData.type = String(item.type)
   formData.lateArrival = item.lateArrival
   formData.description = item.description
@@ -496,6 +500,15 @@ watch(
           allowClear
         />
       </a-form-item>
+      <a-form-item class="col-sm-12" label="Link học online" name="link">
+        <a-input
+          class="w-100"
+          v-model:value="formData.link"
+          placeholder="https://"
+          :disabled="modalAddOrUpdate.isLoading"
+          allowClear
+        />
+      </a-form-item>
     </a-form>
   </a-modal>
 
@@ -622,6 +635,9 @@ watch(
                   <a-typography-link @click="handleShowDescription(record.description)"
                     >Chi tiết</a-typography-link
                   >
+                </template>
+                <template v-if="column.dataIndex === 'link' && record.link">
+                  <a target="_blank" :href="record.link">Link</a>
                 </template>
                 <template v-if="column.dataIndex === 'lateArrival'">
                   {{ `${record.lateArrival} phút` }}

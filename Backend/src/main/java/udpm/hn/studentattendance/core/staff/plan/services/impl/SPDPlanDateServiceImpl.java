@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 import udpm.hn.studentattendance.core.staff.plan.model.request.SPDAddOrUpdatePlanDateRequest;
 import udpm.hn.studentattendance.core.staff.plan.model.request.SPDDeletePlanDateRequest;
 import udpm.hn.studentattendance.core.staff.plan.model.request.SPDFilterPlanDateRequest;
@@ -20,6 +21,7 @@ import udpm.hn.studentattendance.entities.PlanFactory;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
 import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.helpers.SessionHelper;
+import udpm.hn.studentattendance.helpers.ValidateHelper;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.constants.ShiftConstant;
 import udpm.hn.studentattendance.infrastructure.constants.ShiftType;
@@ -131,9 +133,16 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
             return RouterHelper.responseError("Giảng viên " + factory.getUserStaff().getName() + " - " + factory.getUserStaff().getCode() + " đã đứng lớp tại ca " + request.getShift() + " trong ngày " + DateTimeUtils.convertMillisToDate(startDate));
         }
 
+        if (StringUtils.hasText(request.getLink()) && !ValidateHelper.isValidURL(request.getLink())) {
+            return RouterHelper.responseError("Link học online không hợp lệ");
+        }
+
+        String link = StringUtils.hasText(request.getLink()) ? request.getLink().trim() : null;
+
         planDate.setStartDate(startDate);
         planDate.setShift(request.getShift());
         planDate.setType(type);
+        planDate.setLink(link);
         planDate.setDescription(request.getDescription());
         planDate.setLateArrival(request.getLateArrival());
 
@@ -178,6 +187,7 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
             return RouterHelper.responseError("Hình thức học không hợp lệ");
         }
 
+
         Long startDate = ShiftConstant.getShiftTimeStart(request.getStartDate(), shift);
 
         if (startDate < DateTimeUtils.getCurrentTimeMillis()) {
@@ -196,11 +206,18 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
             return RouterHelper.responseError("Giảng viên " + factory.getUserStaff().getName() + " - " + factory.getUserStaff().getCode() + " đã đứng lớp tại ca " + request.getShift() + " trong ngày " + DateTimeUtils.convertMillisToDate(startDate));
         }
 
+        if (StringUtils.hasText(request.getLink()) && !ValidateHelper.isValidURL(request.getLink())) {
+            return RouterHelper.responseError("Link học online không hợp lệ");
+        }
+
+        String link = StringUtils.hasText(request.getLink()) ? request.getLink().trim() : null;
+
         PlanDate planDate = new PlanDate();
         planDate.setPlanFactory(planFactory);
         planDate.setStartDate(startDate);
         planDate.setShift(request.getShift());
         planDate.setType(type);
+        planDate.setLink(link);
         planDate.setDescription(request.getDescription());
         planDate.setLateArrival(request.getLateArrival());
 

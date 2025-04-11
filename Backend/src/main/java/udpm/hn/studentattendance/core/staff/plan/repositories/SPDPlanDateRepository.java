@@ -25,6 +25,7 @@ public interface SPDPlanDateRepository extends PlanDateRepository {
             pd.type,
             pd.late_arrival,
             pd.description,
+            pd.link,
             CASE
                 WHEN UNIX_TIMESTAMP(NOW()) * 1000 > (pd.start_date + 7200)
                 THEN 'DA_DIEN_RA'
@@ -92,6 +93,7 @@ public interface SPDPlanDateRepository extends PlanDateRepository {
             pd.late_arrival,
             pl.to_date,
             pl.from_date,
+            pd.link,
             CASE
                 WHEN UNIX_TIMESTAMP(NOW()) * 1000 > (pd.start_date + 7200)
                 THEN 'DA_DIEN_RA'

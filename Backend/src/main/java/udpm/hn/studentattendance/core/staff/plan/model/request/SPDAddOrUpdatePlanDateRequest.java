@@ -24,6 +24,8 @@ public class SPDAddOrUpdatePlanDateRequest {
 
     private Long startDate;
 
+    private String link;
+
     @Min(value = 1, message = "Ca học sớm nhất là ca 1")
     @Max(value = 6, message = "Ca học muộn nhất là ca 6")
     private Integer shift;

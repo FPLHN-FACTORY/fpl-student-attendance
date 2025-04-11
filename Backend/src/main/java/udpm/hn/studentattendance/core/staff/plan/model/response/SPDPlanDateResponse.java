@@ -13,6 +13,8 @@ public interface SPDPlanDateResponse extends IsIdentify, HasOrderNumber {
 
     Integer getLateArrival();
 
+    String getLink();
+
     String getStatus();
 
     Integer getType();
