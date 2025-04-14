@@ -160,4 +160,28 @@ public class Staff_StudentServiceImpl implements Staff_StudentService {
         }
     }
 
+    public ResponseEntity<?> deleteFaceStudentFactory(String studentId) {
+        Optional<UserStudent> existUserStudent = studentExtendRepository.findById(studentId);
+        if (existUserStudent.isPresent()) {
+            UserStudent userStudent = existUserStudent.get();
+            userStudent.setFaceEmbedding(null);
+            studentExtendRepository.save(userStudent);
+            return new ResponseEntity<>(
+                    new ApiResponse(
+                            RestApiStatus.SUCCESS,
+                            "Cấp quyền thay đổi mặt thành công",
+                            userStudent
+                    ),
+                    HttpStatus.OK);
+        }
+        return new ResponseEntity<>(
+                new ApiResponse(
+                        RestApiStatus.ERROR,
+                        "Sinh viên không tồn tại",
+                        null
+                ),
+                HttpStatus.BAD_REQUEST);
+
+    }
+
 }

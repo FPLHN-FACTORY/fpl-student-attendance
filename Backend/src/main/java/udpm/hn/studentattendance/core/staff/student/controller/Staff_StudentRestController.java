@@ -40,4 +40,9 @@ public class Staff_StudentRestController {
     public ResponseEntity<?> changeStatus(@PathVariable("studentId") String studentId) {
         return studentService.changeStatusStudent(studentId);
     }
+
+    @PutMapping("/change-face/{studentId}")
+    public ResponseEntity<?> changeFaceStudent(@PathVariable("studentId") String studentId) {
+        return studentService.deleteFaceStudentFactory(studentId);
+    }
 }

@@ -65,7 +65,6 @@ const columns = ref([
     key: 'statusStudentFactory',
     width: 120,
   },
-  { title: 'Chức năng', key: 'actions', width: 120 }, // Có thể tăng width nếu cần
 ])
 
 const loadingStore = useLoadingStore()
@@ -156,28 +155,28 @@ const toggleStatusStudentFactory = (record) => {
 }
 
 // <-- Thêm hàm changeFaceStudent
-const changeFaceStudent = (record) => {
-  Modal.confirm({
-    title: 'Xác nhận đổi mặt',
-    content: `Bạn có chắc muốn đổi mặt của học sinh ${record.studentName}?`,
-    onOk() {
-      loadingStore.show()
-      // Giả sử record chứa studentId, nếu không hãy thay đổi cho phù hợp
-      requestAPI
-        .put(API_ROUTES_TEACHER.FETCH_DATA_STUDENT_FACTORY + '/change-face/' + record.studentId)
-        .then((response) => {
-          message.success(response.data.message || 'Đổi mặt học sinh thành công')
-          fetchStudentFactory() // Làm mới danh sách sau khi đổi mặt
-        })
-        .catch((error) => {
-          message.error(error.response?.data?.message || 'Lỗi khi đổi mặt học sinh')
-        })
-        .finally(() => {
-          loadingStore.hide()
-        })
-    },
-  })
-}
+// const changeFaceStudent = (record) => {
+//   Modal.confirm({
+//     title: 'Xác nhận đổi mặt',
+//     content: `Bạn có chắc muốn đổi mặt của học sinh ${record.studentName}?`,
+//     onOk() {
+//       loadingStore.show()
+//       // Giả sử record chứa studentId, nếu không hãy thay đổi cho phù hợp
+//       requestAPI
+//         .put(API_ROUTES_TEACHER.FETCH_DATA_STUDENT_FACTORY + '/change-face/' + record.studentId)
+//         .then((response) => {
+//           message.success(response.data.message || 'Đổi mặt học sinh thành công')
+//           fetchStudentFactory() // Làm mới danh sách sau khi đổi mặt
+//         })
+//         .catch((error) => {
+//           message.error(error.response?.data?.message || 'Lỗi khi đổi mặt học sinh')
+//         })
+//         .finally(() => {
+//           loadingStore.hide()
+//         })
+//     },
+//   })
+// }
 
 onMounted(() => {
   breadcrumbStore.setRoutes(breadcrumb.value)
@@ -277,20 +276,6 @@ onMounted(() => {
                 </template>
               </template>
               <!-- Các nút hành động -->
-              <template v-else-if="column.key === 'actions'">
-                <a-space>
-                  <!-- Nút đổi mặt học sinh -->
-                  <a-tooltip title="Cấp quyền thay đổi mặt sinh viên">
-                    <a-button
-                      type="text"
-                      class="btn-outline-info"
-                      @click="changeFaceStudent(record)"
-                    >
-                      <UserDeleteOutlined />
-                    </a-button>
-                  </a-tooltip>
-                </a-space>
-              </template>
             </template>
           </a-table>
         </a-card>
