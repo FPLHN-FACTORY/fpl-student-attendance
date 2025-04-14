@@ -68,4 +68,6 @@ public interface Staff_StudentExtendRepository extends UserStudentRepository {
 
     Optional<UserStudent> getUserStudentByCode(String studentCode);
 
+    Optional<UserStudent> getUserStudentByEmail(String email);
+
 }

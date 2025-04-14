@@ -63,9 +63,15 @@ public class Admin_SubjectFacilityServiceImpl implements Admin_SubjectFacilitySe
     }
 
     @Override
-    public ResponseObject<?> deleteSubjectFacility(String id) {
-        repository.deleteById(id);
-        return new ResponseObject<>(null, HttpStatus.OK, "Xóa dự án thành công");
+    public ResponseObject<?> changeStatus(String id) {
+        SubjectFacility subjectFacility = repository.findById(id).get();
+        if (subjectFacility.getStatus() == EntityStatus.ACTIVE) {
+            subjectFacility.setStatus(EntityStatus.INACTIVE);
+        } else {
+            subjectFacility.setStatus(EntityStatus.ACTIVE);
+        }
+        repository.save(subjectFacility);
+        return new ResponseObject<>(null, HttpStatus.OK, "thành công");
     }
 
     private SubjectFacility convertAdd(SubjectFacility s, Admin_SubjectFacilityCreateRequest request) {

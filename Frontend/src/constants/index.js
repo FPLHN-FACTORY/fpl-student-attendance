@@ -11,6 +11,7 @@ export const DEFAULT_PAGINATION = {
   pageSize: PAGINATION_SIZE,
   total: 0,
   showSizeChanger: true,
+  pageSizeOptions: ['5', '10', '20', '50'],
 }
 
 export const DAY_OF_WEEK = {

@@ -58,11 +58,11 @@ public class Staff_ProjectManagementImpl implements Staff_ProjectManagementServi
     @Override
     public ResponseObject<?> updateProject(String idProject, Staff_ProjectUpdateRequest request) {
         Project project = staffProjectManagementRepository.findById(idProject).get();
-        if (project.getStatus() == EntityStatus.ACTIVE) {
-            project.setStatus(EntityStatus.INACTIVE);
-        } else {
-            project.setStatus(EntityStatus.ACTIVE);
-        }
+        project.setName(request.getName());
+        project.setDescription(request.getDescription());
+        project.setLevelProject(levelProjectRepository.findById(request.getIdLevelProject()).get());
+        project.setSemester(semesterRepository.findById(request.getIdSemester()).get());
+        project.setSubjectFacility(subjectFacilityRepository.findById(request.getIdSubjectFacility()).get());
         staffProjectManagementRepository.save(project);
         return new ResponseObject<>(project, HttpStatus.OK, "Chuyển trạng thái thành công");
     }
@@ -75,7 +75,7 @@ public class Staff_ProjectManagementImpl implements Staff_ProjectManagementServi
     }
 
     @Override
-    public ResponseObject<?> deleteProject(String idProject) {
+    public ResponseObject<?> changeStatus(String idProject) {
         Project project = staffProjectManagementRepository.findById(idProject).get();
         if (project.getStatus() == EntityStatus.ACTIVE) {
             project.setStatus(EntityStatus.INACTIVE);
@@ -101,7 +101,7 @@ public class Staff_ProjectManagementImpl implements Staff_ProjectManagementServi
         project.setDescription(request.getDescription());
         project.setLevelProject(levelProjectRepository.findById(request.getIdLevelProject()).get());
         project.setSemester(semesterRepository.findById(request.getIdSemester()).get());
-        project.setSubjectFacility(subjectFacilityRepository.findById(request.getIdSubject()).get());
+        project.setSubjectFacility(subjectFacilityRepository.findById(request.getIdSubjectFacility()).get());
 //        if (request.getStatus().equals("ACTIVE")) {
 //            project.setStatus(EntityStatus.ACTIVE);
 //        } else {

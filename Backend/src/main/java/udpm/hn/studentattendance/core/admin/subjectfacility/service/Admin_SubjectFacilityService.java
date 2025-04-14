@@ -15,6 +15,6 @@ public interface Admin_SubjectFacilityService {
 
     ResponseObject<?> detailSubjectFacility(String id);
 
-    ResponseObject<?> deleteSubjectFacility(String id);
+    ResponseObject<?> changeStatus(String id);
 
 }

@@ -27,4 +27,9 @@ public class Teacher_StudentFactoryRestController {
     public ResponseEntity<?> changeStatusStudentFactory(@PathVariable("id") String studentFactoryId) {
         return teacherStudentService.changeStatusStudentFactory(studentFactoryId);
     }
+
+    @PutMapping("/change-face/{studentId}")
+    public ResponseEntity<?> changeFaceStudent(@PathVariable("studentId") String studentId){
+        return teacherStudentService.deleteFaceStudentFactory(studentId);
+    }
 }

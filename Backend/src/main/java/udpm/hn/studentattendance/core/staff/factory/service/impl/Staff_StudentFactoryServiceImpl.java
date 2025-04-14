@@ -8,10 +8,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
+import udpm.hn.studentattendance.core.staff.factory.model.request.Staff_StudentFactoryAddRequest;
 import udpm.hn.studentattendance.core.staff.factory.model.request.Staff_StudentFactoryCreateUpdateRequest;
 import udpm.hn.studentattendance.core.staff.factory.model.request.Staff_StudentFactoryRequest;
 import udpm.hn.studentattendance.core.staff.factory.model.request.Staff_UserStudentRequest;
 import udpm.hn.studentattendance.core.staff.factory.model.response.Staff_UserStudentResponse;
+import udpm.hn.studentattendance.core.staff.factory.repository.Staff_FactoryExtendRepository;
 import udpm.hn.studentattendance.core.staff.factory.repository.Staff_StudentFactoryRepository;
 import udpm.hn.studentattendance.core.staff.factory.repository.Staff_UserStudentFactoryExtendRepository;
 import udpm.hn.studentattendance.core.staff.factory.service.Staff_StudentFactoryService;
@@ -64,6 +66,7 @@ public class Staff_StudentFactoryServiceImpl implements Staff_StudentFactoryServ
     public ResponseEntity<?> deleteStudentInFactory(String userStudentFactoryId) {
         Optional<UserStudentFactory> existStudentFactory = studentFactoryRepository.findById(userStudentFactoryId);
         if (existStudentFactory.isPresent()) {
+            UserStudentFactory userStudentFactory = existStudentFactory.get();
             studentFactoryRepository.deleteById(userStudentFactoryId);
             return new ResponseEntity<>(
                     new ApiResponse(
@@ -111,10 +114,45 @@ public class Staff_StudentFactoryServiceImpl implements Staff_StudentFactoryServ
     @Transactional
     public ResponseEntity<?> createOrDeleteStudentFactory(Staff_StudentFactoryCreateUpdateRequest studentFactoryCreateUpdateRequest) {
         Optional<UserStudentFactory> existStudentFactory = studentFactoryRepository
-                .getUserStudentFactoriesByUserStudentIdAndFactoryId
-                        (studentFactoryCreateUpdateRequest.getStudentId(), studentFactoryCreateUpdateRequest.getFactoryId());
+                .getUserStudentFactoriesByUserStudentIdAndFactoryId(
+                        studentFactoryCreateUpdateRequest.getStudentId(),
+                        studentFactoryCreateUpdateRequest.getFactoryId());
+
         Optional<Factory> existFactory = factoryRepository.findById(studentFactoryCreateUpdateRequest.getFactoryId());
         Optional<UserStudent> existUserStudent = userStudentRepository.findById(studentFactoryCreateUpdateRequest.getStudentId());
+
+        boolean isGreaterThanTwenty = userStudentFactoryExtendRepository
+                .isStudentGreaterThanTwenty(studentFactoryCreateUpdateRequest.getFactoryId());
+        boolean isExistsShift = userStudentFactoryExtendRepository
+                .isStudentExistsShift(
+                        sessionHelper.getFacilityId(),
+                        studentFactoryCreateUpdateRequest.getFactoryId(),
+                        studentFactoryCreateUpdateRequest.getStudentId());
+        if (existStudentFactory.isPresent()) {
+            return new ResponseEntity<>(
+                    new ApiResponse(
+                            RestApiStatus.ERROR,
+                            "Thêm sinh viên thất bại: Sinh viên đã có trong nhóm xưởng",
+                            null),
+                    HttpStatus.BAD_REQUEST);
+        }
+        if (!isGreaterThanTwenty) {
+            return new ResponseEntity<>(
+                    new ApiResponse(
+                            RestApiStatus.ERROR,
+                            "Thêm sinh viên thất bại: Số lượng sinh viên trong nhóm  vượt quá 20",
+                            null),
+                    HttpStatus.BAD_REQUEST);
+        }
+
+        if (!isExistsShift) {
+            return new ResponseEntity<>(
+                    new ApiResponse(
+                            RestApiStatus.ERROR,
+                            "Thêm sinh viên thất bại: Sinh viên  tồn tại ở ca khác",
+                            null),
+                    HttpStatus.BAD_REQUEST);
+        }
 
         UserStudentFactory userStudentFactory = new UserStudentFactory();
         userStudentFactory.setId(CodeGeneratorUtils.generateRandom());
@@ -127,8 +165,7 @@ public class Staff_StudentFactoryServiceImpl implements Staff_StudentFactoryServ
                 new ApiResponse(
                         RestApiStatus.SUCCESS,
                         "Thêm sinh viên vào nhóm xưởng thành công",
-                        userStudentFactory
-                ),
+                        userStudentFactory),
                 HttpStatus.OK);
     }
 
@@ -159,5 +196,99 @@ public class Staff_StudentFactoryServiceImpl implements Staff_StudentFactoryServ
                         listStudent
                 ),
                 HttpStatus.OK);
+    }
+
+    @Override
+    public ResponseEntity<?> createStudent(Staff_StudentFactoryAddRequest addRequest) {
+
+        Optional<UserStudent> existUserStudentByCode = userStudentFactoryExtendRepository.getUserStudentByCode(addRequest.getStudentCode());
+        Optional<UserStudentFactory> existStudentFactory = studentFactoryRepository
+                .getUserStudentFactoriesByUserStudentIdAndFactoryId(
+                        existUserStudentByCode.get().getId(),
+                        addRequest.getFactoryId());
+
+        Optional<Factory> existFactory = factoryRepository.findById(addRequest.getFactoryId());
+        Optional<UserStudent> existUserStudent = userStudentRepository.findById(existUserStudentByCode.get().getId());
+
+        boolean isGreaterThanTwenty = userStudentFactoryExtendRepository
+                .isStudentGreaterThanTwenty(addRequest.getFactoryId());
+        boolean isExistsShift = userStudentFactoryExtendRepository
+                .isStudentExistsShift(
+                        sessionHelper.getFacilityId(),
+                        addRequest.getFactoryId(),
+                        existUserStudentByCode.get().getId());
+
+        if (existUserStudent.isEmpty()) {
+            return new ResponseEntity<>(
+                    new ApiResponse(
+                            RestApiStatus.ERROR,
+                            "Thêm sinh viên thất bại: Sinh viên không tồn tại trong cơ sở",
+                            null),
+                    HttpStatus.BAD_REQUEST);
+        }
+        if (existStudentFactory.isPresent()) {
+            return new ResponseEntity<>(
+                    new ApiResponse(
+                            RestApiStatus.ERROR,
+                            "Thêm sinh viên thất bại: Sinh viên đã có trong nhóm xưởng",
+                            null),
+                    HttpStatus.BAD_REQUEST);
+        }
+        if (!isGreaterThanTwenty) {
+            return new ResponseEntity<>(
+                    new ApiResponse(
+                            RestApiStatus.ERROR,
+                            "Thêm sinh viên thất bại: Số lượng sinh viên trong nhóm  vượt quá 20",
+                            null),
+                    HttpStatus.BAD_REQUEST);
+        }
+
+        if (!isExistsShift) {
+            return new ResponseEntity<>(
+                    new ApiResponse(
+                            RestApiStatus.ERROR,
+                            "Thêm sinh viên thất bại: Sinh viên  tồn tại ở ca khác",
+                            null),
+                    HttpStatus.BAD_REQUEST);
+        }
+
+        UserStudentFactory userStudentFactory = new UserStudentFactory();
+        userStudentFactory.setId(CodeGeneratorUtils.generateRandom());
+        userStudentFactory.setUserStudent(existUserStudent.get());
+        userStudentFactory.setFactory(existFactory.get());
+        userStudentFactory.setStatus(EntityStatus.ACTIVE);
+        studentFactoryRepository.save(userStudentFactory);
+
+        return new ResponseEntity<>(
+                new ApiResponse(
+                        RestApiStatus.SUCCESS,
+                        "Thêm sinh viên vào nhóm xưởng thành công",
+                        userStudentFactory),
+                HttpStatus.OK);
+    }
+
+    @Override
+    public ResponseEntity<?> deleteFaceStudentFactory(String studentId) {
+        Optional<UserStudent> existUserStudent = userStudentRepository.findById(studentId);
+        if (existUserStudent.isPresent()) {
+            UserStudent userStudent = existUserStudent.get();
+            userStudent.setFaceEmbedding(null);
+            userStudentRepository.save(userStudent);
+            return new ResponseEntity<>(
+                    new ApiResponse(
+                            RestApiStatus.SUCCESS,
+                            "Cấp quyền thay đổi mặt thành công",
+                            userStudent
+                    ),
+                    HttpStatus.OK);
+        }
+        return new ResponseEntity<>(
+                new ApiResponse(
+                        RestApiStatus.ERROR,
+                        "Sinh viên không tồn tại",
+                        null
+                ),
+                HttpStatus.BAD_REQUEST);
+
     }
 }

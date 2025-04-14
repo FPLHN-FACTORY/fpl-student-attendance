@@ -3,6 +3,7 @@ package udpm.hn.studentattendance.core.admin.levelproject.service.impl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import udpm.hn.studentattendance.core.admin.levelproject.model.request.Admin_LevelProjectCreateRequest;
 import udpm.hn.studentattendance.core.admin.levelproject.model.request.Admin_LevelProjectUpdateRequest;
@@ -55,7 +56,7 @@ public class Admin_LevelProjectManagementServiceImpl implements Admin_LevelProje
     }
 
     @Override
-    public ResponseObject<?> deleteLevelProject(String id) {
+    public ResponseObject<?> changeStatus(String id) {
         LevelProject lv = repository.findById(id).get();
         if (lv.getStatus() == EntityStatus.ACTIVE) {
             lv.setStatus(EntityStatus.INACTIVE);

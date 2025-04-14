@@ -55,9 +55,15 @@ public class Admin_SubjectManagementServiceImpl implements Admin_SubjectManageme
     }
 
     @Override
-    public ResponseObject<?> deleteSubject(String id) {
-        adminSubjectRepository.deleteById(id);
-        return new ResponseObject<>(null, HttpStatus.OK, "Xóa bộ môn thành công");
+    public ResponseObject<?> changeStatus(String id) {
+        Subject s = adminSubjectRepository.findById(id).get();
+        if (s.getStatus() == EntityStatus.ACTIVE) {
+            s.setStatus(EntityStatus.INACTIVE);
+        } else {
+            s.setStatus(EntityStatus.ACTIVE);
+        }
+        adminSubjectRepository.save(s);
+        return new ResponseObject<>(null, HttpStatus.OK, "Đổi trạng thái bộ môn thành công");
     }
 
     private Subject convertAdd(Subject subject, Admin_SubjectCreateRequest request) {

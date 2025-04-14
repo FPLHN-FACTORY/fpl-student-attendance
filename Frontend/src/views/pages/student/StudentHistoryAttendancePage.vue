@@ -38,20 +38,20 @@ const filter = reactive({
 const attendanceRecords = ref([])
 const loading = ref(false)
 const paginations = ref({})
+const loadingExport = reactive({})
 
 const columns = [
   { title: 'Bài học', dataIndex: 'rowNumber', key: 'rowNumber', width: 50 },
   { title: 'Ngày học', dataIndex: 'planDateStartDate', key: 'planDateStartDate', width: 150 },
   { title: 'Ca học', dataIndex: 'planDateShift', key: 'planDateShift', width: 30 },
-  { title: 'Nội dung', dataIndex: 'planDateDescription', key: 'planDateDescription', width: 80 },
   {
     title: 'Điểm danh muộn tối đa (phút)',
     dataIndex: 'lateArrival',
     key: 'lateArrival',
     width: 100,
   },
+  { title: 'Nội dung', dataIndex: 'planDateDescription', key: 'planDateDescription', width: 80 },
   { title: 'Trạng thái đi học', dataIndex: 'statusAttendance', key: 'statusAttendance', width: 80 },
-  { title: 'Hành động', key: 'actions', width: 100 },
 ]
 
 const semesters = ref([])
@@ -74,7 +74,7 @@ const fetchAllAttendanceHistory = async () => {
         promises.push(
           requestAPI.get(API_ROUTES_STUDENT.FETCH_DATA_HISTORY_ATTENDANCE, {
             params: { ...filter, page },
-          }),
+          })
         )
       }
       const responses = await Promise.all(promises)
@@ -88,8 +88,7 @@ const fetchAllAttendanceHistory = async () => {
     paginations.value = {}
     for (const factoryId in grouped) {
       paginations.value[factoryId] = {
-        current: 1,
-        pageSize: 5,
+        ...DEFAULT_PAGINATION,
         total: grouped[factoryId].length,
       }
     }
@@ -99,6 +98,7 @@ const fetchAllAttendanceHistory = async () => {
     loadingStore.hide()
   }
 }
+
 const handleShowDescription = (text) => {
   Modal.info({
     title: 'Nội dung buổi học',
@@ -110,6 +110,7 @@ const handleShowDescription = (text) => {
     },
   })
 }
+
 const fetchSemesters = () => {
   requestAPI
     .get(API_ROUTES_STUDENT.FETCH_DATA_HISTORY_ATTENDANCE + '/semesters')
@@ -160,6 +161,30 @@ const handleDetail = (record) => {
 const getFactoryName = (factoryId) => {
   const factory = factories.value.find((f) => f.id === factoryId)
   return factory ? factory.name : 'Chưa xác định'
+}
+
+const exportPDF = async (factoryId, factoryName) => {
+  loadingExport[factoryId] = true
+  try {
+    const response = await requestAPI.get(
+      API_ROUTES_STUDENT.FETCH_DATA_HISTORY_ATTENDANCE + '/export-pdf',
+      {
+        params: { factoryName, factoryId },
+        responseType: 'blob',
+      }
+    )
+    const url = window.URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }))
+    const link = document.createElement('a')
+    link.href = url
+    link.setAttribute('download', `lich-su-diem-danh-${factoryName}.pdf`)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  } catch (error) {
+    message.error('Lỗi khi xuất PDF: ' + (error.response?.data?.message || error.message))
+  } finally {
+    loadingExport[factoryId] = false
+  }
 }
 
 onMounted(() => {
@@ -223,6 +248,15 @@ onMounted(() => {
             <UnorderedListOutlined />
             Danh sách điểm danh nhóm: {{ getFactoryName(factoryId) }}
           </template>
+          <template #extra>
+            <a-button
+              type="primary"
+              :loading="loadingExport[factoryId]"
+              @click="exportPDF(factoryId, getFactoryName(factoryId))"
+            >
+              Xuất PDF
+            </a-button>
+          </template>
           <a-table
             :dataSource="records"
             :columns="columns"
@@ -250,7 +284,7 @@ onMounted(() => {
                   </a-tag>
                 </template>
                 <template v-else-if="column.dataIndex === 'planDateDescription'">
-                  <a-typography-link @click="handleShowDescription(record.description)"
+                  <a-typography-link @click="handleShowDescription(record.planDateDescription)"
                     >Chi tiết</a-typography-link
                   >
                 </template>
@@ -260,28 +294,21 @@ onMounted(() => {
                       record.statusAttendance === 'CHUA_DIEN_RA'
                         ? 'warning'
                         : record.statusAttendance === 'CO_MAT'
-                          ? 'success'
-                          : 'error'
+                        ? 'success'
+                        : 'error'
                     "
-                    :text="record.statusAttendance"
+                    :text="
+                      record.statusAttendance === 'CHUA_DIEN_RA'
+                        ? 'Chưa diễn ra'
+                        : record.statusAttendance === 'CO_MAT'
+                        ? 'Có mặt'
+                        : 'Vắng mặt'
+                    "
                   />
                 </template>
                 <template v-else>
                   {{ record[column.dataIndex] }}
                 </template>
-              </template>
-              <template v-else-if="column.key === 'actions'">
-                <a-space>
-                  <a-tooltip title="Xem chi tiết">
-                    <a-button
-                      type="text"
-                      @click="handleDetail(record)"
-                      class="btn-outline-secondary"
-                    >
-                      <EyeFilled />
-                    </a-button>
-                  </a-tooltip>
-                </a-space>
               </template>
             </template>
           </a-table>
