@@ -299,7 +299,7 @@ onMounted(() => {
           <template #title> <FilterFilled /> Bộ lọc </template>
           <div class="row g-2">
             <div class="col-xxl-6 col-md-8 col-sm-8">
-              <div class="label-title">Tìm kiếm tên:</div>
+              <div class="label-title">Từ khoá:</div>
               <a-input
                 v-model:value="filter.name"
                 placeholder="Tìm kiếm theo tên"
