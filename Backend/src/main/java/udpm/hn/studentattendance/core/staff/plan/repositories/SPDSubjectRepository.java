@@ -11,16 +11,19 @@ import java.util.List;
 public interface SPDSubjectRepository extends SubjectRepository {
 
     @Query(value = """
-        SELECT DISTINCT 
+        SELECT
             s.id,
             s.name,
             s.code
-        FROM subject s 
-        JOIN subject_facility sf ON sf.id_subject = s.id
+        FROM subject s
         WHERE
             s.status = 1 AND
-            sf.status = 1 AND
-            sf.id_facility = :idFacility
+            EXISTS (
+                SELECT 1 FROM subject_facility sf
+                WHERE sf.id_subject = s.id
+                  AND sf.status = 1
+                  AND sf.id_facility = :idFacility
+            )
         ORDER BY s.name ASC
     """, nativeQuery = true)
     List<SPDSubjectResponse> getAllByFacility(String idFacility);

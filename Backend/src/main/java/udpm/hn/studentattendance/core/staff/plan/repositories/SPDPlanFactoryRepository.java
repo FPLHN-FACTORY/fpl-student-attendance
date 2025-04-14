@@ -108,10 +108,11 @@ public interface SPDPlanFactoryRepository extends PlanFactoryRepository {
         JOIN project p ON p.id = f.id_project
         LEFT JOIN user_staff us ON us.id = f.id_user_staff
         LEFT JOIN plan_factory pf ON pf.id_factory = f.id AND pf.status = 1
+        LEFT JOIN plan pl ON pf.id_plan = pl.id
         WHERE 
             f.status = 1 AND
             p.status = 1 AND
-            pf.id IS NULL AND
+            (pf.id IS NULL OR pl.status = 0) AND
             p.id = :idProject
         ORDER BY f.created_at DESC 
     """, nativeQuery = true)

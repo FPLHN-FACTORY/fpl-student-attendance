@@ -180,7 +180,16 @@ const handleUpdateInfo = async () => {
   faceIDStore.init(video, canvas, (descriptor) => {
     isShowCamera.value = false
     formData.faceEmbedding = JSON.stringify(Array.from(descriptor))
-    handleSubmitUpdateInfo()
+    Modal.confirm({
+      title: 'Xác nhận cập nhật dữ liệu khuôn mặt',
+      icon: createVNode(ExclamationCircleOutlined),
+      content: 'Không thể hoàn tác. Bạn thực sự muốn cập nhật khuôn mặt này?',
+      okText: 'Tiếp tục',
+      cancelText: 'Huỷ bỏ',
+      onOk: () => {
+        handleSubmitUpdateInfo()
+      },
+    })
   })
   await nextTick()
   await faceIDStore.startVideo()
@@ -233,7 +242,7 @@ watch(
   () => {
     handleSubmitFilter()
   },
-  { deep: true }
+  { deep: true },
 )
 </script>
 
@@ -383,7 +392,7 @@ watch(
                 {{
                   `${dayOfWeek(record.date)} - ${formatDate(
                     record.date,
-                    DEFAULT_DATE_FORMAT + ' HH:mm'
+                    DEFAULT_DATE_FORMAT + ' HH:mm',
                   )}`
                 }}
               </template>
