@@ -137,7 +137,8 @@ public interface SPDPlanRepository extends PlanRepository {
         DELETE ad
         FROM attendance ad
         JOIN plan_date pd ON pd.id = ad.id_plan_date
-        JOIN plan p ON p.id = pd.id_plan
+        JOIN plan_factory pf ON pf.id = pd.id_plan_factory
+        JOIN plan p ON p.id = pf.id_plan
         WHERE
             p.id = :idPlan AND
             p.status = 0
@@ -161,7 +162,8 @@ public interface SPDPlanRepository extends PlanRepository {
     @Query(value = """
         DELETE pd
         FROM plan_date pd
-        JOIN plan p ON p.id = pd.id_plan
+        JOIN plan_factory pf ON pd.id_plan_factory = pf.id
+        JOIN plan p ON p.id = pf.id_plan
         WHERE
             p.id = :idPlan AND
             p.status = 0

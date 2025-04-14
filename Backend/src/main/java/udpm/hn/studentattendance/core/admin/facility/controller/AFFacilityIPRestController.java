@@ -29,24 +29,24 @@ public class AFFacilityIPRestController {
         return afFacilityIPService.getAllList(request);
     }
 
-    @PostMapping("/{idFacility}/add")
+    @PostMapping("/{idFacility}/add-ip")
     public ResponseEntity<?> addIP(@Valid @RequestBody AFAddOrUpdateFacilityIPRequest request, @PathVariable String idFacility) {
         request.setIdFacility(idFacility);
         return afFacilityIPService.addIP(request);
     }
 
-    @PutMapping("/{idFacility}/update")
+    @PutMapping("/{idFacility}/update-ip")
     public ResponseEntity<?> updateIP(@Valid @RequestBody AFAddOrUpdateFacilityIPRequest request, @PathVariable String idFacility) {
         request.setIdFacility(idFacility);
         return afFacilityIPService.updateIP(request);
     }
 
-    @DeleteMapping("/{idFacilityIP}/delete")
+    @DeleteMapping("/{idFacilityIP}/delete-ip")
     public ResponseEntity<?> deleteIP(@PathVariable String idFacilityIP) {
         return afFacilityIPService.deleteIP(idFacilityIP);
     }
 
-    @PutMapping("/{idFacilityIP}/change-status")
+    @PutMapping("/{idFacilityIP}/change-status-ip")
     public ResponseEntity<?> changeStatus(@PathVariable String idFacilityIP) {
         return afFacilityIPService.changeStatus(idFacilityIP);
     }

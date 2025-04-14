@@ -1,22 +1,22 @@
 <script setup>
-import { ref, onMounted, watch, reactive, h, computed } from 'vue'
+import { ref, onMounted, watch, reactive, h } from 'vue'
 import {
   PlusOutlined,
   FilterFilled,
   UnorderedListOutlined,
-  SearchOutlined,
   EditFilled,
   DeleteFilled,
 } from '@ant-design/icons-vue'
 import { message, Modal } from 'ant-design-vue'
 import requestAPI from '@/services/requestApiService'
-import { DEFAULT_PAGINATION, STATUS_FACILITY_IP, TYPE_FACILITY_IP } from '@/constants'
+import { DEFAULT_PAGINATION, SHIFT, STATUS_FACILITY_IP } from '@/constants'
 import { API_ROUTES_ADMIN } from '@/constants/adminConstant'
 import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
 import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
 import { ROUTE_NAMES } from '@/router/adminRoute'
 import useLoadingStore from '@/stores/useLoadingStore'
 import { useRoute, useRouter } from 'vue-router'
+import dayjs from 'dayjs'
 
 const route = useRoute()
 const router = useRouter()
@@ -40,8 +40,9 @@ const lstData = ref([])
 
 const columns = ref([
   { title: '#', dataIndex: 'orderNumber', key: 'orderNumber', width: 50 },
-  { title: 'Kiểu IP', dataIndex: 'type', key: 'type' },
-  { title: 'IP/Dải IP', dataIndex: 'ip', key: 'ip' },
+  { title: 'Ca học', dataIndex: 'shift', key: 'shift' },
+  { title: 'Thời gian bắt đầu', dataIndex: 'startTime', key: 'startTime', minWidth: 120 },
+  { title: 'Thời gian kết thúc', dataIndex: 'endTime', key: 'endTime', minWidth: 120 },
   { title: 'Trạng thái', dataIndex: 'status', key: 'status' },
   { title: '', key: 'actions' },
 ])
@@ -60,9 +61,8 @@ const breadcrumb = ref([
 const pagination = ref({ ...DEFAULT_PAGINATION })
 
 const dataFilter = reactive({
-  keyword: null,
+  shift: null,
   status: null,
-  type: null,
 })
 
 const formRefAddOrUpdate = ref(null)
@@ -70,13 +70,13 @@ const formRefAddOrUpdate = ref(null)
 const formData = reactive({
   id: null,
   idFacility: null,
-  ip: null,
-  type: null,
+  shift: null,
+  timeRange: [],
 })
 
 const formRules = reactive({
-  ip: [{ required: true, message: 'Vui lòng nhập ip hoặc dải ip!' }],
-  type: [{ required: true, message: 'Vui lòng chọn kiểu ip!' }],
+  shift: [{ required: true, message: 'Vui lòng chọn 1 ca học!' }],
+  timeRange: [{ required: true, message: 'Vui lòng chọn thời gian ca học!' }],
 })
 
 const fetchDataDetail = () => {
@@ -92,8 +92,8 @@ const fetchDataDetail = () => {
         breadcrumbName: _detail.value.facilityName,
       })
       breadcrumbStore.push({
-        name: ROUTE_NAMES.MANAGEMENT_FACILITY_IP,
-        breadcrumbName: 'Quản lý IP',
+        name: ROUTE_NAMES.MANAGEMENT_FACILITY_SHIFT,
+        breadcrumbName: 'Quản lý ca học',
       })
       fetchDataList()
     })
@@ -113,7 +113,7 @@ const fetchDataList = () => {
 
   isLoading.value = true
   requestAPI
-    .get(`${API_ROUTES_ADMIN.FETCH_DATA_FACILITY}/${_detail.value.id}/list-ip`, {
+    .get(`${API_ROUTES_ADMIN.FETCH_DATA_FACILITY}/${_detail.value.id}/list-shift`, {
       params: {
         page: pagination.value.current,
         size: pagination.value.pageSize,
@@ -136,7 +136,7 @@ const fetchDeleteItem = (id) => {
   loadingStore.show()
 
   requestAPI
-    .delete(`${API_ROUTES_ADMIN.FETCH_DATA_FACILITY}/${id}/delete-ip`)
+    .delete(`${API_ROUTES_ADMIN.FETCH_DATA_FACILITY}/${id}/delete-shift`)
     .then(({ data: response }) => {
       message.success(response.message)
       fetchDataList()
@@ -152,8 +152,13 @@ const fetchDeleteItem = (id) => {
 const fetchAddItem = () => {
   modalAddOrUpdate.isLoading = true
   requestAPI
-    .post(`${API_ROUTES_ADMIN.FETCH_DATA_FACILITY}/${_detail.value.id}/add-ip`, {
-      ...formData,
+    .post(`${API_ROUTES_ADMIN.FETCH_DATA_FACILITY}/${_detail.value.id}/add-shift`, {
+      idFacility: formData.idFacility,
+      shift: formData.shift,
+      fromHour: formData.timeRange[0]?.format('HH'),
+      fromMinute: formData.timeRange[0]?.format('mm'),
+      toHour: formData.timeRange[1]?.format('HH'),
+      toMinute: formData.timeRange[1]?.format('mm'),
     })
     .then(({ data: response }) => {
       message.success(response.message)
@@ -171,7 +176,15 @@ const fetchAddItem = () => {
 const fetchUpdateItem = () => {
   modalAddOrUpdate.isLoading = true
   requestAPI
-    .put(`${API_ROUTES_ADMIN.FETCH_DATA_FACILITY}/${_detail.value.id}/update-ip`, formData)
+    .put(`${API_ROUTES_ADMIN.FETCH_DATA_FACILITY}/${_detail.value.id}/update-shift`, {
+      id: formData.id,
+      idFacility: formData.idFacility,
+      shift: formData.shift,
+      fromHour: formData.timeRange[0]?.format('HH'),
+      fromMinute: formData.timeRange[0]?.format('mm'),
+      toHour: formData.timeRange[1]?.format('HH'),
+      toMinute: formData.timeRange[1]?.format('mm'),
+    })
     .then(({ data: response }) => {
       message.success(response.message)
       modalAddOrUpdate.isShow = false
@@ -187,21 +200,20 @@ const fetchUpdateItem = () => {
 
 const fetchSubmitChangeStatus = (id) => {
   requestAPI
-    .put(`${API_ROUTES_ADMIN.FETCH_DATA_FACILITY}/${id}/change-status-ip`)
+    .put(`${API_ROUTES_ADMIN.FETCH_DATA_FACILITY}/${id}/change-status-shift`)
     .then(({ data: response }) => {
       message.success(response.message)
       fetchDataList()
     })
     .catch((error) => {
-      message.error(error?.response?.data?.message || 'Không thể thay đổi trạng thái IP')
+      message.error(error?.response?.data?.message || 'Không thể thay đổi trạng thái ca học')
     })
 }
 
 const handleClearFilter = () => {
   Object.assign(dataFilter, {
-    keyword: null,
+    shift: null,
     status: null,
-    type: null,
   })
   fetchDataList()
 }
@@ -225,14 +237,18 @@ const handleShowAdd = () => {
   modalAddOrUpdate.isLoading = false
   modalAddOrUpdate.title = h('span', [
     h(PlusOutlined, { class: 'me-2 text-primary' }),
-    'Thêm IP mới',
+    'Thêm ca học mới',
   ])
   modalAddOrUpdate.okText = 'Thêm ngay'
   modalAddOrUpdate.onOk = () => handleSubmitAdd()
 
   formData.id = null
-  formData.ip = null
-  formData.type = null
+  formData.shift = Object.keys(SHIFT)[0]
+  formData.fromHour = null
+  formData.fromMinute = null
+  formData.toHour = null
+  formData.toMinute = null
+  formData.timeRange = []
 }
 
 const handleShowUpdate = (item) => {
@@ -243,14 +259,21 @@ const handleShowUpdate = (item) => {
   modalAddOrUpdate.isLoading = false
   modalAddOrUpdate.title = h('span', [
     h(EditFilled, { class: 'me-2 text-primary' }),
-    'Chỉnh sửa IP',
+    'Chỉnh sửa ca học',
   ])
   modalAddOrUpdate.okText = 'Lưu lại'
   modalAddOrUpdate.onOk = () => handleSubmitUpdate()
 
   formData.id = item.id
-  formData.ip = item.ip
-  formData.type = String(item.type)
+  formData.shift = item.shift
+  formData.fromHour = item.fromHour
+  formData.fromMinute = item.fromMinute
+  formData.toHour = item.toHour
+  formData.toMinute = item.toMinute
+  formData.timeRange = [
+    dayjs(item.fromHour + ':' + item.fromMinute, 'HH:mm'),
+    dayjs(item.toHour + ':' + item.toMinute, 'HH:mm'),
+  ]
 }
 
 const handleSubmitAdd = async () => {
@@ -259,7 +282,7 @@ const handleSubmitAdd = async () => {
     Modal.confirm({
       title: `Xác nhận thêm mới`,
       type: 'info',
-      content: `Bạn có chắc muốn thêm mới IP này?`,
+      content: `Bạn có chắc muốn thêm mới ca học này?`,
       okText: 'Tiếp tục',
       cancelText: 'Hủy bỏ',
       onOk() {
@@ -289,7 +312,7 @@ const handleChangeStatus = (id) => {
   Modal.confirm({
     title: `Xác nhận thay đổi trạng thái`,
     type: 'info',
-    content: `Bạn có chắc muốn thay đổi trạng thái IP này?`,
+    content: `Bạn có chắc muốn thay đổi trạng thái ca học này?`,
     okText: 'Tiếp tục',
     cancelText: 'Hủy bỏ',
     onOk() {
@@ -300,9 +323,9 @@ const handleChangeStatus = (id) => {
 
 const handleShowAlertDelete = (item) => {
   Modal.confirm({
-    title: `Xoá IP: ${item.ip}`,
+    title: `Xoá ca học: ${item.shift}`,
     type: 'error',
-    content: `Bạn có chắc muốn xoá IP này?`,
+    content: `Bạn có chắc muốn xoá ca học này?`,
     okText: 'Tiếp tục',
     cancelText: 'Hủy bỏ',
     okButtonProps: {
@@ -344,24 +367,31 @@ watch(
       autocomplete="off"
       :model="formData"
     >
-      <a-form-item class="col-sm-4" label="Kiểu IP" name="type" :rules="formRules.type">
+      <a-form-item class="col-sm-4" label="Ca học" name="shift" :rules="formRules.shift">
         <a-select
           class="w-100"
-          v-model:value="formData.type"
+          v-model:value="formData.shift"
           :disabled="modalAddOrUpdate.isLoading"
         >
-          <a-select-option v-for="(name, id) in TYPE_FACILITY_IP" :key="id" :value="id">
+          <a-select-option v-for="(name, id) in SHIFT" :key="id" :value="id">
             {{ name }}
           </a-select-option>
         </a-select>
       </a-form-item>
 
-      <a-form-item class="col-sm-8" label="IP/Dải IP" name="ip" :rules="formRules.ip">
-        <a-input
+      <a-form-item
+        class="col-sm-8"
+        label="Thời gian ca học"
+        name="timeRange"
+        :rules="formRules.timeRange"
+      >
+        <a-range-picker
           class="w-100"
-          v-model:value="formData.ip"
-          :disabled="modalAddOrUpdate.isLoading"
-          allowClear
+          v-model:value="formData.timeRange"
+          :show-time="{ format: 'HH:mm' }"
+          format="HH:mm"
+          picker="time"
+          :placeholder="['Thời gian bắt đầu', 'Thời gian kết thúc']"
         />
       </a-form-item>
     </a-form>
@@ -374,15 +404,22 @@ watch(
         <a-card :bordered="false" class="cart">
           <template #title> <FilterFilled /> Bộ lọc </template>
           <div class="row g-2">
-            <div class="col-lg-6 col-md-12 col-sm-12">
-              <div class="label-title">Từ khoá:</div>
-              <a-input v-model:value="dataFilter.keyword" placeholder="Tìm theo IP..." allowClear>
-                <template #prefix>
-                  <SearchOutlined />
-                </template>
-              </a-input>
+            <div class="col-lg-4 col-md-6 col-sm-6">
+              <div class="label-title">Ca học:</div>
+              <a-select
+                v-model:value="dataFilter.shift"
+                class="w-100"
+                :dropdownMatchSelectWidth="false"
+                placeholder="-- Tất cả ca học --"
+                allowClear
+              >
+                <a-select-option :value="null">-- Tất cả ca học --</a-select-option>
+                <a-select-option v-for="(name, id) in SHIFT" :key="id" :value="id">
+                  {{ name }}
+                </a-select-option>
+              </a-select>
             </div>
-            <div class="col-lg-3 col-md-6 col-sm-6">
+            <div class="col-lg-4 col-md-6 col-sm-6">
               <div class="label-title">Trạng thái:</div>
               <a-select
                 v-model:value="dataFilter.status"
@@ -397,21 +434,7 @@ watch(
                 </a-select-option>
               </a-select>
             </div>
-            <div class="col-lg-3 col-md-6 col-sm-6">
-              <div class="label-title">Kiểu IP:</div>
-              <a-select
-                v-model:value="dataFilter.type"
-                class="w-100"
-                :dropdownMatchSelectWidth="false"
-                placeholder="-- Tất cả kiểu IP --"
-                allowClear
-              >
-                <a-select-option :value="null">-- Tất cả kiểu IP --</a-select-option>
-                <a-select-option v-for="(name, id) in TYPE_FACILITY_IP" :key="id" :value="id">
-                  {{ name }}
-                </a-select-option>
-              </a-select>
-            </div>
+
             <div class="col-12">
               <div class="d-flex justify-content-center flex-wrap gap-2 mt-3">
                 <a-button class="btn-light" @click="handleSubmitFilter">
@@ -426,10 +449,10 @@ watch(
 
       <div class="col-12">
         <a-card :bordered="false" class="cart">
-          <template #title> <UnorderedListOutlined /> Danh sách IP cho phép </template>
+          <template #title> <UnorderedListOutlined /> Danh sách ca học </template>
           <div class="d-flex justify-content-end mb-3 flex-wrap gap-3">
             <a-button type="primary" @click="handleShowAdd">
-              <PlusOutlined /> Thêm IP mới
+              <PlusOutlined /> Thêm ca học mới
             </a-button>
           </div>
 
@@ -445,10 +468,8 @@ watch(
               @change="handleTableChange"
             >
               <template #bodyCell="{ column, record }">
-                <template v-if="column.dataIndex === 'type'">
-                  <a-tag color="purple">
-                    {{ TYPE_FACILITY_IP[record.type] }}
-                  </a-tag>
+                <template v-if="column.dataIndex === 'shift'">
+                  <a-tag color="purple"> Ca {{ record.shift }} </a-tag>
                 </template>
                 <template v-if="column.dataIndex === 'status'">
                   <a-switch
@@ -461,12 +482,12 @@ watch(
                   }}</a-tag>
                 </template>
                 <template v-if="column.key === 'actions'">
-                  <a-tooltip title="Chỉnh sửa IP">
+                  <a-tooltip title="Chỉnh sửa ca học">
                     <a-button class="btn-outline-info border-0" @click="handleShowUpdate(record)">
                       <EditFilled />
                     </a-button>
                   </a-tooltip>
-                  <a-tooltip title="Xoá IP">
+                  <a-tooltip title="Xoá ca học">
                     <a-button
                       class="btn-outline-danger border-0 ms-2"
                       @click="handleShowAlertDelete(record)"

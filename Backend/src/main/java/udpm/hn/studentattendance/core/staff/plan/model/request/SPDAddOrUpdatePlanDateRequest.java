@@ -9,6 +9,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import udpm.hn.studentattendance.infrastructure.common.PageableRequest;
+import udpm.hn.studentattendance.infrastructure.constants.StatusType;
 
 @Getter
 @Setter
@@ -25,6 +26,10 @@ public class SPDAddOrUpdatePlanDateRequest {
     private Long startDate;
 
     private String link;
+
+    private Integer requiredIp = StatusType.ENABLE.getKey();
+
+    private Integer requiredLocation = StatusType.ENABLE.getKey();
 
     @Min(value = 1, message = "Ca học sớm nhất là ca 1")
     @Max(value = 6, message = "Ca học muộn nhất là ca 6")

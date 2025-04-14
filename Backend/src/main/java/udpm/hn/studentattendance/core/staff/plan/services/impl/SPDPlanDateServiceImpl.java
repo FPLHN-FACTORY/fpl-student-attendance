@@ -11,9 +11,11 @@ import udpm.hn.studentattendance.core.staff.plan.model.request.SPDDeletePlanDate
 import udpm.hn.studentattendance.core.staff.plan.model.request.SPDFilterPlanDateRequest;
 import udpm.hn.studentattendance.core.staff.plan.model.response.SPDPlanDateResponse;
 import udpm.hn.studentattendance.core.staff.plan.model.response.SPDPlanFactoryResponse;
+import udpm.hn.studentattendance.core.staff.plan.repositories.SPDFacilityShiftRepository;
 import udpm.hn.studentattendance.core.staff.plan.repositories.SPDPlanDateRepository;
 import udpm.hn.studentattendance.core.staff.plan.repositories.SPDPlanFactoryRepository;
 import udpm.hn.studentattendance.core.staff.plan.services.SPDPlanDateService;
+import udpm.hn.studentattendance.entities.FacilityShift;
 import udpm.hn.studentattendance.entities.Factory;
 import udpm.hn.studentattendance.entities.Plan;
 import udpm.hn.studentattendance.entities.PlanDate;
@@ -21,12 +23,14 @@ import udpm.hn.studentattendance.entities.PlanFactory;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
 import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.helpers.SessionHelper;
+import udpm.hn.studentattendance.helpers.ShiftHelper;
 import udpm.hn.studentattendance.helpers.ValidateHelper;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
-import udpm.hn.studentattendance.infrastructure.constants.ShiftConstant;
 import udpm.hn.studentattendance.infrastructure.constants.ShiftType;
+import udpm.hn.studentattendance.infrastructure.constants.StatusType;
 import udpm.hn.studentattendance.utils.DateTimeUtils;
 
+import java.time.LocalTime;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -38,6 +42,8 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
     private final SPDPlanDateRepository spdPlanDateRepository;
 
     private final SPDPlanFactoryRepository spdPlanFactoryRepository;
+
+    private final SPDFacilityShiftRepository spdFacilityShiftRepository;
 
     private final SessionHelper sessionHelper;
 
@@ -99,11 +105,9 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
             return RouterHelper.responseError("Không thể cập nhật kế hoạch đã diễn ra");
         }
 
-        ShiftConstant shift;
-        try {
-            shift = ShiftConstant.valueOf("CA" + request.getShift());
-        } catch (Exception e) {
-            return RouterHelper.responseError("Ca học không hợp lệ");
+        FacilityShift shift = spdFacilityShiftRepository.findByShiftAndFacility_Id(request.getShift(), sessionHelper.getFacilityId()).orElse(null);
+        if (shift == null) {
+            return RouterHelper.responseError("Ca học không tồn tại");
         }
 
         ShiftType type;
@@ -113,7 +117,7 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
             return RouterHelper.responseError("Hình thức học không hợp lệ");
         }
 
-        Long startDate = ShiftConstant.getShiftTimeStart(request.getStartDate(), shift);
+        Long startDate = ShiftHelper.getShiftTimeStart(request.getStartDate(), LocalTime.of(shift.getFromHour(), shift.getFromMinute()));
 
         if (startDate < DateTimeUtils.getCurrentTimeMillis()) {
             return RouterHelper.responseError("Thời gian diễn ra phải lớn hơn hoặc bằng ngày hiện tại");
@@ -137,12 +141,20 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
             return RouterHelper.responseError("Link học online không hợp lệ");
         }
 
+        StatusType requiredIp = StatusType.fromKey(request.getRequiredIp());
+        StatusType requiredLocation = StatusType.fromKey(request.getRequiredLocation());
+        if (requiredIp == null || requiredLocation == null) {
+            return RouterHelper.responseError("Điều kiện điểm danh không hợp lệ");
+        }
+
         String link = StringUtils.hasText(request.getLink()) ? request.getLink().trim() : null;
 
         planDate.setStartDate(startDate);
         planDate.setShift(request.getShift());
         planDate.setType(type);
         planDate.setLink(link);
+        planDate.setRequiredIp(requiredIp);
+        planDate.setRequiredLocation(requiredLocation);
         planDate.setDescription(request.getDescription());
         planDate.setLateArrival(request.getLateArrival());
 
@@ -173,11 +185,9 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
             return RouterHelper.responseError("Không tìm thấy nhóm xưởng");
         }
 
-        ShiftConstant shift;
-        try {
-            shift = ShiftConstant.valueOf("CA" + request.getShift());
-        } catch (Exception e) {
-            return RouterHelper.responseError("Ca học không hợp lệ");
+        FacilityShift shift = spdFacilityShiftRepository.findByShiftAndFacility_Id(request.getShift(), sessionHelper.getFacilityId()).orElse(null);
+        if (shift == null) {
+            return RouterHelper.responseError("Ca học không tồn tại");
         }
 
         ShiftType type;
@@ -188,7 +198,7 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
         }
 
 
-        Long startDate = ShiftConstant.getShiftTimeStart(request.getStartDate(), shift);
+        Long startDate = ShiftHelper.getShiftTimeStart(request.getStartDate(), LocalTime.of(shift.getFromHour(), shift.getFromMinute()));
 
         if (startDate < DateTimeUtils.getCurrentTimeMillis()) {
             return RouterHelper.responseError("Thời gian diễn ra phải lớn hơn hoặc bằng ngày hiện tại");
@@ -210,6 +220,12 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
             return RouterHelper.responseError("Link học online không hợp lệ");
         }
 
+        StatusType requiredIp = StatusType.fromKey(request.getRequiredIp());
+        StatusType requiredLocation = StatusType.fromKey(request.getRequiredLocation());
+        if (requiredIp == null || requiredLocation == null) {
+            return RouterHelper.responseError("Điều kiện điểm danh không hợp lệ");
+        }
+
         String link = StringUtils.hasText(request.getLink()) ? request.getLink().trim() : null;
 
         PlanDate planDate = new PlanDate();
@@ -218,6 +234,8 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
         planDate.setShift(request.getShift());
         planDate.setType(type);
         planDate.setLink(link);
+        planDate.setRequiredIp(requiredIp);
+        planDate.setRequiredLocation(requiredLocation);
         planDate.setDescription(request.getDescription());
         planDate.setLateArrival(request.getLateArrival());
 

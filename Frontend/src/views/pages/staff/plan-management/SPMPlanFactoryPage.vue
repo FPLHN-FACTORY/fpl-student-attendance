@@ -10,7 +10,7 @@ import {
 } from '@ant-design/icons-vue'
 import { message, Modal } from 'ant-design-vue'
 import requestAPI from '@/services/requestApiService'
-import { DEFAULT_PAGINATION, TYPE_SHIFT } from '@/constants'
+import { DEFAULT_PAGINATION, STATUS_TYPE, TYPE_SHIFT } from '@/constants'
 import { API_ROUTES_STAFF } from '@/constants/staffConstant'
 import { useRoute, useRouter } from 'vue-router'
 import { ROUTE_NAMES } from '@/router/staffRoute'
@@ -45,6 +45,7 @@ const modalAdd = reactive({
 
 const lstData = ref([])
 const lstDataAdd = ref([])
+const lstShift = ref([])
 
 const formRefAdd = ref(null)
 
@@ -81,8 +82,10 @@ const formDataAdd = reactive({
   idFactory: null,
   type: Object.keys(TYPE_SHIFT)[0],
   days: [],
-  shift: Object.keys(SHIFT)[0],
+  shift: null,
   link: null,
+  requiredLocation: STATUS_TYPE.ENABLE,
+  requiredIp: STATUS_TYPE.ENABLE,
   lateArrival: DEFAULT_LATE_ARRIVAL,
 })
 
@@ -140,6 +143,17 @@ const fetchDataList = () => {
     })
     .finally(() => {
       isLoading.value = false
+    })
+}
+
+const fetchDataShift = () => {
+  requestAPI
+    .get(`${API_ROUTES_STAFF.FETCH_DATA_PLAN_FACTORY}/list/shift`)
+    .then(({ data: response }) => {
+      lstShift.value = response.data
+    })
+    .catch((error) => {
+      message.error(error?.response?.data?.message || 'Lỗi khi lấy dữ liệu ca học')
     })
 }
 
@@ -245,6 +259,9 @@ const handleShowDetail = (id) => {
 }
 
 const handleShowModalAdd = () => {
+  if (formRefAdd.value) {
+    formRefAdd.value.clearValidate()
+  }
   fetchDataFactoryList()
 
   modalAdd.isShow = true
@@ -254,8 +271,11 @@ const handleShowModalAdd = () => {
   formDataAdd.idFactory = null
   formDataAdd.type = Object.keys(TYPE_SHIFT)[0]
   formDataAdd.lateArrival = DEFAULT_LATE_ARRIVAL
-  formDataAdd.shift = Object.keys(SHIFT)[0]
+  formDataAdd.shift = null
   formDataAdd.days = []
+  formDataAdd.link = null
+  formDataAdd.requiredLocation = STATUS_TYPE.ENABLE
+  formDataAdd.requiredIp = STATUS_TYPE.ENABLE
 }
 
 const handleChangeStatus = (id) => {
@@ -288,6 +308,7 @@ onMounted(() => {
   breadcrumbStore.setRoutes(breadcrumb.value)
   fetchDataDetail()
   fetchDataList()
+  fetchDataShift()
 })
 
 watch(
@@ -362,8 +383,8 @@ watch(
       </a-form-item>
       <a-form-item class="col-sm-3" label="Ca học" name="shift" :rules="formRules.shift">
         <a-select class="w-100" v-model:value="formDataAdd.shift" :disabled="modalAdd.isLoading">
-          <a-select-option v-for="(name, id) in SHIFT" :key="id" :value="id">
-            {{ name }}
+          <a-select-option v-for="o in lstShift" :key="o.id" :value="o.shift">
+            {{ SHIFT[o.shift] }}
           </a-select-option>
         </a-select>
       </a-form-item>
@@ -391,6 +412,38 @@ watch(
           :disabled="modalAdd.isLoading"
           allowClear
         />
+      </a-form-item>
+      <a-form-item class="col-sm-12" label="Điều kiện điểm danh">
+        <div class="mt-2">
+          <a-switch
+            class="me-2"
+            :checked="formDataAdd.requiredIp === STATUS_TYPE.ENABLE"
+            @change="
+              formDataAdd.requiredIp =
+                formDataAdd.requiredIp === STATUS_TYPE.ENABLE
+                  ? STATUS_TYPE.DISABLE
+                  : STATUS_TYPE.ENABLE
+            "
+          />
+          <span :class="{ disabled: formDataAdd.requiredIp !== STATUS_TYPE.ENABLE }"
+            >Phải kết nối mạng trường</span
+          >
+        </div>
+        <div class="mt-3">
+          <a-switch
+            class="me-2"
+            :checked="formDataAdd.requiredLocation === STATUS_TYPE.ENABLE"
+            @change="
+              formDataAdd.requiredLocation =
+                formDataAdd.requiredLocation === STATUS_TYPE.ENABLE
+                  ? STATUS_TYPE.DISABLE
+                  : STATUS_TYPE.ENABLE
+            "
+          />
+          <span :class="{ disabled: formDataAdd.requiredLocation !== STATUS_TYPE.ENABLE }"
+            >Phải ở trong địa điểm cơ sở</span
+          >
+        </div>
       </a-form-item>
     </a-form>
   </a-modal>

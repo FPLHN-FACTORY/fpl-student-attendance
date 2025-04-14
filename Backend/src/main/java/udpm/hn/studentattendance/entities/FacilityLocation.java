@@ -11,11 +11,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.DynamicUpdate;
-import org.hibernate.annotations.OnDelete;
-import org.hibernate.annotations.OnDeleteAction;
 import udpm.hn.studentattendance.entities.base.PrimaryEntity;
 import udpm.hn.studentattendance.infrastructure.constants.EntityProperties;
-import udpm.hn.studentattendance.infrastructure.constants.AttendanceStatus;
 
 import java.io.Serializable;
 
@@ -24,20 +21,24 @@ import java.io.Serializable;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-@Table(name = "attendance")
+@Table(name = "facility_location")
 @DynamicUpdate
-public class Attendance extends PrimaryEntity implements Serializable {
+public class FacilityLocation extends PrimaryEntity implements Serializable {
+
+    @Column(name = "name", length = EntityProperties.LENGTH_NAME)
+    private String name;
+
+    @Column(name = "latitude")
+    private Double latitude;
+
+    @Column(name = "longitude")
+    private Double longitude;
+
+    @Column(name = "radius")
+    private Integer radius;
 
     @ManyToOne
-    @JoinColumn(name = "id_plan_date")
-    @OnDelete(action = OnDeleteAction.CASCADE)
-    private PlanDate planDate;
-
-    @ManyToOne
-    @JoinColumn(name = "id_user_student")
-    private UserStudent userStudent;
-
-    @Column(name = "attendance_status")
-    private AttendanceStatus attendanceStatus = AttendanceStatus.NOTCHECKIN;
+    @JoinColumn(name = "id_facility", nullable = false)
+    private Facility facility;
 
 }

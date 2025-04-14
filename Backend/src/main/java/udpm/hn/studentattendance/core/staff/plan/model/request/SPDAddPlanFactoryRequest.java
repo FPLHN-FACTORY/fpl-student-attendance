@@ -6,6 +6,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import udpm.hn.studentattendance.infrastructure.constants.StatusType;
 
 import java.util.List;
 
@@ -24,6 +25,10 @@ public class SPDAddPlanFactoryRequest {
     private Integer type;
 
     private String link;
+
+    private Integer requiredIp = StatusType.ENABLE.getKey();
+
+    private Integer requiredLocation = StatusType.ENABLE.getKey();
 
     @Min(value = 1, message = "Ca học sớm nhất là ca 1")
     @Max(value = 6, message = "Ca học muộn nhất là ca 6")

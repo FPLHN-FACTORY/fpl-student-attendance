@@ -28,7 +28,7 @@ public interface AFFacilityIPRepository extends FacilityIPRepository {
         ORDER BY fi.status DESC, fi.created_at DESC
     """, countQuery = """
         SELECT 
-            COUNT(DISTINCT pl.id)
+            COUNT(DISTINCT fi.id)
         FROM facility_ip fi
         JOIN facility f ON fi.id_facility = f.id
         WHERE 
@@ -45,10 +45,11 @@ public interface AFFacilityIPRepository extends FacilityIPRepository {
         FROM facility_ip
         WHERE 
             status = 1 AND
+            id_facility = :idFacility AND
             ip = :ip AND
             type = :type AND
             (:idFacilityIP IS NULL OR id != :idFacilityIP)
     """, nativeQuery = true)
-    boolean isExistsIP(String ip, int type, String idFacilityIP);
+    boolean isExistsIP(String ip, int type, String idFacility, String idFacilityIP);
 
 }

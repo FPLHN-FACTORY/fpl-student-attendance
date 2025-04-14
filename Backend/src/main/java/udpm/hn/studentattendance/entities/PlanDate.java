@@ -11,9 +11,12 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.DynamicUpdate;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 import udpm.hn.studentattendance.entities.base.PrimaryEntity;
 import udpm.hn.studentattendance.infrastructure.constants.EntityProperties;
 import udpm.hn.studentattendance.infrastructure.constants.ShiftType;
+import udpm.hn.studentattendance.infrastructure.constants.StatusType;
 
 import java.io.Serializable;
 
@@ -44,8 +47,15 @@ public class PlanDate extends PrimaryEntity implements Serializable {
     @Column(name = "type")
     private ShiftType type = ShiftType.OFFLINE;
 
+    @Column(name = "required_location")
+    private StatusType requiredLocation = StatusType.ENABLE;
+
+    @Column(name = "required_ip")
+    private StatusType requiredIp = StatusType.ENABLE;
+
     @ManyToOne
     @JoinColumn(name = "id_plan_factory")
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private PlanFactory planFactory;
 
 }
