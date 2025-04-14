@@ -17,6 +17,6 @@ public class Staff_ProjectUpdateRequest {
 
     private String idSemester;
 
-    private String idSubject;
+    private String idSubjectFacility;
 
 }

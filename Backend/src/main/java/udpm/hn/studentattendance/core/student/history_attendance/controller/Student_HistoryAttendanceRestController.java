@@ -1,13 +1,29 @@
 package udpm.hn.studentattendance.core.student.history_attendance.controller;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import udpm.hn.studentattendance.core.student.history_attendance.model.request.Student_HistoryAttendanceRequest;
+import udpm.hn.studentattendance.core.student.history_attendance.model.response.Student_HistoryAttendanceResponse;
+import udpm.hn.studentattendance.core.student.history_attendance.repository.Student_HistoryAttendanceExtendRepository;
 import udpm.hn.studentattendance.core.student.history_attendance.service.Student_HistoryAttendanceService;
+import udpm.hn.studentattendance.core.teacher.teaching_schedule.model.request.Teacher_TeachingScheduleRequest;
+import udpm.hn.studentattendance.core.teacher.teaching_schedule.model.response.Teacher_TeachingScheduleResponse;
+import udpm.hn.studentattendance.helpers.SessionHelper;
 import udpm.hn.studentattendance.infrastructure.constants.router.RouteStudentConstant;
+
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -15,19 +31,33 @@ import udpm.hn.studentattendance.infrastructure.constants.router.RouteStudentCon
 public class Student_HistoryAttendanceRestController {
     private final Student_HistoryAttendanceService historyAttendanceService;
 
+    private final Student_HistoryAttendanceExtendRepository attendanceExtendRepository;
+
+    private final SessionHelper sessionHelper;
+
     @GetMapping
-    public ResponseEntity<?> getAllAttendanceHistory(Student_HistoryAttendanceRequest historyAttendanceRequest){
+    public ResponseEntity<?> getAllAttendanceHistory(Student_HistoryAttendanceRequest historyAttendanceRequest) {
         return historyAttendanceService.getAllHistoryAttendanceByStudent(historyAttendanceRequest);
     }
 
     @GetMapping("/semesters")
-    public ResponseEntity<?> getAllSemester(){
+    public ResponseEntity<?> getAllSemester() {
         return historyAttendanceService.getAllSemester();
     }
 
     @GetMapping("/factories")
-    public ResponseEntity<?> getAllFactory(){
+    public ResponseEntity<?> getAllFactory() {
         return historyAttendanceService.getAllFactoryByUserStudent();
+    }
+
+    @GetMapping(value = "/export-pdf", produces = MediaType.APPLICATION_PDF_VALUE)
+    public ResponseEntity<InputStreamResource> exportTeachingSchedule(@RequestParam String factoryName, @RequestParam String factoryId) throws UnsupportedEncodingException, IOException {
+        List<Student_HistoryAttendanceResponse> list = attendanceExtendRepository.getAllHistoryAttendanceByFactory(sessionHelper.getUserId(), factoryId);
+        ByteArrayInputStream byteArrayInputStream = historyAttendanceService.exportHistoryAttendance(list, factoryName);
+        HttpHeaders headers = new HttpHeaders();
+        String fileName = "lịch-sử-điểm-danh.pdf";
+        headers.add("Content-Disposition", "inline; filename*=UTF-8''" + URLEncoder.encode(fileName, StandardCharsets.UTF_8.toString()));
+        return ResponseEntity.ok().headers(headers).contentType(MediaType.APPLICATION_PDF).body(new InputStreamResource(byteArrayInputStream));
     }
 
 }

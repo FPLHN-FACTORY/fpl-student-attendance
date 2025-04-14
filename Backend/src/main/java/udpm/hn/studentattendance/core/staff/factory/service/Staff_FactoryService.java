@@ -22,4 +22,8 @@ public interface Staff_FactoryService {
     ResponseEntity<?> changeStatus(String factoryId);
 
     ResponseEntity<?> detailFactory(String factoryId);
+
+    ResponseEntity<?> existsPlanByFactoryId(String factoryId);
+
+    ResponseEntity<?> changeAllStatusByFactory();
 }

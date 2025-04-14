@@ -110,7 +110,7 @@ public interface SPDPlanRepository extends PlanRepository {
         LEFT JOIN subject_facility sf ON sf.id = p.id_subject_facility
         LEFT JOIN subject s2 ON s2.id = sf.id_subject
         WHERE 
-            (SELECT COUNT(*) FROM plan pl WHERE pl.id_project = p.id AND pl.status = 0) < 1 AND
+            (SELECT COUNT(*) FROM plan pl WHERE pl.id_project = p.id AND pl.status = 1) < 1 AND
             sf.id_facility = :#{#request.idFacility} AND
             (:#{#request.level} IS NULL OR lp.id = :#{#request.level}) AND
             (:#{#request.semester} IS NULL OR s.name = :#{#request.semester}) AND
@@ -137,7 +137,8 @@ public interface SPDPlanRepository extends PlanRepository {
         DELETE ad
         FROM attendance ad
         JOIN plan_date pd ON pd.id = ad.id_plan_date
-        JOIN plan p ON p.id = pd.id_plan
+        JOIN plan_factory pf ON pf.id = pd.id_plan_factory
+        JOIN plan p ON p.id = pf.id_plan
         WHERE
             p.id = :idPlan AND
             p.status = 0
@@ -161,7 +162,8 @@ public interface SPDPlanRepository extends PlanRepository {
     @Query(value = """
         DELETE pd
         FROM plan_date pd
-        JOIN plan p ON p.id = pd.id_plan
+        JOIN plan_factory pf ON pd.id_plan_factory = pf.id
+        JOIN plan p ON p.id = pf.id_plan
         WHERE
             p.id = :idPlan AND
             p.status = 0

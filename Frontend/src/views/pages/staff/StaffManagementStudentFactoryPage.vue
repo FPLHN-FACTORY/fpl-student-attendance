@@ -4,7 +4,7 @@ import { message, Modal } from 'ant-design-vue'
 import router from '@/router'
 import requestAPI from '@/services/requestApiService'
 import { API_ROUTES_STAFF } from '@/constants/staffConstant'
-import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
+import { API_ROUTES_EXCEL, GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
 import {
   PlusOutlined,
   DeleteOutlined,
@@ -13,12 +13,14 @@ import {
   EyeFilled,
   FilterFilled,
   UnorderedListOutlined,
+  UserDeleteOutlined,
 } from '@ant-design/icons-vue'
 import { useRoute } from 'vue-router'
 import { DEFAULT_PAGINATION } from '@/constants'
 import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
 import useLoadingStore from '@/stores/useLoadingStore'
 import { ROUTE_NAMES } from '@/router/staffRoute'
+import ExcelUploadButton from '@/components/excel/ExcelUploadButton.vue'
 
 const route = useRoute()
 const factoryId = route.query.factoryId
@@ -108,9 +110,12 @@ const fetchExistingStudents = () => {
     .get(API_ROUTES_STAFF.FETCH_DATA_STUDENT_FACTORY + '/exist-student/' + factoryId)
     .then((response) => {
       existingStudents.value = response.data.data || []
-      breadcrumbStore.push({
-        breadcrumbName: factoryName,
-      })
+      // Kiểm tra xem breadcrumb đã tồn tại chưa, nếu chưa thì mới push
+      if (!breadcrumbStore.routes.some((item) => item.breadcrumbName === factoryName)) {
+        breadcrumbStore.push({
+          breadcrumbName: factoryName,
+        })
+      }
       if (allStudents.value.length) {
         updateAllStudentsCheckStatus()
       }
@@ -259,7 +264,7 @@ const handleTableChange = (pageInfo) => {
   pagination.pageSize = pageInfo.pageSize
   // Nếu muốn đồng bộ với filter, bạn có thể cập nhật:
   filter.page = pageInfo.current
-  filter.pageSize = pageInfo.pageSize // <-- Đã thêm dòng này
+  filter.pageSize = pageInfo.pageSize
   fetchStudentFactories()
 }
 
@@ -272,22 +277,6 @@ const confirmDeleteStudent = (record) => {
       deleteStudentFactory(record.studentFactoryId)
     },
   })
-}
-
-const deleteStudentFactory = (studentFactoryId) => {
-  loadingStore.show()
-  requestAPI
-    .delete(API_ROUTES_STAFF.FETCH_DATA_STUDENT_FACTORY + '/' + studentFactoryId)
-    .then((response) => {
-      message.success(response.data.message || 'Xóa sinh viên thành công')
-      fetchStudentFactories()
-    })
-    .catch((error) => {
-      message.error(error.response?.data?.message || 'Lỗi khi xóa sinh viên khỏi nhóm xưởng')
-    })
-    .finally(() => {
-      loadingStore.hide()
-    })
 }
 
 /* -------------------- Xử lý đổi trạng thái sinh viên -------------------- */
@@ -317,14 +306,49 @@ const changeStatusStudentFactory = (studentFactoryId) => {
     })
 }
 
+const configImportExcel = {
+  fetchUrl: API_ROUTES_EXCEL.FETCH_IMPORT_STUDENT_FACTORY,
+  onSuccess: () => {
+    fetchStudentFactories()
+  },
+  onError: () => {
+    message.error('Không thể xử lý file excel')
+  },
+  data: { idFactory: factoryId },
+  showDownloadTemplate: true,
+  showHistoryLog: true,
+}
+const changeFaceStudent = (record) => {
+  Modal.confirm({
+    title: 'Xác nhận đổi mặt',
+    content: `Bạn có chắc muốn đổi mặt của học sinh ${record.studentName}?`,
+    onOk() {
+      loadingStore.show()
+      // Giả sử record chứa studentId, nếu không hãy thay đổi cho phù hợp
+      requestAPI
+        .put(API_ROUTES_STAFF.FETCH_DATA_STUDENT_FACTORY + '/change-face/' + record.studentId)
+        .then((response) => {
+          message.success(response.data.message || 'Đổi mặt học sinh thành công')
+          fetchStudentFactories() // Làm mới danh sách sau khi đổi mặt
+        })
+        .catch((error) => {
+          message.error(error.response?.data?.message || 'Lỗi khi đổi mặt học sinh')
+        })
+        .finally(() => {
+          loadingStore.hide()
+        })
+    },
+  })
+}
 /* -------------------- Quản lý modal thêm sinh viên -------------------- */
 const isAddStudentModalVisible = ref(false)
-// Reset dữ liệu và phân trang khi modal mở
 watch(isAddStudentModalVisible, (newVal) => {
   if (newVal) {
     studentFilter.searchQuery = ''
     studentFilter.page = 1
     studentPagination.current = 1
+    // Cập nhật cả danh sách sinh viên tổng và danh sách đã có trong nhóm
+    fetchExistingStudents()
     fetchAllStudents()
   }
 })
@@ -364,8 +388,8 @@ onMounted(() => {
                 @change="fetchStudentFactories"
               >
                 <a-select-option :value="''">Tất cả trạng thái</a-select-option>
-                <a-select-option value="1">Hoạt động</a-select-option>
-                <a-select-option value="0">Không hoạt động</a-select-option>
+                <a-select-option value="1">Đang học</a-select-option>
+                <a-select-option value="0">Ngưng học</a-select-option>
               </a-select>
             </a-col>
           </a-row>
@@ -378,7 +402,8 @@ onMounted(() => {
       <div class="col-12">
         <a-card :bordered="false" class="cart">
           <template #title> <UnorderedListOutlined /> Danh sách sinh viên </template>
-          <div class="d-flex justify-content-end mb-3">
+          <div class="d-flex justify-content-end mb-3 flex-wrap gap-3">
+            <ExcelUploadButton v-bind="configImportExcel" />
             <a-tooltip title="Thêm học sinh vào nhóm xưởng">
               <a-button type="primary" @click="isAddStudentModalVisible = true">
                 <PlusOutlined /> Thêm học sinh
@@ -400,19 +425,31 @@ onMounted(() => {
                   {{ index + 1 }}
                 </template>
                 <template v-else-if="column.dataIndex === 'statusStudentFactory'">
-                  <a-tag
-                    :color="
-                      record.statusStudentFactory === 'ACTIVE' || record.statusStudentFactory === 1
-                        ? 'green'
-                        : 'red'
-                    "
-                  >
-                    {{
-                      record.statusStudentFactory === 'ACTIVE' || record.statusStudentFactory === 1
-                        ? 'Hoạt động'
-                        : 'Không hoạt động'
-                    }}
-                  </a-tag>
+                  <span class="nowrap">
+                    <a-switch
+                      class="me-2"
+                      :checked="
+                        record.statusStudentFactory === 'ACTIVE' ||
+                        record.statusStudentFactory === 1
+                      "
+                      @change="confirmChangeStatus(record)"
+                    />
+                    <a-tag
+                      :color="
+                        record.statusStudentFactory === 'ACTIVE' ||
+                        record.statusStudentFactory === 1
+                          ? 'green'
+                          : 'red'
+                      "
+                    >
+                      {{
+                        record.statusStudentFactory === 'ACTIVE' ||
+                        record.statusStudentFactory === 1
+                          ? 'Đang học'
+                          : 'Ngưng học'
+                      }}
+                    </a-tag>
+                  </span>
                 </template>
                 <template v-else>
                   {{ record[column.dataIndex] }}
@@ -420,22 +457,13 @@ onMounted(() => {
               </template>
               <template v-else-if="column.key === 'actions'">
                 <a-space>
-                  <a-tooltip title="Xóa sinh viên khỏi nhóm xưởng">
+                  <a-tooltip title="Cấp quyền thay đổi mặt sinh viên">
                     <a-button
                       type="text"
-                      class="btn-outline-danger"
-                      @click="confirmDeleteStudent(record)"
+                      class="btn-outline-info"
+                      @click="changeFaceStudent(record)"
                     >
-                      <DeleteFilled />
-                    </a-button>
-                  </a-tooltip>
-                  <a-tooltip title="Đổi trạng thái sinh viên">
-                    <a-button
-                      type="text"
-                      class="btn-outline-warning"
-                      @click="confirmChangeStatus(record)"
-                    >
-                      <SyncOutlined />
+                      <UserDeleteOutlined />
                     </a-button>
                   </a-tooltip>
                 </a-space>

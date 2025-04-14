@@ -16,4 +16,6 @@ public interface SPDPlanFactoryService {
 
     ResponseEntity<?> deletePlanFactory(String idPlanFactory);
 
+    ResponseEntity<?> getListShift();
+
 }

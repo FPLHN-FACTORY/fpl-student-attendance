@@ -10,7 +10,7 @@ import {
 } from '@ant-design/icons-vue'
 import { message, Modal } from 'ant-design-vue'
 import requestAPI from '@/services/requestApiService'
-import { DEFAULT_PAGINATION, TYPE_SHIFT } from '@/constants'
+import { DEFAULT_PAGINATION, STATUS_TYPE, TYPE_SHIFT } from '@/constants'
 import { API_ROUTES_STAFF } from '@/constants/staffConstant'
 import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
 import { API_ROUTES_EXCEL, GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
@@ -60,12 +60,14 @@ const modalAddOrUpdate = reactive({
 
 const _detail = ref(null)
 const lstData = ref([])
+const lstShift = ref([])
 
 const columns = ref([
   { title: 'Buổi', dataIndex: 'orderNumber', key: 'orderNumber', width: 50 },
   { title: 'Ngày học', dataIndex: 'startDate', key: 'startDate' },
   { title: 'Ca học', dataIndex: 'shift', key: 'shift' },
   { title: 'Nội dung', dataIndex: 'description', key: 'description', width: 300 },
+  { title: 'Link Online', dataIndex: 'link', key: 'link', width: 100 },
   { title: 'Điểm danh trễ', dataIndex: 'lateArrival', key: 'lateArrival', width: 130 },
   { title: 'Trạng thái', dataIndex: 'status', key: 'status' },
   { title: '', key: 'actions' },
@@ -98,8 +100,11 @@ const formData = reactive({
   id: null,
   idPlan: null,
   description: null,
-  shift: Object.keys(SHIFT)[0],
+  shift: null,
+  link: null,
   type: null,
+  requiredLocation: STATUS_TYPE.ENABLE,
+  requiredIp: STATUS_TYPE.ENABLE,
   startDate: null,
   lateArrival: DEFAULT_LATE_ARRIVAL,
 })
@@ -166,6 +171,17 @@ const fetchDataList = () => {
     })
     .finally(() => {
       isLoading.value = false
+    })
+}
+
+const fetchDataShift = () => {
+  requestAPI
+    .get(`${API_ROUTES_STAFF.FETCH_DATA_PLAN_FACTORY}/list/shift`)
+    .then(({ data: response }) => {
+      lstShift.value = response.data
+    })
+    .catch((error) => {
+      message.error(error?.response?.data?.message || 'Lỗi khi lấy dữ liệu ca học')
     })
 }
 
@@ -271,6 +287,9 @@ const handleTableChange = (page) => {
 }
 
 const handleShowAdd = () => {
+  if (formRefAddOrUpdate.value) {
+    formRefAddOrUpdate.value.clearValidate()
+  }
   modalAddOrUpdate.isShow = true
   modalAddOrUpdate.isLoading = false
   modalAddOrUpdate.title = h('span', [
@@ -282,13 +301,19 @@ const handleShowAdd = () => {
 
   formData.id = null
   formData.startDate = dayjs()
-  formData.shift = Object.keys(SHIFT)[0]
+  formData.shift = null
+  formData.link = null
   formData.type = null
+  formData.requiredLocation = STATUS_TYPE.ENABLE
+  formData.requiredIp = STATUS_TYPE.ENABLE
   formData.lateArrival = DEFAULT_LATE_ARRIVAL
   formData.description = null
 }
 
 const handleShowUpdate = (item) => {
+  if (formRefAddOrUpdate.value) {
+    formRefAddOrUpdate.value.clearValidate()
+  }
   modalAddOrUpdate.isShow = true
   modalAddOrUpdate.isLoading = false
   modalAddOrUpdate.title = h('span', [
@@ -301,7 +326,10 @@ const handleShowUpdate = (item) => {
   formData.id = item.id
   formData.startDate = dayjs(item.startDate)
   formData.shift = item.shift
+  formData.link = item.link
   formData.type = String(item.type)
+  formData.requiredLocation = item.requiredLocation
+  formData.requiredIp = item.requiredIp
   formData.lateArrival = item.lateArrival
   formData.description = item.description
 }
@@ -400,6 +428,7 @@ const rowSelection = computed(() => rowSelectTable(selectedRowKeys, isDisabledSe
 onMounted(() => {
   breadcrumbStore.setRoutes(breadcrumb.value)
   fetchDataDetail()
+  fetchDataShift()
 })
 
 watch(
@@ -407,7 +436,7 @@ watch(
   () => {
     handleSubmitFilter()
   },
-  { deep: true },
+  { deep: true }
 )
 </script>
 
@@ -445,8 +474,8 @@ watch(
           v-model:value="formData.shift"
           :disabled="modalAddOrUpdate.isLoading"
         >
-          <a-select-option v-for="(name, id) in SHIFT" :key="id" :value="id">
-            {{ name }}
+          <a-select-option v-for="o in lstShift" :key="o.id" :value="o.shift">
+            {{ SHIFT[o.shift] }}
           </a-select-option>
         </a-select>
       </a-form-item>
@@ -495,6 +524,47 @@ watch(
           :disabled="modalAddOrUpdate.isLoading"
           allowClear
         />
+      </a-form-item>
+      <a-form-item class="col-sm-12" label="Link học online" name="link">
+        <a-input
+          class="w-100"
+          v-model:value="formData.link"
+          placeholder="https://"
+          :disabled="modalAddOrUpdate.isLoading"
+          allowClear
+        />
+      </a-form-item>
+      <a-form-item class="col-sm-12" label="Điều kiện điểm danh">
+        <div class="mt-2">
+          <a-switch
+            class="me-2"
+            :checked="formData.requiredIp === STATUS_TYPE.ENABLE"
+            @change="
+              formData.requiredIp =
+                formData.requiredIp === STATUS_TYPE.ENABLE
+                  ? STATUS_TYPE.DISABLE
+                  : STATUS_TYPE.ENABLE
+            "
+          />
+          <span :class="{ disabled: formData.requiredIp !== STATUS_TYPE.ENABLE }"
+            >Phải kết nối mạng trường</span
+          >
+        </div>
+        <div class="mt-3">
+          <a-switch
+            class="me-2"
+            :checked="formData.requiredLocation === STATUS_TYPE.ENABLE"
+            @change="
+              formData.requiredLocation =
+                formData.requiredLocation === STATUS_TYPE.ENABLE
+                  ? STATUS_TYPE.DISABLE
+                  : STATUS_TYPE.ENABLE
+            "
+          />
+          <span :class="{ disabled: formData.requiredLocation !== STATUS_TYPE.ENABLE }"
+            >Phải ở trong địa điểm cơ sở</span
+          >
+        </div>
       </a-form-item>
     </a-form>
   </a-modal>
@@ -623,6 +693,9 @@ watch(
                     >Chi tiết</a-typography-link
                   >
                 </template>
+                <template v-if="column.dataIndex === 'link' && record.link">
+                  <a target="_blank" :href="record.link">Link</a>
+                </template>
                 <template v-if="column.dataIndex === 'lateArrival'">
                   {{ `${record.lateArrival} phút` }}
                 </template>
@@ -630,7 +703,7 @@ watch(
                   {{
                     `${dayOfWeek(record.startDate)} - ${formatDate(
                       record.startDate,
-                      DEFAULT_DATE_FORMAT + ' HH:mm',
+                      DEFAULT_DATE_FORMAT + ' HH:mm'
                     )}`
                   }}
                 </template>

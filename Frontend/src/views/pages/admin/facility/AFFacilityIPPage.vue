@@ -87,9 +87,13 @@ const fetchDataDetail = () => {
       _detail.value = response.data
       formData.idFacility = _detail.value.id
       breadcrumbStore.push({
-        name: ROUTE_NAMES.MANAGEMENT_FACILITY_IP,
+        name: ROUTE_NAMES.MANAGEMENT_FACILITY,
         params: { id: _detail.value.id },
         breadcrumbName: _detail.value.facilityName,
+      })
+      breadcrumbStore.push({
+        name: ROUTE_NAMES.MANAGEMENT_FACILITY_IP,
+        breadcrumbName: 'Quản lý IP',
       })
       fetchDataList()
     })
@@ -132,7 +136,7 @@ const fetchDeleteItem = (id) => {
   loadingStore.show()
 
   requestAPI
-    .delete(`${API_ROUTES_ADMIN.FETCH_DATA_FACILITY}/${id}/delete`)
+    .delete(`${API_ROUTES_ADMIN.FETCH_DATA_FACILITY}/${id}/delete-ip`)
     .then(({ data: response }) => {
       message.success(response.message)
       fetchDataList()
@@ -148,7 +152,7 @@ const fetchDeleteItem = (id) => {
 const fetchAddItem = () => {
   modalAddOrUpdate.isLoading = true
   requestAPI
-    .post(`${API_ROUTES_ADMIN.FETCH_DATA_FACILITY}/${_detail.value.id}/add`, {
+    .post(`${API_ROUTES_ADMIN.FETCH_DATA_FACILITY}/${_detail.value.id}/add-ip`, {
       ...formData,
     })
     .then(({ data: response }) => {
@@ -167,10 +171,7 @@ const fetchAddItem = () => {
 const fetchUpdateItem = () => {
   modalAddOrUpdate.isLoading = true
   requestAPI
-    .put(`${API_ROUTES_ADMIN.FETCH_DATA_FACILITY}/${_detail.value.id}/update`, {
-      ...formData,
-      startDate: Date.parse(formData.startDate),
-    })
+    .put(`${API_ROUTES_ADMIN.FETCH_DATA_FACILITY}/${_detail.value.id}/update-ip`, formData)
     .then(({ data: response }) => {
       message.success(response.message)
       modalAddOrUpdate.isShow = false
@@ -186,7 +187,7 @@ const fetchUpdateItem = () => {
 
 const fetchSubmitChangeStatus = (id) => {
   requestAPI
-    .put(`${API_ROUTES_ADMIN.FETCH_DATA_FACILITY}/${id}/change-status`)
+    .put(`${API_ROUTES_ADMIN.FETCH_DATA_FACILITY}/${id}/change-status-ip`)
     .then(({ data: response }) => {
       message.success(response.message)
       fetchDataList()
@@ -217,6 +218,9 @@ const handleTableChange = (page) => {
 }
 
 const handleShowAdd = () => {
+  if (formRefAddOrUpdate.value) {
+    formRefAddOrUpdate.value.clearValidate()
+  }
   modalAddOrUpdate.isShow = true
   modalAddOrUpdate.isLoading = false
   modalAddOrUpdate.title = h('span', [
@@ -232,6 +236,9 @@ const handleShowAdd = () => {
 }
 
 const handleShowUpdate = (item) => {
+  if (formRefAddOrUpdate.value) {
+    formRefAddOrUpdate.value.clearValidate()
+  }
   modalAddOrUpdate.isShow = true
   modalAddOrUpdate.isLoading = false
   modalAddOrUpdate.title = h('span', [

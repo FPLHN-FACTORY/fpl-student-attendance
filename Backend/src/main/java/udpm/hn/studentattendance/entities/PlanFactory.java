@@ -10,6 +10,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 import org.hibernate.annotations.DynamicUpdate;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 import udpm.hn.studentattendance.entities.base.PrimaryEntity;
 
 import java.io.Serializable;
@@ -26,10 +28,12 @@ public class PlanFactory extends PrimaryEntity implements Serializable {
 
     @ManyToOne
     @JoinColumn(name = "id_plan")
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private Plan plan;
 
     @ManyToOne
     @JoinColumn(name = "id_factory")
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private Factory factory;
 
 }

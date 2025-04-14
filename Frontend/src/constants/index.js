@@ -4,13 +4,14 @@ export const DEFAULT_LATE_ARRIVAL = 15
 
 export const DEFAULT_MAX_LATE_ARRIVAL = 60
 
-export const PAGINATION_SIZE = 5
+export const PAGINATION_SIZE = 10
 
 export const DEFAULT_PAGINATION = {
   current: 1,
   pageSize: PAGINATION_SIZE,
   total: 0,
   showSizeChanger: true,
+  pageSizeOptions: ['5', '10', '20', '50'],
 }
 
 export const DAY_OF_WEEK = {
@@ -38,6 +39,11 @@ export const TYPE_FACILITY_IP = {
   1: 'IPv6',
 }
 
+export const STATUS_TYPE = {
+  DISABLE: 0,
+  ENABLE: 1,
+}
+
 export const SHIFT = {
   1: 'Ca 1',
   2: 'Ca 2',
@@ -45,6 +51,24 @@ export const SHIFT = {
   4: 'Ca 4',
   5: 'Ca 5',
   6: 'Ca 6',
+  7: 'Ca 7',
+  8: 'Ca 8',
+  9: 'Ca 9',
+  10: 'Ca 10',
+  11: 'Ca 11',
+  12: 'Ca 12',
+  13: 'Ca 13',
+  14: 'Ca 14',
+  15: 'Ca 15',
+  16: 'Ca 16',
+  17: 'Ca 17',
+  18: 'Ca 18',
+  19: 'Ca 19',
+  20: 'Ca 20',
+  21: 'Ca 21',
+  22: 'Ca 22',
+  23: 'Ca 23',
+  24: 'Ca 24',
 }
 
 export const TYPE_SHIFT = {
