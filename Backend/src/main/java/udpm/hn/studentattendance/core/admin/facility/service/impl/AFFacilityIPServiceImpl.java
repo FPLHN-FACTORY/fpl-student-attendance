@@ -72,7 +72,7 @@ public class AFFacilityIPServiceImpl implements AFFacilityIPService {
             return RouterHelper.responseError("Không tìm cơ sở");
         }
 
-        if (afFacilityIPRepository.isExistsIP(request.getIp(), request.getType(), null)) {
+        if (afFacilityIPRepository.isExistsIP(request.getIp(), request.getType(), request.getIdFacility(), null)) {
             return RouterHelper.responseError("IP " + request.getIp() + " đã tồn tại trong cơ sở " + facility.getName());
         }
 
@@ -105,7 +105,7 @@ public class AFFacilityIPServiceImpl implements AFFacilityIPService {
             return RouterHelper.responseError("Không tìm cơ sở");
         }
 
-        if (afFacilityIPRepository.isExistsIP(request.getIp(), request.getType(), facilityIP.getId())) {
+        if (afFacilityIPRepository.isExistsIP(request.getIp(), request.getType(), request.getIdFacility(), facilityIP.getId())) {
             return RouterHelper.responseError("IP " + request.getIp() + " đã tồn tại trong cơ sở " + facility.getName());
         }
 
@@ -141,7 +141,7 @@ public class AFFacilityIPServiceImpl implements AFFacilityIPService {
             return RouterHelper.responseError("Không tìm thấy IP");
         }
 
-        if (facilityIP.getStatus() == EntityStatus.INACTIVE && afFacilityIPRepository.isExistsIP(facilityIP.getIp(), facilityIP.getType().getKey(), facilityIP.getFacility().getId())) {
+        if (facilityIP.getStatus() == EntityStatus.INACTIVE && afFacilityIPRepository.isExistsIP(facilityIP.getIp(), facilityIP.getType().getKey(), facilityIP.getFacility().getId(), facilityIP.getId())) {
             return RouterHelper.responseError("IP " + facilityIP.getIp() + " đã được áp dụng trong cơ sở");
         }
 

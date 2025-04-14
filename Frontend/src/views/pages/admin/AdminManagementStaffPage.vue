@@ -17,9 +17,10 @@ import { ROUTE_NAMES } from '@/router/adminRoute'
 import router from '@/router'
 import { API_ROUTES_ADMIN } from '@/constants/adminConstant'
 import { DEFAULT_PAGINATION } from '@/constants'
-import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
+import { API_ROUTES_EXCEL, GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
 import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
 import useLoadingStore from '@/stores/useLoadingStore'
+import ExcelUploadButton from '@/components/excel/ExcelUploadButton.vue'
 
 const breadcrumbStore = useBreadcrumbStore()
 const loadingStore = useLoadingStore()
@@ -112,13 +113,13 @@ const detailStaff = reactive({
 const columns = ref([
   { title: '#', dataIndex: 'orderNumber', key: 'orderNumber', width: 50 },
   { title: 'Mã nhân viên', dataIndex: 'staffCode', key: 'staffCode', width: 250 },
-  { title: 'Tên nhân viên', dataIndex: 'staffName', key: 'staffName', width: 350 },
+  { title: 'Tên nhân viên', dataIndex: 'staffName', key: 'staffName', width: 250 },
   { title: 'Email FE', dataIndex: 'staffEmailFe', key: 'staffEmailFe', width: 250 },
   { title: 'Email FPT', dataIndex: 'staffEmailFpt', key: 'staffEmailFpt', width: 250 },
-  { title: 'Cơ sở', dataIndex: 'facilityName', key: 'facilityName', width: 380 },
-  { title: 'Vai trò', dataIndex: 'roleCode', key: 'roleCode', width: 380 },
-  { title: 'Trạng thái', dataIndex: 'staffStatus', key: 'staffStatus', width: 80 },
-  { title: 'Chức năng', key: 'actions' },
+  { title: 'Cơ sở', dataIndex: 'facilityName', key: 'facilityName', width: 200 },
+  { title: 'Vai trò', dataIndex: 'roleCode', key: 'roleCode', width: 300 },
+  { title: 'Trạng thái', dataIndex: 'staffStatus', key: 'staffStatus', width: 180 },
+  { title: 'Chức năng', key: 'actions', width: 120 },
 ])
 
 // Hàm lấy danh sách nhân viên, dùng pagination.value.current và pagination.value.pageSize
@@ -316,7 +317,17 @@ const clearNewStaffForm = () => {
   newStaff.facilityId = null
   newStaff.roleCodes = []
 }
-
+const configImportExcel = {
+  fetchUrl: API_ROUTES_EXCEL.FETCH_IMPORT_STAFF,
+  onSuccess: () => {
+    fetchStaffs()
+  },
+  onError: () => {
+    message.error('Không thể xử lý file excel')
+  },
+  showDownloadTemplate: true,
+  showHistoryLog: true,
+}
 onMounted(() => {
   breadcrumbStore.setRoutes(breadcrumb.value)
   fetchStaffs()
@@ -358,8 +369,8 @@ onMounted(() => {
                 @change="fetchStaffs"
               >
                 <a-select-option :value="''">Tất cả trạng thái</a-select-option>
-                <a-select-option value="ACTIVE">Hoạt động</a-select-option>
-                <a-select-option value="INACTIVE">Không hoạt động</a-select-option>
+                <a-select-option value="ACTIVE">Đang hoạt động</a-select-option>
+                <a-select-option value="INACTIVE">Ngừng hoạt động</a-select-option>
               </a-select>
             </a-col>
             <!-- Combobox cơ sở -->
@@ -392,7 +403,8 @@ onMounted(() => {
       <div class="col-12">
         <a-card :bordered="false" class="cart">
           <template #title> <UnorderedListOutlined /> Danh sách nhân viên </template>
-          <div class="d-flex justify-content-end mb-3">
+          <div class="d-flex justify-content-end mb-3 flex-wrap gap-3">
+            <ExcelUploadButton v-bind="configImportExcel" />
             <a-tooltip title="Thêm mới nhân viên">
               <a-button type="primary" @click="modalAdd = true"> <PlusOutlined /> Thêm </a-button>
             </a-tooltip>
@@ -407,28 +419,32 @@ onMounted(() => {
             @change="handleTableChange"
           >
             <template #bodyCell="{ column, record }">
-              <!-- Hiển thị trạng thái -->
               <template v-if="column.dataIndex === 'staffStatus'">
-                <a-tag
-                  :color="
-                    record.staffStatus === 'ACTIVE' || record.staffStatus === 1 ? 'green' : 'red'
-                  "
-                >
-                  {{
-                    record.staffStatus === 'ACTIVE' || record.staffStatus === 1
-                      ? 'Hoạt động'
-                      : 'Không hoạt động'
-                  }}
-                </a-tag>
+                <span class="nowrap">
+                  <a-switch
+                    class="me-2"
+                    :checked="record.staffStatus === 'ACTIVE' || record.staffStatus === 1"
+                    @change="handleChangeStatusStaff(record)"
+                  />
+                  <a-tag
+                    :color="
+                      record.staffStatus === 'ACTIVE' || record.staffStatus === 1 ? 'green' : 'red'
+                    "
+                  >
+                    {{
+                      record.staffStatus === 'ACTIVE' || record.staffStatus === 1
+                        ? 'Đang hoạt động'
+                        : 'Ngừng hoạt động'
+                    }}
+                  </a-tag>
+                </span>
               </template>
-              <!-- Cột Vai trò: hiển thị tên thay vì mã -->
               <template v-else-if="column.dataIndex === 'roleCode'">
                 {{ convertRole(record.roleCode) }}
               </template>
-              <!-- Các nút chức năng có tooltip -->
               <template v-else-if="column.key === 'actions'">
                 <a-space>
-                  <a-tooltip title="Chức vụ/ cơ sở/ bộ môn">
+                  <!-- <a-tooltip title="Chức vụ/ cơ sở/ bộ môn">
                     <a-button
                       @click="handleDetailStaff(record)"
                       type="text"
@@ -436,7 +452,7 @@ onMounted(() => {
                     >
                       <EyeFilled />
                     </a-button>
-                  </a-tooltip>
+                  </a-tooltip> -->
                   <a-tooltip title="Sửa nhân viên">
                     <a-button
                       @click="handleUpdateStaff(record)"
@@ -444,15 +460,6 @@ onMounted(() => {
                       class="btn-outline-info me-2"
                     >
                       <EditFilled />
-                    </a-button>
-                  </a-tooltip>
-                  <a-tooltip title="Đổi trạng thái nhân viên">
-                    <a-button
-                      @click="handleChangeStatusStaff(record)"
-                      type="text"
-                      class="btn-outline-warning"
-                    >
-                      <SyncOutlined />
                     </a-button>
                   </a-tooltip>
                 </a-space>

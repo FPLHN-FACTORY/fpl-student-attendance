@@ -40,6 +40,11 @@ public class SPDPlanFactoryRestController {
         return spdPlanFactoryService.getListFactory(idPlan);
     }
 
+    @GetMapping("/list/shift")
+    public ResponseEntity<?> getAllShift() {
+        return spdPlanFactoryService.getListShift();
+    }
+
     @DeleteMapping("/{idPlanFactory}")
     public ResponseEntity<?> deletePlan(@PathVariable("idPlanFactory") String idPlanFactory) {
         return spdPlanFactoryService.deletePlanFactory(idPlanFactory);

@@ -1,371 +1,469 @@
-<template>
-  <h1>Quản lý bộ môn</h1>
-
-  <!-- Bộ lọc tìm kiếm -->
-  <a-card title="Bộ lọc" :bordered="false" class="cart">
-    <a-row :gutter="16" class="filter-container">
-      <!-- Ô nhập tên để tìm kiếm -->
-      <a-col :span="12">
-        <a-input
-          v-model:value="filter.name"
-          placeholder="Tìm kiếm theo tên"
-          allowClear
-          @change="fetchSubjects"
-        />
-      </a-col>
-
-      <!-- Dropdown chọn trạng thái -->
-      <a-col :span="12">
-        <a-select
-          v-model:value="filter.status"
-          placeholder="Chọn trạng thái"
-          allowClear
-          style="width: 100%"
-          @change="fetchSubjects"
-        >
-          <a-select-option :value="''">Tất cả trạng thái</a-select-option>
-          <a-select-option :value="1">Hoạt động</a-select-option>
-          <a-select-option :value="0">Không hoạt động</a-select-option>
-        </a-select>
-      </a-col>
-    </a-row>
-  </a-card>
-
-  <!-- Danh sách bộ môn -->
-  <a-card title="Danh sách bộ môn" :bordered="false" class="cart">
-    <!-- Nút thêm bộ môn -->
-    <div style="display: flex; justify-content: flex-end; margin-bottom: 10px">
-      <a-tooltip title="Thêm bộ môn">
-        <a-button
-          style="background-color: #fff7e6; color: black; border: 1px solid #ffa940"
-          @click="ShowAddModal(true)"
-        >
-          <PlusOutlined />
-          Thêm
-        </a-button>
-      </a-tooltip>
-    </div>
-
-    <!-- Bảng hiển thị danh sách -->
-    <a-table
-      :dataSource="subjects"
-      :columns="columns"
-      :rowKey="'id'"
-      bordered
-      :pagination="pagination"
-      @change="handleTableChange"
-    >
-      <!-- Custom cell cho cột trạng thái và chức năng -->
-      <template #bodyCell="{ column, record }">
-        <template v-if="column.dataIndex === 'status'">
-          <a-tag :color="record.status === 1 ? 'green' : 'red'">
-            {{ record.status === 1 ? 'Hoạt động' : 'Không hoạt động' }}
-          </a-tag>
-        </template>
-
-        <!-- Custom cell cho cột chức năng (actions) -->
-        <template v-if="column.key === 'actions'">
-          <!-- Nút chuyển hướng bộ môn cơ sở -->
-          <a-tooltip title="Bộ môn cơ sở">
-            <a-button
-              @click="handleAddSubjectFacility(record)"
-              type="text"
-              :style="{
-                backgroundColor: '#FFF7E6',
-                marginRight: '8px',
-                border: '1px solid #ffa940',
-              }"
-            >
-              <ClusterOutlined />
-            </a-button>
-          </a-tooltip>
-
-          <!-- Nút xem chi tiết -->
-          <a-tooltip title="Xem chi tiết">
-            <a-button
-              @click="handleDetailSubject(record)"
-              type="text"
-              :style="{
-                backgroundColor: '#FFF7E6',
-                marginRight: '8px',
-                border: '1px solid #ffa940',
-              }"
-            >
-              <EyeOutlined />
-            </a-button>
-          </a-tooltip>
-
-          <!-- Nút sửa -->
-          <a-tooltip title="Sửa bộ môn">
-            <a-button
-              @click="handleUpdateSubject(record)"
-              type="text"
-              :style="{
-                backgroundColor: '#FFF7E6',
-                marginRight: '8px',
-                border: '1px solid #ffa940',
-              }"
-            >
-              <EditOutlined />
-            </a-button>
-          </a-tooltip>
-
-          <!-- Nút xóa -->
-          <a-tooltip title="Xóa bộ môn">
-            <a-button
-              @click="handleDeleteSubject(record)"
-              type="text"
-              :style="{ backgroundColor: '#FFF7E6', border: '1px solid #ffa940' }"
-            >
-              <DeleteOutlined />
-            </a-button>
-          </a-tooltip>
-        </template>
-      </template>
-    </a-table>
-  </a-card>
-
-  <!-- Modal thêm bộ môn -->
-  <a-modal v-model:open="ModalAdd" title="Thêm bộ môn" @ok="handleAddSubject">
-    <a-form layout="vertical">
-      <a-form-item label="Tên" required>
-        <a-input v-model:value="newSubject.name" />
-      </a-form-item>
-      <a-form-item label="Mã">
-        <a-input v-model:value="newSubject.code" />
-      </a-form-item>
-    </a-form>
-  </a-modal>
-
-  <!-- Modal xem chi tiết bộ môn -->
-  <a-modal v-model:open="ModalDetail" title="Chi tiết bộ môn" footer="">
-    <p><strong>Tên:</strong> {{ detailSubject.name }}</p>
-    <p><strong>Mã:</strong> {{ detailSubject.code }}</p>
-    <p>
-      <strong>Trạng thái:</strong>
-      <a-tag :color="detailSubject.status === 'ACTIVE' ? 'green' : 'red'">
-        {{ detailSubject.status === 'ACTIVE' ? 'Hoạt động' : 'Không hoạt động' }}
-      </a-tag>
-    </p>
-    <p><strong>Ngày tạo:</strong> {{ formatDate(detailSubject.createdAt) }}</p>
-    <p><strong>Ngày cập nhật:</strong> {{ formatDate(detailSubject.updatedAt) }}</p>
-  </a-modal>
-
-  <!-- Modal sửa bộ môn -->
-  <a-modal v-model:open="ModalUpdate" title="Sửa bộ môn" @ok="updateSubject">
-    <a-form layout="vertical">
-      <a-form-item label="Tên" required>
-        <a-input v-model:value="detailSubject.name" />
-      </a-form-item>
-      <a-form-item label="Mã">
-        <a-input v-model:value="detailSubject.code" />
-      </a-form-item>
-      <a-form-item label="Trạng thái">
-        <a-select v-model:value="detailSubject.status" placeholder="Chọn trạng thái">
-          <a-select-option value="ACTIVE">Hoạt động</a-select-option>
-          <a-select-option value="INACTIVE">Không hoạt động</a-select-option>
-        </a-select>
-      </a-form-item>
-    </a-form>
-  </a-modal>
-</template>
-
-<script>
+<script setup>
+import { ref, reactive, onMounted } from 'vue'
+import { message, Modal } from 'ant-design-vue'
+import { useRouter } from 'vue-router'
+import requestAPI from '@/services/requestApiService'
 import {
-  SearchOutlined,
   PlusOutlined,
   EyeOutlined,
   EditOutlined,
-  DeleteOutlined,
   ClusterOutlined,
+  UnorderedListOutlined,
+  FilterFilled,
+  SyncOutlined
 } from '@ant-design/icons-vue'
-import { message, Modal } from 'ant-design-vue'
-import requestAPI from '@/services/requestApiService'
-import { ROUTE_NAMES } from '@/router/adminRoute'
+import { DEFAULT_PAGINATION } from '@/constants'
+import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
+import useLoadingStore from '@/stores/useLoadingStore'
 import { API_ROUTES_ADMIN } from '@/constants/adminConstant'
+import { ROUTE_NAMES } from '@/router/adminRoute'
+import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
 
-export default {
-  components: {
-    SearchOutlined,
-    PlusOutlined,
-    EyeOutlined,
-    EditOutlined,
-    DeleteOutlined,
-    ClusterOutlined,
+const router = useRouter()
+const breadcrumbStore = useBreadcrumbStore()
+const loadingStore = useLoadingStore()
+
+/* ----------------- Data & Reactive Variables ----------------- */
+const subjects = ref([])
+
+const filter = reactive({
+  name: '',
+  status: null,
+})
+
+const pagination = reactive({
+  ...DEFAULT_PAGINATION,
+})
+
+const modalAdd = ref(false)
+const modalUpdate = ref(false)
+const modalDetail = ref(false)
+
+const newSubject = reactive({
+  name: '',
+  code: '',
+})
+
+const detailSubject = reactive({
+  id: '',
+  name: '',
+  code: '',
+  status: 1,
+  createdAt: '',
+  updatedAt: '',
+  sizeSubjectSemester: 0,
+})
+
+const columns = ref([
+  { title: '#', dataIndex: 'indexs', key: 'indexs', width: 50 },
+  { title: 'Tên bộ môn', dataIndex: 'name', key: 'name', width: 200 },
+  { title: 'Mã bộ môn', dataIndex: 'code', key: 'code', width: 150 },
+  { 
+    title: 'Số lượng bộ môn cơ sở', 
+    dataIndex: 'sizeSubjectSemester', 
+    key: 'sizeSubjectSemester', 
+    width: 150 
   },
-  data() {
-    return {
-      subjects: [], // Danh sách bộ môn
-      filter: { name: '', status: '', page: 1, pageSize: 5 }, // Bộ lọc tìm kiếm và phân trang
-      ModalAdd: false, // Trạng thái modal thêm bộ môn
-      ModalDetail: false, // Trạng thái modal xem chi tiết
-      ModalUpdate: false, // Trạng thái modal sửa bộ môn
-      newSubject: { name: '', code: '' }, // Dữ liệu bộ môn mới
-      detailSubject: {}, // Bộ môn đang được xem
-      columns: [
-        { title: '#', dataIndex: 'indexs', key: 'indexs' },
-        { title: 'Tên', dataIndex: 'name', key: 'name' },
-        { title: 'Mã', dataIndex: 'code', key: 'code' },
-        {
-          title: 'Số lượng bộ môn cơ sở',
-          dataIndex: 'sizeSubjectSemester',
-          key: 'sizeSubjectSemester',
-        },
-        { title: 'Trạng thái', dataIndex: 'status', key: 'status' },
-        { title: 'Chức năng', key: 'actions' },
-      ],
-      pagination: {
-        current: 1, // Trang hiện tại
-        pageSize: 5, // Số bản ghi mỗi trang (cố định là 5)
-        total: 0, // Tổng số bản ghi
-        showSizeChanger: false, // Không cho phép thay đổi số bản ghi mỗi trang
+  { title: 'Trạng thái', dataIndex: 'status', key: 'status', width: 100 },
+  { title: 'Chức năng', key: 'actions', width: 200 },
+])
+
+const breadcrumb = ref([
+  {
+    name: GLOBAL_ROUTE_NAMES.ADMIN_PAGE,
+    breadcrumbName: 'Ban đào tạo',
+  },
+  {
+    name: ROUTE_NAMES.MANAGEMENT_SUBJECT,
+    breadcrumbName: 'Quản lý bộ môn',
+  },
+])
+
+/* ----------------- Methods ----------------- */
+const fetchSubjects = () => {
+  loadingStore.show()
+  requestAPI
+    .post(
+      `${API_ROUTES_ADMIN.FETCH_DATA_SUBJECT}/list`,
+      {
+        ...filter,
       },
-    }
-  },
-
-  mounted() {
-    this.fetchSubjects()
-  },
-
-  methods: {
-    // Load table
-    fetchSubjects() {
-      requestAPI
-        .post(`${API_ROUTES_ADMIN.FETCH_DATA_SUBJECT}/list`, this.filter)
-        .then((response) => {
-          this.subjects = response.data.data.data
-          this.pagination.total = response.data.data.totalPages * this.filter.pageSize
-          this.pagination.current = this.filter.page
-        })
-        .catch(() => {
-          message.error('Lỗi khi lấy dữ liệu')
-        })
-    },
-
-    // Paging
-    handleTableChange(pagination) {
-      this.filter.page = pagination.current
-      this.fetchSubjects()
-    },
-
-    // Mở modal thêm bộ môn
-    ShowAddModal(isOpen) {
-      this.ModalAdd = isOpen
-    },
-
-    // Xử lý thêm bộ môn
-    handleAddSubject() {
-      if (!this.newSubject.name) {
-        message.error('Tên không được bỏ trống')
-        return
+      {
+        params: {
+          page: pagination.current,
+          size: pagination.pageSize,
+        },
       }
-      requestAPI
-        .post(API_ROUTES_ADMIN.FETCH_DATA_SUBJECT, this.newSubject)
-        .then(() => {
-          message.success('Thêm bộ môn thành công')
-          this.ShowAddModal(false)
-          this.fetchSubjects()
-          this.newSubject = { name: '', code: '' } // Reset form
-        })
-        .catch(() => {
-          message.error('Lỗi khi thêm bộ môn')
-        })
-    },
+    )
+    .then((response) => {
+      const result = response.data.data
+      subjects.value = result.data
+      pagination.total = result.totalPages * pagination.pageSize
+    })
+    .catch((error) => {
+      message.error(error.response?.data?.message || 'Lỗi khi lấy danh sách bộ môn')
+    })
+    .finally(() => {
+      loadingStore.hide()
+    })
+}
 
-    // Xem chi tiết bộ môn
-    handleDetailSubject(record) {
+const handleTableChange = (pageInfo) => {
+  pagination.current = pageInfo.current
+  pagination.pageSize = pageInfo.pageSize
+  fetchSubjects()
+}
+
+const showAddModal = (isOpen) => {
+  modalAdd.value = isOpen
+}
+
+const handleAddSubject = () => {
+  if (!newSubject.name) {
+    message.error('Vui lòng nhập tên bộ môn')
+    return
+  }
+  loadingStore.show()
+  requestAPI
+    .post(API_ROUTES_ADMIN.FETCH_DATA_SUBJECT, newSubject)
+    .then((response) => {
+      message.success(response.data.message || 'Thêm bộ môn thành công')
+      modalAdd.value = false
+      fetchSubjects()
+      newSubject.name = ''
+      newSubject.code = ''
+    })
+    .catch((error) => {
+      message.error(error.response?.data?.message || 'Lỗi khi thêm bộ môn')
+    })
+    .finally(() => {
+      loadingStore.hide()
+    })
+}
+
+const handleDetailSubject = (record) => {
+  loadingStore.show()
+  requestAPI
+    .get(`${API_ROUTES_ADMIN.FETCH_DATA_SUBJECT}/${record.id}`)
+    .then((response) => {
+      Object.assign(detailSubject, response.data.data)
+      modalDetail.value = true
+    })
+    .catch((error) => {
+      message.error(error.response?.data?.message || 'Lỗi khi lấy chi tiết bộ môn')
+    })
+    .finally(() => {
+      loadingStore.hide()
+    })
+}
+
+const handleUpdateSubject = (record) => {
+  loadingStore.show()
+  requestAPI
+    .get(`${API_ROUTES_ADMIN.FETCH_DATA_SUBJECT}/${record.id}`)
+    .then((response) => {
+      Object.assign(detailSubject, response.data.data)
+      modalUpdate.value = true
+    })
+    .catch((error) => {
+      message.error(error.response?.data?.message || 'Lỗi khi lấy thông tin bộ môn')
+    })
+    .finally(() => {
+      loadingStore.hide()
+    })
+}
+
+const updateSubject = () => {
+  if (!detailSubject.name) {
+    message.error('Vui lòng nhập tên bộ môn')
+    return
+  }
+  loadingStore.show()
+  const requestData = {
+    id: detailSubject.id,
+    name: detailSubject.name,
+    code: detailSubject.code,
+    status: detailSubject.status,
+  }
+  
+  requestAPI
+    .put(`${API_ROUTES_ADMIN.FETCH_DATA_SUBJECT}/${detailSubject.id}`, requestData)
+    .then((response) => {
+      message.success(response.data.message || 'Cập nhật bộ môn thành công')
+      modalUpdate.value = false
+      fetchSubjects()
+    })
+    .catch((error) => {
+      message.error(error.response?.data?.message || 'Lỗi khi cập nhật bộ môn')
+    })
+    .finally(() => {
+      loadingStore.hide()
+    })
+}
+
+const confirmChangeStatus = (record) => {
+  Modal.confirm({
+    title: 'Xác nhận',
+    content: `Bạn có chắc chắn muốn chuyển trạng thái bộ môn ${record.name}?`,
+    onOk: () => {
+      loadingStore.show()
       requestAPI
-        .get(`${API_ROUTES_ADMIN.FETCH_DATA_SUBJECT}/${record.id}`)
+        .delete(`${API_ROUTES_ADMIN.FETCH_DATA_SUBJECT}/${record.id}`)
         .then((response) => {
-          this.ModalDetail = true
-          this.detailSubject = response.data.data
-        })
-        .catch(() => {
-          message.error('Lỗi khi lấy detail')
-        })
-    },
-
-    // Mở modal sửa bộ môn
-    handleUpdateSubject(record) {
-      requestAPI
-        .get(`${API_ROUTES_ADMIN.FETCH_DATA_SUBJECT}/${record.id}`)
-        .then((response) => {
-          this.detailSubject = response.data.data
-          this.ModalUpdate = true
-        })
-        .catch(() => {
-          message.error('Lỗi khi lấy detail')
-        })
-    },
-
-    // Xử lý sửa bộ môn
-    updateSubject(record) {
-      if (!this.detailSubject.name) {
-        message.error('Tên không được bỏ trống')
-        return
-      }
-      let req = {
-        id: this.detailSubject.id,
-        name: this.detailSubject.name,
-        code: this.detailSubject.code,
-        status: this.detailSubject.status,
-      }
-      console.log(req.id)
-
-      requestAPI
-        .put(`${API_ROUTES_ADMIN.FETCH_DATA_SUBJECT}/${req.id}`, req)
-        .then(() => {
-          message.success('Cập nhật bộ môn thành công')
-          this.ModalUpdate = false
-          this.fetchSubjects()
+          message.success(response.data.message || ' thành công')
+          fetchSubjects()
         })
         .catch((error) => {
-          message.error('Lỗi khi cập nhật bộ môn')
+          message.error(error.response?.data?.message || 'Lỗi khi chuyển trang thái bộ môn')
+        })
+        .finally(() => {
+          loadingStore.hide()
         })
     },
-
-    // Xóa bộ môn
-    handleDeleteSubject(record) {
-      Modal.confirm({
-        title: 'Xác nhận xóa',
-        content: `Bạn có chắc chắn muốn xóa bộ môn ${record.name} không?`,
-        onOk: () => {
-          requestAPI
-            .delete(`${API_ROUTES_ADMIN.FETCH_DATA_SUBJECT}/${record.id}`)
-            .then(() => {
-              message.success('Xóa bộ môn thành công')
-              this.fetchSubjects()
-            })
-            .catch(() => {
-              message.error('Lỗi khi xóa bộ môn')
-            })
-        },
-      })
-    },
-
-    // Xử lý chuyển hướng
-    handleAddSubjectFacility(record) {
-      this.$router.push({
-        name: ROUTE_NAMES.MANAGEMENT_SUBJECT_FACILITY,
-        query: { subjectId: record.id }, // Truyền ID của bộ môn
-      })
-    },
-
-    //Convert date
-    formatDate(timestamp) {
-      if (!timestamp) return 'Không xác định'
-      return new Date(timestamp).toLocaleString()
-    },
-  },
+  })
 }
+
+const handleAddSubjectFacility = (record) => {
+  router.push({
+    name: ROUTE_NAMES.MANAGEMENT_SUBJECT_FACILITY,
+    query: { subjectId: record.id },
+  })
+}
+
+const formatDate = (timestamp) => {
+  if (!timestamp) return 'Không xác định'
+  return new Date(timestamp).toLocaleString()
+}
+
+const getStatusText = (status) => {
+  return status === 1 ? 'Hoạt động' : 'Không hoạt động'
+}
+
+const getStatusColor = (status) => {
+  return status === 1 ? 'green' : 'red'
+}
+
+onMounted(() => {
+  breadcrumbStore.setRoutes(breadcrumb.value)
+  fetchSubjects()
+})
 </script>
 
-<style>
+<template>
+  <div class="container-fluid">
+    <!-- Card Bộ lọc tìm kiếm -->
+    <div class="row g-3">
+      <div class="col-12">
+        <a-card :bordered="false" class="cart mb-3">
+          <template #title> <FilterFilled /> Bộ lọc </template>
+          <a-row :gutter="16" class="filter-container">
+            <!-- Input tìm kiếm theo tên -->
+            <a-col :span="12" class="col">
+              <div class="label-title">Tìm kiếm theo tên:</div>
+              <a-input
+                v-model:value="filter.name"
+                placeholder="Tìm kiếm theo tên"
+                allowClear
+                @change="fetchSubjects"
+              />
+            </a-col>
+
+            <!-- Combobox trạng thái -->
+            <a-col :span="12" class="col">
+              <div class="label-title">Trạng thái:</div>
+              <a-select
+                v-model:value="filter.status"
+                placeholder="Chọn trạng thái"
+                allowClear
+                style="width: 100%"
+                @change="fetchSubjects"
+              >
+                <a-select-option :value="null">Tất cả trạng thái</a-select-option>
+                <a-select-option :value="1">Hoạt động</a-select-option>
+                <a-select-option :value="0">Không hoạt động</a-select-option>
+              </a-select>
+            </a-col>
+          </a-row>
+        </a-card>
+      </div>
+    </div>
+
+    <!-- Card Danh sách bộ môn -->
+    <div class="row g-3">
+      <div class="col-12">
+        <a-card :bordered="false" class="cart">
+          <template #title> <UnorderedListOutlined /> Danh sách bộ môn </template>
+          <div class="d-flex justify-content-end mb-3">
+            <a-tooltip title="Thêm bộ môn">
+              <a-button type="primary" @click="showAddModal(true)">
+                <PlusOutlined /> Thêm
+              </a-button>
+            </a-tooltip>
+          </div>
+          <a-table
+            :dataSource="subjects"
+            :columns="columns"
+            rowKey="id"
+            :pagination="pagination"
+            @change="handleTableChange"
+            :loading="loadingStore.isLoading"
+            :scroll="{ y: 500, x: 'auto' }"
+          >
+            <template #bodyCell="{ column, record, index }">
+              <template v-if="column.dataIndex">
+                <template v-if="column.dataIndex === 'indexs'">
+                  {{ index + 1 }}
+                </template>
+                <template v-else-if="column.dataIndex === 'status'">
+                  <a-tag :color="getStatusColor(record.status)">
+                    {{ getStatusText(record.status) }}
+                  </a-tag>
+                </template>
+                <template v-else>
+                  {{ record[column.dataIndex] }}
+                </template>
+              </template>
+              <template v-else-if="column.key === 'actions'">
+                <a-space>
+                  <a-tooltip title="Bộ môn cơ sở">
+                    <a-button
+                      @click="handleAddSubjectFacility(record)"
+                      type="text"
+                      class="btn-outline-primary me-2"
+                    >
+                      <ClusterOutlined />
+                    </a-button>
+                  </a-tooltip>
+                  <a-tooltip title="Xem chi tiết">
+                    <a-button
+                      @click="handleDetailSubject(record)"
+                      type="text"
+                      class="btn-outline-info me-2"
+                    >
+                      <EyeOutlined />
+                    </a-button>
+                  </a-tooltip>
+                  <a-tooltip title="Sửa bộ môn">
+                    <a-button
+                      @click="handleUpdateSubject(record)"
+                      type="text"
+                      class="btn-outline-warning me-2"
+                    >
+                      <EditOutlined />
+                    </a-button>
+                  </a-tooltip>
+                  <a-tooltip title="Đổi trạng thái">
+                    <a-button
+                      type="text"
+                      class="btn-outline-warning"
+                      @click="confirmChangeStatus(record)"
+                    >
+                      <SyncOutlined />
+                    </a-button>
+                  </a-tooltip>
+                </a-space>
+              </template>
+            </template>
+          </a-table>
+        </a-card>
+      </div>
+    </div>
+
+    <!-- Modal Thêm bộ môn -->
+    <a-modal
+      v-model:open="modalAdd"
+      title="Thêm bộ môn"
+      @ok="handleAddSubject"
+      :okButtonProps="{ loading: loadingStore.isLoading }"
+    >
+      <a-form layout="vertical">
+        <a-form-item label="Tên bộ môn" required>
+          <a-input v-model:value="newSubject.name" placeholder="Nhập tên bộ môn" />
+        </a-form-item>
+        <a-form-item label="Mã bộ môn">
+          <a-input v-model:value="newSubject.code" placeholder="Nhập mã bộ môn" />
+        </a-form-item>
+      </a-form>
+    </a-modal>
+
+    <!-- Modal Xem chi tiết bộ môn -->
+    <a-modal v-model:open="modalDetail" title="Chi tiết bộ môn" :footer="null">
+      <a-descriptions bordered :column="1">
+        <a-descriptions-item label="Tên">{{ detailSubject.name }}</a-descriptions-item>
+        <a-descriptions-item label="Mã">{{ detailSubject.code }}</a-descriptions-item>
+        <a-descriptions-item label="Trạng thái">
+          <a-tag :color="getStatusColor(detailSubject.status)">
+            {{ getStatusText(detailSubject.status) }}
+          </a-tag>
+        </a-descriptions-item>
+        <a-descriptions-item label="Số lượng bộ môn cơ sở">
+          {{ detailSubject.sizeSubjectSemester }}
+        </a-descriptions-item>
+        <a-descriptions-item label="Ngày tạo">
+          {{ formatDate(detailSubject.createdAt) }}
+        </a-descriptions-item>
+        <a-descriptions-item label="Ngày cập nhật">
+          {{ formatDate(detailSubject.updatedAt) }}
+        </a-descriptions-item>
+      </a-descriptions>
+    </a-modal>
+
+    <!-- Modal Cập nhật bộ môn -->
+    <a-modal
+      v-model:open="modalUpdate"
+      title="Cập nhật bộ môn"
+      @ok="updateSubject"
+      :okButtonProps="{ loading: loadingStore.isLoading }"
+    >
+      <a-form layout="vertical">
+        <a-form-item label="Tên bộ môn" required>
+          <a-input v-model:value="detailSubject.name" placeholder="Nhập tên bộ môn" />
+        </a-form-item>
+        <a-form-item label="Mã bộ môn">
+          <a-input v-model:value="detailSubject.code" placeholder="Nhập mã bộ môn" />
+        </a-form-item>
+        <a-form-item label="Trạng thái">
+          <a-select v-model:value="detailSubject.status" placeholder="Chọn trạng thái">
+            <a-select-option :value="1">Hoạt động</a-select-option>
+            <a-select-option :value="0">Không hoạt động</a-select-option>
+          </a-select>
+        </a-form-item>
+      </a-form>
+    </a-modal>
+  </div>
+</template>
+
+<style scoped>
 .cart {
   margin-top: 5px;
 }
 
 .filter-container {
   margin-bottom: 5px;
+}
+
+.label-title {
+  font-weight: 500;
+  margin-bottom: 5px;
+}
+
+.btn-outline-primary {
+  color: #1890ff;
+  border-color: #1890ff;
+}
+
+.btn-outline-info {
+  color: #13c2c2;
+  border-color: #13c2c2;
+}
+
+.btn-outline-warning {
+  color: #faad14;
+  border-color: #faad14;
+}
+
+.btn-outline-danger {
+  color: #ff4d4f;
+  border-color: #ff4d4f;
 }
 </style>

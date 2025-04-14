@@ -61,7 +61,7 @@ public class Staff_ProjectManagementRestController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteProject(@PathVariable String id) {
-        return PaginationHelper.createResponseEntity(service.deleteProject(id));
+        return PaginationHelper.createResponseEntity(service.changeStatus(id));
     }
 
     //Get data show combobox

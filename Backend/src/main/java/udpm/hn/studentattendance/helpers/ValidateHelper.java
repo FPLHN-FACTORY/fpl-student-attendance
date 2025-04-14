@@ -1,6 +1,9 @@
 package udpm.hn.studentattendance.helpers;
 
+import java.net.MalformedURLException;
 import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
@@ -22,6 +25,9 @@ public class ValidateHelper {
     private static final String EMAIL_FPT_REGEX = "^[A-Za-z0-9._%+-]+@fpt.edu.vn$";
 
     private static final String PHONE_REGEX = "^0[0-9]{9,10}$";
+
+    private static final String URL_REGEX =
+            "^(https?)://[a-zA-Z0-9-]+(\\.[a-zA-Z0-9-]+)+([/?].*)?$";
 
     private static final InetAddressValidator validator = InetAddressValidator.getInstance();
 
@@ -133,4 +139,13 @@ public class ValidateHelper {
         return ip.startsWith(cidr.split("/")[0]);
     }
 
+    public static boolean isValidURL(String url) {
+        try {
+            URL u = new URL(url);
+            u.toURI();
+            return Pattern.compile(URL_REGEX).matcher(url).matches();
+        } catch (MalformedURLException | URISyntaxException e) {
+            return false;
+        }
+    }
 }

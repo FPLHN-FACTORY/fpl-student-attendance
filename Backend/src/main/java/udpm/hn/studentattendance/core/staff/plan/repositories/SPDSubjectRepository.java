@@ -11,7 +11,7 @@ import java.util.List;
 public interface SPDSubjectRepository extends SubjectRepository {
 
     @Query(value = """
-        SELECT 
+        SELECT DISTINCT 
             s.id,
             s.name,
             s.code

@@ -11,6 +11,8 @@ import {
 export const ROUTE_NAMES = {
   MANAGEMENT_FACILITY: 'route_admin_management_facility',
   MANAGEMENT_FACILITY_IP: 'route_admin_management_facility_ip',
+  MANAGEMENT_FACILITY_LOCATION: 'route_admin_management_facility_location',
+  MANAGEMENT_FACILITY_SHIFT: 'route_admin_management_facility_shift',
   MANAGEMENT_SEMESTER: 'route_admin_management_semester',
   MANAGEMENT_SUBJECT: 'route_admin_management_subject',
   MANAGEMENT_SUBJECT_FACILITY: 'route_admin_management_subject_facility',
@@ -46,7 +48,23 @@ export const AdminRoutes = [
         name: ROUTE_NAMES.MANAGEMENT_FACILITY_IP,
         component: () => import('@/views/pages/admin/facility/AFFacilityIPPage.vue'),
         meta: {
-          name: 'Quản lý cơ sở',
+          name: 'Quản lý IP cơ sở',
+        },
+      },
+      {
+        path: 'management-shift/:id',
+        name: ROUTE_NAMES.MANAGEMENT_FACILITY_SHIFT,
+        component: () => import('@/views/pages/admin/facility/AFFacilityShiftPage.vue'),
+        meta: {
+          name: 'Quản lý ca học cơ sở',
+        },
+      },
+      {
+        path: 'management-location/:id',
+        name: ROUTE_NAMES.MANAGEMENT_FACILITY_LOCATION,
+        component: () => import('@/views/pages/admin/facility/AFFacilityLocationPage.vue'),
+        meta: {
+          name: 'Quản lý địa điểm cơ sở',
         },
       },
       {

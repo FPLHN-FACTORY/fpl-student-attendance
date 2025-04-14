@@ -38,7 +38,7 @@ public interface Student_ScheduleAttendanceRepository extends FacilityRepository
                             FROM user_student_factory
                             WHERE id_user_student = :#{#request.idStudent}
                         )
-                    AND pd.start_date BETWEEN :#{#request.now} AND :#{#request.max}
+                    AND pd.start_date BETWEEN UNIX_TIMESTAMP(CURDATE()) * 1000 AND :#{#request.max}
             ORDER BY pd.start_date
             """,
             countQuery = """
@@ -56,7 +56,7 @@ public interface Student_ScheduleAttendanceRepository extends FacilityRepository
                             FROM user_student_factory
                             WHERE id_user_student = :#{#request.idStudent}
                         )
-                    AND pd.start_date BETWEEN :#{#request.now} AND :#{#request.max}
+                    AND pd.start_date BETWEEN UNIX_TIMESTAMP(CURDATE()) AND :#{#request.max}
                     """,
             nativeQuery = true)
     Page<Student_ScheduleAttendanceResponse> getAllListAttendanceByUser(Pageable pageable, @Param("request") Student_ScheduleAttendanceSearchRequest request);

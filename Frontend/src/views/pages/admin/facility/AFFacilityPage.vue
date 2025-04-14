@@ -9,6 +9,8 @@ import {
   ArrowUpOutlined,
   ArrowDownOutlined,
   SearchOutlined,
+  AimOutlined,
+  FieldBinaryOutlined,
 } from '@ant-design/icons-vue'
 import { message, Modal } from 'ant-design-vue'
 import requestAPI from '@/services/requestApiService'
@@ -206,6 +208,14 @@ const handleShowIP = (id) => {
   router.push({ name: ROUTE_NAMES.MANAGEMENT_FACILITY_IP, params: { id: id } })
 }
 
+const handleShowShift = (id) => {
+  router.push({ name: ROUTE_NAMES.MANAGEMENT_FACILITY_SHIFT, params: { id: id } })
+}
+
+const handleShowLocation = (id) => {
+  router.push({ name: ROUTE_NAMES.MANAGEMENT_FACILITY_LOCATION, params: { id: id } })
+}
+
 // Hàm đổi trạng thái cơ sở
 const handleChangeStatusFacility = (record) => {
   Modal.confirm({
@@ -289,7 +299,7 @@ onMounted(() => {
           <template #title> <FilterFilled /> Bộ lọc </template>
           <div class="row g-2">
             <div class="col-xxl-6 col-md-8 col-sm-8">
-              <div class="label-title">Tìm kiếm tên:</div>
+              <div class="label-title">Từ khoá:</div>
               <a-input
                 v-model:value="filter.name"
                 placeholder="Tìm kiếm theo tên"
@@ -381,12 +391,28 @@ onMounted(() => {
                       <EditFilled />
                     </a-button>
                   </a-tooltip>
+                  <a-tooltip title="Quản lý ca học">
+                    <a-button
+                      class="btn-outline-primary border-0 me-2"
+                      @click="handleShowShift(record.id)"
+                    >
+                      <FieldBinaryOutlined />
+                    </a-button>
+                  </a-tooltip>
                   <a-tooltip title="Quản lý ip cơ sở">
                     <a-button
                       class="btn-outline-primary border-0 me-2"
                       @click="handleShowIP(record.id)"
                     >
                       <GlobalOutlined />
+                    </a-button>
+                  </a-tooltip>
+                  <a-tooltip title="Quản lý địa điểm cơ sở">
+                    <a-button
+                      class="btn-outline-primary border-0 me-2"
+                      @click="handleShowLocation(record.id)"
+                    >
+                      <AimOutlined />
                     </a-button>
                   </a-tooltip>
                   <a-tooltip title="Lên trên" v-if="record.facilityIndex > 1">

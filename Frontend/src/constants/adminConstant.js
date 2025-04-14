@@ -3,6 +3,8 @@ import { API_URL } from '@/constants/routesConstant'
 export const API_ROUTES_ADMIN = {
   FETCH_DATA_FACILITY: API_URL + '/admin/facilities',
 
+  FETCH_DATA_SHIFT: API_URL + '/admin/shift',
+
   FETCH_DATA_PROJECT: API_URL + '/admin/project-management',
 
   FETCH_DATA_SEMESTER: API_URL + '/admin/semesters',

@@ -9,8 +9,11 @@ import udpm.hn.studentattendance.infrastructure.common.PageableRequest;
 public class Student_HistoryAttendanceRequest extends PageableRequest {
 
     private String studentFactoryId;
+
     private String factoryId;
+
     private String semesterId;
+
 
     public String getFactoryId() {
         return (factoryId == null || factoryId.trim().isEmpty()) ? null : factoryId;
@@ -20,7 +23,6 @@ public class Student_HistoryAttendanceRequest extends PageableRequest {
         return (semesterId == null || semesterId.trim().isEmpty()) ? null : semesterId;
     }
 
-    // Nếu cần, cũng có thể xử lý trường studentFactoryId tương tự
     public String getStudentFactoryId() {
         return (studentFactoryId == null || studentFactoryId.trim().isEmpty()) ? null : studentFactoryId;
     }

@@ -301,6 +301,10 @@ body {
   }
 }
 
+span.disabled {
+  opacity: 0.6;
+}
+
 @import url(color.scss);
 @import url(face-id.scss);
 @import url(button.scss);

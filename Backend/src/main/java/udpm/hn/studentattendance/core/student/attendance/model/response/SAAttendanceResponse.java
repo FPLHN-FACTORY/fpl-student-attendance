@@ -17,6 +17,8 @@ public interface SAAttendanceResponse extends IsIdentify, HasOrderNumber {
 
     Integer getShift();
 
+    String getLink();
+
     Integer getType();
 
     Integer getStatus();

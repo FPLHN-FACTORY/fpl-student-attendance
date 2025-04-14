@@ -5,7 +5,10 @@ import udpm.hn.studentattendance.core.teacher.student.model.request.Teacher_Stud
 
 public interface Teacher_StudentFactoryService {
     ResponseEntity<?> getAllStudentFactory(Teacher_StudentFactoryRequest studentRequest);
+
     ResponseEntity<?> deleteStudentFactoryById(String studentFactoryId);
 
     ResponseEntity<?> changeStatusStudentFactory(String studentFactoryId);
+
+    ResponseEntity<?> deleteFaceStudentFactory(String studentId);
 }
