@@ -258,7 +258,7 @@ const handleDetailFactory = (record) => {
 const confirmChangeStatus = (record) => {
   Modal.confirm({
     title: 'Xác nhận đổi trạng thái',
-    content: `Bạn có chắc muốn đổi trạng thái cho nhóm xưởng "${record.factoryName}"?`,
+    content: `Bạn có chắc muốn đổi trạng thái cho nhóm xưởng "${record.name}"?`,
     onOk() {
       handleChangeStatus(record.id)
     },
@@ -330,7 +330,7 @@ onMounted(() => {
       <a-form-item label="Tên nhóm xưởng" required>
         <a-input v-model:value="newFactory.factoryName" placeholder="-- Tên nhóm xưởng --" />
       </a-form-item>
-      <a-form-item label="Mô tả">
+      <a-form-item label="Mô tả" required>
         <a-input
           v-model:value="newFactory.factoryDescription"
           placeholder="-- Mô tả nhóm xưởng --"
@@ -393,7 +393,7 @@ onMounted(() => {
       <a-form-item label="Tên nhóm xưởng" required>
         <a-input v-model:value="detailFactory.factoryName" />
       </a-form-item>
-      <a-form-item label="Mô tả">
+      <a-form-item label="Mô tả" required>
         <a-input v-model:value="detailFactory.factoryDescription" />
       </a-form-item>
       <a-form-item label="Giảng viên" required>

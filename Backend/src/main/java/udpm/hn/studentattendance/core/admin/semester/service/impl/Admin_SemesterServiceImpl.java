@@ -68,23 +68,31 @@ public class Admin_SemesterServiceImpl implements Admin_SemesterService {
     @Override
     public ResponseEntity<?> createSemester(@Valid Admin_CreateUpdateSemesterRequest request) {
         try {
-            // fomat từ epoch milli giây sang Instant convert thành giờ của máy chủ
+            // Chuyển đổi từ epoch milli giây sang giờ của máy chủ
             LocalDateTime fromDate = Instant
                     .ofEpochMilli(request.getFromDate())
                     .atZone(ZoneId.systemDefault())
                     .toLocalDateTime();
-            // fomat từ epoch milli giây sang Instant convert thành giờ của máy chủ
             LocalDateTime toDate = Instant
                     .ofEpochMilli(request.getToDate())
                     .atZone(ZoneId.systemDefault())
                     .toLocalDateTime();
-            // lấy thời gian bắt đầu và kêt thúc học kỳ
+
+            // **Thêm validation kiểm tra ngày quá khứ**
+            if (fromDate.isBefore(LocalDateTime.now())) {
+                return new ResponseEntity<>(
+                        new ApiResponse(
+                                RestApiStatus.ERROR,
+                                "Ngày bắt đầu học kỳ không thể là ngày trong quá khứ",
+                                null),
+                        HttpStatus.BAD_REQUEST);
+            }
+
+            // Các bước còn lại giữ nguyên
             Long fromTimeSemester = request.getStartTimeCustom();
             Long toTimeSemester = request.getEndTimeCustom();
-            // lấy ra năm trên máy
             Integer yearStartTime = fromDate.getYear();
             Integer yearEndTime = toDate.getYear();
-            // quy chuẩn lại tên kỳ học : Spring, Summer, Fall
             String name = SemesterName.valueOf(request.getSemesterName()).toString().trim();
 
             long monthsBetween = ChronoUnit.MONTHS.between(fromDate, toDate);
@@ -130,13 +138,6 @@ public class Admin_SemesterServiceImpl implements Admin_SemesterService {
             semester.setFromDate(fromTimeSemester);
             semester.setToDate(toTimeSemester);
             semester.setStatus(EntityStatus.ACTIVE);
-//            for (Facility facility: facilityRepository.findAll()
-//                 ) {
-//                if (facility.getStatus().equals(EntityStatus.ACTIVE)){
-//                    semester.setFacility(facility);
-//                }
-//
-//            }
 
             Semester semesterSave = adSemesterRepository.save(semester);
             return new ResponseEntity<>(
@@ -160,25 +161,33 @@ public class Admin_SemesterServiceImpl implements Admin_SemesterService {
 
     @Override
     public ResponseEntity<?> updateSemester(@Valid Admin_CreateUpdateSemesterRequest request) {
-        // fomat từ epoch milli giây sang Instant convert thành giờ của máy chủ
+        // Chuyển đổi từ epoch milli giây sang giờ của máy chủ
         LocalDateTime fromDate = Instant
                 .ofEpochMilli(request.getFromDate())
                 .atZone(ZoneId.systemDefault())
                 .toLocalDateTime();
-        // fomat từ epoch milli giây sang Instant convert thành giờ của máy chủ
         LocalDateTime toDate = Instant
                 .ofEpochMilli(request.getToDate())
                 .atZone(ZoneId.systemDefault())
                 .toLocalDateTime();
-        // lấy ra năm trên máy
+
+        // **Thêm validation kiểm tra ngày quá khứ**
+        if (fromDate.isBefore(LocalDateTime.now())) {
+            return new ResponseEntity<>(
+                    new ApiResponse(
+                            RestApiStatus.ERROR,
+                            "Ngày bắt đầu học kỳ không thể là ngày trong quá khứ",
+                            null),
+                    HttpStatus.BAD_REQUEST);
+        }
+
+        // Các bước còn lại giữ nguyên
         Integer yearStartTime = fromDate.getYear();
         Integer yearEndTime = toDate.getYear();
-        // quy chuẩn lại tên kỳ học : Spring, Summer, Fall
         String name = SemesterName.valueOf(request.getSemesterName()).toString().trim();
-        // lấy thời gian bắt đầu và kêt thúc học kỳ
         Long fromTimeSemester = request.getStartTimeCustom();
         Long toTimeSemester = request.getEndTimeCustom();
-        // tính năm
+
         long monthsBetween = ChronoUnit.MONTHS.between(fromDate, toDate);
         if (monthsBetween < 3) {
             return new ResponseEntity<>(
@@ -191,7 +200,6 @@ public class Admin_SemesterServiceImpl implements Admin_SemesterService {
 
         Optional<Semester> existSemester = adSemesterRepository.findById(request.getSemesterId());
         if (existSemester.isPresent()) {
-
             Semester semester = existSemester.get();
 
             List<Semester> semesters = adSemesterRepository.checkConflictTime(fromTimeSemester, toTimeSemester);

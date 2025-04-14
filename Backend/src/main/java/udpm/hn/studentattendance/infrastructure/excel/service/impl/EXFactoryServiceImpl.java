@@ -97,7 +97,6 @@ public class EXFactoryServiceImpl implements EXFactoryService {
         createUpdateRequest.setFactoryDescription(factoryDescription);
         createUpdateRequest.setIdProject(projectId);
         createUpdateRequest.setIdUserStaff(lecturerId);
-        factoryService.createFactory(createUpdateRequest);
 
         ResponseEntity<ApiResponse> result = (ResponseEntity<ApiResponse>) factoryService.createFactory(createUpdateRequest);
         ApiResponse response = result.getBody();

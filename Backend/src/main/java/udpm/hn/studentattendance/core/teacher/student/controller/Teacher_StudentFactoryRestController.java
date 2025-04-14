@@ -28,8 +28,8 @@ public class Teacher_StudentFactoryRestController {
         return teacherStudentService.changeStatusStudentFactory(studentFactoryId);
     }
 
-    @PutMapping("/change-face/{studentId}")
-    public ResponseEntity<?> changeFaceStudent(@PathVariable("studentId") String studentId){
-        return teacherStudentService.deleteFaceStudentFactory(studentId);
-    }
+//    @PutMapping("/change-face/{studentId}")
+//    public ResponseEntity<?> changeFaceStudent(@PathVariable("studentId") String studentId){
+//        return teacherStudentService.deleteFaceStudentFactory(studentId);
+//    }
 }
