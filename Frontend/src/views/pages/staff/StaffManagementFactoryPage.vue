@@ -4,7 +4,7 @@ import { message, Modal } from 'ant-design-vue'
 import router from '@/router'
 import requestAPI from '@/services/requestApiService'
 import { API_ROUTES_STAFF } from '@/constants/staffConstant'
-import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
+import { API_ROUTES_EXCEL, GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
 import {
   PlusOutlined,
   EyeOutlined,
@@ -14,38 +14,34 @@ import {
   EditFilled,
   UnorderedListOutlined,
   FilterFilled,
+  AlignLeftOutlined,
 } from '@ant-design/icons-vue'
 import { ROUTE_NAMES } from '@/router/staffRoute'
 import { DEFAULT_PAGINATION } from '@/constants'
 import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
 import useLoadingStore from '@/stores/useLoadingStore'
+import ExcelUploadButton from '@/components/excel/ExcelUploadButton.vue'
 
 const breadcrumbStore = useBreadcrumbStore()
 const loadingStore = useLoadingStore()
 
 /* ----------------- Data & Reactive Variables ----------------- */
-// Danh sách nhóm xưởng
 const factories = ref([])
-// Danh sách dự án, giảng viên (để chọn trong form)
 const projects = ref([])
 const staffs = ref([])
 
-// Filter (không chứa thông số phân trang)
 const filter = reactive({
   searchQuery: '',
   status: '',
 })
 
-// Đối tượng phân trang (sử dụng cấu trúc từ DEFAULT_PAGINATION)
 const pagination = reactive({
   ...DEFAULT_PAGINATION,
 })
 
-// Modal hiển thị
 const modalAdd = ref(false)
 const modalUpdate = ref(false)
 
-// Dữ liệu thêm mới nhóm xưởng
 const newFactory = reactive({
   factoryName: '',
   factoryDescription: '',
@@ -53,7 +49,6 @@ const newFactory = reactive({
   idProject: null,
 })
 
-// Dữ liệu chi tiết nhóm xưởng dùng cho cập nhật (được load qua API chi tiết)
 const detailFactory = reactive({
   id: '',
   factoryName: '',
@@ -66,7 +61,6 @@ const detailFactory = reactive({
   staffName: '',
 })
 
-// Cấu hình cột cho bảng
 const columns = ref([
   { title: '#', dataIndex: 'rowNumber', key: 'rowNumber', width: 50 },
   { title: 'Tên nhóm xưởng', dataIndex: 'name', key: 'name', width: 200 },
@@ -75,7 +69,7 @@ const columns = ref([
   { title: 'Tên giảng viên', dataIndex: 'staffName', key: 'staffName', width: 100 },
   { title: 'Mô tả', dataIndex: 'factoryDescription', key: 'factoryDescription', width: 200 },
   { title: 'Trạng thái', dataIndex: 'factoryStatus', key: 'factoryStatus', width: 80 },
-  { title: 'Chức năng', key: 'actions' },
+  { title: 'Chức năng', key: 'actions', width: 100 },
 ])
 
 const breadcrumb = ref([
@@ -89,8 +83,6 @@ const breadcrumb = ref([
   },
 ])
 
-/* ----------------- Methods ----------------- */
-// Lấy danh sách nhóm xưởng từ backend (có phân trang động)
 const fetchFactories = () => {
   loadingStore.show()
   requestAPI
@@ -104,14 +96,11 @@ const fetchFactories = () => {
     .then((response) => {
       const result = response.data.data
       factories.value = result.data
-      // Nếu API có trường totalRecords, dùng luôn; nếu không thì tính bằng totalPages * pageSize
       if (result.totalRecords !== undefined) {
         pagination.total = result.totalRecords
       } else {
         pagination.total = result.totalPages * pagination.pageSize
       }
-      // Đồng bộ current nếu cần (ví dụ: filter.page)
-      // Nếu backend không trả về current thì giữ nguyên pagination.current
     })
     .catch((error) => {
       message.error(error.response?.data?.message || 'Lỗi khi lấy danh sách nhóm xưởng')
@@ -128,7 +117,6 @@ const clearData = () => {
   newFactory.idUserStaff = null
 }
 
-// Lấy danh sách dự án
 const fetchProjects = () => {
   loadingStore.show()
   requestAPI
@@ -144,7 +132,6 @@ const fetchProjects = () => {
     })
 }
 
-// Lấy danh sách giảng viên
 const fetchStaffs = () => {
   loadingStore.show()
   requestAPI
@@ -160,9 +147,7 @@ const fetchStaffs = () => {
     })
 }
 
-// Sự kiện thay đổi trang bảng: cập nhật current và pageSize rồi gọi lại fetchFactories
 const handleTableChange = (pageInfo) => {
-  // Cập nhật cả filter và pagination để giữ trạng thái trang
   filter.page = pageInfo.current
   filter.pageSize = pageInfo.pageSize
   pagination.current = pageInfo.current
@@ -198,7 +183,6 @@ const handleUpdateFactory = (record) => {
     .get(API_ROUTES_STAFF.FETCH_DATA_FACTORY + '/detail/' + record.id)
     .then((response) => {
       const data = response.data.data
-      // Mapping dữ liệu chi tiết theo định dạng mong muốn
       detailFactory.id = data.id
       detailFactory.factoryName = data.factoryName
       detailFactory.factoryDescription = data.factoryDescription
@@ -239,13 +223,36 @@ const submitUpdateFactory = () => {
 }
 
 const handleDetailFactory = (record) => {
-  router.push({
-    name: ROUTE_NAMES.MANAGEMENT_STUDENT_FACTORY,
-    query: {
-      factoryId: record.id,
-      factoryName: record.name,
-    },
-  })
+  loadingStore.show()
+  requestAPI
+    .get(API_ROUTES_STAFF.FETCH_DATA_FACTORY + '/exist-plan/' + record.id)
+    .then((response) => {
+      const existsPlan = response.data.data
+      if (!existsPlan) {
+        Modal.info({
+          title: 'Thông báo',
+          content: 'Nhóm xưởng chưa có kế hoạch',
+          onOk() {},
+        })
+      } else {
+        router.push({
+          name: ROUTE_NAMES.MANAGEMENT_STUDENT_FACTORY,
+          query: {
+            factoryId: record.id,
+            factoryName: record.name,
+          },
+        })
+      }
+    })
+    .catch((error) => {
+      Modal.error({
+        title: 'Lỗi',
+        content: error.response?.data?.message || 'Lỗi khi kiểm tra kế hoạch của nhóm xưởng',
+      })
+    })
+    .finally(() => {
+      loadingStore.hide()
+    })
 }
 
 const confirmChangeStatus = (record) => {
@@ -274,7 +281,40 @@ const handleChangeStatus = (id) => {
     })
 }
 
-/* ----------------- Lifecycle Hook ----------------- */
+const changeAllStatusBySemester = () => {
+  Modal.confirm({
+    title: 'Xác nhận đổi trạng thái',
+    content: 'Bạn có chắc muốn đổi trạng thái cho tất cả các nhóm xưởng của kỳ trước?',
+    onOk() {
+      loadingStore.show()
+      requestAPI
+        .put(API_ROUTES_STAFF.FETCH_DATA_FACTORY + '/change-all-status')
+        .then((response) => {
+          message.success(response.data.message || 'Đổi trạng thái nhóm xưởng kỳ trước thành công')
+          fetchFactories()
+        })
+        .catch((error) => {
+          message.error(error.response?.data?.message || 'Lỗi khi đổi trạng thái nhóm xưởng')
+        })
+        .finally(() => {
+          loadingStore.hide()
+        })
+    },
+  })
+}
+
+const configImportExcel = {
+  fetchUrl: API_ROUTES_EXCEL.FETCH_IMPORT_FACTORY,
+  onSuccess: () => {
+    fetchFactories()
+  },
+  onError: () => {
+    message.error('Không thể xử lý file excel')
+  },
+  showDownloadTemplate: true,
+  showHistoryLog: true,
+}
+
 onMounted(() => {
   breadcrumbStore.setRoutes(breadcrumb.value)
   fetchFactories()
@@ -282,8 +322,6 @@ onMounted(() => {
   fetchStaffs()
 })
 </script>
-
-
 
 <template>
   <!-- Modal Thêm nhóm xưởng -->
@@ -299,18 +337,52 @@ onMounted(() => {
         />
       </a-form-item>
       <a-form-item label="Giảng viên" required>
-        <a-select v-model:value="newFactory.idUserStaff" placeholder="Chọn giảng viên">
-          <a-select-option v-for="item in staffs" :key="item.id" :value="item.id">
-            {{ item.name }}
+        <a-select
+          v-if="staffs.length > 0"
+          v-model:value="newFactory.idUserStaff"
+          placeholder="Chọn giảng viên"
+          show-search
+          :filter-option="
+            (input, option) => {
+              const text = option.label || ''
+              return text.toLowerCase().includes(input.toLowerCase())
+            }
+          "
+        >
+          <a-select-option
+            v-for="item in staffs"
+            :key="item.id"
+            :value="item.id"
+            :label="item.name"
+          >
+            {{ item.code + ' - ' + item.name }}
           </a-select-option>
         </a-select>
+        <div v-else>Cơ sở chưa có giảng viên nào!</div>
       </a-form-item>
       <a-form-item label="Dự án" required>
-        <a-select v-model:value="newFactory.idProject" placeholder="Chọn dự án">
-          <a-select-option v-for="item in projects" :key="item.id" :value="item.id">
-            {{ item.name }}
+        <a-select
+          v-if="projects.length > 0"
+          v-model:value="newFactory.idProject"
+          placeholder="Chọn dự án"
+          show-search
+          :filter-option="
+            (input, option) => {
+              const text = option.label || ''
+              return text.toLowerCase().includes(input.toLowerCase())
+            }
+          "
+        >
+          <a-select-option
+            v-for="item in projects"
+            :key="item.id"
+            :value="item.id"
+            :label="item.name"
+          >
+            {{ item.name + ' - ' + item.levelProject.name }}
           </a-select-option>
         </a-select>
+        <div v-else>Cơ sở chưa có dự án nào!</div>
       </a-form-item>
     </a-form>
   </a-modal>
@@ -325,18 +397,52 @@ onMounted(() => {
         <a-input v-model:value="detailFactory.factoryDescription" />
       </a-form-item>
       <a-form-item label="Giảng viên" required>
-        <a-select v-model:value="detailFactory.idUserStaff" placeholder="Chọn giảng viên">
-          <a-select-option v-for="item in staffs" :key="item.id" :value="item.id">
-            {{ item.name }}
+        <a-select
+          v-if="staffs.length > 0"
+          v-model:value="detailFactory.idUserStaff"
+          placeholder="Chọn giảng viên"
+          show-search
+          :filter-option="
+            (input, option) => {
+              const text = option.label || ''
+              return text.toLowerCase().includes(input.toLowerCase())
+            }
+          "
+        >
+          <a-select-option
+            v-for="item in staffs"
+            :key="item.id"
+            :value="item.id"
+            :label="item.name"
+          >
+            {{ item.code + ' - ' + item.name }}
           </a-select-option>
         </a-select>
+        <div v-else>Cơ sở chưa có giảng viên nào!</div>
       </a-form-item>
       <a-form-item label="Dự án" required>
-        <a-select v-model:value="detailFactory.idProject" placeholder="Chọn dự án">
-          <a-select-option v-for="item in projects" :key="item.id" :value="item.id">
-            {{ item.name }}
+        <a-select
+          v-if="projects.length > 0"
+          v-model:value="detailFactory.idProject"
+          placeholder="Chọn dự án"
+          show-search
+          :filter-option="
+            (input, option) => {
+              const text = option.label || ''
+              return text.toLowerCase().includes(input.toLowerCase())
+            }
+          "
+        >
+          <a-select-option
+            v-for="item in projects"
+            :key="item.id"
+            :value="item.id"
+            :label="item.name"
+          >
+            {{ item.name + ' - ' + item.levelProject.name }}
           </a-select-option>
         </a-select>
+        <div v-else>Cơ sở chưa có dự án nào!</div>
       </a-form-item>
     </a-form>
   </a-modal>
@@ -368,8 +474,8 @@ onMounted(() => {
                 @change="fetchFactories"
               >
                 <a-select-option :value="''">Tất cả trạng thái</a-select-option>
-                <a-select-option value="ACTIVE">Hoạt động</a-select-option>
-                <a-select-option value="INACTIVE">Không hoạt động</a-select-option>
+                <a-select-option value="ACTIVE">Đang hoạt động</a-select-option>
+                <a-select-option value="INACTIVE">Ngừng hoạt động</a-select-option>
               </a-select>
             </div>
           </div>
@@ -380,7 +486,17 @@ onMounted(() => {
       <div class="col-12">
         <a-card :bordered="false" class="cart">
           <template #title> <UnorderedListOutlined /> Danh sách nhóm xưởng </template>
-          <div class="d-flex justify-content-end mb-3">
+          <div class="d-flex justify-content-end mb-3 flex-wrap gap-3">
+            <ExcelUploadButton v-bind="configImportExcel" />
+            <a-tooltip title="Đổi trạng thái tất cả nhóm xưởng kỳ trước">
+              <a-button
+                type="default"
+                @click="changeAllStatusBySemester"
+                class="btn-outline-warning me-2"
+              >
+                <SyncOutlined /> Đổi trạng thái
+              </a-button>
+            </a-tooltip>
             <a-tooltip title="Thêm nhóm xưởng">
               <a-button type="primary" @click="modalAdd = true"> <PlusOutlined /> Thêm </a-button>
             </a-tooltip>
@@ -400,19 +516,26 @@ onMounted(() => {
                   {{ index + 1 }}
                 </template>
                 <template v-else-if="column.dataIndex === 'factoryStatus'">
-                  <a-tag
-                    :color="
-                      record.factoryStatus === 'ACTIVE' || record.factoryStatus === 1
-                        ? 'green'
-                        : 'red'
-                    "
-                  >
-                    {{
-                      record.factoryStatus === 'ACTIVE' || record.factoryStatus === 1
-                        ? 'Hoạt động'
-                        : 'Không hoạt động'
-                    }}
-                  </a-tag>
+                  <span class="nowrap">
+                    <a-switch
+                      class="me-2"
+                      :checked="record.factoryStatus === 'ACTIVE' || record.factoryStatus === 1"
+                      @change="confirmChangeStatus(record)"
+                    />
+                    <a-tag
+                      :color="
+                        record.factoryStatus === 'ACTIVE' || record.factoryStatus === 1
+                          ? 'green'
+                          : 'red'
+                      "
+                    >
+                      {{
+                        record.factoryStatus === 'ACTIVE' || record.factoryStatus === 1
+                          ? 'Đang hoạt động'
+                          : 'Ngừng hoạt động'
+                      }}
+                    </a-tag>
+                  </span>
                 </template>
                 <template v-else>
                   {{ record[column.dataIndex] }}
@@ -426,7 +549,7 @@ onMounted(() => {
                       class="btn-outline-primary"
                       @click="handleDetailFactory(record)"
                     >
-                      <EyeFilled />
+                      <AlignLeftOutlined />
                     </a-button>
                   </a-tooltip>
                   <a-tooltip title="Chỉnh sửa">
@@ -436,15 +559,6 @@ onMounted(() => {
                       @click="handleUpdateFactory(record)"
                     >
                       <EditFilled />
-                    </a-button>
-                  </a-tooltip>
-                  <a-tooltip title="Đổi trạng thái">
-                    <a-button
-                      type="text"
-                      class="btn-outline-warning"
-                      @click="confirmChangeStatus(record)"
-                    >
-                      <SyncOutlined />
                     </a-button>
                   </a-tooltip>
                 </a-space>

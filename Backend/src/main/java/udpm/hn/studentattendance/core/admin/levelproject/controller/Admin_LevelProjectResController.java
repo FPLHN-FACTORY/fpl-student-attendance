@@ -1,5 +1,6 @@
 package udpm.hn.studentattendance.core.admin.levelproject.controller;
 
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,8 +18,8 @@ public class Admin_LevelProjectResController {
     @Autowired
     private Admin_LevelProjectManagementService service;
 
-    @PostMapping("/list")
-    public ResponseEntity<?> getListLevelProject(@RequestBody Admin_LevelProjectSearchRequest request) {
+    @GetMapping("/list")
+    public ResponseEntity<?> getListLevelProject(@Valid Admin_LevelProjectSearchRequest request) {
         return PaginationHelper.createResponseEntity(service.getListLevelProject(request));
     }
 
@@ -39,7 +40,7 @@ public class Admin_LevelProjectResController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteLevelProject(@PathVariable String id) {
-        return PaginationHelper.createResponseEntity(service.deleteLevelProject(id));
+        return PaginationHelper.createResponseEntity(service.changeStatus(id));
     }
 
 }

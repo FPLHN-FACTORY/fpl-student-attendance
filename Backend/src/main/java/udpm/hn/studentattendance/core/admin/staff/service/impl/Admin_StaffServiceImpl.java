@@ -1,10 +1,13 @@
 package udpm.hn.studentattendance.core.admin.staff.service.impl;
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 import udpm.hn.studentattendance.core.admin.role.model.response.Admin_RoleFacilityResponse;
 import udpm.hn.studentattendance.core.admin.staff.model.request.Admin_CreateUpdateStaffRequest;
@@ -42,6 +45,8 @@ public class Admin_StaffServiceImpl implements Admin_StaffService {
 
     private final Admin_StaffFacilityRepository adminStaffFacilityRepository;
 
+    @PersistenceContext
+    private EntityManager entityManager;
 
     @Override
     public ResponseEntity<?> getAllStaffByFilter(Admin_StaffRequest adStaffRequest) {
@@ -120,15 +125,14 @@ public class Admin_StaffServiceImpl implements Admin_StaffService {
         staff.setStatus(EntityStatus.ACTIVE);
         staff = adStaffRepository.save(staff);
 
-        // Kiểm tra cơ sở tồn tại
-        Optional<Facility> existFacility = adminStaffFacilityRepository.findById(adCreateUpdateStaffRequest.getFacilityId().trim());
-        if (existFacility.isEmpty()) {
+        Facility facility = entityManager.find(Facility.class, adCreateUpdateStaffRequest.getFacilityId());
+        if (facility == null) {
             return new ResponseEntity<>(
                     new ApiResponse(RestApiStatus.ERROR, "Cơ sở không tồn tại", null),
                     HttpStatus.BAD_REQUEST
             );
         }
-        Facility facility = existFacility.get();
+
 
         // Tạo các vai trò
         List<String> roleCodes = adCreateUpdateStaffRequest.getRoleCodes();
@@ -143,14 +147,14 @@ public class Admin_StaffServiceImpl implements Admin_StaffService {
         for (String roleCode : roleCodes) {
             RoleConstant roleConstant;
             switch (roleCode.trim()) {
-                case "0":
+                case "0", "ADMIN":
                     roleConstant = RoleConstant.ADMIN;
                     isAdmin = true;
                     break;
-                case "1":
+                case "1", "STAFF":
                     roleConstant = RoleConstant.STAFF;
                     break;
-                case "3":
+                case "3", "TEACHER":
                     roleConstant = RoleConstant.TEACHER;
                     break;
                 default:
@@ -330,7 +334,6 @@ public class Admin_StaffServiceImpl implements Admin_StaffService {
                 HttpStatus.OK
         );
     }
-
 
 
     @Override

@@ -13,9 +13,10 @@ import { message, Modal } from 'ant-design-vue'
 import requestAPI from '@/services/requestApiService'
 import dayjs from 'dayjs'
 import { API_ROUTES_ADMIN } from '@/constants/adminConstant'
+import { ROUTE_NAMES } from '@/router/adminRoute'
 import { DEFAULT_PAGINATION } from '@/constants'
 import { useRouter } from 'vue-router'
-import { ROUTE_NAMES } from '@/router/adminRoute'
+
 import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
 import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
 import useLoadingStore from '@/stores/useLoadingStore'
@@ -69,13 +70,13 @@ const detailSemester = ref({})
 
 // Cấu hình cột cho bảng
 const columns = ref([
-  { title: '#', dataIndex: 'semesterIndex', key: 'semesterIndex' },
-  { title: 'Mã học kỳ', dataIndex: 'semesterCode', key: 'semesterCode' },
-  { title: 'Tên học kỳ', dataIndex: 'semesterName', key: 'semesterName' },
-  { title: 'Ngày bắt đầu', dataIndex: 'startDate', key: 'startDate' },
-  { title: 'Ngày kết thúc', dataIndex: 'endDate', key: 'endDate' },
-  { title: 'Trạng thái', dataIndex: 'semesterStatus', key: 'semesterStatus' },
-  { title: 'Chức năng', key: 'actions' },
+  { title: '#', dataIndex: 'semesterIndex', key: 'semesterIndex', width: 80 },
+  { title: 'Mã học kỳ', dataIndex: 'semesterCode', key: 'semesterCode', width: 180 },
+  { title: 'Tên học kỳ', dataIndex: 'semesterName', key: 'semesterName', width: 180 },
+  { title: 'Ngày bắt đầu', dataIndex: 'startDate', key: 'startDate', width: 180 },
+  { title: 'Ngày kết thúc', dataIndex: 'endDate', key: 'endDate', width: 180 },
+  { title: 'Trạng thái', dataIndex: 'semesterStatus', key: 'semesterStatus', width: 180 },
+  { title: 'Chức năng', key: 'actions', width: 120 },
 ])
 
 // Hàm định dạng epoch sang "DD/MM/YYYY"
@@ -301,8 +302,8 @@ onMounted(() => {
                 @change="fetchSemesters"
               >
                 <a-select-option :value="''">Tất cả trạng thái</a-select-option>
-                <a-select-option value="ACTIVE">Hoạt động</a-select-option>
-                <a-select-option value="INACTIVE">Không hoạt động</a-select-option>
+                <a-select-option value="ACTIVE">Đang hoạt động</a-select-option>
+                <a-select-option value="INACTIVE">Đã kết thúc</a-select-option>
               </a-select>
             </a-col>
           </a-row>
@@ -359,19 +360,27 @@ onMounted(() => {
               </template>
               <!-- Hiển thị trạng thái -->
               <template v-else-if="column.dataIndex === 'semesterStatus'">
-                <a-tag
-                  :color="
-                    record.semesterStatus === 'ACTIVE' || record.semesterStatus === 1
-                      ? 'green'
-                      : 'red'
-                  "
-                >
-                  {{
-                    record.semesterStatus === 'ACTIVE' || record.semesterStatus === 1
-                      ? 'Hoạt động'
-                      : 'Không hoạt động'
-                  }}
-                </a-tag>
+                <span class="nowrap">
+                  <a-switch
+                    class="me-2"
+                    :checked="record.semesterStatus === 'ACTIVE' || record.semesterStatus === 1"
+                    @change="handleChangeStatusSemester(record)"
+                  />
+
+                  <a-tag
+                    :color="
+                      record.semesterStatus === 'ACTIVE' || record.semesterStatus === 1
+                        ? 'green'
+                        : 'red'
+                    "
+                  >
+                    {{
+                      record.semesterStatus === 'ACTIVE' || record.semesterStatus === 1
+                        ? 'Đang hoạt động'
+                        : 'Đã kết thúc'
+                    }}
+                  </a-tag>
+                </span>
               </template>
               <!-- Các chức năng: Sửa & Đổi trạng thái -->
               <template v-else-if="column.key === 'actions'">
@@ -383,15 +392,6 @@ onMounted(() => {
                       class="btn-outline-info me-2"
                     >
                       <EditFilled />
-                    </a-button>
-                  </a-tooltip>
-                  <a-tooltip title="Đổi trạng thái học kỳ">
-                    <a-button
-                      @click="handleChangeStatusSemester(record)"
-                      type="text"
-                      class="btn-outline-warning"
-                    >
-                      <SyncOutlined />
                     </a-button>
                   </a-tooltip>
                 </a-space>
