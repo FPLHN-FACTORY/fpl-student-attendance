@@ -1,5 +1,7 @@
 package udpm.hn.studentattendance.entities;
 
+
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
@@ -8,10 +10,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import lombok.ToString;
 import org.hibernate.annotations.DynamicUpdate;
-import org.hibernate.annotations.OnDelete;
-import org.hibernate.annotations.OnDeleteAction;
 import udpm.hn.studentattendance.entities.base.PrimaryEntity;
 
 import java.io.Serializable;
@@ -21,19 +20,27 @@ import java.io.Serializable;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-@Table(name = "plan_factory")
+@Table(name = "facility_shift")
 @DynamicUpdate
-@ToString
-public class PlanFactory extends PrimaryEntity implements Serializable {
+public class FacilityShift extends PrimaryEntity implements Serializable {
+
+    @Column(name = "shift")
+    private int shift;
+
+    @Column(name = "from_hour")
+    private int fromHour;
+
+    @Column(name = "from_minute")
+    private int fromMinute;
+
+    @Column(name = "to_hour")
+    private int toHour;
+
+    @Column(name = "to_minute")
+    private int toMinute;
 
     @ManyToOne
-    @JoinColumn(name = "id_plan")
-    @OnDelete(action = OnDeleteAction.CASCADE)
-    private Plan plan;
-
-    @ManyToOne
-    @JoinColumn(name = "id_factory")
-    @OnDelete(action = OnDeleteAction.CASCADE)
-    private Factory factory;
+    @JoinColumn(name = "id_facility")
+    private Facility facility;
 
 }

@@ -15,6 +15,10 @@ public class SACheckinAttendanceRequest {
 
     private String idPlanDate;
 
+    private Double latitude;
+
+    private Double longitude;
+
     @NotBlank(message = "Không tìm thấy dữ liệu khuôn mặt")
     private String faceEmbedding;
 

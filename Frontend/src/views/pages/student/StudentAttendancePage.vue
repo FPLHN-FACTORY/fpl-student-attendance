@@ -39,6 +39,8 @@ const canvas = ref(null)
 
 const formData = reactive({
   idPlanDate: null,
+  latitude: null,
+  longitude: null,
   faceEmbedding: null,
 })
 
@@ -196,8 +198,31 @@ const handleCheckin = async (item) => {
   await faceIDStore.startVideo()
 }
 
+const getCurrentLocation = async () => {
+  navigator.geolocation.getCurrentPosition(
+    (position) => {
+      const { latitude, longitude } = position.coords || {}
+      formData.latitude = latitude
+      formData.longitude = longitude
+    },
+    (error) => {
+      Modal.confirm({
+        title: 'Không thể lấy vị trí',
+        icon: createVNode(ExclamationCircleOutlined),
+        content: 'Vui lòng bật quyền truy cập vị trí để tiếp tục!!!',
+        okText: 'Tải lại trang',
+        cancelText: 'Huỷ bỏ',
+        onOk: () => {
+          window.location.reload()
+        },
+      })
+    },
+  )
+}
+
 onMounted(async () => {
   breadcrumbStore.setRoutes(breadcrumb.value)
+  await getCurrentLocation()
   fetchDataStudentInfo()
   fetchDataList()
   await faceIDStore.loadModels()

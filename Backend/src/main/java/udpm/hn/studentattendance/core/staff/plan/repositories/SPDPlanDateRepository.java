@@ -18,7 +18,7 @@ public interface SPDPlanDateRepository extends PlanDateRepository {
 
     @Query(value = """
         SELECT 
-            ROW_NUMBER() OVER (ORDER BY pd.start_date DESC) as orderNumber,
+            ROW_NUMBER() OVER (ORDER BY pd.start_date ASC) as orderNumber,
             pd.id,
             pd.start_date,
             pd.shift,
@@ -26,6 +26,8 @@ public interface SPDPlanDateRepository extends PlanDateRepository {
             pd.late_arrival,
             pd.description,
             pd.link,
+            pd.required_location,
+            pd.required_ip,
             CASE
                 WHEN UNIX_TIMESTAMP(NOW()) * 1000 > (pd.start_date + 7200)
                 THEN 'DA_DIEN_RA'
@@ -54,7 +56,7 @@ public interface SPDPlanDateRepository extends PlanDateRepository {
                     ELSE 'CHUA_DIEN_RA'
                 END
             ) = :#{#request.status})
-        ORDER BY pd.start_date DESC
+        ORDER BY pd.start_date ASC
     """, countQuery = """
         SELECT 
             COUNT(pd.id)
@@ -94,6 +96,8 @@ public interface SPDPlanDateRepository extends PlanDateRepository {
             pl.to_date,
             pl.from_date,
             pd.link,
+            pd.required_location,
+            pd.required_ip,
             CASE
                 WHEN UNIX_TIMESTAMP(NOW()) * 1000 > (pd.start_date + 7200)
                 THEN 'DA_DIEN_RA'

@@ -11,10 +11,12 @@ import udpm.hn.studentattendance.core.student.attendance.model.request.SAFilterA
 import udpm.hn.studentattendance.core.student.attendance.model.response.SAAttendanceResponse;
 import udpm.hn.studentattendance.core.student.attendance.repositories.SAAttendanceRepository;
 import udpm.hn.studentattendance.core.student.attendance.repositories.SAFacilityIPRepository;
+import udpm.hn.studentattendance.core.student.attendance.repositories.SAFacilityLocationRepository;
 import udpm.hn.studentattendance.core.student.attendance.repositories.SAPlanDateRepository;
 import udpm.hn.studentattendance.core.student.attendance.repositories.SAUserStudentFactoryRepository;
 import udpm.hn.studentattendance.core.student.attendance.service.SAAttendanceService;
 import udpm.hn.studentattendance.entities.Attendance;
+import udpm.hn.studentattendance.entities.FacilityLocation;
 import udpm.hn.studentattendance.entities.PlanDate;
 import udpm.hn.studentattendance.entities.UserStudent;
 import udpm.hn.studentattendance.entities.UserStudentFactory;
@@ -24,10 +26,14 @@ import udpm.hn.studentattendance.helpers.SessionHelper;
 import udpm.hn.studentattendance.helpers.ValidateHelper;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.constants.AttendanceStatus;
+import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.ShiftType;
+import udpm.hn.studentattendance.infrastructure.constants.StatusType;
 import udpm.hn.studentattendance.utils.DateTimeUtils;
 import udpm.hn.studentattendance.utils.FaceRecognitionUtils;
+import udpm.hn.studentattendance.utils.GeoUtil;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
@@ -44,6 +50,8 @@ public class SAAttendanceServiceImpl implements SAAttendanceService {
     private final SAUserStudentFactoryRepository userStudentFactoryRepository;
 
     private final SAFacilityIPRepository facilityIPRepository;
+
+    private final SAFacilityLocationRepository facilityLocationRepository;
 
     private final HttpServletRequest httpServletRequest;
 
@@ -71,14 +79,26 @@ public class SAAttendanceServiceImpl implements SAAttendanceService {
         }
 
         if (planDate.getType() != ShiftType.ONLINE) {
-            String clientIP = ValidateHelper.getClientIP(httpServletRequest);
-            if (clientIP == null) {
-                return RouterHelper.responseError("IP đăng nhập không hợp lệ");
+            if (planDate.getRequiredIp() == StatusType.ENABLE) {
+                String clientIP = ValidateHelper.getClientIP(httpServletRequest);
+                if (clientIP == null) {
+                    return RouterHelper.responseError("IP đăng nhập không hợp lệ");
+                }
+
+                Set<String> allowIPs = facilityIPRepository.getAllIP(sessionHelper.getFacilityId());
+                if (!allowIPs.isEmpty() && !ValidateHelper.isAllowedIP(clientIP, allowIPs)) {
+                    return RouterHelper.responseError("Vui lòng kết nối bằng mạng trường để có thể Checkin");
+                }
             }
 
-            Set<String> allowIPs = facilityIPRepository.getAllIP(sessionHelper.getFacilityId());
-            if (!allowIPs.isEmpty() && !ValidateHelper.isAllowedIP(clientIP, allowIPs)) {
-                return RouterHelper.responseError("Vui lòng kết nối bằng mạng trường để có thể Checkin");
+            if (planDate.getRequiredLocation() == StatusType.ENABLE) {
+                if (request.getLatitude() == null || request.getLongitude() == null) {
+                    return RouterHelper.responseError("Không thể lấy thông tin vị trí");
+                }
+                List<FacilityLocation> lstLocation = facilityLocationRepository.findAllByFacility_IdAndStatus(sessionHelper.getFacilityId(), EntityStatus.ACTIVE);
+                if (!GeoUtil.isAllowedLocation(lstLocation, request.getLatitude(), request.getLongitude())) {
+                    return RouterHelper.responseError("Địa điểm checkin nằm ngoài vùng cho phép");
+                }
             }
         }
 

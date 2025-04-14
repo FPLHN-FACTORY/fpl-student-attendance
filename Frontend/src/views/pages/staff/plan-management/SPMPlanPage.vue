@@ -385,6 +385,9 @@ const handleShowDetail = (id) => {
 }
 
 const handleShowModalAdd = () => {
+  if (formRefAddOrUpdate.value) {
+    formRefAddOrUpdate.value.clearValidate()
+  }
   modalAddOrUpdate.isShow = true
   modalAddOrUpdate.isLoading = false
   modalAddOrUpdate.title = h('span', [
@@ -414,6 +417,9 @@ const handleShowModalAdd = () => {
 }
 
 const handleShowModalUpdate = (item) => {
+  if (formRefAddOrUpdate.value) {
+    formRefAddOrUpdate.value.clearValidate()
+  }
   modalAddOrUpdate.isShow = true
   modalAddOrUpdate.isLoading = false
   modalAddOrUpdate.title = h('span', [

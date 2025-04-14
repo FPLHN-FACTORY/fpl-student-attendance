@@ -17,6 +17,20 @@ import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
 import { ROUTE_NAMES } from '@/router/adminRoute'
 import useLoadingStore from '@/stores/useLoadingStore'
 import { useRoute, useRouter } from 'vue-router'
+import { LMap, LTileLayer, LMarker, LCircle } from '@vue-leaflet/vue-leaflet'
+import L from 'leaflet'
+import 'leaflet-control-geocoder'
+
+import 'leaflet/dist/leaflet.css'
+import 'leaflet-control-geocoder/dist/Control.Geocoder.css'
+
+delete L.Icon.Default.prototype._getIconUrl
+
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: new URL('leaflet/dist/images/marker-icon-2x.png', import.meta.url).href,
+  iconUrl: new URL('leaflet/dist/images/marker-icon.png', import.meta.url).href,
+  shadowUrl: new URL('leaflet/dist/images/marker-shadow.png', import.meta.url).href,
+})
 
 const route = useRoute()
 const router = useRouter()
@@ -26,6 +40,15 @@ const loadingStore = useLoadingStore()
 
 const isLoading = ref(false)
 
+const mapRef = ref(null)
+const mapCenter = ref([0, 0])
+const selectedLatLng = ref(null)
+const leafletMap = ref(null)
+const MAP_ZOOM = 17
+const MAP_CENTER_DEFAULT = [21.0278, 105.8342]
+
+const tileUrl = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
+
 const modalAddOrUpdate = reactive({
   isShow: false,
   isLoading: false,
@@ -33,6 +56,7 @@ const modalAddOrUpdate = reactive({
   cancelText: 'Hủy bỏ',
   okText: 'Xác nhận',
   onOk: null,
+  width: 800,
 })
 
 const _detail = ref(null)
@@ -40,8 +64,10 @@ const lstData = ref([])
 
 const columns = ref([
   { title: '#', dataIndex: 'orderNumber', key: 'orderNumber', width: 50 },
-  { title: 'Kiểu IP', dataIndex: 'type', key: 'type' },
-  { title: 'IP/Dải IP', dataIndex: 'ip', key: 'ip' },
+  { title: 'Tên địa điểm', dataIndex: 'name', key: 'name' },
+  { title: 'Vĩ độ', dataIndex: 'latitude', key: 'latitude' },
+  { title: 'Kinh độ', dataIndex: 'longitude', key: 'longitude' },
+  { title: 'Bán kính', dataIndex: 'radius', key: 'radius' },
   { title: 'Trạng thái', dataIndex: 'status', key: 'status' },
   { title: '', key: 'actions' },
 ])
@@ -62,7 +88,6 @@ const pagination = ref({ ...DEFAULT_PAGINATION })
 const dataFilter = reactive({
   keyword: null,
   status: null,
-  type: null,
 })
 
 const formRefAddOrUpdate = ref(null)
@@ -70,13 +95,17 @@ const formRefAddOrUpdate = ref(null)
 const formData = reactive({
   id: null,
   idFacility: null,
-  ip: null,
-  type: null,
+  name: null,
+  latitude: null,
+  longitude: null,
+  radius: 1,
 })
 
 const formRules = reactive({
-  ip: [{ required: true, message: 'Vui lòng nhập ip hoặc dải ip!' }],
-  type: [{ required: true, message: 'Vui lòng chọn kiểu ip!' }],
+  name: [{ required: true, message: 'Vui lòng nhập tên địa điểm!' }],
+  latitude: [{ required: true, message: 'Vui lòng nhập vĩ độ!' }],
+  longitude: [{ required: true, message: 'Vui lòng nhập kinh độ!' }],
+  radius: [{ required: true, message: 'Vui lòng nhập bán kính!' }],
 })
 
 const fetchDataDetail = () => {
@@ -92,8 +121,8 @@ const fetchDataDetail = () => {
         breadcrumbName: _detail.value.facilityName,
       })
       breadcrumbStore.push({
-        name: ROUTE_NAMES.MANAGEMENT_FACILITY_IP,
-        breadcrumbName: 'Quản lý IP',
+        name: ROUTE_NAMES.MANAGEMENT_FACILITY_LOCATION,
+        breadcrumbName: 'Quản lý địa điểm',
       })
       fetchDataList()
     })
@@ -113,7 +142,7 @@ const fetchDataList = () => {
 
   isLoading.value = true
   requestAPI
-    .get(`${API_ROUTES_ADMIN.FETCH_DATA_FACILITY}/${_detail.value.id}/list-ip`, {
+    .get(`${API_ROUTES_ADMIN.FETCH_DATA_FACILITY}/${_detail.value.id}/list-location`, {
       params: {
         page: pagination.value.current,
         size: pagination.value.pageSize,
@@ -136,7 +165,7 @@ const fetchDeleteItem = (id) => {
   loadingStore.show()
 
   requestAPI
-    .delete(`${API_ROUTES_ADMIN.FETCH_DATA_FACILITY}/${id}/delete-ip`)
+    .delete(`${API_ROUTES_ADMIN.FETCH_DATA_FACILITY}/${id}/delete-location`)
     .then(({ data: response }) => {
       message.success(response.message)
       fetchDataList()
@@ -152,7 +181,7 @@ const fetchDeleteItem = (id) => {
 const fetchAddItem = () => {
   modalAddOrUpdate.isLoading = true
   requestAPI
-    .post(`${API_ROUTES_ADMIN.FETCH_DATA_FACILITY}/${_detail.value.id}/add-ip`, {
+    .post(`${API_ROUTES_ADMIN.FETCH_DATA_FACILITY}/${_detail.value.id}/add-location`, {
       ...formData,
     })
     .then(({ data: response }) => {
@@ -171,7 +200,7 @@ const fetchAddItem = () => {
 const fetchUpdateItem = () => {
   modalAddOrUpdate.isLoading = true
   requestAPI
-    .put(`${API_ROUTES_ADMIN.FETCH_DATA_FACILITY}/${_detail.value.id}/update-ip`, formData)
+    .put(`${API_ROUTES_ADMIN.FETCH_DATA_FACILITY}/${_detail.value.id}/update-location`, formData)
     .then(({ data: response }) => {
       message.success(response.message)
       modalAddOrUpdate.isShow = false
@@ -187,13 +216,13 @@ const fetchUpdateItem = () => {
 
 const fetchSubmitChangeStatus = (id) => {
   requestAPI
-    .put(`${API_ROUTES_ADMIN.FETCH_DATA_FACILITY}/${id}/change-status-ip`)
+    .put(`${API_ROUTES_ADMIN.FETCH_DATA_FACILITY}/${id}/change-status-location`)
     .then(({ data: response }) => {
       message.success(response.message)
       fetchDataList()
     })
     .catch((error) => {
-      message.error(error?.response?.data?.message || 'Không thể thay đổi trạng thái IP')
+      message.error(error?.response?.data?.message || 'Không thể thay đổi trạng thái địa điểm')
     })
 }
 
@@ -201,7 +230,6 @@ const handleClearFilter = () => {
   Object.assign(dataFilter, {
     keyword: null,
     status: null,
-    type: null,
   })
   fetchDataList()
 }
@@ -225,32 +253,45 @@ const handleShowAdd = () => {
   modalAddOrUpdate.isLoading = false
   modalAddOrUpdate.title = h('span', [
     h(PlusOutlined, { class: 'me-2 text-primary' }),
-    'Thêm IP mới',
+    'Thêm địa điểm mới',
   ])
   modalAddOrUpdate.okText = 'Thêm ngay'
   modalAddOrUpdate.onOk = () => handleSubmitAdd()
 
+  getCurrentLocation()
+
   formData.id = null
-  formData.ip = null
-  formData.type = null
+  formData.name = null
+  formData.longitude = null
+  formData.latitude = null
+  formData.radius = 1
 }
 
 const handleShowUpdate = (item) => {
   if (formRefAddOrUpdate.value) {
     formRefAddOrUpdate.value.clearValidate()
   }
+
   modalAddOrUpdate.isShow = true
   modalAddOrUpdate.isLoading = false
   modalAddOrUpdate.title = h('span', [
     h(EditFilled, { class: 'me-2 text-primary' }),
-    'Chỉnh sửa IP',
+    'Chỉnh sửa địa điểm',
   ])
   modalAddOrUpdate.okText = 'Lưu lại'
   modalAddOrUpdate.onOk = () => handleSubmitUpdate()
 
   formData.id = item.id
-  formData.ip = item.ip
-  formData.type = String(item.type)
+  formData.name = item.name
+  formData.latitude = item.latitude
+  formData.longitude = item.longitude
+  formData.radius = item.radius
+
+  mapCenter.value = [item.latitude, item.longitude]
+  selectedLatLng.value = {
+    lat: mapCenter.value[0],
+    lng: mapCenter.value[1],
+  }
 }
 
 const handleSubmitAdd = async () => {
@@ -259,7 +300,7 @@ const handleSubmitAdd = async () => {
     Modal.confirm({
       title: `Xác nhận thêm mới`,
       type: 'info',
-      content: `Bạn có chắc muốn thêm mới IP này?`,
+      content: `Bạn có chắc muốn thêm mới địa điểm này?`,
       okText: 'Tiếp tục',
       cancelText: 'Hủy bỏ',
       onOk() {
@@ -289,7 +330,7 @@ const handleChangeStatus = (id) => {
   Modal.confirm({
     title: `Xác nhận thay đổi trạng thái`,
     type: 'info',
-    content: `Bạn có chắc muốn thay đổi trạng thái IP này?`,
+    content: `Bạn có chắc muốn thay đổi trạng thái địa điểm này?`,
     okText: 'Tiếp tục',
     cancelText: 'Hủy bỏ',
     onOk() {
@@ -300,9 +341,9 @@ const handleChangeStatus = (id) => {
 
 const handleShowAlertDelete = (item) => {
   Modal.confirm({
-    title: `Xoá IP: ${item.ip}`,
+    title: `Xoá địa điểm: ${item.name}`,
     type: 'error',
-    content: `Bạn có chắc muốn xoá IP này?`,
+    content: `Bạn có chắc muốn xoá địa điểm này?`,
     okText: 'Tiếp tục',
     cancelText: 'Hủy bỏ',
     okButtonProps: {
@@ -317,6 +358,51 @@ const handleShowAlertDelete = (item) => {
   })
 }
 
+const handleGetCurrentLocation = () => {
+  getCurrentLocation()
+}
+
+const onMapReady = (mapInstance) => {
+  leafletMap.value = mapInstance
+
+  L.Control.geocoder({
+    defaultMarkGeocode: false,
+  })
+    .on('markgeocode', function (e) {
+      const center = e.geocode.center
+      formData.latitude = center.lat
+      formData.longitude = center.lng
+      leafletMap.value.setView(center, MAP_ZOOM)
+      selectedLatLng.value = center
+    })
+    .addTo(leafletMap.value)
+}
+
+const onMapClick = (event) => {
+  selectedLatLng.value = event.latlng
+  formData.latitude = event.latlng.lat
+  formData.longitude = event.latlng.lng
+}
+
+const getCurrentLocation = () => {
+  navigator.geolocation.getCurrentPosition(
+    (position) => {
+      const { latitude, longitude } = position.coords || {
+        latitude: MAP_CENTER_DEFAULT[0],
+        longitude: MAP_CENTER_DEFAULT[1],
+      }
+      mapCenter.value = [latitude, longitude]
+      formData.latitude = latitude
+      formData.longitude = longitude
+    },
+    (error) => {
+      mapCenter.value = MAP_CENTER_DEFAULT
+      formData.latitude = mapCenter.value[0]
+      formData.longitude = mapCenter.value[1]
+    },
+  )
+}
+
 onMounted(() => {
   breadcrumbStore.setRoutes(breadcrumb.value)
   fetchDataDetail()
@@ -329,6 +415,22 @@ watch(
   },
   { deep: true },
 )
+
+watch(formData, () => {
+  if (formData.latitude && formData.longitude) {
+    mapCenter.value = [formData.latitude, formData.longitude]
+  }
+})
+
+watch(mapCenter, (newCenter) => {
+  selectedLatLng.value = {
+    lat: newCenter[0],
+    lng: newCenter[1],
+  }
+  if (mapRef.value?.leafletObject && newCenter[0] && newCenter[1]) {
+    mapRef.value.leafletObject.setView(newCenter, MAP_ZOOM)
+  }
+})
 </script>
 
 <template>
@@ -344,25 +446,69 @@ watch(
       autocomplete="off"
       :model="formData"
     >
-      <a-form-item class="col-sm-4" label="Kiểu IP" name="type" :rules="formRules.type">
-        <a-select
-          class="w-100"
-          v-model:value="formData.type"
-          :disabled="modalAddOrUpdate.isLoading"
-        >
-          <a-select-option v-for="(name, id) in TYPE_FACILITY_IP" :key="id" :value="id">
-            {{ name }}
-          </a-select-option>
-        </a-select>
-      </a-form-item>
-
-      <a-form-item class="col-sm-8" label="IP/Dải IP" name="ip" :rules="formRules.ip">
+      <a-form-item class="col-sm-12" label="Tên địa điểm" name="name" :rules="formRules.name">
         <a-input
           class="w-100"
-          v-model:value="formData.ip"
+          v-model:value="formData.name"
           :disabled="modalAddOrUpdate.isLoading"
           allowClear
         />
+      </a-form-item>
+      <a-form-item class="col-sm-4" label="Vĩ độ" name="latitude" :rules="formRules.latitude">
+        <a-input-number
+          class="w-100"
+          v-model:value="formData.latitude"
+          :min="-90"
+          :max="90"
+          :disabled="modalAddOrUpdate.isLoading"
+          allowClear
+        />
+      </a-form-item>
+
+      <a-form-item class="col-sm-4" label="Kinh độ" name="longitude" :rules="formRules.longitude">
+        <a-input-number
+          class="w-100"
+          v-model:value="formData.longitude"
+          :min="-180"
+          :max="180"
+          :disabled="modalAddOrUpdate.isLoading"
+          allowClear
+        />
+      </a-form-item>
+      <a-form-item class="col-sm-2" label="Bán kính (m)" name="radius" :rules="formRules.radius">
+        <a-input-number
+          class="w-100"
+          v-model:value="formData.radius"
+          :min="1"
+          :disabled="modalAddOrUpdate.isLoading"
+          allowClear
+        />
+      </a-form-item>
+      <a-form-item class="col-sm-2">
+        <a-button type="primary" class="mt-4" @click="handleGetCurrentLocation"
+          >Vị trí hiện tại</a-button
+        >
+      </a-form-item>
+      <a-form-item class="col-sm-12">
+        <LMap
+          ref="mapRef"
+          style="height: 400px"
+          :zoom="MAP_ZOOM"
+          :center="mapCenter"
+          @click="onMapClick"
+          @ready="onMapReady"
+        >
+          <LTileLayer :url="tileUrl" attribution="" />
+          <LMarker v-if="selectedLatLng" :lat-lng="selectedLatLng" />
+          <LCircle
+            v-if="selectedLatLng"
+            :lat-lng="selectedLatLng"
+            :radius="formData.radius"
+            color="#41395b"
+            fillColor="#41395b"
+            :fillOpacity="0.2"
+          />
+        </LMap>
       </a-form-item>
     </a-form>
   </a-modal>
@@ -376,7 +522,11 @@ watch(
           <div class="row g-2">
             <div class="col-lg-6 col-md-12 col-sm-12">
               <div class="label-title">Từ khoá:</div>
-              <a-input v-model:value="dataFilter.keyword" placeholder="Tìm theo IP..." allowClear>
+              <a-input
+                v-model:value="dataFilter.keyword"
+                placeholder="Tìm theo địa điểm..."
+                allowClear
+              >
                 <template #prefix>
                   <SearchOutlined />
                 </template>
@@ -397,21 +547,6 @@ watch(
                 </a-select-option>
               </a-select>
             </div>
-            <div class="col-lg-3 col-md-6 col-sm-6">
-              <div class="label-title">Kiểu IP:</div>
-              <a-select
-                v-model:value="dataFilter.type"
-                class="w-100"
-                :dropdownMatchSelectWidth="false"
-                placeholder="-- Tất cả kiểu IP --"
-                allowClear
-              >
-                <a-select-option :value="null">-- Tất cả kiểu IP --</a-select-option>
-                <a-select-option v-for="(name, id) in TYPE_FACILITY_IP" :key="id" :value="id">
-                  {{ name }}
-                </a-select-option>
-              </a-select>
-            </div>
             <div class="col-12">
               <div class="d-flex justify-content-center flex-wrap gap-2 mt-3">
                 <a-button class="btn-light" @click="handleSubmitFilter">
@@ -426,10 +561,10 @@ watch(
 
       <div class="col-12">
         <a-card :bordered="false" class="cart">
-          <template #title> <UnorderedListOutlined /> Danh sách IP cho phép </template>
+          <template #title> <UnorderedListOutlined /> Danh sách địa điểm cho phép </template>
           <div class="d-flex justify-content-end mb-3 flex-wrap gap-3">
             <a-button type="primary" @click="handleShowAdd">
-              <PlusOutlined /> Thêm IP mới
+              <PlusOutlined /> Thêm địa điểm mới
             </a-button>
           </div>
 
@@ -445,6 +580,9 @@ watch(
               @change="handleTableChange"
             >
               <template #bodyCell="{ column, record }">
+                <template v-if="column.dataIndex === 'radius'">
+                  <a-tag color="purple"> {{ record.radius }}m </a-tag>
+                </template>
                 <template v-if="column.dataIndex === 'type'">
                   <a-tag color="purple">
                     {{ TYPE_FACILITY_IP[record.type] }}
@@ -466,7 +604,7 @@ watch(
                       <EditFilled />
                     </a-button>
                   </a-tooltip>
-                  <a-tooltip title="Xoá IP">
+                  <a-tooltip title="Xoá địa điểm">
                     <a-button
                       class="btn-outline-danger border-0 ms-2"
                       @click="handleShowAlertDelete(record)"

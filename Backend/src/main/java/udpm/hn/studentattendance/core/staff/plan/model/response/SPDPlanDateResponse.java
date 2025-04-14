@@ -23,4 +23,8 @@ public interface SPDPlanDateResponse extends IsIdentify, HasOrderNumber {
 
     Long getToDate();
 
+    Integer getRequiredIp();
+
+    Integer getRequiredLocation();
+
 }
