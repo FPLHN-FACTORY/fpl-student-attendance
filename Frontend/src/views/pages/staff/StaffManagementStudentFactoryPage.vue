@@ -65,7 +65,6 @@ const columns = ref([
   { title: 'Tên sinh viên', dataIndex: 'studentName', key: 'studentName' },
   { title: 'Email sinh viên', dataIndex: 'studentEmail', key: 'studentEmail' },
   { title: 'Trạng thái', dataIndex: 'statusStudentFactory', key: 'statusStudentFactory' },
-  { title: 'Chức năng', key: 'actions', width: 80 },
 ])
 
 /* -------------------- Phân trang cho danh sách sinh viên trong nhóm xưởng -------------------- */
@@ -145,7 +144,6 @@ const studentColumns = ref([
   { title: 'Mã sinh viên', dataIndex: 'code', key: 'code' },
   { title: 'Tên sinh viên', dataIndex: 'name', key: 'name' },
   { title: 'Email', dataIndex: 'email', key: 'email' },
-  { title: 'Chọn', key: 'select' },
 ])
 const selectedStudents = reactive({})
 
@@ -318,28 +316,28 @@ const configImportExcel = {
   showDownloadTemplate: true,
   showHistoryLog: true,
 }
-const changeFaceStudent = (record) => {
-  Modal.confirm({
-    title: 'Xác nhận đổi mặt',
-    content: `Bạn có chắc muốn đổi mặt của học sinh ${record.studentName}?`,
-    onOk() {
-      loadingStore.show()
-      // Giả sử record chứa studentId, nếu không hãy thay đổi cho phù hợp
-      requestAPI
-        .put(API_ROUTES_STAFF.FETCH_DATA_STUDENT_FACTORY + '/change-face/' + record.studentId)
-        .then((response) => {
-          message.success(response.data.message || 'Đổi mặt học sinh thành công')
-          fetchStudentFactories() // Làm mới danh sách sau khi đổi mặt
-        })
-        .catch((error) => {
-          message.error(error.response?.data?.message || 'Lỗi khi đổi mặt học sinh')
-        })
-        .finally(() => {
-          loadingStore.hide()
-        })
-    },
-  })
-}
+// const changeFaceStudent = (record) => {
+//   Modal.confirm({
+//     title: 'Xác nhận đổi mặt',
+//     content: `Bạn có chắc muốn đổi mặt của học sinh ${record.studentName}?`,
+//     onOk() {
+//       loadingStore.show()
+//       // Giả sử record chứa studentId, nếu không hãy thay đổi cho phù hợp
+//       requestAPI
+//         .put(API_ROUTES_STAFF.FETCH_DATA_STUDENT_FACTORY + '/change-face/' + record.studentId)
+//         .then((response) => {
+//           message.success(response.data.message || 'Đổi mặt học sinh thành công')
+//           fetchStudentFactories() // Làm mới danh sách sau khi đổi mặt
+//         })
+//         .catch((error) => {
+//           message.error(error.response?.data?.message || 'Lỗi khi đổi mặt học sinh')
+//         })
+//         .finally(() => {
+//           loadingStore.hide()
+//         })
+//     },
+//   })
+// }
 /* -------------------- Quản lý modal thêm sinh viên -------------------- */
 const isAddStudentModalVisible = ref(false)
 watch(isAddStudentModalVisible, (newVal) => {
@@ -451,22 +449,6 @@ onMounted(() => {
                     </a-tag>
                   </span>
                 </template>
-                <template v-else>
-                  {{ record[column.dataIndex] }}
-                </template>
-              </template>
-              <template v-else-if="column.key === 'actions'">
-                <a-space>
-                  <a-tooltip title="Cấp quyền thay đổi mặt sinh viên">
-                    <a-button
-                      type="text"
-                      class="btn-outline-info"
-                      @click="changeFaceStudent(record)"
-                    >
-                      <UserDeleteOutlined />
-                    </a-button>
-                  </a-tooltip>
-                </a-space>
               </template>
             </template>
           </a-table>
