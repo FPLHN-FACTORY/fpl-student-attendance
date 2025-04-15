@@ -51,9 +51,15 @@ router.beforeEach((to, from, next) => {
 
   breadcrumbStore.clear()
 
+  const requireAuth = to.meta.requireAuth || null
+
   const requireRole = to.meta.requireRole || null
 
   const user = authStore.user || null
+
+  if (requireAuth && !user) {
+    return next({ name: RouteNameAuth.LOGIN_PAGE })
+  }
 
   if (!user && requireRole) {
     return next({ name: RouteNameAuth.LOGIN_PAGE })

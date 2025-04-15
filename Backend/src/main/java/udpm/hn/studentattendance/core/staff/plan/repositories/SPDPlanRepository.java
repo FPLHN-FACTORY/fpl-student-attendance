@@ -34,7 +34,7 @@ public interface SPDPlanRepository extends PlanRepository {
             pl.description,
             CONCAT(s.name, ' - ', s.year) AS semesterName,
             s2.name AS subjectName,
-            pl.status AS status
+            LEAST(pl.status, p.status, lp.status, s.status, sf.status, s2.status) AS status
         FROM plan pl
         JOIN project p ON p.id = pl.id_project
         LEFT JOIN level_project lp ON lp.id = p.id_level_project
@@ -85,7 +85,7 @@ public interface SPDPlanRepository extends PlanRepository {
             pl.description,
             CONCAT(s.name, ' - ', s.year) AS semesterName,
             s2.name AS subjectName,
-            pl.status AS status
+            LEAST(pl.status, p.status, lp.status, s.status, sf.status, s2.status) AS status
         FROM plan pl
         JOIN project p ON p.id = pl.id_project
         LEFT JOIN level_project lp ON lp.id = p.id_level_project
