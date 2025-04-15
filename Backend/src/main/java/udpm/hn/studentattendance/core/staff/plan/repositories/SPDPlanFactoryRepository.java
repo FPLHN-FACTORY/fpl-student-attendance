@@ -29,7 +29,7 @@ public interface SPDPlanFactoryRepository extends PlanFactoryRepository {
             MIN(pd.start_date) AS fromDate,
             MAX(pd.start_date) AS toDate,
             COUNT(DISTINCT pd.id) AS totalShift,
-            pf.status,
+            LEAST(pf.status, p.status, f.status, pl.status) AS status,
             MAX(pd.created_at) AS lastUpdated
         FROM plan_factory pf
         JOIN plan pl ON pf.id_plan = pl.id
@@ -83,7 +83,7 @@ public interface SPDPlanFactoryRepository extends PlanFactoryRepository {
             MIN(pd.start_date) AS fromDate,
             MAX(pd.start_date) AS toDate,
             COUNT(DISTINCT pd.id) AS totalShift,
-            pf.status
+            LEAST(pf.status, p.status, f.status, pl.status) AS status
         FROM plan_factory pf
         JOIN plan pl ON pf.id_plan = pl.id
         JOIN factory f ON pf.id_factory = f.id

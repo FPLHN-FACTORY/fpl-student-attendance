@@ -20,6 +20,7 @@ import udpm.hn.studentattendance.entities.FacilityLocation;
 import udpm.hn.studentattendance.entities.FacilityShift;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
 import udpm.hn.studentattendance.helpers.RouterHelper;
+import udpm.hn.studentattendance.helpers.ShiftHelper;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 
@@ -47,6 +48,11 @@ public class AFFacilityShiftServiceImpl implements AFFacilityShiftService {
             return RouterHelper.responseError("Không tìm cơ sở");
         }
 
+        int diffTime = ShiftHelper.getDiffTime(request.getFromHour(), request.getFromMinute(), request.getToHour(), request.getToMinute());
+        if (diffTime < ShiftHelper.MIN_DIFF) {
+            return RouterHelper.responseError("Ca học phải diễn ra tối thiểu trong " + ShiftHelper.MIN_DIFF / 60 + " phút");
+        }
+
         if (afFacilityShiftRepository.isExistsShift(request.getShift(), request.getIdFacility(), null)) {
             return RouterHelper.responseError("Ca " + request.getShift() + " đã tồn tại trong cơ sở " + facility.getName());
         }
@@ -71,6 +77,11 @@ public class AFFacilityShiftServiceImpl implements AFFacilityShiftService {
         FacilityShift facilityShift = afFacilityShiftRepository.findById(request.getId()).orElse(null);
         if (facilityShift == null) {
             return RouterHelper.responseError("Không tìm thấy ca học muốn cập nhật");
+        }
+
+        int diffTime = ShiftHelper.getDiffTime(request.getFromHour(), request.getFromMinute(), request.getToHour(), request.getToMinute());
+        if (diffTime < ShiftHelper.MIN_DIFF) {
+            return RouterHelper.responseError("Ca học phải diễn ra tối thiểu trong " + ShiftHelper.MIN_DIFF / 60 + " phút");
         }
 
         Facility facility = afFacilityExtendRepository.findById(request.getIdFacility()).orElse(null);

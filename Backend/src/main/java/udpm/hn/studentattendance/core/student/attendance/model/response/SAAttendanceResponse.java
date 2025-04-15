@@ -7,7 +7,9 @@ public interface SAAttendanceResponse extends IsIdentify, HasOrderNumber {
 
     String getIdPlanDate();
 
-    Long getDate();
+    Long getStartDate();
+
+    Long getEndDate();
 
     Long getTimeCheckin();
 

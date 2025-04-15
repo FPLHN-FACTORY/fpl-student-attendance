@@ -14,4 +14,7 @@ public class RoutesConstant {
 
     public final static String PREFIX_API_EXCEL = API_PREFIX + "/excel";
 
+    public final static String PREFIX_API_NOTIFICATION = API_PREFIX + "/notification";
+
+
 }
