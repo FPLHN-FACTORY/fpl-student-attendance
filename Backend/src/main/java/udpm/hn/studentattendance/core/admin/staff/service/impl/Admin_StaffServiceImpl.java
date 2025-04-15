@@ -233,7 +233,7 @@ public class Admin_StaffServiceImpl implements Admin_StaffService {
             );
         }
 
-        if(isCheckEmailFpt.equals("true")) {
+        if(!isCheckEmailFpt.equals("true")) {
             if (!ValidateHelper.isValidEmailFE(adCreateUpdateStaffRequest.getEmailFe().trim())) {
                 return RouterHelper.responseError("Không chứa khoảng trắng và kết thúc bằng @fe.edu.vn");
             }
