@@ -107,15 +107,19 @@ const fetchSemesters = () => {
   loadingStore.show()
   isLoading.value = true
 
-  // Tạo bản sao của filter, chuyển đổi ngày nếu cần
-  const params = { ...filter }
-  params.fromDateSemester = filter.fromDateSemester ? filter.fromDateSemester.valueOf() : null
-  params.toDateSemester = filter.toDateSemester ? filter.toDateSemester.valueOf() : null
-  params.page = pagination.current
-  params.size = pagination.pageSize
+  // Tạo bản sao của filter, loại bỏ dateRange
+  const { dateRange, ...filteredParams } = filter
+
+  // Thêm các tham số khác
+  filteredParams.fromDateSemester = filter.fromDateSemester
+    ? filter.fromDateSemester.valueOf()
+    : null
+  filteredParams.toDateSemester = filter.toDateSemester ? filter.toDateSemester.valueOf() : null
+  filteredParams.page = pagination.current
+  filteredParams.size = pagination.pageSize
 
   requestAPI
-    .get(API_ROUTES_ADMIN.FETCH_DATA_SEMESTER, { params })
+    .get(API_ROUTES_ADMIN.FETCH_DATA_SEMESTER, { params: filteredParams })
     .then((response) => {
       semesters.value = response.data.data.data
       // Cập nhật tổng số bản ghi: nếu có totalRecords, dùng luôn, nếu không dùng totalPages * pageSize

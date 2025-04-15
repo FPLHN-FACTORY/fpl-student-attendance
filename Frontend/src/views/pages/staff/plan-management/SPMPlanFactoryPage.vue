@@ -541,9 +541,10 @@ watch(
                 <a-switch
                   class="me-2"
                   :checked="record.status === 1"
+                  :disabled="_detail.status !== 1"
                   @change="handleChangeStatus(record.id)"
                 />
-                <a-tag :color="record.status === 1 ? 'green' : 'red'">{{
+                <a-tag :color="record.status === 1 && _detail.status === 1 ? 'green' : 'red'">{{
                   record.status === 1 ? 'Đang triển khai' : 'Ngừng triển khai'
                 }}</a-tag>
               </template>

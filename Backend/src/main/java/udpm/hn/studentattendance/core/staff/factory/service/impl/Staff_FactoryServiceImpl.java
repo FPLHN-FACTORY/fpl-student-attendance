@@ -140,7 +140,8 @@ public class Staff_FactoryServiceImpl implements Staff_FactoryService {
                     ),
                     HttpStatus.BAD_REQUEST);
         }
-        if (factoryRepository.isExistNameAndProject(factoryCreateUpdateRequest.getFactoryName(), project.get().getId())) {
+        boolean exists = factoryRepository.isExistNameAndProject(factoryCreateUpdateRequest.getFactoryName(), factoryCreateUpdateRequest.getIdProject());
+        if (exists) {
             return new ResponseEntity<>(
                     new ApiResponse(
                             RestApiStatus.ERROR,
@@ -174,6 +175,16 @@ public class Staff_FactoryServiceImpl implements Staff_FactoryService {
         Optional<Factory> existFactory = factoryRepository.findById(factoryCreateUpdateRequest.getId());
         Optional<UserStaff> userStaff = staffFactoryExtendRepository.findById(factoryCreateUpdateRequest.getIdUserStaff());
         Optional<Project> project = projectFactoryExtendRepository.findById(factoryCreateUpdateRequest.getIdProject());
+        boolean exists = factoryRepository.isExistNameAndProject(factoryCreateUpdateRequest.getFactoryName(), factoryCreateUpdateRequest.getIdProject());
+        if (exists) {
+            return new ResponseEntity<>(
+                    new ApiResponse(
+                            RestApiStatus.ERROR,
+                            "Nhóm xưởng đã tồn tại trong dự án này",
+                            null
+                    ),
+                    HttpStatus.BAD_REQUEST);
+        }
         if (existFactory.isPresent()) {
             Factory factory = existFactory.get();
             factory.setName(factoryCreateUpdateRequest.getFactoryName());

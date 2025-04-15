@@ -18,7 +18,6 @@ import udpm.hn.studentattendance.core.student.history_attendance.repository.Stud
 import udpm.hn.studentattendance.core.student.history_attendance.repository.Student_HistoryAttendanceFactoryExtendRepository;
 import udpm.hn.studentattendance.core.student.history_attendance.repository.Student_HistoryAttendanceSemesterExtendRepository;
 import udpm.hn.studentattendance.core.student.history_attendance.service.Student_HistoryAttendanceService;
-import udpm.hn.studentattendance.core.teacher.teaching_schedule.model.response.Teacher_TeachingScheduleResponse;
 import udpm.hn.studentattendance.entities.Factory;
 import udpm.hn.studentattendance.entities.Semester;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
@@ -97,7 +96,7 @@ public class Student_HistoryAttendanceImpl implements Student_HistoryAttendanceS
             document.open();
 
             // Nhúng font hỗ trợ tiếng Việt (Arial Unicode MS)
-            BaseFont unicodeFont = BaseFont.createFont("Arial Unicode.ttf", BaseFont.IDENTITY_H, BaseFont.EMBEDDED);
+            BaseFont unicodeFont = BaseFont.createFont("font/Arial Unicode.ttf", BaseFont.IDENTITY_H, BaseFont.EMBEDDED);
             Font fontHeaders = new Font(unicodeFont, 15, Font.BOLD);
             Font headFont = new Font(unicodeFont, 12, Font.SYMBOL, new Color(239, 235, 235));
             Font cellFont = new Font(unicodeFont, 12);
