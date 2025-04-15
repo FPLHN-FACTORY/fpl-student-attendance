@@ -3,6 +3,7 @@ package udpm.hn.studentattendance.core.admin.staff.service.impl;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -23,6 +24,8 @@ import udpm.hn.studentattendance.entities.Role;
 import udpm.hn.studentattendance.entities.UserAdmin;
 import udpm.hn.studentattendance.entities.UserStaff;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
+import udpm.hn.studentattendance.helpers.RouterHelper;
+import udpm.hn.studentattendance.helpers.ValidateHelper;
 import udpm.hn.studentattendance.infrastructure.common.ApiResponse;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
@@ -44,6 +47,9 @@ public class Admin_StaffServiceImpl implements Admin_StaffService {
     private final Admin_StaffAdminRepository adStaffAdminRepository;
 
     private final Admin_StaffFacilityRepository adminStaffFacilityRepository;
+
+    @Value("${app.config.disabled-check-email-fpt}")
+    private String isCheckEmailFpt;
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -225,6 +231,15 @@ public class Admin_StaffServiceImpl implements Admin_StaffService {
                     new ApiResponse(RestApiStatus.ERROR, "Không tìm thấy nhân viên", null),
                     HttpStatus.NOT_FOUND
             );
+        }
+
+        if(!isCheckEmailFpt.equals("true")) {
+            if (!ValidateHelper.isValidEmailFE(adCreateUpdateStaffRequest.getEmailFe().trim())) {
+                return RouterHelper.responseError("Không chứa khoảng trắng và kết thúc bằng @fe.edu.vn");
+            }
+            if (!ValidateHelper.isValidEmailFPT(adCreateUpdateStaffRequest.getEmailFpt().trim())) {
+                return RouterHelper.responseError("Không chứa khoảng trắng và kết thúc bằng @fpt.edu.vn");
+            }
         }
 
         UserStaff staff = existStaff.get();
