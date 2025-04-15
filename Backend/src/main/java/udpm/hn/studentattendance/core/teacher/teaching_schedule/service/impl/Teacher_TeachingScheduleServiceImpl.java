@@ -4,11 +4,8 @@ import com.lowagie.text.*;
 import com.lowagie.text.Font;
 import com.lowagie.text.pdf.*;
 import lombok.RequiredArgsConstructor;
-import org.springframework.core.io.InputStreamResource;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
@@ -125,7 +122,7 @@ public class Teacher_TeachingScheduleServiceImpl implements Teacher_TeachingSche
             document.open();
 
             // Nhúng font hỗ trợ tiếng Việt (Arial Unicode MS)
-            BaseFont unicodeFont = BaseFont.createFont("Arial Unicode.ttf", BaseFont.IDENTITY_H, BaseFont.EMBEDDED);
+            BaseFont unicodeFont = BaseFont.createFont("font/Arial Unicode.ttf", BaseFont.IDENTITY_H, BaseFont.EMBEDDED);
             Font fontHeaders = new Font(unicodeFont, 15, Font.BOLD);
             // Định nghĩa font cho header với màu chữ đen (không dùng màu trắng)
             Font headFont = new Font(unicodeFont, 12, Font.SYMBOL, new Color(239, 235, 235));

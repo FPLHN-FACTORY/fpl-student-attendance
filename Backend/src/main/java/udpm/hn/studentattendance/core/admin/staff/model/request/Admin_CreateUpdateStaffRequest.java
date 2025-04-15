@@ -23,12 +23,12 @@ public class Admin_CreateUpdateStaffRequest {
 
 //    @NotEmpty(message = "Tài khoản FE không được để trống")
     @Length(max = 100, message = "Tài khoản FE phải ít hơn 100 ký tự")
-    @Pattern(regexp = "^[A-Za-z0-9._%+-]+@fe\\.edu\\.vn$", message = "Không chứa khoảng trắng và kết thúc bằng @fe.edu.vn")
+//    @Pattern(regexp = "^[A-Za-z0-9._%+-]+@fe\\.edu\\.vn$", message = "Không chứa khoảng trắng và kết thúc bằng @fe.edu.vn")
     private String emailFe;
 
 //    @NotBlank(message = "Tài khoản FPT không được để trống")
     @Length(max = 100, message = "Tài khoản FPT phải ít hơn 100 ký tự")
-    @Pattern(regexp = "^[A-Za-z0-9._%+-]+@fpt\\.edu\\.vn$", message = "Không chứa khoảng trắng và kết thúc bằng @fpt.edu.vn")
+//    @Pattern(regexp = "^[A-Za-z0-9._%+-]+@fpt\\.edu\\.vn$", message = "Không chứa khoảng trắng và kết thúc bằng @fpt.edu.vn")
     private String emailFpt;
 
     private String facilityId;
