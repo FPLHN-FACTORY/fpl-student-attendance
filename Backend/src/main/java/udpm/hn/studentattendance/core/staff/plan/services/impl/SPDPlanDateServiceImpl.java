@@ -101,7 +101,7 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
             return RouterHelper.responseError("Không tìm thấy kế hoạch chi tiết");
         }
 
-        if (DateTimeUtils.getCurrentTimeMillis() > planDate.getStartDate() + 7200 ) {
+        if (DateTimeUtils.getCurrentTimeMillis() > planDate.getEndDate() ) {
             return RouterHelper.responseError("Không thể cập nhật kế hoạch đã diễn ra");
         }
 
@@ -150,6 +150,7 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
         String link = StringUtils.hasText(request.getLink()) ? request.getLink().trim() : null;
 
         planDate.setStartDate(startDate);
+        planDate.setEndDate(startDate + ShiftHelper.getDiffTime(shift));
         planDate.setShift(request.getShift());
         planDate.setType(type);
         planDate.setLink(link);
@@ -231,6 +232,7 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
         PlanDate planDate = new PlanDate();
         planDate.setPlanFactory(planFactory);
         planDate.setStartDate(startDate);
+        planDate.setEndDate(startDate + ShiftHelper.getDiffTime(shift));
         planDate.setShift(request.getShift());
         planDate.setType(type);
         planDate.setLink(link);

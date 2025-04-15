@@ -6,12 +6,15 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
+import udpm.hn.studentattendance.core.notification.model.request.NotificationAddRequest;
+import udpm.hn.studentattendance.core.notification.service.NotificationService;
 import udpm.hn.studentattendance.core.staff.student.model.request.Staff_StudentCreateUpdateRequest;
 import udpm.hn.studentattendance.core.staff.student.model.request.Staff_StudentRequest;
 import udpm.hn.studentattendance.core.staff.student.repository.Staff_StudentExtendRepository;
 import udpm.hn.studentattendance.core.staff.student.service.Staff_StudentService;
 import udpm.hn.studentattendance.entities.Facility;
 import udpm.hn.studentattendance.entities.UserStudent;
+import udpm.hn.studentattendance.helpers.NotificationHelper;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
 import udpm.hn.studentattendance.helpers.SessionHelper;
 import udpm.hn.studentattendance.infrastructure.common.ApiResponse;
@@ -21,6 +24,9 @@ import udpm.hn.studentattendance.infrastructure.constants.RestApiStatus;
 import udpm.hn.studentattendance.repositories.FacilityRepository;
 import udpm.hn.studentattendance.utils.CodeGeneratorUtils;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 @Service
@@ -33,6 +39,8 @@ public class Staff_StudentServiceImpl implements Staff_StudentService {
     private final SessionHelper sessionHelper;
 
     private final FacilityRepository facilityRepository;
+
+    private final NotificationService notificationService;
 
     @Override
     public ResponseEntity<?> getAllStudentByFacility(Staff_StudentRequest studentRequest) {
@@ -166,6 +174,15 @@ public class Staff_StudentServiceImpl implements Staff_StudentService {
             UserStudent userStudent = existUserStudent.get();
             userStudent.setFaceEmbedding(null);
             studentExtendRepository.save(userStudent);
+
+            Map<String, Object> dataNotification = new HashMap<>();
+            dataNotification.put(NotificationHelper.KEY_USER_STAFF, sessionHelper.getUserCode() + " - " + sessionHelper.getUserName());
+            NotificationAddRequest notificationAddRequest = new NotificationAddRequest();
+            notificationAddRequest.setIdUser(userStudent.getId());
+            notificationAddRequest.setType(NotificationHelper.TYPE_REMOVE_FACE_ID);
+            notificationAddRequest.setData(dataNotification);
+            notificationService.add(notificationAddRequest);
+
             return new ResponseEntity<>(
                     new ApiResponse(
                             RestApiStatus.SUCCESS,

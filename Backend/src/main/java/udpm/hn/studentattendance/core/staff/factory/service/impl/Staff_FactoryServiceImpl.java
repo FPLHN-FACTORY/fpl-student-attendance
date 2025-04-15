@@ -6,12 +6,15 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
+import udpm.hn.studentattendance.core.notification.model.request.NotificationAddRequest;
+import udpm.hn.studentattendance.core.notification.service.NotificationService;
 import udpm.hn.studentattendance.core.staff.factory.model.request.Staff_FactoryCreateUpdateRequest;
 import udpm.hn.studentattendance.core.staff.factory.model.request.Staff_FactoryRequest;
 import udpm.hn.studentattendance.core.staff.factory.model.response.Staff_DetailFactoryResponse;
 import udpm.hn.studentattendance.core.staff.factory.repository.*;
 import udpm.hn.studentattendance.core.staff.factory.service.Staff_FactoryService;
 import udpm.hn.studentattendance.entities.*;
+import udpm.hn.studentattendance.helpers.NotificationHelper;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
 import udpm.hn.studentattendance.helpers.SessionHelper;
 import udpm.hn.studentattendance.infrastructure.common.ApiResponse;
@@ -22,7 +25,9 @@ import udpm.hn.studentattendance.repositories.SemesterRepository;
 import udpm.hn.studentattendance.utils.CodeGeneratorUtils;
 
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -41,6 +46,8 @@ public class Staff_FactoryServiceImpl implements Staff_FactoryService {
     private final Staff_FactoryPlanExtendRepository factoryPlanExtendRepository;
 
     private final SemesterRepository semesterRepository;
+
+    private final NotificationService notificationService;
 
     private final SessionHelper sessionHelper;
 
@@ -158,6 +165,16 @@ public class Staff_FactoryServiceImpl implements Staff_FactoryService {
         factory.setProject(project.get());
         factory.setStatus(EntityStatus.ACTIVE);
         factoryRepository.save(factory);
+
+        Map<String, Object> dataNotification = new HashMap<>();
+        dataNotification.put(NotificationHelper.KEY_USER_ADMIN, sessionHelper.getUserCode() + " - " + sessionHelper.getUserName());
+        dataNotification.put(NotificationHelper.KEY_FACTORY, factory.getName());
+        NotificationAddRequest notificationAddRequest = new NotificationAddRequest();
+        notificationAddRequest.setIdUser(userStaff.get().getId());
+        notificationAddRequest.setType(NotificationHelper.TYPE_ADD_TEACHER_TO_FACTORY);
+        notificationAddRequest.setData(dataNotification);
+        notificationService.add(notificationAddRequest);
+
         return new ResponseEntity<>(
                 new ApiResponse(
                         RestApiStatus.SUCCESS,
@@ -187,15 +204,33 @@ public class Staff_FactoryServiceImpl implements Staff_FactoryService {
         }
         if (existFactory.isPresent()) {
             Factory factory = existFactory.get();
+            UserStaff currentUserStaff = factory.getUserStaff();
+
             factory.setName(factoryCreateUpdateRequest.getFactoryName());
             factory.setDescription(factoryCreateUpdateRequest.getFactoryDescription());
             factory.setUserStaff(userStaff.get());
             factory.setProject(project.get());
             factoryRepository.save(factory);
+
+            Map<String, Object> dataNotification = new HashMap<>();
+            NotificationAddRequest notificationAddRequest = new NotificationAddRequest();
+            dataNotification.put(NotificationHelper.KEY_USER_ADMIN, sessionHelper.getUserCode() + " - " + sessionHelper.getUserName());
+            dataNotification.put(NotificationHelper.KEY_FACTORY, factory.getName());
+            notificationAddRequest.setData(dataNotification);
+            if (!currentUserStaff.getId().equals(userStaff.get().getId())) {
+                notificationAddRequest.setIdUser(currentUserStaff.getId());
+                notificationAddRequest.setType(NotificationHelper.TYPE_REMOVE_TEACHER_TO_FACTORY);
+                notificationService.add(notificationAddRequest);
+            }
+            notificationAddRequest.setIdUser(userStaff.get().getId());
+            notificationAddRequest.setType(NotificationHelper.TYPE_ADD_TEACHER_TO_FACTORY);
+            notificationService.add(notificationAddRequest);
+
+
             return new ResponseEntity<>(
                     new ApiResponse(
                             RestApiStatus.SUCCESS,
-                            "Sửa nhóm xưởng  thành công",
+                            "Sửa nhóm xưởng thành công",
                             factory
                     ),
                     HttpStatus.OK);

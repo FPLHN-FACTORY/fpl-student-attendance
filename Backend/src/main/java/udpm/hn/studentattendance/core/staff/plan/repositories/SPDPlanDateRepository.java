@@ -21,6 +21,7 @@ public interface SPDPlanDateRepository extends PlanDateRepository {
             ROW_NUMBER() OVER (ORDER BY pd.start_date ASC) as orderNumber,
             pd.id,
             pd.start_date,
+            pd.end_date,
             pd.shift,
             pd.type,
             pd.late_arrival,
@@ -29,7 +30,7 @@ public interface SPDPlanDateRepository extends PlanDateRepository {
             pd.required_location,
             pd.required_ip,
             CASE
-                WHEN UNIX_TIMESTAMP(NOW()) * 1000 > (pd.start_date + 7200)
+                WHEN UNIX_TIMESTAMP(NOW()) * 1000 > pd.end_date
                 THEN 'DA_DIEN_RA'
                 ELSE 'CHUA_DIEN_RA'
             END AS status
@@ -51,7 +52,7 @@ public interface SPDPlanDateRepository extends PlanDateRepository {
             )) AND
             (:#{#request.status} IS NULL OR (
                 CASE
-                    WHEN UNIX_TIMESTAMP(NOW()) * 1000 > (pd.start_date + 7200)
+                    WHEN UNIX_TIMESTAMP(NOW()) * 1000 > pd.end_date
                     THEN 'DA_DIEN_RA'
                     ELSE 'CHUA_DIEN_RA'
                 END
@@ -78,7 +79,7 @@ public interface SPDPlanDateRepository extends PlanDateRepository {
             )) AND
             (:#{#request.status} IS NULL OR (
                 CASE
-                    WHEN UNIX_TIMESTAMP(NOW()) * 1000 > (pd.start_date + 7200)
+                    WHEN UNIX_TIMESTAMP(NOW()) * 1000 > pd.end_date
                     THEN 'DA_DIEN_RA'
                     ELSE 'CHUA_DIEN_RA'
                 END
@@ -91,6 +92,7 @@ public interface SPDPlanDateRepository extends PlanDateRepository {
             1 as orderNumber,
             pd.id,
             pd.start_date,
+            pd.end_date,
             pd.shift,
             pd.late_arrival,
             pl.to_date,
@@ -99,7 +101,7 @@ public interface SPDPlanDateRepository extends PlanDateRepository {
             pd.required_location,
             pd.required_ip,
             CASE
-                WHEN UNIX_TIMESTAMP(NOW()) * 1000 > (pd.start_date + 7200)
+                WHEN UNIX_TIMESTAMP(NOW()) * 1000 > pd.end_date
                 THEN 'DA_DIEN_RA'
                 ELSE 'CHUA_DIEN_RA'
             END AS status
@@ -127,7 +129,7 @@ public interface SPDPlanDateRepository extends PlanDateRepository {
         WHERE
             sf.id_facility = :idFacility AND
             pd.id IN(:idPlanDates) AND
-            UNIX_TIMESTAMP(NOW()) * 1000 <= (pd.start_date + 7200)
+            UNIX_TIMESTAMP(NOW()) * 1000 <= pd.end_date
     """, countQuery = "SELECT 1", nativeQuery = true)
     int deletePlanDateById(String idFacility, List<String> idPlanDates);
 

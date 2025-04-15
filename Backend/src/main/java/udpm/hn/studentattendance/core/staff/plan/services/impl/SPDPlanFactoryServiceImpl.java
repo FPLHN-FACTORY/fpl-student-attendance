@@ -159,6 +159,7 @@ public class SPDPlanFactoryServiceImpl implements SPDPlanFactoryService {
                 PlanDate planDate = new PlanDate();
                 planDate.setPlanFactory(planFactory);
                 planDate.setStartDate(date);
+                planDate.setEndDate(date + ShiftHelper.getDiffTime(shift));
                 planDate.setShift(request.getShift());
                 planDate.setType(type);
                 planDate.setLink(link);
@@ -183,6 +184,11 @@ public class SPDPlanFactoryServiceImpl implements SPDPlanFactoryService {
         PlanFactory planFactory = spdPlanFactoryRepository.findById(idPlanFactory).orElse(null);
         if (planFactory == null) {
             return RouterHelper.responseError("Không tìm thấy nhóm xưởng trong kế hoạch này");
+        }
+
+        SPDPlanFactoryResponse planFactoryResponse = spdPlanFactoryRepository.getDetail(planFactory.getId(), sessionHelper.getFacilityId()).orElse(null);
+        if (planFactoryResponse == null || planFactoryResponse.getStatus() != planFactory.getStatus().ordinal()) {
+            return RouterHelper.responseError("Không thể thay đổi trạng thái nhóm xưởng này trong kế hoạch");
         }
 
         if (planFactory.getStatus() == EntityStatus.INACTIVE && spdPlanFactoryRepository.isExistsFactoryInPlan(planFactory.getFactory().getId())) {

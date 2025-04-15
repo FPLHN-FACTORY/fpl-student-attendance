@@ -25,7 +25,7 @@ public interface Student_HistoryAttendanceExtendRepository extends FactoryReposi
                         pd.shift AS planDateShift,
                         s.id AS semesterId,
                         CASE
-                            WHEN UNIX_TIMESTAMP(NOW()) * 1000 < (pd.start_date + 7200) THEN 'CHUA_DIEN_RA'
+                            WHEN UNIX_TIMESTAMP(NOW()) * 1000 < pd.end_date THEN 'CHUA_DIEN_RA'
                             WHEN 
                             (
                             SELECT 
@@ -111,7 +111,7 @@ public interface Student_HistoryAttendanceExtendRepository extends FactoryReposi
                         pd.shift AS planDateShift,
                         s.id AS semesterId,
                         CASE
-                            WHEN UNIX_TIMESTAMP(NOW()) * 1000 < (pd.start_date + 7200) THEN 'CHUA_DIEN_RA'
+                            WHEN UNIX_TIMESTAMP(NOW()) * 1000 < pd.end_date THEN 'CHUA_DIEN_RA'
                             WHEN 
                             (
                             SELECT 

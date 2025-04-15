@@ -8,6 +8,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
+import udpm.hn.studentattendance.core.notification.model.request.NotificationAddRequest;
+import udpm.hn.studentattendance.core.notification.service.NotificationService;
 import udpm.hn.studentattendance.core.staff.factory.model.request.Staff_StudentFactoryAddRequest;
 import udpm.hn.studentattendance.core.staff.factory.model.request.Staff_StudentFactoryCreateUpdateRequest;
 import udpm.hn.studentattendance.core.staff.factory.model.request.Staff_StudentFactoryRequest;
@@ -20,6 +22,7 @@ import udpm.hn.studentattendance.core.staff.factory.service.Staff_StudentFactory
 import udpm.hn.studentattendance.entities.Factory;
 import udpm.hn.studentattendance.entities.UserStudent;
 import udpm.hn.studentattendance.entities.UserStudentFactory;
+import udpm.hn.studentattendance.helpers.NotificationHelper;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
 import udpm.hn.studentattendance.helpers.SessionHelper;
 import udpm.hn.studentattendance.infrastructure.common.ApiResponse;
@@ -30,7 +33,9 @@ import udpm.hn.studentattendance.repositories.FactoryRepository;
 import udpm.hn.studentattendance.repositories.UserStudentRepository;
 import udpm.hn.studentattendance.utils.CodeGeneratorUtils;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 
@@ -46,6 +51,8 @@ public class Staff_StudentFactoryServiceImpl implements Staff_StudentFactoryServ
     private final FactoryRepository factoryRepository;
 
     private final Staff_UserStudentFactoryExtendRepository userStudentFactoryExtendRepository;
+
+    private final NotificationService notificationService;
 
     private final SessionHelper sessionHelper;
 
@@ -68,6 +75,16 @@ public class Staff_StudentFactoryServiceImpl implements Staff_StudentFactoryServ
         if (existStudentFactory.isPresent()) {
             UserStudentFactory userStudentFactory = existStudentFactory.get();
             studentFactoryRepository.deleteById(userStudentFactoryId);
+
+            Map<String, Object> dataNotification = new HashMap<>();
+            dataNotification.put(NotificationHelper.KEY_USER_STAFF, sessionHelper.getUserCode() + " - " + sessionHelper.getUserName());
+            dataNotification.put(NotificationHelper.KEY_FACTORY, userStudentFactory.getFactory().getName());
+            NotificationAddRequest notificationAddRequest = new NotificationAddRequest();
+            notificationAddRequest.setIdUser(userStudentFactory.getId());
+            notificationAddRequest.setType(NotificationHelper.TYPE_REMOVE_STUDENT_TO_FACTORY);
+            notificationAddRequest.setData(dataNotification);
+            notificationService.add(notificationAddRequest);
+
             return new ResponseEntity<>(
                     new ApiResponse(
                             RestApiStatus.SUCCESS,
@@ -160,6 +177,15 @@ public class Staff_StudentFactoryServiceImpl implements Staff_StudentFactoryServ
         userStudentFactory.setFactory(existFactory.get());
         userStudentFactory.setStatus(EntityStatus.ACTIVE);
         studentFactoryRepository.save(userStudentFactory);
+
+        Map<String, Object> dataNotification = new HashMap<>();
+        dataNotification.put(NotificationHelper.KEY_USER_STAFF, sessionHelper.getUserCode() + " - " + sessionHelper.getUserName());
+        dataNotification.put(NotificationHelper.KEY_FACTORY, existFactory.get().getName());
+        NotificationAddRequest notificationAddRequest = new NotificationAddRequest();
+        notificationAddRequest.setIdUser(userStudentFactory.getId());
+        notificationAddRequest.setType(NotificationHelper.TYPE_ADD_STUDENT_TO_FACTORY);
+        notificationAddRequest.setData(dataNotification);
+        notificationService.add(notificationAddRequest);
 
         return new ResponseEntity<>(
                 new ApiResponse(
@@ -258,6 +284,15 @@ public class Staff_StudentFactoryServiceImpl implements Staff_StudentFactoryServ
         userStudentFactory.setFactory(existFactory.get());
         userStudentFactory.setStatus(EntityStatus.ACTIVE);
         studentFactoryRepository.save(userStudentFactory);
+
+        Map<String, Object> dataNotification = new HashMap<>();
+        dataNotification.put(NotificationHelper.KEY_USER_STAFF, sessionHelper.getUserCode() + " - " + sessionHelper.getUserName());
+        dataNotification.put(NotificationHelper.KEY_FACTORY, existFactory.get().getName());
+        NotificationAddRequest notificationAddRequest = new NotificationAddRequest();
+        notificationAddRequest.setIdUser(userStudentFactory.getId());
+        notificationAddRequest.setType(NotificationHelper.TYPE_ADD_STUDENT_TO_FACTORY);
+        notificationAddRequest.setData(dataNotification);
+        notificationService.add(notificationAddRequest);
 
         return new ResponseEntity<>(
                 new ApiResponse(

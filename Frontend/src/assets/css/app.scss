@@ -112,6 +112,99 @@ body {
   font-size: 0.8rem;
   margin-bottom: 6px;
 }
+
+.notification-menu {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  margin: 0 0.8rem;
+  &_icon {
+    font-size: 1.6rem;
+    color: #6e757b;
+    &:hover {
+      color: #5b5373;
+    }
+  }
+}
+
+.notification-content {
+  min-width: 300px;
+  max-width: 500px;
+  padding: 4px;
+  list-style-type: none;
+  background-color: #ffffff;
+  background-clip: padding-box;
+  border-radius: 8px;
+  outline: none;
+  box-shadow:
+    0 6px 16px 0 rgba(0, 0, 0, 0.08),
+    0 3px 6px -4px rgba(0, 0, 0, 0.12),
+    0 9px 28px 8px rgba(0, 0, 0, 0.05);
+  &_header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #f6f8fa;
+    padding: 0.2rem 0.4rem;
+    font-weight: 600;
+    .btn-markReadAll {
+      border-radius: 5px;
+      font-weight: 100;
+      border: 0;
+      padding: 4px;
+      background: #f6f8fa;
+      font-size: 0.7rem;
+      cursor: pointer;
+      &:hover {
+        color: #846eca;
+        background: #f6f8fa;
+      }
+    }
+  }
+  &_body {
+    max-height: 500px;
+    overflow-y: auto;
+    margin: 0.4rem 0;
+    &-item {
+      padding: 0.8rem 1rem;
+      cursor: pointer;
+      border-radius: 5px;
+      background: #efeef1;
+      color: #353144;
+      &:hover {
+        background: #b4b1bc;
+        color: #2a1f41;
+      }
+      & + & {
+        margin-top: 0.2rem;
+      }
+      .notification-time {
+        opacity: 0.8;
+        font-size: 0.8rem;
+      }
+    }
+    &-empty {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 3rem 0;
+      opacity: 0.6;
+      svg {
+        width: 50px;
+      }
+    }
+  }
+  &_footer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f6f8fa;
+    padding: 0.2rem 1rem;
+    color: #5537b9;
+  }
+}
 .ant-layout {
   background: #fff;
   &-header {
@@ -162,6 +255,7 @@ body {
       text-overflow: ellipsis;
     }
   }
+
   &-content {
     padding: 15px;
   }
