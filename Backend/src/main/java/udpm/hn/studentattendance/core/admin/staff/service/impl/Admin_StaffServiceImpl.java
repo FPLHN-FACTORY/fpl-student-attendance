@@ -19,12 +19,16 @@ import udpm.hn.studentattendance.core.admin.staff.repository.Admin_StaffFacility
 import udpm.hn.studentattendance.core.admin.staff.repository.Admin_StaffRepository;
 import udpm.hn.studentattendance.core.admin.staff.repository.Admin_StaffRoleRepository;
 import udpm.hn.studentattendance.core.admin.staff.service.Admin_StaffService;
+import udpm.hn.studentattendance.core.notification.model.request.NotificationAddRequest;
+import udpm.hn.studentattendance.core.notification.service.NotificationService;
 import udpm.hn.studentattendance.entities.Facility;
 import udpm.hn.studentattendance.entities.Role;
 import udpm.hn.studentattendance.entities.UserAdmin;
 import udpm.hn.studentattendance.entities.UserStaff;
+import udpm.hn.studentattendance.helpers.NotificationHelper;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
 import udpm.hn.studentattendance.helpers.RouterHelper;
+import udpm.hn.studentattendance.helpers.SessionHelper;
 import udpm.hn.studentattendance.helpers.ValidateHelper;
 import udpm.hn.studentattendance.infrastructure.common.ApiResponse;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
@@ -33,7 +37,9 @@ import udpm.hn.studentattendance.infrastructure.constants.RestApiStatus;
 import udpm.hn.studentattendance.infrastructure.constants.RoleConstant;
 import udpm.hn.studentattendance.utils.CodeGeneratorUtils;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -47,6 +53,10 @@ public class Admin_StaffServiceImpl implements Admin_StaffService {
     private final Admin_StaffAdminRepository adStaffAdminRepository;
 
     private final Admin_StaffFacilityRepository adminStaffFacilityRepository;
+
+    private final NotificationService notificationService;
+
+    private final SessionHelper sessionHelper;
 
     @Value("${app.config.disabled-check-email-fpt}")
     private String isCheckEmailFpt;
@@ -109,6 +119,16 @@ public class Admin_StaffServiceImpl implements Admin_StaffService {
 //    }
     @Override
     public ResponseEntity<?> createStaff(Admin_CreateUpdateStaffRequest adCreateUpdateStaffRequest) {
+
+        if(!isCheckEmailFpt.equals("true")) {
+            if (!ValidateHelper.isValidEmailFE(adCreateUpdateStaffRequest.getEmailFe().trim())) {
+                return RouterHelper.responseError("Không chứa khoảng trắng và kết thúc bằng @fe.edu.vn");
+            }
+            if (!ValidateHelper.isValidEmailFPT(adCreateUpdateStaffRequest.getEmailFpt().trim())) {
+                return RouterHelper.responseError("Không chứa khoảng trắng và kết thúc bằng @fpt.edu.vn");
+            }
+        }
+
         // Kiểm tra nhân viên đã tồn tại chưa
         UserStaff staffExist = isStaffExist(
                 adCreateUpdateStaffRequest.getStaffCode(),
@@ -177,6 +197,15 @@ public class Admin_StaffServiceImpl implements Admin_StaffService {
             role.setUserStaff(staff);
             role.setStatus(EntityStatus.ACTIVE);
             adStaffRoleRepository.save(role);
+
+            Map<String, Object> dataNotification = new HashMap<>();
+            dataNotification.put(NotificationHelper.KEY_USER_ADMIN, sessionHelper.getUserCode() + " - " + sessionHelper.getUserName());
+            dataNotification.put(NotificationHelper.KEY_ROLE, roleConstant.name());
+            NotificationAddRequest notificationAddRequest = new NotificationAddRequest();
+            notificationAddRequest.setIdUser(staff.getId());
+            notificationAddRequest.setType(NotificationHelper.TYPE_ADD_ROLE);
+            notificationAddRequest.setData(dataNotification);
+            notificationService.add(notificationAddRequest);
         }
 
         // Tạo UserAdmin nếu có vai trò ADMIN
@@ -279,6 +308,15 @@ public class Admin_StaffServiceImpl implements Admin_StaffService {
             }
             if (!newRoleCodes.contains(currentRoleString)) {
                 adStaffRoleRepository.delete(role);
+
+                Map<String, Object> dataNotification = new HashMap<>();
+                dataNotification.put(NotificationHelper.KEY_USER_ADMIN, sessionHelper.getUserCode() + " - " + sessionHelper.getUserName());
+                dataNotification.put(NotificationHelper.KEY_ROLE, role.getCode().name());
+                NotificationAddRequest notificationAddRequest = new NotificationAddRequest();
+                notificationAddRequest.setIdUser(staff.getId());
+                notificationAddRequest.setType(NotificationHelper.TYPE_REMOVE_ROLE);
+                notificationAddRequest.setData(dataNotification);
+                notificationService.add(notificationAddRequest);
             }
         }
 
@@ -319,6 +357,15 @@ public class Admin_StaffServiceImpl implements Admin_StaffService {
             }
             role.setStatus(EntityStatus.ACTIVE);
             adStaffRoleRepository.save(role);
+
+            Map<String, Object> dataNotification = new HashMap<>();
+            dataNotification.put(NotificationHelper.KEY_USER_ADMIN, sessionHelper.getUserCode() + " - " + sessionHelper.getUserName());
+            dataNotification.put(NotificationHelper.KEY_ROLE, role.getCode().name());
+            NotificationAddRequest notificationAddRequest = new NotificationAddRequest();
+            notificationAddRequest.setIdUser(staff.getId());
+            notificationAddRequest.setType(NotificationHelper.TYPE_ADD_ROLE);
+            notificationAddRequest.setData(dataNotification);
+            notificationService.add(notificationAddRequest);
         }
 
         // Kiểm tra nếu có vai trò ADMIN ("0")

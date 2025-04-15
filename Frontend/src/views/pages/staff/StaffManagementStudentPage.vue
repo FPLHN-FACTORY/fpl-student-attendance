@@ -106,7 +106,7 @@ const fetchStudents = () => {
     .catch((error) => {
       message.error(
         (error.response && error.response.data && error.response.data.message) ||
-          'Lỗi khi lấy danh sách sinh viên'
+          'Lỗi khi lấy danh sách sinh viên',
       )
     })
     .finally(() => {
@@ -143,7 +143,7 @@ const handleAddStudent = () => {
     .catch((error) => {
       message.error(
         (error.response && error.response.data && error.response.data.message) ||
-          'Lỗi khi thêm sinh viên'
+          'Lỗi khi thêm sinh viên',
       )
     })
     .finally(() => {
@@ -167,7 +167,7 @@ const handleUpdateStudent = (record) => {
     .catch((error) => {
       message.error(
         (error.response && error.response.data && error.response.data.message) ||
-          'Lỗi khi lấy chi tiết sinh viên'
+          'Lỗi khi lấy chi tiết sinh viên',
       )
     })
     .finally(() => {
@@ -191,7 +191,7 @@ const handleDetailStudent = (record) => {
     .catch((error) => {
       message.error(
         (error.response && error.response.data && error.response.data.message) ||
-          'Lỗi khi lấy chi tiết sinh viên'
+          'Lỗi khi lấy chi tiết sinh viên',
       )
     })
     .finally(() => {
@@ -216,7 +216,7 @@ const updateStudent = () => {
     .catch((error) => {
       message.error(
         (error.response && error.response.data && error.response.data.message) ||
-          'Lỗi khi cập nhật sinh viên'
+          'Lỗi khi cập nhật sinh viên',
       )
     })
     .finally(() => {
@@ -240,7 +240,7 @@ const handleChangeStatusStudent = (record) => {
         .catch((error) => {
           message.error(
             (error.response && error.response.data && error.response.data.message) ||
-              'Lỗi khi đổi trạng thái sinh viên'
+              'Lỗi khi đổi trạng thái sinh viên',
           )
         })
         .finally(() => {
@@ -260,7 +260,7 @@ const changeFaceStudent = (record) => {
         .put(API_ROUTES_STAFF.FETCH_DATA_STUDENT + '/change-face/' + record.studentId)
         .then((response) => {
           message.success(response.data.message || 'Đổi mặt học sinh thành công')
-          fetchStudentFactory() // Làm mới danh sách sau khi đổi mặt
+          fetchStudents() // Làm mới danh sách sau khi đổi mặt
         })
         .catch((error) => {
           message.error(error.response?.data?.message || 'Lỗi khi đổi mặt học sinh')
@@ -294,7 +294,6 @@ onMounted(() => {
   fetchStudents()
 })
 </script>
-
 
 <template>
   <div class="container-fluid">

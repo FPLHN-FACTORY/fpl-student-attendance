@@ -59,7 +59,7 @@ const breadcrumb = ref([
 
 const columns = ref([
   { title: '#', dataIndex: 'orderNumber', key: 'orderNumber', width: 50 },
-  { title: 'Thời gian', dataIndex: 'date', key: 'date', width: 100 },
+  { title: 'Thời gian', dataIndex: 'startDate', key: 'startDate', width: 100 },
   { title: 'Ca học', dataIndex: 'shift', key: 'shift', width: 200 },
   { title: 'Lớp học', dataIndex: 'factoryName', key: 'factoryName' },
   { title: 'Giảng viên', dataIndex: 'teacherName', key: 'teacherName' },
@@ -390,8 +390,8 @@ watch(
               </template>
               <template v-if="column.dataIndex === 'date'">
                 {{
-                  `${dayOfWeek(record.date)} - ${formatDate(
-                    record.date,
+                  `${dayOfWeek(record.startDate)} - ${formatDate(
+                    record.startDate,
                     DEFAULT_DATE_FORMAT + ' HH:mm',
                   )}`
                 }}
@@ -413,14 +413,14 @@ watch(
                 <span
                   v-if="
                     record.status == ATTENDANCE_STATUS.NOTCHECKIN.id &&
-                    Date.now() <= record.date - 10 * 60 * 1000
+                    Date.now() <= record.startDate - 10 * 60 * 1000
                   "
                   ><a-badge status="warning"></a-badge>Chưa đến giờ checkin</span
                 >
                 <span
                   v-else-if="
                     record.status == ATTENDANCE_STATUS.NOTCHECKIN.id &&
-                    Date.now() > record.date + record.lateArrival * 60 * 1000
+                    Date.now() > record.startDate + record.lateArrival * 60 * 1000
                   "
                   ><a-badge status="error"></a-badge>Đã quá giờ checkin</span
                 >

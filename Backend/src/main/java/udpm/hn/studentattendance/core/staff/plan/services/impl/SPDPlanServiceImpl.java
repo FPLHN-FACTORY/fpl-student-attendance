@@ -149,6 +149,12 @@ public class SPDPlanServiceImpl implements SPDPlanService {
             return RouterHelper.responseError("Không tìm thấy kế hoạch");
         }
 
+        SPDPlanResponse planResponse = spdPlanRepository.getByIdPlan(plan.getId(), sessionHelper.getFacilityId()).orElse(null);
+
+        if (planResponse == null || planResponse.getStatus() != plan.getStatus().ordinal()) {
+            return RouterHelper.responseError("Không thể thay đổi trạng thái kế hoạch này");
+        }
+
         if (plan.getStatus() == EntityStatus.INACTIVE && spdPlanRepository.isExistsProjectInPlan(plan.getProject().getId(), null)) {
             return RouterHelper.responseError("Dự án " + plan.getProject().getName() + " đã được triển khai trong một kế hoạch khác");
         }

@@ -20,5 +20,15 @@ export const API_ROUTES_EXCEL = {
   FETCH_IMPORT_STAFF: API_URL + '/excel/staff',
   FETCH_IMPORT_FACTORY: API_URL + '/excel/factory',
   FETCH_IMPORT_STUDENT: API_URL + '/excel/student',
-  FETCH_IMPORT_STUDENT_FACTORY: API_URL + '/excel/student-factory'
+  FETCH_IMPORT_STUDENT_FACTORY: API_URL + '/excel/student-factory',
+}
+
+export const API_ROUTES_NOTIFICATION = {
+  FETCH_COUNT: API_URL + '/notification/count',
+  FETCH_LIST: API_URL + '/notification/list',
+  FETCH_DELETE: API_URL + '/notification/delete',
+  FETCH_DELETE_ALL: API_URL + '/notification/delete-all',
+  FETCH_MARK_READ: API_URL + '/notification/mark-read',
+  FETCH_MARK_UNREAD: API_URL + '/notification/mark-unread',
+  FETCH_MARK_READ_ALL: API_URL + '/notification/mark-read-all',
 }

@@ -7,6 +7,8 @@ public interface SPDPlanDateResponse extends IsIdentify, HasOrderNumber {
 
     Long getStartDate();
 
+    Long getEndDate();
+
     String getShift();
 
     String getDescription();
