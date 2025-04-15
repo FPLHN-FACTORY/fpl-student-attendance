@@ -14,6 +14,7 @@ import {
   EditFilled,
   UnorderedListOutlined,
   FilterFilled,
+  UserDeleteOutlined,
 } from '@ant-design/icons-vue'
 import { ROUTE_NAMES } from '@/router/staffRoute'
 import { DEFAULT_PAGINATION } from '@/constants'
@@ -248,7 +249,28 @@ const handleChangeStatusStudent = (record) => {
     },
   })
 }
-
+const changeFaceStudent = (record) => {
+  Modal.confirm({
+    title: 'Xác nhận đổi mặt',
+    content: `Bạn có chắc muốn đổi mặt của học sinh ${record.studentName}?`,
+    onOk() {
+      loadingStore.show()
+      // Giả sử record chứa studentId, nếu không hãy thay đổi cho phù hợp
+      requestAPI
+        .put(API_ROUTES_STAFF.FETCH_DATA_STUDENT + '/change-face/' + record.studentId)
+        .then((response) => {
+          message.success(response.data.message || 'Đổi mặt học sinh thành công')
+          fetchStudentFactory() // Làm mới danh sách sau khi đổi mặt
+        })
+        .catch((error) => {
+          message.error(error.response?.data?.message || 'Lỗi khi đổi mặt học sinh')
+        })
+        .finally(() => {
+          loadingStore.hide()
+        })
+    },
+  })
+}
 const configImportExcel = {
   fetchUrl: API_ROUTES_EXCEL.FETCH_IMPORT_STUDENT,
   onSuccess: () => {
@@ -379,6 +401,15 @@ onMounted(() => {
                       @click="handleUpdateStudent(record)"
                     >
                       <EditFilled />
+                    </a-button>
+                  </a-tooltip>
+                  <a-tooltip title="Cấp quyền thay đổi mặt sinh viên">
+                    <a-button
+                      type="text"
+                      class="btn-outline-default"
+                      @click="changeFaceStudent(record)"
+                    >
+                      <UserDeleteOutlined />
                     </a-button>
                   </a-tooltip>
                 </a-space>

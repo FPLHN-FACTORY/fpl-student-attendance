@@ -2,6 +2,7 @@ plugins {
     id 'java'
     id 'org.springframework.boot' version '3.4.2'
     id 'io.spring.dependency-management' version '1.1.7'
+    id 'war'
 }
 
 group = 'udpm.hn'
@@ -57,7 +58,9 @@ dependencies {
     testImplementation 'org.springframework.security:spring-security-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
-
+springBoot {
+    mainClass = 'udpm.hn.studentattendance.StudentAttendanceApplication'
+}
 tasks.named('test') {
     useJUnitPlatform()
 }

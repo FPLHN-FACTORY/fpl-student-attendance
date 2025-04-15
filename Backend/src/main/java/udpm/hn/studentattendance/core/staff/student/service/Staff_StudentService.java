@@ -15,5 +15,7 @@ public interface Staff_StudentService {
 
     ResponseEntity<?> changeStatusStudent(String studentId);
 
+    ResponseEntity<?> deleteFaceStudentFactory(String studentId);
+
 
 }

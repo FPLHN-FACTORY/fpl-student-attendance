@@ -26,7 +26,7 @@ import java.util.List;
 @DynamicUpdate
 public class ImportLog extends PrimaryEntity implements Serializable {
 
-    @Column(name = "id_user", length = EntityProperties.LENGTH_NAME)
+    @Column(name = "id_user", length = EntityProperties.LENGTH_CODE)
     private String idUser;
 
     @Column(name = "code", length = EntityProperties.LENGTH_NAME)
