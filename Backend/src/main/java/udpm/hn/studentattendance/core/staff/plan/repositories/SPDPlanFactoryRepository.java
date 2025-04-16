@@ -30,15 +30,19 @@ public interface SPDPlanFactoryRepository extends PlanFactoryRepository {
             MAX(pd.start_date) AS toDate,
             COUNT(DISTINCT pd.id) AS totalShift,
             LEAST(pf.status, p.status, f.status, pl.status) AS status,
+            (SELECT COUNT(usf.id) FROM user_student_factory usf WHERE f.id = usf.id_factory AND usf.status = 1) AS totalStudent,
             MAX(pd.created_at) AS lastUpdated
         FROM plan_factory pf
         JOIN plan pl ON pf.id_plan = pl.id
         JOIN factory f ON pf.id_factory = f.id
         JOIN project p ON p.id = f.id_project
-        LEFT JOIN subject_facility sf ON sf.id = p.id_subject_facility
+        JOIN subject_facility sf ON sf.id = p.id_subject_facility
         LEFT JOIN user_staff us ON us.id = f.id_user_staff
         LEFT JOIN plan_date pd ON pd.id_plan_factory = pf.id
         WHERE 
+            p.status = 1 AND
+            f.status = 1 AND
+            sf.status = 1 AND
             pf.id_plan = :#{#request.idPlan} AND
             sf.id_facility = :#{#request.idFacility} AND
             (NULLIF(TRIM(:#{#request.keyword}), '') IS NULL OR 
@@ -57,10 +61,13 @@ public interface SPDPlanFactoryRepository extends PlanFactoryRepository {
         JOIN plan pl ON pf.id_plan = pl.id
         JOIN factory f on f.id = pf.id_factory
         JOIN project p ON p.id = f.id_project
-        LEFT JOIN subject_facility sf ON sf.id = p.id_subject_facility
+        JOIN subject_facility sf ON sf.id = p.id_subject_facility
         LEFT JOIN user_staff us ON us.id = f.id_user_staff
         LEFT JOIN plan_date pd ON pd.id_plan_factory = pf.id
         WHERE 
+            p.status = 1 AND
+            f.status = 1 AND
+            sf.status = 1 AND
             pf.id_plan = :#{#request.idPlan} AND
             sf.id_facility = :#{#request.idFacility} AND
             (NULLIF(TRIM(:#{#request.keyword}), '') IS NULL OR 
@@ -80,22 +87,25 @@ public interface SPDPlanFactoryRepository extends PlanFactoryRepository {
             pl.name AS planName,
             f.name AS factoryName,
             CONCAT(us.code, ' - ', us.name) AS staffName,
-            MIN(pd.start_date) AS fromDate,
-            MAX(pd.start_date) AS toDate,
+            pl.from_date AS fromDate,
+            pl.to_date AS toDate,
             COUNT(DISTINCT pd.id) AS totalShift,
             LEAST(pf.status, p.status, f.status, pl.status) AS status
         FROM plan_factory pf
         JOIN plan pl ON pf.id_plan = pl.id
         JOIN factory f ON pf.id_factory = f.id
         JOIN project p ON p.id = f.id_project
-        LEFT JOIN subject_facility sf ON sf.id = p.id_subject_facility
+        JOIN subject_facility sf ON sf.id = p.id_subject_facility
         LEFT JOIN user_staff us ON us.id = f.id_user_staff
         LEFT JOIN plan_date pd ON pd.id_plan_factory = pf.id
         WHERE 
+            p.status = 1 AND
+            f.status = 1 AND
+            sf.status = 1 AND
             pf.id = :idPlanFactory AND
             sf.id_facility = :idFacility
         GROUP BY 
-            pf.id, f.name, us.code, us.name, pf.id_plan, pf.status, pl.name
+            pf.id, f.name, us.code, us.name, pf.id_plan, pf.status, pl.name, pl.from_date, pl.to_date
     """, nativeQuery = true)
     Optional<SPDPlanFactoryResponse> getDetail(String idPlanFactory, String idFacility);
 
