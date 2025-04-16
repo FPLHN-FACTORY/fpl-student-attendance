@@ -63,6 +63,13 @@ const handleNotificationMarkReadAll = () => {
   applicationStore.markReadAll(fetchDataListNotification)
 }
 
+const handleNotificationDeleteAll = () => {
+  applicationStore.removeAll(() => {
+    lstAllNotification.value = []
+    pagination.value.total = 0
+  })
+}
+
 const callbackLoadNotification = () => {
   fetchDataListNotification(applicationStore.loadNotification)
 }
