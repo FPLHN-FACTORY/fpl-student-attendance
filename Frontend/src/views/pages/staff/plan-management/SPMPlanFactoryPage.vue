@@ -53,7 +53,7 @@ const columns = ref([
   { title: '#', dataIndex: 'orderNumber', key: 'orderNumber', width: 50 },
   { title: 'Tên nhóm xưởng', dataIndex: 'factoryName', key: 'factoryName', width: 150 },
   { title: 'Giảng viên', dataIndex: 'staffName', key: 'staffName' },
-  { title: 'Thời gian diễn ra', key: 'time' },
+  { title: 'Thời gian thực tế', key: 'time' },
   { title: 'Số buổi', dataIndex: 'totalShift', key: 'totalShift' },
   { title: 'Trạng thái', dataIndex: 'status', key: 'status' },
   { title: '', key: 'actions' },

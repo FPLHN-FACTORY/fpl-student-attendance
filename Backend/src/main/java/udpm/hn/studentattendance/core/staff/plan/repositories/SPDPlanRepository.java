@@ -37,11 +37,15 @@ public interface SPDPlanRepository extends PlanRepository {
             LEAST(pl.status, p.status, lp.status, s.status, sf.status, s2.status) AS status
         FROM plan pl
         JOIN project p ON p.id = pl.id_project
-        LEFT JOIN level_project lp ON lp.id = p.id_level_project
-        LEFT JOIN semester s ON s.id = p.id_semester
-        LEFT JOIN subject_facility sf ON sf.id = p.id_subject_facility
-        LEFT JOIN subject s2 ON s2.id = sf.id_subject
+        JOIN level_project lp ON lp.id = p.id_level_project
+        JOIN semester s ON s.id = p.id_semester
+        JOIN subject_facility sf ON sf.id = p.id_subject_facility
+        JOIN subject s2 ON s2.id = sf.id_subject
         WHERE 
+            p.status = 1 AND
+            s.status = 1 AND
+            sf.status = 1 AND
+            s2.status = 1 AND
             sf.id_facility = :#{#request.idFacility} AND
             (NULLIF(TRIM(:#{#request.keyword}), '') IS NULL OR BINARY pl.name LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%')) AND
             (:#{#request.level} IS NULL OR lp.id = :#{#request.level}) AND
@@ -55,11 +59,15 @@ public interface SPDPlanRepository extends PlanRepository {
             COUNT(DISTINCT pl.id)
         FROM plan pl
         JOIN project p ON p.id = pl.id_project
-        LEFT JOIN level_project lp ON lp.id = p.id_level_project
-        LEFT JOIN semester s ON s.id = p.id_semester
-        LEFT JOIN subject_facility sf ON sf.id = p.id_subject_facility
-        LEFT JOIN subject s2 ON s2.id = sf.id_subject
+        JOIN level_project lp ON lp.id = p.id_level_project
+        JOIN semester s ON s.id = p.id_semester
+        JOIN subject_facility sf ON sf.id = p.id_subject_facility
+        JOIN subject s2 ON s2.id = sf.id_subject
         WHERE 
+            p.status = 1 AND
+            s.status = 1 AND
+            sf.status = 1 AND
+            s2.status = 1 AND
             sf.id_facility = :#{#request.idFacility} AND
             (NULLIF(TRIM(:#{#request.keyword}), '') IS NULL OR BINARY pl.name LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%')) AND
             (:#{#request.level} IS NULL OR lp.id = :#{#request.level}) AND
@@ -88,11 +96,16 @@ public interface SPDPlanRepository extends PlanRepository {
             LEAST(pl.status, p.status, lp.status, s.status, sf.status, s2.status) AS status
         FROM plan pl
         JOIN project p ON p.id = pl.id_project
-        LEFT JOIN level_project lp ON lp.id = p.id_level_project
-        LEFT JOIN semester s ON s.id = p.id_semester
-        LEFT JOIN subject_facility sf ON sf.id = p.id_subject_facility
-        LEFT JOIN subject s2 ON s2.id = sf.id_subject
+        JOIN level_project lp ON lp.id = p.id_level_project
+        JOIN semester s ON s.id = p.id_semester
+        JOIN subject_facility sf ON sf.id = p.id_subject_facility
+        JOIN subject s2 ON s2.id = sf.id_subject
         WHERE 
+            p.status = 1 AND
+            lp.status = 1 AND
+            s.status = 1 AND
+            sf.status = 1 AND
+            s2.status = 1 AND
             sf.id_facility = :idFacility AND
             pl.id = :idPlan
     """, nativeQuery = true)
@@ -105,11 +118,16 @@ public interface SPDPlanRepository extends PlanRepository {
             s.from_date AS fromDate,
             s.to_date AS toDate
         FROM project p
-        LEFT JOIN level_project lp ON lp.id = p.id_level_project
-        LEFT JOIN semester s ON s.id = p.id_semester
-        LEFT JOIN subject_facility sf ON sf.id = p.id_subject_facility
-        LEFT JOIN subject s2 ON s2.id = sf.id_subject
+        JOIN level_project lp ON lp.id = p.id_level_project
+        JOIN semester s ON s.id = p.id_semester
+        JOIN subject_facility sf ON sf.id = p.id_subject_facility
+        JOIN subject s2 ON s2.id = sf.id_subject
         WHERE 
+            p.status = 1 AND
+            s.status = 1 AND
+            lp.status = 1 AND
+            sf.status = 1 AND
+            s2.status = 1 AND
             (SELECT COUNT(*) FROM plan pl WHERE pl.id_project = p.id AND pl.status = 1) < 1 AND
             sf.id_facility = :#{#request.idFacility} AND
             (:#{#request.level} IS NULL OR lp.id = :#{#request.level}) AND
@@ -140,8 +158,7 @@ public interface SPDPlanRepository extends PlanRepository {
         JOIN plan_factory pf ON pf.id = pd.id_plan_factory
         JOIN plan p ON p.id = pf.id_plan
         WHERE
-            p.id = :idPlan AND
-            p.status = 0
+            p.id = :idPlan
     """, countQuery = "SELECT 1", nativeQuery = true)
     int deleteAllAttendanceByIdPlan(String idPlan);
 
@@ -152,8 +169,7 @@ public interface SPDPlanRepository extends PlanRepository {
         FROM plan_factory pf
         JOIN plan p ON p.id = pf.id_plan
         WHERE
-            p.id = :idPlan AND
-            p.status = 0
+            p.id = :idPlan
     """, countQuery = "SELECT 1", nativeQuery = true)
     int deleteAllPlanFactoryByIdPlan(String idPlan);
 
@@ -165,9 +181,35 @@ public interface SPDPlanRepository extends PlanRepository {
         JOIN plan_factory pf ON pd.id_plan_factory = pf.id
         JOIN plan p ON p.id = pf.id_plan
         WHERE
-            p.id = :idPlan AND
-            p.status = 0
+            p.id = :idPlan
     """, countQuery = "SELECT 1", nativeQuery = true)
     int deleteAllPlanDateByIdPlan(String idPlan);
+
+    @Modifying
+    @Transactional
+    @Query(value = """
+        DELETE ad
+        FROM attendance ad
+        JOIN plan_date pd ON pd.id = ad.id_plan_date
+        JOIN plan_factory pf ON pf.id = pd.id_plan_factory
+        JOIN plan p ON p.id = pf.id_plan
+        WHERE
+            p.id = :idPlan AND
+            (pd.start_date < p.from_date OR pd.start_date > p.to_date)
+    """, countQuery = "SELECT 1", nativeQuery = true)
+    int deleteAllAttendanceOutRangeDateByIdPlan(String idPlan);
+
+    @Modifying
+    @Transactional
+    @Query(value = """
+        DELETE pd
+        FROM plan_date pd
+        JOIN plan_factory pf ON pd.id_plan_factory = pf.id
+        JOIN plan p ON p.id = pf.id_plan
+        WHERE
+            p.id = :idPlan AND
+            (pd.start_date < p.from_date OR pd.start_date > p.to_date)
+    """, countQuery = "SELECT 1", nativeQuery = true)
+    int deleteAllPlanDateOutRangeDateByIdPlan(String idPlan);
 
 }
