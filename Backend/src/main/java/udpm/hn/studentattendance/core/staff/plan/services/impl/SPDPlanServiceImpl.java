@@ -214,7 +214,12 @@ public class SPDPlanServiceImpl implements SPDPlanService {
         plan.setToDate(DateTimeUtils.toEndOfDay(endDate));
         plan.setProject(project);
 
-        return RouterHelper.responseSuccess("Cập nhật kế hoạch thành công", spdPlanRepository.save(plan));
+        Plan updatePlan = spdPlanRepository.save(plan);
+        
+        spdPlanRepository.deleteAllAttendanceOutRangeDateByIdPlan(updatePlan.getId());
+        spdPlanRepository.deleteAllPlanDateOutRangeDateByIdPlan(updatePlan.getId());
+
+        return RouterHelper.responseSuccess("Cập nhật kế hoạch thành công", updatePlan);
     }
 
 }
