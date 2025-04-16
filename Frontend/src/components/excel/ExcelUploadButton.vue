@@ -8,6 +8,7 @@ import {
   HistoryOutlined,
   InfoCircleFilled,
 } from '@ant-design/icons-vue'
+import { message } from 'ant-design-vue'
 import { defineProps, onMounted, ref } from 'vue'
 import { toast } from 'vue3-toastify'
 
@@ -95,6 +96,7 @@ const fetchDataHistoryLog = async () => {
   } catch (error) {
     lstData.value = []
     isLoadingShowLog.value = false
+    message.error('Không tải danh sách lịch sử import')
   }
 }
 
@@ -106,6 +108,7 @@ const fetchDataHistoryLogDetail = async (id) => {
     isShowHistoryLogDetail.value = true
   } catch (error) {
     isLoadingTable.value = false
+    message.error('Không tải danh sách lịch sử import chi tiết')
   }
 }
 

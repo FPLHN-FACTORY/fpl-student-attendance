@@ -113,7 +113,7 @@ const useImportExcelStore = defineStore('importExcel', () => {
         }
 
         response.data.forEach((o, i) => {
-          task.items.push(wrapperDataItems(++i, o))
+          task.items.push(wrapperDataItems(Number(o['_LINE']), o))
         })
 
         while (true) {
