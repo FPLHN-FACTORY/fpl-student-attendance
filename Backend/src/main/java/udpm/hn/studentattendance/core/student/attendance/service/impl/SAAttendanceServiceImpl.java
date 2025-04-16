@@ -31,7 +31,7 @@ import udpm.hn.studentattendance.infrastructure.constants.ShiftType;
 import udpm.hn.studentattendance.infrastructure.constants.StatusType;
 import udpm.hn.studentattendance.utils.DateTimeUtils;
 import udpm.hn.studentattendance.utils.FaceRecognitionUtils;
-import udpm.hn.studentattendance.utils.GeoUtil;
+import udpm.hn.studentattendance.utils.GeoUtils;
 
 import java.util.List;
 import java.util.Objects;
@@ -95,8 +95,8 @@ public class SAAttendanceServiceImpl implements SAAttendanceService {
                 if (request.getLatitude() == null || request.getLongitude() == null) {
                     return RouterHelper.responseError("Không thể lấy thông tin vị trí");
                 }
-                List<FacilityLocation> lstLocation = facilityLocationRepository.findAllByFacility_IdAndStatus(sessionHelper.getFacilityId(), EntityStatus.ACTIVE);
-                if (!GeoUtil.isAllowedLocation(lstLocation, request.getLatitude(), request.getLongitude())) {
+                List<FacilityLocation> lstLocation = facilityLocationRepository.getAllList(sessionHelper.getFacilityId());
+                if (!GeoUtils.isAllowedLocation(lstLocation, request.getLatitude(), request.getLongitude())) {
                     return RouterHelper.responseError("Địa điểm checkin nằm ngoài vùng cho phép");
                 }
             }

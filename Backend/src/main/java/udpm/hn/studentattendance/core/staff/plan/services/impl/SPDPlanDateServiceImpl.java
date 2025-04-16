@@ -105,7 +105,7 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
             return RouterHelper.responseError("Không thể cập nhật kế hoạch đã diễn ra");
         }
 
-        FacilityShift shift = spdFacilityShiftRepository.findByShiftAndFacility_Id(request.getShift(), sessionHelper.getFacilityId()).orElse(null);
+        FacilityShift shift = spdFacilityShiftRepository.getOneById(request.getShift(), sessionHelper.getFacilityId()).orElse(null);
         if (shift == null) {
             return RouterHelper.responseError("Ca học không tồn tại");
         }
@@ -186,7 +186,7 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
             return RouterHelper.responseError("Không tìm thấy nhóm xưởng");
         }
 
-        FacilityShift shift = spdFacilityShiftRepository.findByShiftAndFacility_Id(request.getShift(), sessionHelper.getFacilityId()).orElse(null);
+        FacilityShift shift = spdFacilityShiftRepository.getOneById(request.getShift(), sessionHelper.getFacilityId()).orElse(null);
         if (shift == null) {
             return RouterHelper.responseError("Ca học không tồn tại");
         }

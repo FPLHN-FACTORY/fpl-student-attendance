@@ -93,7 +93,7 @@ public class SPDPlanFactoryServiceImpl implements SPDPlanFactoryService {
             return RouterHelper.responseError("Không tìm thấy nhóm xưởng");
         }
 
-        FacilityShift shift = spdFacilityShiftRepository.findByShiftAndFacility_Id(request.getShift(), sessionHelper.getFacilityId()).orElse(null);
+        FacilityShift shift = spdFacilityShiftRepository.getOneById(request.getShift(), sessionHelper.getFacilityId()).orElse(null);
         if (shift == null) {
             return RouterHelper.responseError("Ca học không tồn tại");
         }
@@ -218,7 +218,7 @@ public class SPDPlanFactoryServiceImpl implements SPDPlanFactoryService {
 
     @Override
     public ResponseEntity<?> getListShift() {
-        List<FacilityShift> data = SPDFacilityShiftRepository.findAllByFacility_IdAndStatusOrderByShiftAsc(sessionHelper.getFacilityId(), EntityStatus.ACTIVE);
+        List<FacilityShift> data = SPDFacilityShiftRepository.getAllList(sessionHelper.getFacilityId());
         return RouterHelper.responseSuccess("Lấy danh sách dữ liệu thành công", data);
     }
 
