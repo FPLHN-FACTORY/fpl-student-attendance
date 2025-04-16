@@ -18,9 +18,12 @@ import udpm.hn.studentattendance.core.authentication.repositories.Authentication
 import udpm.hn.studentattendance.core.authentication.repositories.AuthenticationUserStaffRepository;
 import udpm.hn.studentattendance.core.authentication.repositories.AuthenticationUserStudentRepository;
 import udpm.hn.studentattendance.core.authentication.utils.JwtUtil;
+import udpm.hn.studentattendance.core.notification.model.request.NotificationAddRequest;
+import udpm.hn.studentattendance.core.notification.service.NotificationService;
 import udpm.hn.studentattendance.entities.UserAdmin;
 import udpm.hn.studentattendance.entities.UserStaff;
 import udpm.hn.studentattendance.entities.UserStudent;
+import udpm.hn.studentattendance.helpers.NotificationHelper;
 import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.helpers.SessionHelper;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
@@ -48,6 +51,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     private final SessionHelper sessionHelper;
 
     private final JwtUtil jwtUtil;
+
+    private final NotificationService notificationService;
 
     private final AuthenticationFacilityRepository authenticationFacilityRepository;
 
@@ -181,6 +186,12 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         }
 
         student.setFaceEmbedding(request.getFaceEmbedding());
+
+        NotificationAddRequest notificationAddRequest = new NotificationAddRequest();
+        notificationAddRequest.setType(NotificationHelper.TYPE_SUCCESS_UPDATE_FACE_ID);
+        notificationAddRequest.setIdUser(student.getId());
+        notificationService.add(notificationAddRequest);
+
         return RouterHelper.responseSuccess("Cập nhật khuôn mặt thành công", authenticationUserStudentRepository.save(student));
     }
 
