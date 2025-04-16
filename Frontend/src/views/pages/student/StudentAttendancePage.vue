@@ -24,7 +24,9 @@ import { createVNode, nextTick, onMounted, reactive, ref, watch } from 'vue'
 import useLoadingStore from '@/stores/useLoadingStore'
 import useFaceIDStore from '@/stores/useFaceIDStore'
 import { ROUTE_NAMES_API } from '@/router/authenticationRoute'
+import useApplicationStore from '@/stores/useApplicationStore'
 
+const applicationStore = useApplicationStore()
 const faceIDStore = useFaceIDStore()
 const loadingPage = useLoadingStore()
 
@@ -166,6 +168,7 @@ const handleSubmitUpdateInfo = () => {
     .put(`${ROUTE_NAMES_API.FETCH_DATA_UPDATE_FACEID}`, formData)
     .then(({ data: response }) => {
       message.success(response.message)
+      applicationStore.loadNotification()
     })
     .catch((error) => {
       message.error(error?.response?.data?.message || 'Không thể cập nhật khuôn mặt')

@@ -6,7 +6,6 @@ import {
   UnorderedListOutlined,
   SearchOutlined,
   AlignLeftOutlined,
-  PoweroffOutlined,
   DeleteFilled,
   EditFilled,
 } from '@ant-design/icons-vue'

@@ -79,6 +79,33 @@ const useApplicationStore = defineStore('Application', () => {
     })
   }
 
+  const removeAll = (callback) => {
+    Modal.confirm({
+      title: 'Xoá thông báo',
+      icon: createVNode(ExclamationCircleOutlined),
+      content: 'Bạn thực sự muốn xoá tất cả thông báo?',
+      okText: 'Tiếp tục',
+      cancelText: 'Huỷ bỏ',
+      onOk: () => {
+        isLoadingNotification.value = true
+        requestAPI
+          .delete(API_ROUTES_NOTIFICATION.FETCH_DELETE_ALL)
+          .then(({ data: response }) => {
+            totalNotification.value = 0
+            lstNotification.value = []
+            message.success(response.message)
+            typeof callback == 'function' && callback()
+          })
+          .catch((error) => {
+            message.error(error?.response?.data?.message || 'Không thể xoá tất cả thông báo')
+          })
+          .finally(() => {
+            isLoadingNotification.value = false
+          })
+      },
+    })
+  }
+
   const markRead = (item, callback) => {
     Modal.confirm({
       title: 'Đánh dấu đã đọc',
@@ -173,6 +200,7 @@ const useApplicationStore = defineStore('Application', () => {
     markRead,
     markUnread,
     remove,
+    removeAll,
   }
 })
 
