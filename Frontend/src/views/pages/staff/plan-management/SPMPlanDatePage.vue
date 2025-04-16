@@ -632,8 +632,8 @@ watch(
                 allowClear
               >
                 <a-select-option :value="null">-- Tất cả ca học --</a-select-option>
-                <a-select-option v-for="(name, id) in SHIFT" :key="id" :value="id">
-                  {{ name }}
+                <a-select-option v-for="o in lstShift" :key="o.id" :value="o.shift">
+                  {{ SHIFT[o.shift] }}
                 </a-select-option>
               </a-select>
             </div>
