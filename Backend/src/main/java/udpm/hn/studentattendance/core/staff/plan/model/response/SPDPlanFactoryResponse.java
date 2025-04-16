@@ -15,6 +15,8 @@ public interface SPDPlanFactoryResponse extends IsIdentify, HasOrderNumber {
 
     Integer getTotalShift();
 
+    Integer getTotalStudent();
+
     Long getFromDate();
 
     Long getToDate();

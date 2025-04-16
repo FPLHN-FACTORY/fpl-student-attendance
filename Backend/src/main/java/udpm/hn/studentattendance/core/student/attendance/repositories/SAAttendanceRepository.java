@@ -38,6 +38,7 @@ public interface SAAttendanceRepository extends AttendanceRepository {
         JOIN plan p ON pf.id_plan = p.id
         JOIN project pj ON f.id_project = pj.id
         JOIN subject_facility sf ON sf.id = pj.id_subject_facility
+        JOIN subject s2 ON s2.id = sf.id_subject
         JOIN facility f2 ON sf.id_facility = f2.id
         JOIN semester s ON pj.id_semester = s.id
         LEFT JOIN user_staff us ON f.id_user_staff = us.id
@@ -49,7 +50,10 @@ public interface SAAttendanceRepository extends AttendanceRepository {
             f.status = 1 AND
             pj.status = 1 AND
             s.status = 1 AND
+            s2.status = 1 AND
             f2.status = 1 AND
+            sf.status = 1 AND
+            usf.status = 1 AND
             (NULLIF(TRIM(:#{#request.keyword}), '') IS NULL OR BINARY f.name LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%')) AND
             (:#{#request.status} IS NULL OR a.status = :#{#request.status}) AND
             (:#{#request.type} IS NULL OR pd.type = :#{#request.type}) AND
@@ -68,6 +72,7 @@ public interface SAAttendanceRepository extends AttendanceRepository {
         JOIN plan p ON pf.id_plan = p.id
         JOIN project pj ON f.id_project = pj.id
         JOIN subject_facility sf ON sf.id = pj.id_subject_facility
+        JOIN subject s2 ON s2.id = sf.id_subject
         JOIN facility f2 ON sf.id_facility = f2.id
         JOIN semester s ON pj.id_semester = s.id
         LEFT JOIN user_staff us ON f.id_user_staff = us.id
@@ -79,7 +84,10 @@ public interface SAAttendanceRepository extends AttendanceRepository {
             f.status = 1 AND
             pj.status = 1 AND
             s.status = 1 AND
+            s2.status = 1 AND
             f2.status = 1 AND
+            sf.status = 1 AND
+            usf.status = 1 AND
             (NULLIF(TRIM(:#{#request.keyword}), '') IS NULL OR BINARY f.name LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%')) AND
             (:#{#request.status} IS NULL OR a.status = :#{#request.status}) AND
             (:#{#request.type} IS NULL OR pd.type = :#{#request.type}) AND

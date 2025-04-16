@@ -14,6 +14,7 @@ import udpm.hn.studentattendance.core.staff.plan.model.response.SPDPlanFactoryRe
 import udpm.hn.studentattendance.core.staff.plan.repositories.SPDFacilityShiftRepository;
 import udpm.hn.studentattendance.core.staff.plan.repositories.SPDPlanDateRepository;
 import udpm.hn.studentattendance.core.staff.plan.repositories.SPDPlanFactoryRepository;
+import udpm.hn.studentattendance.infrastructure.common.repositories.CommonUserStudentRepository;
 import udpm.hn.studentattendance.core.staff.plan.services.SPDPlanDateService;
 import udpm.hn.studentattendance.entities.FacilityShift;
 import udpm.hn.studentattendance.entities.Factory;
@@ -44,6 +45,8 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
     private final SPDPlanFactoryRepository spdPlanFactoryRepository;
 
     private final SPDFacilityShiftRepository spdFacilityShiftRepository;
+
+    private final CommonUserStudentRepository commonUserStudentRepository;
 
     private final SessionHelper sessionHelper;
 
@@ -159,7 +162,11 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
         planDate.setDescription(request.getDescription());
         planDate.setLateArrival(request.getLateArrival());
 
-        return RouterHelper.responseSuccess("Cập nhật kế hoạch thành công", spdPlanDateRepository.save(planDate));
+        PlanDate newEntity = spdPlanDateRepository.save(planDate);
+
+        commonUserStudentRepository.disableAllStudentDuplicateShiftByStartDateAndShift(planDate.getPlanFactory().getFactory().getId(), planDate.getStartDate(), planDate.getShift());
+
+        return RouterHelper.responseSuccess("Cập nhật kế hoạch thành công", newEntity);
     }
 
     @Override
@@ -241,7 +248,11 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
         planDate.setDescription(request.getDescription());
         planDate.setLateArrival(request.getLateArrival());
 
-        return RouterHelper.responseSuccess("Thêm mới kế hoạch thành công", spdPlanDateRepository.save(planDate));
+        PlanDate newEntity = spdPlanDateRepository.save(planDate);
+
+        commonUserStudentRepository.disableAllStudentDuplicateShiftByStartDateAndShift(planDate.getPlanFactory().getFactory().getId(), planDate.getStartDate(), planDate.getShift());
+
+        return RouterHelper.responseSuccess("Thêm mới kế hoạch thành công", newEntity);
     }
 
 }
