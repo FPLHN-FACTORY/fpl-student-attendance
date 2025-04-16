@@ -57,7 +57,7 @@ public class NotificationHelper {
                         .append(data.get(KEY_FACTORY))
                         .append("</b>")
                         .append(" bởi <b>")
-                        .append(data.get(KEY_USER_STAFF))
+                        .append(data.get(KEY_USER_ADMIN))
                         .append("</b>");
             }
             case TYPE_REMOVE_TEACHER_TO_FACTORY -> {
@@ -66,7 +66,7 @@ public class NotificationHelper {
                         .append(data.get(KEY_FACTORY))
                         .append("</b>")
                         .append(" bởi <b>")
-                        .append(data.get(KEY_USER_STAFF))
+                        .append(data.get(KEY_USER_ADMIN))
                         .append("</b>");
             }
             case TYPE_ADD_STUDENT_TO_FACTORY -> {
