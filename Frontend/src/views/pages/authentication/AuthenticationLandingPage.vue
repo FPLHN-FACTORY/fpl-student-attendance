@@ -4,6 +4,7 @@ import imgLogoFpt from '@/assets/images/logo-fpt.png'
 import imgLogoUdpm from '@/assets/images/logo-udpm.png'
 import imgRoleAdmin from '@/assets/images/role-admin.png'
 import imgRoleStaff from '@/assets/images/role-staff.png'
+import imgRoleTeacher from '@/assets/images/role-teacher.png'
 import imgRoleStudent from '@/assets/images/role-student.png'
 import { GoogleOutlined } from '@ant-design/icons-vue'
 import { onMounted, ref } from 'vue'
@@ -15,6 +16,7 @@ import useLoadingStore from '@/stores/useLoadingStore'
 import { decodeBase64 } from '@/utils/utils'
 import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
 import { ROUTE_NAMES_API } from '@/router/authenticationRoute'
+import { ROLE } from '@/constants'
 
 const router = useRouter()
 const route = useRoute()
@@ -29,19 +31,25 @@ const lstFacility = ref([])
 
 const roles = [
   {
-    role: 'ADMIN',
+    role: ROLE.ADMIN,
     label: 'Cán bộ đào tạo',
     img: imgRoleAdmin,
     route: GLOBAL_ROUTE_NAMES.ADMIN_PAGE,
   },
   {
-    role: 'STAFF',
+    role: ROLE.STAFF,
     label: 'Quản lý xưởng',
     img: imgRoleStaff,
     route: GLOBAL_ROUTE_NAMES.STAFF_PAGE,
   },
   {
-    role: 'STUDENT',
+    role: ROLE.TEACHER,
+    label: 'Giảng viên',
+    img: imgRoleTeacher,
+    route: GLOBAL_ROUTE_NAMES.TEACHER_PAGE,
+  },
+  {
+    role: ROLE.STUDENT,
     label: 'Sinh viên',
     img: imgRoleStudent,
     route: GLOBAL_ROUTE_NAMES.STUDENT_PAGE,
@@ -52,7 +60,12 @@ const showModalSelectFacility = () => (isShowModalSelectFacility.value = true)
 
 const handleSelectFacility = (role) => {
   roleLogin.value = role
-  if (role === 'ADMIN') {
+
+  if (authStore.isLogin) {
+    return redirectLoginRole()
+  }
+
+  if (role === ROLE.ADMIN) {
     return handleRedirectLogin(true)
   }
   showModalSelectFacility()
@@ -64,7 +77,7 @@ const handleRedirectLogin = (width_out_facility = false) => {
     return toast.error('Vui lòng chọn cơ sở muốn đăng nhập')
   }
 
-  const currentRole = roles.find((o) => o.role === roleLogin.value)
+  const currentRole = roles.find((o) => o.role.includes(roleLogin.value))
 
   if (!currentRole) {
     return toast.error('Role đăng nhập không chính xác')
@@ -83,6 +96,9 @@ const fetchDataFacility = async () => {
   try {
     const response = await requestAPI.get(ROUTE_NAMES_API.FETCH_DATA_FACILITY)
     lstFacility.value = response.data.data
+    if (lstFacility.value.length > 0) {
+      facilityID.value = lstFacility.value[0].id
+    }
   } catch (error) {
     toast.error('Không thể tải danh sách cơ sở')
   }
@@ -90,8 +106,7 @@ const fetchDataFacility = async () => {
 
 const redirectLoginRole = () => {
   if (authStore.isLogin) {
-    const user = authStore.user
-    const role = roles.find((o) => o.role === user.role)
+    const role = roles.find((o) => o.role.includes(roleLogin.value))
 
     if (role) {
       loadingPage.hide()
@@ -101,6 +116,7 @@ const redirectLoginRole = () => {
 }
 
 const checkLogin = () => {
+  roleLogin.value = route.query.role || null
   const authenticationToken = route.query.authencation_token || null
   const authenticationError = route.query.authencation_error || null
 
@@ -120,6 +136,7 @@ const checkLogin = () => {
 }
 
 onMounted(() => {
+  document.body.classList.add('bg-login')
   checkLogin()
   fetchDataFacility()
   loadingPage.hide()
@@ -128,27 +145,36 @@ onMounted(() => {
 
 <template>
   <div class="container">
-    <a-flex justify="center" alignItem="center" gap="middle" vertical>
+    <div class="row">
       <div class="logo">
         <img :src="imgLogoFpt" alt="Logo" />
         <img :src="imgLogoUdpm" alt="Logo" />
       </div>
+    </div>
+
+    <div class="row">
       <h2 class="title">Đăng nhập</h2>
-      <div class="role-container">
-        <div
-          v-for="role in roles"
-          :key="role.role"
-          class="role-item"
-          @click="handleSelectFacility(role.role)"
-        >
-          <img :src="role.img" class="role-img" />
-          <a-button type="primary" class="role-button" size="large">
-            <span>{{ role.label }}</span>
-          </a-button>
+      <div class="d-flex justify-content-center align-items-center">
+        <div class="role-container">
+          <template v-for="role in roles" :key="role.role">
+            <div
+              class="role-item"
+              @click="handleSelectFacility(role.role)"
+              v-if="
+                !authStore.isLogin ||
+                (authStore.isLogin && authStore.user.role.includes(role.role.toUpperCase()))
+              "
+            >
+              <img :src="role.img" class="role-img" />
+              <a-button class="role-button" size="large">
+                <span>{{ role.label }}</span>
+              </a-button>
+            </div>
+          </template>
         </div>
       </div>
       <p class="footer">Powered by <strong>FPLHN-UDPM</strong></p>
-    </a-flex>
+    </div>
 
     <a-modal v-model:open="isShowModalSelectFacility" centered :footer="null">
       <template #title>
@@ -190,19 +216,13 @@ onMounted(() => {
 </template>
 
 <style scoped>
-body {
-  background-image: url('@/assets/images/bg.jpg');
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  height: 100vh;
-}
 .container {
-  height: 100vh;
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
   margin: 0 auto;
+  margin-top: 6rem;
 }
 .logo {
   text-align: center;
@@ -213,9 +233,12 @@ body {
   margin-bottom: 20px;
 }
 .title {
+  margin: 2rem 0;
   font-size: 24px;
   font-weight: bold;
   text-align: center;
+  color: #41395a;
+  text-transform: uppercase;
 }
 .role-container {
   display: flex;
@@ -238,9 +261,18 @@ body {
 .role-button {
   width: 100%;
   margin-top: 10px;
+  background-color: #41395b;
+  border-color: #6b667d;
+  color: white;
+}
+.role-button:hover,
+.role-button:active {
+  background-color: #6b667d;
+  border-color: #6b667d;
+  color: white;
 }
 .footer {
-  margin-top: 30px;
+  margin-top: 6rem;
   font-size: 14px;
   color: gray;
   text-align: center;

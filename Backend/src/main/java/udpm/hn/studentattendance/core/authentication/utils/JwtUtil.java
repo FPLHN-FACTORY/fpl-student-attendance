@@ -4,12 +4,20 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Component;
+import udpm.hn.studentattendance.core.authentication.oauth2.AuthUser;
+import udpm.hn.studentattendance.core.authentication.oauth2.CustomOAuth2User;
 
 import javax.crypto.SecretKey;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @Component
 public class JwtUtil {
@@ -18,6 +26,14 @@ public class JwtUtil {
     private String SECRET_KEY;
 
     private static final long EXPIRATION_TIME = 86400000;
+
+    public static String getAuthorization(HttpServletRequest request) {
+        String token = request.getHeader("Authorization");
+        if (token != null && token.startsWith("Bearer ")) {
+            return token.substring(7);
+        }
+        return null;
+    }
 
     public SecretKey getSecretKey() {
         byte[] keyBytes = SECRET_KEY.getBytes();
@@ -38,7 +54,18 @@ public class JwtUtil {
         }
     }
 
-    public String generateToken(String email, Map<String, Object> data) {
+    public String generateToken(String email, AuthUser oauthUser) {
+        Map<String, Object> dataUser = new HashMap<>();
+        dataUser.put("id", oauthUser.getId());
+        dataUser.put("role", oauthUser.getRole());
+        dataUser.put("facilityID", oauthUser.getIdFacility());
+        dataUser.put("name", oauthUser.getName());
+        dataUser.put("code", oauthUser.getCode());
+        dataUser.put("picture", oauthUser.getPicture());
+        return buildToken(email, dataUser);
+    }
+
+    private String buildToken(String email, Map<String, Object> data) {
         return Jwts.builder()
                 .setSubject(email)
                 .addClaims(data)
@@ -65,8 +92,8 @@ public class JwtUtil {
         return claimsJws.getBody();
     }
 
-    public String getRoleFromToken(String token) {
-        return getClaimsFromToken(token).get("role", String.class);
+    public Set<String> getRoleFromToken(String token) {
+        return new HashSet<>(getClaimsFromToken(token).get("role", List.class));
     }
 
     public String getFacilityFromToken(String token) {

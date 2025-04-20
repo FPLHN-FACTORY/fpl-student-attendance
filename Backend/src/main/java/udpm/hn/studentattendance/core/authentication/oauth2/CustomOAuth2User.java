@@ -13,24 +13,13 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @Getter
 @Setter
-public class CustomOAuth2User implements OAuth2User {
+public class CustomOAuth2User extends AuthUser implements OAuth2User {
 
     private OAuth2User oauth2User;
-
-    private String id;
-
-    private String role;
-
-    private String code;
-
-    private String emailFe;
-
-    private String emailFPT;
-
-    private String idFacility;
 
     public CustomOAuth2User(OAuth2User oauth2User) {
         this.oauth2User = oauth2User;
@@ -44,13 +33,21 @@ public class CustomOAuth2User implements OAuth2User {
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         List<GrantedAuthority> authorities = new ArrayList<>();
-        authorities.add(new SimpleGrantedAuthority(role));
+        for(RoleConstant r: this.role) {
+            authorities.add(new SimpleGrantedAuthority(r.name()));
+        }
         return authorities;
     }
 
     @Override
     public String getName() {
         return oauth2User.getAttribute("name");
+    }
+
+    @Override
+    public String getCode() {
+        String[] split = getEmail().trim().split("@");
+        return split[0];
     }
 
     public String getEmail() {

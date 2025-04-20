@@ -10,8 +10,12 @@ public class PrimaryEntityListener {
 
     @PrePersist
     private void onCreate(PrimaryEntity entity) {
-        entity.setId(UUID.randomUUID().toString());
-        entity.setStatus(EntityStatus.ACTIVE);
+        if (entity.getId() == null) {
+            entity.setId(UUID.randomUUID().toString());
+        }
+        if (entity.getStatus() == null) {
+            entity.setStatus(EntityStatus.ACTIVE);
+        }
     }
 
 }

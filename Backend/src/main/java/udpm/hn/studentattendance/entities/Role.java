@@ -1,11 +1,8 @@
 package udpm.hn.studentattendance.entities;
 
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -31,10 +28,12 @@ public class Role extends PrimaryEntity implements Serializable {
     private RoleConstant code;
 
     @ManyToOne
+    @JsonIgnore
     @JoinColumn(name = "id_facility")
     private Facility facility;
 
     @ManyToOne
+    @JsonIgnore
     @JoinColumn(name = "id_user_staff")
     private UserStaff userStaff;
 
