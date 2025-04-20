@@ -79,8 +79,18 @@ public class SecurityConfig {
         teacherSecurityConfig.configure(http);
         excelSecurityConfig.configure(http);
 
-        http.authorizeHttpRequests(auth -> auth.anyRequest().authenticated());
-        return http.build();
+        http.authorizeHttpRequests(auth -> auth
+                .requestMatchers(
+                        "/",
+                        "/index.html",
+                        "/favicon.ico",
+                        "/logo.png",
+                        "/*.js", "/*.css",
+                        "/assets/**",
+                        "/static/**"
+                ).permitAll()
+                .anyRequest().authenticated()
+        );        return http.build();
     }
 
 }

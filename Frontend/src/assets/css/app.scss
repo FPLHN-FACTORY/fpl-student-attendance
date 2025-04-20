@@ -14,6 +14,14 @@ body {
   height: auto;
 }
 
+hr {
+  display: block;
+  height: 1px;
+  border: 0;
+  border-top: 1px solid #ecebef;
+  padding: 0;
+}
+
 .container,
 .container-fluid,
 .container-xxl,

@@ -22,7 +22,6 @@ import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.RestApiStatus;
 import udpm.hn.studentattendance.repositories.SemesterRepository;
-import udpm.hn.studentattendance.utils.CodeGeneratorUtils;
 
 import java.util.Date;
 import java.util.HashMap;
@@ -158,7 +157,6 @@ public class Staff_FactoryServiceImpl implements Staff_FactoryService {
                     HttpStatus.BAD_REQUEST);
         }
         Factory factory = new Factory();
-        factory.setId(CodeGeneratorUtils.generateRandom());
         factory.setName(factoryCreateUpdateRequest.getFactoryName());
         factory.setDescription(factoryCreateUpdateRequest.getFactoryDescription());
         factory.setUserStaff(userStaff.get());

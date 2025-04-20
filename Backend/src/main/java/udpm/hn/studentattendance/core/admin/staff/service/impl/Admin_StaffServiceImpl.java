@@ -35,7 +35,6 @@ import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.RestApiStatus;
 import udpm.hn.studentattendance.infrastructure.constants.RoleConstant;
-import udpm.hn.studentattendance.utils.CodeGeneratorUtils;
 
 import java.util.HashMap;
 import java.util.List;
@@ -77,50 +76,10 @@ public class Admin_StaffServiceImpl implements Admin_StaffService {
                 HttpStatus.OK);
     }
 
-    //    @Override
-//    public ResponseEntity<?> createStaff(Admin_CreateUpdateStaffRequest adCreateUpdateStaffRequest) {
-//        UserStaff staffExist = isStaffExist(
-//                adCreateUpdateStaffRequest.getStaffCode(),
-//                adCreateUpdateStaffRequest.getEmailFe(),
-//                adCreateUpdateStaffRequest.getEmailFpt()
-//        );
-//        if (staffExist != null) {
-//            new ResponseEntity<>(
-//                    new ApiResponse(
-//                            RestApiStatus.WARNING,
-//                            "Nhân viên đã tồn tại",
-//                            null
-//                    ),
-//                    HttpStatus.BAD_REQUEST);
-//        }
-//        UserStaff staff = new UserStaff();
-//        staff.setCode(adCreateUpdateStaffRequest.getStaffCode().trim());
-//        staff.setName(adCreateUpdateStaffRequest.getName().trim());
-//        staff.setEmailFe(adCreateUpdateStaffRequest.getEmailFe().trim());
-//        staff.setEmailFpt(adCreateUpdateStaffRequest.getEmailFpt().trim());
-//        staff.setStatus(EntityStatus.ACTIVE);
-//        adStaffRepository.save(staff);
-//
-//        UserAdmin staffAdmin = new UserAdmin();
-//        staffAdmin.setId(CodeGeneratorUtils.generateRandom());
-//        staffAdmin.setCode(adCreateUpdateStaffRequest.getStaffCode().trim());
-//        staffAdmin.setName(adCreateUpdateStaffRequest.getName().trim());
-//        staffAdmin.setEmail(adCreateUpdateStaffRequest.getEmailFe().trim());
-//        staffAdmin.setStatus(EntityStatus.INACTIVE);
-//        adStaffAdminRepository.save(staffAdmin);
-//
-//        return new ResponseEntity<>(
-//                new ApiResponse(
-//                        RestApiStatus.SUCCESS,
-//                        "Thêm nhân viên mới thành công",
-//                        null
-//                ),
-//                HttpStatus.CREATED);
-//    }
     @Override
     public ResponseEntity<?> createStaff(Admin_CreateUpdateStaffRequest adCreateUpdateStaffRequest) {
-
-        if(!isCheckEmailFpt.equals("true")) {
+        // Kiểm tra định dạng email
+        if (!isCheckEmailFpt.equals("true")) {
             if (!ValidateHelper.isValidEmailFE(adCreateUpdateStaffRequest.getEmailFe().trim())) {
                 return RouterHelper.responseError("Không chứa khoảng trắng và kết thúc bằng @fe.edu.vn");
             }
@@ -151,6 +110,7 @@ public class Admin_StaffServiceImpl implements Admin_StaffService {
         staff.setStatus(EntityStatus.ACTIVE);
         staff = adStaffRepository.save(staff);
 
+        // Kiểm tra cơ sở
         Facility facility = entityManager.find(Facility.class, adCreateUpdateStaffRequest.getFacilityId());
         if (facility == null) {
             return new ResponseEntity<>(
@@ -158,7 +118,6 @@ public class Admin_StaffServiceImpl implements Admin_StaffService {
                     HttpStatus.BAD_REQUEST
             );
         }
-
 
         // Tạo các vai trò
         List<String> roleCodes = adCreateUpdateStaffRequest.getRoleCodes();
@@ -170,34 +129,35 @@ public class Admin_StaffServiceImpl implements Admin_StaffService {
         }
 
         boolean isAdmin = false;
+        RoleConstant[] roleConstants = RoleConstant.values(); // Mảng các giá trị enum
         for (String roleCode : roleCodes) {
             RoleConstant roleConstant;
-            switch (roleCode.trim()) {
-                case "0", "ADMIN":
-                    roleConstant = RoleConstant.ADMIN;
-                    isAdmin = true;
-                    break;
-                case "1", "STAFF":
-                    roleConstant = RoleConstant.STAFF;
-                    break;
-                case "3", "TEACHER":
-                    roleConstant = RoleConstant.TEACHER;
-                    break;
-                default:
-                    return new ResponseEntity<>(
-                            new ApiResponse(RestApiStatus.ERROR, "Vai trò không hợp lệ: " + roleCode, null),
-                            HttpStatus.BAD_REQUEST
-                    );
+            try {
+                int ordinal = Integer.parseInt(roleCode.trim());
+                if (ordinal < 0 || ordinal >= roleConstants.length) {
+                    throw new IllegalArgumentException("Ordinal out of range: " + roleCode);
+                }
+                roleConstant = roleConstants[ordinal];
+            } catch (IllegalArgumentException e) {
+                return new ResponseEntity<>(
+                        new ApiResponse(RestApiStatus.ERROR, "Vai trò không hợp lệ: " + roleCode, null),
+                        HttpStatus.BAD_REQUEST
+                );
+            }
+
+            if (roleConstant == RoleConstant.ADMIN) {
+                isAdmin = true;
             }
 
             Role role = new Role();
-            role.setId(CodeGeneratorUtils.generateRandom());
+
             role.setCode(roleConstant);
             role.setFacility(facility);
             role.setUserStaff(staff);
             role.setStatus(EntityStatus.ACTIVE);
             adStaffRoleRepository.save(role);
 
+            // Thêm thông báo
             Map<String, Object> dataNotification = new HashMap<>();
             dataNotification.put(NotificationHelper.KEY_USER_ADMIN, sessionHelper.getUserCode() + " - " + sessionHelper.getUserName());
             dataNotification.put(NotificationHelper.KEY_ROLE, roleConstant.name());
@@ -211,7 +171,6 @@ public class Admin_StaffServiceImpl implements Admin_StaffService {
         // Tạo UserAdmin nếu có vai trò ADMIN
         if (isAdmin) {
             UserAdmin staffAdmin = new UserAdmin();
-            staffAdmin.setId(CodeGeneratorUtils.generateRandom());
             staffAdmin.setCode(adCreateUpdateStaffRequest.getStaffCode().trim());
             staffAdmin.setName(adCreateUpdateStaffRequest.getName().trim());
             staffAdmin.setEmail(adCreateUpdateStaffRequest.getEmailFe().trim());
@@ -224,36 +183,9 @@ public class Admin_StaffServiceImpl implements Admin_StaffService {
                 HttpStatus.CREATED
         );
     }
-
-    //    @Override
-//    public ResponseEntity<?> updateStaff(Admin_CreateUpdateStaffRequest adCreateUpdateStaffRequest) {
-//        Optional<UserStaff> existStaff = adStaffRepository.findById(adCreateUpdateStaffRequest.getId());
-//        if (existStaff.isEmpty()) {
-//            return new ResponseEntity<>(
-//                    new ApiResponse(
-//                            RestApiStatus.ERROR,
-//                            "Không tìm thấy giảng viên",
-//                            null
-//                    ),
-//                    HttpStatus.NOT_FOUND);
-//        }
-//        UserStaff staff = existStaff.get();
-//        staff.setId(adCreateUpdateStaffRequest.getId());
-//        staff.setName(adCreateUpdateStaffRequest.getName().trim());
-//        staff.setCode(adCreateUpdateStaffRequest.getStaffCode().trim());
-//        staff.setEmailFe(adCreateUpdateStaffRequest.getEmailFe().trim());
-//        staff.setEmailFpt(adCreateUpdateStaffRequest.getEmailFpt().trim());
-//        adStaffRepository.save(staff);
-//        return new ResponseEntity<>(
-//                new ApiResponse(
-//                        RestApiStatus.SUCCESS,
-//                        "Cập nhật giảng viên thàn công",
-//                        null
-//                ),
-//                HttpStatus.OK);
-//    }
     @Override
     public ResponseEntity<?> updateStaff(Admin_CreateUpdateStaffRequest adCreateUpdateStaffRequest) {
+        // Kiểm tra nhân viên tồn tại
         Optional<UserStaff> existStaff = adStaffRepository.findById(adCreateUpdateStaffRequest.getId());
         if (existStaff.isEmpty()) {
             return new ResponseEntity<>(
@@ -262,7 +194,8 @@ public class Admin_StaffServiceImpl implements Admin_StaffService {
             );
         }
 
-        if(!isCheckEmailFpt.equals("true")) {
+        // Kiểm tra định dạng email
+        if (!isCheckEmailFpt.equals("true")) {
             if (!ValidateHelper.isValidEmailFE(adCreateUpdateStaffRequest.getEmailFe().trim())) {
                 return RouterHelper.responseError("Không chứa khoảng trắng và kết thúc bằng @fe.edu.vn");
             }
@@ -271,6 +204,7 @@ public class Admin_StaffServiceImpl implements Admin_StaffService {
             }
         }
 
+        // Cập nhật thông tin nhân viên
         UserStaff staff = existStaff.get();
         staff.setName(adCreateUpdateStaffRequest.getName().trim());
         staff.setCode(adCreateUpdateStaffRequest.getStaffCode().trim());
@@ -278,6 +212,7 @@ public class Admin_StaffServiceImpl implements Admin_StaffService {
         staff.setEmailFpt(adCreateUpdateStaffRequest.getEmailFpt().trim());
         adStaffRepository.save(staff);
 
+        // Kiểm tra cơ sở
         Optional<Facility> existFacility = adminStaffFacilityRepository.findById(adCreateUpdateStaffRequest.getFacilityId().trim());
         if (existFacility.isEmpty()) {
             return new ResponseEntity<>(
@@ -287,25 +222,15 @@ public class Admin_StaffServiceImpl implements Admin_StaffService {
         }
         Facility facility = existFacility.get();
 
+        // Xử lý vai trò
         List<Role> currentRoles = adStaffRoleRepository.findAllByUserStaffId(staff.getId());
         List<String> newRoleCodes = adCreateUpdateStaffRequest.getRoleCodes();
+        RoleConstant[] roleConstants = RoleConstant.values();
 
-        // Xóa những vai trò hiện tại không có trong danh sách mới
+        // Xóa vai trò không còn trong danh sách mới
         for (Role role : currentRoles) {
-            String currentRoleString;
-            switch (role.getCode()) {
-                case ADMIN:
-                    currentRoleString = "0";
-                    break;
-                case STAFF:
-                    currentRoleString = "1";
-                    break;
-                case TEACHER:
-                    currentRoleString = "3";
-                    break;
-                default:
-                    currentRoleString = "";
-            }
+            int currentRoleOrdinal = role.getCode().ordinal();
+            String currentRoleString = String.valueOf(currentRoleOrdinal);
             if (!newRoleCodes.contains(currentRoleString)) {
                 adStaffRoleRepository.delete(role);
 
@@ -320,24 +245,20 @@ public class Admin_StaffServiceImpl implements Admin_StaffService {
             }
         }
 
-        // Cập nhật hoặc tạo mới vai trò theo danh sách mới
-        for (String roleName : newRoleCodes) {
+        // Cập nhật hoặc tạo mới vai trò
+        for (String roleCode : newRoleCodes) {
             RoleConstant roleConstant;
-            switch (roleName.trim()) {
-                case "0":
-                    roleConstant = RoleConstant.ADMIN;
-                    break;
-                case "1":
-                    roleConstant = RoleConstant.STAFF;
-                    break;
-                case "3":
-                    roleConstant = RoleConstant.TEACHER;
-                    break;
-                default:
-                    return new ResponseEntity<>(
-                            new ApiResponse(RestApiStatus.ERROR, "Vai trò không hợp lệ: " + roleName, null),
-                            HttpStatus.BAD_REQUEST
-                    );
+            try {
+                int ordinal = Integer.parseInt(roleCode.trim());
+                if (ordinal < 0 || ordinal >= roleConstants.length) {
+                    throw new IllegalArgumentException("Ordinal out of range: " + roleCode);
+                }
+                roleConstant = roleConstants[ordinal];
+            } catch (IllegalArgumentException e) {
+                return new ResponseEntity<>(
+                        new ApiResponse(RestApiStatus.ERROR, "Vai trò không hợp lệ: " + roleCode, null),
+                        HttpStatus.BAD_REQUEST
+                );
             }
 
             Optional<Role> existingRole = currentRoles.stream()
@@ -350,7 +271,6 @@ public class Admin_StaffServiceImpl implements Admin_StaffService {
                 role.setFacility(facility);
             } else {
                 role = new Role();
-                role.setId(CodeGeneratorUtils.generateRandom());
                 role.setCode(roleConstant);
                 role.setFacility(facility);
                 role.setUserStaff(staff);
@@ -368,7 +288,7 @@ public class Admin_StaffServiceImpl implements Admin_StaffService {
             notificationService.add(notificationAddRequest);
         }
 
-        // Kiểm tra nếu có vai trò ADMIN ("0")
+        // Xử lý vai trò ADMIN
         boolean isAdmin = newRoleCodes.contains("0");
         Optional<UserAdmin> existStaffAdmin = adStaffAdminRepository.getUserAdminByCode(staff.getCode());
         if (isAdmin) {
@@ -380,7 +300,6 @@ public class Admin_StaffServiceImpl implements Admin_StaffService {
                 adStaffAdminRepository.save(staffAdmin);
             } else {
                 UserAdmin staffAdmin = new UserAdmin();
-                staffAdmin.setId(CodeGeneratorUtils.generateRandom());
                 staffAdmin.setCode(staff.getCode());
                 staffAdmin.setName(staff.getName());
                 staffAdmin.setEmail(staff.getEmailFe());
