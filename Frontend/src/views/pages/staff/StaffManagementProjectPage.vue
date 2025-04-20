@@ -245,16 +245,16 @@ const handleUpdateProject = () => {
 const handleDeleteProject = (record) => {
   Modal.confirm({
     title: 'Xác nhận',
-    content: 'Bạn có chắc chắn muốn xóa dự án này?',
+    content: 'Bạn có chắc chắn muốn đổi trạng thái dự án này?',
     onOk: () => {
       requestAPI
         .delete(`${API_ROUTES_STAFF.FETCH_DATA_PROJECT}/${record.id}`)
         .then(() => {
-          message.success('Xóa dự án thành công')
+          message.success('Đổi trạng thái dự án thành công')
           fetchProjects()
         })
         .catch(() => {
-          message.error('Lỗi khi xóa dự án')
+          message.error('Lỗi khi đổi trạng thái dự án')
         })
     },
   })

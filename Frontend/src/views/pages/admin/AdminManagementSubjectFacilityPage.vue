@@ -34,7 +34,7 @@ const breadcrumb = ref([
   },
   {
     name: ROUTE_NAMES.MANAGEMENT_SUBJECT_FACILITY,
-    breadcrumbName: 'Quản lý bộ môn cơ sở',
+    breadcrumbName: 'Bộ môn - ' + route.query.name,
   },
 ])
 
@@ -61,7 +61,7 @@ const modalUpdate = ref(false)
 
 const newSubjectFacility = reactive({
   name: '',
-  facilityId: null,
+  facilityId: [],
 })
 
 const detailSubjectFacility = reactive({
@@ -174,7 +174,8 @@ const handleAddSubjectFacility = () => {
   loadingStore.show()
   const requests = []
 
-  if (newSubjectFacility.facilityId === null) {
+  if (newSubjectFacility.facilityId === null ||
+  newSubjectFacility.facilityId.includes(null)) {
     // Thêm tất cả cơ sở chưa có
     facilitySubject.value.forEach((f) => {
       requests.push(
@@ -217,18 +218,18 @@ const handleUpdateProject = (record) => {
 
 const handleDeleteSubjectFacility = (record) => {
   Modal.confirm({
-    title: 'Xác nhận xóa',
-    content: `Bạn có chắc chắn muốn xóa bộ môn ${record.subjectName} cơ sở ${record.facilityName}?`,
+    title: 'Xác nhận đổi trạng thái',
+    content: `Bạn có chắc chắn muốn chuyển đổi trạng thái bộ môn ${record.subjectName} cơ sở ${record.facilityName}?`,
     onOk: () => {
       loadingStore.show()
       requestAPI
         .delete(`${API_ROUTES_ADMIN.FETCH_DATA_SUBJECT_FACILITY}/${record.id}`)
         .then(() => {
-          message.success('Xóa bộ môn cơ sở thành công')
+          message.success('Đổi trạng thái bộ môn cơ sở thành công')
           fetchSubjectFacility()
         })
         .catch((error) => {
-          message.error(error.response?.data?.message || 'Lỗi khi xóa bộ môn cơ sở')
+          message.error(error.response?.data?.message || 'Lỗi khi đổi trạng thái bộ môn cơ sở')
         })
         .finally(() => {
           loadingStore.hide()
@@ -419,10 +420,24 @@ onMounted(() => {
             allowClear
             mode="multiple"
           >
-            <a-select-option v-for="f in facilitySubject" :key="f.id" :value="f.id">
-              {{ f.name }}
-            </a-select-option>
+          <a-select-option
+            :value="null"
+            :disabled="Array.isArray(newSubjectFacility.facilityId) && newSubjectFacility.facilityId.length > 0 && newSubjectFacility.facilityId.some(v => v !== null)"
+          >
+            Tất cả cơ sở
+          </a-select-option>
+
+          <a-select-option
+            v-for="f in facilitySubject"
+            :key="f.id"
+            :value="f.id"
+            :disabled="Array.isArray(newSubjectFacility.facilityId) && newSubjectFacility.facilityId.includes(null)"
+          >
+            {{ f.name }}
+          </a-select-option>
+
           </a-select>
+
         </a-form-item>
       </a-form>
     </a-modal>
