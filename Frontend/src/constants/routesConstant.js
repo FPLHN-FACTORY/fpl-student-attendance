@@ -1,8 +1,10 @@
 export const BASE_URL = import.meta.env.VITE_BASE_URL
 
+export const BASE_API_URL = import.meta.env.VITE_BASE_API_URL
+
 export const API_PREFIX = import.meta.env.VITE_PREFIX_API
 
-export const API_URL = BASE_URL + API_PREFIX
+export const API_URL = BASE_API_URL + API_PREFIX
 
 export const GLOBAL_ROUTE_NAMES = {
   SWITCH_ROLE: 'switch_role',

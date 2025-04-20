@@ -16,13 +16,14 @@ import imgLogoUdpm from '@/assets/images/logo-udpm.png'
 import useAuthStore from '@/stores/useAuthStore'
 import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
 import { useRoute, useRouter } from 'vue-router'
-import { API_ROUTES_NOTIFICATION, BASE_URL, GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
+import { API_ROUTES_NOTIFICATION, GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
 import useApplicationStore from '@/stores/useApplicationStore'
 import ExcelUploadList from '@/components/excel/ExcelUploadList.vue'
 import { formatDate } from '@/utils/utils'
 import { DEFAULT_DATE_FORMAT, DEFAULT_PAGINATION } from '@/constants'
 import requestAPI from '@/services/requestApiService'
 import { message } from 'ant-design-vue'
+import { BASE_API_URL } from '@/constants/routesConstant'
 
 const router = useRouter()
 const route = useRoute()
@@ -51,7 +52,7 @@ const pagination = ref({ ...DEFAULT_PAGINATION })
 
 const handleLogout = () => {
   authStore.logout()
-  window.location.href = BASE_URL
+  window.location.href = BASE_API_URL
 }
 
 const handleShowAllNotification = () => {
