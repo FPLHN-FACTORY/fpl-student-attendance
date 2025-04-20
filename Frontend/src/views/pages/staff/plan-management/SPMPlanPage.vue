@@ -6,7 +6,6 @@ import {
   UnorderedListOutlined,
   SearchOutlined,
   AlignLeftOutlined,
-  PoweroffOutlined,
   DeleteFilled,
   EditFilled,
 } from '@ant-design/icons-vue'
@@ -187,7 +186,7 @@ const fetchDataProjectList = () => {
       },
     })
     .then(({ data: response }) => {
-      lstDataProject.value = response.data
+      lstDataProject.value = response.data.filter((o) => o.id !== currentProject.value?.id)
       if (currentProject.value) {
         lstDataProject.value.push(currentProject.value)
         formData.idProject = currentProject.value.id
@@ -298,12 +297,14 @@ const handleSubmitFilter = () => {
 
 const handleSubmitFilterAdd = () => {
   if (
-    !dataFilterAdd.level ||
-    !dataFilterAdd.semester ||
-    !dataFilterAdd.subject ||
+    !dataFilterAdd.level &&
+    !dataFilterAdd.semester &&
+    !dataFilterAdd.subject &&
     !dataFilterAdd.year
   ) {
-    return
+    return (lstDataProject.value = lstDataProject.value.filter(
+      (o) => o.id === currentProject.value?.id
+    ))
   }
   formData.idProject = null
   fetchDataProjectList()
@@ -331,7 +332,7 @@ const handleSubmitUpdate = async () => {
     Modal.confirm({
       title: `Xác nhận cập nhật`,
       type: 'info',
-      content: `Bạn có chắc muốn cập nhật kế hoạch này?`,
+      content: `Mọi dữ liệu dư thừa trong khoảng thời gian diễn ra có thể mất. Bạn có chắc muốn cập nhật kế hoạch này?`,
       okText: 'Tiếp tục',
       cancelText: 'Hủy bỏ',
       onOk() {
@@ -467,7 +468,7 @@ watch(
   () => {
     handleSubmitFilter()
   },
-  { deep: true },
+  { deep: true }
 )
 
 watch(
@@ -475,7 +476,7 @@ watch(
   () => {
     handleSubmitFilterAdd()
   },
-  { deep: true },
+  { deep: true }
 )
 </script>
 
@@ -492,7 +493,8 @@ watch(
       autocomplete="off"
       :model="formData"
     >
-      <a-form-item class="col-sm-3" label="Học kỳ">
+      <div class="col-12 mb-2">Tìm kiếm dự án</div>
+      <a-form-item class="col-sm-3">
         <a-select
           v-model:value="dataFilterAdd.semester"
           class="w-100"
@@ -506,7 +508,7 @@ watch(
           </a-select-option>
         </a-select>
       </a-form-item>
-      <a-form-item class="col-sm-3" label="Năm học">
+      <a-form-item class="col-sm-3">
         <a-select
           v-model:value="dataFilterAdd.year"
           class="w-100"
@@ -520,7 +522,7 @@ watch(
           </a-select-option>
         </a-select>
       </a-form-item>
-      <a-form-item class="col-sm-3" label="Bộ môn">
+      <a-form-item class="col-sm-3">
         <a-select
           v-model:value="dataFilterAdd.subject"
           class="w-100"
@@ -534,7 +536,7 @@ watch(
           </a-select-option>
         </a-select>
       </a-form-item>
-      <a-form-item class="col-sm-3" label="Cấp độ dự án">
+      <a-form-item class="col-sm-3">
         <a-select
           v-model:value="dataFilterAdd.level"
           class="w-100"
@@ -548,6 +550,10 @@ watch(
           </a-select-option>
         </a-select>
       </a-form-item>
+
+      <div class="col-12">
+        <hr class="mb-3" />
+      </div>
 
       <a-form-item
         class="col-sm-6"
@@ -569,7 +575,7 @@ watch(
       </a-form-item>
       <a-form-item
         class="col-sm-6"
-        label="Thời gian diễn ra"
+        label="Khoảng thời gian diễn ra"
         name="rangeDate"
         :rules="formRules.rangeDate"
       >

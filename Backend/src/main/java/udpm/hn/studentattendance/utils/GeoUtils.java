@@ -4,7 +4,7 @@ import udpm.hn.studentattendance.entities.FacilityLocation;
 
 import java.util.List;
 
-public class GeoUtil {
+public class GeoUtils {
 
     private static final double EARTH_RADIUS = 6371000;
 

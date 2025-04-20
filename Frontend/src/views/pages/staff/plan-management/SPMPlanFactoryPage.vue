@@ -53,8 +53,9 @@ const columns = ref([
   { title: '#', dataIndex: 'orderNumber', key: 'orderNumber', width: 50 },
   { title: 'Tên nhóm xưởng', dataIndex: 'factoryName', key: 'factoryName', width: 150 },
   { title: 'Giảng viên', dataIndex: 'staffName', key: 'staffName' },
-  { title: 'Thời gian diễn ra', key: 'time' },
+  { title: 'Thời gian thực tế', key: 'time' },
   { title: 'Số buổi', dataIndex: 'totalShift', key: 'totalShift' },
+  { title: 'Số sinh viên', dataIndex: 'totalStudent', key: 'totalStudent' },
   { title: 'Trạng thái', dataIndex: 'status', key: 'status' },
   { title: '', key: 'actions' },
 ])
@@ -536,6 +537,9 @@ watch(
               </template>
               <template v-if="column.dataIndex === 'totalShift'">
                 <a-tag> {{ record.totalShift }} buổi </a-tag>
+              </template>
+              <template v-if="column.dataIndex === 'totalStudent'">
+                <a-tag> {{ record.totalStudent }} sinh viên </a-tag>
               </template>
               <template v-if="column.dataIndex === 'status'">
                 <a-switch

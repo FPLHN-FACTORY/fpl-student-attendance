@@ -24,6 +24,7 @@ import udpm.hn.studentattendance.helpers.PaginationHelper;
 import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.helpers.SessionHelper;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
+import udpm.hn.studentattendance.infrastructure.common.repositories.CommonUserStudentRepository;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.SemesterName;
 import udpm.hn.studentattendance.utils.DateTimeUtils;
@@ -47,6 +48,8 @@ public class SPDPlanServiceImpl implements SPDPlanService {
     private final SPDSemesterRepository spdSemesterRepository;
 
     private final SPDProjectRepository spdProjectRepository;
+
+    private final CommonUserStudentRepository commonUserStudentRepository;
 
     private final SessionHelper sessionHelper;
 
@@ -160,7 +163,13 @@ public class SPDPlanServiceImpl implements SPDPlanService {
         }
 
         plan.setStatus(plan.getStatus() == EntityStatus.ACTIVE ? EntityStatus.INACTIVE : EntityStatus.ACTIVE);
-        return RouterHelper.responseSuccess("Thay đổi trạng thái kế hoạch thành công", spdPlanRepository.save(plan));
+        Plan newEntity = spdPlanRepository.save(plan);
+
+        if (newEntity.getStatus() == EntityStatus.ACTIVE) {
+            commonUserStudentRepository.disableAllStudentDuplicateShiftByIdPlan(plan.getId());
+        }
+
+        return RouterHelper.responseSuccess("Thay đổi trạng thái kế hoạch thành công", newEntity);
     }
 
     @Override
@@ -214,7 +223,12 @@ public class SPDPlanServiceImpl implements SPDPlanService {
         plan.setToDate(DateTimeUtils.toEndOfDay(endDate));
         plan.setProject(project);
 
-        return RouterHelper.responseSuccess("Cập nhật kế hoạch thành công", spdPlanRepository.save(plan));
+        Plan updatePlan = spdPlanRepository.save(plan);
+
+        spdPlanRepository.deleteAllAttendanceOutRangeDateByIdPlan(updatePlan.getId());
+        spdPlanRepository.deleteAllPlanDateOutRangeDateByIdPlan(updatePlan.getId());
+
+        return RouterHelper.responseSuccess("Cập nhật kế hoạch thành công", updatePlan);
     }
 
 }

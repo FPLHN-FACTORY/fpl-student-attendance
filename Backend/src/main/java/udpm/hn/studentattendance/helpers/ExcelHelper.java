@@ -107,6 +107,7 @@ public class ExcelHelper {
             if (row == null) continue;
 
             Map<String, String> rowData = new HashMap<>();
+            rowData.put("_LINE", String.valueOf(i));
             for (int j = 0; j < headers.size(); j++) {
                 Cell cell = row.getCell(j, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
                 rowData.put(CodeGeneratorUtils.generateCodeFromString(headers.get(j)), getCellValue(cell));

@@ -14,6 +14,7 @@ public class NotificationHelper {
     public static final int TYPE_REMOVE_TEACHER_TO_FACTORY = 4;
     public static final int TYPE_ADD_STUDENT_TO_FACTORY = 5;
     public static final int TYPE_REMOVE_STUDENT_TO_FACTORY = 6;
+    public static final int TYPE_SUCCESS_UPDATE_FACE_ID = 7;
 
     public static final String KEY_USER_ADMIN = "USER_ADMIN";
     public static final String KEY_USER_STAFF = "USER_STAFF";
@@ -56,7 +57,7 @@ public class NotificationHelper {
                         .append(data.get(KEY_FACTORY))
                         .append("</b>")
                         .append(" bởi <b>")
-                        .append(data.get(KEY_USER_STAFF))
+                        .append(data.get(KEY_USER_ADMIN))
                         .append("</b>");
             }
             case TYPE_REMOVE_TEACHER_TO_FACTORY -> {
@@ -65,7 +66,7 @@ public class NotificationHelper {
                         .append(data.get(KEY_FACTORY))
                         .append("</b>")
                         .append(" bởi <b>")
-                        .append(data.get(KEY_USER_STAFF))
+                        .append(data.get(KEY_USER_ADMIN))
                         .append("</b>");
             }
             case TYPE_ADD_STUDENT_TO_FACTORY -> {
@@ -85,6 +86,10 @@ public class NotificationHelper {
                         .append(" bởi <b>")
                         .append(data.get(KEY_USER_STAFF))
                         .append("</b>");
+            }
+            case TYPE_SUCCESS_UPDATE_FACE_ID -> {
+                result
+                        .append("Cập nhật thông tin khuôn mặt thành công");
             }
         }
         return result.toString();

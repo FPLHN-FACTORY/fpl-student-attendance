@@ -15,6 +15,7 @@ import udpm.hn.studentattendance.infrastructure.constants.RoutesConstant;
 import udpm.hn.studentattendance.infrastructure.constants.router.RouteAuthenticationConstant;
 
 import static udpm.hn.studentattendance.helpers.RouterHelper.appendPrefixApi;
+import static udpm.hn.studentattendance.helpers.RouterHelper.appendWildcard;
 
 @Component
 @RequiredArgsConstructor
@@ -46,7 +47,6 @@ public class AuthenticationSecurityConfig {
             authorization.requestMatchers(appendPrefixApi(RouteAuthenticationConstant.API_STUDENT_REGISTER, "/*")).hasAuthority(RoleConstant.STUDENT.name());
             authorization.requestMatchers(appendPrefixApi(RouteAuthenticationConstant.API_STUDENT_INFO, "/*")).hasAuthority(RoleConstant.STUDENT.name());
             authorization.requestMatchers(RouteAuthenticationConstant.REDIRECT_LOGIN).permitAll();
-
             authorization.requestMatchers(RouterHelper.appendWildcard(RoutesConstant.PREFIX_API_NOTIFICATION)).authenticated();
         });
 
