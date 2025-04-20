@@ -11,9 +11,12 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.DynamicUpdate;
-import org.hibernate.annotations.Nationalized;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 import udpm.hn.studentattendance.entities.base.PrimaryEntity;
 import udpm.hn.studentattendance.infrastructure.constants.EntityProperties;
+import udpm.hn.studentattendance.infrastructure.constants.ShiftType;
+import udpm.hn.studentattendance.infrastructure.constants.StatusType;
 
 import java.io.Serializable;
 
@@ -26,17 +29,36 @@ import java.io.Serializable;
 @DynamicUpdate
 public class PlanDate extends PrimaryEntity implements Serializable {
 
-    @Column(name = "name", length = EntityProperties.LENGTH_NAME)
-    private String name;
-
     @Column(name = "description", length = EntityProperties.LENGTH_TEXT)
     private String description;
 
     @Column(name = "start_date")
     private Long startDate;
 
+    @Column(name = "end_date")
+    private Long endDate;
+
+    @Column(name = "shift")
+    private Integer shift;
+
+    @Column(name = "late_arrival")
+    private Integer lateArrival;
+
+    @Column(name = "link", length = EntityProperties.LENGTH_TEXT)
+    private String link;
+
+    @Column(name = "type")
+    private ShiftType type = ShiftType.OFFLINE;
+
+    @Column(name = "required_location")
+    private StatusType requiredLocation = StatusType.ENABLE;
+
+    @Column(name = "required_ip")
+    private StatusType requiredIp = StatusType.ENABLE;
+
     @ManyToOne
-    @JoinColumn(name = "id_factory")
-    private Factory factory;
+    @JoinColumn(name = "id_plan_factory")
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    private PlanFactory planFactory;
 
 }

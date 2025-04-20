@@ -14,20 +14,25 @@ import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.OAuth2Error;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
+import udpm.hn.studentattendance.core.authentication.repositories.AuthenticationRoleRepository;
 import udpm.hn.studentattendance.core.authentication.repositories.AuthenticationUserAdminRepository;
 import udpm.hn.studentattendance.core.authentication.repositories.AuthenticationUserStaffRepository;
 import udpm.hn.studentattendance.core.authentication.repositories.AuthenticationUserStudentRepository;
 import udpm.hn.studentattendance.core.authentication.utils.JwtUtil;
+import udpm.hn.studentattendance.entities.Role;
 import udpm.hn.studentattendance.entities.UserAdmin;
 import udpm.hn.studentattendance.entities.UserStaff;
 import udpm.hn.studentattendance.entities.UserStudent;
+import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.helpers.SessionHelper;
 import udpm.hn.studentattendance.infrastructure.constants.RoleConstant;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @Component
 @RequiredArgsConstructor
@@ -43,62 +48,50 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final AuthenticationUserStudentRepository authenticationUserStudentRepository;
 
+    private final AuthenticationRoleRepository authenticationRoleRepository;
+
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain) throws ServletException, IOException {
-        String token = request.getHeader("Authorization");
+        String token = JwtUtil.getAuthorization(request);
 
-        if (token != null && token.startsWith("Bearer ")) {
-            token = token.substring(7);
+        if (token != null) {
 
             if (jwtUtil.validateToken(token)) {
+
+                RoleConstant requiredRole = RouterHelper.getRequiredRoleForUrl(request.getRequestURI());
+
                 String email = jwtUtil.getEmailFromToken(token);
-                String role = jwtUtil.getRoleFromToken(token);
+                Set<String> role = jwtUtil.getRoleFromToken(token);
                 String facilityID = jwtUtil.getFacilityFromToken(token);
 
-                boolean isAuthentication = true;
+                AuthUser authUser = null;
 
-                AuthUser authUser = new AuthUser();
-
-                RoleConstant roleCode;
-                try {
-                    roleCode = RoleConstant.valueOf(role.toUpperCase());
-
-                    switch (roleCode) {
-
-                        case ADMIN:
-                            Optional<UserAdmin> userAdmin = authenticationUserAdminRepository.findByEmail(email);
-                            if (userAdmin.isEmpty()) {
-                                isAuthentication = false;
-                            }
-                            authUser = sessionHelper.buildAuthUser(userAdmin.get(), roleCode, facilityID);
-                            break;
-
-                        case STAFF:
-                            Optional<UserStaff> userStaff = authenticationUserStaffRepository.findLoginStaff(email, roleCode, facilityID);
-                            if (userStaff.isEmpty()) {
-                                isAuthentication = false;
-                            }
-                            authUser = sessionHelper.buildAuthUser(userStaff.get(), roleCode, facilityID);
-                            break;
-
-                        case STUDENT:
-                            Optional<UserStudent> userStudent = authenticationUserStudentRepository.findByEmailAndFacility_Id(email, facilityID);
-                            if (userStudent.isEmpty()) {
-                                isAuthentication = false;
-                            }
-                            authUser = sessionHelper.buildAuthUser(userStudent.get(), roleCode, facilityID);
-                            break;
+                if (requiredRole == RoleConstant.ADMIN) {
+                    authUser = getAccountAdmin(email);
+                }
+                else if(requiredRole == RoleConstant.STAFF || requiredRole == RoleConstant.TEACHER) {
+                    authUser = getAccountStaffOrTeacher(email, facilityID);
+                }
+                else if (requiredRole == RoleConstant.STUDENT) {
+                    authUser = getAccountStudent(email, facilityID);
+                } else {
+                    if (role.contains(RoleConstant.ADMIN.name())) {
+                        authUser = getAccountAdmin(email);
                     }
-                } catch (Exception e) {
+                    else if(role.contains(RoleConstant.STAFF.name()) || role.contains(RoleConstant.TEACHER.name())) {
+                        authUser = getAccountStaffOrTeacher(email, facilityID);
+                    }
+                    else if (role.contains(RoleConstant.STUDENT.name())) {
+                        authUser = getAccountStudent(email, facilityID);
+                    }
                 }
 
-
-                if (isAuthentication) {
-
+                if (authUser != null) {
                     sessionHelper.setCurrentUser(authUser);
-
                     List<GrantedAuthority> authorities = new ArrayList<>();
-                    authorities.add(new SimpleGrantedAuthority(role));
+                    for (RoleConstant r: authUser.getRole()) {
+                        authorities.add(new SimpleGrantedAuthority(r.name()));
+                    }
 
                     Authentication auth = new UsernamePasswordAuthenticationToken(null, token, authorities);
                     SecurityContextHolder.getContext().setAuthentication(auth);
@@ -107,6 +100,30 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         chain.doFilter(request, response);
+    }
+
+    private AuthUser getAccountStaffOrTeacher(String email, String facilityID) {
+        Optional<UserStaff> userStaff = authenticationUserStaffRepository.findLogin(email, facilityID);
+        if (userStaff.isPresent()) {
+            Set<RoleConstant> roles = new HashSet<>();
+
+            List<Role> lstRole = authenticationRoleRepository.findRolesByUserId(userStaff.get().getId());
+            for(Role r: lstRole) {
+                roles.add(r.getCode());
+            }
+            return sessionHelper.buildAuthUser(userStaff.get(), roles, facilityID);
+        }
+        return null;
+    }
+
+    private AuthUser getAccountAdmin(String email) {
+        Optional<UserAdmin> userAdmin = authenticationUserAdminRepository.findByEmail(email);
+        return userAdmin.map(admin -> sessionHelper.buildAuthUser(admin, Set.of(RoleConstant.ADMIN), null)).orElse(null);
+    }
+
+    private AuthUser getAccountStudent(String email, String facilityID) {
+        Optional<UserStudent> userStudent = authenticationUserStudentRepository.findByEmailAndFacility_Id(email, facilityID);
+        return userStudent.map(student -> sessionHelper.buildAuthUser(student, Set.of(RoleConstant.STUDENT), facilityID)).orElse(null);
     }
 
 }

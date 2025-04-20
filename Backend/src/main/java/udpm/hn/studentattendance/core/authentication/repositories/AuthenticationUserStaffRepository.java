@@ -27,4 +27,20 @@ public interface AuthenticationUserStaffRepository extends UserStaffRepository {
     """, nativeQuery = true)
     Optional<UserStaff> findLoginStaff(String email, RoleConstant roleCode, String facilityID);
 
+    @Query(value = """
+        SELECT 
+            us.*
+        FROM user_staff us
+        JOIN role r ON r.id_user_staff = us.id
+        JOIN facility f ON f.id = r.id_facility
+        WHERE
+            us.status = 1 
+            AND f.status = 1
+            AND us.email_fpt = :email
+            AND r.code IN(1, 3)
+            AND f.id = :facilityID
+        LIMIT 1
+    """, nativeQuery = true)
+    Optional<UserStaff> findLogin(String email, String facilityID);
+
 }
