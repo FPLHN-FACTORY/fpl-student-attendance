@@ -27,8 +27,8 @@ import java.util.List;
 @Configuration
 @RequiredArgsConstructor
 @EnableMethodSecurity(
-    securedEnabled = true,
-    jsr250Enabled = true
+        securedEnabled = true,
+        jsr250Enabled = true
 )
 public class SecurityConfig {
 
@@ -85,12 +85,14 @@ public class SecurityConfig {
                         "/index.html",
                         "/favicon.ico",
                         "/logo.png",
-                        "/*.js", "/*.css",
+                        "/*.js",
+                        "/*.css",
                         "/assets/**",
                         "/static/**"
                 ).permitAll()
                 .anyRequest().authenticated()
-        );        return http.build();
+        );
+        return http.build();
     }
 
 }
