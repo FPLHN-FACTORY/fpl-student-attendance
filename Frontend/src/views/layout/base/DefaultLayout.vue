@@ -23,6 +23,7 @@ import { formatDate } from '@/utils/utils'
 import { DEFAULT_DATE_FORMAT, DEFAULT_PAGINATION } from '@/constants'
 import requestAPI from '@/services/requestApiService'
 import { message } from 'ant-design-vue'
+import { BASE_URL } from '@/constants/routesConstant'
 
 const router = useRouter()
 const route = useRoute()
@@ -51,7 +52,7 @@ const pagination = ref({ ...DEFAULT_PAGINATION })
 
 const handleLogout = () => {
   authStore.logout()
-  window.location.reload()
+  window.location.href = BASE_URL
 }
 
 const handleShowAllNotification = () => {
