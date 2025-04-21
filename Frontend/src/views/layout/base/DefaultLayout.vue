@@ -52,7 +52,7 @@ const pagination = ref({ ...DEFAULT_PAGINATION })
 
 const handleLogout = () => {
   authStore.logout()
-  window.location.href = BASE_API_URL
+  window.location.reload()
 }
 
 const handleShowAllNotification = () => {

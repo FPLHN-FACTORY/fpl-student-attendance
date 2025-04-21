@@ -6,6 +6,7 @@ import {
   CalendarOutlined,
   ClusterOutlined,
   TeamOutlined,
+  UserOutlined,
 } from '@ant-design/icons-vue'
 
 export const ROUTE_NAMES = {
@@ -18,7 +19,7 @@ export const ROUTE_NAMES = {
   MANAGEMENT_SUBJECT_FACILITY: 'route_admin_management_subject_facility',
   MANAGEMENT_LEVEL_PROJECT: 'route_admin_management_level_project',
   MANAGEMENT_STAFF: 'route_admin_management_staff',
-  MANAGEMENT_STAFF_ROLE: 'route_admin_management_staff_role',
+  MANAGEMENT_ADMIN: 'route_admin_management_admin',
 }
 let selectedKey = 1
 
@@ -108,11 +109,13 @@ export const AdminRoutes = [
         },
       },
       {
-        path: 'management-staff-role',
-        name: ROUTE_NAMES.MANAGEMENT_STAFF_ROLE,
-        component: () => import('@/views/pages/admin/AdminManagementStaffRolePage.vue'),
+        path: 'management-admin',
+        name: ROUTE_NAMES.MANAGEMENT_ADMIN,
+        component: () => import('@/views/pages/admin/AdminManagementUserAdminPage.vue'),
         meta: {
-          name: 'Quản lý chức vụ',
+          selectedKey: selectedKey++,
+          name: 'Quản lý ban đào tạo',
+          icon: UserOutlined,
         },
       },
       {

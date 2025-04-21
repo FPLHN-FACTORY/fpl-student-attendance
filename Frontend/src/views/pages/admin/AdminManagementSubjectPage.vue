@@ -10,7 +10,7 @@ import {
   ClusterOutlined,
   UnorderedListOutlined,
   FilterFilled,
-  SyncOutlined
+  SyncOutlined,
 } from '@ant-design/icons-vue'
 import { DEFAULT_PAGINATION } from '@/constants'
 import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
@@ -58,11 +58,11 @@ const columns = ref([
   { title: '#', dataIndex: 'indexs', key: 'indexs', width: 50 },
   { title: 'Tên bộ môn', dataIndex: 'name', key: 'name', width: 200 },
   { title: 'Mã bộ môn', dataIndex: 'code', key: 'code', width: 150 },
-  { 
-    title: 'Số lượng bộ môn cơ sở', 
-    dataIndex: 'sizeSubjectSemester', 
-    key: 'sizeSubjectSemester', 
-    width: 150 
+  {
+    title: 'Số lượng bộ môn cơ sở',
+    dataIndex: 'sizeSubjectSemester',
+    key: 'sizeSubjectSemester',
+    width: 150,
   },
   { title: 'Trạng thái', dataIndex: 'status', key: 'status', width: 100 },
   { title: 'Chức năng', key: 'actions', width: 200 },
@@ -185,7 +185,7 @@ const updateSubject = () => {
     code: detailSubject.code,
     status: detailSubject.status,
   }
-  
+
   requestAPI
     .put(`${API_ROUTES_ADMIN.FETCH_DATA_SUBJECT}/${detailSubject.id}`, requestData)
     .then((response) => {
@@ -313,6 +313,9 @@ onMounted(() => {
               <template v-if="column.dataIndex">
                 <template v-if="column.dataIndex === 'indexs'">
                   {{ index + 1 }}
+                </template>
+                <template v-else-if="column.dataIndex === 'name'">
+                  <a @click="handleAddSubjectFacility(record)">{{ record.name }}</a>
                 </template>
                 <template v-else-if="column.dataIndex === 'status'">
                   <a-tag :color="getStatusColor(record.status)">
