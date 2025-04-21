@@ -29,10 +29,13 @@ const loadingStore = useLoadingStore()
 const factories = ref([])
 const projects = ref([])
 const staffs = ref([])
-
+const semesters = ref([])
 const filter = reactive({
-  searchQuery: '',
+  factoryName: '',
   status: '',
+  idProject: null,
+  idStaff: null,
+  idSemester: null,
 })
 
 const pagination = reactive({
@@ -147,9 +150,27 @@ const fetchStaffs = () => {
     })
 }
 
+const fetchSemesters = () => {
+  loadingStore.show()
+  requestAPI
+    .get(API_ROUTES_STAFF.FETCH_DATA_FACTORY + '/semesters')
+    .then((response) => {
+      semesters.value = response.data.data
+    })
+    .catch((error) => {
+      message.error(error.response?.data?.message || 'Lỗi khi lấy danh sách kỳ học')
+    })
+    .finally(() => {
+      loadingStore.hide()
+    })
+}
+
+const onFilterChange = () => {
+  pagination.current = 1
+  fetchFactories()
+}
+
 const handleTableChange = (pageInfo) => {
-  filter.page = pageInfo.current
-  filter.pageSize = pageInfo.pageSize
   pagination.current = pageInfo.current
   pagination.pageSize = pageInfo.pageSize
   fetchFactories()
@@ -320,6 +341,7 @@ onMounted(() => {
   fetchFactories()
   fetchProjects()
   fetchStaffs()
+  fetchSemesters()
 })
 </script>
 
@@ -453,16 +475,92 @@ onMounted(() => {
       <div class="col-12">
         <a-card :bordered="false" class="cart">
           <template #title> <FilterFilled /> Bộ lọc </template>
+          <!-- First Row: Search Query and Status -->
           <div class="row g-2">
             <div class="col-md-6 col-sm-12">
-              <div class="label-title">Tìm kiếm tên xưởng, dự án, giảng viên:</div>
+              <div class="label-title">Tìm kiếm tên xưởng</div>
               <a-input
-                v-model:value="filter.searchQuery"
-                placeholder="Tên xưởng, dự án, bộ môn, giảng viên"
+                v-model:value="filter.factoryName"
+                placeholder="Tên xưởng"
                 allowClear
-                @change="fetchFactories"
+                @change="onFilterChange"
                 class="w-100"
               />
+            </div>
+            <div class="col-md-3 col-sm-9">
+              <div class="label-title">Giảng viên</div>
+              <a-select
+                v-model:value="filter.idStaff"
+                placeholder="Chọn giảng viên"
+                allowClear
+                show-search
+                @change="onFilterChange"
+                class="w-100"
+                :filter-option="
+                  (input, option) =>
+                    (option.label || '').toLowerCase().includes(input.toLowerCase())
+                "
+              >
+                <a-select-option
+                  v-for="staff in staffs"
+                  :key="staff.id"
+                  :value="staff.id"
+                  :label="staff.code + ' - ' + staff.name"
+                >
+                  {{ staff.code + ' - ' + staff.name }}
+                </a-select-option>
+              </a-select>
+            </div>
+            <div class="col-md-3 col-sm-9">
+              <div class="label-title">Kỳ học</div>
+              <a-select
+                v-model:value="filter.idSemester"
+                placeholder="Chọn kỳ học"
+                allowClear
+                show-search
+                @change="onFilterChange"
+                class="w-100"
+                :filter-option="
+                  (input, option) =>
+                    (option.label || '').toLowerCase().includes(input.toLowerCase())
+                "
+              >
+                <a-select-option
+                  v-for="semester in semesters"
+                  :key="semester.id"
+                  :value="semester.id"
+                  :label="semester.code"
+                >
+                  {{ semester.code }}
+                </a-select-option>
+              </a-select>
+            </div>
+          </div>
+          <!-- Second Row: Project and Staff -->
+          <div class="row g-2 mt-2">
+            <div class="col-md-6 col-sm-12">
+              <div class="label-title">Dự án</div>
+              <a-select
+                v-model:value="filter.idProject"
+                placeholder="Chọn dự án"
+                allowClear
+                show-search
+                @change="onFilterChange"
+                class="w-100"
+                :filter-option="
+                  (input, option) =>
+                    (option.label || '').toLowerCase().includes(input.toLowerCase())
+                "
+              >
+                <a-select-option
+                  v-for="project in projects"
+                  :key="project.id"
+                  :value="project.id"
+                  :label="project.name + ' - ' + project.levelProject.name"
+                >
+                  {{ project.name + ' - ' + project.levelProject.name }}
+                </a-select-option>
+              </a-select>
             </div>
             <div class="col-md-6 col-sm-12">
               <div class="label-title">Trạng thái:</div>
@@ -471,7 +569,7 @@ onMounted(() => {
                 placeholder="Chọn trạng thái"
                 allowClear
                 class="w-100"
-                @change="fetchFactories"
+                @change="onFilterChange"
               >
                 <a-select-option :value="''">Tất cả trạng thái</a-select-option>
                 <a-select-option value="ACTIVE">Đang hoạt động</a-select-option>
@@ -514,6 +612,9 @@ onMounted(() => {
               <template v-if="column.dataIndex">
                 <template v-if="column.dataIndex === 'rowNumber'">
                   {{ index + 1 }}
+                </template>
+                <template v-else-if="column.dataIndex === 'name'">
+                  <a @click="handleDetailFactory(record)">{{ record.name }}</a>
                 </template>
                 <template v-else-if="column.dataIndex === 'factoryStatus'">
                   <span class="nowrap">
