@@ -12,6 +12,6 @@ public interface Admin_SubjectResponse {
 
     Integer getStatus();
 
-    Integer getSizeSubjectSemester();
+    String getSizeSubjectSemester();
 
 }
