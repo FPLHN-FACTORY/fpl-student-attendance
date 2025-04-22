@@ -7,13 +7,16 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import udpm.hn.studentattendance.infrastructure.config.mailer.model.MailerDefaultRequest;
+import udpm.hn.studentattendance.infrastructure.constants.ExecutorConstants;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 
 @Component
 @RequiredArgsConstructor
@@ -37,13 +40,13 @@ public class MailerHelper {
         </ul>
     """;
 
-    public boolean send(MailerDefaultRequest request) {
-
+    @Async(ExecutorConstants.TASK_EXECUTOR)
+    public CompletableFuture<Boolean> send(MailerDefaultRequest request) {
         String content = loadTemplate(request.getTemplate());
 
         if (Objects.isNull(content)) {
             LogHelper.error("Gửi mail thất bại!");
-            return false;
+            return CompletableFuture.completedFuture(false);
         }
 
         if (!Objects.isNull(request.getHeader())) {
@@ -68,7 +71,7 @@ public class MailerHelper {
             mimeMessageHelper.setFrom(from);
             mimeMessageHelper.setTo(request.getTo());
 
-            if (request.getBcc().length > 0) {
+            if (request.getBcc() != null && request.getBcc().length > 0) {
                 mimeMessageHelper.setBcc(request.getBcc());
             }
 
@@ -78,9 +81,9 @@ public class MailerHelper {
             mailSender.send(mimeMessage);
         } catch (MessagingException e) {
             LogHelper.error("Không thể gửi mail", e);
-            return false;
+            return CompletableFuture.completedFuture(false);
         }
-        return true;
+        return CompletableFuture.completedFuture(true);
     }
 
 
