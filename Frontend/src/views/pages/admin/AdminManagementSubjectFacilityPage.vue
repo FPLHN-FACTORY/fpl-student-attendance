@@ -9,7 +9,9 @@ import {
   DeleteOutlined,
   UnorderedListOutlined,
   FilterFilled,
-  SyncOutlined
+  SyncOutlined,
+  EyeFilled,
+  EditFilled,
 } from '@ant-design/icons-vue'
 import requestAPI from '@/services/requestApiService'
 import { DEFAULT_PAGINATION } from '@/constants'
@@ -174,8 +176,7 @@ const handleAddSubjectFacility = () => {
   loadingStore.show()
   const requests = []
 
-  if (newSubjectFacility.facilityId === null ||
-  newSubjectFacility.facilityId.includes(null)) {
+  if (newSubjectFacility.facilityId === null || newSubjectFacility.facilityId.includes(null)) {
     // Thêm tất cả cơ sở chưa có
     facilitySubject.value.forEach((f) => {
       requests.push(
@@ -278,7 +279,6 @@ onMounted(() => {
 
 <template>
   <div class="container-fluid">
-
     <!-- Card Bộ lọc tìm kiếm -->
     <div class="row g-3">
       <div class="col-12">
@@ -337,9 +337,7 @@ onMounted(() => {
           <template #title> <UnorderedListOutlined /> Danh sách bộ môn cơ sở </template>
           <div class="d-flex justify-content-end mb-3">
             <a-tooltip title="Thêm bộ môn cơ sở">
-              <a-button type="primary" @click="showAddModal">
-                <PlusOutlined /> Thêm
-              </a-button>
+              <a-button type="primary" @click="showAddModal"> <PlusOutlined /> Thêm </a-button>
             </a-tooltip>
           </div>
           <a-table
@@ -357,9 +355,16 @@ onMounted(() => {
                   {{ index + 1 }}
                 </template>
                 <template v-else-if="column.dataIndex === 'status'">
-                  <a-tag :color="getStatusColor(record.status)">
-                    {{ getStatusText(record.status) }}
-                  </a-tag>
+                  <span class="nowrap">
+                    <a-switch
+                      class="me-2"
+                      :checked="record.status == 'ACTIVE' || record.status == 1"
+                      @change="handleDeleteSubjectFacility(record)"
+                    />
+                    <a-tag :color="getStatusColor(record.status)">
+                      {{ getStatusText(record.status) }}
+                    </a-tag>
+                  </span>
                 </template>
                 <template v-else>
                   {{ record[column.dataIndex] }}
@@ -373,7 +378,7 @@ onMounted(() => {
                       type="text"
                       class="btn-outline-primary me-2"
                     >
-                      <EyeOutlined />
+                      <EyeFilled />
                     </a-button>
                   </a-tooltip>
                   <a-tooltip title="Sửa">
@@ -382,14 +387,14 @@ onMounted(() => {
                       type="text"
                       class="btn-outline-info me-2"
                     >
-                      <EditOutlined />
+                      <EditFilled />
                     </a-button>
                   </a-tooltip>
                   <a-tooltip title="Chuyển trạng thái">
                     <a-button
                       @click="handleDeleteSubjectFacility(record)"
                       type="text"
-                      class="btn-outline-danger"
+                      class="btn-outline-warning"
                     >
                       <SyncOutlined />
                     </a-button>
@@ -420,24 +425,29 @@ onMounted(() => {
             allowClear
             mode="multiple"
           >
-          <a-select-option
-            :value="null"
-            :disabled="Array.isArray(newSubjectFacility.facilityId) && newSubjectFacility.facilityId.length > 0 && newSubjectFacility.facilityId.some(v => v !== null)"
-          >
-            Tất cả cơ sở
-          </a-select-option>
+            <a-select-option
+              :value="null"
+              :disabled="
+                Array.isArray(newSubjectFacility.facilityId) &&
+                newSubjectFacility.facilityId.length > 0 &&
+                newSubjectFacility.facilityId.some((v) => v !== null)
+              "
+            >
+              Tất cả cơ sở
+            </a-select-option>
 
-          <a-select-option
-            v-for="f in facilitySubject"
-            :key="f.id"
-            :value="f.id"
-            :disabled="Array.isArray(newSubjectFacility.facilityId) && newSubjectFacility.facilityId.includes(null)"
-          >
-            {{ f.name }}
-          </a-select-option>
-
+            <a-select-option
+              v-for="f in facilitySubject"
+              :key="f.id"
+              :value="f.id"
+              :disabled="
+                Array.isArray(newSubjectFacility.facilityId) &&
+                newSubjectFacility.facilityId.includes(null)
+              "
+            >
+              {{ f.name }}
+            </a-select-option>
           </a-select>
-
         </a-form-item>
       </a-form>
     </a-modal>
@@ -476,33 +486,3 @@ onMounted(() => {
     </a-modal>
   </div>
 </template>
-
-<style scoped>
-.cart {
-  margin-top: 5px;
-}
-
-.filter-container {
-  margin-bottom: 5px;
-}
-
-.label-title {
-  font-weight: 500;
-  margin-bottom: 5px;
-}
-
-.btn-outline-primary {
-  color: #1890ff;
-  border-color: #1890ff;
-}
-
-.btn-outline-info {
-  color: #13c2c2;
-  border-color: #13c2c2;
-}
-
-.btn-outline-danger {
-  color: #ff4d4f;
-  border-color: #ff4d4f;
-}
-</style>

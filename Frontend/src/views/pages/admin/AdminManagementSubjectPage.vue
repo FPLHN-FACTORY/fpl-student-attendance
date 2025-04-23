@@ -10,7 +10,9 @@ import {
   ClusterOutlined,
   UnorderedListOutlined,
   FilterFilled,
-  SyncOutlined
+  SyncOutlined,
+  EditFilled,
+  EyeFilled,
 } from '@ant-design/icons-vue'
 import { DEFAULT_PAGINATION } from '@/constants'
 import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
@@ -58,11 +60,11 @@ const columns = ref([
   { title: '#', dataIndex: 'indexs', key: 'indexs', width: 50 },
   { title: 'Tên bộ môn', dataIndex: 'name', key: 'name', width: 200 },
   { title: 'Mã bộ môn', dataIndex: 'code', key: 'code', width: 150 },
-  { 
-    title: 'Số lượng bộ môn cơ sở', 
-    dataIndex: 'sizeSubjectSemester', 
-    key: 'sizeSubjectSemester', 
-    width: 150 
+  {
+    title: 'Cơ sở hoạt động',
+    dataIndex: 'sizeSubjectSemester',
+    key: 'sizeSubjectSemester',
+    width: 150,
   },
   { title: 'Trạng thái', dataIndex: 'status', key: 'status', width: 100 },
   { title: 'Chức năng', key: 'actions', width: 200 },
@@ -94,7 +96,7 @@ const fetchSubjects = () => {
       const result = response.data.data
       subjects.value = result.data
       pagination.total =
-        result.totalElements || result.totalItems || (result.totalPages * pagination.pageSize)
+        result.totalElements || result.totalItems || result.totalPages * pagination.pageSize
     })
     .catch((error) => {
       message.error(error.response?.data?.message || 'Lỗi khi lấy danh sách bộ môn')
@@ -115,7 +117,7 @@ const showAddModal = (isOpen) => {
 }
 
 const handleAddSubject = () => {
-  if (!newSubject.name  || !newSubject.name.trim()) {
+  if (!newSubject.name || !newSubject.name.trim()) {
     message.error('Vui lòng nhập tên bộ môn')
     return
   }
@@ -190,7 +192,7 @@ const updateSubject = () => {
     code: detailSubject.code,
     status: detailSubject.status,
   }
-  
+
   requestAPI
     .put(`${API_ROUTES_ADMIN.FETCH_DATA_SUBJECT}/${detailSubject.id}`, requestData)
     .then((response) => {
@@ -231,7 +233,7 @@ const confirmChangeStatus = (record) => {
 const handleAddSubjectFacility = (record) => {
   router.push({
     name: ROUTE_NAMES.MANAGEMENT_SUBJECT_FACILITY,
-    query: { subjectId: record.id , name : record.name},
+    query: { subjectId: record.id, name: record.name },
   })
 }
 
@@ -319,10 +321,26 @@ onMounted(() => {
                 <template v-if="column.dataIndex === 'indexs'">
                   {{ index + 1 }}
                 </template>
+                <template v-else-if="column.dataIndex === 'name'">
+                  <a @click="handleAddSubjectFacility(record)">{{ record.name }}</a>
+                </template>
                 <template v-else-if="column.dataIndex === 'status'">
-                  <a-tag :color="record.status === 1 ? 'green' : 'red'">
-                    {{ record.status === 1 ? 'Hoạt động' : 'Không hoạt động' }}
-                  </a-tag>
+                  <span class="nowrap">
+                    <a-switch
+                      class="me-2"
+                      :checked="record.status === 'ACTIVE' || record.status === 1"
+                      @change="confirmChangeStatus(record)"
+                    />
+                    <a-tag
+                      :color="record.status === 'ACTIVE' || record.status === 1 ? 'green' : 'red'"
+                    >
+                      {{
+                        record.status === 'ACTIVE' || record.status === 1
+                          ? 'Hoạt động'
+                          : 'Không hoạt động'
+                      }}
+                    </a-tag>
+                  </span>
                 </template>
                 <template v-else>
                   {{ record[column.dataIndex] }}
@@ -334,7 +352,7 @@ onMounted(() => {
                     <a-button
                       @click="handleAddSubjectFacility(record)"
                       type="text"
-                      class="btn-outline-primary me-2"
+                      class="btn-outline-default me-2"
                     >
                       <ClusterOutlined />
                     </a-button>
@@ -343,27 +361,18 @@ onMounted(() => {
                     <a-button
                       @click="handleDetailSubject(record)"
                       type="text"
-                      class="btn-outline-info me-2"
+                      class="btn-outline-primary me-2"
                     >
-                      <EyeOutlined />
+                      <EyeFilled />
                     </a-button>
                   </a-tooltip>
                   <a-tooltip title="Sửa bộ môn">
                     <a-button
                       @click="handleUpdateSubject(record)"
                       type="text"
-                      class="btn-outline-warning me-2"
+                      class="btn-outline-info me-2"
                     >
-                      <EditOutlined />
-                    </a-button>
-                  </a-tooltip>
-                  <a-tooltip title="Đổi trạng thái">
-                    <a-button
-                      type="text"
-                      class="btn-outline-warning"
-                      @click="confirmChangeStatus(record)"
-                    >
-                      <SyncOutlined />
+                      <EditFilled />
                     </a-button>
                   </a-tooltip>
                 </a-space>
@@ -388,7 +397,6 @@ onMounted(() => {
         <a-form-item label="Tên bộ môn" required>
           <a-input v-model:value="newSubject.name" placeholder="Nhập tên bộ môn" />
         </a-form-item>
-        
       </a-form>
     </a-modal>
 
@@ -402,7 +410,7 @@ onMounted(() => {
             {{ getStatusText(detailSubject.status) }}
           </a-tag>
         </a-descriptions-item>
-        <a-descriptions-item label="Số lượng bộ môn cơ sở">
+        <a-descriptions-item label="Cơ sở hoạt động">
           {{ detailSubject.sizeSubjectSemester }}
         </a-descriptions-item>
         <a-descriptions-item label="Ngày tạo">
@@ -438,38 +446,3 @@ onMounted(() => {
     </a-modal>
   </div>
 </template>
-
-<style scoped>
-.cart {
-  margin-top: 5px;
-}
-
-.filter-container {
-  margin-bottom: 5px;
-}
-
-.label-title {
-  font-weight: 500;
-  margin-bottom: 5px;
-}
-
-.btn-outline-primary {
-  color: #1890ff;
-  border-color: #1890ff;
-}
-
-.btn-outline-info {
-  color: #13c2c2;
-  border-color: #13c2c2;
-}
-
-.btn-outline-warning {
-  color: #faad14;
-  border-color: #faad14;
-}
-
-.btn-outline-danger {
-  color: #ff4d4f;
-  border-color: #ff4d4f;
-}
-</style>

@@ -22,7 +22,6 @@ import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.RestApiStatus;
 import udpm.hn.studentattendance.repositories.SemesterRepository;
-import udpm.hn.studentattendance.utils.CodeGeneratorUtils;
 
 import java.util.Date;
 import java.util.HashMap;
@@ -129,6 +128,7 @@ public class Staff_FactoryServiceImpl implements Staff_FactoryService {
     public ResponseEntity<?> createFactory(Staff_FactoryCreateUpdateRequest factoryCreateUpdateRequest) {
         Optional<UserStaff> userStaff = staffFactoryExtendRepository.findById(factoryCreateUpdateRequest.getIdUserStaff());
         Optional<Project> project = projectFactoryExtendRepository.findById(factoryCreateUpdateRequest.getIdProject());
+
         if (userStaff.isEmpty()) {
             return new ResponseEntity<>(
                     new ApiResponse(
@@ -157,8 +157,17 @@ public class Staff_FactoryServiceImpl implements Staff_FactoryService {
                     ),
                     HttpStatus.BAD_REQUEST);
         }
+        boolean teacherJoinThanThreeFactory = factoryRepository.isTeacherJoinThanThreeFactory(factoryCreateUpdateRequest.getIdUserStaff(), project.get().getSemester().getId());
+        if (teacherJoinThanThreeFactory) {
+            return new ResponseEntity<>(
+                    new ApiResponse(
+                            RestApiStatus.ERROR,
+                            "Giảng viên này đã tham gia 3 nhóm xưởng ở kỳ học này",
+                            null
+                    ),
+                    HttpStatus.BAD_REQUEST);
+        }
         Factory factory = new Factory();
-        factory.setId(CodeGeneratorUtils.generateRandom());
         factory.setName(factoryCreateUpdateRequest.getFactoryName());
         factory.setDescription(factoryCreateUpdateRequest.getFactoryDescription());
         factory.setUserStaff(userStaff.get());
@@ -192,12 +201,13 @@ public class Staff_FactoryServiceImpl implements Staff_FactoryService {
         Optional<Factory> existFactory = factoryRepository.findById(factoryCreateUpdateRequest.getId());
         Optional<UserStaff> userStaff = staffFactoryExtendRepository.findById(factoryCreateUpdateRequest.getIdUserStaff());
         Optional<Project> project = projectFactoryExtendRepository.findById(factoryCreateUpdateRequest.getIdProject());
-        boolean exists = factoryRepository.isExistNameAndProject(factoryCreateUpdateRequest.getFactoryName(), factoryCreateUpdateRequest.getIdProject());
-        if (exists) {
+
+        boolean teacherJoinThanThreeFactory = factoryRepository.isTeacherJoinThanThreeFactory(factoryCreateUpdateRequest.getIdUserStaff(), project.get().getSemester().getId());
+        if (teacherJoinThanThreeFactory) {
             return new ResponseEntity<>(
                     new ApiResponse(
                             RestApiStatus.ERROR,
-                            "Nhóm xưởng đã tồn tại trong dự án này",
+                            "Giảng viên này đã tham gia 3 nhóm xưởng ở kỳ học này",
                             null
                     ),
                     HttpStatus.BAD_REQUEST);
@@ -327,6 +337,15 @@ public class Staff_FactoryServiceImpl implements Staff_FactoryService {
 
         return new ResponseEntity<>(
                 new ApiResponse(RestApiStatus.SUCCESS, "Đổi trạng thái nhóm xưởng kỳ trước thành công", factories),
+                HttpStatus.OK
+        );
+    }
+
+    @Override
+    public ResponseEntity<?> getAllSemester() {
+        List<Semester> semesters = semesterRepository.findAll();
+        return new ResponseEntity<>(
+                new ApiResponse(RestApiStatus.SUCCESS, "Lấy thành công tất cả học kỳ", semesters),
                 HttpStatus.OK
         );
     }

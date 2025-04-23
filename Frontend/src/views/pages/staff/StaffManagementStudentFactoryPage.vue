@@ -144,6 +144,7 @@ const studentColumns = ref([
   { title: 'Mã sinh viên', dataIndex: 'code', key: 'code' },
   { title: 'Tên sinh viên', dataIndex: 'name', key: 'name' },
   { title: 'Email', dataIndex: 'email', key: 'email' },
+  { title: 'Chọn', key: 'select' },
 ])
 const selectedStudents = reactive({})
 
@@ -266,16 +267,16 @@ const handleTableChange = (pageInfo) => {
   fetchStudentFactories()
 }
 
-/* -------------------- Xử lý xóa sinh viên khỏi nhóm -------------------- */
-const confirmDeleteStudent = (record) => {
-  Modal.confirm({
-    title: 'Xác nhận xóa',
-    content: `Bạn có chắc muốn xóa sinh viên ${record.studentName} khỏi nhóm xưởng?`,
-    onOk() {
-      deleteStudentFactory(record.studentFactoryId)
-    },
-  })
-}
+// /* -------------------- Xử lý xóa sinh viên khỏi nhóm -------------------- */
+// const confirmDeleteStudent = (record) => {
+//   Modal.confirm({
+//     title: 'Xác nhận xóa',
+//     content: `Bạn có chắc muốn xóa sinh viên ${record.studentName} khỏi nhóm xưởng?`,
+//     onOk() {
+//       deleteStudentFactory(record.studentFactoryId)
+//     },
+//   })
+// }
 
 /* -------------------- Xử lý đổi trạng thái sinh viên -------------------- */
 const confirmChangeStatus = (record) => {
@@ -448,6 +449,9 @@ onMounted(() => {
                       }}
                     </a-tag>
                   </span>
+                </template>
+                <template v-else>
+                  {{ record[column.dataIndex] }}
                 </template>
               </template>
             </template>

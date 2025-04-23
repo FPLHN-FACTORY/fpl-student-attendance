@@ -100,7 +100,7 @@ const fetchFacilities = () => {
     .catch((error) => {
       message.error(
         (error.response && error.response.data && error.response.data.message) ||
-          'Lỗi khi lấy dữ liệu cơ sở',
+          'Lỗi khi lấy dữ liệu cơ sở'
       )
     })
     .finally(() => {
@@ -148,7 +148,7 @@ const handleAddFacility = () => {
     .catch((error) => {
       message.error(
         (error.response && error.response.data && error.response.data.message) ||
-          'Lỗi khi thêm cơ sở',
+          'Lỗi khi thêm cơ sở'
       )
     })
     .finally(() => {
@@ -169,7 +169,7 @@ const handleUpdateFacility = (record) => {
     .catch((error) => {
       message.error(
         (error.response && error.response.data && error.response.data.message) ||
-          'Lỗi khi lấy chi tiết cơ sở',
+          'Lỗi khi lấy chi tiết cơ sở'
       )
     })
     .finally(() => {
@@ -195,7 +195,7 @@ const updateFacility = () => {
     .catch((error) => {
       message.error(
         (error.response && error.response.data && error.response.data.message) ||
-          'Lỗi khi cập nhật cơ sở',
+          'Lỗi khi cập nhật cơ sở'
       )
     })
     .finally(() => {
@@ -232,7 +232,7 @@ const handleChangeStatusFacility = (record) => {
         .catch((error) => {
           message.error(
             (error.response && error.response.data && error.response.data.message) ||
-              'Lỗi khi cập nhật trạng thái cơ sở',
+              'Lỗi khi cập nhật trạng thái cơ sở'
           )
         })
         .finally(() => {
@@ -253,7 +253,7 @@ const handleUp = (id) => {
     .catch((error) => {
       message.error(
         (error.response && error.response.data && error.response.data.message) ||
-          'Có lỗi xảy ra. Vui lòng thử lại sau ít phút',
+          'Có lỗi xảy ra. Vui lòng thử lại sau ít phút'
       )
     })
     .finally(() => {
@@ -272,7 +272,7 @@ const handleDown = (id) => {
     .catch((error) => {
       message.error(
         (error.response && error.response.data && error.response.data.message) ||
-          'Có lỗi xảy ra. Vui lòng thử lại sau ít phút',
+          'Có lỗi xảy ra. Vui lòng thử lại sau ít phút'
       )
     })
     .finally(() => {
@@ -311,19 +311,21 @@ onMounted(() => {
                 </template>
               </a-input>
             </div>
-            <div class="col-xxl-2 col-md-4 col-sm-4">
-              <div class="label-title">Trạng thái:</div>
-              <a-select
-                v-model:value="filter.status"
-                placeholder="Chọn trạng thái"
-                allowClear
-                style="width: 100%"
-                @change="fetchFacilities"
-              >
-                <a-select-option :value="null">Tất cả trạng thái</a-select-option>
-                <a-select-option value="ACTIVE">Hoạt động</a-select-option>
-                <a-select-option value="INACTIVE">Không hoạt động</a-select-option>
-              </a-select>
+            <div class="col-xxl-6 col-md-8 col-sm-8">
+              <div class="label-title">
+                Trạng thái:
+                <a-select
+                  v-model:value="filter.status"
+                  placeholder="Chọn trạng thái"
+                  allowClear
+                  style="width: 100%"
+                  @change="fetchFacilities"
+                >
+                  <a-select-option :value="null">Tất cả trạng thái</a-select-option>
+                  <a-select-option value="ACTIVE">Hoạt động</a-select-option>
+                  <a-select-option value="INACTIVE">Không hoạt động</a-select-option>
+                </a-select>
+              </div>
             </div>
             <div class="col-12">
               <div class="d-flex justify-content-center flex-wrap gap-2 mt-3">

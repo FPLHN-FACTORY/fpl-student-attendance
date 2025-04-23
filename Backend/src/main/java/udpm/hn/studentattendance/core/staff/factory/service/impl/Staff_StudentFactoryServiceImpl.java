@@ -31,7 +31,6 @@ import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.RestApiStatus;
 import udpm.hn.studentattendance.repositories.FactoryRepository;
 import udpm.hn.studentattendance.repositories.UserStudentRepository;
-import udpm.hn.studentattendance.utils.CodeGeneratorUtils;
 
 import java.util.HashMap;
 import java.util.List;
@@ -172,7 +171,6 @@ public class Staff_StudentFactoryServiceImpl implements Staff_StudentFactoryServ
         }
 
         UserStudentFactory userStudentFactory = new UserStudentFactory();
-        userStudentFactory.setId(CodeGeneratorUtils.generateRandom());
         userStudentFactory.setUserStudent(existUserStudent.get());
         userStudentFactory.setFactory(existFactory.get());
         userStudentFactory.setStatus(EntityStatus.ACTIVE);
@@ -279,7 +277,6 @@ public class Staff_StudentFactoryServiceImpl implements Staff_StudentFactoryServ
         }
 
         UserStudentFactory userStudentFactory = new UserStudentFactory();
-        userStudentFactory.setId(CodeGeneratorUtils.generateRandom());
         userStudentFactory.setUserStudent(existUserStudent.get());
         userStudentFactory.setFactory(existFactory.get());
         userStudentFactory.setStatus(EntityStatus.ACTIVE);

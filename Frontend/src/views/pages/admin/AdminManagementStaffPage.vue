@@ -14,7 +14,6 @@ import {
 } from '@ant-design/icons-vue'
 import requestAPI from '@/services/requestApiService'
 import { ROUTE_NAMES } from '@/router/adminRoute'
-import router from '@/router'
 import { API_ROUTES_ADMIN } from '@/constants/adminConstant'
 import { DEFAULT_PAGINATION } from '@/constants'
 import { API_ROUTES_EXCEL, GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
@@ -28,7 +27,7 @@ const loadingStore = useLoadingStore()
 const breadcrumb = ref([
   {
     name: GLOBAL_ROUTE_NAMES.ADMIN_PAGE,
-    breadcrumbName: 'Ban đào tạo',
+    breadcrumbName: 'Quản lý',
   },
   {
     name: ROUTE_NAMES.MANAGEMENT_STAFF,
@@ -40,19 +39,16 @@ const breadcrumb = ref([
 const staffs = ref([])
 
 // Danh sách cơ sở (để hiển thị trong select option)
-const facilitiesList = ref([])
 const facilitiesListCombobox = ref([])
 
-// Danh sách vai trò (cố định dựa trên backend)
+// Danh sách vai trò (cố định dựa trên backend, xoá vai trò 'Ban đào tạo')
 const rolesList = ref([
-  { code: '0', name: 'Ban đào tạo' },
   { code: '1', name: 'Phụ trách xưởng' },
   { code: '3', name: 'Giảng viên' },
 ])
 
-// Hàm mapping để chuyển đổi mã vai trò thành tên hiển thị
+// Hàm mapping để chuyển đổi mã vai trò thành tên hiển thị, xoá vai trò 'Ban đào tạo'
 const roleMapping = {
-  0: 'Ban đào tạo',
   1: 'Phụ trách xưởng',
   3: 'Giảng viên',
 }
@@ -137,7 +133,6 @@ const fetchStaffs = () => {
     })
     .then((response) => {
       staffs.value = response.data.data.data
-      // Tính tổng số bản ghi theo mẫu plandate: totalPages * pageSize
       pagination.value.total = response.data.data.totalPages * pagination.value.pageSize
     })
     .catch((error) => {
@@ -152,20 +147,6 @@ const fetchStaffs = () => {
     })
 }
 
-// Hàm lấy danh sách cơ sở cho combobox
-const fetchFacilitiesList = () => {
-  requestAPI
-    .get(`${API_ROUTES_ADMIN.FETCH_DATA_STAFF_ROLE}/facilities`)
-    .then((response) => {
-      facilitiesList.value = response.data.data.data || response.data.data
-    })
-    .catch((error) => {
-      message.error(
-        (error.response && error.response.data && error.response.data.message) ||
-          'Lỗi khi lấy danh sách cơ sở'
-      )
-    })
-}
 const fetchFacilitiesListCombobox = () => {
   requestAPI
     .get(`${API_ROUTES_ADMIN.FETCH_DATA_STAFF}/facility`)
@@ -265,7 +246,7 @@ const updateStaff = () => {
   modalUpdateLoading.value = true
   loadingStore.show()
   requestAPI
-    .put(API_ROUTES_ADMIN.FETCH_DATA_STAFF, detailStaff)
+    .put(`${API_ROUTES_ADMIN.FETCH_DATA_STAFF}/${detailStaff.id}`, detailStaff)
     .then(() => {
       message.success('Cập nhật nhân viên thành công')
       modalUpdate.value = false
@@ -332,13 +313,8 @@ onMounted(() => {
   breadcrumbStore.setRoutes(breadcrumb.value)
   fetchStaffs()
   fetchFacilitiesListCombobox()
-  fetchFacilitiesList()
 })
 </script>
-
-
-
-
 
 <template>
   <div class="container-fluid">
@@ -385,11 +361,11 @@ onMounted(() => {
               >
                 <a-select-option :value="''">Tất cả cơ sở</a-select-option>
                 <a-select-option
-                  v-for="facility in facilitiesList"
-                  :key="facility.facilityId"
-                  :value="facility.facilityId"
+                  v-for="facility in facilitiesListCombobox"
+                  :key="facility.id"
+                  :value="facility.id"
                 >
-                  {{ facility.facilityName }}
+                  {{ facility.name }}
                 </a-select-option>
               </a-select>
             </a-col>
@@ -444,15 +420,6 @@ onMounted(() => {
               </template>
               <template v-else-if="column.key === 'actions'">
                 <a-space>
-                  <!-- <a-tooltip title="Chức vụ/ cơ sở/ bộ môn">
-                    <a-button
-                      @click="handleDetailStaff(record)"
-                      type="text"
-                      class="btn-outline-primary me-2"
-                    >
-                      <EyeFilled />
-                    </a-button>
-                  </a-tooltip> -->
                   <a-tooltip title="Sửa nhân viên">
                     <a-button
                       @click="handleUpdateStaff(record)"

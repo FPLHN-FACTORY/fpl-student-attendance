@@ -191,6 +191,9 @@ onMounted(() => {
                 <template v-if="column.dataIndex === 'rowNumber'">
                   {{ index + 1 }}
                 </template>
+                <template v-else-if="column.dataIndex === 'factoryName'">
+                  <a @click="handleDetailFactory(record)">{{ record.factoryName }}</a>
+                </template>
                 <template v-else-if="column.dataIndex === 'factoryStatus'">
                   <a-tag
                     :color="
