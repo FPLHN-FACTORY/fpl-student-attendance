@@ -256,16 +256,16 @@ const handleUpdateProject = () => {
 const handleDeleteProject = (record) => {
   Modal.confirm({
     title: 'Xác nhận',
-    content: 'Bạn có chắc chắn muốn xóa dự án này?',
+    content: 'Bạn có chắc chắn muốn đổi trạng thái dự án này?',
     onOk: () => {
       requestAPI
         .delete(`${API_ROUTES_STAFF.FETCH_DATA_PROJECT}/${record.id}`)
         .then(() => {
-          message.success('Xóa dự án thành công')
+          message.success('Đổi trạng thái dự án thành công')
           fetchProjects()
         })
         .catch(() => {
-          message.error('Lỗi khi xóa dự án')
+          message.error('Lỗi khi đổi trạng thái dự án')
         })
     },
   })
@@ -447,7 +447,7 @@ onMounted(() => {
         <a-form-item label="Tên dự án" required>
           <a-input v-model:value="newProject.name" placeholder="Nhập tên dự án" />
         </a-form-item>
-        <a-form-item label="Mô tả">
+        <a-form-item label="Mô tả" required>
           <a-textarea v-model:value="newProject.description" placeholder="Nhập mô tả" />
         </a-form-item>
         <a-form-item label="Cấp dự án" required>
@@ -511,7 +511,7 @@ onMounted(() => {
         <a-form-item label="Tên dự án" required>
           <a-input v-model:value="detailProject.name" placeholder="Nhập tên dự án" />
         </a-form-item>
-        <a-form-item label="Mô tả">
+        <a-form-item label="Mô tả" required>
           <a-textarea v-model:value="detailProject.description" placeholder="Nhập mô tả" />
         </a-form-item>
         <a-form-item label="Cấp dự án" required>
