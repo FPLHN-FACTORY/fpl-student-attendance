@@ -13,11 +13,11 @@ import java.util.List;
 public interface AdminFacilityBySubjectRepository extends ProjectRepository {
 
     @Query(value = """
-                SELECT 
+                SELECT
                     ROW_NUMBER() OVER (ORDER BY sf.created_at DESC) AS indexs,
                     f.id AS id,
                     f.name AS name
-                FROM facility f 
+                FROM facility f
                 JOIN subject_facility sf ON f.id = sf.id_facility
                 WHERE (
                     :subjectId IS NULL OR sf.id_subject= :subjectId

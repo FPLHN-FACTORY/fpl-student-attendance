@@ -30,7 +30,8 @@ public class SPDPlanFactoryRestController {
     }
 
     @PostMapping("/{idPlan}")
-    public ResponseEntity<?> createPlanFactory(@Valid @RequestBody SPDAddPlanFactoryRequest request, @PathVariable String idPlan) {
+    public ResponseEntity<?> createPlanFactory(@Valid @RequestBody SPDAddPlanFactoryRequest request,
+            @PathVariable String idPlan) {
         request.setIdPlan(idPlan);
         return spdPlanFactoryService.createPlanFactory(request);
     }

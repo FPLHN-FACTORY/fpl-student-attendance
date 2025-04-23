@@ -31,7 +31,8 @@ public class NotificationResponse {
         this.status = status.ordinal();
         this.createdAt = createdAt;
         try {
-            this.data = mapper.readValue(dataJson, new TypeReference<>() {});
+            this.data = mapper.readValue(dataJson, new TypeReference<>() {
+            });
         } catch (Exception e) {
             this.data = Map.of();
         }

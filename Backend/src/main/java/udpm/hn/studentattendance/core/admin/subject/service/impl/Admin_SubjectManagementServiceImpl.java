@@ -27,8 +27,7 @@ public class Admin_SubjectManagementServiceImpl implements Admin_SubjectManageme
         return new ResponseObject<>(
                 PageableObject.of(adminSubjectRepository.getAll(pageable, request)),
                 HttpStatus.OK,
-                "Lây danh sách bộ môn thành công"
-        );
+                "Lây danh sách bộ môn thành công");
     }
 
     @Override

@@ -20,26 +20,24 @@ public class Admin_SemesterRestController {
     }
 
     @GetMapping("/{semesterId}")
-    public ResponseEntity<?> getSemesterById
-            (@PathVariable("semesterId") String semesterId) {
+    public ResponseEntity<?> getSemesterById(@PathVariable("semesterId") String semesterId) {
         return semesterService.getSemesterById(semesterId);
     }
 
     @PostMapping
-    public ResponseEntity<?> createSemester
-            (@RequestBody Admin_CreateUpdateSemesterRequest createUpdateSemesterRequest) {
+    public ResponseEntity<?> createSemester(
+            @RequestBody Admin_CreateUpdateSemesterRequest createUpdateSemesterRequest) {
         return semesterService.createSemester(createUpdateSemesterRequest);
     }
 
     @PutMapping
-    public ResponseEntity<?> updateSemester
-            (@RequestBody Admin_CreateUpdateSemesterRequest createUpdateSemesterRequest) {
+    public ResponseEntity<?> updateSemester(
+            @RequestBody Admin_CreateUpdateSemesterRequest createUpdateSemesterRequest) {
         return semesterService.updateSemester(createUpdateSemesterRequest);
     }
 
     @PutMapping("/status/{semesterId}")
-    public ResponseEntity<?> changeStatusSemester
-            (@PathVariable("semesterId") String semesterId) {
+    public ResponseEntity<?> changeStatusSemester(@PathVariable("semesterId") String semesterId) {
         return semesterService.changeStatusSemester(semesterId);
     }
 

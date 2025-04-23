@@ -10,7 +10,6 @@ import udpm.hn.studentattendance.core.authentication.services.AuthenticationServ
 
 import java.io.IOException;
 
-
 @Controller
 @RequiredArgsConstructor
 public class AuthenticationController {
@@ -21,10 +20,8 @@ public class AuthenticationController {
     public RedirectView login(
             @RequestParam(name = "role", required = false) String role,
             @RequestParam(name = "redirect_uri", required = false) String redirectUri,
-            @RequestParam(name = "facility_id", required = false) String facilityId
-    ) throws IOException {
+            @RequestParam(name = "facility_id", required = false) String facilityId) throws IOException {
         return authenticationService.authorSwitch(role, redirectUri, facilityId);
     }
-
 
 }

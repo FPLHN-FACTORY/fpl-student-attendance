@@ -9,13 +9,12 @@ public interface Staff_StudentService {
 
     ResponseEntity<?> getDetailStudent(String studentId);
 
-    ResponseEntity<?> createStudent( Staff_StudentCreateUpdateRequest studentCreateUpdateRequest);
+    ResponseEntity<?> createStudent(Staff_StudentCreateUpdateRequest studentCreateUpdateRequest);
 
-    ResponseEntity<?> updateStudent( Staff_StudentCreateUpdateRequest studentCreateUpdateRequest);
+    ResponseEntity<?> updateStudent(Staff_StudentCreateUpdateRequest studentCreateUpdateRequest);
 
     ResponseEntity<?> changeStatusStudent(String studentId);
 
     ResponseEntity<?> deleteFaceStudentFactory(String studentId);
-
 
 }

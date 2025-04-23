@@ -11,11 +11,10 @@ import java.util.List;
 public interface Admin_StaffRoleRepository extends RoleRepository {
     List<Role> findAllByUserStaffId(String staffId);
 
-    @Query
-            ("""
-                    SELECT 
-                    r
-                    FROM Role r
-                    """)
+    @Query("""
+            SELECT
+            r
+            FROM Role r
+            """)
     List<Role> getAllRole();
 }

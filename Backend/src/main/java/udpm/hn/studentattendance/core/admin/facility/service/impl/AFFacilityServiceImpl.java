@@ -1,6 +1,5 @@
 package udpm.hn.studentattendance.core.admin.facility.service.impl;
 
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -22,176 +21,168 @@ import udpm.hn.studentattendance.infrastructure.constants.RestApiStatus;
 
 import java.util.Optional;
 
-
 @Service
 @RequiredArgsConstructor
 @Validated
 public class AFFacilityServiceImpl implements AFFacilityService {
-    private final AFFacilityExtendRepository facilityRepository;
+        private final AFFacilityExtendRepository facilityRepository;
 
-    @Override
-    public ResponseEntity<?> getAllFacility(AFFacilitySearchRequest request) {
-        Pageable pageable = PaginationHelper.createPageable(request, "createdAt");
-        PageableObject facilities = PageableObject.of(facilityRepository.getAllFacility(pageable, request));
-        return new ResponseEntity<>(
-                new ApiResponse(
-                        RestApiStatus.SUCCESS,
-                        "Lấy tất cả cơ sở thành công",
-                        facilities
-                ), HttpStatus.OK);
-    }
-
-    @Override
-    public ResponseEntity<?> createFacility(AFCreateUpdateFacilityRequest request) {
-        Optional<Facility> existFacility = facilityRepository.findByName(request.getFacilityName().trim());
-        if (existFacility.isPresent()) {
-            return new ResponseEntity<>(
-                    new ApiResponse(
-                            RestApiStatus.WARNING,
-                            "Cơ sở đã tồn tại",
-                            null
-                    ),
-                    HttpStatus.BAD_REQUEST);
-        }
-        String code = GenerateNameHelper.generateCodeFromName(request.getFacilityName());
-        int position = facilityRepository.getLastPosition() + 1;
-        Facility facility = new Facility();
-        facility.setCode(code);
-        facility.setName(GenerateNameHelper.replaceManySpaceToOneSpace(request.getFacilityName()));
-        facility.setCreatedAt(System.currentTimeMillis());
-        facility.setPosition(position);
-        facility.setStatus(EntityStatus.ACTIVE);
-        facilityRepository.save(facility);
-        return new ResponseEntity<>(
-                new ApiResponse(
-                        RestApiStatus.SUCCESS,
-                        "Thêm cơ sở mới thành công",
-                        null
-                ),
-                HttpStatus.CREATED);
-    }
-
-    @Override
-    public ResponseEntity<?> updateFacility(String facilityId, AFCreateUpdateFacilityRequest request) {
-//        if (!facilityRepository.existsByNameAndId(request.getFacilityName(), facilityId)) {
-//            return new ResponseEntity<>(
-//                    new ApiResponse(
-//                            RestApiStatus.ERROR,
-//                            "Cơ sở không tồn tại",
-//                            null
-//                    ),
-//                    HttpStatus.NOT_FOUND);
-//        }
-        Optional<Facility> existFacility = facilityRepository.findById(facilityId);
-        existFacility.map(facilities -> {
-            facilities.setCode(GenerateNameHelper.generateCodeFromName(request.getFacilityName().trim()));
-            facilities.setName(GenerateNameHelper.replaceManySpaceToOneSpace(request.getFacilityName().trim()));
-            facilities.setCreatedAt(facilities.getCreatedAt());
-//            facilities.setStatus(EntityStatus.ACTIVE);
-            return facilityRepository.save(facilities);
-        });
-        return existFacility
-                .map(
-                        facility -> new ResponseEntity<>(
+        @Override
+        public ResponseEntity<?> getAllFacility(AFFacilitySearchRequest request) {
+                Pageable pageable = PaginationHelper.createPageable(request, "createdAt");
+                PageableObject facilities = PageableObject.of(facilityRepository.getAllFacility(pageable, request));
+                return new ResponseEntity<>(
                                 new ApiResponse(
-                                        RestApiStatus.SUCCESS,
-                                        "Cập nhật cơ sở thành công",
-                                        null
-                                ),
-                                HttpStatus.CREATED)
-                )
-                .orElseGet(
-                        () -> new ResponseEntity<>(
-                                new ApiResponse(
-                                        RestApiStatus.ERROR,
-                                        "Cơ sở không tồn tại",
-                                        null
-                                ),
-                                HttpStatus.NOT_FOUND)
-                );
-    }
-
-    @Override
-    public ResponseEntity<?> changeFacilityStatus(String facilityId) {
-        Optional<Facility> facilityOptional = facilityRepository.findById(facilityId);
-        facilityOptional.map(facility -> {
-            facility.setStatus(facility.getStatus() == EntityStatus.ACTIVE ? EntityStatus.INACTIVE : EntityStatus.ACTIVE);
-            return facilityRepository.save(facility);
-        });
-        return facilityOptional
-                .map(
-                        object -> new ResponseEntity<>(
-                                new ApiResponse(
-                                        RestApiStatus.SUCCESS,
-                                        "Cập nhật cơ sở thành công",
-                                        null
-                                ),
-                                HttpStatus.OK)
-                )
-                .orElseGet(
-                        () -> new ResponseEntity<>(
-                                new ApiResponse(
-                                        RestApiStatus.ERROR,
-                                        "Cơ sở không tồn tại",
-                                        null
-                                ),
-                                HttpStatus.NOT_FOUND)
-                );
-    }
-
-    @Override
-    public ResponseEntity<?> getFacilityById(String facilityId) {
-        return facilityRepository.getDetailFacilityById(facilityId)
-                .map(
-                        facility -> new ResponseEntity<>(
-                                new ApiResponse(
-                                        RestApiStatus.SUCCESS,
-                                        "Hiển thị chi tiết cơ sở thành công",
-                                        facilityRepository.getDetailFacilityById(facilityId)
-                                ),
-                                HttpStatus.OK)
-                )
-                .orElseGet(
-                        () -> new ResponseEntity<>(
-                                new ApiResponse(
-                                        RestApiStatus.WARNING,
-                                        "Cơ sở không tồn tại",
-                                        null
-                                ),
-                                HttpStatus.NOT_FOUND)
-                );
-
-    }
-
-    @Override
-    public ResponseEntity<?> up(String facilityId) {
-        Facility facility = facilityRepository.findById(facilityId).orElse(null);
-        if (facility == null) {
-            return RouterHelper.responseError("Không tìm thấy cơ sở");
+                                                RestApiStatus.SUCCESS,
+                                                "Lấy tất cả cơ sở thành công",
+                                                facilities),
+                                HttpStatus.OK);
         }
 
-        if (facility.getPosition() <= 1) {
-            return RouterHelper.responseError("Cơ sở đã đang ở mức ưu tiên hiển thị cao nhất");
+        @Override
+        public ResponseEntity<?> createFacility(AFCreateUpdateFacilityRequest request) {
+                Optional<Facility> existFacility = facilityRepository.findByName(request.getFacilityName().trim());
+                if (existFacility.isPresent()) {
+                        return new ResponseEntity<>(
+                                        new ApiResponse(
+                                                        RestApiStatus.WARNING,
+                                                        "Cơ sở đã tồn tại",
+                                                        null),
+                                        HttpStatus.BAD_REQUEST);
+                }
+                String code = GenerateNameHelper.generateCodeFromName(request.getFacilityName());
+                int position = facilityRepository.getLastPosition() + 1;
+                Facility facility = new Facility();
+                facility.setCode(code);
+                facility.setName(GenerateNameHelper.replaceManySpaceToOneSpace(request.getFacilityName()));
+                facility.setCreatedAt(System.currentTimeMillis());
+                facility.setPosition(position);
+                facility.setStatus(EntityStatus.ACTIVE);
+                facilityRepository.save(facility);
+                return new ResponseEntity<>(
+                                new ApiResponse(
+                                                RestApiStatus.SUCCESS,
+                                                "Thêm cơ sở mới thành công",
+                                                null),
+                                HttpStatus.CREATED);
         }
 
-        facility.setPosition(Math.max(1, facility.getPosition() - 1));
-        facilityRepository.updatePositionPreUp(facility.getPosition(), facilityId);
-        return RouterHelper.responseSuccess("Tăng mức ưu tiên hiển thị thành công", facilityRepository.save(facility));
-    }
-
-    @Override
-    public ResponseEntity<?> down(String facilityId) {
-        Facility facility = facilityRepository.findById(facilityId).orElse(null);
-        if (facility == null) {
-            return RouterHelper.responseError("Không tìm thấy cơ sở");
+        @Override
+        public ResponseEntity<?> updateFacility(String facilityId, AFCreateUpdateFacilityRequest request) {
+                // if (!facilityRepository.existsByNameAndId(request.getFacilityName(),
+                // facilityId)) {
+                // return new ResponseEntity<>(
+                // new ApiResponse(
+                // RestApiStatus.ERROR,
+                // "Cơ sở không tồn tại",
+                // null
+                // ),
+                // HttpStatus.NOT_FOUND);
+                // }
+                Optional<Facility> existFacility = facilityRepository.findById(facilityId);
+                existFacility.map(facilities -> {
+                        facilities.setCode(GenerateNameHelper.generateCodeFromName(request.getFacilityName().trim()));
+                        facilities.setName(GenerateNameHelper
+                                        .replaceManySpaceToOneSpace(request.getFacilityName().trim()));
+                        facilities.setCreatedAt(facilities.getCreatedAt());
+                        // facilities.setStatus(EntityStatus.ACTIVE);
+                        return facilityRepository.save(facilities);
+                });
+                return existFacility
+                                .map(
+                                                facility -> new ResponseEntity<>(
+                                                                new ApiResponse(
+                                                                                RestApiStatus.SUCCESS,
+                                                                                "Cập nhật cơ sở thành công",
+                                                                                null),
+                                                                HttpStatus.CREATED))
+                                .orElseGet(
+                                                () -> new ResponseEntity<>(
+                                                                new ApiResponse(
+                                                                                RestApiStatus.ERROR,
+                                                                                "Cơ sở không tồn tại",
+                                                                                null),
+                                                                HttpStatus.NOT_FOUND));
         }
-        int maxPosition = facilityRepository.getLastPosition();
-        if (facility.getPosition() >= maxPosition) {
-            return RouterHelper.responseError("Cơ sở đã đang ở mức ưu tiên hiển thị thấp nhất");
+
+        @Override
+        public ResponseEntity<?> changeFacilityStatus(String facilityId) {
+                Optional<Facility> facilityOptional = facilityRepository.findById(facilityId);
+                facilityOptional.map(facility -> {
+                        facility.setStatus(facility.getStatus() == EntityStatus.ACTIVE ? EntityStatus.INACTIVE
+                                        : EntityStatus.ACTIVE);
+                        return facilityRepository.save(facility);
+                });
+                return facilityOptional
+                                .map(
+                                                object -> new ResponseEntity<>(
+                                                                new ApiResponse(
+                                                                                RestApiStatus.SUCCESS,
+                                                                                "Cập nhật cơ sở thành công",
+                                                                                null),
+                                                                HttpStatus.OK))
+                                .orElseGet(
+                                                () -> new ResponseEntity<>(
+                                                                new ApiResponse(
+                                                                                RestApiStatus.ERROR,
+                                                                                "Cơ sở không tồn tại",
+                                                                                null),
+                                                                HttpStatus.NOT_FOUND));
         }
 
-        facility.setPosition(Math.min(maxPosition, facility.getPosition() + 1));
-        facilityRepository.updatePositionNextDown(facility.getPosition(), facilityId);
-        return RouterHelper.responseSuccess("Giảm mức ưu tiên hiển thị thành công", facilityRepository.save(facility));
-    }
+        @Override
+        public ResponseEntity<?> getFacilityById(String facilityId) {
+                return facilityRepository.getDetailFacilityById(facilityId)
+                                .map(
+                                                facility -> new ResponseEntity<>(
+                                                                new ApiResponse(
+                                                                                RestApiStatus.SUCCESS,
+                                                                                "Hiển thị chi tiết cơ sở thành công",
+                                                                                facilityRepository
+                                                                                                .getDetailFacilityById(
+                                                                                                                facilityId)),
+                                                                HttpStatus.OK))
+                                .orElseGet(
+                                                () -> new ResponseEntity<>(
+                                                                new ApiResponse(
+                                                                                RestApiStatus.WARNING,
+                                                                                "Cơ sở không tồn tại",
+                                                                                null),
+                                                                HttpStatus.NOT_FOUND));
+
+        }
+
+        @Override
+        public ResponseEntity<?> up(String facilityId) {
+                Facility facility = facilityRepository.findById(facilityId).orElse(null);
+                if (facility == null) {
+                        return RouterHelper.responseError("Không tìm thấy cơ sở");
+                }
+
+                if (facility.getPosition() <= 1) {
+                        return RouterHelper.responseError("Cơ sở đã đang ở mức ưu tiên hiển thị cao nhất");
+                }
+
+                facility.setPosition(Math.max(1, facility.getPosition() - 1));
+                facilityRepository.updatePositionPreUp(facility.getPosition(), facilityId);
+                return RouterHelper.responseSuccess("Tăng mức ưu tiên hiển thị thành công",
+                                facilityRepository.save(facility));
+        }
+
+        @Override
+        public ResponseEntity<?> down(String facilityId) {
+                Facility facility = facilityRepository.findById(facilityId).orElse(null);
+                if (facility == null) {
+                        return RouterHelper.responseError("Không tìm thấy cơ sở");
+                }
+                int maxPosition = facilityRepository.getLastPosition();
+                if (facility.getPosition() >= maxPosition) {
+                        return RouterHelper.responseError("Cơ sở đã đang ở mức ưu tiên hiển thị thấp nhất");
+                }
+
+                facility.setPosition(Math.min(maxPosition, facility.getPosition() + 1));
+                facilityRepository.updatePositionNextDown(facility.getPosition(), facilityId);
+                return RouterHelper.responseSuccess("Giảm mức ưu tiên hiển thị thành công",
+                                facilityRepository.save(facility));
+        }
 }

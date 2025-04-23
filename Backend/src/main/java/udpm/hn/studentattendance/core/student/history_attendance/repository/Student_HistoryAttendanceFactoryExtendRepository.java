@@ -10,20 +10,18 @@ import java.util.List;
 
 @Repository
 public interface Student_HistoryAttendanceFactoryExtendRepository extends FactoryRepository {
-    @Query(
-            value = """
-            SELECT 
-            ft
-            FROM 
-            Factory ft
-            LEFT JOIN 
-            UserStudentFactory usf ON usf.factory.id = ft.id
-            WHERE 
-            ft.status = :factoryStatus
-            AND 
-            usf.userStudent.id = :userStudentId
-"""
-    )
+    @Query(value = """
+                        SELECT
+                        ft
+                        FROM
+                        Factory ft
+                        LEFT JOIN
+                        UserStudentFactory usf ON usf.factory.id = ft.id
+                        WHERE
+                        ft.status = :factoryStatus
+                        AND
+                        usf.userStudent.id = :userStudentId
+            """)
     List<Factory> getAllFactoryByUser(EntityStatus factoryStatus, String userStudentId);
 
 }

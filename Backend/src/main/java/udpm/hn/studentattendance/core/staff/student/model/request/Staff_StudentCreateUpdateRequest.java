@@ -22,10 +22,7 @@ public class Staff_StudentCreateUpdateRequest {
     private String name;
 
     @Length(max = 100, message = "Tài khoản email phải ít hơn 100 ký tự")
-    @Pattern(
-            regexp = "^[a-zA-Z0-9._%+-]+@gmail\\.com$",
-            message = "Email phải có định dạng @gmail.com"
-    )
+    @Pattern(regexp = "^[a-zA-Z0-9._%+-]+@gmail\\.com$", message = "Email phải có định dạng @gmail.com")
     @NotBlank
     private String email;
 }

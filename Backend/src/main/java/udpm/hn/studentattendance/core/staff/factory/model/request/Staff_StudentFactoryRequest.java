@@ -12,7 +12,7 @@ public class Staff_StudentFactoryRequest extends PageableRequest {
     private String factoryId;
 
     private String studentFactoryId;
-    
+
     private String searchQuery;
 
     private Integer status;

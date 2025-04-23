@@ -43,8 +43,7 @@ public class Staff_ProjectManagementImpl implements Staff_ProjectManagementServi
         return new ResponseObject<>(
                 PageableObject.of(staffProjectManagementRepository.getListProject(pageable, request)),
                 HttpStatus.OK,
-                "Lây danh sách dự án thành công"
-        );
+                "Lây danh sách dự án thành công");
     }
 
     @Override
@@ -102,11 +101,11 @@ public class Staff_ProjectManagementImpl implements Staff_ProjectManagementServi
         project.setLevelProject(levelProjectRepository.findById(request.getIdLevelProject()).get());
         project.setSemester(semesterRepository.findById(request.getIdSemester()).get());
         project.setSubjectFacility(subjectFacilityRepository.findById(request.getIdSubjectFacility()).get());
-//        if (request.getStatus().equals("ACTIVE")) {
-//            project.setStatus(EntityStatus.ACTIVE);
-//        } else {
-//            project.setStatus(EntityStatus.INACTIVE);
-//        }
+        // if (request.getStatus().equals("ACTIVE")) {
+        // project.setStatus(EntityStatus.ACTIVE);
+        // } else {
+        // project.setStatus(EntityStatus.INACTIVE);
+        // }
         return project;
     }
 }

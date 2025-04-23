@@ -38,28 +38,26 @@ public interface Teacher_FactoryExtendRepository extends FactoryRepository {
                 AND (:#{#teacherStudentRequest.factoryStatus} IS NULL OR ft.status = :#{#teacherStudentRequest.factoryStatus})
 
             ORDER BY ft.created_at DESC
-            """,
-            countQuery = """
-                    SELECT COUNT(*)
-                    FROM factory ft
-                    LEFT JOIN user_staff us ON us.id = ft.id_user_staff
-                    LEFT JOIN project p ON p.id = ft.id_project
-                    LEFT JOIN subject_facility sf ON sf.id = p.id_subject_facility
-                    LEFT JOIN facility f ON f.id = sf.id_facility
-                    WHERE
-                        us.code = :userStaffCode
-                        AND f.id = :facilityId
-                        AND f.status = 1
-                        AND p.status = 1
-                        AND sf.status = 1
-                        AND ft.status = 1
-                        AND (:#{#teacherStudentRequest.factoryName} IS NULL OR ft.name LIKE CONCAT('%', :#{#teacherStudentRequest.factoryName}, '%'))
-                        AND (:#{#teacherStudentRequest.projectId} IS NULL OR p.id LIKE CONCAT('%', :#{#teacherStudentRequest.projectId}, '%'))
-                        AND (:#{#teacherStudentRequest.factoryStatus} IS NULL OR ft.status = :#{#teacherStudentRequest.factoryStatus})
+            """, countQuery = """
+            SELECT COUNT(*)
+            FROM factory ft
+            LEFT JOIN user_staff us ON us.id = ft.id_user_staff
+            LEFT JOIN project p ON p.id = ft.id_project
+            LEFT JOIN subject_facility sf ON sf.id = p.id_subject_facility
+            LEFT JOIN facility f ON f.id = sf.id_facility
+            WHERE
+                us.code = :userStaffCode
+                AND f.id = :facilityId
+                AND f.status = 1
+                AND p.status = 1
+                AND sf.status = 1
+                AND ft.status = 1
+                AND (:#{#teacherStudentRequest.factoryName} IS NULL OR ft.name LIKE CONCAT('%', :#{#teacherStudentRequest.factoryName}, '%'))
+                AND (:#{#teacherStudentRequest.projectId} IS NULL OR p.id LIKE CONCAT('%', :#{#teacherStudentRequest.projectId}, '%'))
+                AND (:#{#teacherStudentRequest.factoryStatus} IS NULL OR ft.status = :#{#teacherStudentRequest.factoryStatus})
 
-                    """,
-            nativeQuery = true)
-    Page<Teacher_FactoryResponse> getAllFactoryByTeacher(Pageable pageable, String facilityId, String userStaffCode, Teacher_FactoryRequest teacherStudentRequest);
-
+            """, nativeQuery = true)
+    Page<Teacher_FactoryResponse> getAllFactoryByTeacher(Pageable pageable, String facilityId, String userStaffCode,
+            Teacher_FactoryRequest teacherStudentRequest);
 
 }

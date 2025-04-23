@@ -24,19 +24,22 @@ public class AFFacilityLocationRestController {
     private final AFFacilityLocationService afFacilityLocationService;
 
     @GetMapping("/{idFacility}/list-location")
-    public ResponseEntity<?> getAllList(@Valid AFFilterFacilityLocationRequest request, @PathVariable String idFacility) {
+    public ResponseEntity<?> getAllList(@Valid AFFilterFacilityLocationRequest request,
+            @PathVariable String idFacility) {
         request.setIdFacility(idFacility);
         return afFacilityLocationService.getAllList(request);
     }
 
     @PostMapping("/{idFacility}/add-location")
-    public ResponseEntity<?> addIP(@Valid @RequestBody AFAddOrUpdateFacilityLocationRequest request, @PathVariable String idFacility) {
+    public ResponseEntity<?> addIP(@Valid @RequestBody AFAddOrUpdateFacilityLocationRequest request,
+            @PathVariable String idFacility) {
         request.setIdFacility(idFacility);
         return afFacilityLocationService.addLocation(request);
     }
 
     @PutMapping("/{idFacility}/update-location")
-    public ResponseEntity<?> updateIP(@Valid @RequestBody AFAddOrUpdateFacilityLocationRequest request, @PathVariable String idFacility) {
+    public ResponseEntity<?> updateIP(@Valid @RequestBody AFAddOrUpdateFacilityLocationRequest request,
+            @PathVariable String idFacility) {
         request.setIdFacility(idFacility);
         return afFacilityLocationService.updateLocation(request);
     }

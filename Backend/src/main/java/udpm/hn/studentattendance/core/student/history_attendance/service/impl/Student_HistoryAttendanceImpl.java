@@ -49,15 +49,17 @@ public class Student_HistoryAttendanceImpl implements Student_HistoryAttendanceS
     private final Student_HistoryAttendanceFactoryExtendRepository historyAttendanceFactoryExtendRepository;
 
     @Override
-    public ResponseEntity<?> getAllHistoryAttendanceByStudent(Student_HistoryAttendanceRequest historyAttendanceRequest) {
+    public ResponseEntity<?> getAllHistoryAttendanceByStudent(
+            Student_HistoryAttendanceRequest historyAttendanceRequest) {
         Pageable pageable = PaginationHelper.createPageable(historyAttendanceRequest, "createdAt");
-        PageableObject list = PageableObject.of(historyAttendanceExtendRepository.getAllFactoryAttendance(sessionHelper.getCurrentUser().getId(), pageable, historyAttendanceRequest));
+        PageableObject list = PageableObject.of(historyAttendanceExtendRepository
+                .getAllFactoryAttendance(sessionHelper.getCurrentUser().getId(), pageable, historyAttendanceRequest));
         return new ResponseEntity<>(
                 new ApiResponse(
                         RestApiStatus.SUCCESS,
-                        "Lấy tất cả lịch sử điểm danh của sinh viên " + sessionHelper.getCurrentUser().getCode() + " thành công",
-                        list
-                ),
+                        "Lấy tất cả lịch sử điểm danh của sinh viên " + sessionHelper.getCurrentUser().getCode()
+                                + " thành công",
+                        list),
                 HttpStatus.OK);
     }
 
@@ -68,26 +70,25 @@ public class Student_HistoryAttendanceImpl implements Student_HistoryAttendanceS
                 new ApiResponse(
                         RestApiStatus.SUCCESS,
                         "Lấy tất cả học kỳ thành công",
-                        semesters
-                ),
+                        semesters),
                 HttpStatus.OK);
     }
 
     @Override
     public ResponseEntity<?> getAllFactoryByUserStudent() {
-        List<Factory> factories = historyAttendanceFactoryExtendRepository.getAllFactoryByUser(EntityStatus.ACTIVE, sessionHelper.getUserId());
+        List<Factory> factories = historyAttendanceFactoryExtendRepository.getAllFactoryByUser(EntityStatus.ACTIVE,
+                sessionHelper.getUserId());
         return new ResponseEntity<>(
                 new ApiResponse(
                         RestApiStatus.SUCCESS,
                         "Lấy tất cả nhóm xưởng của sinh viên " + sessionHelper.getUserCode() + " thành công",
-                        factories
-                ),
+                        factories),
                 HttpStatus.OK);
     }
 
-
     @Override
-    public ByteArrayInputStream exportHistoryAttendance(List<Student_HistoryAttendanceResponse> attendanceResponses, String factoryName) {
+    public ByteArrayInputStream exportHistoryAttendance(List<Student_HistoryAttendanceResponse> attendanceResponses,
+            String factoryName) {
         Document document = new Document();
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
 
@@ -96,7 +97,8 @@ public class Student_HistoryAttendanceImpl implements Student_HistoryAttendanceS
             document.open();
 
             // Nhúng font hỗ trợ tiếng Việt (Arial Unicode MS)
-            BaseFont unicodeFont = BaseFont.createFont("font/Arial Unicode.ttf", BaseFont.IDENTITY_H, BaseFont.EMBEDDED);
+            BaseFont unicodeFont = BaseFont.createFont("font/Arial Unicode.ttf", BaseFont.IDENTITY_H,
+                    BaseFont.EMBEDDED);
             Font fontHeaders = new Font(unicodeFont, 15, Font.BOLD);
             Font headFont = new Font(unicodeFont, 12, Font.SYMBOL, new Color(239, 235, 235));
             Font cellFont = new Font(unicodeFont, 12);
@@ -106,8 +108,7 @@ public class Student_HistoryAttendanceImpl implements Student_HistoryAttendanceS
                             + sessionHelper.getUserCode()
                             + " - "
                             + sessionHelper.getUserName(),
-                    fontHeaders
-            );
+                    fontHeaders);
             paragraph.setAlignment(Element.ALIGN_CENTER);
             document.add(paragraph);
             document.add(Chunk.NEWLINE);
@@ -117,7 +118,7 @@ public class Student_HistoryAttendanceImpl implements Student_HistoryAttendanceS
             pdfTable.setWidthPercentage(100);
             pdfTable.setSpacingBefore(10f);
             pdfTable.setSpacingAfter(10f);
-            pdfTable.setWidths(new float[]{20, 40, 20, 20, 30, 30});
+            pdfTable.setWidths(new float[] { 20, 40, 20, 20, 30, 30 });
 
             // Header: sử dụng màu cam đậm từ ảnh mẫu (ví dụ: RGB 237,125,49)
             Color headerColor = new Color(2, 3, 51);
@@ -145,7 +146,8 @@ public class Student_HistoryAttendanceImpl implements Student_HistoryAttendanceS
             for (Student_HistoryAttendanceResponse attendanceResponse : attendanceResponses) {
                 Color backgroundColor = (rowIndex % 2 == 0) ? rowColor1 : rowColor2;
 
-                PdfPCell rowNumberCell = new PdfPCell(new Phrase(String.valueOf(attendanceResponse.getRowNumber()), cellFont));
+                PdfPCell rowNumberCell = new PdfPCell(
+                        new Phrase(String.valueOf(attendanceResponse.getRowNumber()), cellFont));
                 styleCell(rowNumberCell, backgroundColor);
                 pdfTable.addCell(rowNumberCell);
 
@@ -154,25 +156,28 @@ public class Student_HistoryAttendanceImpl implements Student_HistoryAttendanceS
                 styleCell(learningDayCell, backgroundColor);
                 pdfTable.addCell(learningDayCell);
 
-                PdfPCell shiftCell = new PdfPCell(new Phrase(String.valueOf(attendanceResponse.getPlanDateShift()), cellFont));
+                PdfPCell shiftCell = new PdfPCell(
+                        new Phrase(String.valueOf(attendanceResponse.getPlanDateShift()), cellFont));
                 styleCell(shiftCell, backgroundColor);
                 pdfTable.addCell(shiftCell);
 
                 // Cột "Điểm danh muộn tối đa (phút)"
-                PdfPCell lateArrivalCell = new PdfPCell(new Phrase(String.valueOf(attendanceResponse.getLateArrival()), cellFont));
+                PdfPCell lateArrivalCell = new PdfPCell(
+                        new Phrase(String.valueOf(attendanceResponse.getLateArrival()), cellFont));
                 styleCell(lateArrivalCell, backgroundColor);
                 pdfTable.addCell(lateArrivalCell);
 
                 // Cột "Mô tả"
                 PdfPCell descriptionCell = new PdfPCell(new Phrase(
-                        attendanceResponse.getPlanDateDescription() != null ? attendanceResponse.getPlanDateDescription() : "",
-                        cellFont
-                ));
+                        attendanceResponse.getPlanDateDescription() != null
+                                ? attendanceResponse.getPlanDateDescription()
+                                : "",
+                        cellFont));
 
-                PdfPCell statusAttendanceCell = new PdfPCell(new Phrase(String.valueOf(attendanceResponse.getStatusAttendance()), cellFont));
+                PdfPCell statusAttendanceCell = new PdfPCell(
+                        new Phrase(String.valueOf(attendanceResponse.getStatusAttendance()), cellFont));
                 styleCell(statusAttendanceCell, backgroundColor);
-                pdfTable.addCell(statusAttendanceCell
-                );
+                pdfTable.addCell(statusAttendanceCell);
 
                 styleCell(descriptionCell, backgroundColor);
                 pdfTable.addCell(descriptionCell);
