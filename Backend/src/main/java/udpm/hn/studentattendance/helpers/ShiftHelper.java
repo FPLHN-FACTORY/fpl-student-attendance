@@ -7,10 +7,15 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 public class ShiftHelper {
 
     public final static int MIN_DIFF = 1800; // 30 phút
+
+    public final static int MAX_LATE_ARRIVAL = 90; // phút
 
     private static final ZoneId ZONEID = ZoneId.of("Asia/Ho_Chi_Minh");
 
@@ -51,4 +56,29 @@ public class ShiftHelper {
         return endDateTime.atZone(ZONEID).toInstant().toEpochMilli();
     }
 
+    public static List<List<Integer>> findConsecutiveShift(List<Integer> selected) {
+        List<List<Integer>> result = new ArrayList<>();
+        if (selected == null || selected.isEmpty()) {
+            return result;
+        }
+
+        Collections.sort(selected);
+        List<Integer> currentShift = new ArrayList<>();
+        currentShift.add(selected.get(0));
+
+        for (int i = 1; i < selected.size(); i++) {
+            int current = selected.get(i);
+            int previous = selected.get(i - 1);
+            if (current == previous + 1) {
+                currentShift.add(current);
+            } else {
+                result.add(new ArrayList<>(currentShift));
+                currentShift.clear();
+                currentShift.add(current);
+            }
+        }
+
+        result.add(currentShift);
+        return result;
+    }
 }

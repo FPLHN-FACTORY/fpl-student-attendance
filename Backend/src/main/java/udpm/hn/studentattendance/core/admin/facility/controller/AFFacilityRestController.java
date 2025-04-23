@@ -1,5 +1,6 @@
 package udpm.hn.studentattendance.core.admin.facility.controller;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -23,12 +24,13 @@ public class AFFacilityRestController {
 
     @GetMapping("/{facilityId}")
     public ResponseEntity<?> getFacility
-            (@PathVariable("facilityId") String facilityId){
+            (@Valid @PathVariable("facilityId") String facilityId) {
         return adFacilityService.getFacilityById(facilityId);
     }
+
     @PostMapping
     public ResponseEntity<?> createFacility
-            (@RequestBody AFCreateUpdateFacilityRequest createUpdateFacilityRequest) {
+            (@Valid @RequestBody AFCreateUpdateFacilityRequest createUpdateFacilityRequest) {
         return adFacilityService.createFacility(createUpdateFacilityRequest);
     }
 

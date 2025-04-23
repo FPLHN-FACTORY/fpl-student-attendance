@@ -140,11 +140,11 @@ public interface SPDPlanDateRepository extends PlanDateRepository {
         WHERE 
             status = 1 AND
             id_plan_factory = :idPlanFactory AND
-            start_date = :startDate AND
-            shift = :shift AND
+            start_date <= :endDate AND
+            end_date >= :startDate AND
             (:idPlanDate IS NULL OR id != :idPlanDate)
     """, nativeQuery = true)
-    boolean isExistsShiftInFactory(String idPlanFactory, String idPlanDate, Long startDate, Integer shift);
+    boolean isExistsShiftInFactory(String idPlanFactory, String idPlanDate, Long startDate, Long endDate);
 
     @Query(value = """
         SELECT 
@@ -155,10 +155,10 @@ public interface SPDPlanDateRepository extends PlanDateRepository {
             pd.status = 1 AND
             f.status = 1 AND
             f.id_user_staff = :idUserStaff AND
-            pd.start_date = :startDate AND
-            pd.shift = :shift
+            pd.start_date <= :endDate AND
+            pd.end_date >= :startDate
     """, nativeQuery = true)
-    boolean isExistsTeacherOnShift(String idUserStaff, Long startDate, Integer shift);
+    boolean isExistsTeacherOnShift(String idUserStaff, Long startDate, Long endDate);
 
 
 }

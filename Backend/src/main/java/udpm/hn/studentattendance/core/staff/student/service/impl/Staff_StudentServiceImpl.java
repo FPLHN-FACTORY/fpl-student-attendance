@@ -22,7 +22,6 @@ import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.RestApiStatus;
 import udpm.hn.studentattendance.repositories.FacilityRepository;
-import udpm.hn.studentattendance.utils.CodeGeneratorUtils;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -89,7 +88,6 @@ public class Staff_StudentServiceImpl implements Staff_StudentService {
 
         if (existStudentCode.isEmpty() || existStudentEmail.isEmpty()) {
             UserStudent userStudent = new UserStudent();
-            userStudent.setId(CodeGeneratorUtils.generateRandom());
             userStudent.setCode(studentCreateUpdateRequest.getCode());
             userStudent.setName(studentCreateUpdateRequest.getName());
             userStudent.setEmail(studentCreateUpdateRequest.getEmail());

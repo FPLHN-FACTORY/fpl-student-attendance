@@ -2,6 +2,7 @@ package udpm.hn.studentattendance.entities;
 
 
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
@@ -17,8 +18,10 @@ import udpm.hn.studentattendance.entities.base.PrimaryEntity;
 import udpm.hn.studentattendance.infrastructure.constants.EntityProperties;
 import udpm.hn.studentattendance.infrastructure.constants.ShiftType;
 import udpm.hn.studentattendance.infrastructure.constants.StatusType;
+import udpm.hn.studentattendance.infrastructure.converter.ListIntegerConverter;
 
 import java.io.Serializable;
+import java.util.List;
 
 @Entity
 @Getter
@@ -38,8 +41,9 @@ public class PlanDate extends PrimaryEntity implements Serializable {
     @Column(name = "end_date")
     private Long endDate;
 
-    @Column(name = "shift")
-    private Integer shift;
+    @Column(name = "shift", length = EntityProperties.LENGTH_NAME)
+    @Convert(converter = ListIntegerConverter.class)
+    private List<Integer> shift;
 
     @Column(name = "late_arrival")
     private Integer lateArrival;
