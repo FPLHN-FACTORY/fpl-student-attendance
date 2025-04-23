@@ -303,7 +303,7 @@ const handleSubmitFilterAdd = () => {
     !dataFilterAdd.year
   ) {
     return (lstDataProject.value = lstDataProject.value.filter(
-      (o) => o.id === currentProject.value?.id,
+      (o) => o.id === currentProject.value?.id
     ))
   }
   formData.idProject = null
@@ -468,7 +468,7 @@ watch(
   () => {
     handleSubmitFilter()
   },
-  { deep: true },
+  { deep: true }
 )
 
 watch(
@@ -476,7 +476,7 @@ watch(
   () => {
     handleSubmitFilterAdd()
   },
-  { deep: true },
+  { deep: true }
 )
 </script>
 

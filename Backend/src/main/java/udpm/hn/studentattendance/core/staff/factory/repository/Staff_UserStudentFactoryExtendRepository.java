@@ -117,8 +117,8 @@ public interface Staff_UserStudentFactoryExtendRepository extends UserStudentRep
                     f2.status = 1 AND
                     usf.status = 1 AND
                     usf2.status = 1 AND
-                    pd.start_date = pd2.start_date AND
-                    pd.shift = pd2.shift AND
+                    (pd2.start_date < pd.start_date OR pd2.start_date > pd.end_date) AND
+                    pd.start_date >= (UNIX_TIMESTAMP(CURRENT_DATE) * 1000) AND
                     f.id <> :idFactory AND
                     usf.id_user_student = :idUserStudent AND
                     f2.id = :idFacility

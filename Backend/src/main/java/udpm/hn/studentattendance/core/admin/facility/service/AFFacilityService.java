@@ -9,9 +9,9 @@ import udpm.hn.studentattendance.core.admin.facility.model.request.AFFacilitySea
 public interface AFFacilityService {
     ResponseEntity<?> getAllFacility(AFFacilitySearchRequest request);
 
-    ResponseEntity<?> createFacility(@Valid AFCreateUpdateFacilityRequest request);
+    ResponseEntity<?> createFacility(AFCreateUpdateFacilityRequest request);
 
-    ResponseEntity<?> updateFacility(String facilityId, @Valid AFCreateUpdateFacilityRequest request);
+    ResponseEntity<?> updateFacility(String facilityId, AFCreateUpdateFacilityRequest request);
 
     ResponseEntity<?> changeFacilityStatus(String facilityId);
 

@@ -30,9 +30,7 @@ public class SPDAddPlanFactoryRequest {
 
     private Integer requiredLocation = StatusType.ENABLE.getKey();
 
-    @Min(value = 1, message = "Ca học sớm nhất là ca 1")
-    @Max(value = 6, message = "Ca học muộn nhất là ca 6")
-    private Integer shift;
+    private List<Integer> shift;
 
     @Min(value = 0, message = "Thời gian điểm danh muộn nhất phải lớn hơn 0")
     @Max(value = 60, message = "Thời gian điểm danh muộn nhất không quá 60 phút")

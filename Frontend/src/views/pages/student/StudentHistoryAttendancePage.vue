@@ -74,7 +74,7 @@ const fetchAllAttendanceHistory = async () => {
         promises.push(
           requestAPI.get(API_ROUTES_STUDENT.FETCH_DATA_HISTORY_ATTENDANCE, {
             params: { ...filter, page },
-          })
+          }),
         )
       }
       const responses = await Promise.all(promises)
@@ -171,7 +171,7 @@ const exportPDF = async (factoryId, factoryName) => {
       {
         params: { factoryName, factoryId },
         responseType: 'blob',
-      }
+      },
     )
     const url = window.URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }))
     const link = document.createElement('a')
@@ -274,7 +274,13 @@ onMounted(() => {
                 </template>
                 <template v-else-if="column.dataIndex === 'planDateShift'">
                   <a-tag color="purple">
-                    {{ SHIFT[record.planDateShift] }}
+                    Ca
+                    {{
+                      record.planDateShift
+                        .split(',')
+                        .map((o) => Number(o))
+                        .join(', ')
+                    }}
                   </a-tag>
                 </template>
                 <template v-else-if="column.dataIndex === 'lateArrival'">
@@ -294,15 +300,15 @@ onMounted(() => {
                       record.statusAttendance === 'CHUA_DIEN_RA'
                         ? 'warning'
                         : record.statusAttendance === 'CO_MAT'
-                        ? 'success'
-                        : 'error'
+                          ? 'success'
+                          : 'error'
                     "
                     :text="
                       record.statusAttendance === 'CHUA_DIEN_RA'
                         ? 'Chưa diễn ra'
                         : record.statusAttendance === 'CO_MAT'
-                        ? 'Có mặt'
-                        : 'Vắng mặt'
+                          ? 'Có mặt'
+                          : 'Vắng mặt'
                     "
                   />
                 </template>
