@@ -12,7 +12,6 @@ import * as XLSX from 'xlsx'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 
-
 const breadcrumbStore = useBreadcrumbStore()
 
 const breadcrumb = ref([
@@ -53,7 +52,6 @@ const convertTime = () => {
   }
   return currentTimestamp + plan * 24 * 60 * 60 * 1000
 }
-
 
 const fetchAttendanceList = () => {
   loadingStore.show()
@@ -102,16 +100,18 @@ const formatDate = (timestamp) => {
   return new Date(timestamp).toLocaleString()
 }
 const exportToExcel = () => {
-  const worksheet = XLSX.utils.json_to_sheet(attendanceList.value.map((item, index) => ({
-    STT: index + 1,
-    'Ngày điểm danh': formatDate(item.attendanceDay),
-    'Ca': 'Ca ' + item.shift,
-    'Nhóm xưởng': item.factoryName,
-    'Dự án': item.projectName,
-    'Tên môn học': item.subjectName,
-    'Tên giảng viên': item.staffName,
-    'Mô tả': item.description || '',
-  })))
+  const worksheet = XLSX.utils.json_to_sheet(
+    attendanceList.value.map((item, index) => ({
+      STT: index + 1,
+      'Ngày điểm danh': formatDate(item.attendanceDay),
+      Ca: 'Ca ' + item.shift,
+      'Nhóm xưởng': item.factoryName,
+      'Dự án': item.projectName,
+      'Tên môn học': item.subjectName,
+      'Tên giảng viên': item.staffName,
+      'Mô tả': item.description || '',
+    }))
+  )
   const workbook = XLSX.utils.book_new()
   XLSX.utils.book_append_sheet(workbook, worksheet, 'DanhSach')
   XLSX.writeFile(workbook, 'DiemDanh.xlsx')
@@ -130,7 +130,9 @@ const exportToPDF = () => {
     item.description || '',
   ])
   autoTable(doc, {
-    head: [['STT', 'Ngày điểm danh', 'Ca', 'Nhóm xưởng', 'Dự án', 'Môn học', 'Giảng viên', 'Mô tả']],
+    head: [
+      ['STT', 'Ngày điểm danh', 'Ca', 'Nhóm xưởng', 'Dự án', 'Môn học', 'Giảng viên', 'Mô tả'],
+    ],
     body: rows,
     startY: 20,
   })
@@ -175,11 +177,11 @@ onMounted(() => {
 
           <a-card title="Danh sách điểm danh" :bordered="false" class="cart">
             <div class="d-flex justify-content-end mb-3">
-            <a-tooltip title="Thêm cấp dự án">
-              <a-button type="primary" @click="exportToExcel">Tải xuống Excel</a-button>
+              <a-button type="primary" @click="exportToExcel" class="me-3"
+                >Tải xuống Excel</a-button
+              >
               <a-button type="default" @click="exportToPDF">Tải xuống PDF</a-button>
-            </a-tooltip>
-          </div>
+            </div>
 
             <a-table
               :dataSource="attendanceList"

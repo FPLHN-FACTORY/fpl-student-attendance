@@ -18,6 +18,7 @@ import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
 
 const breadcrumbStore = useBreadcrumbStore()
 const loadingStore = useLoadingStore()
+const isLoading = ref(false)
 
 const breadcrumb = ref([
   {
@@ -65,9 +66,7 @@ const filter = reactive({
 })
 
 const pagination = reactive({
-  current: 1,
-  pageSize: 5,
-  total: 0,
+  ...DEFAULT_PAGINATION,
 })
 
 // Cấu hình cột bảng
@@ -91,8 +90,15 @@ const formatDate = (timestamp) => {
 
 // Lấy danh sách dự án
 const fetchProjects = () => {
+  loadingStore.show()
   requestAPI
-    .post(`${API_ROUTES_STAFF.FETCH_DATA_PROJECT}/list`, filter)
+    .post(`${API_ROUTES_STAFF.FETCH_DATA_PROJECT}/list`, {
+      params: {
+        ...filter,
+        page: pagination.current,
+        size: pagination.pageSize,
+      },
+    })
     .then((response) => {
       projects.value = response.data.data.data
       pagination.total = response.data.data.totalPages * filter.pageSize
@@ -100,6 +106,9 @@ const fetchProjects = () => {
     })
     .catch(() => {
       message.error('Lỗi khi lấy dữ liệu')
+    })
+    .finally(() => {
+      loadingStore.hide()
     })
 }
 
@@ -141,6 +150,8 @@ const fetchSubjects = () => {
 const handleTableChange = (pageInfo) => {
   filter.page = pageInfo.current
   filter.pageSize = pageInfo.pageSize
+  pagination.current = pageInfo.current
+  pagination.pageSize = pageInfo.pageSize
   fetchProjects()
 }
 
@@ -380,6 +391,8 @@ onMounted(() => {
             :columns="columns"
             rowKey="id"
             :pagination="pagination"
+            :scroll="{ y: 500, x: 'auto' }"
+            :loading="isLoading"
             @change="handleTableChange"
           >
             <template #bodyCell="{ column, record }">
@@ -434,7 +447,7 @@ onMounted(() => {
         <a-form-item label="Tên dự án" required>
           <a-input v-model:value="newProject.name" placeholder="Nhập tên dự án" />
         </a-form-item>
-        <a-form-item label="Mô tả">
+        <a-form-item label="Mô tả" required>
           <a-textarea v-model:value="newProject.description" placeholder="Nhập mô tả" />
         </a-form-item>
         <a-form-item label="Cấp dự án" required>
@@ -451,7 +464,7 @@ onMounted(() => {
         <a-form-item label="Học kỳ" required>
           <a-select v-model:value="newProject.semesterId" placeholder="Chọn học kỳ" allowClear>
             <a-select-option v-for="semester in semesters" :key="semester.id" :value="semester.id">
-              {{ semester.name }}
+              {{ semester.code }}
             </a-select-option>
           </a-select>
         </a-form-item>
@@ -498,7 +511,7 @@ onMounted(() => {
         <a-form-item label="Tên dự án" required>
           <a-input v-model:value="detailProject.name" placeholder="Nhập tên dự án" />
         </a-form-item>
-        <a-form-item label="Mô tả">
+        <a-form-item label="Mô tả" required>
           <a-textarea v-model:value="detailProject.description" placeholder="Nhập mô tả" />
         </a-form-item>
         <a-form-item label="Cấp dự án" required>
@@ -515,7 +528,7 @@ onMounted(() => {
         <a-form-item label="Học kỳ" required>
           <a-select v-model:value="detailProject.semesterId" placeholder="Chọn học kỳ" allowClear>
             <a-select-option v-for="semester in semesters" :key="semester.id" :value="semester.id">
-              {{ semester.name }}
+              {{ semester.code }}
             </a-select-option>
           </a-select>
         </a-form-item>

@@ -9,11 +9,14 @@ import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 @Setter
 public class Staff_FactoryRequest extends PageableRequest {
     private String idProject;
+
     private String idStaff;
+
     private String idFacility;
-    private String searchQuery;        // Tìm kiếm chung cho bảng factory
-//    private Long searchPlanStartDate;
-//    private Integer searchPlanShift;
+
+    private String factoryName;    // dùng thay cho searchQuery
+
+    private String idSemester;
 
     private EntityStatus status;
 

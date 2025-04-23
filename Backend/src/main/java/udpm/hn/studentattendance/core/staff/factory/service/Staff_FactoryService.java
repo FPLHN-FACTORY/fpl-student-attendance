@@ -26,4 +26,6 @@ public interface Staff_FactoryService {
     ResponseEntity<?> existsPlanByFactoryId(String factoryId);
 
     ResponseEntity<?> changeAllStatusByFactory();
+
+    ResponseEntity<?> getAllSemester();
 }

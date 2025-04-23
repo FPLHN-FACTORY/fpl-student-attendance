@@ -9,6 +9,8 @@ import {
   UnorderedListOutlined,
   FilterFilled,
   SyncOutlined,
+  EditFilled,
+  EyeFilled,
 } from '@ant-design/icons-vue'
 import { DEFAULT_PAGINATION } from '@/constants'
 import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
@@ -62,7 +64,7 @@ const columns = ref([
 ])
 
 const breadcrumb = ref([
-{
+  {
     name: GLOBAL_ROUTE_NAMES.ADMIN_PAGE,
     breadcrumbName: 'Ban đào tạo',
   },
@@ -88,7 +90,7 @@ const fetchLevels = () => {
       levels.value = result.data
       // Tổng số bản ghi
       pagination.total =
-        result.totalElements || result.totalItems || (result.totalPages * pagination.pageSize)
+        result.totalElements || result.totalItems || result.totalPages * pagination.pageSize
     })
     .catch((error) => {
       message.error(error.response?.data?.message || 'Lỗi khi lấy danh sách cấp dự án')
@@ -98,7 +100,6 @@ const fetchLevels = () => {
     })
 }
 
-
 const clearNewLevelForm = () => {
   newLevel.name = ''
   newLevel.code = ''
@@ -106,7 +107,6 @@ const clearNewLevelForm = () => {
 }
 
 const handleTableChange = (pageInfo) => {
-  
   pagination.current = pageInfo.current
   pagination.pageSize = pageInfo.pageSize
   fetchLevels()
@@ -234,7 +234,6 @@ const getStatusColor = (status) => {
   return status === 'ACTIVE' ? 'green' : 'red'
 }
 
-
 onMounted(() => {
   breadcrumbStore.setRoutes(breadcrumb.value)
   fetchLevels()
@@ -289,8 +288,12 @@ onMounted(() => {
           {{ getStatusText(detailLevel.status) }}
         </a-tag>
       </a-descriptions-item>
-      <a-descriptions-item label="Ngày tạo">{{ formatDate(detailLevel.createdAt) }}</a-descriptions-item>
-      <a-descriptions-item label="Ngày cập nhật">{{ formatDate(detailLevel.updatedAt) }}</a-descriptions-item>
+      <a-descriptions-item label="Ngày tạo">{{
+        formatDate(detailLevel.createdAt)
+      }}</a-descriptions-item>
+      <a-descriptions-item label="Ngày cập nhật">{{
+        formatDate(detailLevel.updatedAt)
+      }}</a-descriptions-item>
     </a-descriptions>
   </a-modal>
 
@@ -335,9 +338,7 @@ onMounted(() => {
           <template #title> <UnorderedListOutlined /> Danh sách cấp dự án </template>
           <div class="d-flex justify-content-end mb-3">
             <a-tooltip title="Thêm cấp dự án">
-              <a-button type="primary" @click="modalAdd = true"> 
-                <PlusOutlined /> Thêm 
-              </a-button>
+              <a-button type="primary" @click="modalAdd = true"> <PlusOutlined /> Thêm </a-button>
             </a-tooltip>
           </div>
           <a-table
@@ -355,9 +356,22 @@ onMounted(() => {
                   {{ index + 1 }}
                 </template>
                 <template v-else-if="column.dataIndex === 'status'">
-                  <a-tag :color="record.status === 1 ? 'green' : 'red'">
-                    {{ record.status === 1 ? 'Hoạt động' : 'Không hoạt động' }}
-                  </a-tag>
+                  <span class="nowrap">
+                    <a-switch
+                      class="me-2"
+                      :checked="record.status === 'ACTIVE' || record.status === 1"
+                      @change="confirmChangeStatus(record)"
+                    />
+                    <a-tag
+                      :color="record.status === 'ACTIVE' || record.status === 1 ? 'green' : 'red'"
+                    >
+                      {{
+                        record.status === 'ACTIVE' || record.status === 1
+                          ? 'Hoạt động'
+                          : 'Không hoạt động'
+                      }}
+                    </a-tag>
+                  </span>
                 </template>
 
                 <template v-else>
@@ -372,7 +386,7 @@ onMounted(() => {
                       class="btn-outline-primary"
                       @click="handleDetailLevel(record)"
                     >
-                      <EyeOutlined />
+                      <EyeFilled />
                     </a-button>
                   </a-tooltip>
                   <a-tooltip title="Chỉnh sửa">
@@ -381,16 +395,7 @@ onMounted(() => {
                       class="btn-outline-info"
                       @click="prepareUpdateLevel(record)"
                     >
-                      <EditOutlined />
-                    </a-button>
-                  </a-tooltip>
-                  <a-tooltip title="Đổi trạng thái">
-                    <a-button
-                      type="text"
-                      class="btn-outline-warning"
-                      @click="confirmChangeStatus(record)"
-                    >
-                      <SyncOutlined />
+                      <EditFilled />
                     </a-button>
                   </a-tooltip>
                 </a-space>
@@ -403,33 +408,3 @@ onMounted(() => {
   </div>
 </template>
 
-<style scoped>
-.cart {
-  margin-top: 5px;
-}
-
-.label-title {
-  font-weight: 500;
-  margin-bottom: 5px;
-}
-
-.btn-outline-primary {
-  color: #1890ff;
-  border-color: #1890ff;
-}
-
-.btn-outline-info {
-  color: #13c2c2;
-  border-color: #13c2c2;
-}
-
-.btn-outline-warning {
-  color: #faad14;
-  border-color: #faad14;
-}
-
-.btn-outline-danger {
-  color: #ff4d4f;
-  border-color: #ff4d4f;
-}
-</style>

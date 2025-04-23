@@ -56,7 +56,7 @@ public class AFFacilityServiceImpl implements AFFacilityService {
     }
 
     @Override
-    public ResponseEntity<?> createFacility(@Valid AFCreateUpdateFacilityRequest request) {
+    public ResponseEntity<?> createFacility(AFCreateUpdateFacilityRequest request) {
         Optional<Facility> existFacility = facilityRepository.findByName(request.getFacilityName().trim());
         if (existFacility.isPresent()) {
             return new ResponseEntity<>(
@@ -86,7 +86,7 @@ public class AFFacilityServiceImpl implements AFFacilityService {
     }
 
     @Override
-    public ResponseEntity<?> updateFacility(String facilityId, @Valid AFCreateUpdateFacilityRequest request) {
+    public ResponseEntity<?> updateFacility(String facilityId, AFCreateUpdateFacilityRequest request) {
 //        if (!facilityRepository.existsByNameAndId(request.getFacilityName(), facilityId)) {
 //            return new ResponseEntity<>(
 //                    new ApiResponse(

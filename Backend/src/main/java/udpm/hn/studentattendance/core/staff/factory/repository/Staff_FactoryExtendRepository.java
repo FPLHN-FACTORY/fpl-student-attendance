@@ -21,7 +21,7 @@ public interface Staff_FactoryExtendRepository extends FactoryRepository {
             SELECT 
                 ROW_NUMBER() OVER (ORDER BY ft.created_at DESC) as rowNumber,
                 ft.id AS id,
-                ft.name AS name,
+                CONCAT(ft.name, ' - ', s.code) AS name,
                 ft.status AS factoryStatus,
                 CONCAT(p.name, ' - ', lp.name) AS projectName,           
                 sub.code AS subjectCode,
@@ -34,6 +34,7 @@ public interface Staff_FactoryExtendRepository extends FactoryRepository {
             LEFT JOIN subject sub ON sub.id = sf.id_subject
             LEFT JOIN user_staff us ON us.id = ft.id_user_staff
             LEFT JOIN facility f ON f.id = sf.id_facility
+            LEFT JOIN semester s ON s.id = p.id_semester
             WHERE
                 f.id = :facilityId
                 AND f.status = 1
@@ -43,41 +44,36 @@ public interface Staff_FactoryExtendRepository extends FactoryRepository {
                 AND f.status = 1
                 AND (:#{#staffFactoryRequest.idProject} IS NULL OR p.id = :#{#staffFactoryRequest.idProject})
                 AND (:#{#staffFactoryRequest.idStaff} IS NULL OR us.id = :#{#staffFactoryRequest.idStaff})
-                AND (:#{#staffFactoryRequest.searchQuery} IS NULL OR (
-                    ft.name LIKE CONCAT('%', :#{#staffFactoryRequest.searchQuery}, '%')
-                    OR CONCAT(p.name, ' - ', lp.name) LIKE CONCAT('%', :#{#staffFactoryRequest.searchQuery}, '%')
-                    OR sub.code LIKE CONCAT('%', :#{#staffFactoryRequest.searchQuery}, '%')
-                    OR CONCAT(us.code, ' - ', us.name) LIKE CONCAT('%', :#{#staffFactoryRequest.searchQuery}, '%')
-                ))
+                AND (:#{#staffFactoryRequest.idSemester} IS NULL OR s.id = :#{#staffFactoryRequest.idSemester})
                 AND (:#{#staffFactoryRequest.status} IS NULL OR ft.status = :#{#staffFactoryRequest.status})
+                AND (:#{#staffFactoryRequest.factoryName} IS NULL OR 
+                    CONCAT(ft.name, '-', s.code) LIKE CONCAT('%', :#{#staffFactoryRequest.factoryName}, '%'))
             ORDER BY ft.created_at DESC
             """,
             countQuery = """
-                    SELECT COUNT(*)
-                    FROM factory ft
-                    JOIN project p ON p.id = ft.id_project
-                    JOIN level_project lp ON lp.id = p.id_level_project
-                    JOIN subject_facility sf ON p.id_subject_facility = sf.id
-                    JOIN subject sub ON sub.id = sf.id_subject
-                    JOIN facility f ON f.id = sf.id_facility
-                    JOIN user_staff us ON us.id = ft.id_user_staff
-                    WHERE
-                        f.id = :facilityId
-                        AND f.status = 1
-                        AND p.status = 1
-                        AND sf.status = 1
-                        AND sub.status = 1
-                        AND f.status = 1
-                        AND (:#{#staffFactoryRequest.idProject} IS NULL OR p.id = :#{#staffFactoryRequest.idProject})
-                        AND (:#{#staffFactoryRequest.idStaff} IS NULL OR us.id = :#{#staffFactoryRequest.idStaff})
-                        AND (:#{#staffFactoryRequest.searchQuery} IS NULL OR (
-                            LOWER(ft.name) LIKE LOWER(CONCAT('%', :#{#staffFactoryRequest.searchQuery}, '%'))
-                            OR LOWER(CONCAT(p.name, ' - ', lp.name)) LIKE LOWER(CONCAT('%', :#{#staffFactoryRequest.searchQuery}, '%'))
-                            OR LOWER(sub.code) LIKE LOWER(CONCAT('%', :#{#staffFactoryRequest.searchQuery}, '%'))
-                            OR LOWER(CONCAT(us.code, ' - ', us.name)) LIKE LOWER(CONCAT('%', :#{#staffFactoryRequest.searchQuery}, '%'))
-                        ))
-                        AND (:#{#staffFactoryRequest.status} IS NULL OR ft.status = :#{#staffFactoryRequest.status})
-                    """,
+                        SELECT COUNT(*)
+                        FROM factory ft
+                        JOIN project p ON p.id = ft.id_project
+                        JOIN level_project lp ON lp.id = p.id_level_project
+                        JOIN subject_facility sf ON p.id_subject_facility = sf.id
+                        JOIN subject sub ON sub.id = sf.id_subject
+                        JOIN facility f ON f.id = sf.id_facility
+                        JOIN user_staff us ON us.id = ft.id_user_staff
+                        LEFT JOIN semester s ON s.id = p.id_semester
+                        WHERE
+                    f.id = :facilityId
+                    AND f.status = 1
+                    AND p.status = 1
+                    AND sf.status = 1
+                    AND sub.status = 1
+                    AND f.status = 1
+                    AND (:#{#staffFactoryRequest.idProject} IS NULL OR p.id = :#{#staffFactoryRequest.idProject})
+                    AND (:#{#staffFactoryRequest.idStaff} IS NULL OR us.id = :#{#staffFactoryRequest.idStaff})
+                    AND (:#{#staffFactoryRequest.idSemester} IS NULL OR s.id = :#{#staffFactoryRequest.idSemester})
+                    AND (:#{#staffFactoryRequest.factoryName} IS NULL OR 
+                        CONCAT(ft.name, '-', s.code) LIKE CONCAT('%', :#{#staffFactoryRequest.factoryName}, '%')
+                    AND (:#{#staffFactoryRequest.status} IS NULL OR ft.status = :#{#staffFactoryRequest.status})
+                        """,
             nativeQuery = true)
     Page<Staff_FactoryResponse> getAllFactory(Pageable pageable, String facilityId, Staff_FactoryRequest staffFactoryRequest);
 
@@ -134,4 +130,23 @@ public interface Staff_FactoryExtendRepository extends FactoryRepository {
                             """
     )
     List<Factory> getAllFactoryBySemester(String facilityId, String semesterId);
+
+    @Query
+            (value =
+                    """
+                        SELECT 
+                        CASE WHEN COUNT(*) >= 3 THEN 'TRUE' ELSE 'FALSE' END 
+                        FROM 
+                        factory ft
+                        LEFT JOIN
+                        project p ON p.id = ft.id_project
+                        LEFT JOIN
+                        semester s ON s.id = p.id_semester
+                        WHERE
+                        ft.id_user_staff = :userStaffId
+                        AND 
+                        p.id_semester = :semesterId
+                                                
+                            """, nativeQuery = true)
+    boolean isTeacherJoinThanThreeFactory(String userStaffId, String semesterId);
 }
