@@ -96,6 +96,20 @@ hr {
   overflow: hidden;
 }
 
+.ant-pagination {
+  .ant-pagination-item-active {
+    a {
+      color: #fff;
+    }
+    &:hover {
+      a {
+        color: #fff;
+      }
+    }
+    background-color: #41395b;
+  }
+}
+
 .ant-spin-nested-loading > div > .ant-spin.fullscreen-spin {
   position: fixed;
   top: 0;

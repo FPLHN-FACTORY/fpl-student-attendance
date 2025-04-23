@@ -7,7 +7,7 @@ public interface Teacher_TeachingScheduleResponse {
 
     Long getTeachingDay();
 
-    Integer getShift();
+    String getShift();
 
     String getSubjectCode();
 
