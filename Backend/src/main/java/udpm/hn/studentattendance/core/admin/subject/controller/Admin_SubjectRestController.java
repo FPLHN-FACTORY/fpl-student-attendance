@@ -17,8 +17,8 @@ public class Admin_SubjectRestController {
     @Autowired
     private Admin_SubjectManagementService service;
 
-    @PostMapping("/list")
-    public ResponseEntity<?> getListSubject(@RequestBody Admin_SubjectSearchRequest request) {
+    @GetMapping("/list")
+    public ResponseEntity<?> getListSubject(Admin_SubjectSearchRequest request) {
         return PaginationHelper.createResponseEntity(service.getListSubject(request));
     }
 

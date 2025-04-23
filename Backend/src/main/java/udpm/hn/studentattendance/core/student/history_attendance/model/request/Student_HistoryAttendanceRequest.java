@@ -27,3 +27,4 @@ public class Student_HistoryAttendanceRequest extends PageableRequest {
         return (studentFactoryId == null || studentFactoryId.trim().isEmpty()) ? null : studentFactoryId;
     }
 }
+
