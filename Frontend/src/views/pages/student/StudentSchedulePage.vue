@@ -8,6 +8,10 @@ import { DEFAULT_PAGINATION } from '@/constants'
 import { onMounted, ref } from 'vue'
 import useLoadingStore from '@/stores/useLoadingStore'
 import { Modal } from 'ant-design-vue'
+import * as XLSX from 'xlsx'
+import jsPDF from 'jspdf'
+import autoTable from 'jspdf-autotable'
+
 
 const breadcrumbStore = useBreadcrumbStore()
 
@@ -43,14 +47,13 @@ const getCurrentTimestamp = () => Date.now()
 
 const convertTime = () => {
   const currentTimestamp = getCurrentTimestamp()
-  if (filter.value.plan === '') {
-    return currentTimestamp + 7 * 24 * 60 * 60 * 1000 // 7 ngày
-  } else if (filter.value.plan === 14) {
-    return currentTimestamp + 14 * 24 * 60 * 60 * 1000 // 14 ngày
-  } else {
-    return currentTimestamp + 30 * 24 * 60 * 60 * 1000 // 30 ngày
+  const plan = filter.value.plan
+  if (!plan) {
+    return currentTimestamp + 7 * 24 * 60 * 60 * 1000
   }
+  return currentTimestamp + plan * 24 * 60 * 60 * 1000
 }
+
 
 const fetchAttendanceList = () => {
   loadingStore.show()
@@ -98,7 +101,44 @@ const formatDate = (timestamp) => {
   if (!timestamp) return 'Không xác định'
   return new Date(timestamp).toLocaleString()
 }
+const exportToExcel = () => {
+  const worksheet = XLSX.utils.json_to_sheet(attendanceList.value.map((item, index) => ({
+    STT: index + 1,
+    'Ngày điểm danh': formatDate(item.attendanceDay),
+    'Ca': 'Ca ' + item.shift,
+    'Nhóm xưởng': item.factoryName,
+    'Dự án': item.projectName,
+    'Tên môn học': item.subjectName,
+    'Tên giảng viên': item.staffName,
+    'Mô tả': item.description || '',
+  })))
+  const workbook = XLSX.utils.book_new()
+  XLSX.utils.book_append_sheet(workbook, worksheet, 'DanhSach')
+  XLSX.writeFile(workbook, 'DiemDanh.xlsx')
+}
+
+const exportToPDF = () => {
+  const doc = new jsPDF()
+  const rows = attendanceList.value.map((item, index) => [
+    index + 1,
+    formatDate(item.attendanceDay),
+    'Ca ' + item.shift,
+    item.factoryName,
+    item.projectName,
+    item.subjectName,
+    item.staffName,
+    item.description || '',
+  ])
+  autoTable(doc, {
+    head: [['STT', 'Ngày điểm danh', 'Ca', 'Nhóm xưởng', 'Dự án', 'Môn học', 'Giảng viên', 'Mô tả']],
+    body: rows,
+    startY: 20,
+  })
+  doc.save('DiemDanh.pdf')
+}
+
 onMounted(() => {
+  filter.value.plan = 7
   breadcrumbStore.setRoutes(breadcrumb.value)
   fetchAttendanceList()
 })
@@ -120,15 +160,27 @@ onMounted(() => {
                   style="width: 100%"
                   @change="fetchAttendanceList"
                 >
-                  <a-select-option :value="''">7 ngày tới</a-select-option>
+                  <a-select-option :value="-90">90 ngày trước</a-select-option>
+                  <a-select-option :value="-30">30 ngày trước</a-select-option>
+                  <a-select-option :value="-14">14 ngày trước</a-select-option>
+                  <a-select-option :value="-7">7 ngày trước</a-select-option>
+                  <a-select-option :value="7">7 ngày tới</a-select-option>
                   <a-select-option :value="14">14 ngày tới</a-select-option>
                   <a-select-option :value="30">30 ngày tới</a-select-option>
+                  <a-select-option :value="90">90 ngày tới</a-select-option>
                 </a-select>
               </a-col>
             </a-row>
           </a-card>
 
           <a-card title="Danh sách điểm danh" :bordered="false" class="cart">
+            <div class="d-flex justify-content-end mb-3">
+            <a-tooltip title="Thêm cấp dự án">
+              <a-button type="primary" @click="exportToExcel">Tải xuống Excel</a-button>
+              <a-button type="default" @click="exportToPDF">Tải xuống PDF</a-button>
+            </a-tooltip>
+          </div>
+
             <a-table
               :dataSource="attendanceList"
               :columns="columns"

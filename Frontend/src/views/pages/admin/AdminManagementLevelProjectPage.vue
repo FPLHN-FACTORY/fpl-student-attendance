@@ -6,7 +6,6 @@ import {
   PlusOutlined,
   EyeOutlined,
   EditOutlined,
-  DeleteOutlined,
   UnorderedListOutlined,
   FilterFilled,
   SyncOutlined,
@@ -26,7 +25,7 @@ const levels = ref([])
 
 const filter = reactive({
   name: '',
-  status: null, // Sử dụng null thay vì chuỗi rỗng để phù hợp với số
+  status: null,
 })
 
 const pagination = reactive({
@@ -69,7 +68,7 @@ const breadcrumb = ref([
   },
   {
     name: ROUTE_NAMES.MANAGEMENT_LEVEL_PROJECT,
-    breadcrumbName: 'Học kỳ',
+    breadcrumbName: 'Cấp dự án',
   },
 ])
 
@@ -85,8 +84,6 @@ const fetchLevels = () => {
       },
     })
     .then((response) => {
-      console.log(filter);
-      
       const result = response.data.data
       levels.value = result.data
       // Tổng số bản ghi
@@ -118,6 +115,10 @@ const handleTableChange = (pageInfo) => {
 const submitAddLevel = () => {
   if (!newLevel.name || !newLevel.name.trim()) {
     message.error('Vui lòng nhập tên cấp dự án')
+    return
+  }
+  if (!newLevel.code || !newLevel.code.trim()) {
+    message.error('Vui lòng nhập mã cấp dự án')
     return
   }
   loadingStore.show()
@@ -172,6 +173,10 @@ const prepareUpdateLevel = (record) => {
 const submitUpdateLevel = () => {
   if (!detailLevel.name) {
     message.error('Vui lòng nhập tên cấp dự án')
+    return
+  }
+  if (!detailLevel.code) {
+    message.error('Vui lòng nhập mã cấp dự án')
     return
   }
   loadingStore.show()
@@ -240,11 +245,11 @@ onMounted(() => {
   <!-- Modal Thêm cấp dự án -->
   <a-modal v-model:open="modalAdd" title="Thêm cấp dự án" @ok="submitAddLevel">
     <a-form :model="newLevel" layout="vertical">
+      <a-form-item label="Mã cấp dự án" required>
+        <a-input v-model:value="newLevel.code" placeholder="Nhập mã cấp dự án" />
+      </a-form-item>
       <a-form-item label="Tên cấp dự án" required>
         <a-input v-model:value="newLevel.name" placeholder="Nhập tên cấp dự án" />
-      </a-form-item>
-      <a-form-item label="Mã cấp dự án">
-        <a-input v-model:value="newLevel.code" placeholder="Nhập mã cấp dự án" />
       </a-form-item>
       <a-form-item label="Mô tả">
         <a-textarea v-model:value="newLevel.description" placeholder="Nhập mô tả" :rows="4" />
@@ -255,11 +260,11 @@ onMounted(() => {
   <!-- Modal Cập nhật cấp dự án -->
   <a-modal v-model:open="modalUpdate" title="Cập nhật cấp dự án" @ok="submitUpdateLevel">
     <a-form :model="detailLevel" layout="vertical">
+      <a-form-item label="Mã cấp dự án" required>
+        <a-input v-model:value="detailLevel.code" placeholder="Nhập mã cấp dự án" />
+      </a-form-item>
       <a-form-item label="Tên cấp dự án" required>
         <a-input v-model:value="detailLevel.name" placeholder="Nhập tên cấp dự án" />
-      </a-form-item>
-      <a-form-item label="Mã cấp dự án">
-        <a-input v-model:value="detailLevel.code" placeholder="Nhập mã cấp dự án" />
       </a-form-item>
       <a-form-item label="Mô tả">
         <a-textarea v-model:value="detailLevel.description" placeholder="Nhập mô tả" :rows="4" />
@@ -276,8 +281,8 @@ onMounted(() => {
   <!-- Modal Xem chi tiết cấp dự án -->
   <a-modal v-model:open="modalDetail" title="Chi tiết cấp dự án" :footer="null">
     <a-descriptions bordered :column="1">
-      <a-descriptions-item label="Tên">{{ detailLevel.name }}</a-descriptions-item>
       <a-descriptions-item label="Mã">{{ detailLevel.code }}</a-descriptions-item>
+      <a-descriptions-item label="Tên">{{ detailLevel.name }}</a-descriptions-item>
       <a-descriptions-item label="Mô tả">{{ detailLevel.description }}</a-descriptions-item>
       <a-descriptions-item label="Trạng thái">
         <a-tag :color="getStatusColor(detailLevel.status)">
