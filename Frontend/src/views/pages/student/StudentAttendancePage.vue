@@ -2,6 +2,7 @@
 import {
   ATTENDANCE_STATUS,
   DEFAULT_DATE_FORMAT,
+  DEFAULT_EARLY_MINUTE_CHECKIN,
   DEFAULT_PAGINATION,
   SHIFT,
   TYPE_SHIFT,
@@ -388,15 +389,17 @@ watch(
             <template #bodyCell="{ column, record }">
               <template v-if="column.dataIndex === 'shift'">
                 <a-tag :color="record.type === 1 ? 'blue' : 'purple'">
-                  {{ `${SHIFT[record.shift]} - ${TYPE_SHIFT[record.type]}` }}
+                  {{
+                    `Ca ${record.shift
+                      .split(',')
+                      .map((o) => Number(o))
+                      .join(', ')} - ${TYPE_SHIFT[record.type]}`
+                  }}
                 </a-tag>
               </template>
-              <template v-if="column.dataIndex === 'date'">
+              <template v-if="column.dataIndex === 'startDate'">
                 {{
-                  `${dayOfWeek(record.startDate)} - ${formatDate(
-                    record.startDate,
-                    DEFAULT_DATE_FORMAT + ' HH:mm',
-                  )}`
+                  `${formatDate(record.startDate, 'HH:mm')} - ${formatDate(record.endDate, 'HH:mm')}`
                 }}
               </template>
               <template v-if="column.dataIndex === 'status'">
@@ -416,7 +419,7 @@ watch(
                 <span
                   v-if="
                     record.status == ATTENDANCE_STATUS.NOTCHECKIN.id &&
-                    Date.now() <= record.startDate - 10 * 60 * 1000
+                    Date.now() <= record.startDate - DEFAULT_EARLY_MINUTE_CHECKIN * 60 * 1000
                   "
                   ><a-badge status="warning"></a-badge>Chưa đến giờ checkin</span
                 >

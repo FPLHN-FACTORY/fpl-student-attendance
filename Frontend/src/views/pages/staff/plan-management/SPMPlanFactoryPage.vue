@@ -40,6 +40,7 @@ const modalAdd = reactive({
   isLoading: false,
   okText: 'Xác nhận',
   cancelText: 'Huỷ bỏ',
+  width: 800,
   onOk: () => handleSubmitAdd(),
 })
 
@@ -83,7 +84,7 @@ const formDataAdd = reactive({
   idFactory: null,
   type: Object.keys(TYPE_SHIFT)[0],
   days: [],
-  shift: null,
+  shift: [],
   link: null,
   requiredLocation: STATUS_TYPE.ENABLE,
   requiredIp: STATUS_TYPE.ENABLE,
@@ -272,7 +273,7 @@ const handleShowModalAdd = () => {
   formDataAdd.idFactory = null
   formDataAdd.type = Object.keys(TYPE_SHIFT)[0]
   formDataAdd.lateArrival = DEFAULT_LATE_ARRIVAL
-  formDataAdd.shift = null
+  formDataAdd.shift = []
   formDataAdd.days = []
   formDataAdd.link = null
   formDataAdd.requiredLocation = STATUS_TYPE.ENABLE
@@ -370,7 +371,20 @@ watch(
           </a-select-option>
         </a-select>
       </a-form-item>
-      <a-form-item class="col-sm-3" label="Hình thức học" name="type" :rules="formRules.type">
+      <a-form-item class="col-sm-12" label="Ca học" name="shift" :rules="formRules.shift">
+        <a-select
+          class="w-100"
+          v-model:value="formDataAdd.shift"
+          :disabled="modalAdd.isLoading"
+          mode="multiple"
+          allow-clear
+        >
+          <a-select-option v-for="o in lstShift" :key="o.id" :value="o.shift">
+            {{ SHIFT[o.shift] }}
+          </a-select-option>
+        </a-select>
+      </a-form-item>
+      <a-form-item class="col-sm-4" label="Hình thức học" name="type" :rules="formRules.type">
         <a-select
           v-model:value="formDataAdd.type"
           class="w-100"
@@ -382,15 +396,8 @@ watch(
           </a-select-option>
         </a-select>
       </a-form-item>
-      <a-form-item class="col-sm-3" label="Ca học" name="shift" :rules="formRules.shift">
-        <a-select class="w-100" v-model:value="formDataAdd.shift" :disabled="modalAdd.isLoading">
-          <a-select-option v-for="o in lstShift" :key="o.id" :value="o.shift">
-            {{ SHIFT[o.shift] }}
-          </a-select-option>
-        </a-select>
-      </a-form-item>
       <a-form-item
-        class="col-sm-6"
+        class="col-sm-8"
         label="Điểm danh muộn tối đa (phút)"
         name="lateArrival"
         :rules="formRules.lateArrival"
