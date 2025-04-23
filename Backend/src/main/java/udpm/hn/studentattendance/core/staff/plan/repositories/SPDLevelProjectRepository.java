@@ -11,15 +11,15 @@ import java.util.List;
 public interface SPDLevelProjectRepository extends LevelProjectRepository {
 
     @Query(value = """
-        SELECT 
-            id,
-            name,
-            code
-        FROM level_project 
-        WHERE
-            status = 1
-        ORDER BY name ASC
-    """, nativeQuery = true)
+                SELECT
+                    id,
+                    name,
+                    code
+                FROM level_project
+                WHERE
+                    status = 1
+                ORDER BY name ASC
+            """, nativeQuery = true)
     List<SPDLevelProjectResponse> getAll();
 
 }

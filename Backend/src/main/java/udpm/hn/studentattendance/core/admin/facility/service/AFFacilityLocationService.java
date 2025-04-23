@@ -4,7 +4,6 @@ import org.springframework.http.ResponseEntity;
 import udpm.hn.studentattendance.core.admin.facility.model.request.AFAddOrUpdateFacilityLocationRequest;
 import udpm.hn.studentattendance.core.admin.facility.model.request.AFFilterFacilityLocationRequest;
 
-
 public interface AFFacilityLocationService {
 
     ResponseEntity<?> getAllList(AFFilterFacilityLocationRequest request);

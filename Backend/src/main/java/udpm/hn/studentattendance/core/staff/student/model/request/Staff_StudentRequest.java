@@ -14,5 +14,4 @@ public class Staff_StudentRequest extends PageableRequest {
 
     private EntityStatus studentStatus;
 
-
 }

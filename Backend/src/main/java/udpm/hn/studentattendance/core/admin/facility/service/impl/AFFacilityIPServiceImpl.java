@@ -12,8 +12,6 @@ import udpm.hn.studentattendance.core.admin.facility.repository.AFFacilityIPRepo
 import udpm.hn.studentattendance.core.admin.facility.service.AFFacilityIPService;
 import udpm.hn.studentattendance.entities.Facility;
 import udpm.hn.studentattendance.entities.FacilityIP;
-import udpm.hn.studentattendance.entities.Plan;
-import udpm.hn.studentattendance.entities.Semester;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
 import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.helpers.ValidateHelper;
@@ -21,7 +19,6 @@ import udpm.hn.studentattendance.infrastructure.common.ApiResponse;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.IPType;
-import udpm.hn.studentattendance.utils.DateTimeUtils;
 
 @Service
 @RequiredArgsConstructor
@@ -59,7 +56,8 @@ public class AFFacilityIPServiceImpl implements AFFacilityIPService {
     @Override
     public ResponseEntity<?> getAllList(AFFilterFacilityIPRequest request) {
         Pageable pageable = PaginationHelper.createPageable(request);
-        PageableObject<AFFacilityIPResponse> data = PageableObject.of(afFacilityIPRepository.getAllByFilter(pageable, request));
+        PageableObject<AFFacilityIPResponse> data = PageableObject
+                .of(afFacilityIPRepository.getAllByFilter(pageable, request));
         return RouterHelper.responseSuccess("Lấy danh sách dữ liệu thành công", data);
     }
 
@@ -73,7 +71,8 @@ public class AFFacilityIPServiceImpl implements AFFacilityIPService {
         }
 
         if (afFacilityIPRepository.isExistsIP(request.getIp(), request.getType(), request.getIdFacility(), null)) {
-            return RouterHelper.responseError("IP " + request.getIp() + " đã tồn tại trong cơ sở " + facility.getName());
+            return RouterHelper
+                    .responseError("IP " + request.getIp() + " đã tồn tại trong cơ sở " + facility.getName());
         }
 
         IPType type = IPType.fromKey(request.getType());
@@ -105,8 +104,10 @@ public class AFFacilityIPServiceImpl implements AFFacilityIPService {
             return RouterHelper.responseError("Không tìm cơ sở");
         }
 
-        if (afFacilityIPRepository.isExistsIP(request.getIp(), request.getType(), request.getIdFacility(), facilityIP.getId())) {
-            return RouterHelper.responseError("IP " + request.getIp() + " đã tồn tại trong cơ sở " + facility.getName());
+        if (afFacilityIPRepository.isExistsIP(request.getIp(), request.getType(), request.getIdFacility(),
+                facilityIP.getId())) {
+            return RouterHelper
+                    .responseError("IP " + request.getIp() + " đã tồn tại trong cơ sở " + facility.getName());
         }
 
         IPType type = IPType.fromKey(request.getType());
@@ -141,12 +142,15 @@ public class AFFacilityIPServiceImpl implements AFFacilityIPService {
             return RouterHelper.responseError("Không tìm thấy IP");
         }
 
-        if (facilityIP.getStatus() == EntityStatus.INACTIVE && afFacilityIPRepository.isExistsIP(facilityIP.getIp(), facilityIP.getType().getKey(), facilityIP.getFacility().getId(), facilityIP.getId())) {
+        if (facilityIP.getStatus() == EntityStatus.INACTIVE && afFacilityIPRepository.isExistsIP(facilityIP.getIp(),
+                facilityIP.getType().getKey(), facilityIP.getFacility().getId(), facilityIP.getId())) {
             return RouterHelper.responseError("IP " + facilityIP.getIp() + " đã được áp dụng trong cơ sở");
         }
 
-        facilityIP.setStatus(facilityIP.getStatus() == EntityStatus.ACTIVE ? EntityStatus.INACTIVE : EntityStatus.ACTIVE);
-        return RouterHelper.responseSuccess("Thay đổi trạng thái IP thành công", afFacilityIPRepository.save(facilityIP));
+        facilityIP
+                .setStatus(facilityIP.getStatus() == EntityStatus.ACTIVE ? EntityStatus.INACTIVE : EntityStatus.ACTIVE);
+        return RouterHelper.responseSuccess("Thay đổi trạng thái IP thành công",
+                afFacilityIPRepository.save(facilityIP));
     }
 
 }

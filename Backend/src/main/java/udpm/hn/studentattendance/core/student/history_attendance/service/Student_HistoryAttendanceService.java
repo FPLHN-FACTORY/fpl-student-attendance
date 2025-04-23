@@ -16,6 +16,7 @@ public interface Student_HistoryAttendanceService {
 
     ResponseEntity<?> getAllFactoryByUserStudent();
 
-    ByteArrayInputStream exportHistoryAttendance(List<Student_HistoryAttendanceResponse> attendanceResponses, String factoryName);
+    ByteArrayInputStream exportHistoryAttendance(List<Student_HistoryAttendanceResponse> attendanceResponses,
+            String factoryName);
 
 }

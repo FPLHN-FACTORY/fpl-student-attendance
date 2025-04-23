@@ -64,7 +64,8 @@ public class AdminProjectExcel {
         return ResponseEntity.ok()
                 .headers(headers)
                 .contentLength(resource.contentLength())
-                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .contentType(
+                        MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
                 .body(inputStreamResource);
     }
 
@@ -105,21 +106,22 @@ public class AdminProjectExcel {
     // Phương thức hỗ trợ để lấy giá trị chuỗi từ ô
     private String getCellStringValue(Cell cell) {
         if (cell != null) {
-            return cell.getCellType() == CellType.STRING ? cell.getStringCellValue() : String.valueOf(cell.getNumericCellValue());
+            return cell.getCellType() == CellType.STRING ? cell.getStringCellValue()
+                    : String.valueOf(cell.getNumericCellValue());
         }
         return null; // Hoặc có thể trả về một giá trị mặc định như ""
     }
 
-
-    private Project convertProjectImport(ProjectAddImport projectAddImport){
+    private Project convertProjectImport(ProjectAddImport projectAddImport) {
         Project project = new Project();
         project.setName(projectAddImport.getName());
         project.setDescription(projectAddImport.getDescription());
         project.setLevelProject(levelProjectRepository.getLevelProject(projectAddImport.getLevelProjectCode()));
         project.setSemester(semesterRepository.getSemester(projectAddImport.getSemesterCode()));
         project.setSubjectFacility(subjectFacilityRepository.findById(
-                subjectManagementRepository.getSubjectFacilityImport(projectAddImport.getSubjectCode(),projectAddImport.getFacilityCode())).get()
-        );
+                subjectManagementRepository.getSubjectFacilityImport(projectAddImport.getSubjectCode(),
+                        projectAddImport.getFacilityCode()))
+                .get());
         project.setStatus(EntityStatus.ACTIVE);
         return project;
     }

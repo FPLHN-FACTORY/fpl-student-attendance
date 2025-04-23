@@ -17,5 +17,4 @@ public interface Staff_StudentFactoryResponse {
 
     Integer getStatusStudentFactory();
 
-
 }

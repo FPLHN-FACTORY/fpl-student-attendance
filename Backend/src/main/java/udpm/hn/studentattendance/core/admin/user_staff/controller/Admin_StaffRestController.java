@@ -32,7 +32,7 @@ public class Admin_StaffRestController {
 
     @PutMapping("/{id}")
     public ResponseEntity<?> updateStaff(@Valid @RequestBody Admin_CreateUpdateStaffRequest createUpdateStaffRequest,
-                                         @PathVariable(name = "id") String id) {
+            @PathVariable(name = "id") String id) {
         return adStaffService.updateStaff(createUpdateStaffRequest, id);
     }
 

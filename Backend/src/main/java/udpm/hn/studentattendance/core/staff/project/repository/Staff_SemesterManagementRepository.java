@@ -11,7 +11,7 @@ import java.util.List;
 public interface Staff_SemesterManagementRepository extends ProjectRepository {
 
     @Query(value = """
-                SELECT 
+                SELECT
                     ROW_NUMBER() OVER (ORDER BY s.created_at DESC) AS indexs,
                     s.id AS id,
                     s.name AS name,

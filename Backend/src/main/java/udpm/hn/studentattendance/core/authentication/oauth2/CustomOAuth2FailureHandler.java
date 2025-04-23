@@ -23,7 +23,8 @@ public class CustomOAuth2FailureHandler implements AuthenticationFailureHandler 
     private final HttpSession httpSession;
 
     @Override
-    public void onAuthenticationFailure(HttpServletRequest request, HttpServletResponse response, AuthenticationException exception) throws IOException {
+    public void onAuthenticationFailure(HttpServletRequest request, HttpServletResponse response,
+            AuthenticationException exception) throws IOException {
 
         ObjectMapper mapper = new ObjectMapper();
         String json = mapper.writeValueAsString(ApiResponse.error(exception.getMessage()));

@@ -40,25 +40,24 @@ public interface Student_ScheduleAttendanceRepository extends FacilityRepository
                         )
                     AND pd.start_date BETWEEN UNIX_TIMESTAMP(CURDATE()) * 1000 AND :#{#request.max}
             ORDER BY pd.start_date
-            """,
-            countQuery = """
-                    SELECT COUNT(*) FROM plan_date pd
-                    LEFT JOIN plan_factory pdf ON pdf.id = pd.id_plan_factory
-                           LEFT JOIN plan pl ON pl.id = pdf.id_plan
-                           LEFT JOIN factory f ON pdf.id_factory = f.id
-                           LEFT JOIN project p ON f.id_project = p.id
-                           LEFT JOIN user_staff us ON f.id_user_staff = us.id
-                           LEFT JOIN subject_facility sf ON p.id_subject_facility = sf.id
-                           LEFT JOIN subject s ON sf.id_subject = s.id
-                    WHERE
-                        f.id IN (
-                            SELECT id_factory
-                            FROM user_student_factory
-                            WHERE id_user_student = :#{#request.idStudent}
-                        )
-                    AND pd.start_date BETWEEN UNIX_TIMESTAMP(CURDATE()) AND :#{#request.max}
-                    """,
-            nativeQuery = true)
-    Page<Student_ScheduleAttendanceResponse> getAllListAttendanceByUser(Pageable pageable, @Param("request") Student_ScheduleAttendanceSearchRequest request);
+            """, countQuery = """
+            SELECT COUNT(*) FROM plan_date pd
+            LEFT JOIN plan_factory pdf ON pdf.id = pd.id_plan_factory
+                   LEFT JOIN plan pl ON pl.id = pdf.id_plan
+                   LEFT JOIN factory f ON pdf.id_factory = f.id
+                   LEFT JOIN project p ON f.id_project = p.id
+                   LEFT JOIN user_staff us ON f.id_user_staff = us.id
+                   LEFT JOIN subject_facility sf ON p.id_subject_facility = sf.id
+                   LEFT JOIN subject s ON sf.id_subject = s.id
+            WHERE
+                f.id IN (
+                    SELECT id_factory
+                    FROM user_student_factory
+                    WHERE id_user_student = :#{#request.idStudent}
+                )
+            AND pd.start_date BETWEEN UNIX_TIMESTAMP(CURDATE()) AND :#{#request.max}
+            """, nativeQuery = true)
+    Page<Student_ScheduleAttendanceResponse> getAllListAttendanceByUser(Pageable pageable,
+            @Param("request") Student_ScheduleAttendanceSearchRequest request);
 
 }
