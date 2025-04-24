@@ -60,7 +60,7 @@ const useAuthStore = defineStore('authUser', () => {
     setUser({
       ...user.value,
       ...data,
-      picture: user.value.picture,
+      picture: data?.picture || user.value.picture,
       role: user.value.role,
     })
   }
