@@ -33,7 +33,6 @@ public class SPDAddPlanFactoryRequest {
     private List<Integer> shift;
 
     @Min(value = 0, message = "Thời gian điểm danh muộn nhất phải lớn hơn 0")
-    @Max(value = 60, message = "Thời gian điểm danh muộn nhất không quá 60 phút")
     private Integer lateArrival;
 
 }
