@@ -282,7 +282,7 @@ watch(
                     class="notification-content_body-item"
                     v-for="o in applicationStore.lstNotification"
                     :key="o.id"
-                    @click="applicationStore.markRead(o.id)"
+                    @click="applicationStore.markRead(o)"
                   >
                     <a-badge status="processing" />
                     <span class="notification-time">
