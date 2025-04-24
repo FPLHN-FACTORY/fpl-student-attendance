@@ -17,6 +17,7 @@ import udpm.hn.studentattendance.core.authentication.services.AuthenticationServ
 import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.infrastructure.common.ApiResponse;
 import udpm.hn.studentattendance.infrastructure.constants.RoutesConstant;
+import udpm.hn.studentattendance.utils.AppUtils;
 
 import java.util.Map;
 
@@ -26,6 +27,12 @@ import java.util.Map;
 public class AuthenticationRestController {
 
     private final AuthenticationService authenticationService;
+
+    @PostMapping(RouteAuthenticationConstant.API_CONVERT_IMAGE_TO_BASE64)
+    public ResponseEntity<ApiResponse> getAvatar(@RequestBody Map<String, String> requestBody) {
+        String urlImage = requestBody.get("url_image");
+        return RouterHelper.responseSuccess("Lấy dữ liệu avatar thành công", AppUtils.imageUrlToBase64(urlImage));
+    }
 
     @GetMapping(RouteAuthenticationConstant.API_GET_ALL_FACILITY)
     public ResponseEntity<ApiResponse> getAllFacility() {
