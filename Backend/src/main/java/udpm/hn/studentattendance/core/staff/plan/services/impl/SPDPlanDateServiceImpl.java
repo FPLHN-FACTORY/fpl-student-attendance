@@ -2,6 +2,7 @@ package udpm.hn.studentattendance.core.staff.plan.services.impl;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -50,6 +51,9 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
 
     private final SessionHelper sessionHelper;
 
+    @Value("${app.config.shift.max-late-arrival}")
+    private int MAX_LATE_ARRIVAL;
+
     @Override
     public ResponseEntity<?> getDetail(String idPlanFactory) {
         Optional<SPDPlanFactoryResponse> data = spdPlanFactoryRepository.getDetail(idPlanFactory, sessionHelper.getFacilityId());
@@ -96,6 +100,10 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
     @Override
     public ResponseEntity<?> updatePlanDate(SPDAddOrUpdatePlanDateRequest request) {
         request.setIdFacility(sessionHelper.getFacilityId());
+
+        if (request.getLateArrival() > MAX_LATE_ARRIVAL) {
+            return RouterHelper.responseError("Thời gian điểm danh muộn nhất không quá " + MAX_LATE_ARRIVAL + " phút");
+        }
 
         PlanDate planDate = spdPlanDateRepository.findById(request.getId()).orElse(null);
 
@@ -186,6 +194,10 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
     @Override
     public ResponseEntity<?> addPlanDate(SPDAddOrUpdatePlanDateRequest request) {
         request.setIdFacility(sessionHelper.getFacilityId());
+
+        if (request.getLateArrival() > MAX_LATE_ARRIVAL) {
+            return RouterHelper.responseError("Thời gian điểm danh muộn nhất không quá " + MAX_LATE_ARRIVAL + " phút");
+        }
 
         PlanFactory planFactory = spdPlanFactoryRepository.findById(request.getIdPlanFactory()).orElse(null);
 
