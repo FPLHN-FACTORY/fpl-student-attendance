@@ -197,7 +197,6 @@ public class EXPlanDateServiceImpl implements EXPlanDateService {
 
             Sheet templateSheet = ExcelUtils.createTemplate(workbook, "Data Import", headers, new ArrayList<>());
             ExcelUtils.addDateValidation(templateSheet, firstRow, lastRow, 0, "dd/MM/yyyy", "01/01/1900", "31/12/9999");
-            ExcelUtils.addIntegerValidation(templateSheet, firstRow, lastRow, 3);
             ExcelUtils.addListValidation(templateSheet, firstRow, lastRow, 1, lstShiftType);
             ExcelUtils.addListValidation(templateSheet, firstRow, lastRow, 2, lstShift);
             ExcelUtils.addListValidation(templateSheet, firstRow, lastRow, 3, lstShift);
