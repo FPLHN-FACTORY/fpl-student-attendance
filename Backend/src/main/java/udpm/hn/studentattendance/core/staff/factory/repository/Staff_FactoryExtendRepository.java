@@ -68,7 +68,7 @@ public interface Staff_FactoryExtendRepository extends FactoryRepository {
                         AND (:#{#staffFactoryRequest.idStaff} IS NULL OR us.id = :#{#staffFactoryRequest.idStaff})
                         AND (:#{#staffFactoryRequest.idSemester} IS NULL OR s.id = :#{#staffFactoryRequest.idSemester})
                         AND (:#{#staffFactoryRequest.factoryName} IS NULL OR
-                            CONCAT(ft.name, '-', s.code) LIKE CONCAT('%', :#{#staffFactoryRequest.factoryName}, '%')
+                            CONCAT(ft.name, '-', s.code) LIKE CONCAT('%', :#{#staffFactoryRequest.factoryName}, '%'))
                         AND (:#{#staffFactoryRequest.status} IS NULL OR ft.status = :#{#staffFactoryRequest.status})
                             """, nativeQuery = true)
         Page<Staff_FactoryResponse> getAllFactory(Pageable pageable, String facilityId,
