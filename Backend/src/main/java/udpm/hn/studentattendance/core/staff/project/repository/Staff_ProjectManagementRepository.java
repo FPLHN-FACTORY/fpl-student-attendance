@@ -15,7 +15,7 @@ import java.util.Optional;
 public interface Staff_ProjectManagementRepository extends ProjectRepository {
 
     @Query(value = """
-                    SELECT 
+                    SELECT
                         ROW_NUMBER() OVER (ORDER BY p.created_at DESC) AS indexs,
                         p.id AS id,
                         p.name AS name,
@@ -40,7 +40,7 @@ public interface Staff_ProjectManagementRepository extends ProjectRepository {
                     )
                     ORDER BY p.created_at DESC
             """, countQuery = """
-                    SELECT 
+                    SELECT
                        COUNT(*)
                     FROM project p
                     LEFT JOIN level_project lp ON p.id_level_project = lp.id
@@ -59,9 +59,8 @@ public interface Staff_ProjectManagementRepository extends ProjectRepository {
             """, nativeQuery = true)
     Page<Staff_ProjectResponse> getListProject(Pageable pageable, @Param("request") Staff_ProjectSearchRequest request);
 
-
     @Query(value = """
-                SELECT\s
+                SELECT
                                      p.id as id,
                                      p.name as name,
                                      s.name as nameSemester,

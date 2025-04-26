@@ -36,7 +36,8 @@ public class AuthenticationRestController {
 
     @GetMapping(RouteAuthenticationConstant.API_GET_ALL_FACILITY)
     public ResponseEntity<ApiResponse> getAllFacility() {
-        ApiResponse response = ApiResponse.success("Tải dữ liệu danh sách cơ sở thành công", authenticationService.getAllFacility());
+        ApiResponse response = ApiResponse.success("Tải dữ liệu danh sách cơ sở thành công",
+                authenticationService.getAllFacility());
         return RouterHelper.createResponseApi(response, HttpStatus.OK);
     }
 

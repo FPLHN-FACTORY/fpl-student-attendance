@@ -50,9 +50,10 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
         RoleConstant roleCode;
         try {
-             roleCode = RoleConstant.valueOf(role.toUpperCase());
+            roleCode = RoleConstant.valueOf(role.toUpperCase());
         } catch (Exception e) {
-            throw new OAuth2AuthenticationException(new OAuth2Error("invalid_role", "Role đăng nhập không hợp lệ: " + role, null));
+            throw new OAuth2AuthenticationException(
+                    new OAuth2Error("invalid_role", "Role đăng nhập không hợp lệ: " + role, null));
         }
 
         Set<RoleConstant> roles = new HashSet<>();
@@ -60,9 +61,11 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         switch (roleCode) {
 
             case ADMIN:
-                Optional<UserAdmin> userAdmin = authenticationUserAdminRepository.findByEmail(customOAuth2User.getEmail());
+                Optional<UserAdmin> userAdmin = authenticationUserAdminRepository
+                        .findByEmail(customOAuth2User.getEmail());
                 if (userAdmin.isEmpty()) {
-                    throw new OAuth2AuthenticationException(new OAuth2Error("login_failed", "Đăng nhập ban đào tạo thất bại", null));
+                    throw new OAuth2AuthenticationException(
+                            new OAuth2Error("login_failed", "Đăng nhập ban đào tạo thất bại", null));
                 }
                 customOAuth2User.setId(userAdmin.get().getId());
                 customOAuth2User.setCode(userAdmin.get().getCode());
@@ -71,9 +74,11 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
             case TEACHER:
             case STAFF:
-                Optional<UserStaff> userStaff = authenticationUserStaffRepository.findLoginStaff(customOAuth2User.getEmail(), roleCode, facilityID);
+                Optional<UserStaff> userStaff = authenticationUserStaffRepository
+                        .findLoginStaff(customOAuth2User.getEmail(), roleCode, facilityID);
                 if (userStaff.isEmpty()) {
-                    throw new OAuth2AuthenticationException(new OAuth2Error("login_failed", "Đăng nhập giảng viên thất bại", null));
+                    throw new OAuth2AuthenticationException(
+                            new OAuth2Error("login_failed", "Đăng nhập giảng viên thất bại", null));
                 }
                 customOAuth2User.setId(userStaff.get().getId());
                 customOAuth2User.setCode(userStaff.get().getCode());
@@ -88,7 +93,8 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
                 break;
 
             case STUDENT:
-                UserStudent userStudent = authenticationUserStudentRepository.findByEmail(customOAuth2User.getEmail()).orElse(null);
+                UserStudent userStudent = authenticationUserStudentRepository.findByEmail(customOAuth2User.getEmail())
+                        .orElse(null);
                 if (userStudent == null) {
                     UserStudent newUserStudent = new UserStudent();
                     newUserStudent.setEmail(customOAuth2User.getEmail());
@@ -97,17 +103,21 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
                     newUserStudent.setImage(customOAuth2User.getPicture());
                     userStudent = authenticationUserStudentRepository.save(newUserStudent);
                 }
-                if (userStudent.getFacility() != null && !facilityID.equalsIgnoreCase(userStudent.getFacility().getId())) {
-                    throw new OAuth2AuthenticationException(new OAuth2Error("login_failed", "Đăng nhập sinh viên thất bại", null));
+                if (userStudent.getFacility() != null
+                        && !facilityID.equalsIgnoreCase(userStudent.getFacility().getId())) {
+                    throw new OAuth2AuthenticationException(
+                            new OAuth2Error("login_failed", "Đăng nhập sinh viên thất bại", null));
                 }
                 customOAuth2User.setId(userStudent.getId());
                 customOAuth2User.setCode(userStudent.getCode());
-                customOAuth2User.setIdFacility(userStudent.getFacility() == null ? null : userStudent.getFacility().getId());
+                customOAuth2User
+                        .setIdFacility(userStudent.getFacility() == null ? null : userStudent.getFacility().getId());
                 roles.add(roleCode);
                 break;
 
             default:
-                throw new OAuth2AuthenticationException(new OAuth2Error("invalid_role", "Không tìm thấy role: " + role, null));
+                throw new OAuth2AuthenticationException(
+                        new OAuth2Error("invalid_role", "Không tìm thấy role: " + role, null));
         }
 
         customOAuth2User.setRole(roles);

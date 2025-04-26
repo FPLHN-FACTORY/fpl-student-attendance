@@ -115,7 +115,8 @@ public class SPDPlanServiceImpl implements SPDPlanService {
         }
 
         if (spdPlanRepository.isExistsProjectInPlan(project.getId(), null)) {
-            return RouterHelper.responseError("Dự án " + project.getName() + " đã được triển khai trong 1 kế hoạch khác");
+            return RouterHelper
+                    .responseError("Dự án " + project.getName() + " đã được triển khai trong 1 kế hoạch khác");
         }
 
         long startDate = DateTimeUtils.toStartOfDay(request.getRangeDate().get(0));
@@ -131,8 +132,11 @@ public class SPDPlanServiceImpl implements SPDPlanService {
 
         Semester semester = project.getSemester();
 
-        if (startDate < DateTimeUtils.toStartOfDay(semester.getFromDate()) || startDate > DateTimeUtils.toEndOfDay(semester.getToDate())) {
-            return RouterHelper.responseError("Thời gian diễn ra phải trong khoảng từ " + DateTimeUtils.convertMillisToDate(semester.getFromDate()) + " đến " + DateTimeUtils.convertMillisToDate(semester.getToDate()));
+        if (startDate < DateTimeUtils.toStartOfDay(semester.getFromDate())
+                || startDate > DateTimeUtils.toEndOfDay(semester.getToDate())) {
+            return RouterHelper.responseError("Thời gian diễn ra phải trong khoảng từ "
+                    + DateTimeUtils.convertMillisToDate(semester.getFromDate()) + " đến "
+                    + DateTimeUtils.convertMillisToDate(semester.getToDate()));
         }
 
         Plan plan = new Plan();
@@ -152,14 +156,17 @@ public class SPDPlanServiceImpl implements SPDPlanService {
             return RouterHelper.responseError("Không tìm thấy kế hoạch");
         }
 
-        SPDPlanResponse planResponse = spdPlanRepository.getByIdPlan(plan.getId(), sessionHelper.getFacilityId()).orElse(null);
+        SPDPlanResponse planResponse = spdPlanRepository.getByIdPlan(plan.getId(), sessionHelper.getFacilityId())
+                .orElse(null);
 
         if (planResponse == null || planResponse.getStatus() != plan.getStatus().ordinal()) {
             return RouterHelper.responseError("Không thể thay đổi trạng thái kế hoạch này");
         }
 
-        if (plan.getStatus() == EntityStatus.INACTIVE && spdPlanRepository.isExistsProjectInPlan(plan.getProject().getId(), null)) {
-            return RouterHelper.responseError("Dự án " + plan.getProject().getName() + " đã được triển khai trong một kế hoạch khác");
+        if (plan.getStatus() == EntityStatus.INACTIVE
+                && spdPlanRepository.isExistsProjectInPlan(plan.getProject().getId(), null)) {
+            return RouterHelper.responseError(
+                    "Dự án " + plan.getProject().getName() + " đã được triển khai trong một kế hoạch khác");
         }
 
         plan.setStatus(plan.getStatus() == EntityStatus.ACTIVE ? EntityStatus.INACTIVE : EntityStatus.ACTIVE);
@@ -204,8 +211,10 @@ public class SPDPlanServiceImpl implements SPDPlanService {
             return RouterHelper.responseError("Không tìm thấy dự án");
         }
 
-        if (plan.getStatus() == EntityStatus.ACTIVE && spdPlanRepository.isExistsProjectInPlan(project.getId(), plan.getId())) {
-            return RouterHelper.responseError("Dự án " + project.getName() + " đã được triển khai trong 1 kế hoạch khác");
+        if (plan.getStatus() == EntityStatus.ACTIVE
+                && spdPlanRepository.isExistsProjectInPlan(project.getId(), plan.getId())) {
+            return RouterHelper
+                    .responseError("Dự án " + project.getName() + " đã được triển khai trong 1 kế hoạch khác");
         }
 
         long startDate = DateTimeUtils.toStartOfDay(request.getRangeDate().get(0));
@@ -213,8 +222,11 @@ public class SPDPlanServiceImpl implements SPDPlanService {
 
         Semester semester = project.getSemester();
 
-        if (startDate < DateTimeUtils.toStartOfDay(semester.getFromDate()) || startDate > DateTimeUtils.toEndOfDay(semester.getToDate())) {
-            return RouterHelper.responseError("Thời gian diễn ra phải trong khoảng từ " + DateTimeUtils.convertMillisToDate(semester.getFromDate()) + " đến " + DateTimeUtils.convertMillisToDate(semester.getToDate()));
+        if (startDate < DateTimeUtils.toStartOfDay(semester.getFromDate())
+                || startDate > DateTimeUtils.toEndOfDay(semester.getToDate())) {
+            return RouterHelper.responseError("Thời gian diễn ra phải trong khoảng từ "
+                    + DateTimeUtils.convertMillisToDate(semester.getFromDate()) + " đến "
+                    + DateTimeUtils.convertMillisToDate(semester.getToDate()));
         }
 
         plan.setName(request.getName());

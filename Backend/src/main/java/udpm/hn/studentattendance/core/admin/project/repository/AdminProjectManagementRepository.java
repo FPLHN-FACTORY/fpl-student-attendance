@@ -16,7 +16,7 @@ import java.util.Optional;
 public interface AdminProjectManagementRepository extends ProjectRepository {
 
     @Query(value = """
-                    SELECT 
+                    SELECT
                         ROW_NUMBER() OVER (ORDER BY p.created_at DESC) AS indexs,
                         p.id AS id,
                         p.name AS name,
@@ -41,7 +41,7 @@ public interface AdminProjectManagementRepository extends ProjectRepository {
                     )
                     ORDER BY p.created_at DESC
             """, countQuery = """
-                    SELECT 
+                    SELECT
                        COUNT(*)
                     FROM project p
                     LEFT JOIN level_project lp ON p.id_level_project = lp.id
@@ -65,24 +65,25 @@ public interface AdminProjectManagementRepository extends ProjectRepository {
             from subject_facility
             where id_subject = :idSubject and id_facility = :idFacility
             """, nativeQuery = true)
-    SubjectFacility getSubjectFacilityById(@Param("idSubject")String idSubject,@Param("idFacility") String idFacility);
+    SubjectFacility getSubjectFacilityById(@Param("idSubject") String idSubject,
+            @Param("idFacility") String idFacility);
 
     @Query(value = """
-    SELECT 
-    p.id as id,
-    p.name as name,
-    p.semester.semesterName as nameSemester,
-    p.levelProject.name as nameLevelProject,
-    p.subjectFacility.subject.code as nameSubject,
-    p.description as description,
-    p.status as status,
-    p.levelProject.id as levelProjectId,
-    p.semester.id as semesterId,
-    p.subjectFacility.subject.id as subjectId
-    FROM Project p
-    WHERE 
-    p.id = :projectId
-""")
+                SELECT
+                p.id as id,
+                p.name as name,
+                p.semester.semesterName as nameSemester,
+                p.levelProject.name as nameLevelProject,
+                p.subjectFacility.subject.code as nameSubject,
+                p.description as description,
+                p.status as status,
+                p.levelProject.id as levelProjectId,
+                p.semester.id as semesterId,
+                p.subjectFacility.subject.id as subjectId
+                FROM Project p
+                WHERE
+                p.id = :projectId
+            """)
     Optional<ProjectResponse> getDetailProject(String projectId);
 
 }

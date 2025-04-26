@@ -23,5 +23,4 @@ public interface Teacher_TeachingScheduleResponse {
 
     String getUserId();
 
-
 }

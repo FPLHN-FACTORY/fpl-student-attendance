@@ -13,20 +13,20 @@ import java.util.List;
 public interface AdminLevelProjectManagementRepository extends LevelProjectRepository {
 
     @Query(value = """
-                SELECT 
+                SELECT
                     ROW_NUMBER() OVER (ORDER BY created_at DESC) AS indexs,
                     id AS id,
                     name AS name
-                FROM level_project 
+                FROM level_project
                 where status = 1
                 ORDER BY created_at DESC
             """, nativeQuery = true)
     List<LevelProjectResponse> getLevelProject();
 
     @Query(value = """
-                SELECT 
+                SELECT
                     *
-                FROM level_project 
+                FROM level_project
                 where code = :code
             """, nativeQuery = true)
     LevelProject getLevelProject(@Param("code") String code);

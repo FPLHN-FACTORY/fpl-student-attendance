@@ -68,12 +68,16 @@ public class Teacher_TeachingScheduleRestController {
     }
 
     @GetMapping(value = "/export-pdf", produces = MediaType.APPLICATION_PDF_VALUE)
-    public ResponseEntity<InputStreamResource> exportTeachingSchedule(Teacher_TeachingScheduleRequest teachingScheduleRequest) throws UnsupportedEncodingException, IOException {
-        List<Teacher_TeachingScheduleResponse> list = teacherTeachingScheduleExtendRepository.exportExcelTeachingSchedule(sessionHelper.getUserId(), teachingScheduleRequest);
+    public ResponseEntity<InputStreamResource> exportTeachingSchedule(
+            Teacher_TeachingScheduleRequest teachingScheduleRequest) throws UnsupportedEncodingException, IOException {
+        List<Teacher_TeachingScheduleResponse> list = teacherTeachingScheduleExtendRepository
+                .exportExcelTeachingSchedule(sessionHelper.getUserId(), teachingScheduleRequest);
         ByteArrayInputStream byteArrayInputStream = service.exportTeachingSchedule(list);
         HttpHeaders headers = new HttpHeaders();
         String fileName = "lịch-dạy.pdf";
-        headers.add("Content-Disposition", "inline; filename*=UTF-8''" + URLEncoder.encode(fileName, StandardCharsets.UTF_8.toString()));
-        return ResponseEntity.ok().headers(headers).contentType(MediaType.APPLICATION_PDF).body(new InputStreamResource(byteArrayInputStream));
+        headers.add("Content-Disposition",
+                "inline; filename*=UTF-8''" + URLEncoder.encode(fileName, StandardCharsets.UTF_8.toString()));
+        return ResponseEntity.ok().headers(headers).contentType(MediaType.APPLICATION_PDF)
+                .body(new InputStreamResource(byteArrayInputStream));
     }
 }

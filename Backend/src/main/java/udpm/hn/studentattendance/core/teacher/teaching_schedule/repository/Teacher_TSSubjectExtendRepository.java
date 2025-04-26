@@ -10,18 +10,17 @@ import java.util.List;
 
 @Repository
 public interface Teacher_TSSubjectExtendRepository extends SubjectRepository {
-    @Query
-            (value = """
-                        SELECT
-                        DISTINCT
-                        sb
-                        FROM Subject sb
-                        LEFT JOIN SubjectFacility sf ON sf.subject.id = sb.id
-                        LEFT JOIN Project p ON p.subjectFacility.id = sf.id
-                        LEFT JOIN Factory ft ON ft.project.id = p.id
-                        LEFT JOIN UserStaff us ON us.id = ft.userStaff.id
-                        WHERE us.id = :userId
-                        AND sb.status = :status
-                    """ )
+    @Query(value = """
+                SELECT
+                DISTINCT
+                sb
+                FROM Subject sb
+                LEFT JOIN SubjectFacility sf ON sf.subject.id = sb.id
+                LEFT JOIN Project p ON p.subjectFacility.id = sf.id
+                LEFT JOIN Factory ft ON ft.project.id = p.id
+                LEFT JOIN UserStaff us ON us.id = ft.userStaff.id
+                WHERE us.id = :userId
+                AND sb.status = :status
+            """)
     List<Subject> getAllSubjectByStaff(String userId, EntityStatus status);
 }

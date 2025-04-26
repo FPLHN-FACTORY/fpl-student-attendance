@@ -16,7 +16,7 @@ public class Teacher_TSPlanDateUpdateRequest {
     @Size(max = 255)
     private String description;
 
-//    @Max(value = 60)
+    // @Max(value = 60)
     private Integer lateArrival;
 
 }

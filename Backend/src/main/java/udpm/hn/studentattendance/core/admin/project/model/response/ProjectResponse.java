@@ -1,6 +1,5 @@
 package udpm.hn.studentattendance.core.admin.project.model.response;
 
-
 public interface ProjectResponse {
 
     Integer getIndexs();
@@ -22,6 +21,7 @@ public interface ProjectResponse {
     String getFacilityName();
 
     String getLevelProjectId();
+
     String getSemesterId();
 
     String getSubjectId();

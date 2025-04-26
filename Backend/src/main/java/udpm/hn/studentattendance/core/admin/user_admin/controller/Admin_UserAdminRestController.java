@@ -32,7 +32,8 @@ public class Admin_UserAdminRestController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateUserAdmin(@Valid @RequestBody Admin_UserAdminCreateOrUpdateRequest request, @PathVariable(name = "id") String id) {
+    public ResponseEntity<?> updateUserAdmin(@Valid @RequestBody Admin_UserAdminCreateOrUpdateRequest request,
+            @PathVariable(name = "id") String id) {
         return userAdminService.updateUserAdmin(request, id);
     }
 
