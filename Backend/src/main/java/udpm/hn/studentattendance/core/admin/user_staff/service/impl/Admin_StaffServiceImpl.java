@@ -75,7 +75,7 @@ public class Admin_StaffServiceImpl implements Admin_StaffService {
     @Override
     public ResponseEntity<?> createStaff(Admin_CreateUpdateStaffRequest adCreateUpdateStaffRequest) {
         // Kiểm tra định dạng email
-        if (!isCheckEmailFpt.equals("false")) {
+        if (isCheckEmailFpt.equals("false")) {
             if (!ValidateHelper.isValidEmailFE(adCreateUpdateStaffRequest.getEmailFe().trim())) {
                 return RouterHelper.responseError("Không chứa khoảng trắng và kết thúc bằng @fe.edu.vn");
             }
@@ -190,7 +190,7 @@ public class Admin_StaffServiceImpl implements Admin_StaffService {
         }
 
         // Kiểm tra định dạng email
-        if (!isCheckEmailFpt.equals("false")) {
+        if (isCheckEmailFpt.equals("false")) {
             if (!ValidateHelper.isValidEmailFE(adCreateUpdateStaffRequest.getEmailFe().trim())) {
                 return RouterHelper.responseError("Không chứa khoảng trắng và kết thúc bằng @fe.edu.vn");
             }
