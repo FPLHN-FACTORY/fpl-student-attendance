@@ -17,6 +17,7 @@ import { ROUTE_NAMES } from '@/router/adminRoute'
 import useLoadingStore from '@/stores/useLoadingStore'
 import { useRoute, useRouter } from 'vue-router'
 import dayjs from 'dayjs'
+import { debounce } from '@/utils/utils'
 
 const route = useRoute()
 const router = useRouter()
@@ -298,7 +299,7 @@ const handleSubmitUpdate = async () => {
     Modal.confirm({
       title: `Xác nhận cập nhật`,
       type: 'info',
-      content: `Bạn có chắc muốn lưu lại thay đổi?`,
+      content: `Mọi thay đổi chỉ áp dụng cho kế hoạch tạo mới. Bạn có chắc muốn lưu lại thay đổi?`,
       okText: 'Tiếp tục',
       cancelText: 'Hủy bỏ',
       onOk() {
@@ -345,10 +346,11 @@ onMounted(() => {
   fetchDataDetail()
 })
 
+const debounceFilter = debounce(handleSubmitFilter, 100)
 watch(
   dataFilter,
   () => {
-    handleSubmitFilter()
+    debounceFilter()
   },
   { deep: true },
 )
