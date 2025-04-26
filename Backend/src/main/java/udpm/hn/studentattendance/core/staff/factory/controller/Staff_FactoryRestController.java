@@ -47,12 +47,14 @@ public class Staff_FactoryRestController {
     }
 
     @PostMapping
-    public ResponseEntity<?> createFactory(@Valid @RequestBody Staff_FactoryCreateUpdateRequest factoryCreateUpdateRequest) {
+    public ResponseEntity<?> createFactory(
+            @Valid @RequestBody Staff_FactoryCreateUpdateRequest factoryCreateUpdateRequest) {
         return factoryService.createFactory(factoryCreateUpdateRequest);
     }
 
     @PutMapping
-    public ResponseEntity<?> updateFactory(@Valid @RequestBody Staff_FactoryCreateUpdateRequest factoryCreateUpdateRequest) {
+    public ResponseEntity<?> updateFactory(
+            @Valid @RequestBody Staff_FactoryCreateUpdateRequest factoryCreateUpdateRequest) {
         return factoryService.updateFactory(factoryCreateUpdateRequest);
     }
 
@@ -67,12 +69,12 @@ public class Staff_FactoryRestController {
     }
 
     @PutMapping("/change-all-status")
-    public ResponseEntity<?> changeAllStatusBySemester(){
+    public ResponseEntity<?> changeAllStatusBySemester() {
         return factoryService.changeAllStatusByFactory();
     }
 
     @GetMapping("/semesters")
-    public ResponseEntity<?> getAllSemester(){
+    public ResponseEntity<?> getAllSemester() {
         return factoryService.getAllSemester();
     }
 }

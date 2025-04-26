@@ -12,8 +12,6 @@ import udpm.hn.studentattendance.core.authentication.utils.JwtUtil;
 import udpm.hn.studentattendance.infrastructure.constants.SessionConstant;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 
 @Component
 @RequiredArgsConstructor
@@ -24,7 +22,8 @@ public class CustomOAuth2SuccessHandler implements AuthenticationSuccessHandler 
     private final HttpSession httpSession;
 
     @Override
-    public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException {
+    public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
+            Authentication authentication) throws IOException {
 
         CustomOAuth2User oauthUser = (CustomOAuth2User) authentication.getPrincipal();
 
@@ -36,7 +35,8 @@ public class CustomOAuth2SuccessHandler implements AuthenticationSuccessHandler 
 
         String redirect_uri = (String) httpSession.getAttribute(SessionConstant.LOGIN_REDIRECT);
 
-        response.sendRedirect(redirect_uri + "?" + RouteAuthenticationConstant.PARAM_ROUTE_ROLE + "=" + role + "&" + RouteAuthenticationConstant.PARAM_LOGIN_SUCCESS + "=" + token);
+        response.sendRedirect(redirect_uri + "?" + RouteAuthenticationConstant.PARAM_ROUTE_ROLE + "=" + role + "&"
+                + RouteAuthenticationConstant.PARAM_LOGIN_SUCCESS + "=" + token);
     }
 
 }

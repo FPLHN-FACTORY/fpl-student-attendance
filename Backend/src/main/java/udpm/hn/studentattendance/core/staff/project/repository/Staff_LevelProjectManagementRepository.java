@@ -11,11 +11,11 @@ import java.util.List;
 public interface Staff_LevelProjectManagementRepository extends LevelProjectRepository {
 
     @Query(value = """
-                SELECT 
+                SELECT
                     ROW_NUMBER() OVER (ORDER BY created_at DESC) AS indexs,
                     id AS id,
                     name AS name
-                FROM level_project 
+                FROM level_project
                 where status = 1
                 ORDER BY created_at DESC
             """, nativeQuery = true)

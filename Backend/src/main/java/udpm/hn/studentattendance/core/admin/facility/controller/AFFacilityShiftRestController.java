@@ -30,13 +30,15 @@ public class AFFacilityShiftRestController {
     }
 
     @PostMapping("/{idFacility}/add-shift")
-    public ResponseEntity<?> add(@Valid @RequestBody AFAddOrUpdateFacilityShiftRequest request, @PathVariable String idFacility) {
+    public ResponseEntity<?> add(@Valid @RequestBody AFAddOrUpdateFacilityShiftRequest request,
+            @PathVariable String idFacility) {
         request.setIdFacility(idFacility);
         return afFacilityShiftService.addShift(request);
     }
 
     @PutMapping("/{idFacility}/update-shift")
-    public ResponseEntity<?> update(@Valid @RequestBody AFAddOrUpdateFacilityShiftRequest request, @PathVariable String idFacility) {
+    public ResponseEntity<?> update(@Valid @RequestBody AFAddOrUpdateFacilityShiftRequest request,
+            @PathVariable String idFacility) {
         request.setIdFacility(idFacility);
         return afFacilityShiftService.updateShift(request);
     }

@@ -13,7 +13,7 @@ import java.util.List;
 public interface Admin_FacilityRepository extends ProjectRepository {
 
     @Query(value = """
-                SELECT 
+                SELECT
                     ROW_NUMBER() OVER (ORDER BY created_at DESC) AS indexs,
                     id AS id,
                     name AS name

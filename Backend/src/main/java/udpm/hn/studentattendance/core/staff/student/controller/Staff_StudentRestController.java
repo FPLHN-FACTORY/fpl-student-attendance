@@ -27,12 +27,14 @@ public class Staff_StudentRestController {
     }
 
     @PostMapping
-    public ResponseEntity<?> createStudent(@Valid @RequestBody Staff_StudentCreateUpdateRequest studentCreateUpdateRequest) {
+    public ResponseEntity<?> createStudent(
+            @Valid @RequestBody Staff_StudentCreateUpdateRequest studentCreateUpdateRequest) {
         return studentService.createStudent(studentCreateUpdateRequest);
     }
 
     @PutMapping
-    public ResponseEntity<?> updateStudent(@Valid @RequestBody Staff_StudentCreateUpdateRequest studentCreateUpdateRequest) {
+    public ResponseEntity<?> updateStudent(
+            @Valid @RequestBody Staff_StudentCreateUpdateRequest studentCreateUpdateRequest) {
         return studentService.updateStudent(studentCreateUpdateRequest);
     }
 

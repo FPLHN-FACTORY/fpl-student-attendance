@@ -21,7 +21,6 @@ import udpm.hn.studentattendance.core.notification.model.request.NotificationAdd
 import udpm.hn.studentattendance.core.notification.service.NotificationService;
 import udpm.hn.studentattendance.entities.Facility;
 import udpm.hn.studentattendance.entities.Role;
-import udpm.hn.studentattendance.entities.UserAdmin;
 import udpm.hn.studentattendance.entities.UserStaff;
 import udpm.hn.studentattendance.helpers.NotificationHelper;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
@@ -69,15 +68,14 @@ public class Admin_StaffServiceImpl implements Admin_StaffService {
                 new ApiResponse(
                         RestApiStatus.SUCCESS,
                         "Lấy tất cả giảng viên thành công",
-                        staffs
-                ),
+                        staffs),
                 HttpStatus.OK);
     }
 
     @Override
     public ResponseEntity<?> createStaff(Admin_CreateUpdateStaffRequest adCreateUpdateStaffRequest) {
         // Kiểm tra định dạng email
-        if (!isCheckEmailFpt.equals("false")) {
+        if (isCheckEmailFpt.equals("false")) {
             if (!ValidateHelper.isValidEmailFE(adCreateUpdateStaffRequest.getEmailFe().trim())) {
                 return RouterHelper.responseError("Không chứa khoảng trắng và kết thúc bằng @fe.edu.vn");
             }
@@ -90,13 +88,11 @@ public class Admin_StaffServiceImpl implements Admin_StaffService {
         UserStaff staffExist = isStaffExist(
                 adCreateUpdateStaffRequest.getStaffCode(),
                 adCreateUpdateStaffRequest.getEmailFe(),
-                adCreateUpdateStaffRequest.getEmailFpt()
-        );
+                adCreateUpdateStaffRequest.getEmailFpt());
         if (staffExist != null) {
             return new ResponseEntity<>(
                     new ApiResponse(RestApiStatus.WARNING, "Nhân viên đã tồn tại", null),
-                    HttpStatus.BAD_REQUEST
-            );
+                    HttpStatus.BAD_REQUEST);
         }
 
         // Tạo mới UserStaff
@@ -113,8 +109,7 @@ public class Admin_StaffServiceImpl implements Admin_StaffService {
         if (facility == null) {
             return new ResponseEntity<>(
                     new ApiResponse(RestApiStatus.ERROR, "Cơ sở không tồn tại", null),
-                    HttpStatus.BAD_REQUEST
-            );
+                    HttpStatus.BAD_REQUEST);
         }
 
         // Tạo các vai trò
@@ -122,8 +117,7 @@ public class Admin_StaffServiceImpl implements Admin_StaffService {
         if (roleCodes == null || roleCodes.isEmpty()) {
             return new ResponseEntity<>(
                     new ApiResponse(RestApiStatus.ERROR, "Phải chọn ít nhất một vai trò", null),
-                    HttpStatus.BAD_REQUEST
-            );
+                    HttpStatus.BAD_REQUEST);
         }
 
         RoleConstant[] roleConstants = RoleConstant.values(); // Mảng các giá trị enum
@@ -138,8 +132,7 @@ public class Admin_StaffServiceImpl implements Admin_StaffService {
             } catch (IllegalArgumentException e) {
                 return new ResponseEntity<>(
                         new ApiResponse(RestApiStatus.ERROR, "Vai trò không hợp lệ: " + roleCode, null),
-                        HttpStatus.BAD_REQUEST
-                );
+                        HttpStatus.BAD_REQUEST);
             }
 
             Role role = new Role();
@@ -151,7 +144,8 @@ public class Admin_StaffServiceImpl implements Admin_StaffService {
 
             // Thêm thông báo
             Map<String, Object> dataNotification = new HashMap<>();
-            dataNotification.put(NotificationHelper.KEY_USER_ADMIN, sessionHelper.getUserCode() + " - " + sessionHelper.getUserName());
+            dataNotification.put(NotificationHelper.KEY_USER_ADMIN,
+                    sessionHelper.getUserCode() + " - " + sessionHelper.getUserName());
             dataNotification.put(NotificationHelper.KEY_ROLE, roleConstant.name());
             NotificationAddRequest notificationAddRequest = new NotificationAddRequest();
             notificationAddRequest.setIdUser(staff.getId());
@@ -162,8 +156,7 @@ public class Admin_StaffServiceImpl implements Admin_StaffService {
 
         return new ResponseEntity<>(
                 new ApiResponse(RestApiStatus.SUCCESS, "Thêm nhân viên mới thành công", null),
-                HttpStatus.CREATED
-        );
+                HttpStatus.CREATED);
     }
 
     @Override
@@ -173,8 +166,7 @@ public class Admin_StaffServiceImpl implements Admin_StaffService {
         if (opt.isEmpty()) {
             return new ResponseEntity<>(
                     new ApiResponse(RestApiStatus.ERROR, "Không tìm thấy nhân viên", null),
-                    HttpStatus.BAD_REQUEST
-            );
+                    HttpStatus.BAD_REQUEST);
         }
         UserStaff current = opt.get();
 
@@ -182,26 +174,23 @@ public class Admin_StaffServiceImpl implements Admin_StaffService {
         if (adStaffRepository.isExistCodeUpdate(adCreateUpdateStaffRequest.getStaffCode(), current.getCode())) {
             return new ResponseEntity<>(
                     new ApiResponse(RestApiStatus.ERROR, "Mã nhân viên đã tồn tại", null),
-                    HttpStatus.BAD_REQUEST
-            );
+                    HttpStatus.BAD_REQUEST);
         }
         // 3. Check trùng email FE
         if (adStaffRepository.isExistEmailFeUpdate(adCreateUpdateStaffRequest.getEmailFe(), current.getEmailFe())) {
             return new ResponseEntity<>(
                     new ApiResponse(RestApiStatus.ERROR, "Đã có nhân viên khác dùng email fe này", null),
-                    HttpStatus.BAD_REQUEST
-            );
+                    HttpStatus.BAD_REQUEST);
         }
         // 4. Check trùng email FPT
         if (adStaffRepository.isExistEmailFptUpdate(adCreateUpdateStaffRequest.getEmailFpt(), current.getEmailFpt())) {
             return new ResponseEntity<>(
                     new ApiResponse(RestApiStatus.ERROR, "Đã có nhân viên khác dùng email fpt này", null),
-                    HttpStatus.BAD_REQUEST
-            );
+                    HttpStatus.BAD_REQUEST);
         }
 
         // Kiểm tra định dạng email
-        if (!isCheckEmailFpt.equals("false")) {
+        if (isCheckEmailFpt.equals("false")) {
             if (!ValidateHelper.isValidEmailFE(adCreateUpdateStaffRequest.getEmailFe().trim())) {
                 return RouterHelper.responseError("Không chứa khoảng trắng và kết thúc bằng @fe.edu.vn");
             }
@@ -209,7 +198,6 @@ public class Admin_StaffServiceImpl implements Admin_StaffService {
                 return RouterHelper.responseError("Không chứa khoảng trắng và kết thúc bằng @fpt.edu.vn");
             }
         }
-
 
         // Cập nhật thông tin nhân viên
         UserStaff staff = opt.get();
@@ -220,12 +208,12 @@ public class Admin_StaffServiceImpl implements Admin_StaffService {
         adStaffRepository.save(staff);
 
         // Kiểm tra cơ sở
-        Optional<Facility> existFacility = adminStaffFacilityRepository.findById(adCreateUpdateStaffRequest.getFacilityId().trim());
+        Optional<Facility> existFacility = adminStaffFacilityRepository
+                .findById(adCreateUpdateStaffRequest.getFacilityId().trim());
         if (existFacility.isEmpty()) {
             return new ResponseEntity<>(
                     new ApiResponse(RestApiStatus.ERROR, "Cơ sở không tồn tại", null),
-                    HttpStatus.BAD_REQUEST
-            );
+                    HttpStatus.BAD_REQUEST);
         }
         Facility facility = existFacility.get();
 
@@ -242,7 +230,8 @@ public class Admin_StaffServiceImpl implements Admin_StaffService {
                 adStaffRoleRepository.delete(role);
 
                 Map<String, Object> dataNotification = new HashMap<>();
-                dataNotification.put(NotificationHelper.KEY_USER_ADMIN, sessionHelper.getUserCode() + " - " + sessionHelper.getUserName());
+                dataNotification.put(NotificationHelper.KEY_USER_ADMIN,
+                        sessionHelper.getUserCode() + " - " + sessionHelper.getUserName());
                 dataNotification.put(NotificationHelper.KEY_ROLE, role.getCode().name());
                 NotificationAddRequest notificationAddRequest = new NotificationAddRequest();
                 notificationAddRequest.setIdUser(staff.getId());
@@ -264,8 +253,7 @@ public class Admin_StaffServiceImpl implements Admin_StaffService {
             } catch (IllegalArgumentException e) {
                 return new ResponseEntity<>(
                         new ApiResponse(RestApiStatus.ERROR, "Vai trò không hợp lệ: " + roleCode, null),
-                        HttpStatus.BAD_REQUEST
-                );
+                        HttpStatus.BAD_REQUEST);
             }
 
             Optional<Role> existingRole = currentRoles.stream()
@@ -286,7 +274,8 @@ public class Admin_StaffServiceImpl implements Admin_StaffService {
             adStaffRoleRepository.save(role);
 
             Map<String, Object> dataNotification = new HashMap<>();
-            dataNotification.put(NotificationHelper.KEY_USER_ADMIN, sessionHelper.getUserCode() + " - " + sessionHelper.getUserName());
+            dataNotification.put(NotificationHelper.KEY_USER_ADMIN,
+                    sessionHelper.getUserCode() + " - " + sessionHelper.getUserName());
             dataNotification.put(NotificationHelper.KEY_ROLE, role.getCode().name());
             NotificationAddRequest notificationAddRequest = new NotificationAddRequest();
             notificationAddRequest.setIdUser(staff.getId());
@@ -297,10 +286,8 @@ public class Admin_StaffServiceImpl implements Admin_StaffService {
 
         return new ResponseEntity<>(
                 new ApiResponse(RestApiStatus.SUCCESS, "Cập nhật nhân viên thành công", null),
-                HttpStatus.OK
-        );
+                HttpStatus.OK);
     }
-
 
     @Override
     public ResponseEntity<?> changeStaffStatus(String staffId) {
@@ -310,15 +297,15 @@ public class Admin_StaffServiceImpl implements Admin_StaffService {
                     new ApiResponse(
                             RestApiStatus.ERROR,
                             "Nhân viên không tồn tại",
-                            null
-                    ),
+                            null),
                     HttpStatus.NOT_FOUND);
         }
         UserStaff staff = existStaff.get();
         staff.setStatus(staff.getStatus() == EntityStatus.ACTIVE ? EntityStatus.INACTIVE : EntityStatus.ACTIVE);
 
         List<Role> staffRoles = adStaffRoleRepository.findAllByUserStaffId(staffId);
-        staffRoles.forEach(staffRole -> staffRole.setStatus(staff.getStatus() == EntityStatus.ACTIVE ? EntityStatus.INACTIVE : EntityStatus.ACTIVE));
+        staffRoles.forEach(staffRole -> staffRole
+                .setStatus(staff.getStatus() == EntityStatus.ACTIVE ? EntityStatus.INACTIVE : EntityStatus.ACTIVE));
         adStaffRoleRepository.saveAll(staffRoles);
 
         adStaffRepository.save(staff);
@@ -326,8 +313,7 @@ public class Admin_StaffServiceImpl implements Admin_StaffService {
                 new ApiResponse(
                         RestApiStatus.SUCCESS,
                         "Thay đổi trạng thái giảng viên thành công",
-                        null
-                ),
+                        null),
                 HttpStatus.OK);
     }
 
@@ -339,16 +325,14 @@ public class Admin_StaffServiceImpl implements Admin_StaffService {
                     new ApiResponse(
                             RestApiStatus.SUCCESS,
                             "Xem chi tiết giảng viên thành công",
-                            existStaff
-                    ),
+                            existStaff),
                     HttpStatus.OK);
         }
         return new ResponseEntity<>(
                 new ApiResponse(
                         RestApiStatus.WARNING,
                         "Giảng viên không tồn tại",
-                        existStaff
-                ),
+                        existStaff),
                 HttpStatus.NOT_FOUND);
     }
 
@@ -359,8 +343,7 @@ public class Admin_StaffServiceImpl implements Admin_StaffService {
                 new ApiResponse(
                         RestApiStatus.SUCCESS,
                         "Lấy tất cả vai trò thành công",
-                        getAllRole
-                ),
+                        getAllRole),
                 HttpStatus.OK);
     }
 
@@ -371,16 +354,14 @@ public class Admin_StaffServiceImpl implements Admin_StaffService {
                 new ApiResponse(
                         RestApiStatus.SUCCESS,
                         "Lấy tất cả cơ sở thành công",
-                        getAllFacility
-                ),
+                        getAllFacility),
                 HttpStatus.OK);
     }
 
     private UserStaff isStaffExist(
             String staffCode,
             String accountFe,
-            String accountFpt
-    ) {
+            String accountFpt) {
         Optional<UserStaff> staffs = adStaffRepository.findUserStaffByCode(staffCode);
         if (staffs.isPresent()) {
             return staffs.get();

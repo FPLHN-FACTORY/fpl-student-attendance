@@ -23,7 +23,8 @@ public class SDPAddOrUpdatePlanRequest {
     private List<Long> rangeDate;
 
     @NotBlank(message = "Vui lòng nhập tên kế hoạch")
-    @Size(max = EntityProperties.LENGTH_NAME, message = "Tên kế hoạch không được vượt quá " + EntityProperties.LENGTH_NAME + " ký tự")
+    @Size(max = EntityProperties.LENGTH_NAME, message = "Tên kế hoạch không được vượt quá "
+            + EntityProperties.LENGTH_NAME + " ký tự")
     private String name;
 
     @NotBlank(message = "Vui lòng nhập nội dung kế hoạch")

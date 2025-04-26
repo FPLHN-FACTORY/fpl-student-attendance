@@ -14,67 +14,59 @@ import java.util.Optional;
 @Repository
 public interface Admin_UserAdminExtendRepository extends UserAdminRepository {
 
-    @Query(
-            value = """
-                    SELECT\s
-                    	ROW_NUMBER() OVER (ORDER BY ua.created_at DESC) AS rowNumber,
-                    	ua.id AS userAdminId,
-                    	ua.code AS userAdminCode,
-                    	ua.name AS userAdminName,
-                    	ua.email AS userAdminEmail,
-                    	ua.status AS userAdminStatus
-                    FROM user_admin ua
-                    WHERE
-                        (trim(:#{#request.searchQuery}) IS NULL
-                    	OR trim(:#{#request.searchQuery}) = ''
-                    	OR ua.name LIKE concat('%', trim(:#{#request.searchQuery}), '%')
-                    	OR ua.code LIKE concat('%', trim(:#{#request.searchQuery}), '%')
-                    	OR ua.email LIKE concat('%', trim(:#{#request.searchQuery}), '%')
-                    	)
-                    	AND (:#{#request.status} IS NULL OR ua.status = :#{#request.status})
-                    ORDER BY ua.created_at DESC
-                    """,
-            countQuery =
-"""
-                            SELECT COUNT(*) 
-                            FROM user_admin ua
-                            WHERE
-                                (trim(:#{#request.searchQuery}) IS NULL
-                            	OR trim(:#{#request.searchQuery}) = ''
-                            	OR ua.name LIKE concat('%', trim(:#{#request.searchQuery}), '%')
-                            	OR ua.code LIKE concat('%', trim(:#{#request.searchQuery}), '%')
-                            	OR ua.email LIKE concat('%', trim(:#{#request.searchQuery}), '%')
-                            	AND (:#{#request.status} IS NULL OR ua.status = :#{#request.status})
-        """
-            , nativeQuery = true
-    )
+    @Query(value = """
+            SELECT
+            	ROW_NUMBER() OVER (ORDER BY ua.created_at DESC) AS rowNumber,
+            	ua.id AS userAdminId,
+            	ua.code AS userAdminCode,
+            	ua.name AS userAdminName,
+            	ua.email AS userAdminEmail,
+            	ua.status AS userAdminStatus
+            FROM user_admin ua
+            WHERE
+                (trim(:#{#request.searchQuery}) IS NULL
+            	OR trim(:#{#request.searchQuery}) = ''
+            	OR ua.name LIKE concat('%', trim(:#{#request.searchQuery}), '%')
+            	OR ua.code LIKE concat('%', trim(:#{#request.searchQuery}), '%')
+            	OR ua.email LIKE concat('%', trim(:#{#request.searchQuery}), '%')
+            	)
+            	AND (:#{#request.status} IS NULL OR ua.status = :#{#request.status})
+            ORDER BY ua.created_at DESC
+            """, countQuery = """
+                                SELECT COUNT(*)
+                                FROM user_admin ua
+                                WHERE
+                                    (trim(:#{#request.searchQuery}) IS NULL
+                                	OR trim(:#{#request.searchQuery}) = ''
+                                	OR ua.name LIKE concat('%', trim(:#{#request.searchQuery}), '%')
+                                	OR ua.code LIKE concat('%', trim(:#{#request.searchQuery}), '%')
+                                	OR ua.email LIKE concat('%', trim(:#{#request.searchQuery}), '%')
+                                	AND (:#{#request.status} IS NULL OR ua.status = :#{#request.status})
+            """, nativeQuery = true)
     Page<Admin_UserAdminResponse> getAllUserAdmin(Pageable pageable, Admin_UserAdminRequest request);
 
     Optional<UserAdmin> getUserAdminByCode(String code);
+
     Optional<UserAdmin> getUserAdminByEmail(String email);
 
-    @Query(
-            value = """
+    @Query(value = """
             SELECT CASE WHEN EXISTS (
                 SELECT 1
                 FROM user_admin ua
                 WHERE ua.code = :newCode
                 AND ua.code != :currentCode
             ) THEN 'TRUE' ELSE 'FALSE' END
-            """, nativeQuery = true
-    )
+            """, nativeQuery = true)
     boolean isExistCodeUpdate(String newCode, String currentCode);
 
-    @Query(
-            value = """
+    @Query(value = """
             SELECT CASE WHEN EXISTS (
                 SELECT 1
                 FROM user_admin ua
                 WHERE ua.email = :newEmailFe
                 AND ua.email != :currentEmailFe
             ) THEN 'TRUE' ELSE 'FALSE' END
-            """, nativeQuery = true
-    )
+            """, nativeQuery = true)
     boolean isExistEmailUpdate(String newEmailFe, String currentEmailFe);
 
 }

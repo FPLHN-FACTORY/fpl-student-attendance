@@ -13,12 +13,10 @@ import udpm.hn.studentattendance.helpers.PaginationHelper;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.common.ResponseObject;
 
-
 @Service
 @RequiredArgsConstructor
 @Validated
 public class Student_ScheduleAttendanceServiceImpl implements Student_ScheduleAttendanceService {
-
 
     @Autowired
     private Student_ScheduleAttendanceRepository repository;
@@ -29,7 +27,6 @@ public class Student_ScheduleAttendanceServiceImpl implements Student_ScheduleAt
         return new ResponseObject<>(
                 PageableObject.of(repository.getAllListAttendanceByUser(pageable, request)),
                 HttpStatus.OK,
-                "Lây danh sách điểm danh thành công"
-        );
+                "Lây danh sách điểm danh thành công");
     }
 }
