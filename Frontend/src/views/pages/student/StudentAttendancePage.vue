@@ -13,7 +13,7 @@ import { API_ROUTES_STUDENT } from '@/constants/studentConstant'
 import { ROUTE_NAMES } from '@/router/studentRoute'
 import requestAPI from '@/services/requestApiService'
 import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
-import { dayOfWeek, formatDate } from '@/utils/utils'
+import { dayOfWeek, debounce, formatDate } from '@/utils/utils'
 import {
   CheckOutlined,
   ExclamationCircleOutlined,
@@ -242,10 +242,11 @@ onMounted(async () => {
   await faceIDStore.loadModels()
 })
 
+const debounceFilter = debounce(handleSubmitFilter, 100)
 watch(
   dataFilter,
   () => {
-    handleSubmitFilter()
+    debounceFilter()
   },
   { deep: true },
 )

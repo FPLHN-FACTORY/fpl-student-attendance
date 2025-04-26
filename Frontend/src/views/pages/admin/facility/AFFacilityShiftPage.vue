@@ -17,6 +17,7 @@ import { ROUTE_NAMES } from '@/router/adminRoute'
 import useLoadingStore from '@/stores/useLoadingStore'
 import { useRoute, useRouter } from 'vue-router'
 import dayjs from 'dayjs'
+import { debounce } from '@/utils/utils'
 
 const route = useRoute()
 const router = useRouter()
@@ -345,10 +346,11 @@ onMounted(() => {
   fetchDataDetail()
 })
 
+const debounceFilter = debounce(handleSubmitFilter, 100)
 watch(
   dataFilter,
   () => {
-    handleSubmitFilter()
+    debounceFilter()
   },
   { deep: true },
 )

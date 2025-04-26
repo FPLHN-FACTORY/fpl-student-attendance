@@ -7,6 +7,16 @@ export const decodeBase64 = (base64String) => {
   return new TextDecoder('utf-8').decode(byteArray)
 }
 
+export const debounce = (func, delay) => {
+  let timer
+  return function (...args) {
+    clearTimeout(timer)
+    timer = setTimeout(() => {
+      func.apply(this, args)
+    }, delay)
+  }
+}
+
 export const dayOfWeek = (timestamp) => {
   const date = new Date(timestamp)
   const daysOfWeek = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy']

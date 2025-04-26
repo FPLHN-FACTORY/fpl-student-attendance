@@ -17,7 +17,7 @@ import { useRouter } from 'vue-router'
 import { ROUTE_NAMES } from '@/router/staffRoute'
 import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
 import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
-import { formatDate } from '@/utils/utils'
+import { debounce, formatDate } from '@/utils/utils'
 import dayjs from 'dayjs'
 
 const router = useRouter()
@@ -303,7 +303,7 @@ const handleSubmitFilterAdd = () => {
     !dataFilterAdd.year
   ) {
     return (lstDataProject.value = lstDataProject.value.filter(
-      (o) => o.id === currentProject.value?.id
+      (o) => o.id === currentProject.value?.id,
     ))
   }
   formData.idProject = null
@@ -463,12 +463,13 @@ onMounted(() => {
   fetchDataList()
 })
 
+const debounceFilter = debounce(handleSubmitFilter, 100)
 watch(
   dataFilter,
   () => {
-    handleSubmitFilter()
+    debounceFilter()
   },
-  { deep: true }
+  { deep: true },
 )
 
 watch(
@@ -476,7 +477,7 @@ watch(
   () => {
     handleSubmitFilterAdd()
   },
-  { deep: true }
+  { deep: true },
 )
 </script>
 
