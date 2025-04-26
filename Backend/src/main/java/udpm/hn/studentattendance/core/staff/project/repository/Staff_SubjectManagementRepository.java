@@ -12,7 +12,7 @@ import java.util.List;
 public interface Staff_SubjectManagementRepository extends ProjectRepository {
 
     @Query(value = """
-                SELECT 
+                SELECT
                     ROW_NUMBER() OVER (ORDER BY sf.created_at DESC) AS indexs,
                     sf.id AS id,
                     s.name AS name

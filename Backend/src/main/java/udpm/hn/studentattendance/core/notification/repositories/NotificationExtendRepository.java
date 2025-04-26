@@ -17,104 +17,104 @@ import java.util.Optional;
 public interface NotificationExtendRepository extends NotificationRepository {
 
     @Query(value = """
-        SELECT new udpm.hn.studentattendance.core.notification.model.response.NotificationResponse(
-                n.id, 
-                n.type, 
-                n.data, 
-                n.status, 
-                n.createdAt
-            )
-        FROM Notification n
-        WHERE 
-            n.idUser = :#{#request.idUser} AND
-            (:#{#request.status} IS NULL OR n.status = :#{#request.entityStatus})
-        ORDER BY n.createdAt DESC
-    """, countQuery = """
-        SELECT COUNT(n.id)
-        FROM Notification n
-        WHERE 
-            n.idUser = :#{#request.idUser} AND
-            (:#{#request.status} IS NULL OR n.status = :#{#request.entityStatus})
-    """)
+                SELECT new udpm.hn.studentattendance.core.notification.model.response.NotificationResponse(
+                        n.id,
+                        n.type,
+                        n.data,
+                        n.status,
+                        n.createdAt
+                    )
+                FROM Notification n
+                WHERE
+                    n.idUser = :#{#request.idUser} AND
+                    (:#{#request.status} IS NULL OR n.status = :#{#request.entityStatus})
+                ORDER BY n.createdAt DESC
+            """, countQuery = """
+                SELECT COUNT(n.id)
+                FROM Notification n
+                WHERE
+                    n.idUser = :#{#request.idUser} AND
+                    (:#{#request.status} IS NULL OR n.status = :#{#request.entityStatus})
+            """)
     Page<NotificationResponse> getAllByFilter(Pageable pageable, NotificationFilterRequest request);
 
     @Query(value = """
-        SELECT new udpm.hn.studentattendance.core.notification.model.response.NotificationResponse(
-                n.id, 
-                n.type, 
-                n.data, 
-                n.status, 
-                n.createdAt
-            )
-        FROM Notification n
-        WHERE 
-            n.idUser = :#{#request.idUser} AND
-            n.id = :id
-    """)
+                SELECT new udpm.hn.studentattendance.core.notification.model.response.NotificationResponse(
+                        n.id,
+                        n.type,
+                        n.data,
+                        n.status,
+                        n.createdAt
+                    )
+                FROM Notification n
+                WHERE
+                    n.idUser = :#{#request.idUser} AND
+                    n.id = :id
+            """)
     Optional<NotificationResponse> getDataById(String id, String idUser);
 
     @Query(value = """
-        SELECT 
-            COUNT(id)
-        FROM notification
-        WHERE 
-            id_user = :idUser AND
-            status = 1
-    """, nativeQuery = true)
+                SELECT
+                    COUNT(id)
+                FROM notification
+                WHERE
+                    id_user = :idUser AND
+                    status = 1
+            """, nativeQuery = true)
     int count(String idUser);
 
     @Modifying
     @Transactional
     @Query(value = """
-        DELETE FROM notification
-        WHERE
-            id_user = :#{#request.idUser} AND
-            id IN(:#{#request.ids})
-    """, countQuery = "SELECT 1", nativeQuery = true)
+                DELETE FROM notification
+                WHERE
+                    id_user = :#{#request.idUser} AND
+                    id IN(:#{#request.ids})
+            """, countQuery = "SELECT 1", nativeQuery = true)
     int deleteMultipleById(NotificationModifyRequest request);
 
     @Modifying
     @Transactional
     @Query(value = """
-        DELETE FROM notification
-        WHERE
-            id_user = :idUser
-    """, countQuery = "SELECT 1", nativeQuery = true)
+                DELETE FROM notification
+                WHERE
+                    id_user = :idUser
+            """, countQuery = "SELECT 1", nativeQuery = true)
     int deleteAllNotification(String idUser);
 
     @Modifying
     @Transactional
     @Query(value = """
-        UPDATE notification
-        SET
-            status = 0
-        WHERE
-            id_user = :idUser
-    """, countQuery = "SELECT 1", nativeQuery = true)
+                UPDATE notification
+                SET
+                    status = 0
+                WHERE
+                    id_user = :idUser
+            """, countQuery = "SELECT 1", nativeQuery = true)
     int markReadAll(String idUser);
 
     @Modifying
     @Transactional
     @Query(value = """
-        UPDATE notification
-        SET
-            status = 0
-        WHERE
-            id_user = :#{#request.idUser} AND
-            id IN(:#{#request.ids})
-    """, countQuery = "SELECT 1", nativeQuery = true)
+                UPDATE notification
+                SET
+                    status = 0
+                WHERE
+                    id_user = :#{#request.idUser} AND
+                    id IN(:#{#request.ids})
+            """, countQuery = "SELECT 1", nativeQuery = true)
     int markReadMultipleById(NotificationModifyRequest request);
 
     @Modifying
     @Transactional
     @Query(value = """
-        UPDATE notification
-        SET
-            status = 1
-        WHERE
-            id_user = :#{#request.idUser} AND
-            id IN(:#{#request.ids})
-    """, countQuery = "SELECT 1", nativeQuery = true)
+                UPDATE notification
+                SET
+                    status = 1
+                WHERE
+                    id_user = :#{#request.idUser} AND
+                    id IN(:#{#request.ids})
+            """, countQuery = "SELECT 1", nativeQuery = true)
     int markUnreadMultipleById(NotificationModifyRequest request);
 
 }

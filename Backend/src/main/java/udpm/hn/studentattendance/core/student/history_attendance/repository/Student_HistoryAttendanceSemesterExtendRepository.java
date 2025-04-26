@@ -10,16 +10,13 @@ import java.util.List;
 
 @Repository
 public interface Student_HistoryAttendanceSemesterExtendRepository extends SemesterRepository {
-    @Query(
-            value =
-                    """
-                    SELECT 
-                    s
-                    FROM 
-                    Semester s
-                    WHERE 
-                    s.status = :semesterStatus
-                            """
-    )
-    List<Semester> getAllSemesterByCode(EntityStatus semesterStatus);
+        @Query(value = """
+                        SELECT
+                        s
+                        FROM
+                        Semester s
+                        WHERE
+                        s.status = :semesterStatus
+                                """)
+        List<Semester> getAllSemesterByCode(EntityStatus semesterStatus);
 }

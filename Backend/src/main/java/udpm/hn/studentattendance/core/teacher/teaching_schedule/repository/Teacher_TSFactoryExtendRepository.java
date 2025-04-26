@@ -10,15 +10,13 @@ import java.util.List;
 
 @Repository
 public interface Teacher_TSFactoryExtendRepository extends FactoryRepository {
-    @Query(
-            value = """
-                    SELECT
-                    f
-                    FROM Factory f
-                    LEFT JOIN UserStaff us ON us.id = f.userStaff.id
-                    WHERE us.id = :userId
-                    AND f.status = :status
-                    """
-    )
+    @Query(value = """
+            SELECT
+            f
+            FROM Factory f
+            LEFT JOIN UserStaff us ON us.id = f.userStaff.id
+            WHERE us.id = :userId
+            AND f.status = :status
+            """)
     List<Factory> getAllFactoryByStaff(String userId, EntityStatus status);
 }

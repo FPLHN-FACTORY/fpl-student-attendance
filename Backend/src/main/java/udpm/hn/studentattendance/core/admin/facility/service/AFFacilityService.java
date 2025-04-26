@@ -5,7 +5,6 @@ import org.springframework.http.ResponseEntity;
 import udpm.hn.studentattendance.core.admin.facility.model.request.AFCreateUpdateFacilityRequest;
 import udpm.hn.studentattendance.core.admin.facility.model.request.AFFacilitySearchRequest;
 
-
 public interface AFFacilityService {
     ResponseEntity<?> getAllFacility(AFFacilitySearchRequest request);
 

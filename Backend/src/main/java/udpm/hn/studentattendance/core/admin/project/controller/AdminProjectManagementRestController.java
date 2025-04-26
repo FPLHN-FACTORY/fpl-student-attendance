@@ -18,7 +18,6 @@ import udpm.hn.studentattendance.core.admin.project.service.ipml.AdminSubjectFac
 import udpm.hn.studentattendance.helpers.PaginationHelper;
 import udpm.hn.studentattendance.helpers.SessionHelper;
 import udpm.hn.studentattendance.infrastructure.constants.router.RouteAdminConstant;
-import udpm.hn.studentattendance.infrastructure.constants.router.RouteStaffConstant;
 
 import java.util.List;
 
@@ -69,7 +68,7 @@ public class AdminProjectManagementRestController {
         return PaginationHelper.createResponseEntity(service.deleteProject(id));
     }
 
-    //Get data show combobox
+    // Get data show combobox
     @GetMapping("/level-combobox")
     public List<LevelProjectResponse> getLevelProject() {
         return serviceLevel.getComboboxLevelProject();

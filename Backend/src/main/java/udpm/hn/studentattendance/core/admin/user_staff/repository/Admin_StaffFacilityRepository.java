@@ -10,14 +10,11 @@ import java.util.List;
 
 @Repository
 public interface Admin_StaffFacilityRepository extends FacilityRepository {
-    @Query
-            (
-                    value = """
-                            SELECT 
-                            f
-                            FROM Facility f
-                            WHERE f.status = :status
-                                                        """
-            )
-    List<Facility> getFacility(EntityStatus status);
+        @Query(value = """
+                        SELECT
+                        f
+                        FROM Facility f
+                        WHERE f.status = :status
+                                                    """)
+        List<Facility> getFacility(EntityStatus status);
 }

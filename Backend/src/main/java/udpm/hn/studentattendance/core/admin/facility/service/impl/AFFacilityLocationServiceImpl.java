@@ -4,27 +4,18 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import udpm.hn.studentattendance.core.admin.facility.model.request.AFAddOrUpdateFacilityIPRequest;
 import udpm.hn.studentattendance.core.admin.facility.model.request.AFAddOrUpdateFacilityLocationRequest;
-import udpm.hn.studentattendance.core.admin.facility.model.request.AFFilterFacilityIPRequest;
 import udpm.hn.studentattendance.core.admin.facility.model.request.AFFilterFacilityLocationRequest;
-import udpm.hn.studentattendance.core.admin.facility.model.response.AFFacilityIPResponse;
 import udpm.hn.studentattendance.core.admin.facility.model.response.AFFacilityLocationResponse;
 import udpm.hn.studentattendance.core.admin.facility.repository.AFFacilityExtendRepository;
-import udpm.hn.studentattendance.core.admin.facility.repository.AFFacilityIPRepository;
 import udpm.hn.studentattendance.core.admin.facility.repository.AFFacilityLocationRepository;
-import udpm.hn.studentattendance.core.admin.facility.service.AFFacilityIPService;
 import udpm.hn.studentattendance.core.admin.facility.service.AFFacilityLocationService;
 import udpm.hn.studentattendance.entities.Facility;
-import udpm.hn.studentattendance.entities.FacilityIP;
 import udpm.hn.studentattendance.entities.FacilityLocation;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
 import udpm.hn.studentattendance.helpers.RouterHelper;
-import udpm.hn.studentattendance.helpers.ValidateHelper;
-import udpm.hn.studentattendance.infrastructure.common.ApiResponse;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
-import udpm.hn.studentattendance.infrastructure.constants.IPType;
 
 @Service
 @RequiredArgsConstructor
@@ -37,7 +28,8 @@ public class AFFacilityLocationServiceImpl implements AFFacilityLocationService 
     @Override
     public ResponseEntity<?> getAllList(AFFilterFacilityLocationRequest request) {
         Pageable pageable = PaginationHelper.createPageable(request);
-        PageableObject<AFFacilityLocationResponse> data = PageableObject.of(afFacilityLocationRepository.getAllByFilter(pageable, request));
+        PageableObject<AFFacilityLocationResponse> data = PageableObject
+                .of(afFacilityLocationRepository.getAllByFilter(pageable, request));
         return RouterHelper.responseSuccess("Lấy danh sách dữ liệu thành công", data);
     }
 
@@ -51,7 +43,8 @@ public class AFFacilityLocationServiceImpl implements AFFacilityLocationService 
         }
 
         if (afFacilityLocationRepository.isExistsLocation(request.getName(), request.getIdFacility(), null)) {
-            return RouterHelper.responseError("Tên địa điểm " + request.getName() + " đã tồn tại trong cơ sở " + facility.getName());
+            return RouterHelper.responseError(
+                    "Tên địa điểm " + request.getName() + " đã tồn tại trong cơ sở " + facility.getName());
         }
 
         FacilityLocation facilityLocation = new FacilityLocation();
@@ -61,7 +54,8 @@ public class AFFacilityLocationServiceImpl implements AFFacilityLocationService 
         facilityLocation.setLongitude(request.getLongitude());
         facilityLocation.setRadius(request.getRadius());
 
-        return RouterHelper.responseSuccess("Tạo mới địa điểm thành công", afFacilityLocationRepository.save(facilityLocation));
+        return RouterHelper.responseSuccess("Tạo mới địa điểm thành công",
+                afFacilityLocationRepository.save(facilityLocation));
     }
 
     @Override
@@ -77,8 +71,10 @@ public class AFFacilityLocationServiceImpl implements AFFacilityLocationService 
             return RouterHelper.responseError("Không tìm cơ sở");
         }
 
-        if (afFacilityLocationRepository.isExistsLocation(request.getName(), request.getIdFacility(), facilityLocation.getId())) {
-            return RouterHelper.responseError("Tên địa điểm " + request.getName() + " đã tồn tại trong cơ sở " + facility.getName());
+        if (afFacilityLocationRepository.isExistsLocation(request.getName(), request.getIdFacility(),
+                facilityLocation.getId())) {
+            return RouterHelper.responseError(
+                    "Tên địa điểm " + request.getName() + " đã tồn tại trong cơ sở " + facility.getName());
         }
 
         facilityLocation.setName(request.getName());
@@ -86,7 +82,8 @@ public class AFFacilityLocationServiceImpl implements AFFacilityLocationService 
         facilityLocation.setLatitude(request.getLatitude());
         facilityLocation.setRadius(request.getRadius());
 
-        return RouterHelper.responseSuccess("Cập nhật địa điểm thành công", afFacilityLocationRepository.save(facilityLocation));
+        return RouterHelper.responseSuccess("Cập nhật địa điểm thành công",
+                afFacilityLocationRepository.save(facilityLocation));
     }
 
     @Override
@@ -107,12 +104,16 @@ public class AFFacilityLocationServiceImpl implements AFFacilityLocationService 
             return RouterHelper.responseError("Không tìm thấy địa điểm");
         }
 
-        if (facilityLocation.getStatus() == EntityStatus.INACTIVE && afFacilityLocationRepository.isExistsLocation(facilityLocation.getName(), facilityLocation.getFacility().getId(), facilityLocation.getId())) {
-            return RouterHelper.responseError("Địa điểm " + facilityLocation.getName() + " đã được áp dụng trong cơ sở");
+        if (facilityLocation.getStatus() == EntityStatus.INACTIVE && afFacilityLocationRepository.isExistsLocation(
+                facilityLocation.getName(), facilityLocation.getFacility().getId(), facilityLocation.getId())) {
+            return RouterHelper
+                    .responseError("Địa điểm " + facilityLocation.getName() + " đã được áp dụng trong cơ sở");
         }
 
-        facilityLocation.setStatus(facilityLocation.getStatus() == EntityStatus.ACTIVE ? EntityStatus.INACTIVE : EntityStatus.ACTIVE);
-        return RouterHelper.responseSuccess("Thay đổi trạng thái địa điểm thành công", afFacilityLocationRepository.save(facilityLocation));
+        facilityLocation.setStatus(
+                facilityLocation.getStatus() == EntityStatus.ACTIVE ? EntityStatus.INACTIVE : EntityStatus.ACTIVE);
+        return RouterHelper.responseSuccess("Thay đổi trạng thái địa điểm thành công",
+                afFacilityLocationRepository.save(facilityLocation));
     }
 
 }

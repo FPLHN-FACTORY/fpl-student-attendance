@@ -27,8 +27,7 @@ public class Admin_LevelProjectManagementServiceImpl implements Admin_LevelProje
         return new ResponseObject<>(
                 PageableObject.of(repository.getAll(pageable, request)),
                 HttpStatus.OK,
-                "Lây danh sách cấp dự án thành công"
-        );
+                "Lây danh sách cấp dự án thành công");
     }
 
     @Override

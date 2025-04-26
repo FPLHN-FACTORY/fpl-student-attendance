@@ -34,7 +34,8 @@ public class Admin_LevelProjectResController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateLevelProject(@PathVariable String id, @RequestBody Admin_LevelProjectUpdateRequest request) {
+    public ResponseEntity<?> updateLevelProject(@PathVariable String id,
+            @RequestBody Admin_LevelProjectUpdateRequest request) {
         return PaginationHelper.createResponseEntity(service.updateLevelProject(id, request));
     }
 

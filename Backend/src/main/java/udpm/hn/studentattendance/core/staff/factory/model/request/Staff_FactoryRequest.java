@@ -14,7 +14,7 @@ public class Staff_FactoryRequest extends PageableRequest {
 
     private String idFacility;
 
-    private String factoryName;    // dùng thay cho searchQuery
+    private String factoryName; // dùng thay cho searchQuery
 
     private String idSemester;
 

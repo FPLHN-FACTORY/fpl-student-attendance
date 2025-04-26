@@ -13,15 +13,13 @@ public interface Staff_StudentFactoryService {
 
     ResponseEntity<?> changeStatus(String userStudentFactoryId);
 
-    ResponseEntity<?> createOrDeleteStudentFactory(Staff_StudentFactoryCreateUpdateRequest studentFactoryCreateUpdateRequest);
+    ResponseEntity<?> createOrDeleteStudentFactory(
+            Staff_StudentFactoryCreateUpdateRequest studentFactoryCreateUpdateRequest);
 
-    ResponseEntity<?> getStudentFactoryExist( String factoryId);
+    ResponseEntity<?> getStudentFactoryExist(String factoryId);
 
     ResponseEntity<?> getAllStudent(Staff_UserStudentRequest userStudentRequest);
 
     ResponseEntity<?> createStudent(Staff_StudentFactoryAddRequest staffStudentFactoryAddRequest);
-
-    ResponseEntity<?> deleteFaceStudentFactory(String studentId);
-
 
 }

@@ -35,8 +35,7 @@ public class Admin_SubjectFacilityServiceImpl implements Admin_SubjectFacilitySe
         return new ResponseObject<>(
                 PageableObject.of(repository.getAll(pageable, request)),
                 HttpStatus.OK,
-                "Lây danh sách bộ môn cơ sở thành công"
-        );
+                "Lây danh sách bộ môn cơ sở thành công");
     }
 
     @Override
@@ -44,7 +43,7 @@ public class Admin_SubjectFacilityServiceImpl implements Admin_SubjectFacilitySe
         SubjectFacility subjectFacility = new SubjectFacility();
         subjectFacility = convertAdd(subjectFacility, request);
         repository.save(subjectFacility);
-        return new ResponseObject<>(subjectFacility , HttpStatus.OK, "Thêm bộ môn cơ ở");
+        return new ResponseObject<>(subjectFacility, HttpStatus.OK, "Thêm bộ môn cơ ở");
     }
 
     @Override
@@ -52,7 +51,7 @@ public class Admin_SubjectFacilityServiceImpl implements Admin_SubjectFacilitySe
         SubjectFacility subjectFacility = repository.findById(id).get();
         subjectFacility = convertUpdate(subjectFacility, request);
         repository.save(subjectFacility);
-        return new ResponseObject<>(subjectFacility , HttpStatus.OK, "sửa bộ môn cơ ở");
+        return new ResponseObject<>(subjectFacility, HttpStatus.OK, "sửa bộ môn cơ ở");
     }
 
     @Override
@@ -79,6 +78,7 @@ public class Admin_SubjectFacilityServiceImpl implements Admin_SubjectFacilitySe
         s.setSubject(subjectRepository.findById(request.getSubjectId()).get());
         return s;
     }
+
     private SubjectFacility convertUpdate(SubjectFacility s, Admin_SubjectFacilityUpdateRequest request) {
         s.setFacility(facilityRepository.findById(request.getFacilityId()).get());
         s.setSubject(subjectRepository.findById(request.getSubjectId()).get());

@@ -13,7 +13,7 @@ import udpm.hn.studentattendance.repositories.SubjectFacilityRepository;
 public interface Admin_SubjectFacilityRepository extends SubjectFacilityRepository {
 
     @Query(value = """
-                    SELECT 
+                    SELECT
                         ROW_NUMBER() OVER (ORDER BY sf.created_at DESC) AS indexs,
                         sf.id AS id,
                         s.name AS subjectName,
@@ -41,7 +41,7 @@ public interface Admin_SubjectFacilityRepository extends SubjectFacilityReposito
                     AND (:#{#request.facilityId} IS NULL OR sf.id_facility = :#{#request.facilityId})
                     AND (:#{#request.status} IS NULL OR sf.status = :#{#request.status})
             """, nativeQuery = true)
-    Page<Admin_SubjectFacilityResponse> getAll(Pageable pageable, @Param("request") Admin_SubjectFacilitySearchRequest request);
-
+    Page<Admin_SubjectFacilityResponse> getAll(Pageable pageable,
+            @Param("request") Admin_SubjectFacilitySearchRequest request);
 
 }

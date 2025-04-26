@@ -14,7 +14,6 @@ import udpm.hn.studentattendance.infrastructure.constants.router.RouteAdminConst
 
 import java.util.List;
 
-
 @RestController
 @RequestMapping(RouteAdminConstant.URL_API_SUBJECT_FACILITY_MANAGEMENT)
 public class Admin_SubjectFacilityRestController {
@@ -29,7 +28,6 @@ public class Admin_SubjectFacilityRestController {
     public List<Admin_FacilityResponse> getFacility() {
         return adminFacilityManagementService.getComboboxFacility();
     }
-
 
     @PostMapping("/facility-combobox")
     public List<Admin_FacilityResponse> getFacilitySubject(@RequestBody Admin_SubjectFacilitySearchRequest request) {
@@ -57,7 +55,8 @@ public class Admin_SubjectFacilityRestController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateSubjectFacility(@PathVariable String id, @RequestBody Admin_SubjectFacilityUpdateRequest request) {
+    public ResponseEntity<?> updateSubjectFacility(@PathVariable String id,
+            @RequestBody Admin_SubjectFacilityUpdateRequest request) {
         return PaginationHelper.createResponseEntity(adminSubjectFacilityService.updateSubjectFacility(id, request));
     }
 

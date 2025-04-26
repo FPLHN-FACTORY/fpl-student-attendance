@@ -15,38 +15,32 @@ import java.util.Optional;
 
 @Repository
 public interface Admin_SemesterRepository extends SemesterRepository {
-    @Query(
-            value = """
-        SELECT  
-            DISTINCT 
-            ROW_NUMBER() OVER (ORDER BY s.createdAt desc ) AS semesterIndex, 
-            s.id AS id,
-            s.code AS semesterCode,
-            s.semesterName AS semesterName,
-            s.status AS semesterStatus,
-            s.fromDate AS startDate,
-            s.toDate AS endDate
-        FROM Semester s
-        WHERE (:#{#request.semesterCode} IS NULL OR s.code LIKE CONCAT('%', TRIM(:#{#request.semesterCode}), '%'))
-          AND (:#{#request.status} IS NULL OR s.status = :#{#request.status})
-          AND ((:#{#request.fromDateSemester} IS NULL OR :#{#request.toDateSemester} IS NULL)
-               OR (s.fromDate >= :#{#request.fromDateSemester} AND s.toDate <= :#{#request.toDateSemester})
-               OR (s.toDate >= :#{#request.fromDateSemester} AND s.fromDate <= :#{#request.toDateSemester}))
-        """,
-            countQuery = """
-        SELECT COUNT(s.id)
-        FROM Semester s
-        WHERE (:#{#request.semesterCode} IS NULL OR s.code LIKE CONCAT('%', TRIM(:#{#request.semesterCode}), '%'))
-          AND (:#{#request.status} IS NULL OR s.status = :#{#request.status})
-          AND ((:#{#request.fromDateSemester} IS NULL OR :#{#request.toDateSemester} IS NULL)
-               OR (s.fromDate >= :#{#request.fromDateSemester} AND s.toDate <= :#{#request.toDateSemester})
-               OR (s.toDate >= :#{#request.fromDateSemester} AND s.fromDate <= :#{#request.toDateSemester}))
-        """
-    )
+    @Query(value = """
+            SELECT
+                DISTINCT
+                ROW_NUMBER() OVER (ORDER BY s.createdAt desc ) AS semesterIndex,
+                s.id AS id,
+                s.code AS semesterCode,
+                s.semesterName AS semesterName,
+                s.status AS semesterStatus,
+                s.fromDate AS startDate,
+                s.toDate AS endDate
+            FROM Semester s
+            WHERE (:#{#request.semesterCode} IS NULL OR s.code LIKE CONCAT('%', TRIM(:#{#request.semesterCode}), '%'))
+              AND (:#{#request.status} IS NULL OR s.status = :#{#request.status})
+              AND ((:#{#request.fromDateSemester} IS NULL OR :#{#request.toDateSemester} IS NULL)
+                   OR (s.fromDate >= :#{#request.fromDateSemester} AND s.toDate <= :#{#request.toDateSemester})
+                   OR (s.toDate >= :#{#request.fromDateSemester} AND s.fromDate <= :#{#request.toDateSemester}))
+            """, countQuery = """
+            SELECT COUNT(s.id)
+            FROM Semester s
+            WHERE (:#{#request.semesterCode} IS NULL OR s.code LIKE CONCAT('%', TRIM(:#{#request.semesterCode}), '%'))
+              AND (:#{#request.status} IS NULL OR s.status = :#{#request.status})
+              AND ((:#{#request.fromDateSemester} IS NULL OR :#{#request.toDateSemester} IS NULL)
+                   OR (s.fromDate >= :#{#request.fromDateSemester} AND s.toDate <= :#{#request.toDateSemester})
+                   OR (s.toDate >= :#{#request.fromDateSemester} AND s.fromDate <= :#{#request.toDateSemester}))
+            """)
     Page<Admin_SemesterResponse> getAllSemester(Pageable pageable, Admin_SemesterRequest request);
-
-
-
 
     @Query(value = """
              SELECT s
@@ -67,7 +61,7 @@ public interface Admin_SemesterRepository extends SemesterRepository {
     Optional<Semester> checkSemesterExistNameAndYear(String semesterName, Integer semesterYear, EntityStatus status);
 
     @Query(value = """
-            SELECT 
+            SELECT
             s.id as id,
             s.semesterName as semesterName,
             s.fromDate as startTime,
