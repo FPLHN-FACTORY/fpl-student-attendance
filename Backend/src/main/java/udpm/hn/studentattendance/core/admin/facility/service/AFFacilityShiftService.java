@@ -4,7 +4,6 @@ import org.springframework.http.ResponseEntity;
 import udpm.hn.studentattendance.core.admin.facility.model.request.AFAddOrUpdateFacilityShiftRequest;
 import udpm.hn.studentattendance.core.admin.facility.model.request.AFFilterFacilityShiftRequest;
 
-
 public interface AFFacilityShiftService {
 
     ResponseEntity<?> getAllList(AFFilterFacilityShiftRequest request);

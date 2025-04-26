@@ -19,42 +19,42 @@ import udpm.hn.studentattendance.infrastructure.constants.RestApiStatus;
 
 import java.util.List;
 
-
 @Service
 @RequiredArgsConstructor
 @Validated
 public class Teacher_FactoryServiceImpl implements Teacher_FactoryService {
 
-    private final Teacher_FactoryExtendRepository teacherStudentFactoryExtendRepository;
+        private final Teacher_FactoryExtendRepository teacherStudentFactoryExtendRepository;
 
-    private final SessionHelper sessionHelper;
+        private final SessionHelper sessionHelper;
 
-    private final Teacher_ProjectExtendRepository teacherStudentProjectExtendRepository;
+        private final Teacher_ProjectExtendRepository teacherStudentProjectExtendRepository;
 
-    @Override
-    public ResponseEntity<?> getAllFactoryByTeacher(Teacher_FactoryRequest teacherStudentRequest) {
-        Pageable pageable = PaginationHelper.createPageable(teacherStudentRequest, "createdAt");
-        PageableObject listFactoryByTeacher = PageableObject
-                .of(teacherStudentFactoryExtendRepository.getAllFactoryByTeacher
-                        (pageable, sessionHelper.getFacilityId(), sessionHelper.getUserCode(), teacherStudentRequest));
-        return new ResponseEntity<>(
-                new ApiResponse(
-                        RestApiStatus.SUCCESS,
-                        "Lấy tất cả nhóm xưởng do giảng viên " + sessionHelper.getUserCode() + " thành công",
-                        listFactoryByTeacher
-                ),
-                HttpStatus.OK);
-    }
+        @Override
+        public ResponseEntity<?> getAllFactoryByTeacher(Teacher_FactoryRequest teacherStudentRequest) {
+                Pageable pageable = PaginationHelper.createPageable(teacherStudentRequest, "createdAt");
+                PageableObject listFactoryByTeacher = PageableObject
+                                .of(teacherStudentFactoryExtendRepository.getAllFactoryByTeacher(pageable,
+                                                sessionHelper.getFacilityId(), sessionHelper.getUserCode(),
+                                                teacherStudentRequest));
+                return new ResponseEntity<>(
+                                new ApiResponse(
+                                                RestApiStatus.SUCCESS,
+                                                "Lấy tất cả nhóm xưởng do giảng viên " + sessionHelper.getUserCode()
+                                                                + " thành công",
+                                                listFactoryByTeacher),
+                                HttpStatus.OK);
+        }
 
-    @Override
-    public ResponseEntity<?> getAllProjectByFacility() {
-        List<Project> projects = teacherStudentProjectExtendRepository.getAllProjectName(sessionHelper.getFacilityId());
-        return new ResponseEntity<>(
-                new ApiResponse(
-                        RestApiStatus.SUCCESS,
-                        "Lấy tất cả dự án theo cơ sở thành công",
-                        projects
-                ),
-                HttpStatus.OK);
-    }
+        @Override
+        public ResponseEntity<?> getAllProjectByFacility() {
+                List<Project> projects = teacherStudentProjectExtendRepository
+                                .getAllProjectName(sessionHelper.getFacilityId());
+                return new ResponseEntity<>(
+                                new ApiResponse(
+                                                RestApiStatus.SUCCESS,
+                                                "Lấy tất cả dự án theo cơ sở thành công",
+                                                projects),
+                                HttpStatus.OK);
+        }
 }

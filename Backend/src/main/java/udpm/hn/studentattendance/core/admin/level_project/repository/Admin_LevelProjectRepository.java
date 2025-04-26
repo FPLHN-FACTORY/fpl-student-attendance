@@ -12,31 +12,31 @@ import udpm.hn.studentattendance.repositories.LevelProjectRepository;
 public interface Admin_LevelProjectRepository extends LevelProjectRepository {
 
     @Query(value = """
-        select
-            row_number() over(
-            order by created_at desc) as indexs,
-            id as id,
-            name as name,
-            description as description,
-            status as status,
-            code as code
-        from
-            level_project
-        WHERE
-            (:#{#request.name} IS NULL OR name LIKE CONCAT('%', :#{#request.name}, '%') 
-                or code LIKE CONCAT('%', :#{#request.name}, '%')
-                )
-            AND (:#{#request.status} IS NULL OR status = :#{#request.status})
-        ORDER BY created_at DESC
-""", countQuery = """
-        select
-            count(*)
-        from
-            level_project
-        WHERE
-            (:#{#request.name} IS NULL OR name LIKE CONCAT('%', :#{#request.name}, '%') 
-                or code LIKE CONCAT('%', :#{#request.name}, '%') )
-            AND (:#{#request.status} IS NULL OR status = :#{#request.status})
-""", nativeQuery = true)
+                    select
+                        row_number() over(
+                        order by created_at desc) as indexs,
+                        id as id,
+                        name as name,
+                        description as description,
+                        status as status,
+                        code as code
+                    from
+                        level_project
+                    WHERE
+                        (:#{#request.name} IS NULL OR name LIKE CONCAT('%', :#{#request.name}, '%')
+                            or code LIKE CONCAT('%', :#{#request.name}, '%')
+                            )
+                        AND (:#{#request.status} IS NULL OR status = :#{#request.status})
+                    ORDER BY created_at DESC
+            """, countQuery = """
+                    select
+                        count(*)
+                    from
+                        level_project
+                    WHERE
+                        (:#{#request.name} IS NULL OR name LIKE CONCAT('%', :#{#request.name}, '%')
+                            or code LIKE CONCAT('%', :#{#request.name}, '%') )
+                        AND (:#{#request.status} IS NULL OR status = :#{#request.status})
+            """, nativeQuery = true)
     Page<Admin_LevelProjectResponse> getAll(Pageable pageable, Admin_LevelProjectSearchRequest request);
 }

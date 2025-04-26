@@ -14,7 +14,6 @@ public class Student_HistoryAttendanceRequest extends PageableRequest {
 
     private String semesterId;
 
-
     public String getFactoryId() {
         return (factoryId == null || factoryId.trim().isEmpty()) ? null : factoryId;
     }
@@ -27,4 +26,3 @@ public class Student_HistoryAttendanceRequest extends PageableRequest {
         return (studentFactoryId == null || studentFactoryId.trim().isEmpty()) ? null : studentFactoryId;
     }
 }
-

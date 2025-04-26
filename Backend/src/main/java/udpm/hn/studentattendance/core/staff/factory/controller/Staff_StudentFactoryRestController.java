@@ -17,7 +17,8 @@ public class Staff_StudentFactoryRestController {
     private final Staff_StudentFactoryService studentFactoryService;
 
     @GetMapping("/{factoryId}")
-    public ResponseEntity<?> getAllStudentInFactory(@PathVariable("factoryId") String factoryId, Staff_StudentFactoryRequest studentFactoryRequest) {
+    public ResponseEntity<?> getAllStudentInFactory(@PathVariable("factoryId") String factoryId,
+            Staff_StudentFactoryRequest studentFactoryRequest) {
         return studentFactoryService.getAllStudentInFactory(factoryId, studentFactoryRequest);
     }
 
@@ -37,8 +38,8 @@ public class Staff_StudentFactoryRestController {
     }
 
     @PostMapping
-    public ResponseEntity<?> addOrDeleteStudentInFactory
-            (@Valid @RequestBody Staff_StudentFactoryCreateUpdateRequest studentFactoryCreateUpdateRequest) {
+    public ResponseEntity<?> addOrDeleteStudentInFactory(
+            @Valid @RequestBody Staff_StudentFactoryCreateUpdateRequest studentFactoryCreateUpdateRequest) {
         return studentFactoryService.createOrDeleteStudentFactory(studentFactoryCreateUpdateRequest);
     }
 
@@ -47,8 +48,4 @@ public class Staff_StudentFactoryRestController {
         return studentFactoryService.getStudentFactoryExist(id);
     }
 
-    @PutMapping("/change-face/{studentId}")
-    public ResponseEntity<?> changeFaceStudent(@PathVariable("studentId") String studentId) {
-        return studentFactoryService.deleteFaceStudentFactory(studentId);
-    }
 }

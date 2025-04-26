@@ -20,7 +20,6 @@ public interface Teacher_TSProjectExtendRepository extends ProjectRepository {
             LEFT JOIN UserStaff us ON us.id = f.userStaff.id
             WHERE us.id = :userId
             AND p.status = :status
-            """
-    )
+            """)
     List<Project> getAllProject(String userId, EntityStatus status);
 }

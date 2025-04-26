@@ -12,6 +12,7 @@ public interface Staff_DetailFactoryResponse {
     String getSubjectCode();
 
     String getStaffName();
+
     String getStaffCode();
 
     String getProjectId();

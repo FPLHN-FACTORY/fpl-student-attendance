@@ -6,25 +6,24 @@ import udpm.hn.studentattendance.entities.Project;
 import udpm.hn.studentattendance.repositories.ProjectRepository;
 
 import java.util.List;
+
 @Repository
 public interface Teacher_ProjectExtendRepository extends ProjectRepository {
-    @Query(
-            value = """
-                    SELECT
-                         p.*
-                         FROM
-                         project p
-                         LEFT JOIN subject_facility sf ON sf.id = p.id_subject_facility
-                         LEFT JOIN facility f ON f.id = sf.id_facility
-                         WHERE
-                         p.status = 1
-                         AND
-                         f.status = 1
-                         AND
-                         sf.status = 1
-                         AND
-                         f.id = :facilityId
-                    """
-    , nativeQuery = true)
+    @Query(value = """
+            SELECT
+                 p.*
+                 FROM
+                 project p
+                 LEFT JOIN subject_facility sf ON sf.id = p.id_subject_facility
+                 LEFT JOIN facility f ON f.id = sf.id_facility
+                 WHERE
+                 p.status = 1
+                 AND
+                 f.status = 1
+                 AND
+                 sf.status = 1
+                 AND
+                 f.id = :facilityId
+            """, nativeQuery = true)
     List<Project> getAllProjectName(String facilityId);
 }

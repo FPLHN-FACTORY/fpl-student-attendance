@@ -15,5 +15,4 @@ public interface Admin_UserAdminService {
 
     ResponseEntity<?> changeStatus(String id);
 
-
 }
