@@ -14,6 +14,7 @@ import udpm.hn.studentattendance.core.staff.student.repository.Staff_StudentExte
 import udpm.hn.studentattendance.core.staff.student.repository.Staff_StudentFacilityExtendRepository;
 import udpm.hn.studentattendance.core.staff.student.service.Staff_StudentService;
 import udpm.hn.studentattendance.entities.Facility;
+import udpm.hn.studentattendance.entities.UserStaff;
 import udpm.hn.studentattendance.entities.UserStudent;
 import udpm.hn.studentattendance.helpers.NotificationHelper;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
@@ -33,164 +34,187 @@ import java.util.Optional;
 @Validated
 public class Staff_StudentServiceImpl implements Staff_StudentService {
 
-        private final Staff_StudentExtendRepository studentExtendRepository;
+    private final Staff_StudentExtendRepository studentExtendRepository;
 
-        private final SessionHelper sessionHelper;
+    private final SessionHelper sessionHelper;
 
-        private final Staff_StudentFacilityExtendRepository facilityRepository;
+    private final Staff_StudentFacilityExtendRepository facilityRepository;
 
-        private final NotificationService notificationService;
+    private final NotificationService notificationService;
 
-        @Override
-        public ResponseEntity<?> getAllStudentByFacility(Staff_StudentRequest studentRequest) {
-                Pageable pageable = PaginationHelper.createPageable(studentRequest, "createdAt");
-                PageableObject pageableObject = PageableObject.of(studentExtendRepository
-                                .getAllStudentByFacility(pageable, studentRequest, sessionHelper.getFacilityId()));
+    @Override
+    public ResponseEntity<?> getAllStudentByFacility(Staff_StudentRequest studentRequest) {
+        Pageable pageable = PaginationHelper.createPageable(studentRequest, "createdAt");
+        PageableObject pageableObject = PageableObject.of(studentExtendRepository
+                .getAllStudentByFacility(pageable, studentRequest, sessionHelper.getFacilityId()));
 
-                return new ResponseEntity<>(
-                                new ApiResponse(
-                                                RestApiStatus.SUCCESS,
-                                                "Lấy danh sách sinh viên thành công",
-                                                pageableObject),
-                                HttpStatus.OK);
+        return new ResponseEntity<>(
+                new ApiResponse(
+                        RestApiStatus.SUCCESS,
+                        "Lấy danh sách sinh viên thành công",
+                        pageableObject),
+                HttpStatus.OK);
+    }
+
+    @Override
+    public ResponseEntity<?> getDetailStudent(String studentId) {
+        Optional<UserStudent> userStudent = studentExtendRepository.findById(studentId);
+
+        if (userStudent.isPresent()) {
+            return new ResponseEntity<>(
+                    new ApiResponse(
+                            RestApiStatus.SUCCESS,
+                            "Hiện thị chi tiết nhân viên thành công",
+                            userStudent),
+                    HttpStatus.OK);
         }
 
-        @Override
-        public ResponseEntity<?> getDetailStudent(String studentId) {
-                Optional<UserStudent> userStudent = studentExtendRepository.findById(studentId);
+        return new ResponseEntity<>(
+                new ApiResponse(
+                        RestApiStatus.ERROR,
+                        "Sinh viên không tồn tại",
+                        null),
+                HttpStatus.NOT_FOUND);
+    }
 
-                if (userStudent.isPresent()) {
-                        return new ResponseEntity<>(
-                                        new ApiResponse(
-                                                        RestApiStatus.SUCCESS,
-                                                        "Hiện thị chi tiết nhân viên thành công",
-                                                        userStudent),
-                                        HttpStatus.OK);
-                }
+    @Override
+    public ResponseEntity<?> createStudent(Staff_StudentCreateUpdateRequest studentCreateUpdateRequest) {
+        Optional<UserStudent> existStudentCode = studentExtendRepository
+                .getUserStudentByCode(studentCreateUpdateRequest.getCode());
+        Optional<UserStudent> existStudentEmail = studentExtendRepository
+                .getUserStudentByEmail(studentCreateUpdateRequest.getEmail());
 
-                return new ResponseEntity<>(
-                                new ApiResponse(
-                                                RestApiStatus.ERROR,
-                                                "Sinh viên không tồn tại",
-                                                null),
-                                HttpStatus.NOT_FOUND);
+        Optional<Facility> facility = facilityRepository.findById(sessionHelper.getFacilityId());
+
+        if (existStudentCode.isPresent()) {
+            return new ResponseEntity<>(
+                    new ApiResponse(
+                            RestApiStatus.ERROR,
+                            "Mã sinh viên đã tồn tại",
+                            null),
+                    HttpStatus.CONFLICT);
         }
-
-        @Override
-        public ResponseEntity<?> createStudent(Staff_StudentCreateUpdateRequest studentCreateUpdateRequest) {
-                Optional<UserStudent> existStudentCode = studentExtendRepository
-                                .getUserStudentByCode(studentCreateUpdateRequest.getCode());
-                Optional<UserStudent> existStudentEmail = studentExtendRepository
-                                .getUserStudentByEmail(studentCreateUpdateRequest.getEmail());
-
-                Optional<Facility> facility = facilityRepository.findById(sessionHelper.getFacilityId());
-
-                if (existStudentCode.isEmpty() || existStudentEmail.isEmpty()) {
-                        UserStudent userStudent = new UserStudent();
-                        userStudent.setCode(studentCreateUpdateRequest.getCode());
-                        userStudent.setName(studentCreateUpdateRequest.getName());
-                        userStudent.setEmail(studentCreateUpdateRequest.getEmail());
-                        userStudent.setFacility(facility.get());
-                        userStudent.setStatus(EntityStatus.ACTIVE);
-                        studentExtendRepository.save(userStudent);
-                        return new ResponseEntity<>(
-                                        new ApiResponse(
-                                                        RestApiStatus.SUCCESS,
-                                                        "Thêm sinh viên mới thành công",
-                                                        userStudent),
-                                        HttpStatus.CREATED);
-                }
-
-                return new ResponseEntity<>(
-                                new ApiResponse(
-                                                RestApiStatus.ERROR,
-                                                "Sinh viên đã tồn tại",
-                                                null),
-                                HttpStatus.CONFLICT);
+        if (existStudentEmail.isPresent()) {
+            return new ResponseEntity<>(
+                    new ApiResponse(
+                            RestApiStatus.ERROR,
+                            "Email sinh viên đã tồn tại",
+                            null),
+                    HttpStatus.CONFLICT);
         }
+        UserStudent userStudent = new UserStudent();
+        userStudent.setCode(studentCreateUpdateRequest.getCode());
+        userStudent.setName(studentCreateUpdateRequest.getName());
+        userStudent.setEmail(studentCreateUpdateRequest.getEmail());
+        userStudent.setFacility(facility.get());
+        userStudent.setStatus(EntityStatus.ACTIVE);
+        studentExtendRepository.save(userStudent);
+        return new ResponseEntity<>(
+                new ApiResponse(
+                        RestApiStatus.SUCCESS,
+                        "Thêm sinh viên mới thành công",
+                        userStudent),
+                HttpStatus.CREATED);
 
-        @Override
-        public ResponseEntity<?> updateStudent(Staff_StudentCreateUpdateRequest studentCreateUpdateRequest) {
-                Optional<UserStudent> existStudent = studentExtendRepository
-                                .getStudentById(studentCreateUpdateRequest.getId());
+    }
 
-                if (existStudent.isPresent()) {
-                        UserStudent userStudent = existStudent.get();
-                        userStudent.setCode(studentCreateUpdateRequest.getCode());
-                        userStudent.setEmail(studentCreateUpdateRequest.getEmail());
-                        userStudent.setName(studentCreateUpdateRequest.getName());
-                        studentExtendRepository.save(userStudent);
-                        return new ResponseEntity<>(
-                                        new ApiResponse(
-                                                        RestApiStatus.SUCCESS,
-                                                        "Cập nhật sinh viên thành công",
-                                                        userStudent),
-                                        HttpStatus.OK);
-                } else {
-                        return new ResponseEntity<>(
-                                        new ApiResponse(
-                                                        RestApiStatus.ERROR,
-                                                        "Sinh viên không tồn tại",
-                                                        null),
-                                        HttpStatus.NOT_FOUND);
-                }
+    @Override
+    public ResponseEntity<?> updateStudent(Staff_StudentCreateUpdateRequest studentCreateUpdateRequest) {
+        Optional<UserStudent> existStudent = studentExtendRepository
+                .getStudentById(studentCreateUpdateRequest.getId());
+
+        UserStudent current = existStudent.get();
+
+        // 2. Check trùng code
+        if (studentExtendRepository.isExistCodeUpdate(studentCreateUpdateRequest.getCode(), current.getCode())) {
+            return new ResponseEntity<>(
+                    new ApiResponse(RestApiStatus.ERROR, "Mã sinh viên đã tồn tại", null),
+                    HttpStatus.BAD_REQUEST);
         }
-
-        @Override
-        public ResponseEntity<?> changeStatusStudent(String studentId) {
-                Optional<UserStudent> existStudent = studentExtendRepository.findById(studentId);
-
-                if (existStudent.isPresent()) {
-                        UserStudent userStudent = existStudent.get();
-                        userStudent.setStatus(userStudent.getStatus() == EntityStatus.ACTIVE ? EntityStatus.INACTIVE
-                                        : EntityStatus.ACTIVE);
-                        studentExtendRepository.save(userStudent);
-                        return new ResponseEntity<>(
-                                        new ApiResponse(
-                                                        RestApiStatus.SUCCESS,
-                                                        "Cập nhật sinh viên thành công",
-                                                        userStudent),
-                                        HttpStatus.OK);
-                } else {
-                        return new ResponseEntity<>(
-                                        new ApiResponse(
-                                                        RestApiStatus.ERROR,
-                                                        "Sinh viên không tồn tại",
-                                                        null),
-                                        HttpStatus.NOT_FOUND);
-                }
+        // 3. Check trùng email FE
+        if (studentExtendRepository.isExistEmailFeUpdate(studentCreateUpdateRequest.getEmail(), current.getEmail())) {
+            return new ResponseEntity<>(
+                    new ApiResponse(RestApiStatus.ERROR, "Đã có sinh viên khác dùng email này", null),
+                    HttpStatus.BAD_REQUEST);
         }
-
-        public ResponseEntity<?> deleteFaceStudentFactory(String studentId) {
-                Optional<UserStudent> existUserStudent = studentExtendRepository.findById(studentId);
-                if (existUserStudent.isPresent()) {
-                        UserStudent userStudent = existUserStudent.get();
-                        userStudent.setFaceEmbedding(null);
-                        studentExtendRepository.save(userStudent);
-
-                        Map<String, Object> dataNotification = new HashMap<>();
-                        dataNotification.put(NotificationHelper.KEY_USER_STAFF,
-                                        sessionHelper.getUserCode() + " - " + sessionHelper.getUserName());
-                        NotificationAddRequest notificationAddRequest = new NotificationAddRequest();
-                        notificationAddRequest.setIdUser(userStudent.getId());
-                        notificationAddRequest.setType(NotificationHelper.TYPE_REMOVE_FACE_ID);
-                        notificationAddRequest.setData(dataNotification);
-                        notificationService.add(notificationAddRequest);
-
-                        return new ResponseEntity<>(
-                                        new ApiResponse(
-                                                        RestApiStatus.SUCCESS,
-                                                        "Cấp quyền thay đổi mặt thành công",
-                                                        userStudent),
-                                        HttpStatus.OK);
-                }
-                return new ResponseEntity<>(
-                                new ApiResponse(
-                                                RestApiStatus.ERROR,
-                                                "Sinh viên không tồn tại",
-                                                null),
-                                HttpStatus.BAD_REQUEST);
-
+        if (existStudent.isPresent()) {
+            UserStudent userStudent = existStudent.get();
+            userStudent.setCode(studentCreateUpdateRequest.getCode());
+            userStudent.setEmail(studentCreateUpdateRequest.getEmail());
+            userStudent.setName(studentCreateUpdateRequest.getName());
+            studentExtendRepository.save(userStudent);
+            return new ResponseEntity<>(
+                    new ApiResponse(
+                            RestApiStatus.SUCCESS,
+                            "Cập nhật sinh viên thành công",
+                            userStudent),
+                    HttpStatus.OK);
         }
+        return new ResponseEntity<>(
+                new ApiResponse(
+                        RestApiStatus.ERROR,
+                        "Sinh viên không tồn tại",
+                        null),
+                HttpStatus.NOT_FOUND);
+
+    }
+
+    @Override
+    public ResponseEntity<?> changeStatusStudent(String studentId) {
+        Optional<UserStudent> existStudent = studentExtendRepository.findById(studentId);
+
+        if (existStudent.isPresent()) {
+            UserStudent userStudent = existStudent.get();
+            userStudent.setStatus(userStudent.getStatus() == EntityStatus.ACTIVE ? EntityStatus.INACTIVE
+                    : EntityStatus.ACTIVE);
+            studentExtendRepository.save(userStudent);
+            return new ResponseEntity<>(
+                    new ApiResponse(
+                            RestApiStatus.SUCCESS,
+                            "Cập nhật sinh viên thành công",
+                            userStudent),
+                    HttpStatus.OK);
+        } else {
+            return new ResponseEntity<>(
+                    new ApiResponse(
+                            RestApiStatus.ERROR,
+                            "Sinh viên không tồn tại",
+                            null),
+                    HttpStatus.NOT_FOUND);
+        }
+    }
+
+    public ResponseEntity<?> deleteFaceStudentFactory(String studentId) {
+        Optional<UserStudent> existUserStudent = studentExtendRepository.findById(studentId);
+        if (existUserStudent.isPresent()) {
+            UserStudent userStudent = existUserStudent.get();
+            userStudent.setFaceEmbedding(null);
+            studentExtendRepository.save(userStudent);
+
+            Map<String, Object> dataNotification = new HashMap<>();
+            dataNotification.put(NotificationHelper.KEY_USER_STAFF,
+                    sessionHelper.getUserCode() + " - " + sessionHelper.getUserName());
+            NotificationAddRequest notificationAddRequest = new NotificationAddRequest();
+            notificationAddRequest.setIdUser(userStudent.getId());
+            notificationAddRequest.setType(NotificationHelper.TYPE_REMOVE_FACE_ID);
+            notificationAddRequest.setData(dataNotification);
+            notificationService.add(notificationAddRequest);
+
+            return new ResponseEntity<>(
+                    new ApiResponse(
+                            RestApiStatus.SUCCESS,
+                            "Cấp quyền thay đổi mặt thành công",
+                            userStudent),
+                    HttpStatus.OK);
+        }
+        return new ResponseEntity<>(
+                new ApiResponse(
+                        RestApiStatus.ERROR,
+                        "Sinh viên không tồn tại",
+                        null),
+                HttpStatus.BAD_REQUEST);
+
+    }
+
 
 }

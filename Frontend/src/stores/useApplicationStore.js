@@ -52,7 +52,7 @@ const useApplicationStore = defineStore('Application', () => {
     fetchDataCount()
   }
 
-  const markReadAll = (callback) => {
+  const markReadAll = (callback, isLoading) => {
     Modal.confirm({
       title: 'Đánh dấu đã đọc tất cả',
       icon: createVNode(ExclamationCircleOutlined),
@@ -60,6 +60,7 @@ const useApplicationStore = defineStore('Application', () => {
       okText: 'Tiếp tục',
       cancelText: 'Huỷ bỏ',
       onOk: () => {
+        isLoading && (isLoading.value = true)
         isLoadingNotification.value = true
         requestAPI
           .put(API_ROUTES_NOTIFICATION.FETCH_MARK_READ_ALL)
@@ -74,12 +75,13 @@ const useApplicationStore = defineStore('Application', () => {
           })
           .finally(() => {
             isLoadingNotification.value = false
+            isLoading && (isLoading.value = false)
           })
       },
     })
   }
 
-  const removeAll = (callback) => {
+  const removeAll = (callback, isLoading) => {
     Modal.confirm({
       title: 'Xoá thông báo',
       icon: createVNode(ExclamationCircleOutlined),
@@ -87,6 +89,7 @@ const useApplicationStore = defineStore('Application', () => {
       okText: 'Tiếp tục',
       cancelText: 'Huỷ bỏ',
       onOk: () => {
+        isLoading && (isLoading.value = true)
         isLoadingNotification.value = true
         requestAPI
           .delete(API_ROUTES_NOTIFICATION.FETCH_DELETE_ALL)
@@ -101,6 +104,7 @@ const useApplicationStore = defineStore('Application', () => {
           })
           .finally(() => {
             isLoadingNotification.value = false
+            isLoading && (isLoading.value = false)
           })
       },
     })

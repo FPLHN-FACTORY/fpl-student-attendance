@@ -69,4 +69,15 @@ public interface Admin_UserAdminExtendRepository extends UserAdminRepository {
             """, nativeQuery = true)
     boolean isExistEmailUpdate(String newEmailFe, String currentEmailFe);
 
+    @Query(value = """
+            SELECT CASE 
+            WHEN cnt >= 5 THEN 'TRUE' ELSE 'FALSE'
+            END AS result
+            FROM
+            (
+                SELECT COUNT(*) AS cnt FROM user_admin
+            ) AS sub
+            """, nativeQuery = true)
+    boolean isMaxAdmin();
+
 }

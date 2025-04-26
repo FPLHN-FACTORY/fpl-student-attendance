@@ -67,6 +67,11 @@ public class Teacher_TeachingScheduleRestController {
         return service.updatePlanDate(planDateUpdateRequest);
     }
 
+    @PutMapping("/change-type/{id}")
+    public ResponseEntity<?> changeType(@PathVariable("id") String id){
+        return service.changeTypePlanDate(id);
+    }
+
     @GetMapping(value = "/export-pdf", produces = MediaType.APPLICATION_PDF_VALUE)
     public ResponseEntity<InputStreamResource> exportTeachingSchedule(
             Teacher_TeachingScheduleRequest teachingScheduleRequest) throws UnsupportedEncodingException, IOException {

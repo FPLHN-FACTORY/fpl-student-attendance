@@ -46,8 +46,8 @@ public interface CommonUserStudentRepository extends UserStudentRepository {
                 usf2.status = 1 AND
                 us.status = 1 AND
                 pd.id <> pd2.id AND
-                pd.start_date = pd2.start_date AND
-                pd.shift = pd2.shift AND
+                (pd2.start_date < pd.start_date OR pd2.start_date > pd.end_date) AND
+                pd.start_date >= (UNIX_TIMESTAMP(CURRENT_DATE) * 1000) AND
                 f.id = f3.id AND
                 f.id = :idFactory
         ) usf_ids ON usf_ids.id = usf_target.id
@@ -93,8 +93,8 @@ public interface CommonUserStudentRepository extends UserStudentRepository {
                 usf2.status = 1 AND
                 us.status = 1 AND
                 pd.id <> pd2.id AND
-                pd.start_date = pd2.start_date AND
-                pd.shift = pd2.shift AND
+                (pd2.start_date < pd.start_date OR pd2.start_date > pd.end_date) AND
+                pd.start_date >= (UNIX_TIMESTAMP(CURRENT_DATE) * 1000) AND
                 pj.id = pj2.id AND
                 pj.id = :idProject
         ) usf_ids ON usf_ids.id = usf_target.id
@@ -144,8 +144,8 @@ public interface CommonUserStudentRepository extends UserStudentRepository {
                 sf2.status = 1 AND
                 s3.status = 1 AND
                 pd.id <> pd2.id AND
-                pd.start_date = pd2.start_date AND
-                pd.shift = pd2.shift AND
+                (pd2.start_date < pd.start_date OR pd2.start_date > pd.end_date) AND
+                pd.start_date >= (UNIX_TIMESTAMP(CURRENT_DATE) * 1000) AND
                 s.id = s3.id AND
                 s.id = :idSubject
         ) usf_ids ON usf_ids.id = usf_target.id
@@ -193,8 +193,8 @@ public interface CommonUserStudentRepository extends UserStudentRepository {
                 pj2.status = 1 AND
                 sf2.status = 1 AND
                 pd.id <> pd2.id AND
-                pd.start_date = pd2.start_date AND
-                pd.shift = pd2.shift AND
+                (pd2.start_date < pd.start_date OR pd2.start_date > pd.end_date) AND
+                pd.start_date >= (UNIX_TIMESTAMP(CURRENT_DATE) * 1000) AND
                 sf.id = sf2.id AND
                 sf.id = :idSubjectFacility
         ) usf_ids ON usf_ids.id = usf_target.id
@@ -244,8 +244,8 @@ public interface CommonUserStudentRepository extends UserStudentRepository {
                 sf2.status = 1 AND
                 f4.status = 1 AND
                 pd.id <> pd2.id AND
-                pd.start_date = pd2.start_date AND
-                pd.shift = pd2.shift AND
+                (pd2.start_date < pd.start_date OR pd2.start_date > pd.end_date) AND
+                pd.start_date >= (UNIX_TIMESTAMP(CURRENT_DATE) * 1000) AND
                 f2.id = f4.id AND
                 f2.id = :idFacility
         ) usf_ids ON usf_ids.id = usf_target.id
@@ -293,8 +293,8 @@ public interface CommonUserStudentRepository extends UserStudentRepository {
                 pj2.status = 1 AND
                 s3.status = 1 AND
                 pd.id <> pd2.id AND
-                pd.start_date = pd2.start_date AND
-                pd.shift = pd2.shift AND
+                (pd2.start_date < pd.start_date OR pd2.start_date > pd.end_date) AND
+                pd.start_date >= (UNIX_TIMESTAMP(CURRENT_DATE) * 1000) AND
                 s.id = s3.id AND
                 s.id = :idSemester
         ) usf_ids ON usf_ids.id = usf_target.id
@@ -342,8 +342,8 @@ public interface CommonUserStudentRepository extends UserStudentRepository {
                 pj2.status = 1 AND
                 lp2.status = 1 AND
                 pd.id <> pd2.id AND
-                pd.start_date = pd2.start_date AND
-                pd.shift = pd2.shift AND
+                (pd2.start_date < pd.start_date OR pd2.start_date > pd.end_date) AND
+                pd.start_date >= (UNIX_TIMESTAMP(CURRENT_DATE) * 1000) AND
                 lp.id = lp2.id AND
                 lp.id = :idLevelProject
         ) usf_ids ON usf_ids.id = usf_target.id
@@ -387,8 +387,8 @@ public interface CommonUserStudentRepository extends UserStudentRepository {
                 usf2.status = 1 AND
                 us.status = 1 AND
                 pd.id <> pd2.id AND
-                pd.start_date = pd2.start_date AND
-                pd.shift = pd2.shift AND
+                (pd2.start_date < pd.start_date OR pd2.start_date > pd.end_date) AND
+                pd.start_date >= (UNIX_TIMESTAMP(CURRENT_DATE) * 1000) AND
                 p.id = :idPlan AND
                 p2.id <> :idPlan
         ) usf_ids ON usf_ids.id = usf_target.id
@@ -430,8 +430,8 @@ public interface CommonUserStudentRepository extends UserStudentRepository {
                 usf2.status = 1 AND
                 us.status = 1 AND
                 pd.id <> pd2.id AND
-                pd.start_date = pd2.start_date AND
-                pd.shift = pd2.shift AND
+                (pd2.start_date < pd.start_date OR pd2.start_date > pd.end_date) AND
+                pd.start_date >= (UNIX_TIMESTAMP(CURRENT_DATE) * 1000) AND
                 pf.id = :idPlanFactory AND
                 pf2.id <> :idPlanFactory
         ) usf_ids ON usf_ids.id = usf_target.id
@@ -473,14 +473,14 @@ public interface CommonUserStudentRepository extends UserStudentRepository {
                 usf2.status = 1 AND
                 us.status = 1 AND
                 pd.id <> pd2.id AND
-                pd.start_date = pd2.start_date AND
-                pd.shift = pd2.shift AND
-                pd.start_date = :startDate AND
-                pd.shift = :shift AND
                 f.id <> :idFactory AND
+                (pd2.start_date < pd.start_date OR pd2.start_date > pd.end_date) AND
+                pd.start_date >= (UNIX_TIMESTAMP(CURRENT_DATE) * 1000) AND
+                pd.start_date = :startDate AND
                 usf2.id_factory = :idFactory
         ) usf_ids ON usf_ids.id = usf_target.id
         SET usf_target.status = 0
     """, nativeQuery = true)
-    Integer disableAllStudentDuplicateShiftByStartDateAndShift(String idFactory, Long startDate, int shift);
+    Integer disableAllStudentDuplicateShiftByStartDate(String idFactory, Long startDate);
+
 }

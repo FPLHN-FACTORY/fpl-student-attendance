@@ -27,6 +27,7 @@ import {
 import { dayOfWeek, formatDate, rowSelectTable } from '@/utils/utils'
 import dayjs from 'dayjs'
 import ExcelUploadButton from '@/components/excel/ExcelUploadButton.vue'
+import { formatCountdown } from 'ant-design-vue/es/statistic/utils'
 
 const route = useRoute()
 const router = useRouter()
@@ -56,6 +57,7 @@ const modalAddOrUpdate = reactive({
   cancelText: 'Hủy bỏ',
   okText: 'Xác nhận',
   onOk: null,
+  width: 800,
 })
 
 const _detail = ref(null)
@@ -65,6 +67,7 @@ const lstShift = ref([])
 const columns = ref([
   { title: 'Buổi', dataIndex: 'orderNumber', key: 'orderNumber', width: 50 },
   { title: 'Ngày học', dataIndex: 'startDate', key: 'startDate' },
+  { title: 'Thời gian', key: 'time' },
   { title: 'Ca học', dataIndex: 'shift', key: 'shift' },
   { title: 'Nội dung', dataIndex: 'description', key: 'description', width: 300 },
   { title: 'Link Online', dataIndex: 'link', key: 'link', width: 100 },
@@ -100,7 +103,7 @@ const formData = reactive({
   id: null,
   idPlan: null,
   description: null,
-  shift: null,
+  shift: [],
   link: null,
   type: null,
   requiredLocation: STATUS_TYPE.ENABLE,
@@ -301,7 +304,7 @@ const handleShowAdd = () => {
 
   formData.id = null
   formData.startDate = dayjs()
-  formData.shift = null
+  formData.shift = []
   formData.link = null
   formData.type = null
   formData.requiredLocation = STATUS_TYPE.ENABLE
@@ -325,7 +328,7 @@ const handleShowUpdate = (item) => {
 
   formData.id = item.id
   formData.startDate = dayjs(item.startDate)
-  formData.shift = item.shift
+  formData.shift = item.shift.split(',').map((o) => Number(o))
   formData.link = item.link
   formData.type = String(item.type)
   formData.requiredLocation = item.requiredLocation
@@ -416,6 +419,25 @@ const handleShowDescription = (text) => {
   })
 }
 
+const handleChangeShift = (newValues) => {
+  const updated = new Set(newValues)
+
+  const sorted = [...updated].sort((a, b) => a - b)
+
+  for (let i = 0; i < sorted.length - 1; i++) {
+    const start = sorted[i]
+    const end = sorted[i + 1]
+
+    if (end - start > 1) {
+      for (let j = start + 1; j < end; j++) {
+        updated.add(j)
+      }
+    }
+  }
+
+  formData.shift = Array.from(updated).sort((a, b) => a - b)
+}
+
 const selectedRowKeys = ref([])
 
 const isDisabledSelectTable = (key) => {
@@ -436,7 +458,7 @@ watch(
   () => {
     handleSubmitFilter()
   },
-  { deep: true },
+  { deep: true }
 )
 </script>
 
@@ -454,7 +476,7 @@ watch(
       :model="formData"
     >
       <a-form-item
-        class="col-sm-8"
+        class="col-sm-12"
         label="Ngày học diễn ra"
         name="startDate"
         :rules="formRules.startDate"
@@ -468,11 +490,14 @@ watch(
           :disabled="modalAddOrUpdate.isLoading"
         />
       </a-form-item>
-      <a-form-item class="col-sm-4" label="Ca học" name="shift" :rules="formRules.shift">
+      <a-form-item class="col-sm-12" label="Ca học" name="shift" :rules="formRules.shift">
         <a-select
           class="w-100"
           v-model:value="formData.shift"
           :disabled="modalAddOrUpdate.isLoading"
+          @change="handleChangeShift"
+          mode="multiple"
+          allow-clear
         >
           <a-select-option v-for="o in lstShift" :key="o.id" :value="o.shift">
             {{ SHIFT[o.shift] }}
@@ -701,15 +726,28 @@ watch(
                 </template>
                 <template v-if="column.dataIndex === 'startDate'">
                   {{
-                    `${dayOfWeek(record.startDate)} ${formatDate(
+                    `${dayOfWeek(record.startDate)}, ${formatDate(
                       record.startDate,
-                      DEFAULT_DATE_FORMAT + ' HH:mm',
-                    )} - ${formatDate(record.endDate, 'HH:mm')}`
+                      DEFAULT_DATE_FORMAT
+                    )}`
+                  }}
+                </template>
+                <template v-if="column.key === 'time'">
+                  {{
+                    `${formatDate(record.startDate, 'HH:mm')} - ${formatDate(
+                      record.endDate,
+                      'HH:mm'
+                    )}`
                   }}
                 </template>
                 <template v-if="column.dataIndex === 'shift'">
                   <a-tag :color="record.type === 1 ? 'blue' : 'purple'">
-                    {{ `${SHIFT[record.shift]} - ${TYPE_SHIFT[record.type]}` }}
+                    {{
+                      `Ca ${record.shift
+                        .split(',')
+                        .map((o) => Number(o))
+                        .join(', ')} - ${TYPE_SHIFT[record.type]}`
+                    }}
                   </a-tag>
                 </template>
                 <template v-if="column.dataIndex === 'status'">

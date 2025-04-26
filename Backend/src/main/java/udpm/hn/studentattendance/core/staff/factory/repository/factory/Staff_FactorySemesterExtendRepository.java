@@ -1,4 +1,4 @@
-package udpm.hn.studentattendance.core.staff.factory.repository;
+package udpm.hn.studentattendance.core.staff.factory.repository.factory;
 
 import org.springframework.stereotype.Repository;
 

@@ -4,9 +4,10 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import udpm.hn.studentattendance.core.staff.factory.model.request.Staff_StudentFactoryCreateUpdateRequest;
-import udpm.hn.studentattendance.core.staff.factory.model.request.Staff_StudentFactoryRequest;
-import udpm.hn.studentattendance.core.staff.factory.model.request.Staff_UserStudentRequest;
+import udpm.hn.studentattendance.core.staff.factory.model.request.student_factory.Staff_PDDetailShiftByStudentRequest;
+import udpm.hn.studentattendance.core.staff.factory.model.request.student_factory.Staff_StudentFactoryCreateUpdateRequest;
+import udpm.hn.studentattendance.core.staff.factory.model.request.student_factory.Staff_StudentFactoryRequest;
+import udpm.hn.studentattendance.core.staff.factory.model.request.student_factory.Staff_UserStudentRequest;
 import udpm.hn.studentattendance.core.staff.factory.service.Staff_StudentFactoryService;
 import udpm.hn.studentattendance.infrastructure.constants.router.RouteStaffConstant;
 
@@ -18,7 +19,7 @@ public class Staff_StudentFactoryRestController {
 
     @GetMapping("/{factoryId}")
     public ResponseEntity<?> getAllStudentInFactory(@PathVariable("factoryId") String factoryId,
-            Staff_StudentFactoryRequest studentFactoryRequest) {
+                                                    Staff_StudentFactoryRequest studentFactoryRequest) {
         return studentFactoryService.getAllStudentInFactory(factoryId, studentFactoryRequest);
     }
 
@@ -48,4 +49,13 @@ public class Staff_StudentFactoryRestController {
         return studentFactoryService.getStudentFactoryExist(id);
     }
 
+    @GetMapping("/detail-student/{id}")
+    public ResponseEntity<?> detailStudentFactory(@PathVariable String id) {
+        return studentFactoryService.detailStudentFactory(id);
+    }
+
+    @GetMapping("/detail-shift/{id}")
+    public ResponseEntity<?> detailShiftByStudent(Staff_PDDetailShiftByStudentRequest request, @PathVariable String id) {
+        return studentFactoryService.getAllPlanDateByStudent(request, id);
+    }
 }
