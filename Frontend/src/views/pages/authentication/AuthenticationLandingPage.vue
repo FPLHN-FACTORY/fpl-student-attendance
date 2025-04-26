@@ -38,7 +38,7 @@ const roles = [
   },
   {
     role: ROLE.STAFF,
-    label: 'Quản lý xưởng',
+    label: 'Phụ trách xưởng',
     img: imgRoleStaff,
     route: GLOBAL_ROUTE_NAMES.STAFF_PAGE,
   },
