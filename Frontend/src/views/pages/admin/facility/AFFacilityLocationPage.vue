@@ -23,6 +23,7 @@ import 'leaflet-control-geocoder'
 
 import 'leaflet/dist/leaflet.css'
 import 'leaflet-control-geocoder/dist/Control.Geocoder.css'
+import { debounce } from '@/utils/utils'
 
 delete L.Icon.Default.prototype._getIconUrl
 
@@ -408,10 +409,11 @@ onMounted(() => {
   fetchDataDetail()
 })
 
+const debounceFilter = debounce(handleSubmitFilter, 100)
 watch(
   dataFilter,
   () => {
-    handleSubmitFilter()
+    debounceFilter()
   },
   { deep: true },
 )

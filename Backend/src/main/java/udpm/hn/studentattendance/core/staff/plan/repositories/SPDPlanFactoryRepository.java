@@ -46,7 +46,8 @@ public interface SPDPlanFactoryRepository extends PlanFactoryRepository {
                     sf.id_facility = :#{#request.idFacility} AND
                     (NULLIF(TRIM(:#{#request.keyword}), '') IS NULL OR
                         BINARY f.name LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%') OR
-                        BINARY p.name LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%')) AND
+                        BINARY us.name LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%') OR
+                        us.code LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%')) AND
                     (:#{#request.fromDate} IS NULL OR pd.start_date >= :#{#request.fromDate}) AND
                     (:#{#request.toDate} IS NULL OR pd.start_date <= :#{#request.toDate}) AND
                     (:#{#request.status} IS NULL OR pf.status = :#{#request.status})

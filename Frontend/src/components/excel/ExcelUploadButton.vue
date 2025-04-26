@@ -93,6 +93,7 @@ const fetchDataHistoryLog = async () => {
     lstData.value = response?.data?.data?.data || []
     isShowHistoryLog.value = true
     isLoadingShowLog.value = false
+    pagination.value.total = response.data.data.totalPages * pagination.value.pageSize
   } catch (error) {
     lstData.value = []
     isLoadingShowLog.value = false
