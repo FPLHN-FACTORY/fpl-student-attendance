@@ -22,7 +22,7 @@ public interface Student_ScheduleAttendanceRepository extends FacilityRepository
                        pd.shift AS shift,
                        pd.description AS description,
                        f.name as factoryName,
-                       p.name as projectName
+                       CONCAT(p.name, ' - ', lp.name) as projectName
                    FROM
                    plan_date pd
             	   LEFT JOIN plan_factory pdf ON pdf.id = pd.id_plan_factory
@@ -32,6 +32,7 @@ public interface Student_ScheduleAttendanceRepository extends FacilityRepository
                    LEFT JOIN user_staff us ON f.id_user_staff = us.id
                    LEFT JOIN subject_facility sf ON p.id_subject_facility = sf.id
                    LEFT JOIN subject s ON sf.id_subject = s.id
+                   LEFT JOIN level_project lp ON lp.id = p.id_level_project
                    WHERE
                        f.id IN (
                             SELECT id_factory

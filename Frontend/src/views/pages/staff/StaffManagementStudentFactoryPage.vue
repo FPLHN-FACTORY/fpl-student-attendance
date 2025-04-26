@@ -16,11 +16,17 @@ import {
   UserDeleteOutlined,
 } from '@ant-design/icons-vue'
 import { useRoute } from 'vue-router'
-import { DEFAULT_PAGINATION } from '@/constants'
+import {
+  DEFAULT_DATE_FORMAT,
+  DEFAULT_PAGINATION,
+  STATUS_PLAN_DATE_DETAIL,
+  TYPE_SHIFT,
+} from '@/constants'
 import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
 import useLoadingStore from '@/stores/useLoadingStore'
 import { ROUTE_NAMES } from '@/router/staffRoute'
 import ExcelUploadButton from '@/components/excel/ExcelUploadButton.vue'
+import { dayOfWeek, formatDate } from '@/utils/utils'
 
 const route = useRoute()
 const factoryId = route.query.factoryId
@@ -65,6 +71,7 @@ const columns = ref([
   { title: 'Tên sinh viên', dataIndex: 'studentName', key: 'studentName' },
   { title: 'Email sinh viên', dataIndex: 'studentEmail', key: 'studentEmail' },
   { title: 'Trạng thái', dataIndex: 'statusStudentFactory', key: 'statusStudentFactory' },
+  { title: 'Chi tiết', key: 'action', width: 280 },
 ])
 
 /* -------------------- Phân trang cho danh sách sinh viên trong nhóm xưởng -------------------- */
@@ -267,17 +274,6 @@ const handleTableChange = (pageInfo) => {
   fetchStudentFactories()
 }
 
-// /* -------------------- Xử lý xóa sinh viên khỏi nhóm -------------------- */
-// const confirmDeleteStudent = (record) => {
-//   Modal.confirm({
-//     title: 'Xác nhận xóa',
-//     content: `Bạn có chắc muốn xóa sinh viên ${record.studentName} khỏi nhóm xưởng?`,
-//     onOk() {
-//       deleteStudentFactory(record.studentFactoryId)
-//     },
-//   })
-// }
-
 /* -------------------- Xử lý đổi trạng thái sinh viên -------------------- */
 const confirmChangeStatus = (record) => {
   Modal.confirm({
@@ -317,30 +313,87 @@ const configImportExcel = {
   showDownloadTemplate: true,
   showHistoryLog: true,
 }
-// const changeFaceStudent = (record) => {
-//   Modal.confirm({
-//     title: 'Xác nhận đổi mặt',
-//     content: `Bạn có chắc muốn đổi mặt của học sinh ${record.studentName}?`,
-//     onOk() {
-//       loadingStore.show()
-//       // Giả sử record chứa studentId, nếu không hãy thay đổi cho phù hợp
-//       requestAPI
-//         .put(API_ROUTES_STAFF.FETCH_DATA_STUDENT_FACTORY + '/change-face/' + record.studentId)
-//         .then((response) => {
-//           message.success(response.data.message || 'Đổi mặt học sinh thành công')
-//           fetchStudentFactories() // Làm mới danh sách sau khi đổi mặt
-//         })
-//         .catch((error) => {
-//           message.error(error.response?.data?.message || 'Lỗi khi đổi mặt học sinh')
-//         })
-//         .finally(() => {
-//           loadingStore.hide()
-//         })
-//     },
-//   })
-// }
+// state mới cho detail-student modal
+const detailModalVisible = ref(false)
+const detailStudent = ref(null)
+
+// gọi API lấy detail theo userStudentId
+function fetchDetailStudent(userStudentId) {
+  loadingStore.show()
+  requestAPI
+    .get(API_ROUTES_STAFF.FETCH_DATA_STUDENT_FACTORY + '/detail-student/' + userStudentId)
+    .then((res) => {
+      detailStudent.value = res.data.data
+      detailModalVisible.value = true
+    })
+    .catch((err) => {
+      message.error(err.response?.data?.message || 'Lấy chi tiết sinh viên thất bại')
+    })
+    .finally(() => loadingStore.hide())
+}
+
 /* -------------------- Quản lý modal thêm sinh viên -------------------- */
 const isAddStudentModalVisible = ref(false)
+
+// State cho modal chi tiết ca học
+const shiftModalVisible = ref(false)
+const shiftFilter = reactive({ startDate: null, status: '' })
+const shiftPagination = reactive({ current: 1, pageSize: 5, total: 0 })
+const shiftData = ref([])
+const shiftColumns = ref([
+  { title: 'Buổi', dataIndex: 'orderNumber', key: 'orderNumber', width: 150 },
+  { title: 'Ngày học', dataIndex: 'startDate', key: 'startDate' },
+  { title: 'Thời gian', key: 'time' },
+  { title: 'Ca học', dataIndex: 'shift', key: 'shift' },
+  { title: 'Trạng thái', dataIndex: 'status', key: 'status' },
+])
+
+let currentStudentForShift = null
+
+function openShiftModal(userStudentId) {
+  currentStudentForShift = userStudentId
+  shiftModalVisible.value = true
+  shiftPagination.current = 1
+  fetchShiftDetails()
+}
+
+function closeShiftModal() {
+  shiftModalVisible.value = false
+  shiftFilter.startDate = null
+  shiftFilter.status = ''
+}
+
+function fetchShiftDetails() {
+  isLoading.value = true
+  const params = {
+    page: shiftPagination.current,
+    size: shiftPagination.pageSize,
+    startDate: shiftFilter.startDate ? shiftFilter.startDate.valueOf() : null,
+    status: shiftFilter.status || null,
+  }
+  requestAPI
+    .get(`${API_ROUTES_STAFF.FETCH_DATA_STUDENT_FACTORY}/detail-shift/${currentStudentForShift}`, {
+      params,
+    })
+    .then((res) => {
+      const result = res.data.data
+      shiftData.value = result.data
+      shiftPagination.total = result.totalRecords || result.totalPages * shiftPagination.pageSize
+    })
+    .catch((err) => {
+      message.error(err.response?.data?.message || 'Lỗi khi lấy chi tiết ca học')
+    })
+    .finally(() => {
+      isLoading.value = false
+    })
+}
+
+function handleShiftTableChange(paginationObj) {
+  shiftPagination.current = paginationObj.current
+  shiftPagination.pageSize = paginationObj.pageSize
+  fetchShiftDetails()
+}
+
 watch(isAddStudentModalVisible, (newVal) => {
   if (newVal) {
     studentFilter.searchQuery = ''
@@ -450,15 +503,102 @@ onMounted(() => {
                     </a-tag>
                   </span>
                 </template>
-                <template v-else>
-                  {{ record[column.dataIndex] }}
-                </template>
+              </template>
+              <template v-else-if="column.key === 'action'">
+                <a-button
+                  type="text"
+                  @click="fetchDetailStudent(record.studentId)"
+                  class="btn btn-outline-primary"
+                >
+                  <EyeFilled />
+                </a-button>
               </template>
             </template>
           </a-table>
         </a-card>
       </div>
     </div>
+    <!-- Modal Chi tiết sinh viên -->
+    <a-modal
+      v-model:open="detailModalVisible"
+      title="Chi tiết sinh viên"
+      :footer="null"
+      width="600px"
+      @cancel="detailModalVisible = false"
+    >
+      <a-descriptions bordered :column="1">
+        <a-descriptions-item label="Mã sinh viên">
+          {{ detailStudent.userStudentCode }}
+        </a-descriptions-item>
+        <a-descriptions-item label="Tên sinh viên">
+          {{ detailStudent.userStudentName }}
+        </a-descriptions-item>
+        <a-descriptions-item label="Trạng thái">
+          {{ detailStudent.userStudentStatus === 1 ? 'Đang học' : 'Ngưng học' }}
+        </a-descriptions-item>
+        <a-descriptions-item label="Ca học đang hoạt động">
+          <a @click="openShiftModal(detailStudent.id)">Chi tiết</a>
+        </a-descriptions-item>
+        <a-descriptions-item label="Học kỳ">
+          {{ detailStudent.semesterCode }}
+          ( {{ formatDate(detailStudent.startDate) }} -
+          {{ formatDate(detailStudent.endDate) }}
+          )
+        </a-descriptions-item>
+      </a-descriptions>
+    </a-modal>
+    <a-modal
+      v-model:open="shiftModalVisible"
+      title="Chi tiết ca học"
+      :footer="null"
+      width="80%"
+      @cancel="closeShiftModal"
+    >
+      <a-row :gutter="16" class="filter-container mb-3">
+        <!-- filters… -->
+      </a-row>
+
+      <!-- 1. Chuyển từ self-closing thành mở–đóng -->
+      <a-table
+        :dataSource="shiftData"
+        :columns="shiftColumns"
+        rowKey="id"
+        :pagination="shiftPagination"
+        :loading="isLoading"
+        @change="handleShiftTableChange"
+        :scroll="{ y: 500, x: 'auto' }"
+      >
+        <!-- 2. Kéo <template #bodyCell> vào trong đây -->
+        <template #bodyCell="{ column, record }">
+          <template v-if="column.dataIndex === 'startDate'">
+            {{
+              `${dayOfWeek(record.startDate)}, ${formatDate(record.startDate, DEFAULT_DATE_FORMAT)}`
+            }}
+          </template>
+          <template v-else-if="column.key === 'time'">
+            {{
+              `${formatDate(record.startDate, 'HH:mm')} - ${formatDate(record.endDate, 'HH:mm')}`
+            }}
+          </template>
+          <template v-else-if="column.dataIndex === 'shift'">
+            <a-tag :color="record.type === 1 ? 'blue' : 'purple'">
+              Ca
+              {{
+                record.shift
+                  .split(',')
+                  .map((o) => +o)
+                  .join(', ')
+              }}
+              - {{ TYPE_SHIFT[record.type] }}
+            </a-tag>
+          </template>
+          <template v-else-if="column.dataIndex === 'status'">
+            <a-badge :status="record.status === 'DA_DIEN_RA' ? 'error' : 'success'" />
+            {{ STATUS_PLAN_DATE_DETAIL[record.status] }}
+          </template>
+        </template>
+      </a-table>
+    </a-modal>
 
     <!-- Modal "Thêm học sinh vào nhóm xưởng" -->
     <a-modal
@@ -485,34 +625,50 @@ onMounted(() => {
       </div>
       <!-- Bảng danh sách tất cả sinh viên -->
       <a-table
-        :key="isAddStudentModalVisible"
-        :dataSource="allStudents"
-        :columns="studentColumns"
+        :dataSource="shiftData"
+        :columns="shiftColumns"
         rowKey="id"
-        bordered
-        :pagination="studentPagination"
-        @change="handleStudentTableChange"
+        :pagination="shiftPagination"
         :loading="isLoading"
+        @change="handleShiftTableChange"
         :scroll="{ y: 500, x: 'auto' }"
       >
-        <template #bodyCell="{ column, record, index }">
-          <template v-if="column.dataIndex">
-            <template v-if="column.dataIndex === 'rowNumber'">
-              {{ index + 1 }}
-            </template>
-            <template v-else>
-              {{ record[column.dataIndex] }}
-            </template>
+        <template #bodyCell="{ column, record }">
+          <!-- copy y nguyên logic từ component trước -->
+          <template v-if="column.dataIndex === 'description' && record.description">
+            <a-typography-link @click="handleShowDescription(record.description)">
+              Chi tiết
+            </a-typography-link>
           </template>
-          <template v-else-if="column.key === 'select'">
-            <a-checkbox
-              :checked="
-                selectedStudents[record.id] !== undefined
-                  ? selectedStudents[record.id]
-                  : record.checked
-              "
-              @change="(e) => handleStudentCheckboxChange(record, e.target.checked)"
-            />
+          <template v-if="column.dataIndex === 'link' && record.link">
+            <a target="_blank" :href="record.link">Link</a>
+          </template>
+          <template v-if="column.dataIndex === 'lateArrival'">
+            {{ `${record.lateArrival} phút` }}
+          </template>
+          <template v-if="column.dataIndex === 'startDate'">
+            {{
+              `${dayOfWeek(record.startDate)}, ${formatDate(record.startDate, DEFAULT_DATE_FORMAT)}`
+            }}
+          </template>
+          <template v-if="column.key === 'time'">
+            {{
+              `${formatDate(record.startDate, 'HH:mm')} - ${formatDate(record.endDate, 'HH:mm')}`
+            }}
+          </template>
+          <template v-if="column.dataIndex === 'shift'">
+            <a-tag :color="record.type === 1 ? 'blue' : 'purple'">
+              {{
+                `Ca ${record.shift
+                  .split(',')
+                  .map((o) => Number(o))
+                  .join(', ')} - ${TYPE_SHIFT[record.type]}`
+              }}
+            </a-tag>
+          </template>
+          <template v-if="column.dataIndex === 'status'">
+            <a-badge :status="record.status === 'DA_DIEN_RA' ? 'error' : 'success'" />
+            {{ STATUS_PLAN_DATE_DETAIL[record.status] }}
           </template>
         </template>
       </a-table>

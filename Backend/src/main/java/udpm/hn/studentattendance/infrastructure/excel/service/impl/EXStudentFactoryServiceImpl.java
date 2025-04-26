@@ -5,7 +5,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-import udpm.hn.studentattendance.core.staff.factory.model.request.Staff_StudentFactoryAddRequest;
+import udpm.hn.studentattendance.core.staff.factory.model.request.student_factory.Staff_StudentFactoryAddRequest;
 import udpm.hn.studentattendance.core.staff.factory.service.Staff_StudentFactoryService;
 import udpm.hn.studentattendance.helpers.ExcelHelper;
 import udpm.hn.studentattendance.helpers.PaginationHelper;

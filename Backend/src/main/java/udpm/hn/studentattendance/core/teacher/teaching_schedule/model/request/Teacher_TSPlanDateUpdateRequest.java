@@ -19,4 +19,7 @@ public class Teacher_TSPlanDateUpdateRequest {
     // @Max(value = 60)
     private Integer lateArrival;
 
+    @Size(max = 255)
+    private String link;
+
 }

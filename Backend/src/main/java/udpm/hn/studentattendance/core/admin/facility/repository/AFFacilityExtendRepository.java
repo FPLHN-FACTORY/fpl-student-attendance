@@ -11,6 +11,7 @@ import udpm.hn.studentattendance.core.admin.facility.model.response.AFFacilityRe
 import udpm.hn.studentattendance.entities.Facility;
 import udpm.hn.studentattendance.repositories.FacilityRepository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -89,4 +90,21 @@ public interface AFFacilityExtendRepository extends FacilityRepository {
     Integer updatePositionNextDown(int position, String idFacility);
 
     Optional<Facility> findByName(String nameFacility);
+
+    @Query(value = """
+        SELECT
+            DISTINCT COALESCE(us.email, ust.email_fe) AS email
+        From facility f
+        LEFT JOIN role r ON r.id_facility = f.id
+        LEFT JOIN user_staff ust ON ust.id = r.id_user_staff
+        LEFT JOIN user_student us ON us.id_facility = f.id
+        WHERE
+            f.id = :idFacility AND
+            ust.status = 1 AND
+            us.status = 1 AND
+            ust.email_fe IS NOT NULL AND
+            us.email IS NOT NULL
+    """, nativeQuery = true)
+    List<String> getListEmailUserDisableFacility(String idFacility);
+
 }

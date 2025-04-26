@@ -7,4 +7,7 @@ public interface Teacher_TSDetailPlanDateResponse {
 
     String getPlanDateId();
 
+    String getLink();
+
+    Integer getType();
 }

@@ -63,8 +63,7 @@ public class SPDPlanFactoryServiceImpl implements SPDPlanFactoryService {
     public ResponseEntity<?> getAllList(SPDFilterPlanFactoryRequest request) {
         request.setIdFacility(sessionHelper.getFacilityId());
         Pageable pageable = PaginationHelper.createPageable(request);
-        PageableObject<SPDPlanFactoryResponse> data = PageableObject
-                .of(spdPlanFactoryRepository.getAllByFilter(pageable, request));
+        PageableObject<SPDPlanFactoryResponse> data = PageableObject.of(spdPlanFactoryRepository.getAllByFilter(pageable, request));
         return RouterHelper.responseSuccess("Lấy danh sách dữ liệu thành công", data);
     }
 
@@ -72,8 +71,7 @@ public class SPDPlanFactoryServiceImpl implements SPDPlanFactoryService {
     public ResponseEntity<?> getListFactory(String idPlan) {
         Plan plan = spdPlanRepository.findById(idPlan).orElse(null);
         if (plan == null
-                || !Objects.equals(plan.getProject().getSubjectFacility().getFacility().getId(),
-                        sessionHelper.getFacilityId())) {
+                || !Objects.equals(plan.getProject().getSubjectFacility().getFacility().getId(), sessionHelper.getFacilityId())) {
             return RouterHelper.responseError("Kế hoạch không tồn tại hoặc đã bị xoá");
         }
 
@@ -87,23 +85,20 @@ public class SPDPlanFactoryServiceImpl implements SPDPlanFactoryService {
         Plan plan = spdPlanRepository.findById(request.getIdPlan()).orElse(null);
 
         if (plan == null
-                || !Objects.equals(plan.getProject().getSubjectFacility().getFacility().getId(),
-                        sessionHelper.getFacilityId())) {
+                || !Objects.equals(plan.getProject().getSubjectFacility().getFacility().getId(), sessionHelper.getFacilityId())) {
             return RouterHelper.responseError("Không tìm thấy kế hoạch");
         }
 
         Factory factory = spdFactoryRepository.findById(request.getIdFactory()).orElse(null);
 
         if (factory == null
-                || !Objects.equals(factory.getProject().getSubjectFacility().getFacility().getId(),
-                        sessionHelper.getFacilityId())) {
+                || !Objects.equals(factory.getProject().getSubjectFacility().getFacility().getId(), sessionHelper.getFacilityId())) {
             return RouterHelper.responseError("Không tìm thấy nhóm xưởng");
         }
 
-        FacilityShift shift = spdFacilityShiftRepository.getOneById(request.getShift(), sessionHelper.getFacilityId())
-                .orElse(null);
-        if (shift == null) {
-            return RouterHelper.responseError("Ca học không tồn tại");
+        List<List<Integer>> lstConsecutiveShift = ShiftHelper.findConsecutiveShift(request.getShift());
+        if (lstConsecutiveShift.isEmpty()) {
+            return RouterHelper.responseError("Vui lòng chọn ít nhất 1 ca học");
         }
 
         ShiftType type;
@@ -123,6 +118,10 @@ public class SPDPlanFactoryServiceImpl implements SPDPlanFactoryService {
             return RouterHelper.responseError("Điều kiện điểm danh không hợp lệ");
         }
 
+        if (spdPlanFactoryRepository.isExistsFactoryInPlan(factory.getId())) {
+            return RouterHelper.responseError("Nhóm xưởng " + factory.getName() + " đã được triển khai trong một kế hoạch này");
+        }
+
         PlanFactory planFactory = spdPlanFactoryRepository.save(new PlanFactory(plan, factory));
 
         if (planFactory.getId() == null) {
@@ -138,50 +137,59 @@ public class SPDPlanFactoryServiceImpl implements SPDPlanFactoryService {
 
         while (!current.isAfter(toDate)) {
             DayOfWeek dayOfWeek = current.getDayOfWeek();
-            Long date = ShiftHelper.getShiftTimeStart(current,
-                    LocalTime.of(shift.getFromHour(), shift.getFromMinute()));
-            current = current.plusDays(1);
+            for (List<Integer> lstShift : lstConsecutiveShift) {
+                int startShift = lstShift.get(0);
+                int endShift = lstShift.get(lstShift.size() - 1);
 
-            if (request.getDays().contains(dayOfWeek.getValue())) {
-                if (date < DateTimeUtils.getCurrentTimeMillis()) {
-                    continue;
+                FacilityShift shiftStart = spdFacilityShiftRepository.getOneById(startShift, sessionHelper.getFacilityId()).orElse(null);
+                FacilityShift shiftEnd = spdFacilityShiftRepository.getOneById(endShift, sessionHelper.getFacilityId()).orElse(null);
+                if (shiftStart == null) {
+                    return RouterHelper.responseError("Ca học " + startShift + " không tồn tại");
                 }
-                if (date < DateTimeUtils.getCurrentTimeMillis()) {
-                    continue;
+                if (shiftEnd == null) {
+                    return RouterHelper.responseError("Ca học " + endShift + " không tồn tại");
                 }
+                Long startDate = ShiftHelper.getShiftTimeStart(current, LocalTime.of(shiftStart.getFromHour(), shiftStart.getFromMinute()));
+                Long endDate = startDate + ShiftHelper.getDiffTime(shiftStart.getFromHour(), shiftStart.getFromMinute(), shiftEnd.getToHour(), shiftEnd.getToMinute());
 
-                if (date < DateTimeUtils.getCurrentTimeMillis()) {
-                    continue;
-                }
+                if (request.getDays().contains(dayOfWeek.getValue())) {
+                    if (startDate < DateTimeUtils.getCurrentTimeMillis()) {
+                        continue;
+                    }
+                    if (startDate < DateTimeUtils.getCurrentTimeMillis()) {
+                        continue;
+                    }
 
-                if (spdPlanDateRepository.isExistsShiftInFactory(planFactory.getId(), null, date, request.getShift())) {
-                    spdPlanFactoryRepository.delete(planFactory);
-                    return RouterHelper.responseError("Đã tồn tại ca " + request.getShift() + " trong ngày "
-                            + DateTimeUtils.convertMillisToDate(date));
-                }
-                if (spdPlanDateRepository.isExistsTeacherOnShift(factory.getUserStaff().getId(), date,
-                        request.getShift())) {
-                    spdPlanFactoryRepository.delete(planFactory);
-                    return RouterHelper.responseError("Giảng viên " + factory.getUserStaff().getName() + " - "
-                            + factory.getUserStaff().getCode() + " đã đứng lớp tại ca " + request.getShift()
-                            + " trong ngày " + DateTimeUtils.convertMillisToDate(date));
-                }
+                    if (startDate < DateTimeUtils.getCurrentTimeMillis()) {
+                        continue;
+                    }
 
-                String link = StringUtils.hasText(request.getLink()) ? request.getLink().trim() : null;
+                    if (spdPlanDateRepository.isExistsShiftInFactory(planFactory.getId(), null, startDate, endDate)) {
+                        spdPlanFactoryRepository.delete(planFactory);
+                        return RouterHelper.responseError("Đã tồn tại ca " + request.getShift() + " trong ngày " + DateTimeUtils.convertMillisToDate(startDate));
+                    }
+                    if (spdPlanDateRepository.isExistsTeacherOnShift(factory.getUserStaff().getId(), startDate, endDate)) {
+                        spdPlanFactoryRepository.delete(planFactory);
+                        return RouterHelper.responseError("Giảng viên " + factory.getUserStaff().getName() + " - " + factory.getUserStaff().getCode() + " đã đứng lớp tại ca " + request.getShift() + " trong ngày " + DateTimeUtils.convertMillisToDate(startDate));
+                    }
 
-                PlanDate planDate = new PlanDate();
-                planDate.setPlanFactory(planFactory);
-                planDate.setStartDate(date);
-                planDate.setEndDate(date + ShiftHelper.getDiffTime(shift));
-                planDate.setShift(request.getShift());
-                planDate.setType(type);
-                planDate.setLink(link);
-                planDate.setRequiredIp(requiredIp);
-                planDate.setRequiredLocation(requiredLocation);
-                planDate.setDescription(null);
-                planDate.setLateArrival(request.getLateArrival());
-                lstPlanDate.add(planDate);
+                    String link = StringUtils.hasText(request.getLink()) ? request.getLink().trim() : null;
+
+                    PlanDate planDate = new PlanDate();
+                    planDate.setPlanFactory(planFactory);
+                    planDate.setStartDate(startDate);
+                    planDate.setEndDate(endDate);
+                    planDate.setShift(lstShift);
+                    planDate.setType(type);
+                    planDate.setLink(link);
+                    planDate.setRequiredIp(requiredIp);
+                    planDate.setRequiredLocation(requiredLocation);
+                    planDate.setDescription(null);
+                    planDate.setLateArrival(request.getLateArrival());
+                    lstPlanDate.add(planDate);
+                }
             }
+            current = current.plusDays(1);
         }
 
         if (lstPlanDate.isEmpty()) {
@@ -192,8 +200,7 @@ public class SPDPlanFactoryServiceImpl implements SPDPlanFactoryService {
 
         commonUserStudentRepository.disableAllStudentDuplicateShiftByIdPlanFactory(planFactory.getId());
 
-        return RouterHelper.responseSuccess("Tạo mới kế hoạch thành công " + lstPlanDate.size() + " kế hoạch",
-                lstEntity);
+        return RouterHelper.responseSuccess("Tạo mới kế hoạch thành công " + lstPlanDate.size() + " kế hoạch", lstEntity);
     }
 
     @Override
@@ -203,20 +210,16 @@ public class SPDPlanFactoryServiceImpl implements SPDPlanFactoryService {
             return RouterHelper.responseError("Không tìm thấy nhóm xưởng trong kế hoạch này");
         }
 
-        SPDPlanFactoryResponse planFactoryResponse = spdPlanFactoryRepository
-                .getDetail(planFactory.getId(), sessionHelper.getFacilityId()).orElse(null);
+        SPDPlanFactoryResponse planFactoryResponse = spdPlanFactoryRepository.getDetail(planFactory.getId(), sessionHelper.getFacilityId()).orElse(null);
         if (planFactoryResponse == null || planFactoryResponse.getStatus() != planFactory.getStatus().ordinal()) {
             return RouterHelper.responseError("Không thể thay đổi trạng thái nhóm xưởng này trong kế hoạch");
         }
 
-        if (planFactory.getStatus() == EntityStatus.INACTIVE
-                && spdPlanFactoryRepository.isExistsFactoryInPlan(planFactory.getFactory().getId())) {
-            return RouterHelper.responseError(
-                    "Nhóm xưởng " + planFactory.getFactory().getName() + " đã được triển khai trong một kế hoạch này");
+        if (planFactory.getStatus() == EntityStatus.INACTIVE && spdPlanFactoryRepository.isExistsFactoryInPlan(planFactory.getFactory().getId())) {
+            return RouterHelper.responseError("Nhóm xưởng " + planFactory.getFactory().getName() + " đã được triển khai trong một kế hoạch này");
         }
 
-        planFactory.setStatus(
-                planFactory.getStatus() == EntityStatus.ACTIVE ? EntityStatus.INACTIVE : EntityStatus.ACTIVE);
+        planFactory.setStatus(planFactory.getStatus() == EntityStatus.ACTIVE ? EntityStatus.INACTIVE : EntityStatus.ACTIVE);
         PlanFactory newEntity = spdPlanFactoryRepository.save(planFactory);
 
         if (newEntity.getStatus() == EntityStatus.ACTIVE) {

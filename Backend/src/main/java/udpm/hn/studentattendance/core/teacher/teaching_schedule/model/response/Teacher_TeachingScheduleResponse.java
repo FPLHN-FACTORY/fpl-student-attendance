@@ -5,9 +5,11 @@ public interface Teacher_TeachingScheduleResponse {
 
     String getIdPlanDate();
 
-    Long getTeachingDay();
+    Long getStartTeaching();
 
-    Integer getShift();
+    Long getEndTeaching();
+
+    String getShift();
 
     String getSubjectCode();
 
@@ -22,5 +24,9 @@ public interface Teacher_TeachingScheduleResponse {
     String getFactoryId();
 
     String getUserId();
+
+    Integer getType();
+
+    String getLink();
 
 }

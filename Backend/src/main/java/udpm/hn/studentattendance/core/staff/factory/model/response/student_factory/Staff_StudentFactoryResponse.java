@@ -1,4 +1,4 @@
-package udpm.hn.studentattendance.core.staff.factory.model.response;
+package udpm.hn.studentattendance.core.staff.factory.model.response.student_factory;
 
 public interface Staff_StudentFactoryResponse {
     Integer getRowNumber();

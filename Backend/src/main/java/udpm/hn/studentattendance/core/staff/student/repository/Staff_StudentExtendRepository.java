@@ -67,4 +67,26 @@ public interface Staff_StudentExtendRepository extends UserStudentRepository {
 
         Optional<UserStudent> getUserStudentByEmail(String email);
 
+        @Query(value = """
+                        SELECT CASE WHEN EXISTS (
+                            SELECT 1
+                            FROM user_student
+                            WHERE code = :newCode
+                            AND code != :currentCode
+                        ) THEN 'TRUE' ELSE 'FALSE' END
+                        """, nativeQuery = true)
+        boolean isExistCodeUpdate(String newCode, String currentCode);
+
+        @Query(value = """
+                        SELECT CASE WHEN EXISTS (
+                            SELECT 1
+                            FROM user_student us
+                            WHERE us.email = :newEmail
+                            AND us.email != :currentEmail
+                                ) THEN 'TRUE' ELSE 'FALSE' END
+                        """, nativeQuery = true)
+        boolean isExistEmailFeUpdate(String newEmail, String currentEmail);
+
+
+
 }

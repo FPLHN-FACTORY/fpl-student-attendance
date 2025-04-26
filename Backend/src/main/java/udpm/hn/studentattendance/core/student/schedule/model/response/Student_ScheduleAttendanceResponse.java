@@ -14,7 +14,7 @@ public interface Student_ScheduleAttendanceResponse {
 
     String getStaffName();
 
-    Integer getShift();
+    String getShift();
 
     String getDescription();
 

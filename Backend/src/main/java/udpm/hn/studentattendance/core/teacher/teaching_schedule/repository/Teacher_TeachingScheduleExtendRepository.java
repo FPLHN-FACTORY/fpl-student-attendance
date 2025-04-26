@@ -18,15 +18,17 @@ public interface Teacher_TeachingScheduleExtendRepository extends PlanDateReposi
 
     @Query(value = """
             SELECT
-            ROW_NUMBER() OVER (ORDER BY pd.start_date ASC) AS indexs,
                 pd.id AS idPlanDate,
-                pd.start_date AS teachingDay,
+                pd.start_date AS startTeaching,
+                pd.end_date AS endTeaching,
                 pd.shift AS shift,
+                pd.type AS type,
+                pd.link AS link,
                 sb.code AS subjectCode,
                 ft.name AS factoryName,
                 ft.id AS factoryId,
                 us.id AS userId,
-                p.name AS projectName,
+                CONCAT(p.name, ' - ', lp.name) AS projectName,
                 pd.late_arrival AS lateArrival,
                 pd.description AS description
             FROM
@@ -37,6 +39,8 @@ public interface Teacher_TeachingScheduleExtendRepository extends PlanDateReposi
                 LEFT JOIN project p ON p.id = ft.id_project
                 LEFT JOIN subject_facility sf ON sf.id = p.id_subject_facility
                 LEFT JOIN subject sb ON sb.id = sf.id_subject
+                LEFT JOIN level_project lp ON lp.id = p.id_level_project
+
             WHERE
                 us.id = :userId
                 AND us.status = 1
@@ -82,15 +86,17 @@ public interface Teacher_TeachingScheduleExtendRepository extends PlanDateReposi
 
     @Query(value = """
                         SELECT
-                                ROW_NUMBER() OVER (ORDER BY pd.start_date ASC) AS indexs,
                                     pd.id AS idPlanDate,
-                                    pd.start_date AS teachingDay,
+                                    pd.start_date AS startTeaching,
+                                    pd.end_date AS endTeaching,
                                     pd.shift AS shift,
                                     sb.code AS subjectCode,
                                     ft.name AS factoryName,
                                     ft.id AS factoryId,
                                     us.id AS userId,
                                     p.name AS projectName,
+                                    pd.type as type,
+                                     pd.link as link,
                                     pd.late_arrival AS lateArrival,
                                     pd.description AS description
                                 FROM
@@ -135,7 +141,7 @@ public interface Teacher_TeachingScheduleExtendRepository extends PlanDateReposi
                 AND DATE(FROM_UNIXTIME(pd.start_date / 1000)) = CURDATE()
             """, nativeQuery = true)
     Page<Teacher_TeachingScheduleResponse> getAllTeachingSchedulePresent(String userId, Pageable pageable,
-            Teacher_TeachingScheduleRequest teachingScheduleRequest);
+                                                                         Teacher_TeachingScheduleRequest teachingScheduleRequest);
 
     @Query(value = """
             SELECT
@@ -150,6 +156,8 @@ public interface Teacher_TeachingScheduleExtendRepository extends PlanDateReposi
                 SELECT
                 pd.late_arrival as lateArrival,
                 pd.description as description,
+                pd.link as link,
+                pd.type as type,
                 pd.id as planDateId
                 FROM plan_date pd
                 WHERE pd.id = :planDateId
@@ -219,5 +227,20 @@ public interface Teacher_TeachingScheduleExtendRepository extends PlanDateReposi
             """, nativeQuery = true)
     List<Teacher_TeachingScheduleResponse> exportExcelTeachingSchedule(
             String userId, Teacher_TeachingScheduleRequest teachingScheduleRequest);
+
+
+    @Query(
+            value = """
+                      SELECT CASE
+                               WHEN pd.start_date < UNIX_TIMESTAMP(CURDATE()) * 1000 THEN 'FALSE'
+                               ELSE 'TRUE'
+                             END
+                      FROM plan_date pd
+                      WHERE pd.id = :planDateId
+                    """,
+            nativeQuery = true
+    )
+    boolean isOutOfTime(String planDateId);
+
 
 }

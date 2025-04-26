@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import udpm.hn.studentattendance.core.admin.user_admin.model.request.Admin_UserAdminChangePowerShiftRequest;
 import udpm.hn.studentattendance.core.admin.user_admin.model.request.Admin_UserAdminCreateOrUpdateRequest;
 import udpm.hn.studentattendance.core.admin.user_admin.model.request.Admin_UserAdminRequest;
 import udpm.hn.studentattendance.core.admin.user_admin.service.impl.Admin_UserAdminServiceImpl;
@@ -33,7 +34,7 @@ public class Admin_UserAdminRestController {
 
     @PutMapping("/{id}")
     public ResponseEntity<?> updateUserAdmin(@Valid @RequestBody Admin_UserAdminCreateOrUpdateRequest request,
-            @PathVariable(name = "id") String id) {
+                                             @PathVariable(name = "id") String id) {
         return userAdminService.updateUserAdmin(request, id);
     }
 
@@ -42,4 +43,18 @@ public class Admin_UserAdminRestController {
         return userAdminService.changeStatus(id);
     }
 
+    @GetMapping("/is-myself/{id}")
+    public ResponseEntity<?> checkIsMySelf(@PathVariable("id") String id) {
+        return userAdminService.isMySelf(id);
+    }
+
+    @GetMapping("/staff")
+    public ResponseEntity<?> getAllStaff() {
+        return userAdminService.getAllUserStaff();
+    }
+
+    @PostMapping("/change-power")
+    public ResponseEntity<?> changePowerShift(@RequestBody Admin_UserAdminChangePowerShiftRequest userAdminChangePowerShiftRequest) {
+        return userAdminService.changePowerShift(userAdminChangePowerShiftRequest);
+    }
 }
