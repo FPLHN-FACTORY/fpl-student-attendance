@@ -298,7 +298,7 @@ const handleSubmitUpdate = async () => {
     Modal.confirm({
       title: `Xác nhận cập nhật`,
       type: 'info',
-      content: `Bạn có chắc muốn lưu lại thay đổi?`,
+      content: `Mọi thay đổi chỉ áp dụng cho kế hoạch tạo mới. Bạn có chắc muốn lưu lại thay đổi?`,
       okText: 'Tiếp tục',
       cancelText: 'Hủy bỏ',
       onOk() {
