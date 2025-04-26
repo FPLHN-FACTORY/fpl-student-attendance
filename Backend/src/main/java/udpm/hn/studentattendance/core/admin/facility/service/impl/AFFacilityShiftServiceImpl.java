@@ -53,7 +53,7 @@ public class AFFacilityShiftServiceImpl implements AFFacilityShiftService {
         }
 
         int diffTime = ShiftHelper.getDiffTime(request.getFromHour(), request.getFromMinute(), request.getToHour(), request.getToMinute());
-        if (diffTime < MIN_DIFF_SHIFT * 60) {
+        if (diffTime / 1000 < MIN_DIFF_SHIFT * 60) {
             return RouterHelper.responseError("Ca học phải diễn ra tối thiểu trong " + MIN_DIFF_SHIFT + " phút");
         }
 
@@ -84,7 +84,7 @@ public class AFFacilityShiftServiceImpl implements AFFacilityShiftService {
         }
 
         int diffTime = ShiftHelper.getDiffTime(request.getFromHour(), request.getFromMinute(), request.getToHour(), request.getToMinute());
-        if (diffTime < MIN_DIFF_SHIFT * 60) {
+        if (diffTime / 1000 < MIN_DIFF_SHIFT * 60) {
             return RouterHelper.responseError("Ca học phải diễn ra tối thiểu trong " + MIN_DIFF_SHIFT + " phút");
         }
 
