@@ -29,4 +29,5 @@ public interface Teacher_TeachingScheduleResponse {
 
     String getLink();
 
+    String getLocation();
 }

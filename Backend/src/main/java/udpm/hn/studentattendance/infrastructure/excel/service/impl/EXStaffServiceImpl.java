@@ -8,9 +8,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-import udpm.hn.studentattendance.core.admin.user_staff.model.request.Admin_CreateUpdateStaffRequest;
-import udpm.hn.studentattendance.core.admin.user_staff.repository.Admin_StaffFacilityRepository;
-import udpm.hn.studentattendance.core.admin.user_staff.service.Admin_StaffService;
+import udpm.hn.studentattendance.core.admin.user_staff.model.request.ADCreateUpdateStaffRequest;
+import udpm.hn.studentattendance.core.admin.user_staff.repository.ADStaffFacilityRepository;
+import udpm.hn.studentattendance.core.admin.user_staff.service.ADStaffService;
 import udpm.hn.studentattendance.entities.Facility;
 import udpm.hn.studentattendance.helpers.ExcelHelper;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
@@ -39,11 +39,11 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class EXStaffServiceImpl implements EXStaffService {
 
-    private final Admin_StaffService staffService;
+    private final ADStaffService staffService;
     private final EXImportLogRepository importLogRepository;
     private final EXImportLogDetailRepository importLogDetailRepository;
     private final SessionHelper sessionHelper;
-    private final Admin_StaffFacilityRepository facilityRepository;
+    private final ADStaffFacilityRepository facilityRepository;
     private final ExcelHelper excelHelper;
 
     private static final Map<RoleConstant, String> ENUM_TO_FRIENDLY_MAPPING = Map.of(
@@ -101,7 +101,7 @@ public class EXStaffServiceImpl implements EXStaffService {
         Facility facility = facilityRepository.findById(facilityId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy Facility với id: " + facilityId));
 
-        Admin_CreateUpdateStaffRequest createUpdateStaffRequest = new Admin_CreateUpdateStaffRequest();
+        ADCreateUpdateStaffRequest createUpdateStaffRequest = new ADCreateUpdateStaffRequest();
         createUpdateStaffRequest.setFacilityId(facility.getId());
         createUpdateStaffRequest.setStaffCode(item.get("MA_NHAN_VIEN"));
         createUpdateStaffRequest.setEmailFe(item.get("EMAIL_FE"));

@@ -68,7 +68,7 @@ public class Teacher_TeachingScheduleRestController {
     }
 
     @PutMapping("/change-type/{id}")
-    public ResponseEntity<?> changeType(@PathVariable("id") String id){
+    public ResponseEntity<?> changeType(@PathVariable("id") String id) {
         return service.changeTypePlanDate(id);
     }
 
@@ -84,5 +84,10 @@ public class Teacher_TeachingScheduleRestController {
                 "inline; filename*=UTF-8''" + URLEncoder.encode(fileName, StandardCharsets.UTF_8.toString()));
         return ResponseEntity.ok().headers(headers).contentType(MediaType.APPLICATION_PDF)
                 .body(new InputStreamResource(byteArrayInputStream));
+    }
+
+    @GetMapping("/type")
+    public ResponseEntity<?> getAllType() {
+        return service.getAllType();
     }
 }
