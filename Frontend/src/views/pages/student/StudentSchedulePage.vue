@@ -4,10 +4,10 @@ import { ROUTE_NAMES } from '@/router/studentRoute'
 import { API_ROUTES_STUDENT } from '@/constants/studentConstant'
 import requestAPI from '@/services/requestApiService'
 import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
-import { DEFAULT_PAGINATION } from '@/constants'
+import { DEFAULT_PAGINATION, TYPE_SHIFT } from '@/constants'
 import { onMounted, ref } from 'vue'
 import useLoadingStore from '@/stores/useLoadingStore'
-import { Modal } from 'ant-design-vue'
+import { Modal, message } from 'ant-design-vue'
 import * as XLSX from 'xlsx'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
@@ -39,6 +39,8 @@ const columns = [
   { title: 'Dự án', dataIndex: 'projectName', key: 'projectName' },
   { title: 'Tên môn học', dataIndex: 'subjectName', key: 'subjectName' },
   { title: 'Tên giảng viên', dataIndex: 'staffName', key: 'staffName' },
+  { title: 'Địa điểm', dataIndex: 'location', key: 'location', width: 100 },
+  { title: 'Link học', dataIndex: 'link', key: 'link', width: 180 },
   { title: 'Mô tả', dataIndex: 'description', key: 'description' },
 ]
 
@@ -197,8 +199,18 @@ onMounted(() => {
                 <template v-if="column.dataIndex === 'attendanceDay'">{{
                   formatDate(record.attendanceDay)
                 }}</template>
-                <template v-if="column.dataIndex === 'shift'">
-                  <a-tag color="purple">{{ 'Ca ' + record.shift }}</a-tag>
+                <template v-else-if="column.dataIndex === 'shift'">
+                  <a-tag :color="record.type === 1 ? 'blue' : 'purple'">
+                    {{
+                      `Ca ${record.shift
+                        .split(',')
+                        .map((o) => Number(o))
+                        .join(', ')} - ${TYPE_SHIFT[record.type]}`
+                    }}
+                  </a-tag>
+                </template>
+                <template v-if="column.dataIndex === 'link'">
+                  <a v-if="record.link" :href="record.link" target="_blank">{{ record.link }}</a>
                 </template>
                 <template v-if="column.dataIndex === 'description'">
                   <a-typography-link @click="handleShowDescription(record.description)"
@@ -206,7 +218,7 @@ onMounted(() => {
                   >
                 </template>
                 <template v-if="column.dataIndex === 'staffName'">
-                  <a-tag color="green">{{ record.staffName }}</a-tag></template
+                  <a-tag color="lime">{{ record.staffName }}</a-tag></template
                 >
                 <template v-if="column.dataIndex === 'factoryName'">
                   <a-badge status="processing" :text="record.factoryName" />
