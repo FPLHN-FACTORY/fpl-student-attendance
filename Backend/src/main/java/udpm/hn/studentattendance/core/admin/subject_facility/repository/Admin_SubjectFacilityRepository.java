@@ -5,8 +5,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
-import udpm.hn.studentattendance.core.admin.subject_facility.model.request.Admin_SubjectFacilitySearchRequest;
-import udpm.hn.studentattendance.core.admin.subject_facility.model.response.Admin_SubjectFacilityResponse;
+import udpm.hn.studentattendance.core.admin.subject_facility.model.request.ADSubjectFacilitySearchRequest;
+import udpm.hn.studentattendance.core.admin.subject_facility.model.response.ADSubjectFacilityResponse;
 import udpm.hn.studentattendance.repositories.SubjectFacilityRepository;
 
 @Repository
@@ -41,7 +41,7 @@ public interface Admin_SubjectFacilityRepository extends SubjectFacilityReposito
                     AND (:#{#request.facilityId} IS NULL OR sf.id_facility = :#{#request.facilityId})
                     AND (:#{#request.status} IS NULL OR sf.status = :#{#request.status})
             """, nativeQuery = true)
-    Page<Admin_SubjectFacilityResponse> getAll(Pageable pageable,
-            @Param("request") Admin_SubjectFacilitySearchRequest request);
+    Page<ADSubjectFacilityResponse> getAll(Pageable pageable,
+                                           @Param("request") ADSubjectFacilitySearchRequest request);
 
 }

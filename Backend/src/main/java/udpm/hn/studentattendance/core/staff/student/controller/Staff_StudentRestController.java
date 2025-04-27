@@ -47,4 +47,9 @@ public class Staff_StudentRestController {
     public ResponseEntity<?> changeFaceStudent(@PathVariable("studentId") String studentId) {
         return studentService.deleteFaceStudentFactory(studentId);
     }
+
+    @GetMapping("/exist-face")
+    public ResponseEntity<?> isNotExistFace() {
+        return studentService.isExistFace();
+    }
 }

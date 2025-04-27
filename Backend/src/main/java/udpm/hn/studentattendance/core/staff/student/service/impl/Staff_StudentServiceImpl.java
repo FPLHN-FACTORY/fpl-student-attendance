@@ -18,6 +18,7 @@ import udpm.hn.studentattendance.entities.UserStaff;
 import udpm.hn.studentattendance.entities.UserStudent;
 import udpm.hn.studentattendance.helpers.NotificationHelper;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
+import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.helpers.SessionHelper;
 import udpm.hn.studentattendance.infrastructure.common.ApiResponse;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
@@ -26,6 +27,7 @@ import udpm.hn.studentattendance.infrastructure.constants.RestApiStatus;
 import udpm.hn.studentattendance.repositories.FacilityRepository;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -203,7 +205,7 @@ public class Staff_StudentServiceImpl implements Staff_StudentService {
             return new ResponseEntity<>(
                     new ApiResponse(
                             RestApiStatus.SUCCESS,
-                            "Cấp quyền thay đổi mặt thành công",
+                            "Cấp quyền thay đổi mặt sinh viên thành công",
                             userStudent),
                     HttpStatus.OK);
         }
@@ -214,6 +216,17 @@ public class Staff_StudentServiceImpl implements Staff_StudentService {
                         null),
                 HttpStatus.BAD_REQUEST);
 
+    }
+
+    @Override
+    public ResponseEntity<?> isExistFace() {
+        List<Boolean> isExistFace = studentExtendRepository.existFaceForAllStudents();
+        return new ResponseEntity<>(
+                new ApiResponse(
+                        RestApiStatus.ERROR,
+                        "Sinh viên đã đăng ký mặt",
+                        isExistFace),
+                HttpStatus.OK);
     }
 
 

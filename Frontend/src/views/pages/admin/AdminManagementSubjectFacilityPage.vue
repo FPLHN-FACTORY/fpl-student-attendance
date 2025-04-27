@@ -390,15 +390,6 @@ onMounted(() => {
                       <EditFilled />
                     </a-button>
                   </a-tooltip>
-                  <a-tooltip title="Chuyển trạng thái">
-                    <a-button
-                      @click="handleDeleteSubjectFacility(record)"
-                      type="text"
-                      class="btn-outline-warning"
-                    >
-                      <SyncOutlined />
-                    </a-button>
-                  </a-tooltip>
                 </a-space>
               </template>
             </template>

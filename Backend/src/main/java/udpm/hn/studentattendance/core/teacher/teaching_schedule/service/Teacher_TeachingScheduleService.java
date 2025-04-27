@@ -17,7 +17,7 @@ public interface Teacher_TeachingScheduleService {
 
     ResponseEntity<?> getAllSubjectByStaff();
 
-    ResponseEntity<?> getAllShift();
+    ResponseEntity<?> getAllType();
 
     ByteArrayInputStream exportTeachingSchedule(List<Teacher_TeachingScheduleResponse> teachingScheduleResponseList);
 

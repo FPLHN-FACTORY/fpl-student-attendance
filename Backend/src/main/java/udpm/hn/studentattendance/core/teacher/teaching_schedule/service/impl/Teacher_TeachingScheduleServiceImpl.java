@@ -26,6 +26,7 @@ import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.RestApiStatus;
 import udpm.hn.studentattendance.infrastructure.constants.ShiftType;
+import udpm.hn.studentattendance.infrastructure.constants.StatusType;
 
 import java.awt.*;
 import java.io.ByteArrayInputStream;
@@ -104,12 +105,12 @@ public class Teacher_TeachingScheduleServiceImpl implements Teacher_TeachingSche
     }
 
     @Override
-    public ResponseEntity<?> getAllShift() {
-        List<PlanDate> shifts = teacherTeachingScheduleExtendRepository.getAllShift();
+    public ResponseEntity<?> getAllType() {
+        List<PlanDate> shifts = teacherTeachingScheduleExtendRepository.getAllType();
         return new ResponseEntity<>(
                 new ApiResponse(
                         RestApiStatus.SUCCESS,
-                        "Lấy tất cả ca học của " + sessionHelper.getUserId() + "thành công",
+                        "Lấy tất cả hình thức học thành công",
                         shifts),
                 HttpStatus.OK);
     }
@@ -144,11 +145,11 @@ public class Teacher_TeachingScheduleServiceImpl implements Teacher_TeachingSche
             document.add(Chunk.NEWLINE);
 
             // Tạo bảng với 7 cột
-            PdfPTable pdfTable = new PdfPTable(7);
+            PdfPTable pdfTable = new PdfPTable(8);
             pdfTable.setWidthPercentage(100);
             pdfTable.setSpacingBefore(10f);
             pdfTable.setSpacingAfter(10f);
-            pdfTable.setWidths(new float[]{30, 20, 20, 20, 30, 30, 40});
+            pdfTable.setWidths(new float[]{30, 20, 20, 20, 30, 50, 25, 30});
 
             // Header: sử dụng màu cam đậm từ ảnh mẫu (ví dụ: RGB 237,125,49)
             Color headerColor = new Color(2, 3, 51);
@@ -158,7 +159,7 @@ public class Teacher_TeachingScheduleServiceImpl implements Teacher_TeachingSche
             Color rowColor2 = new Color(245, 245, 245);
 
             // Thêm header cho bảng
-            Stream.of("Ngày dạy", "Ca học", "Điểm danh muộn tối đa (phút)", "Mã môn", "Xưởng", "Dự án",
+            Stream.of("Ngày dạy", "Ca học", "Điểm danh muộn", "Mã môn", "Xưởng", "Dự án", "Hình thức",
                             "Mô tả")
                     .forEach(headerTitle -> {
                         PdfPCell headerCell = new PdfPCell();
@@ -193,7 +194,7 @@ public class Teacher_TeachingScheduleServiceImpl implements Teacher_TeachingSche
 
                 // Cột "Điểm danh muộn tối đa (phút)"
                 PdfPCell lateArrivalCell = new PdfPCell(new Phrase(
-                        String.valueOf(teachingScheduleResponse.getLateArrival()), cellFont));
+                        String.valueOf(teachingScheduleResponse.getLateArrival() + " phút"), cellFont));
                 styleCell(lateArrivalCell, backgroundColor);
                 pdfTable.addCell(lateArrivalCell);
 
@@ -215,6 +216,11 @@ public class Teacher_TeachingScheduleServiceImpl implements Teacher_TeachingSche
                 styleCell(projectCell, backgroundColor);
                 pdfTable.addCell(projectCell);
 
+                // Cột "Dự án"
+                PdfPCell typeCell = new PdfPCell(new Phrase(
+                        String.valueOf(teachingScheduleResponse.getType() == 0 ? "Offline" : "Online"), cellFont));
+                styleCell(typeCell, backgroundColor);
+                pdfTable.addCell(typeCell);
                 // Cột "Mô tả"
                 PdfPCell descriptionCell = new PdfPCell(new Phrase(
                         teachingScheduleResponse.getDescription() != null
@@ -255,8 +261,8 @@ public class Teacher_TeachingScheduleServiceImpl implements Teacher_TeachingSche
     public ResponseEntity<?> updatePlanDate(Teacher_TSPlanDateUpdateRequest planDateUpdateRequest) {
         Optional<PlanDate> existPlanDate = teacherTeachingScheduleExtendRepository
                 .findById(planDateUpdateRequest.getIdPlanDate());
-        boolean isOutOfTime = teacherTeachingScheduleExtendRepository.isOutOfTime(planDateUpdateRequest.getIdPlanDate());
-        if (isOutOfTime == false) {
+        boolean isOutOfTime = teacherTeachingScheduleExtendRepository.isOutOfTime(existPlanDate.get().getId());
+        if (isOutOfTime) {
             return new ResponseEntity<>(
                     new ApiResponse(
                             RestApiStatus.ERROR,
@@ -326,7 +332,9 @@ public class Teacher_TeachingScheduleServiceImpl implements Teacher_TeachingSche
         Optional<PlanDate> planDate = teacherTeachingScheduleExtendRepository.findById(planDateId);
         if (planDate.isPresent()) {
             PlanDate updatePlanDate = planDate.get();
-            updatePlanDate.setType(updatePlanDate.getType() == ShiftType.ONLINE ? ShiftType.OFFLINE : ShiftType.OFFLINE);
+            updatePlanDate.setType(updatePlanDate.getType() == ShiftType.ONLINE ? ShiftType.OFFLINE : ShiftType.ONLINE);
+            updatePlanDate.setRequiredIp(updatePlanDate.getRequiredIp() == StatusType.DISABLE ? StatusType.ENABLE : StatusType.DISABLE);
+            updatePlanDate.setRequiredLocation(updatePlanDate.getRequiredLocation() == StatusType.DISABLE ? StatusType.ENABLE : StatusType.DISABLE);
             teacherTeachingScheduleExtendRepository.save(updatePlanDate);
             return new ResponseEntity<>(
                     new ApiResponse(

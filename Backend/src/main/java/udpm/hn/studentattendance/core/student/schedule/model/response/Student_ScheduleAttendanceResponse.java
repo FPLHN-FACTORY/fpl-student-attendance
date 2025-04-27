@@ -22,4 +22,11 @@ public interface Student_ScheduleAttendanceResponse {
 
     String getProjectName();
 
+    String getLink();
+
+    String getLocation();
+
+
+    Integer getType();
+
 }

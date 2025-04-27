@@ -4,9 +4,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import udpm.hn.studentattendance.core.admin.subject_facility.model.request.Admin_SubjectFacilityCreateRequest;
-import udpm.hn.studentattendance.core.admin.subject_facility.model.request.Admin_SubjectFacilitySearchRequest;
-import udpm.hn.studentattendance.core.admin.subject_facility.model.request.Admin_SubjectFacilityUpdateRequest;
+import udpm.hn.studentattendance.core.admin.subject_facility.model.request.ADSubjectFacilityCreateRequest;
+import udpm.hn.studentattendance.core.admin.subject_facility.model.request.ADSubjectFacilitySearchRequest;
+import udpm.hn.studentattendance.core.admin.subject_facility.model.request.ADSubjectFacilityUpdateRequest;
 import udpm.hn.studentattendance.core.admin.subject_facility.repository.Admin_SubjectFacilityRepository;
 import udpm.hn.studentattendance.core.admin.subject_facility.service.Admin_SubjectFacilityService;
 import udpm.hn.studentattendance.entities.SubjectFacility;
@@ -30,7 +30,7 @@ public class Admin_SubjectFacilityServiceImpl implements Admin_SubjectFacilitySe
     private FacilityRepository facilityRepository;
 
     @Override
-    public ResponseObject<?> getListSubjectFacility(Admin_SubjectFacilitySearchRequest request) {
+    public ResponseObject<?> getListSubjectFacility(ADSubjectFacilitySearchRequest request) {
         Pageable pageable = PaginationHelper.createPageable(request, "id");
         return new ResponseObject<>(
                 PageableObject.of(repository.getAll(pageable, request)),
@@ -39,7 +39,7 @@ public class Admin_SubjectFacilityServiceImpl implements Admin_SubjectFacilitySe
     }
 
     @Override
-    public ResponseObject<?> createSubjectFacility(Admin_SubjectFacilityCreateRequest request) {
+    public ResponseObject<?> createSubjectFacility(ADSubjectFacilityCreateRequest request) {
         SubjectFacility subjectFacility = new SubjectFacility();
         subjectFacility = convertAdd(subjectFacility, request);
         repository.save(subjectFacility);
@@ -47,7 +47,7 @@ public class Admin_SubjectFacilityServiceImpl implements Admin_SubjectFacilitySe
     }
 
     @Override
-    public ResponseObject<?> updateSubjectFacility(String id, Admin_SubjectFacilityUpdateRequest request) {
+    public ResponseObject<?> updateSubjectFacility(String id, ADSubjectFacilityUpdateRequest request) {
         SubjectFacility subjectFacility = repository.findById(id).get();
         subjectFacility = convertUpdate(subjectFacility, request);
         repository.save(subjectFacility);
@@ -73,13 +73,13 @@ public class Admin_SubjectFacilityServiceImpl implements Admin_SubjectFacilitySe
         return new ResponseObject<>(null, HttpStatus.OK, "thành công");
     }
 
-    private SubjectFacility convertAdd(SubjectFacility s, Admin_SubjectFacilityCreateRequest request) {
+    private SubjectFacility convertAdd(SubjectFacility s, ADSubjectFacilityCreateRequest request) {
         s.setFacility(facilityRepository.findById(request.getFacilityId()).get());
         s.setSubject(subjectRepository.findById(request.getSubjectId()).get());
         return s;
     }
 
-    private SubjectFacility convertUpdate(SubjectFacility s, Admin_SubjectFacilityUpdateRequest request) {
+    private SubjectFacility convertUpdate(SubjectFacility s, ADSubjectFacilityUpdateRequest request) {
         s.setFacility(facilityRepository.findById(request.getFacilityId()).get());
         s.setSubject(subjectRepository.findById(request.getSubjectId()).get());
         if (request.getStatus().equals("ACTIVE")) {
