@@ -2,6 +2,7 @@ package udpm.hn.studentattendance.core.student.attendance.service.impl;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -54,6 +55,12 @@ public class SAAttendanceServiceImpl implements SAAttendanceService {
     private final SAFacilityLocationRepository facilityLocationRepository;
 
     private final HttpServletRequest httpServletRequest;
+
+    @Value("${app.config.attendance.early-checkin}")
+    private int EARLY_CHECKIN;
+
+    @Value("${app.config.attendance.late-checkin}")
+    private int LATE_CHECKIN;
 
     @Override
     public ResponseEntity<?> getAllList(SAFilterAttendanceRequest request) {
@@ -108,17 +115,24 @@ public class SAAttendanceServiceImpl implements SAAttendanceService {
             return RouterHelper.responseError("Tài khoản chưa đăng ký thông tin khuôn mặt");
         }
 
-        if (DateTimeUtils.getCurrentTimeMillis() <= planDate.getStartDate() - 10 * 60 * 1000) {
-            return RouterHelper.responseError("Chưa đến giờ checkin");
-        }
-
-        if (DateTimeUtils.getCurrentTimeMillis() > planDate.getStartDate() + planDate.getLateArrival() * 60 * 1000) {
-            return RouterHelper.responseError("Đã quá giờ checkin");
-        }
-
         Attendance attendance = attendanceRepository.findByUserStudent_IdAndPlanDate_Id(userStudent.getId(), planDate.getId()).orElse(null);
-        if (attendance != null) {
-            return RouterHelper.responseError("Ca học đã được checkin từ trước");
+
+        if (attendance == null) {
+            if (DateTimeUtils.getCurrentTimeMillis() <= planDate.getStartDate() - (long) EARLY_CHECKIN * 60 * 1000) {
+                return RouterHelper.responseError("Chưa đến giờ checkin đầu giờ");
+            }
+
+            if (DateTimeUtils.getCurrentTimeMillis() > planDate.getStartDate() + planDate.getLateArrival() * 60 * 1000) {
+                return RouterHelper.responseError("Đã quá giờ checkin đầu giờ");
+            }
+        } else {
+            if (DateTimeUtils.getCurrentTimeMillis() < planDate.getEndDate()) {
+                return RouterHelper.responseError("Chưa đến giờ checkin cuối giờ");
+            }
+
+            if (DateTimeUtils.getCurrentTimeMillis() > planDate.getEndDate() + (long) LATE_CHECKIN * 60 * 1000) {
+                return RouterHelper.responseError("Đã quá giờ checkin cuối giờ");
+            }
         }
 
         double[] inputEmbedding = FaceRecognitionUtils.parseEmbedding(request.getFaceEmbedding());
@@ -128,12 +142,21 @@ public class SAAttendanceServiceImpl implements SAAttendanceService {
             return RouterHelper.responseError("Xác thực khuôn mặt thất bại");
         }
 
+        if (attendance != null) {
+            if (attendance.getAttendanceStatus() == AttendanceStatus.CHECKIN) {
+                attendance.setAttendanceStatus(AttendanceStatus.PRESENT);
+                return RouterHelper.responseSuccess("Điểm danh thành công", attendanceRepository.save(attendance));
+            } else {
+                return RouterHelper.responseError("Không thể checkin ca học này");
+            }
+        }
+
         attendance = new Attendance();
         attendance.setAttendanceStatus(AttendanceStatus.CHECKIN);
         attendance.setUserStudent(userStudent);
         attendance.setPlanDate(planDate);
 
-        return RouterHelper.responseSuccess("Checkin thành công ca học", attendanceRepository.save(attendance));
+        return RouterHelper.responseSuccess("Checkin đầu giờ thành công", attendanceRepository.save(attendance));
     }
 
 }
