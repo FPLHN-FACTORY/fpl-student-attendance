@@ -104,7 +104,6 @@ public class USStudentFactoryServiceImpl implements USStudentFactoryService {
         boolean isExistsShift = userStudentFactoryExtendRepository
                 .isStudentExistsShift(
                         sessionHelper.getFacilityId(),
-                        existStudentFactory.get().getFactory().getId(),
                         existStudentFactory.get().getUserStudent().getId());
         if (!isExistsShift) {
             return new ResponseEntity<>(
@@ -155,7 +154,6 @@ public class USStudentFactoryServiceImpl implements USStudentFactoryService {
         boolean isExistsShift = userStudentFactoryExtendRepository
                 .isStudentExistsShift(
                         sessionHelper.getFacilityId(),
-                        studentFactoryCreateUpdateRequest.getFactoryId(),
                         studentFactoryCreateUpdateRequest.getStudentId());
         if (existStudentFactory.isPresent()) {
             return new ResponseEntity<>(
@@ -254,7 +252,6 @@ public class USStudentFactoryServiceImpl implements USStudentFactoryService {
         boolean isExistsShift = userStudentFactoryExtendRepository
                 .isStudentExistsShift(
                         sessionHelper.getFacilityId(),
-                        addRequest.getFactoryId(),
                         existUserStudentByCode.get().getId());
 
         if (existUserStudent.isEmpty()) {

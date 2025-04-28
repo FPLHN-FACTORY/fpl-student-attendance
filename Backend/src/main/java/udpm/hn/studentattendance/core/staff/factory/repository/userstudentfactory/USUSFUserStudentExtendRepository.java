@@ -112,12 +112,12 @@ public interface USUSFUserStudentExtendRepository extends UserStudentRepository 
                     usf.status = 1 AND
                     usf2.status = 1 AND
                     (pd2.start_date < pd.start_date OR pd2.start_date > pd.end_date) AND
-                    pd.start_date >= (UNIX_TIMESTAMP(CURRENT_DATE) * 1000) AND
-                    f.id <> :idFactory AND
+                    pd2.start_date >= (UNIX_TIMESTAMP(CURRENT_DATE) * 1000) AND
+                    pd.id <> pd2.id AND
                     usf.id_user_student = :idUserStudent AND
                     f2.id = :idFacility
             """, nativeQuery = true)
-    boolean isStudentExistsShift(String idFacility, String idFactory, String idUserStudent);
+    boolean isStudentExistsShift(String idFacility, String idUserStudent);
 
     Optional<UserStudent> getUserStudentByCode(String code);
 }
