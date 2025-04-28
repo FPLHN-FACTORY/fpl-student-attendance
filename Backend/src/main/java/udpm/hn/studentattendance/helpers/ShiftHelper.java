@@ -13,10 +13,6 @@ import java.util.List;
 
 public class ShiftHelper {
 
-    public final static int MIN_DIFF = 1800; // 30 phút
-
-    public final static int MAX_LATE_ARRIVAL = 90; // phút
-
     private static final ZoneId ZONEID = ZoneId.of("Asia/Ho_Chi_Minh");
 
     public static Long getShiftTimeStart(long time, LocalTime startTime) {

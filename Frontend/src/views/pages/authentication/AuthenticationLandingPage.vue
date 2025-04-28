@@ -38,7 +38,7 @@ const roles = [
   },
   {
     role: ROLE.STAFF,
-    label: 'Quản lý xưởng',
+    label: 'Phụ trách xưởng',
     img: imgRoleStaff,
     route: GLOBAL_ROUTE_NAMES.STAFF_PAGE,
   },
@@ -110,6 +110,13 @@ const redirectLoginRole = () => {
 
     if (role) {
       loadingPage.hide()
+      requestAPI
+        .post(ROUTE_NAMES_API.FETCH_DATA_AVATAR, {
+          url_image: authStore.user.picture,
+        })
+        .then(({ data: response }) => {
+          authStore.updateUser({ picture: response.data })
+        })
       return router.push({ name: role.route })
     }
   }

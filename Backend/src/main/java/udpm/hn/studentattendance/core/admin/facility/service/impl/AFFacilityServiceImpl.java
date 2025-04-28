@@ -28,6 +28,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -162,11 +163,10 @@ public class AFFacilityServiceImpl implements AFFacilityService {
                 if (!lstEmails.isEmpty()) {
                     mailerDefaultRequest.setBcc(lstEmails.toArray(new String[0]));
                 }
+
+                mailerDefaultRequest.setTemplate(null);
                 mailerDefaultRequest.setTitle("Thông báo từ " + appName);
-                mailerDefaultRequest.setContent(String.format("""
-                            Cơ sở <b>%s</b> hiện đã ngững hoạt động.<br />
-                            Bạn nhận được tin nhắn này do đang là quản lý, giảng viên hoặc sinh viên thuộc cơ sở này.<br />
-                        """, entity.getName()));
+                mailerDefaultRequest.setContent(MailerHelper.loadTemplate(MailerHelper.TEMPLATE_CHANGE_STATUS_FACILITY, Map.of("FACILITY_NAME", entity.getName())));
                 mailerHelper.send(mailerDefaultRequest);
             }
         } else {
