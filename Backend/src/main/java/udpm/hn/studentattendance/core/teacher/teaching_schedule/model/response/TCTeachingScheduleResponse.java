@@ -1,6 +1,6 @@
 package udpm.hn.studentattendance.core.teacher.teaching_schedule.model.response;
 
-public interface Teacher_TeachingScheduleResponse {
+public interface TCTeachingScheduleResponse {
     Integer getIndexs();
 
     String getIdPlanDate();

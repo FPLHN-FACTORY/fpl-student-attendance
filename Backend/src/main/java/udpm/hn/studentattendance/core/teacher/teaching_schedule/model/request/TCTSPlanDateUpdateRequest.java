@@ -10,7 +10,7 @@ import javax.swing.text.html.parser.Entity;
 
 @Getter
 @Setter
-public class Teacher_TSPlanDateUpdateRequest {
+public class TCTSPlanDateUpdateRequest {
     private String idPlanDate;
 
     @Size(max = 255)

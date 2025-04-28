@@ -11,7 +11,7 @@ import javax.swing.text.html.parser.Entity;
 import java.util.List;
 
 @Repository
-public interface Teacher_TSProjectExtendRepository extends ProjectRepository {
+public interface TCTSProjectExtendRepository extends ProjectRepository {
     @Query(value = """
             SELECT
             p

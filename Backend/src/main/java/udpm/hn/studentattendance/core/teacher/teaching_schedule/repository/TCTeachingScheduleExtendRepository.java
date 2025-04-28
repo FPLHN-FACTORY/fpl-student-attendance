@@ -4,9 +4,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
-import udpm.hn.studentattendance.core.teacher.teaching_schedule.model.request.Teacher_TeachingScheduleRequest;
-import udpm.hn.studentattendance.core.teacher.teaching_schedule.model.response.Teacher_TSDetailPlanDateResponse;
-import udpm.hn.studentattendance.core.teacher.teaching_schedule.model.response.Teacher_TeachingScheduleResponse;
+import udpm.hn.studentattendance.core.teacher.teaching_schedule.model.request.TCTeachingScheduleRequest;
+import udpm.hn.studentattendance.core.teacher.teaching_schedule.model.response.TCTSDetailPlanDateResponse;
+import udpm.hn.studentattendance.core.teacher.teaching_schedule.model.response.TCTeachingScheduleResponse;
 import udpm.hn.studentattendance.entities.PlanDate;
 import udpm.hn.studentattendance.repositories.PlanDateRepository;
 
@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface Teacher_TeachingScheduleExtendRepository extends PlanDateRepository {
+public interface TCTeachingScheduleExtendRepository extends PlanDateRepository {
 
     @Query(value = """
             SELECT
@@ -87,8 +87,8 @@ public interface Teacher_TeachingScheduleExtendRepository extends PlanDateReposi
                 AND (:#{#teachingScheduleRequest.shift} IS NULL OR pd.shift = :#{#teachingScheduleRequest.shift})
                 AND (:#{#teachingScheduleRequest.shiftType} IS NULL OR pd.type = :#{#teachingScheduleRequest.shiftType})
             """, nativeQuery = true)
-    Page<Teacher_TeachingScheduleResponse> getAllTeachingScheduleByStaff(
-            String userId, Pageable pageable, Teacher_TeachingScheduleRequest teachingScheduleRequest);
+    Page<TCTeachingScheduleResponse> getAllTeachingScheduleByStaff(
+            String userId, Pageable pageable, TCTeachingScheduleRequest teachingScheduleRequest);
 
     @Query(value = """
                         SELECT
@@ -149,8 +149,8 @@ public interface Teacher_TeachingScheduleExtendRepository extends PlanDateReposi
                 AND pf.status = 1
                 AND DATE(FROM_UNIXTIME(pd.start_date / 1000)) = CURDATE()
             """, nativeQuery = true)
-    Page<Teacher_TeachingScheduleResponse> getAllTeachingSchedulePresent(String userId, Pageable pageable,
-                                                                         Teacher_TeachingScheduleRequest teachingScheduleRequest);
+    Page<TCTeachingScheduleResponse> getAllTeachingSchedulePresent(String userId, Pageable pageable,
+                                                                   TCTeachingScheduleRequest teachingScheduleRequest);
 
     @Query(value = """
             SELECT
@@ -169,7 +169,7 @@ public interface Teacher_TeachingScheduleExtendRepository extends PlanDateReposi
                 FROM plan_date pd
                 WHERE pd.id = :planDateId
             """, nativeQuery = true)
-    Optional<Teacher_TSDetailPlanDateResponse> getPlanDateById(String planDateId);
+    Optional<TCTSDetailPlanDateResponse> getPlanDateById(String planDateId);
 
     @Query(value = """
             SELECT
@@ -208,8 +208,8 @@ public interface Teacher_TeachingScheduleExtendRepository extends PlanDateReposi
             ORDER BY pd.start_date ASC
 
             """, nativeQuery = true)
-    List<Teacher_TeachingScheduleResponse> exportExcelTeachingSchedule(
-            String userId, Teacher_TeachingScheduleRequest teachingScheduleRequest);
+    List<TCTeachingScheduleResponse> exportExcelTeachingSchedule(
+            String userId, TCTeachingScheduleRequest teachingScheduleRequest);
 
 
     @Query(
