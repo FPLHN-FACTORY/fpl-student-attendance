@@ -2,7 +2,7 @@ package udpm.hn.studentattendance.core.staff.project.repository;
 
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
-import udpm.hn.studentattendance.core.staff.project.model.response.Staff_LevelProjectResponse;
+import udpm.hn.studentattendance.core.staff.project.model.response.USLevelProjectResponse;
 import udpm.hn.studentattendance.repositories.LevelProjectRepository;
 
 import java.util.List;
@@ -19,6 +19,6 @@ public interface Staff_LevelProjectManagementRepository extends LevelProjectRepo
                 where status = 1
                 ORDER BY created_at DESC
             """, nativeQuery = true)
-    List<Staff_LevelProjectResponse> getLevelProject();
+    List<USLevelProjectResponse> getLevelProject();
 
 }

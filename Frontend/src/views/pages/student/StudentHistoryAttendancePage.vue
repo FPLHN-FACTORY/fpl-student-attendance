@@ -285,8 +285,8 @@ onMounted(() => {
                 </template>
                 <template v-else-if="column.dataIndex === 'lateArrival'">
                   <a-tag :color="record.lateArrival > 0 ? 'gold' : 'green'">
-                    {{ record.lateArrival }}
-                    <ExclamationCircleOutlined />
+                    <ExclamationCircleOutlined /> 
+                    {{ record.lateArrival + ' phút' }}
                   </a-tag>
                 </template>
                 <template v-else-if="column.dataIndex === 'planDateDescription'">

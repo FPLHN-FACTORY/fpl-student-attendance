@@ -1,17 +1,17 @@
 package udpm.hn.studentattendance.core.staff.project.service;
 
-import udpm.hn.studentattendance.core.staff.project.model.request.Staff_ProjectCreateRequest;
-import udpm.hn.studentattendance.core.staff.project.model.request.Staff_ProjectUpdateRequest;
-import udpm.hn.studentattendance.core.staff.project.model.request.Staff_ProjectSearchRequest;
+import udpm.hn.studentattendance.core.staff.project.model.request.USProjectCreateRequest;
+import udpm.hn.studentattendance.core.staff.project.model.request.USProjectUpdateRequest;
+import udpm.hn.studentattendance.core.staff.project.model.request.USProjectSearchRequest;
 import udpm.hn.studentattendance.infrastructure.common.ResponseObject;
 
 public interface Staff_ProjectManagementService {
 
-    ResponseObject<?> getListProject(Staff_ProjectSearchRequest request);
+    ResponseObject<?> getListProject(USProjectSearchRequest request);
 
-    ResponseObject<?> createProject(Staff_ProjectCreateRequest request);
+    ResponseObject<?> createProject(USProjectCreateRequest request);
 
-    ResponseObject<?> updateProject(String id, Staff_ProjectUpdateRequest request);
+    ResponseObject<?> updateProject(String id, USProjectUpdateRequest request);
 
     ResponseObject<?> detailProject(String id);
 

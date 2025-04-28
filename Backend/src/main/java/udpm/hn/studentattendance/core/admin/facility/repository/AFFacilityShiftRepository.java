@@ -70,5 +70,19 @@ public interface AFFacilityShiftRepository extends FacilityShiftRepository {
             """, nativeQuery = true)
     boolean isExistsTime(String idFacility, int from_hour, int from_minute, int to_hour, int to_minute,
             String idFacilityShift);
-
+    @Query(value = """
+                SELECT
+                    CASE WHEN COUNT(*) > 0 THEN 'TRUE' ELSE 'FALSE' END
+                FROM facility_shift
+                WHERE
+                    status = 1 AND
+                    id_facility = :idFacility AND
+                    from_hour = :from_hour AND
+                    from_minute = :from_minute AND
+                    to_hour = :to_hour AND
+                    to_minute = :to_minute AND
+                    (:idFacilityShift IS NULL OR id != :idFacilityShift)
+            """, nativeQuery = true)
+    boolean isExistsTimeV2(String idFacility, int from_hour, int from_minute, int to_hour, int to_minute,
+                         String idFacilityShift);
 }
