@@ -82,7 +82,7 @@ const breadcrumb = ref([
   },
   {
     name: ROUTE_NAMES.MANAGEMENT_FACTORY,
-    breadcrumbName: 'Nhóm xưởng',
+    breadcrumbName: 'Quản lý nhóm xưởng',
   },
 ])
 

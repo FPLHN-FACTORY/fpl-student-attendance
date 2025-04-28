@@ -5,7 +5,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-import udpm.hn.studentattendance.core.staff.student.model.request.Staff_StudentCreateUpdateRequest;
+import udpm.hn.studentattendance.core.staff.student.model.request.USStudentCreateUpdateRequest;
 import udpm.hn.studentattendance.core.staff.student.service.Staff_StudentService;
 import udpm.hn.studentattendance.helpers.ExcelHelper;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
@@ -63,7 +63,7 @@ public class EXStudentServiceImpl implements EXStudentService {
         Map<String, Object> data = request.getData();
         Map<String, String> item = request.getItem();
 
-        Staff_StudentCreateUpdateRequest createUpdateRequest = new Staff_StudentCreateUpdateRequest();
+        USStudentCreateUpdateRequest createUpdateRequest = new USStudentCreateUpdateRequest();
         createUpdateRequest.setName(item.get("TEN_SINH_VIEN"));
         createUpdateRequest.setCode(item.get("MA_SINH_VIEN"));
         createUpdateRequest.setEmail(item.get("EMAIL"));

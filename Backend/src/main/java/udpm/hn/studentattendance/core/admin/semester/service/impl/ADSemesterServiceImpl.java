@@ -20,6 +20,7 @@ import udpm.hn.studentattendance.infrastructure.constants.RestApiStatus;
 import udpm.hn.studentattendance.infrastructure.constants.SemesterName;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
@@ -72,13 +73,12 @@ public class ADSemesterServiceImpl implements ADSemesterService {
                                         .ofEpochMilli(request.getToDate())
                                         .atZone(ZoneId.systemDefault())
                                         .toLocalDateTime();
-
                         // **Thêm validation kiểm tra ngày quá khứ**
                         if (fromDate.isBefore(LocalDateTime.now())) {
                                 return new ResponseEntity<>(
                                                 new ApiResponse(
                                                                 RestApiStatus.ERROR,
-                                                                "Ngày bắt đầu học kỳ không thể là ngày trong quá khứ",
+                                                                "Ngày bắt đầu học kỳ không thể là ngày trong quá khứ hoặc hiện tại",
                                                                 null),
                                                 HttpStatus.BAD_REQUEST);
                         }
@@ -168,7 +168,7 @@ public class ADSemesterServiceImpl implements ADSemesterService {
                         return new ResponseEntity<>(
                                         new ApiResponse(
                                                         RestApiStatus.ERROR,
-                                                        "Ngày bắt đầu học kỳ không thể là ngày trong quá khứ",
+                                                "Ngày bắt đầu học kỳ không thể là ngày trong quá khứ hoặc hiện tại",
                                                         null),
                                         HttpStatus.BAD_REQUEST);
                 }

@@ -8,10 +8,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-import udpm.hn.studentattendance.core.staff.factory.model.request.Staff_FactoryCreateUpdateRequest;
-import udpm.hn.studentattendance.core.staff.factory.repository.factory.Staff_ProjectFactoryExtendRepository;
-import udpm.hn.studentattendance.core.staff.factory.repository.factory.Staff_StaffFactoryExtendRepository;
-import udpm.hn.studentattendance.core.staff.factory.service.Staff_FactoryService;
+import udpm.hn.studentattendance.core.staff.factory.model.request.USFactoryCreateUpdateRequest;
+import udpm.hn.studentattendance.core.staff.factory.repository.factory.USProjectFactoryExtendRepository;
+import udpm.hn.studentattendance.core.staff.factory.repository.factory.USStaffFactoryExtendRepository;
+import udpm.hn.studentattendance.core.staff.factory.service.USFactoryService;
 import udpm.hn.studentattendance.helpers.ExcelHelper;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
 import udpm.hn.studentattendance.helpers.RouterHelper;
@@ -41,9 +41,9 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class EXFactoryServiceImpl implements EXFactoryService {
 
-    private final Staff_FactoryService factoryService;
-    private final Staff_ProjectFactoryExtendRepository projectFactoryExtendRepository;
-    private final Staff_StaffFactoryExtendRepository staffFactoryExtendRepository;
+    private final USFactoryService factoryService;
+    private final USProjectFactoryExtendRepository projectFactoryExtendRepository;
+    private final USStaffFactoryExtendRepository staffFactoryExtendRepository;
     private final EXImportLogRepository importLogRepository;
     private final EXImportLogDetailRepository importLogDetailRepository;
     private final SessionHelper sessionHelper;
@@ -92,7 +92,7 @@ public class EXFactoryServiceImpl implements EXFactoryService {
         }
         String lecturerId = lecturerValue.substring(lecturerStartIndex + 1, lecturerEndIndex);
 
-        Staff_FactoryCreateUpdateRequest createUpdateRequest = new Staff_FactoryCreateUpdateRequest();
+        USFactoryCreateUpdateRequest createUpdateRequest = new USFactoryCreateUpdateRequest();
         createUpdateRequest.setFactoryName(factoryName);
         createUpdateRequest.setFactoryDescription(factoryDescription);
         createUpdateRequest.setIdProject(projectId);

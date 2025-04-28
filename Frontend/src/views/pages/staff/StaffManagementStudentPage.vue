@@ -252,7 +252,7 @@ const handleChangeStatusStudent = (record) => {
 const changeFaceStudent = (record) => {
   Modal.confirm({
     title: 'Xác nhận đổi mặt',
-    content: `Bạn có chắc muốn đổi mặt của học sinh ${record.studentName}?`,
+    content: `Bạn có chắc muốn đổi mặt của sinh viên ${record.studentName}?`,
     onOk() {
       loadingStore.show()
       // Giả sử record chứa studentId, nếu không hãy thay đổi cho phù hợp

@@ -8,23 +8,20 @@ import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
 import udpm.hn.studentattendance.core.notification.model.request.NotificationAddRequest;
 import udpm.hn.studentattendance.core.notification.service.NotificationService;
-import udpm.hn.studentattendance.core.staff.student.model.request.Staff_StudentCreateUpdateRequest;
-import udpm.hn.studentattendance.core.staff.student.model.request.Staff_StudentRequest;
-import udpm.hn.studentattendance.core.staff.student.repository.Staff_StudentExtendRepository;
-import udpm.hn.studentattendance.core.staff.student.repository.Staff_StudentFacilityExtendRepository;
+import udpm.hn.studentattendance.core.staff.student.model.request.USStudentCreateUpdateRequest;
+import udpm.hn.studentattendance.core.staff.student.model.request.USStudentRequest;
+import udpm.hn.studentattendance.core.staff.student.repository.USStudentExtendRepository;
+import udpm.hn.studentattendance.core.staff.student.repository.USStudentFacilityExtendRepository;
 import udpm.hn.studentattendance.core.staff.student.service.Staff_StudentService;
 import udpm.hn.studentattendance.entities.Facility;
-import udpm.hn.studentattendance.entities.UserStaff;
 import udpm.hn.studentattendance.entities.UserStudent;
 import udpm.hn.studentattendance.helpers.NotificationHelper;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
-import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.helpers.SessionHelper;
 import udpm.hn.studentattendance.infrastructure.common.ApiResponse;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.RestApiStatus;
-import udpm.hn.studentattendance.repositories.FacilityRepository;
 
 import java.util.HashMap;
 import java.util.List;
@@ -36,16 +33,16 @@ import java.util.Optional;
 @Validated
 public class Staff_StudentServiceImpl implements Staff_StudentService {
 
-    private final Staff_StudentExtendRepository studentExtendRepository;
+    private final USStudentExtendRepository studentExtendRepository;
 
     private final SessionHelper sessionHelper;
 
-    private final Staff_StudentFacilityExtendRepository facilityRepository;
+    private final USStudentFacilityExtendRepository facilityRepository;
 
     private final NotificationService notificationService;
 
     @Override
-    public ResponseEntity<?> getAllStudentByFacility(Staff_StudentRequest studentRequest) {
+    public ResponseEntity<?> getAllStudentByFacility(USStudentRequest studentRequest) {
         Pageable pageable = PaginationHelper.createPageable(studentRequest, "createdAt");
         PageableObject pageableObject = PageableObject.of(studentExtendRepository
                 .getAllStudentByFacility(pageable, studentRequest, sessionHelper.getFacilityId()));
@@ -80,7 +77,7 @@ public class Staff_StudentServiceImpl implements Staff_StudentService {
     }
 
     @Override
-    public ResponseEntity<?> createStudent(Staff_StudentCreateUpdateRequest studentCreateUpdateRequest) {
+    public ResponseEntity<?> createStudent(USStudentCreateUpdateRequest studentCreateUpdateRequest) {
         Optional<UserStudent> existStudentCode = studentExtendRepository
                 .getUserStudentByCode(studentCreateUpdateRequest.getCode());
         Optional<UserStudent> existStudentEmail = studentExtendRepository
@@ -121,7 +118,7 @@ public class Staff_StudentServiceImpl implements Staff_StudentService {
     }
 
     @Override
-    public ResponseEntity<?> updateStudent(Staff_StudentCreateUpdateRequest studentCreateUpdateRequest) {
+    public ResponseEntity<?> updateStudent(USStudentCreateUpdateRequest studentCreateUpdateRequest) {
         Optional<UserStudent> existStudent = studentExtendRepository
                 .getStudentById(studentCreateUpdateRequest.getId());
 
