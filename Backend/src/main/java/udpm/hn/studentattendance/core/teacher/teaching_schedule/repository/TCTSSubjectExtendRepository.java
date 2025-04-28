@@ -9,7 +9,7 @@ import udpm.hn.studentattendance.repositories.SubjectRepository;
 import java.util.List;
 
 @Repository
-public interface Teacher_TSSubjectExtendRepository extends SubjectRepository {
+public interface TCTSSubjectExtendRepository extends SubjectRepository {
     @Query(value = """
                 SELECT
                 DISTINCT

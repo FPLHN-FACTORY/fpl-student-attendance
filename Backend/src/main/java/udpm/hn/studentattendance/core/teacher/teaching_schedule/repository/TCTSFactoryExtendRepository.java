@@ -9,7 +9,7 @@ import udpm.hn.studentattendance.repositories.FactoryRepository;
 import java.util.List;
 
 @Repository
-public interface Teacher_TSFactoryExtendRepository extends FactoryRepository {
+public interface TCTSFactoryExtendRepository extends FactoryRepository {
     @Query(value = """
             SELECT
             f

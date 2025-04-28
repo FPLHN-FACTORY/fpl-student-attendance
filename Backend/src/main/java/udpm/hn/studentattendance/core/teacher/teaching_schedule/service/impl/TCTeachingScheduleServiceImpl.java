@@ -9,15 +9,15 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
-import udpm.hn.studentattendance.core.teacher.teaching_schedule.model.request.Teacher_TSPlanDateUpdateRequest;
-import udpm.hn.studentattendance.core.teacher.teaching_schedule.model.request.Teacher_TeachingScheduleRequest;
-import udpm.hn.studentattendance.core.teacher.teaching_schedule.model.response.Teacher_TSDetailPlanDateResponse;
-import udpm.hn.studentattendance.core.teacher.teaching_schedule.model.response.Teacher_TeachingScheduleResponse;
-import udpm.hn.studentattendance.core.teacher.teaching_schedule.repository.Teacher_TSFactoryExtendRepository;
-import udpm.hn.studentattendance.core.teacher.teaching_schedule.repository.Teacher_TSProjectExtendRepository;
-import udpm.hn.studentattendance.core.teacher.teaching_schedule.repository.Teacher_TSSubjectExtendRepository;
-import udpm.hn.studentattendance.core.teacher.teaching_schedule.repository.Teacher_TeachingScheduleExtendRepository;
-import udpm.hn.studentattendance.core.teacher.teaching_schedule.service.Teacher_TeachingScheduleService;
+import udpm.hn.studentattendance.core.teacher.teaching_schedule.model.request.TCTSPlanDateUpdateRequest;
+import udpm.hn.studentattendance.core.teacher.teaching_schedule.model.request.TCTeachingScheduleRequest;
+import udpm.hn.studentattendance.core.teacher.teaching_schedule.model.response.TCTSDetailPlanDateResponse;
+import udpm.hn.studentattendance.core.teacher.teaching_schedule.model.response.TCTeachingScheduleResponse;
+import udpm.hn.studentattendance.core.teacher.teaching_schedule.repository.TCTSFactoryExtendRepository;
+import udpm.hn.studentattendance.core.teacher.teaching_schedule.repository.TCTSProjectExtendRepository;
+import udpm.hn.studentattendance.core.teacher.teaching_schedule.repository.TCTSSubjectExtendRepository;
+import udpm.hn.studentattendance.core.teacher.teaching_schedule.repository.TCTeachingScheduleExtendRepository;
+import udpm.hn.studentattendance.core.teacher.teaching_schedule.service.TCTeachingScheduleService;
 import udpm.hn.studentattendance.entities.*;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
 import udpm.hn.studentattendance.helpers.SessionHelper;
@@ -39,21 +39,21 @@ import java.util.stream.Stream;
 @Service
 @RequiredArgsConstructor
 @Validated
-public class Teacher_TeachingScheduleServiceImpl implements Teacher_TeachingScheduleService {
+public class TCTeachingScheduleServiceImpl implements TCTeachingScheduleService {
 
-    private final Teacher_TeachingScheduleExtendRepository teacherTeachingScheduleExtendRepository;
+    private final TCTeachingScheduleExtendRepository teacherTeachingScheduleExtendRepository;
 
-    private final Teacher_TSProjectExtendRepository teacherTsProjectExtendRepository;
+    private final TCTSProjectExtendRepository teacherTsProjectExtendRepository;
 
-    private final Teacher_TSSubjectExtendRepository teacherTsSubjectExtendRepository;
+    private final TCTSSubjectExtendRepository teacherTsSubjectExtendRepository;
 
-    private final Teacher_TSFactoryExtendRepository teacherTsFactoryExtendRepository;
+    private final TCTSFactoryExtendRepository teacherTsFactoryExtendRepository;
 
     private final SessionHelper sessionHelper;
 
     @Override
     public ResponseEntity<?> getAllTeachingScheduleByStaff(
-            Teacher_TeachingScheduleRequest teachingScheduleRequest) {
+            TCTeachingScheduleRequest teachingScheduleRequest) {
         Pageable pageable = PaginationHelper.createPageable(teachingScheduleRequest);
         PageableObject list = PageableObject
                 .of(teacherTeachingScheduleExtendRepository.getAllTeachingScheduleByStaff(
@@ -117,7 +117,7 @@ public class Teacher_TeachingScheduleServiceImpl implements Teacher_TeachingSche
 
     @Override
     public ByteArrayInputStream exportTeachingSchedule(
-            List<Teacher_TeachingScheduleResponse> teachingScheduleResponseList) {
+            List<TCTeachingScheduleResponse> teachingScheduleResponseList) {
         Document document = new Document();
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
 
@@ -176,7 +176,7 @@ public class Teacher_TeachingScheduleServiceImpl implements Teacher_TeachingSche
                     new Locale("vi", "VN"));
 
             int rowIndex = 0;
-            for (Teacher_TeachingScheduleResponse teachingScheduleResponse : teachingScheduleResponseList) {
+            for (TCTeachingScheduleResponse teachingScheduleResponse : teachingScheduleResponseList) {
                 Color backgroundColor = (rowIndex % 2 == 0) ? rowColor1 : rowColor2;
 
                 // Cột "Ngày dạy"
@@ -258,7 +258,7 @@ public class Teacher_TeachingScheduleServiceImpl implements Teacher_TeachingSche
     }
 
     @Override
-    public ResponseEntity<?> updatePlanDate(Teacher_TSPlanDateUpdateRequest planDateUpdateRequest) {
+    public ResponseEntity<?> updatePlanDate(TCTSPlanDateUpdateRequest planDateUpdateRequest) {
         Optional<PlanDate> existPlanDate = teacherTeachingScheduleExtendRepository
                 .findById(planDateUpdateRequest.getIdPlanDate());
         boolean isOutOfTime = teacherTeachingScheduleExtendRepository.isOutOfTime(existPlanDate.get().getId());
@@ -293,7 +293,7 @@ public class Teacher_TeachingScheduleServiceImpl implements Teacher_TeachingSche
 
     @Override
     public ResponseEntity<?> getDetailPlanDate(String planDateId) {
-        Optional<Teacher_TSDetailPlanDateResponse> getDetailPlanDateResponse = teacherTeachingScheduleExtendRepository
+        Optional<TCTSDetailPlanDateResponse> getDetailPlanDateResponse = teacherTeachingScheduleExtendRepository
                 .getPlanDateById(planDateId);
         if (getDetailPlanDateResponse.isPresent()) {
             return new ResponseEntity<>(
@@ -313,7 +313,7 @@ public class Teacher_TeachingScheduleServiceImpl implements Teacher_TeachingSche
 
     @Override
     public ResponseEntity<?> getAllTeachingSchedulePresent(
-            Teacher_TeachingScheduleRequest teachingScheduleRequest) {
+            TCTeachingScheduleRequest teachingScheduleRequest) {
         Pageable pageable = PaginationHelper.createPageable(teachingScheduleRequest);
         PageableObject list = PageableObject.of(teacherTeachingScheduleExtendRepository
                 .getAllTeachingSchedulePresent(sessionHelper.getUserId(), pageable,

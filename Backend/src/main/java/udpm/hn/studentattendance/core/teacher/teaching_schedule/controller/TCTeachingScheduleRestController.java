@@ -6,11 +6,11 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import udpm.hn.studentattendance.core.teacher.teaching_schedule.model.request.Teacher_TSPlanDateUpdateRequest;
-import udpm.hn.studentattendance.core.teacher.teaching_schedule.model.request.Teacher_TeachingScheduleRequest;
-import udpm.hn.studentattendance.core.teacher.teaching_schedule.model.response.Teacher_TeachingScheduleResponse;
-import udpm.hn.studentattendance.core.teacher.teaching_schedule.repository.Teacher_TeachingScheduleExtendRepository;
-import udpm.hn.studentattendance.core.teacher.teaching_schedule.service.Teacher_TeachingScheduleService;
+import udpm.hn.studentattendance.core.teacher.teaching_schedule.model.request.TCTSPlanDateUpdateRequest;
+import udpm.hn.studentattendance.core.teacher.teaching_schedule.model.request.TCTeachingScheduleRequest;
+import udpm.hn.studentattendance.core.teacher.teaching_schedule.model.response.TCTeachingScheduleResponse;
+import udpm.hn.studentattendance.core.teacher.teaching_schedule.repository.TCTeachingScheduleExtendRepository;
+import udpm.hn.studentattendance.core.teacher.teaching_schedule.service.TCTeachingScheduleService;
 import udpm.hn.studentattendance.helpers.SessionHelper;
 import udpm.hn.studentattendance.infrastructure.constants.router.RouteTeacherConstant;
 
@@ -24,21 +24,21 @@ import java.util.List;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping(RouteTeacherConstant.URL_API_TEACHING_SCHEDULE_MANAGEMENT)
-public class Teacher_TeachingScheduleRestController {
+public class TCTeachingScheduleRestController {
 
-    private final Teacher_TeachingScheduleService service;
+    private final TCTeachingScheduleService service;
 
-    private final Teacher_TeachingScheduleExtendRepository teacherTeachingScheduleExtendRepository;
+    private final TCTeachingScheduleExtendRepository teacherTeachingScheduleExtendRepository;
 
     private final SessionHelper sessionHelper;
 
     @GetMapping()
-    public ResponseEntity<?> getAllTeachingScheduleByStaff(Teacher_TeachingScheduleRequest request) {
+    public ResponseEntity<?> getAllTeachingScheduleByStaff(TCTeachingScheduleRequest request) {
         return service.getAllTeachingScheduleByStaff(request);
     }
 
     @GetMapping("/schedule-present")
-    public ResponseEntity<?> getTeachingScheduleByPresent(Teacher_TeachingScheduleRequest request) {
+    public ResponseEntity<?> getTeachingScheduleByPresent(TCTeachingScheduleRequest request) {
         return service.getAllTeachingSchedulePresent(request);
     }
 
@@ -63,7 +63,7 @@ public class Teacher_TeachingScheduleRestController {
     }
 
     @PutMapping()
-    public ResponseEntity<?> updatePlanDate(@RequestBody Teacher_TSPlanDateUpdateRequest planDateUpdateRequest) {
+    public ResponseEntity<?> updatePlanDate(@RequestBody TCTSPlanDateUpdateRequest planDateUpdateRequest) {
         return service.updatePlanDate(planDateUpdateRequest);
     }
 
@@ -74,8 +74,8 @@ public class Teacher_TeachingScheduleRestController {
 
     @GetMapping(value = "/export-pdf", produces = MediaType.APPLICATION_PDF_VALUE)
     public ResponseEntity<InputStreamResource> exportTeachingSchedule(
-            Teacher_TeachingScheduleRequest teachingScheduleRequest) throws UnsupportedEncodingException, IOException {
-        List<Teacher_TeachingScheduleResponse> list = teacherTeachingScheduleExtendRepository
+            TCTeachingScheduleRequest teachingScheduleRequest) throws UnsupportedEncodingException, IOException {
+        List<TCTeachingScheduleResponse> list = teacherTeachingScheduleExtendRepository
                 .exportExcelTeachingSchedule(sessionHelper.getUserId(), teachingScheduleRequest);
         ByteArrayInputStream byteArrayInputStream = service.exportTeachingSchedule(list);
         HttpHeaders headers = new HttpHeaders();

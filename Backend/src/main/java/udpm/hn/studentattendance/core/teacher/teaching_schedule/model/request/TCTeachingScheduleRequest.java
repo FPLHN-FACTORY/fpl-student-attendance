@@ -7,7 +7,7 @@ import udpm.hn.studentattendance.infrastructure.constants.ShiftType;
 
 @Getter
 @Setter
-public class Teacher_TeachingScheduleRequest extends PageableRequest {
+public class TCTeachingScheduleRequest extends PageableRequest {
 
     private String idSubject;
 
