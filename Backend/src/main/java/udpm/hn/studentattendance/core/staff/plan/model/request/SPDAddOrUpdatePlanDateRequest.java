@@ -39,7 +39,6 @@ public class SPDAddOrUpdatePlanDateRequest {
     private Integer type;
 
     @Min(value = 0, message = "Thời gian điểm danh muộn nhất phải lớn hơn hoặc bằng 0")
-    @Max(value = ShiftHelper.MAX_LATE_ARRIVAL, message = "Thời gian điểm danh muộn nhất không quá " + ShiftHelper.MAX_LATE_ARRIVAL + " phút")
     private Integer lateArrival;
 
     @NotBlank(message = "Vui lòng nhập nội dung buổi học")

@@ -24,7 +24,7 @@ import {
   SHIFT,
   STATUS_PLAN_DATE_DETAIL,
 } from '@/constants'
-import { dayOfWeek, formatDate, rowSelectTable } from '@/utils/utils'
+import { dayOfWeek, debounce, formatDate, rowSelectTable } from '@/utils/utils'
 import dayjs from 'dayjs'
 import ExcelUploadButton from '@/components/excel/ExcelUploadButton.vue'
 import { formatCountdown } from 'ant-design-vue/es/statistic/utils'
@@ -321,7 +321,7 @@ const handleShowUpdate = (item) => {
   modalAddOrUpdate.isLoading = false
   modalAddOrUpdate.title = h('span', [
     h(EditFilled, { class: 'me-2 text-primary' }),
-    'Chỉnh sửa kế hoạch',
+    'Chỉnh sửa ca học',
   ])
   modalAddOrUpdate.okText = 'Lưu lại'
   modalAddOrUpdate.onOk = () => handleSubmitUpdate()
@@ -343,7 +343,7 @@ const handleSubmitAdd = async () => {
     Modal.confirm({
       title: `Xác nhận thêm mới`,
       type: 'info',
-      content: `Bạn có chắc muốn thêm mới kế hoạch này?`,
+      content: `Bạn có chắc muốn thêm mới ca học này?`,
       okText: 'Tiếp tục',
       cancelText: 'Hủy bỏ',
       onOk() {
@@ -371,9 +371,9 @@ const handleSubmitUpdate = async () => {
 
 const handleShowAlertDelete = (item) => {
   Modal.confirm({
-    title: `Xoá kế hoạch: ${dayOfWeek(item.startDate)} - ${formatDate(item.startDate)}`,
+    title: `Xoá ca học: ${dayOfWeek(item.startDate)} - ${formatDate(item.startDate)}`,
     type: 'error',
-    content: `Bạn có chắc muốn xoá kế hoạch chi tiết này?`,
+    content: `Bạn có chắc muốn xoá ca học này?`,
     okText: 'Tiếp tục',
     cancelText: 'Hủy bỏ',
     okButtonProps: {
@@ -390,9 +390,9 @@ const handleShowAlertDelete = (item) => {
 
 const handleShowAlertMultipleDelete = () => {
   Modal.confirm({
-    title: `Xoá kế hoạch đã chọn`,
+    title: `Xoá ca học đã chọn`,
     type: 'error',
-    content: `Bạn có chắc muốn xoá ${selectedRowKeys.value.length} kế hoạch đã chọn?`,
+    content: `Bạn có chắc muốn xoá ${selectedRowKeys.value.length} ca học đã chọn?`,
     okText: 'Tiếp tục',
     cancelText: 'Hủy bỏ',
     okButtonProps: {
@@ -453,10 +453,11 @@ onMounted(() => {
   fetchDataShift()
 })
 
+const debounceFilter = debounce(handleSubmitFilter, 100)
 watch(
   dataFilter,
   () => {
-    handleSubmitFilter()
+    debounceFilter()
   },
   { deep: true }
 )
@@ -686,7 +687,7 @@ watch(
       <div class="col-12">
         <a-card :bordered="false" class="cart">
           <template #title>
-            <UnorderedListOutlined /> Danh sách kế hoạch
+            <UnorderedListOutlined /> Danh sách ca học
             {{ `(${formatDate(_detail?.fromDate)} - ${formatDate(_detail?.toDate)})` }}
           </template>
           <div class="d-flex justify-content-end mb-3 flex-wrap gap-3">
