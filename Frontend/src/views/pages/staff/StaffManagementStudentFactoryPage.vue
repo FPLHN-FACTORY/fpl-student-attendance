@@ -41,7 +41,7 @@ const breadcrumb = ref([
   },
   {
     name: ROUTE_NAMES.MANAGEMENT_FACTORY,
-    breadcrumbName: 'Nhóm xưởng',
+    breadcrumbName: 'Quản lý nhóm xưởng',
   },
 ])
 const loadingStore = useLoadingStore()
@@ -625,50 +625,34 @@ onMounted(() => {
       </div>
       <!-- Bảng danh sách tất cả sinh viên -->
       <a-table
-        :dataSource="shiftData"
-        :columns="shiftColumns"
+        :key="isAddStudentModalVisible"
+        :dataSource="allStudents"
+        :columns="studentColumns"
         rowKey="id"
-        :pagination="shiftPagination"
+        bordered
+        :pagination="studentPagination"
+        @change="handleStudentTableChange"
         :loading="isLoading"
-        @change="handleShiftTableChange"
         :scroll="{ y: 500, x: 'auto' }"
       >
-        <template #bodyCell="{ column, record }">
-          <!-- copy y nguyên logic từ component trước -->
-          <template v-if="column.dataIndex === 'description' && record.description">
-            <a-typography-link @click="handleShowDescription(record.description)">
-              Chi tiết
-            </a-typography-link>
+        <template #bodyCell="{ column, record, index }">
+          <template v-if="column.dataIndex">
+            <template v-if="column.dataIndex === 'rowNumber'">
+              {{ index + 1 }}
+            </template>
+            <template v-else>
+              {{ record[column.dataIndex] }}
+            </template>
           </template>
-          <template v-if="column.dataIndex === 'link' && record.link">
-            <a target="_blank" :href="record.link">Link</a>
-          </template>
-          <template v-if="column.dataIndex === 'lateArrival'">
-            {{ `${record.lateArrival} phút` }}
-          </template>
-          <template v-if="column.dataIndex === 'startDate'">
-            {{
-              `${dayOfWeek(record.startDate)}, ${formatDate(record.startDate, DEFAULT_DATE_FORMAT)}`
-            }}
-          </template>
-          <template v-if="column.key === 'time'">
-            {{
-              `${formatDate(record.startDate, 'HH:mm')} - ${formatDate(record.endDate, 'HH:mm')}`
-            }}
-          </template>
-          <template v-if="column.dataIndex === 'shift'">
-            <a-tag :color="record.type === 1 ? 'blue' : 'purple'">
-              {{
-                `Ca ${record.shift
-                  .split(',')
-                  .map((o) => Number(o))
-                  .join(', ')} - ${TYPE_SHIFT[record.type]}`
-              }}
-            </a-tag>
-          </template>
-          <template v-if="column.dataIndex === 'status'">
-            <a-badge :status="record.status === 'DA_DIEN_RA' ? 'error' : 'success'" />
-            {{ STATUS_PLAN_DATE_DETAIL[record.status] }}
+          <template v-else-if="column.key === 'select'">
+            <a-checkbox
+              :checked="
+                selectedStudents[record.id] !== undefined
+                  ? selectedStudents[record.id]
+                  : record.checked
+              "
+              @change="(e) => handleStudentCheckboxChange(record, e.target.checked)"
+            />
           </template>
         </template>
       </a-table>

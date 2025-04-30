@@ -5,8 +5,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-import udpm.hn.studentattendance.core.staff.factory.model.request.student_factory.Staff_StudentFactoryAddRequest;
-import udpm.hn.studentattendance.core.staff.factory.service.Staff_StudentFactoryService;
+import udpm.hn.studentattendance.core.staff.factory.model.request.userstudentfactory.USStudentFactoryAddRequest;
+import udpm.hn.studentattendance.core.staff.factory.service.USStudentFactoryService;
 import udpm.hn.studentattendance.helpers.ExcelHelper;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
 import udpm.hn.studentattendance.helpers.RouterHelper;
@@ -33,7 +33,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class EXStudentFactoryServiceImpl implements EXStudentFactoryService {
 
-    private final Staff_StudentFactoryService service;
+    private final USStudentFactoryService service;
 
     private final EXImportLogRepository importLogRepository;
 
@@ -65,9 +65,16 @@ public class EXStudentFactoryServiceImpl implements EXStudentFactoryService {
 
         String idFactory = (String) data.get("idFactory");
 
-        Staff_StudentFactoryAddRequest addRequest = new Staff_StudentFactoryAddRequest();
+        String code = item.get("MA_SINH_VIEN");
+        if (code == null || code.trim().isEmpty()) {
+            String msg = "Mã sinh viên không được để trống.";
+            excelHelper.saveLogError(ImportLogType.STUDENT, msg, request);
+            return RouterHelper.responseError(msg, HttpStatus.BAD_REQUEST);
+        }
+
+        USStudentFactoryAddRequest addRequest = new USStudentFactoryAddRequest();
         addRequest.setFactoryId(idFactory);
-        addRequest.setStudentCode(item.get("MA_SINH_VIEN"));
+        addRequest.setStudentCode(code);
 
         ResponseEntity<ApiResponse> result = (ResponseEntity<ApiResponse>) service.createStudent(addRequest);
         ApiResponse response = result.getBody();

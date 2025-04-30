@@ -1,17 +1,17 @@
 package udpm.hn.studentattendance.core.staff.student.service;
 
 import org.springframework.http.ResponseEntity;
-import udpm.hn.studentattendance.core.staff.student.model.request.Staff_StudentCreateUpdateRequest;
-import udpm.hn.studentattendance.core.staff.student.model.request.Staff_StudentRequest;
+import udpm.hn.studentattendance.core.staff.student.model.request.USStudentCreateUpdateRequest;
+import udpm.hn.studentattendance.core.staff.student.model.request.USStudentRequest;
 
 public interface Staff_StudentService {
-    ResponseEntity<?> getAllStudentByFacility(Staff_StudentRequest studentRequest);
+    ResponseEntity<?> getAllStudentByFacility(USStudentRequest studentRequest);
 
     ResponseEntity<?> getDetailStudent(String studentId);
 
-    ResponseEntity<?> createStudent(Staff_StudentCreateUpdateRequest studentCreateUpdateRequest);
+    ResponseEntity<?> createStudent(USStudentCreateUpdateRequest studentCreateUpdateRequest);
 
-    ResponseEntity<?> updateStudent(Staff_StudentCreateUpdateRequest studentCreateUpdateRequest);
+    ResponseEntity<?> updateStudent(USStudentCreateUpdateRequest studentCreateUpdateRequest);
 
     ResponseEntity<?> changeStatusStudent(String studentId);
 
