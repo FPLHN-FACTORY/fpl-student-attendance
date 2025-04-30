@@ -23,7 +23,7 @@ import {
   DEFAULT_MAX_LATE_ARRIVAL,
   SHIFT,
 } from '@/constants'
-import { formatDate } from '@/utils/utils'
+import { debounce, formatDate } from '@/utils/utils'
 import useLoadingStore from '@/stores/useLoadingStore'
 
 const router = useRouter()
@@ -313,10 +313,11 @@ onMounted(() => {
   fetchDataShift()
 })
 
+const debounceFilter = debounce(handleSubmitFilter, 100)
 watch(
   dataFilter,
   () => {
-    handleSubmitFilter()
+    debounceFilter()
   },
   { deep: true },
 )

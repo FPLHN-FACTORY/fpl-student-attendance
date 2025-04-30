@@ -1,6 +1,7 @@
 package udpm.hn.studentattendance.core.staff.plan.services.impl;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -59,6 +60,9 @@ public class SPDPlanFactoryServiceImpl implements SPDPlanFactoryService {
 
     private final SessionHelper sessionHelper;
 
+    @Value("${app.config.shift.max-late-arrival}")
+    private int MAX_LATE_ARRIVAL;
+
     @Override
     public ResponseEntity<?> getAllList(SPDFilterPlanFactoryRequest request) {
         request.setIdFacility(sessionHelper.getFacilityId());
@@ -81,6 +85,10 @@ public class SPDPlanFactoryServiceImpl implements SPDPlanFactoryService {
 
     @Override
     public ResponseEntity<?> createPlanFactory(SPDAddPlanFactoryRequest request) {
+
+        if (request.getLateArrival() > MAX_LATE_ARRIVAL) {
+            return RouterHelper.responseError("Thời gian điểm danh muộn nhất không quá " + MAX_LATE_ARRIVAL + " phút");
+        }
 
         Plan plan = spdPlanRepository.findById(request.getIdPlan()).orElse(null);
 
