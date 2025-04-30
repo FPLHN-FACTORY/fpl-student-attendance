@@ -1,0 +1,13 @@
+package udpm.hn.studentattendance.core.admin.userstaff.repository;
+
+import org.springframework.stereotype.Repository;
+import udpm.hn.studentattendance.entities.UserAdmin;
+import udpm.hn.studentattendance.repositories.UserAdminRepository;
+
+import java.util.Optional;
+
+@Repository
+public interface ADStaffAdminRepository extends UserAdminRepository {
+
+    Optional<UserAdmin> getUserAdminByCode(String code);
+}

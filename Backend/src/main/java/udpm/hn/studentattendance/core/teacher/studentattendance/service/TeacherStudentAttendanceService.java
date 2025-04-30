@@ -1,7 +1,6 @@
 package udpm.hn.studentattendance.core.teacher.studentattendance.service;
 
 import org.springframework.http.ResponseEntity;
-import udpm.hn.studentattendance.core.teacher.student.model.request.Teacher_FactoryRequest;
 import udpm.hn.studentattendance.core.teacher.studentattendance.model.request.TeacherStudentAttendanceRequest;
 
 public interface TeacherStudentAttendanceService {

@@ -5,7 +5,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-import udpm.hn.studentattendance.core.staff.student.model.request.Staff_StudentCreateUpdateRequest;
+import udpm.hn.studentattendance.core.staff.student.model.request.USStudentCreateUpdateRequest;
 import udpm.hn.studentattendance.core.staff.student.service.Staff_StudentService;
 import udpm.hn.studentattendance.helpers.ExcelHelper;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
@@ -35,24 +35,19 @@ public class EXStudentServiceImpl implements EXStudentService {
 
     private final Staff_StudentService service;
     private final EXImportLogRepository importLogRepository;
-
     private final EXImportLogDetailRepository importLogDetailRepository;
-
     private final ExcelHelper excelHelper;
-
     private final SessionHelper sessionHelper;
 
     @Override
     public ResponseEntity<?> getDataFromFile(EXUploadRequest request) {
         MultipartFile file = request.getFile();
-
         if (file.isEmpty()) {
             return RouterHelper.createResponseApi(ApiResponse.error("Vui lòng tải lên file Excel"), HttpStatus.BAD_GATEWAY);
         }
-
         try {
             List<Map<String, String>> data = ExcelHelper.readFile(file);
-            return RouterHelper.responseSuccess("Tải lên excel thành công", data);
+            return RouterHelper.responseSuccess("Tải lên Excel thành công", data);
         } catch (IOException e) {
             return RouterHelper.responseError("Lỗi khi xử lý file Excel", e.getMessage());
         }
@@ -63,20 +58,37 @@ public class EXStudentServiceImpl implements EXStudentService {
         Map<String, Object> data = request.getData();
         Map<String, String> item = request.getItem();
 
-        Staff_StudentCreateUpdateRequest createUpdateRequest = new Staff_StudentCreateUpdateRequest();
-        createUpdateRequest.setName(item.get("TEN_SINH_VIEN"));
-        createUpdateRequest.setCode(item.get("MA_SINH_VIEN"));
-        createUpdateRequest.setEmail(item.get("EMAIL"));
+        String code = item.get("MA_SINH_VIEN");
+        if (code == null || code.trim().isEmpty()) {
+            String msg = "Mã sinh viên không được để trống.";
+            excelHelper.saveLogError(ImportLogType.STUDENT, msg, request);
+            return RouterHelper.responseError(msg, HttpStatus.BAD_REQUEST);
+        }
+        String name = item.get("TEN_SINH_VIEN");
+        if (name == null || name.trim().isEmpty()) {
+            String msg = "Tên sinh viên không được để trống.";
+            excelHelper.saveLogError(ImportLogType.STUDENT, msg, request);
+            return RouterHelper.responseError(msg, HttpStatus.BAD_REQUEST);
+        }
+        String email = item.get("EMAIL");
+        if (email == null || email.trim().isEmpty()) {
+            String msg = "Email sinh viên không được để trống.";
+            excelHelper.saveLogError(ImportLogType.STUDENT, msg, request);
+            return RouterHelper.responseError(msg, HttpStatus.BAD_REQUEST);
+        }
+
+        USStudentCreateUpdateRequest createUpdateRequest = new USStudentCreateUpdateRequest();
+        createUpdateRequest.setCode(code);
+        createUpdateRequest.setName(name);
+        createUpdateRequest.setEmail(email);
 
         ResponseEntity<ApiResponse> result = (ResponseEntity<ApiResponse>) service.createStudent(createUpdateRequest);
         ApiResponse response = result.getBody();
-
         if (response.getStatus() == RestApiStatus.SUCCESS) {
             excelHelper.saveLogSuccess(ImportLogType.STUDENT, response.getMessage(), request);
         } else {
             excelHelper.saveLogError(ImportLogType.STUDENT, response.getMessage(), request);
         }
-
         return result;
     }
 
@@ -84,11 +96,15 @@ public class EXStudentServiceImpl implements EXStudentService {
     public ResponseEntity<?> downloadTemplate(EXDataRequest request) {
         String filename = "template-import-student.xlsx";
         List<String> headers = List.of("Mã sinh viên", "Tên sinh viên", "Email");
-        byte[] data = ExcelHelper.createExcelStream("student", headers, new ArrayList<>());
-        if (data == null) {
-            return null;
+        byte[] data;
+        try {
+            data = ExcelHelper.createExcelStream("student", headers, new ArrayList<>());
+        } catch (Exception e) {
+            return RouterHelper.responseError("Không thể tạo file mẫu", HttpStatus.INTERNAL_SERVER_ERROR);
         }
-
+        if (data == null) {
+            return RouterHelper.responseError("Không thể tạo file mẫu", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
         HttpHeaders httpHeaders = new HttpHeaders();
         httpHeaders.setContentDisposition(ContentDisposition.builder("attachment").filename(filename).build());
         httpHeaders.set(HttpHeaders.ACCESS_CONTROL_EXPOSE_HEADERS, HttpHeaders.CONTENT_DISPOSITION);
@@ -99,7 +115,9 @@ public class EXStudentServiceImpl implements EXStudentService {
     @Override
     public ResponseEntity<?> historyLog(EXDataRequest request) {
         Pageable pageable = PaginationHelper.createPageable(request);
-        PageableObject<ExImportLogResponse> data = PageableObject.of(importLogRepository.getListHistory(pageable, ImportLogType.STUDENT.ordinal(), sessionHelper.getUserId(), sessionHelper.getFacilityId()));
+        PageableObject<ExImportLogResponse> data = PageableObject.of(
+                importLogRepository.getListHistory(pageable, ImportLogType.STUDENT.ordinal(), sessionHelper.getUserId(), sessionHelper.getFacilityId())
+        );
         return RouterHelper.responseSuccess("Lấy danh sách dữ liệu thành công", data);
     }
 
