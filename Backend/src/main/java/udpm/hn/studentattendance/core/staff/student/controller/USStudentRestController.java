@@ -6,7 +6,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import udpm.hn.studentattendance.core.staff.student.model.request.USStudentCreateUpdateRequest;
 import udpm.hn.studentattendance.core.staff.student.model.request.USStudentRequest;
-import udpm.hn.studentattendance.core.staff.student.service.Staff_StudentService;
+import udpm.hn.studentattendance.core.staff.student.service.STStudentService;
 import udpm.hn.studentattendance.infrastructure.constants.router.RouteStaffConstant;
 
 @RestController
@@ -14,7 +14,7 @@ import udpm.hn.studentattendance.infrastructure.constants.router.RouteStaffConst
 @RequestMapping(RouteStaffConstant.URL_API_STUDENT_MANAGEMENT)
 public class USStudentRestController {
 
-    private final Staff_StudentService studentService;
+    private final STStudentService studentService;
 
     @GetMapping
     public ResponseEntity<?> getAllStudent(USStudentRequest studentRequest) {

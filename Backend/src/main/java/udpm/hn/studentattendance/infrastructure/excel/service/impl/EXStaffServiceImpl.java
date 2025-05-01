@@ -9,7 +9,7 @@ import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import udpm.hn.studentattendance.core.admin.userstaff.model.request.ADCreateUpdateStaffRequest;
-import udpm.hn.studentattendance.core.admin.userstaff.repository.ADStaffFacilityRepository;
+import udpm.hn.studentattendance.core.admin.userstaff.repository.ADStaffFacilityExtendRepository;
 import udpm.hn.studentattendance.core.admin.userstaff.service.ADStaffService;
 import udpm.hn.studentattendance.entities.Facility;
 import udpm.hn.studentattendance.helpers.ExcelHelper;
@@ -42,7 +42,7 @@ public class EXStaffServiceImpl implements EXStaffService {
     private final EXImportLogRepository importLogRepository;
     private final EXImportLogDetailRepository importLogDetailRepository;
     private final SessionHelper sessionHelper;
-    private final ADStaffFacilityRepository facilityRepository;
+    private final ADStaffFacilityExtendRepository facilityRepository;
     private final ExcelHelper excelHelper;
 
     private static final Map<RoleConstant, String> ENUM_TO_FRIENDLY_MAPPING = Map.of(

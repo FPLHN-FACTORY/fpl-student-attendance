@@ -4,7 +4,7 @@ import org.springframework.http.ResponseEntity;
 import udpm.hn.studentattendance.core.staff.student.model.request.USStudentCreateUpdateRequest;
 import udpm.hn.studentattendance.core.staff.student.model.request.USStudentRequest;
 
-public interface Staff_StudentService {
+public interface STStudentService {
     ResponseEntity<?> getAllStudentByFacility(USStudentRequest studentRequest);
 
     ResponseEntity<?> getDetailStudent(String studentId);

@@ -14,7 +14,7 @@ import udpm.hn.studentattendance.repositories.UserStaffRepository;
 import java.util.Optional;
 
 @Repository
-public interface ADStaffRepository extends UserStaffRepository {
+public interface ADStaffExtendRepository extends UserStaffRepository {
 
         @Query(value = """
                              SELECT
@@ -41,6 +41,7 @@ public interface ADStaffRepository extends UserStaffRepository {
                                OR trim(:#{#adStaffRequest.idFacility}) = ''
                                OR f.id = trim(:#{#adStaffRequest.idFacility}))
                           AND (:#{#adStaffRequest.status} IS NULL OR s.status = :#{#adStaffRequest.status})
+                          AND f.status = 1
                         GROUP BY s.id, s.name, s.code, s.email_fe, s.email_fpt, s.status, s.created_at, f.id
                         ORDER BY s.created_at DESC
                         """, countQuery = """

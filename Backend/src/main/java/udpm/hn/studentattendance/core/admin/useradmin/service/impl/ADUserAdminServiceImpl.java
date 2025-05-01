@@ -1,6 +1,7 @@
 package udpm.hn.studentattendance.core.admin.useradmin.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,11 +17,13 @@ import udpm.hn.studentattendance.core.notification.model.request.NotificationAdd
 import udpm.hn.studentattendance.core.notification.service.NotificationService;
 import udpm.hn.studentattendance.entities.UserAdmin;
 import udpm.hn.studentattendance.entities.UserStaff;
+import udpm.hn.studentattendance.helpers.MailerHelper;
 import udpm.hn.studentattendance.helpers.NotificationHelper;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
 import udpm.hn.studentattendance.helpers.SessionHelper;
 import udpm.hn.studentattendance.infrastructure.common.ApiResponse;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
+import udpm.hn.studentattendance.infrastructure.config.mailer.model.MailerDefaultRequest;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.RestApiStatus;
 
@@ -41,6 +44,12 @@ public class ADUserAdminServiceImpl implements ADUserAdminService {
     private final NotificationService notificationService;
 
     private final SessionHelper sessionHelper;
+
+    private final MailerHelper mailerHelper;
+
+    @Value("${app.config.app-name}")
+    private String appName;
+
 
     @Override
     public ResponseEntity<?> getAllUserAdmin(ADUserAdminRequest request) {
@@ -97,14 +106,14 @@ public class ADUserAdminServiceImpl implements ADUserAdminService {
                             existUserAdmin),
                     HttpStatus.BAD_REQUEST);
         }
-        if (isMaxAdmin) {
-            return new ResponseEntity<>(
-                    new ApiResponse(
-                            RestApiStatus.ERROR,
-                            "Chỉ cho phép tối đa 5 tài khoản ban đào tạo",
-                            existUserAdmin),
-                    HttpStatus.BAD_REQUEST);
-        }
+//        if (isMaxAdmin) {
+//            return new ResponseEntity<>(
+//                    new ApiResponse(
+//                            RestApiStatus.ERROR,
+//                            "Chỉ cho phép tối đa 5 tài khoản ban đào tạo",
+//                            existUserAdmin),
+//                    HttpStatus.BAD_REQUEST);
+//        }
         UserAdmin userAdmin = new UserAdmin();
         userAdmin.setCode(createOrUpdateRequest.getStaffCode().trim());
         userAdmin.setName(createOrUpdateRequest.getStaffName().trim());
@@ -191,8 +200,28 @@ public class ADUserAdminServiceImpl implements ADUserAdminService {
             UserAdmin userAdmin = optionalUserAdmin.get();
             userAdmin.setStatus(userAdmin.getStatus() == EntityStatus.ACTIVE ? EntityStatus.INACTIVE
                     : EntityStatus.ACTIVE);
-            userAdminExtendRepository.save(userAdmin);
+            UserAdmin saveAdmin = userAdminExtendRepository.save(userAdmin);
+            if (saveAdmin.getStatus() == EntityStatus.INACTIVE) {
+                MailerDefaultRequest mailerDefaultRequest = new MailerDefaultRequest();
+                mailerDefaultRequest.setTo(saveAdmin.getEmail());
+                mailerDefaultRequest.setTemplate(null);
+                mailerDefaultRequest.setTitle("Thông báo quan trọng về cấp/xoá quyền từ:  " + appName);
+
+                Map<String, Object> vars = Map.of(
+                        "ADMIN_NAME", saveAdmin.getCode() + " - " + saveAdmin.getName(),
+                        "MY_NAME", sessionHelper.getUserCode() + " - " + sessionHelper.getUserName()
+                );
+                mailerDefaultRequest.setContent(MailerHelper.loadTemplate(MailerHelper.TEMPLATE_CHANGE_STATUS_ADMIN, vars));
+                mailerHelper.send(mailerDefaultRequest);
+            }
+            return new ResponseEntity<>(
+                    new ApiResponse(
+                            RestApiStatus.SUCCESS,
+                            "Thay đổi trạng thái thành công",
+                            saveAdmin),
+                    HttpStatus.OK);
         }
+
         return new ResponseEntity<>(
                 new ApiResponse(
                         RestApiStatus.ERROR,

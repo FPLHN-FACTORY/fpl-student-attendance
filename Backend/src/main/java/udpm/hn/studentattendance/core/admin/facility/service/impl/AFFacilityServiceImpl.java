@@ -28,6 +28,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -104,7 +105,6 @@ public class AFFacilityServiceImpl implements AFFacilityService {
             facilities.setCode(GenerateNameHelper.generateCodeFromName(request.getFacilityName().trim()));
             facilities.setName(GenerateNameHelper.replaceManySpaceToOneSpace(request.getFacilityName().trim()));
             facilities.setCreatedAt(facilities.getCreatedAt());
-//            facilities.setStatus(EntityStatus.ACTIVE);
             return facilityRepository.save(facilities);
         });
         return existFacility
@@ -137,7 +137,6 @@ public class AFFacilityServiceImpl implements AFFacilityService {
         }
 
         Facility facility = facilityOptional.get();
-        // ----- BỔ SUNG: kiểm tra đã đổi status trong cùng ngày chưa -----
         long lastUpdatedMillis = facility.getUpdatedAt(); // epoch millis
         LocalDate lastUpdatedDate = Instant
                 .ofEpochMilli(lastUpdatedMillis)
@@ -162,11 +161,10 @@ public class AFFacilityServiceImpl implements AFFacilityService {
                 if (!lstEmails.isEmpty()) {
                     mailerDefaultRequest.setBcc(lstEmails.toArray(new String[0]));
                 }
-                mailerDefaultRequest.setTitle("Thông báo từ " + appName);
-                mailerDefaultRequest.setContent(String.format("""
-                            Cơ sở <b>%s</b> hiện đã ngững hoạt động.<br />
-                            Bạn nhận được tin nhắn này do đang là quản lý, giảng viên hoặc sinh viên thuộc cơ sở này.<br />
-                        """, entity.getName()));
+
+                mailerDefaultRequest.setTemplate(null);
+                mailerDefaultRequest.setTitle("Thông báo quan trọng từ " + appName);
+                mailerDefaultRequest.setContent(MailerHelper.loadTemplate(MailerHelper.TEMPLATE_CHANGE_STATUS_FACILITY, Map.of("FACILITY_NAME", entity.getName())));
                 mailerHelper.send(mailerDefaultRequest);
             }
         } else {
