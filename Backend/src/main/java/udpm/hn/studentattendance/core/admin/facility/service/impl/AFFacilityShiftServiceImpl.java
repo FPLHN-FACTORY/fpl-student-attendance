@@ -61,12 +61,10 @@ public class AFFacilityShiftServiceImpl implements AFFacilityShiftService {
             return RouterHelper.responseError("Ca " + request.getShift() + " đã tồn tại trong cơ sở " + facility.getName());
         }
 
-//        if (afFacilityShiftRepository.isExistsTime(request.getIdFacility(), request.getFromHour(), request.getFromMinute(), request.getToHour(), request.getToMinute(), null)) {
-//            return RouterHelper.responseError("Thời gian học " + request.getFromHour() + ":" + request.getFromMinute() + " đến " + request.getToHour() + ":" + request.getToMinute() + " đã tồn tại trong cơ sở " + facility.getName());
-//        }
-        if (afFacilityShiftRepository.isExistsTimeV2(request.getIdFacility(), request.getFromHour(), request.getFromMinute(), request.getToHour(), request.getToMinute(), null)) {
+        if (afFacilityShiftRepository.isExistsTime(request.getIdFacility(), request.getFromHour(), request.getFromMinute(), request.getToHour(), request.getToMinute(), null)) {
             return RouterHelper.responseError("Thời gian học " + request.getFromHour() + ":" + request.getFromMinute() + " đến " + request.getToHour() + ":" + request.getToMinute() + " đã tồn tại trong cơ sở " + facility.getName());
         }
+
         FacilityShift facilityShift = new FacilityShift();
         facilityShift.setFacility(facility);
         facilityShift.setShift(request.getShift());
@@ -100,12 +98,10 @@ public class AFFacilityShiftServiceImpl implements AFFacilityShiftService {
             return RouterHelper.responseError("Ca " + request.getShift() + " đã tồn tại trong cơ sở " + facility.getName());
         }
 
-//        if (afFacilityShiftRepository.isExistsTime(request.getIdFacility(), request.getFromHour(), request.getFromMinute(), request.getToHour(), request.getToMinute(), facilityShift.getId())) {
-//            return RouterHelper.responseError("Thời gian học " + request.getFromHour() + ":" + request.getFromMinute() + " đến " + request.getToHour() + ":" + request.getToMinute() + " đã tồn tại trong cơ sở " + facility.getName());
-//        }
-        if (afFacilityShiftRepository.isExistsTimeV2(request.getIdFacility(), request.getFromHour(), request.getFromMinute(), request.getToHour(), request.getToMinute(), null)) {
+        if (afFacilityShiftRepository.isExistsTime(request.getIdFacility(), request.getFromHour(), request.getFromMinute(), request.getToHour(), request.getToMinute(), facilityShift.getId())) {
             return RouterHelper.responseError("Thời gian học " + request.getFromHour() + ":" + request.getFromMinute() + " đến " + request.getToHour() + ":" + request.getToMinute() + " đã tồn tại trong cơ sở " + facility.getName());
         }
+
         facilityShift.setShift(request.getShift());
         facilityShift.setFromHour(request.getFromHour());
         facilityShift.setFromMinute(request.getFromMinute());
