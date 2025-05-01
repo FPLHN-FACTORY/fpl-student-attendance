@@ -7,10 +7,9 @@ import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.repositories.FacilityRepository;
 
 import java.util.List;
-import java.util.Optional;
 
 @Repository
-public interface ADStaffFacilityRepository extends FacilityRepository {
+public interface ADStaffFacilityExtendRepository extends FacilityRepository {
     @Query(value = """
             SELECT
             f

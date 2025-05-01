@@ -12,7 +12,7 @@ import udpm.hn.studentattendance.core.staff.student.model.request.USStudentCreat
 import udpm.hn.studentattendance.core.staff.student.model.request.USStudentRequest;
 import udpm.hn.studentattendance.core.staff.student.repository.USStudentExtendRepository;
 import udpm.hn.studentattendance.core.staff.student.repository.USStudentFacilityExtendRepository;
-import udpm.hn.studentattendance.core.staff.student.service.Staff_StudentService;
+import udpm.hn.studentattendance.core.staff.student.service.STStudentService;
 import udpm.hn.studentattendance.entities.Facility;
 import udpm.hn.studentattendance.entities.UserStudent;
 import udpm.hn.studentattendance.helpers.NotificationHelper;
@@ -31,7 +31,7 @@ import java.util.Optional;
 @Service
 @RequiredArgsConstructor
 @Validated
-public class Staff_StudentServiceImpl implements Staff_StudentService {
+public class STStudentServiceImpl implements STStudentService {
 
     private final USStudentExtendRepository studentExtendRepository;
 
@@ -170,7 +170,7 @@ public class Staff_StudentServiceImpl implements Staff_StudentService {
             return new ResponseEntity<>(
                     new ApiResponse(
                             RestApiStatus.SUCCESS,
-                            "Cập nhật sinh viên thành công",
+                            "Thay đổi trạng thái sinh viên thành công",
                             userStudent),
                     HttpStatus.OK);
         } else {

@@ -15,6 +15,7 @@ import udpm.hn.studentattendance.infrastructure.constants.ExecutorConstants;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
@@ -31,18 +32,21 @@ public class MailerHelper {
 
     public final static String TEMPLATE_DEFAULT = "default.html";
 
+    public final static String TEMPLATE_CHANGE_STATUS_FACILITY = "change-status-facility.html";
+
+    public final static String TEMPLATE_CHANGE_STATUS_ADMIN = "change-status-admin.html";
     public final static String HEADER_DEFAULT = "";
 
     public final static String FOOTER_DEFAULT = """
-        <ul class="list-unstyled">
-            <li>Lưu ý : Đây là email tự động vui lòng không phải hồi email này.</li>
-            <li>Mọi thắc mắc xin liên hệ xưởng dự án của Bộ môn Phát Triển Phần Mềm.</li>
-        </ul>
-    """;
+                <ul class="list-unstyled">
+                    <li>Lưu ý : Đây là email tự động vui lòng không phải hồi email này.</li>
+                    <li>Mọi thắc mắc xin liên hệ xưởng dự án của Bộ môn Phát Triển Phần Mềm.</li>
+                </ul>
+            """;
 
     @Async(ExecutorConstants.TASK_EXECUTOR)
     public CompletableFuture<Boolean> send(MailerDefaultRequest request) {
-        String content = loadTemplate(request.getTemplate());
+        String content = request.getTemplate() != null ? loadTemplate(request.getTemplate()) : request.getContent();
 
         if (Objects.isNull(content)) {
             LogHelper.error("Gửi mail thất bại!");
@@ -57,7 +61,7 @@ public class MailerHelper {
             content = content.replace("{{ FOOTER }}", request.getFooter());
         }
 
-        if (!Objects.isNull(request.getContent())) {
+        if (request.getTemplate() != null && !Objects.isNull(request.getContent())) {
             content = content.replace("{{ CONTENT }}", request.getContent());
         }
 
@@ -87,16 +91,25 @@ public class MailerHelper {
     }
 
 
-    private String loadTemplate(String template_name) {
+    public static String loadTemplate(String template_name) {
         try {
-            return new String(Files.readAllBytes(new ClassPathResource(buildPathTemplate(template_name)).getFile().toPath()), StandardCharsets.UTF_8);
+            return Files.readString(new ClassPathResource(buildPathTemplate(template_name)).getFile().toPath());
         } catch (IOException e) {
             LogHelper.error("Không thể tải template mailer: ", e);
-            return null;
+            return "";
         }
     }
 
-    private String buildPathTemplate(String template_name) {
+    public static String loadTemplate(String template_name, Map<String, Object> data) {
+        String content = loadTemplate(template_name);
+        for (String key : data.keySet()) {
+            Object value = data.get(key);
+            content = content.replace("{{ " + key + " }}", value != null ? value.toString() : "");
+        }
+        return content;
+    }
+
+    private static String buildPathTemplate(String template_name) {
         return FOLDER_TEMPLATE + "/" + template_name;
     }
 

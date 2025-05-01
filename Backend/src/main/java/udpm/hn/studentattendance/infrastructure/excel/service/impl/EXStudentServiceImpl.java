@@ -6,7 +6,7 @@ import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import udpm.hn.studentattendance.core.staff.student.model.request.USStudentCreateUpdateRequest;
-import udpm.hn.studentattendance.core.staff.student.service.Staff_StudentService;
+import udpm.hn.studentattendance.core.staff.student.service.STStudentService;
 import udpm.hn.studentattendance.helpers.ExcelHelper;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
 import udpm.hn.studentattendance.helpers.RouterHelper;
@@ -33,7 +33,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class EXStudentServiceImpl implements EXStudentService {
 
-    private final Staff_StudentService service;
+    private final STStudentService service;
     private final EXImportLogRepository importLogRepository;
     private final EXImportLogDetailRepository importLogDetailRepository;
     private final ExcelHelper excelHelper;

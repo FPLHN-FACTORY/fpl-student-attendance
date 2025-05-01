@@ -12,10 +12,9 @@ import org.springframework.validation.annotation.Validated;
 import udpm.hn.studentattendance.core.admin.userstaff.model.request.ADCreateUpdateStaffRequest;
 import udpm.hn.studentattendance.core.admin.userstaff.model.request.ADStaffRequest;
 import udpm.hn.studentattendance.core.admin.userstaff.model.response.ADStaffDetailResponse;
-import udpm.hn.studentattendance.core.admin.userstaff.repository.ADStaffAdminRepository;
-import udpm.hn.studentattendance.core.admin.userstaff.repository.ADStaffFacilityRepository;
-import udpm.hn.studentattendance.core.admin.userstaff.repository.ADStaffRepository;
-import udpm.hn.studentattendance.core.admin.userstaff.repository.ADStaffRoleRepository;
+import udpm.hn.studentattendance.core.admin.userstaff.repository.ADStaffFacilityExtendRepository;
+import udpm.hn.studentattendance.core.admin.userstaff.repository.ADStaffExtendRepository;
+import udpm.hn.studentattendance.core.admin.userstaff.repository.ADStaffRoleExtendRepository;
 import udpm.hn.studentattendance.core.admin.userstaff.service.ADStaffService;
 import udpm.hn.studentattendance.core.notification.model.request.NotificationAddRequest;
 import udpm.hn.studentattendance.core.notification.service.NotificationService;
@@ -42,13 +41,11 @@ import java.util.Optional;
 @RequiredArgsConstructor
 @Validated
 public class ADStaffServiceImpl implements ADStaffService {
-    private final ADStaffRepository adStaffRepository;
+    private final ADStaffExtendRepository adStaffRepository;
 
-    private final ADStaffRoleRepository adStaffRoleRepository;
+    private final ADStaffRoleExtendRepository adStaffRoleRepository;
 
-    private final ADStaffAdminRepository adStaffAdminRepository;
-
-    private final ADStaffFacilityRepository adminStaffFacilityRepository;
+    private final ADStaffFacilityExtendRepository adminStaffFacilityRepository;
 
     private final NotificationService notificationService;
 

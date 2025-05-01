@@ -8,7 +8,7 @@ import udpm.hn.studentattendance.repositories.RoleRepository;
 import java.util.List;
 
 @Repository
-public interface ADStaffRoleRepository extends RoleRepository {
+public interface ADStaffRoleExtendRepository extends RoleRepository {
     List<Role> findAllByUserStaffId(String staffId);
 
     @Query("""
