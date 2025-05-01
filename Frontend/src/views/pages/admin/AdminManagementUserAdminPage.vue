@@ -202,7 +202,7 @@ const handleChangeStatus = (record) => {
     content: `Bạn có chắc muốn thay đổi trạng thái của ${record.userAdminName}?`,
     onOk() {
       requestAPI
-        .put(`${API_ROUTES_ADMIN.FETCH_DATA_ADMIN}/status/${record.userAdminId}`)
+        .put(`${API_ROUTES_ADMIN.FETCH_DATA_ADMIN}/change-status/${record.userAdminId}`)
         .then(() => {
           message.success('Đổi trạng thái thành công')
           fetchUsers()
@@ -277,7 +277,7 @@ onMounted(() => {
               @change="handleChangeStatus(record)"
             />
             <a-tag :color="record.userAdminStatus === 1 ? 'green' : 'red'">{{
-              record.userAdminStatus === 1 ? 'Đang hoạt động' : 'Ngưng'
+              record.userAdminStatus === 1 ? 'Đang hoạt động' : 'Ngưng hoạt động'
             }}</a-tag>
           </template>
 
