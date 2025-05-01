@@ -1,17 +1,17 @@
 package udpm.hn.studentattendance.core.admin.subject_facility.service;
 
-import udpm.hn.studentattendance.core.admin.subject_facility.model.request.Admin_SubjectFacilityCreateRequest;
-import udpm.hn.studentattendance.core.admin.subject_facility.model.request.Admin_SubjectFacilitySearchRequest;
-import udpm.hn.studentattendance.core.admin.subject_facility.model.request.Admin_SubjectFacilityUpdateRequest;
+import udpm.hn.studentattendance.core.admin.subject_facility.model.request.ADSubjectFacilityCreateRequest;
+import udpm.hn.studentattendance.core.admin.subject_facility.model.request.ADSubjectFacilitySearchRequest;
+import udpm.hn.studentattendance.core.admin.subject_facility.model.request.ADSubjectFacilityUpdateRequest;
 import udpm.hn.studentattendance.infrastructure.common.ResponseObject;
 
 public interface Admin_SubjectFacilityService {
 
-    ResponseObject<?> getListSubjectFacility(Admin_SubjectFacilitySearchRequest request);
+    ResponseObject<?> getListSubjectFacility(ADSubjectFacilitySearchRequest request);
 
-    ResponseObject<?> createSubjectFacility(Admin_SubjectFacilityCreateRequest request);
+    ResponseObject<?> createSubjectFacility(ADSubjectFacilityCreateRequest request);
 
-    ResponseObject<?> updateSubjectFacility(String id, Admin_SubjectFacilityUpdateRequest request);
+    ResponseObject<?> updateSubjectFacility(String id, ADSubjectFacilityUpdateRequest request);
 
     ResponseObject<?> detailSubjectFacility(String id);
 

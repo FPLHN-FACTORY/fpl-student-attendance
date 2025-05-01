@@ -421,15 +421,6 @@ onMounted(() => {
                       <EditFilled />
                     </a-button>
                   </a-tooltip>
-                  <a-tooltip title="Đổi trạng thái">
-                    <a-button
-                      @click="handleDeleteProject(record)"
-                      type="text"
-                      class="btn-outline-warning"
-                    >
-                      <SyncOutlined />
-                    </a-button>
-                  </a-tooltip>
                 </a-space>
               </template>
               <template v-else>
