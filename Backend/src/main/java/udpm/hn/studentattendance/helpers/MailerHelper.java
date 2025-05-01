@@ -34,14 +34,15 @@ public class MailerHelper {
 
     public final static String TEMPLATE_CHANGE_STATUS_FACILITY = "change-status-facility.html";
 
+    public final static String TEMPLATE_CHANGE_STATUS_ADMIN = "change-status-admin.html";
     public final static String HEADER_DEFAULT = "";
 
     public final static String FOOTER_DEFAULT = """
-        <ul class="list-unstyled">
-            <li>Lưu ý : Đây là email tự động vui lòng không phải hồi email này.</li>
-            <li>Mọi thắc mắc xin liên hệ xưởng dự án của Bộ môn Phát Triển Phần Mềm.</li>
-        </ul>
-    """;
+                <ul class="list-unstyled">
+                    <li>Lưu ý : Đây là email tự động vui lòng không phải hồi email này.</li>
+                    <li>Mọi thắc mắc xin liên hệ xưởng dự án của Bộ môn Phát Triển Phần Mềm.</li>
+                </ul>
+            """;
 
     @Async(ExecutorConstants.TASK_EXECUTOR)
     public CompletableFuture<Boolean> send(MailerDefaultRequest request) {

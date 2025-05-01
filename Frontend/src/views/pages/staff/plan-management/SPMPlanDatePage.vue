@@ -27,6 +27,7 @@ import {
 import { dayOfWeek, debounce, formatDate, rowSelectTable } from '@/utils/utils'
 import dayjs from 'dayjs'
 import ExcelUploadButton from '@/components/excel/ExcelUploadButton.vue'
+import { formatCountdown } from 'ant-design-vue/es/statistic/utils'
 
 const route = useRoute()
 const router = useRouter()
@@ -458,7 +459,7 @@ watch(
   () => {
     debounceFilter()
   },
-  { deep: true },
+  { deep: true }
 )
 </script>
 
@@ -728,13 +729,16 @@ watch(
                   {{
                     `${dayOfWeek(record.startDate)}, ${formatDate(
                       record.startDate,
-                      DEFAULT_DATE_FORMAT,
+                      DEFAULT_DATE_FORMAT
                     )}`
                   }}
                 </template>
                 <template v-if="column.key === 'time'">
                   {{
-                    `${formatDate(record.startDate, 'HH:mm')} - ${formatDate(record.endDate, 'HH:mm')}`
+                    `${formatDate(record.startDate, 'HH:mm')} - ${formatDate(
+                      record.endDate,
+                      'HH:mm'
+                    )}`
                   }}
                 </template>
                 <template v-if="column.dataIndex === 'shift'">

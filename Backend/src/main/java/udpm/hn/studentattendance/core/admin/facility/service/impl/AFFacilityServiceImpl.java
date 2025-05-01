@@ -24,6 +24,9 @@ import udpm.hn.studentattendance.infrastructure.config.mailer.model.MailerDefaul
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.RestApiStatus;
 
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -102,7 +105,6 @@ public class AFFacilityServiceImpl implements AFFacilityService {
             facilities.setCode(GenerateNameHelper.generateCodeFromName(request.getFacilityName().trim()));
             facilities.setName(GenerateNameHelper.replaceManySpaceToOneSpace(request.getFacilityName().trim()));
             facilities.setCreatedAt(facilities.getCreatedAt());
-//            facilities.setStatus(EntityStatus.ACTIVE);
             return facilityRepository.save(facilities);
         });
         return existFacility
@@ -135,6 +137,17 @@ public class AFFacilityServiceImpl implements AFFacilityService {
         }
 
         Facility facility = facilityOptional.get();
+        long lastUpdatedMillis = facility.getUpdatedAt(); // epoch millis
+        LocalDate lastUpdatedDate = Instant
+                .ofEpochMilli(lastUpdatedMillis)
+                .atZone(ZoneId.of("Asia/Ho_Chi_Minh"))    // dùng timezone phù hợp
+                .toLocalDate();
+        LocalDate today = LocalDate.now(ZoneId.of("Asia/Ho_Chi_Minh"));
+        if (lastUpdatedDate.isEqual(today)) {
+            return RouterHelper.responseError("Chỉ được thay đổi trạng thái cơ sở 1 lần mỗi ngày");
+        }
+        // ---------------------------------------------------------------
+
 
         facility.setStatus(facility.getStatus() == EntityStatus.ACTIVE ? EntityStatus.INACTIVE : EntityStatus.ACTIVE);
         Facility entity = facilityRepository.save(facility);
@@ -150,7 +163,7 @@ public class AFFacilityServiceImpl implements AFFacilityService {
                 }
 
                 mailerDefaultRequest.setTemplate(null);
-                mailerDefaultRequest.setTitle("Thông báo từ " + appName);
+                mailerDefaultRequest.setTitle("Thông báo quan trọng từ " + appName);
                 mailerDefaultRequest.setContent(MailerHelper.loadTemplate(MailerHelper.TEMPLATE_CHANGE_STATUS_FACILITY, Map.of("FACILITY_NAME", entity.getName())));
                 mailerHelper.send(mailerDefaultRequest);
             }
