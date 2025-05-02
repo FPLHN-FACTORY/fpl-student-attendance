@@ -45,12 +45,12 @@ export const TeacherRoutes = [
       {
         path: 'management-student-factory',
         name: ROUTE_NAMES.MANAGEMENT_STUDENT_FACTORY,
-        component: import('@/views/pages/teacher/TeacherStudentFactory.vue'),
+        component: () => import('@/views/pages/teacher/TeacherStudentFactory.vue'),
       },
       {
         path: 'management-student-attendance',
         name: ROUTE_NAMES.MANAGEMENT_STUDENT_ATTENDANCE,
-        component: import('@/views/pages/teacher/TeacherAttendancePage.vue'),
+        component: () => import('@/views/pages/teacher/TeacherAttendancePage.vue'),
       },
     ],
   },
