@@ -4,8 +4,6 @@ export const DEFAULT_LATE_ARRIVAL = 15
 
 export const DEFAULT_EARLY_MINUTE_CHECKIN = 10
 
-export const DEFAULT_LATE_MINUTE_CHECKIN = 20
-
 export const DEFAULT_MAX_LATE_ARRIVAL = 90
 
 export const PAGINATION_SIZE = 10

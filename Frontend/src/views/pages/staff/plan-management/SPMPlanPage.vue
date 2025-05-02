@@ -375,9 +375,9 @@ const handleTableChange = (page) => {
 }
 
 const handleChangeProjectId = (id) => {
-  const project = lstDataProject.value.find((o) => o.id === id)
-  minRangeDate.value = dayjs(project.fromDate)
-  maxRangeDate.value = dayjs(project.toDate)
+  currentProject.value = lstDataProject.value.find((o) => o.id === id)
+  minRangeDate.value = dayjs(currentProject.value.fromDate)
+  maxRangeDate.value = dayjs(currentProject.value.toDate)
   formData.rangeDate = [currentProject.value ? minRangeDate.value : dayjs(), maxRangeDate.value]
 }
 
