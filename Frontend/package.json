@@ -8,7 +8,9 @@
     "build": "vite build",
     "preview": "vite preview",
     "lint": "eslint . --fix",
-    "format": "prettier --write src/"
+    "format": "prettier --write src/",
+    "build:prod": "vite build --mode production",
+    "build:staging": "vite build --mode staging"
   },
   "dependencies": {
     "@ant-design/icons-vue": "^7.0.1",
