@@ -59,9 +59,6 @@ public class SAAttendanceServiceImpl implements SAAttendanceService {
     @Value("${app.config.attendance.early-checkin}")
     private int EARLY_CHECKIN;
 
-    @Value("${app.config.attendance.late-checkin}")
-    private int LATE_CHECKIN;
-
     @Override
     public ResponseEntity<?> getAllList(SAFilterAttendanceRequest request) {
         request.setIdFacility(sessionHelper.getFacilityId());
@@ -130,7 +127,7 @@ public class SAAttendanceServiceImpl implements SAAttendanceService {
                 return RouterHelper.responseError("Chưa đến giờ checkin cuối giờ");
             }
 
-            if (DateTimeUtils.getCurrentTimeMillis() > planDate.getEndDate() + (long) LATE_CHECKIN * 60 * 1000) {
+            if (DateTimeUtils.getCurrentTimeMillis() > planDate.getEndDate() + planDate.getLateArrival() * 60 * 1000) {
                 return RouterHelper.responseError("Đã quá giờ checkin cuối giờ");
             }
         }
