@@ -1,4 +1,4 @@
-package udpm.hn.studentattendance.core.teacher.teaching_schedule.repository;
+package udpm.hn.studentattendance.core.teacher.teachingschedule.repository;
 
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;

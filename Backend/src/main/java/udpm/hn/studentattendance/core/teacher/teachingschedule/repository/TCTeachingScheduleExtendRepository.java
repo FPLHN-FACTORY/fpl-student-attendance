@@ -1,12 +1,12 @@
-package udpm.hn.studentattendance.core.teacher.teaching_schedule.repository;
+package udpm.hn.studentattendance.core.teacher.teachingschedule.repository;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
-import udpm.hn.studentattendance.core.teacher.teaching_schedule.model.request.TCTeachingScheduleRequest;
-import udpm.hn.studentattendance.core.teacher.teaching_schedule.model.response.TCTSDetailPlanDateResponse;
-import udpm.hn.studentattendance.core.teacher.teaching_schedule.model.response.TCTeachingScheduleResponse;
+import udpm.hn.studentattendance.core.teacher.teachingschedule.model.request.TCTeachingScheduleRequest;
+import udpm.hn.studentattendance.core.teacher.teachingschedule.model.response.TCTSDetailPlanDateResponse;
+import udpm.hn.studentattendance.core.teacher.teachingschedule.model.response.TCTeachingScheduleResponse;
 import udpm.hn.studentattendance.entities.PlanDate;
 import udpm.hn.studentattendance.repositories.PlanDateRepository;
 

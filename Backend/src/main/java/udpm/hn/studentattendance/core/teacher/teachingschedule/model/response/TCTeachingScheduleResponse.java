@@ -1,4 +1,4 @@
-package udpm.hn.studentattendance.core.teacher.teaching_schedule.model.response;
+package udpm.hn.studentattendance.core.teacher.teachingschedule.model.response;
 
 public interface TCTeachingScheduleResponse {
     Integer getIndexs();
