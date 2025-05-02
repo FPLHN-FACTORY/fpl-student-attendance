@@ -2,7 +2,7 @@ package udpm.hn.studentattendance.core.staff.project.repository;
 
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
-import udpm.hn.studentattendance.core.staff.project.model.response.Staff_SemesterResponse;
+import udpm.hn.studentattendance.core.staff.project.model.response.USSemesterResponse;
 import udpm.hn.studentattendance.repositories.ProjectRepository;
 
 import java.util.List;
@@ -11,7 +11,7 @@ import java.util.List;
 public interface Staff_SemesterManagementRepository extends ProjectRepository {
 
     @Query(value = """
-                SELECT 
+                SELECT
                     ROW_NUMBER() OVER (ORDER BY s.created_at DESC) AS indexs,
                     s.id AS id,
                     s.name AS name,
@@ -20,5 +20,5 @@ public interface Staff_SemesterManagementRepository extends ProjectRepository {
                 WHERE s.status = 1
                 ORDER BY s.created_at DESC
             """, nativeQuery = true)
-    List<Staff_SemesterResponse> getSemesters();
+    List<USSemesterResponse> getSemesters();
 }

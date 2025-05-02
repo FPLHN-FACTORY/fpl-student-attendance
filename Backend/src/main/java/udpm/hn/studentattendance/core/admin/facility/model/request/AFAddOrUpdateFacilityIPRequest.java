@@ -8,8 +8,6 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import udpm.hn.studentattendance.infrastructure.constants.EntityProperties;
 
-import java.util.List;
-
 @Getter
 @Setter
 @NoArgsConstructor
@@ -21,7 +19,8 @@ public class AFAddOrUpdateFacilityIPRequest {
     private String idFacility;
 
     @NotBlank(message = "Vui lòng nhập IP/Dải IP")
-    @Size(max = EntityProperties.LENGTH_NAME, message = "IP không được vượt quá " + EntityProperties.LENGTH_NAME + " ký tự")
+    @Size(max = EntityProperties.LENGTH_NAME, message = "IP không được vượt quá " + EntityProperties.LENGTH_NAME
+            + " ký tự")
     private String ip;
 
     private Integer type;

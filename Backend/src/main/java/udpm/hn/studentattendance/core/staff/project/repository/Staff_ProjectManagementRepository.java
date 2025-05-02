@@ -5,8 +5,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
-import udpm.hn.studentattendance.core.staff.project.model.request.Staff_ProjectSearchRequest;
-import udpm.hn.studentattendance.core.staff.project.model.response.Staff_ProjectResponse;
+import udpm.hn.studentattendance.core.staff.project.model.request.USProjectSearchRequest;
+import udpm.hn.studentattendance.core.staff.project.model.response.USProjectResponse;
 import udpm.hn.studentattendance.repositories.ProjectRepository;
 
 import java.util.Optional;
@@ -15,7 +15,7 @@ import java.util.Optional;
 public interface Staff_ProjectManagementRepository extends ProjectRepository {
 
     @Query(value = """
-                    SELECT 
+                    SELECT
                         ROW_NUMBER() OVER (ORDER BY p.created_at DESC) AS indexs,
                         p.id AS id,
                         p.name AS name,
@@ -40,7 +40,7 @@ public interface Staff_ProjectManagementRepository extends ProjectRepository {
                     )
                     ORDER BY p.created_at DESC
             """, countQuery = """
-                    SELECT 
+                    SELECT
                        COUNT(*)
                     FROM project p
                     LEFT JOIN level_project lp ON p.id_level_project = lp.id
@@ -57,11 +57,10 @@ public interface Staff_ProjectManagementRepository extends ProjectRepository {
                         AND (:#{#request.status} IS NULL OR p.status = :#{#request.status})
                     )
             """, nativeQuery = true)
-    Page<Staff_ProjectResponse> getListProject(Pageable pageable, @Param("request") Staff_ProjectSearchRequest request);
-
+    Page<USProjectResponse> getListProject(Pageable pageable, @Param("request") USProjectSearchRequest request);
 
     @Query(value = """
-                SELECT\s
+                SELECT
                                      p.id as id,
                                      p.name as name,
                                      s.name as nameSemester,
@@ -80,6 +79,6 @@ public interface Staff_ProjectManagementRepository extends ProjectRepository {
                                      WHERE\s
                                      p.id = :projectId
             """, nativeQuery = true)
-    Optional<Staff_ProjectResponse> getDetailProject(String projectId);
+    Optional<USProjectResponse> getDetailProject(String projectId);
 
 }

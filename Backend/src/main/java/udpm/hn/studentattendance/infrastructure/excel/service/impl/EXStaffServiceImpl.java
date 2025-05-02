@@ -8,9 +8,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-import udpm.hn.studentattendance.core.admin.user_staff.model.request.Admin_CreateUpdateStaffRequest;
-import udpm.hn.studentattendance.core.admin.user_staff.repository.Admin_StaffFacilityRepository;
-import udpm.hn.studentattendance.core.admin.user_staff.service.Admin_StaffService;
+import udpm.hn.studentattendance.core.admin.userstaff.model.request.ADCreateUpdateStaffRequest;
+import udpm.hn.studentattendance.core.admin.userstaff.repository.ADStaffFacilityExtendRepository;
+import udpm.hn.studentattendance.core.admin.userstaff.service.ADStaffService;
 import udpm.hn.studentattendance.entities.Facility;
 import udpm.hn.studentattendance.helpers.ExcelHelper;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
@@ -33,92 +33,118 @@ import udpm.hn.studentattendance.infrastructure.excel.service.EXStaffService;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class EXStaffServiceImpl implements EXStaffService {
 
-    private final Admin_StaffService staffService;
+    private final ADStaffService staffService;
     private final EXImportLogRepository importLogRepository;
     private final EXImportLogDetailRepository importLogDetailRepository;
     private final SessionHelper sessionHelper;
-    private final Admin_StaffFacilityRepository facilityRepository;
+    private final ADStaffFacilityExtendRepository facilityRepository;
     private final ExcelHelper excelHelper;
 
     private static final Map<RoleConstant, String> ENUM_TO_FRIENDLY_MAPPING = Map.of(
-            RoleConstant.ADMIN, "ban đào tạo",
             RoleConstant.STAFF, "phụ trách xưởng",
             RoleConstant.TEACHER, "giảng viên"
     );
 
-    private static final Map<String, String> FRIENDLY_TO_ENUM_MAPPING = Map.of(
-            "ban đào tạo", "ADMIN",
-            "phụ trách xưởng", "STAFF",
-            "giảng viên", "TEACHER"
+    Map<String, String> FRIENDLY_TO_ORDINAL = Map.of(
+            "phụ trách xưởng", String.valueOf(RoleConstant.STAFF.ordinal()),
+            "giảng viên", String.valueOf(RoleConstant.TEACHER.ordinal()),
+            "phụ trách xưởng, giảng viên",
+            RoleConstant.STAFF.ordinal() + "," + RoleConstant.TEACHER.ordinal()
     );
 
     @Override
     public ResponseEntity<?> getDataFromFile(EXUploadRequest request) {
         MultipartFile file = request.getFile();
         if (file.isEmpty()) {
-            return RouterHelper.responseError("Vui lòng tải lên file Excel", HttpStatus.BAD_GATEWAY);
+            return RouterHelper.createResponseApi(ApiResponse.error("Vui lòng tải lên file Excel"), HttpStatus.BAD_GATEWAY);
         }
         try {
             List<Map<String, String>> data = ExcelHelper.readFile(file);
-            return RouterHelper.responseSuccess("Tải lên excel thành công", data);
+            return RouterHelper.responseSuccess("Tải lên Excel thành công", data);
         } catch (IOException e) {
-            return RouterHelper.responseError("Lỗi khi xử lý excel", e.getMessage());
+            return RouterHelper.responseError("Lỗi khi xử lý Excel", e.getMessage());
         }
     }
 
     @Override
     public ResponseEntity<?> importItem(EXImportRequest request) {
-        Map<String, Object> data = request.getData();
         Map<String, String> item = request.getItem();
+        // Parse roles
+        List<String> roleFriendlyNames = Optional.ofNullable(item.get("VAI_TRO"))
+                .map(s -> Arrays.stream(s.split(",")).map(String::trim).filter(t -> !t.isEmpty()).toList())
+                .orElse(Collections.emptyList());
 
-        List<String> roleFriendlyNames = new ArrayList<>();
-        String vaiTro = item.get("VAI_TRO");
-        if (vaiTro != null && !vaiTro.trim().isEmpty()) {
-            roleFriendlyNames = Arrays.stream(vaiTro.split(","))
-                    .map(String::trim)
-                    .filter(s -> !s.isEmpty())
-                    .collect(Collectors.toList());
-        }
-
+        // Parse facility
         String facilityValue = item.get("CO_SO");
         if (facilityValue == null || facilityValue.trim().isEmpty()) {
-            return RouterHelper.responseError("Thông tin cơ sở không hợp lệ.", HttpStatus.BAD_REQUEST);
+            String msg = "Thông tin cơ sở không hợp lệ.";
+            excelHelper.saveLogError(ImportLogType.STAFF, msg, request);
+            return RouterHelper.responseError(msg, HttpStatus.BAD_REQUEST);
         }
-        // Tách lấy id từ chuỗi theo định dạng "Tên cơ sở (ID)"
-        int startIndex = facilityValue.lastIndexOf("(");
-        int endIndex = facilityValue.lastIndexOf(")");
-        if (startIndex < 0 || endIndex < 0 || startIndex >= endIndex) {
-            return RouterHelper.responseError("Định dạng cơ sở không hợp lệ. Vui lòng chọn giá trị từ menu sổ xuống.", HttpStatus.BAD_REQUEST);
+        int start = facilityValue.lastIndexOf("(");
+        int end = facilityValue.lastIndexOf(")");
+        if (start < 0 || end < 0 || start >= end) {
+            String msg = "Định dạng cơ sở không hợp lệ. Vui lòng chọn giá trị từ menu sổ xuống.";
+            excelHelper.saveLogError(ImportLogType.STAFF, msg + " => " + facilityValue, request);
+            return RouterHelper.responseError(msg, HttpStatus.BAD_REQUEST);
         }
-        String facilityId = facilityValue.substring(startIndex + 1, endIndex);
+        String facilityCode = facilityValue.substring(start + 1, end);
 
-        Facility facility = facilityRepository.findById(facilityId)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy Facility với id: " + facilityId));
+        Facility facility = facilityRepository.getFacilityByCode(facilityCode);
 
-        Admin_CreateUpdateStaffRequest createUpdateStaffRequest = new Admin_CreateUpdateStaffRequest();
-        createUpdateStaffRequest.setFacilityId(facility.getId());
-        createUpdateStaffRequest.setStaffCode(item.get("MA_NHAN_VIEN"));
-        createUpdateStaffRequest.setEmailFe(item.get("EMAIL_FE"));
-        createUpdateStaffRequest.setEmailFpt(item.get("EMAIL_FPT"));
-        createUpdateStaffRequest.setName(item.get("TEN_NHAN_VIEN"));
+        String code = item.get("MA_NHAN_VIEN");
+        if (code == null || code.trim().isEmpty()) {
+            String msg = "Không được để trống mã nhân viên";
+            excelHelper.saveLogError(ImportLogType.STAFF, msg, request);
+            return RouterHelper.responseError(msg, HttpStatus.BAD_REQUEST);
+        }
+        String nameStaff = item.get("TEN_NHAN_VIEN");
+        if (nameStaff == null || nameStaff.trim().isEmpty()) {
+            String msg = "Không được để trống tên nhân viên";
+            excelHelper.saveLogError(ImportLogType.STAFF, msg, request);
+            return RouterHelper.responseError(msg, HttpStatus.BAD_REQUEST);
+        }
+        String emailFe = item.get("EMAIL_FE");
+        if (emailFe == null || emailFe.trim().isEmpty()) {
+            String msg = "Không được để trống email fe của nhân viên";
+            excelHelper.saveLogError(ImportLogType.STAFF, msg, request);
+            return RouterHelper.responseError(msg, HttpStatus.BAD_REQUEST);
+        }
+        String emailFpt = item.get("EMAIL_FPT");
+        if (emailFpt == null || emailFpt.trim().isEmpty()) {
+            String msg = "Không được để trống email fpt của nhân viên";
+            excelHelper.saveLogError(ImportLogType.STAFF, msg, request);
+            return RouterHelper.responseError(msg, HttpStatus.BAD_REQUEST);
+        }
+
+        ADCreateUpdateStaffRequest req = new ADCreateUpdateStaffRequest();
+        req.setFacilityId(facility.getId());
+        req.setStaffCode(code);
+        req.setName(nameStaff);
+        req.setEmailFe(emailFe);
+        req.setEmailFpt(emailFpt);
 
         List<String> roleCodes = roleFriendlyNames.stream()
-                .map(name -> FRIENDLY_TO_ENUM_MAPPING.getOrDefault(name.toLowerCase(), name))
-                .collect(Collectors.toList());
-        createUpdateStaffRequest.setRoleCodes(roleCodes);
+                .flatMap(name -> {
+                    String codeStr = FRIENDLY_TO_ORDINAL
+                            .getOrDefault(name.toLowerCase(), name);
+                    return Arrays.stream(codeStr.split(","))
+                            .map(String::trim);
+                })
+                .toList();
+        req.setRoleCodes(roleCodes);
 
-        ResponseEntity<ApiResponse> result = (ResponseEntity<ApiResponse>) staffService.createStaff(createUpdateStaffRequest);
-        ApiResponse response = result.getBody();
-        if (response.getStatus() == RestApiStatus.SUCCESS) {
-            excelHelper.saveLogSuccess(ImportLogType.STAFF, response.getMessage(), request);
+        ResponseEntity<ApiResponse> result = (ResponseEntity<ApiResponse>) staffService.createStaff(req);
+        ApiResponse resp = result.getBody();
+        if (resp.getStatus() == RestApiStatus.SUCCESS) {
+            excelHelper.saveLogSuccess(ImportLogType.STAFF, resp.getMessage(), request);
         } else {
-            excelHelper.saveLogError(ImportLogType.STAFF, response.getMessage(), request);
+            excelHelper.saveLogError(ImportLogType.STAFF, resp.getMessage(), request);
         }
         return result;
     }
@@ -126,39 +152,37 @@ public class EXStaffServiceImpl implements EXStaffService {
     @Override
     public ResponseEntity<?> downloadTemplate(EXDataRequest request) {
         String filename = "template-import-staff.xlsx";
-
         List<String> headers = List.of("Mã Nhân Viên", "Tên Nhân Viên", "Email Fe", "Email Fpt", "Vai Trò", "Cơ Sở");
 
-        List<String> roleList = Arrays.stream(RoleConstant.values())
-                .filter(role -> role != RoleConstant.STUDENT)
-                .map(role -> ENUM_TO_FRIENDLY_MAPPING.get(role))
-                .collect(Collectors.toList());
+        List<String> baseRoleList = Arrays.stream(RoleConstant.values())
+                .filter(r -> r != RoleConstant.STUDENT && r != RoleConstant.ADMIN)
+                .map(r -> ENUM_TO_FRIENDLY_MAPPING.get(r))
+                .toList();
+        // 2. Khởi tạo mutable list và thêm mục kết hợp
+        List<String> roleList = new ArrayList<>(baseRoleList);
+        roleList.add("phụ trách xưởng, giảng viên");  // phải khớp đúng key trong FRIENDLY_TO_ORDINAL
+        List<String> facilityList = facilityRepository.findAll().stream()
+                .map(f -> f.getName() + " (" + f.getCode() + ")")
+                .toList();
 
-        List<String> facilityList = facilityRepository.findAll()
-                .stream()
-                .map(facility -> facility.getName() + " (" + facility.getId() + ")")
-                .collect(Collectors.toList());
-
-        byte[] data;
         try {
-            data = createExcelStream("staff", headers, new ArrayList<>(), roleList, facilityList);
+            byte[] data = createExcelStream("staff", headers, new ArrayList<>(), roleList, facilityList);
+            HttpHeaders httpHeaders = new HttpHeaders();
+            httpHeaders.setContentDisposition(ContentDisposition.builder("attachment").filename(filename).build());
+            httpHeaders.set(HttpHeaders.ACCESS_CONTROL_EXPOSE_HEADERS, HttpHeaders.CONTENT_DISPOSITION);
+            httpHeaders.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+            return new ResponseEntity<>(data, httpHeaders, HttpStatus.OK);
         } catch (IOException e) {
             return RouterHelper.responseError("Không thể tạo file mẫu", HttpStatus.INTERNAL_SERVER_ERROR);
         }
-
-        HttpHeaders headersHttp = new HttpHeaders();
-        headersHttp.setContentDisposition(ContentDisposition.builder("attachment").filename(filename).build());
-        headersHttp.set(HttpHeaders.ACCESS_CONTROL_EXPOSE_HEADERS, HttpHeaders.CONTENT_DISPOSITION);
-        headersHttp.setContentType(MediaType.APPLICATION_OCTET_STREAM);
-
-        return new ResponseEntity<>(data, headersHttp, HttpStatus.OK);
     }
 
     @Override
     public ResponseEntity<?> historyLog(EXDataRequest request) {
         Pageable pageable = PaginationHelper.createPageable(request);
-        PageableObject<ExImportLogResponse> data = PageableObject.of(importLogRepository.getListHistory(pageable, ImportLogType.STAFF.ordinal(), sessionHelper.getUserId(), sessionHelper.getFacilityId()));
-        System.out.println(sessionHelper.getFacilityId());
+        PageableObject<ExImportLogResponse> data = PageableObject.of(
+                importLogRepository.getListHistory(pageable, ImportLogType.STAFF.ordinal(), sessionHelper.getUserId(), sessionHelper.getFacilityId())
+        );
         return RouterHelper.responseSuccess("Lấy danh sách dữ liệu thành công", data);
     }
 
@@ -180,98 +204,103 @@ public class EXStaffServiceImpl implements EXStaffService {
      * @return mảng byte của file Excel
      * @throws IOException nếu có lỗi khi tạo file Excel
      */
-    public static byte[] createExcelStream(String sheetName,
-                                           List<String> headers,
-                                           List<Map<String, String>> data,
-                                           List<String> roleList,
-                                           List<String> facilityList) throws IOException {
+    public static byte[] createExcelStream(
+            String sheetName,
+            List<String> headers,
+            List<Map<String, String>> data,
+            List<String> roleList,
+            List<String> facilityList) throws IOException {
 
         Workbook workbook = new XSSFWorkbook();
         Sheet sheet = workbook.createSheet(sheetName);
 
-        // 1. Tạo CellStyle cho header (màu xanh nhạt)
+        // 1. Style cho header: màu xanh, đậm, wrap text
         CellStyle headerStyle = workbook.createCellStyle();
         headerStyle.setFillForegroundColor(IndexedColors.LIGHT_GREEN.getIndex());
         headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
-
-        // Tạo font đậm cho header
         Font headerFont = workbook.createFont();
         headerFont.setBold(true);
         headerStyle.setFont(headerFont);
+        headerStyle.setWrapText(true);
+        headerStyle.setVerticalAlignment(VerticalAlignment.CENTER);
 
-        // 2. Tạo hàng tiêu đề
+        // 2. Style chung cho wrap text
+        CellStyle wrapStyle = workbook.createCellStyle();
+        wrapStyle.setWrapText(true);
+        wrapStyle.setVerticalAlignment(VerticalAlignment.CENTER);
+        // 3. Tạo header và gán styles
         Row headerRow = sheet.createRow(0);
+        headerRow.setHeightInPoints(sheet.getDefaultRowHeightInPoints() * 1.5f); // tăng chiều cao header
         for (int i = 0; i < headers.size(); i++) {
             Cell cell = headerRow.createCell(i);
             cell.setCellValue(headers.get(i));
             cell.setCellStyle(headerStyle);
+            sheet.setDefaultColumnStyle(i, wrapStyle);
         }
 
-        // 3. (Nếu có dữ liệu) tạo các dòng dữ liệu ở đây...
-        // Ví dụ:
-        /*
+        // 4. Viết dữ liệu nếu có
         int rowIndex = 1;
         for (Map<String, String> rowData : data) {
             Row row = sheet.createRow(rowIndex++);
-            // Điền dữ liệu từng cột...
+            for (int i = 0; i < headers.size(); i++) {
+                Cell cell = row.createCell(i);
+                cell.setCellValue(rowData.getOrDefault(headers.get(i), ""));
+                cell.setCellStyle(wrapStyle);
+            }
         }
-        */
 
-        // 4. Tạo sheet phụ để chứa danh sách dropdown
+        // 5. Auto-size các cột chung
+        for (int i = 0; i < headers.size(); i++) {
+            sheet.autoSizeColumn(i);
+        }
+
+        // 6. Đặt width riêng cho 2 cột Email (index 2 và 3): rộng hơn
+        sheet.setColumnWidth(2, 40 * 256);
+        sheet.setColumnWidth(3, 40 * 256);
+
+        // 7. Tạo sheet DropdownData: vai trò và cơ sở
         Sheet dropdownSheet = workbook.createSheet("DropdownData");
-
-        // Điền danh sách vai trò vào cột A (index 0)
         for (int i = 0; i < roleList.size(); i++) {
             Row row = dropdownSheet.createRow(i);
-            Cell cell = row.createCell(0);
-            cell.setCellValue(roleList.get(i));
+            row.createCell(0).setCellValue(roleList.get(i));
         }
-
-        // Điền danh sách cơ sở vào cột B (index 1)
         for (int i = 0; i < facilityList.size(); i++) {
             Row row = dropdownSheet.getRow(i);
-            if (row == null) {
-                row = dropdownSheet.createRow(i);
-            }
-            Cell cell = row.createCell(1);
-            cell.setCellValue(facilityList.get(i));
+            if (row == null) row = dropdownSheet.createRow(i);
+            row.createCell(1).setCellValue(facilityList.get(i));
         }
 
-        // 5. Định nghĩa Named Range cho vai trò và cơ sở
+        // 8. Named ranges
         Name roleName = workbook.createName();
         roleName.setNameName("RoleList");
         roleName.setRefersToFormula("DropdownData!$A$1:$A$" + roleList.size());
-
         Name facilityName = workbook.createName();
         facilityName.setNameName("FacilityList");
         facilityName.setRefersToFormula("DropdownData!$B$1:$B$" + facilityList.size());
 
-        // 6. Thiết lập Data Validation cho sheet chính
-        // Giả sử cột "Vai Trò" là cột thứ 5 (index 4) và "Cơ Sở" là cột thứ 6 (index 5)
-        DataValidationHelper validationHelper = sheet.getDataValidationHelper();
+        // 9. Data validation cho cột Vai Trò (index 4) và Cơ Sở (index 5)
+        DataValidationHelper dvHelper = sheet.getDataValidationHelper();
+        // Vai Trò
+        DataValidationConstraint roleConstraint = dvHelper.createFormulaListConstraint("RoleList");
+        CellRangeAddressList roleAddr = new CellRangeAddressList(1, 100, 4, 4);
+        DataValidation roleValid = dvHelper.createValidation(roleConstraint, roleAddr);
+        roleValid.setSuppressDropDownArrow(true);
+        sheet.addValidationData(roleValid);
+        // Cơ Sở
+        DataValidationConstraint facilityConstraint = dvHelper.createFormulaListConstraint("FacilityList");
+        CellRangeAddressList facAddr = new CellRangeAddressList(1, 100, 5, 5);
+        DataValidation facValid = dvHelper.createValidation(facilityConstraint, facAddr);
+        facValid.setSuppressDropDownArrow(true);
+        sheet.addValidationData(facValid);
 
-        // Data Validation cho cột "Vai Trò"
-        DataValidationConstraint roleConstraint = validationHelper.createFormulaListConstraint("RoleList");
-        CellRangeAddressList roleAddressList = new CellRangeAddressList(1, 100, 4, 4);
-        DataValidation roleValidation = validationHelper.createValidation(roleConstraint, roleAddressList);
-        roleValidation.setSuppressDropDownArrow(true);
-        sheet.addValidationData(roleValidation);
+        // 10. Ẩn sheet DropdownData
+        workbook.setSheetHidden(workbook.getSheetIndex(dropdownSheet), true);
 
-        // Data Validation cho cột "Cơ Sở"
-        DataValidationConstraint facilityConstraint = validationHelper.createFormulaListConstraint("FacilityList");
-        CellRangeAddressList facilityAddressList = new CellRangeAddressList(1, 100, 5, 5);
-        DataValidation facilityValidation = validationHelper.createValidation(facilityConstraint, facilityAddressList);
-        facilityValidation.setSuppressDropDownArrow(true);
-        sheet.addValidationData(facilityValidation);
-
-        // 7. Ẩn sheet DropdownData
-        int dropdownSheetIndex = workbook.getSheetIndex(dropdownSheet);
-        workbook.setSheetHidden(dropdownSheetIndex, true);
-
-        // 8. Xuất Workbook thành mảng byte
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        workbook.write(baos);
-        workbook.close();
-        return baos.toByteArray();
+        // 11. Xuất file
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+            workbook.write(baos);
+            workbook.close();
+            return baos.toByteArray();
+        }
     }
 }

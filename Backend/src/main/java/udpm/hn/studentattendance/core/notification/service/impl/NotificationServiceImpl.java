@@ -20,8 +20,6 @@ import udpm.hn.studentattendance.helpers.SessionHelper;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 
-import java.util.Map;
-
 @Service
 @RequiredArgsConstructor
 public class NotificationServiceImpl implements NotificationService {
@@ -37,7 +35,8 @@ public class NotificationServiceImpl implements NotificationService {
             request.setEntityStatus(EntityStatus.fromValue(request.getStatus()));
         }
         Pageable pageable = PaginationHelper.createPageable(request);
-        PageableObject<NotificationResponse> data = PageableObject.of(notificationExtendRepository.getAllByFilter(pageable, request));
+        PageableObject<NotificationResponse> data = PageableObject
+                .of(notificationExtendRepository.getAllByFilter(pageable, request));
         return RouterHelper.responseSuccess("Lấy danh sách dữ liệu thành công", data);
     }
 
@@ -104,7 +103,7 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Override
     public Notification add(NotificationAddRequest request) {
-        if(!StringUtils.hasText(request.getIdUser())) {
+        if (!StringUtils.hasText(request.getIdUser())) {
             return null;
         }
 
@@ -124,7 +123,8 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Override
     public ResponseEntity<?> count() {
-        return RouterHelper.responseSuccess("Lấy dữ liệu thông báo thành công", notificationExtendRepository.count(sessionHelper.getUserId()));
+        return RouterHelper.responseSuccess("Lấy dữ liệu thông báo thành công",
+                notificationExtendRepository.count(sessionHelper.getUserId()));
     }
 
 }

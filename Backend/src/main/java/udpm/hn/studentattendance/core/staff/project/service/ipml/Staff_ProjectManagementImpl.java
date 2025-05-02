@@ -4,9 +4,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import udpm.hn.studentattendance.core.staff.project.model.request.Staff_ProjectCreateRequest;
-import udpm.hn.studentattendance.core.staff.project.model.request.Staff_ProjectUpdateRequest;
-import udpm.hn.studentattendance.core.staff.project.model.request.Staff_ProjectSearchRequest;
+import udpm.hn.studentattendance.core.staff.project.model.request.USProjectCreateRequest;
+import udpm.hn.studentattendance.core.staff.project.model.request.USProjectUpdateRequest;
+import udpm.hn.studentattendance.core.staff.project.model.request.USProjectSearchRequest;
 import udpm.hn.studentattendance.core.staff.project.repository.Staff_ProjectManagementRepository;
 import udpm.hn.studentattendance.core.staff.project.service.Staff_ProjectManagementService;
 import udpm.hn.studentattendance.entities.Project;
@@ -38,17 +38,16 @@ public class Staff_ProjectManagementImpl implements Staff_ProjectManagementServi
     private SubjectFacilityRepository subjectFacilityRepository;
 
     @Override
-    public ResponseObject<?> getListProject(Staff_ProjectSearchRequest request) {
+    public ResponseObject<?> getListProject(USProjectSearchRequest request) {
         Pageable pageable = PaginationHelper.createPageable(request, "id");
         return new ResponseObject<>(
                 PageableObject.of(staffProjectManagementRepository.getListProject(pageable, request)),
                 HttpStatus.OK,
-                "Lây danh sách dự án thành công"
-        );
+                "Lây danh sách dự án thành công");
     }
 
     @Override
-    public ResponseObject<?> createProject(Staff_ProjectCreateRequest request) {
+    public ResponseObject<?> createProject(USProjectCreateRequest request) {
         Project project = new Project();
         project = convertProjectRequestToProject(request, project);
         staffProjectManagementRepository.save(project);
@@ -56,7 +55,7 @@ public class Staff_ProjectManagementImpl implements Staff_ProjectManagementServi
     }
 
     @Override
-    public ResponseObject<?> updateProject(String idProject, Staff_ProjectUpdateRequest request) {
+    public ResponseObject<?> updateProject(String idProject, USProjectUpdateRequest request) {
         Project project = staffProjectManagementRepository.findById(idProject).get();
         project.setName(request.getName());
         project.setDescription(request.getDescription());
@@ -86,7 +85,7 @@ public class Staff_ProjectManagementImpl implements Staff_ProjectManagementServi
         return new ResponseObject<>(project, HttpStatus.OK, "Chuyển trạng thái thành công");
     }
 
-    private Project convertProjectRequestToProject(Staff_ProjectCreateRequest request, Project project) {
+    private Project convertProjectRequestToProject(USProjectCreateRequest request, Project project) {
         project.setName(request.getName());
         project.setDescription(request.getDescription());
         project.setLevelProject(levelProjectRepository.findById(request.getLevelProjectId()).get());
@@ -96,17 +95,17 @@ public class Staff_ProjectManagementImpl implements Staff_ProjectManagementServi
         return project;
     }
 
-    private Project convertProjectUpdateRequestToProject(Staff_ProjectUpdateRequest request, Project project) {
+    private Project convertProjectUpdateRequestToProject(USProjectUpdateRequest request, Project project) {
         project.setName(request.getName());
         project.setDescription(request.getDescription());
         project.setLevelProject(levelProjectRepository.findById(request.getIdLevelProject()).get());
         project.setSemester(semesterRepository.findById(request.getIdSemester()).get());
         project.setSubjectFacility(subjectFacilityRepository.findById(request.getIdSubjectFacility()).get());
-//        if (request.getStatus().equals("ACTIVE")) {
-//            project.setStatus(EntityStatus.ACTIVE);
-//        } else {
-//            project.setStatus(EntityStatus.INACTIVE);
-//        }
+        // if (request.getStatus().equals("ACTIVE")) {
+        // project.setStatus(EntityStatus.ACTIVE);
+        // } else {
+        // project.setStatus(EntityStatus.INACTIVE);
+        // }
         return project;
     }
 }

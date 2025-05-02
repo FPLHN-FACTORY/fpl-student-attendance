@@ -24,6 +24,7 @@ import ExcelUploadButton from '@/components/excel/ExcelUploadButton.vue'
 
 const breadcrumbStore = useBreadcrumbStore()
 const loadingStore = useLoadingStore()
+const isLoading = ref(false)
 
 /* ----------------- Data & Reactive Variables ----------------- */
 // Danh sách sinh viên
@@ -83,35 +84,38 @@ const breadcrumb = ref([
 
 /* ----------------- Methods ----------------- */
 // Lấy danh sách sinh viên từ backend, truyền phân trang động
-const fetchStudents = () => {
+const fetchStudents = async () => {
   loadingStore.show()
-  requestAPI
-    .get(API_ROUTES_STAFF.FETCH_DATA_STUDENT, {
-      params: {
-        ...filter,
-        page: pagination.current,
-        size: pagination.pageSize,
-      },
-    })
-    .then((response) => {
-      students.value = response.data.data.data
-      // Tính tổng số bản ghi: nếu có totalRecords thì dùng luôn, nếu không nhân totalPages với pageSize
-      if (response.data.data.totalRecords !== undefined) {
-        pagination.total = response.data.data.totalRecords
-      } else {
-        pagination.total = response.data.data.totalPages * pagination.pageSize
-      }
-      // Đồng bộ current nếu cần (ở đây giữ nguyên giá trị của filter hoặc pagination)
-    })
-    .catch((error) => {
-      message.error(
-        (error.response && error.response.data && error.response.data.message) ||
-          'Lỗi khi lấy danh sách sinh viên'
-      )
-    })
-    .finally(() => {
-      loadingStore.hide()
-    })
+  const params = {
+    ...filter,
+    page: pagination.current,
+    size: pagination.pageSize,
+  }
+  try {
+    const [stuRes, faceRes] = await Promise.all([
+      requestAPI.get(API_ROUTES_STAFF.FETCH_DATA_STUDENT, { params }),
+      requestAPI.get(API_ROUTES_STAFF.FETCH_DATA_STUDENT + '/exist-face', { params }),
+    ])
+
+    const list = stuRes.data.data.data // danh sách sinh viên
+    const flags = faceRes.data.data // mảng Boolean
+    // gán thêm hasFace vào từng object
+    students.value = list.map((s, idx) => ({
+      ...s,
+      hasFace: flags[idx] === 1,
+    }))
+
+    // cập nhật tổng bản ghi
+    if (stuRes.data.data.totalRecords !== undefined) {
+      pagination.total = stuRes.data.data.totalRecords
+    } else {
+      pagination.total = stuRes.data.data.totalPages * pagination.pageSize
+    }
+  } catch (error) {
+    message.error(error.response?.data?.message || 'Lỗi khi lấy danh sách sinh viên')
+  } finally {
+    loadingStore.hide()
+  }
 }
 
 // Sự kiện thay đổi trang bảng: cập nhật pagination rồi gọi lại API
@@ -252,7 +256,7 @@ const handleChangeStatusStudent = (record) => {
 const changeFaceStudent = (record) => {
   Modal.confirm({
     title: 'Xác nhận đổi mặt',
-    content: `Bạn có chắc muốn đổi mặt của học sinh ${record.studentName}?`,
+    content: `Bạn có chắc muốn đổi mặt của sinh viên ${record.studentName}?`,
     onOk() {
       loadingStore.show()
       // Giả sử record chứa studentId, nếu không hãy thay đổi cho phù hợp
@@ -402,7 +406,7 @@ onMounted(() => {
                       <EditFilled />
                     </a-button>
                   </a-tooltip>
-                  <a-tooltip title="Cấp quyền thay đổi mặt sinh viên">
+                  <a-tooltip title="Cấp quyền thay đổi mặt sinh viên" v-if="record.hasFace">
                     <a-button
                       type="text"
                       class="btn-outline-warning"

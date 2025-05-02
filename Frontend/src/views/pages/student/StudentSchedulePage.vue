@@ -4,13 +4,14 @@ import { ROUTE_NAMES } from '@/router/studentRoute'
 import { API_ROUTES_STUDENT } from '@/constants/studentConstant'
 import requestAPI from '@/services/requestApiService'
 import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
-import { DEFAULT_PAGINATION } from '@/constants'
+import { DEFAULT_DATE_FORMAT, DEFAULT_PAGINATION, TYPE_SHIFT } from '@/constants'
 import { onMounted, ref } from 'vue'
 import useLoadingStore from '@/stores/useLoadingStore'
 import { Modal } from 'ant-design-vue'
 import * as XLSX from 'xlsx'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
+import { dayOfWeek, formatDate } from '@/utils/utils'
 
 const breadcrumbStore = useBreadcrumbStore()
 
@@ -32,34 +33,35 @@ const filter = ref({ page: 1, pageSize: 5, plan: '' })
 const pagination = ref({ ...DEFAULT_PAGINATION })
 
 const columns = [
-  { title: '#', dataIndex: 'indexs', key: 'indexs' },
-  { title: 'Ngày điểm danh', dataIndex: 'attendanceDay', key: 'attendanceDay' },
-  { title: 'Ca', dataIndex: 'shift', key: 'shift' },
-  { title: 'Nhóm xưởng', dataIndex: 'factoryName', key: 'factoryName' },
-  { title: 'Dự án', dataIndex: 'projectName', key: 'projectName' },
-  { title: 'Tên môn học', dataIndex: 'subjectName', key: 'subjectName' },
-  { title: 'Tên giảng viên', dataIndex: 'staffName', key: 'staffName' },
-  { title: 'Mô tả', dataIndex: 'description', key: 'description' },
+  { title: '#', dataIndex: 'indexs', key: 'indexs', width: 50 },
+  { title: 'Ngày học', key: 'time', width: 250 },
+  { title: 'Ca', dataIndex: 'shift', key: 'shift', width: 150 },
+  { title: 'Nhóm xưởng', dataIndex: 'factoryName', key: 'factoryName', width: 150 },
+  { title: 'Dự án', dataIndex: 'projectName', key: 'projectName', width: 250 },
+  { title: 'Link học', dataIndex: 'link', key: 'link', width: 250 },
+  { title: 'Địa điểm', dataIndex: 'location', key: 'location', width: 150 },
+  { title: 'Tên giảng viên', dataIndex: 'staffName', key: 'staffName', width: 150 },
+  { title: 'Mô tả', dataIndex: 'description', key: 'description', width: 150 },
 ]
 
-const getCurrentTimestamp = () => Date.now()
-
-const convertTime = () => {
-  const currentTimestamp = getCurrentTimestamp()
-  const plan = filter.value.plan
-  if (!plan) {
-    return currentTimestamp + 7 * 24 * 60 * 60 * 1000
+const getTimeRange = () => {
+  const now = Date.now()
+  const offset = (filter.value.plan || 0) * 24 * 60 * 60 * 1000
+  if (filter.value.plan >= 0) {
+    return { now, max: now + offset }
+  } else {
+    return { now: now + offset, max: now }
   }
-  return currentTimestamp + plan * 24 * 60 * 60 * 1000
 }
 
 const fetchAttendanceList = () => {
+  const { now, max } = getTimeRange()
   loadingStore.show()
   requestAPI
     .get(API_ROUTES_STUDENT.FETCH_DATA_STUDENT_PLAN + '/list', {
       params: {
-        now: getCurrentTimestamp(),
-        max: convertTime(),
+        now,
+        max,
         page: pagination.value.current,
         size: pagination.value.pageSize,
       },
@@ -95,10 +97,7 @@ const handleShowDescription = (text) => {
     },
   })
 }
-const formatDate = (timestamp) => {
-  if (!timestamp) return 'Không xác định'
-  return new Date(timestamp).toLocaleString()
-}
+
 const exportToExcel = () => {
   const worksheet = XLSX.utils.json_to_sheet(
     attendanceList.value.map((item, index) => ({
@@ -190,20 +189,40 @@ onMounted(() => {
               :loading="isLoading"
               :scroll="{ y: 500, x: 'auto' }"
               :pagination="pagination"
-              class="nowrap"
               @change="handleTableChange"
             >
               <template #bodyCell="{ column, record }">
-                <template v-if="column.dataIndex === 'attendanceDay'">{{
-                  formatDate(record.attendanceDay)
-                }}</template>
-                <template v-if="column.dataIndex === 'shift'">
-                  <a-tag color="purple">{{ 'Ca ' + record.shift }}</a-tag>
+                <template v-if="column.key === 'time'">
+                  {{
+                    `${dayOfWeek(record.attendanceDayStart)}, ${formatDate(
+                      record.attendanceDayStart,
+                      DEFAULT_DATE_FORMAT
+                    )}`
+                  }}
+                  {{
+                    `${formatDate(record.attendanceDayStart, 'HH:mm')} - ${formatDate(
+                      record.attendanceDayEnd,
+                      'HH:mm'
+                    )}`
+                  }}
+                </template>
+                <template v-else-if="column.dataIndex === 'shift'">
+                  <a-tag :color="record.type === 1 ? 'blue' : 'purple'">
+                    {{
+                      `Ca ${record.shift
+                        .split(',')
+                        .map((o) => Number(o))
+                        .join(', ')} - ${TYPE_SHIFT[record.type]}`
+                    }}
+                  </a-tag>
                 </template>
                 <template v-if="column.dataIndex === 'description'">
                   <a-typography-link @click="handleShowDescription(record.description)"
                     >Chi tiết</a-typography-link
                   >
+                </template>
+                <template v-else-if="column.dataIndex === 'link'">
+                  <a v-if="record.link" :href="record.link" target="_blank">{{ record.link }}</a>
                 </template>
                 <template v-if="column.dataIndex === 'staffName'">
                   <a-tag color="green">{{ record.staffName }}</a-tag></template

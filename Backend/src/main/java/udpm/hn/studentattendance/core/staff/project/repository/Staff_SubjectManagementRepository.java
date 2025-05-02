@@ -3,7 +3,7 @@ package udpm.hn.studentattendance.core.staff.project.repository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
-import udpm.hn.studentattendance.core.staff.project.model.response.Staff_SubjectResponse;
+import udpm.hn.studentattendance.core.staff.project.model.response.USSubjectResponse;
 import udpm.hn.studentattendance.repositories.ProjectRepository;
 
 import java.util.List;
@@ -12,7 +12,7 @@ import java.util.List;
 public interface Staff_SubjectManagementRepository extends ProjectRepository {
 
     @Query(value = """
-                SELECT 
+                SELECT
                     ROW_NUMBER() OVER (ORDER BY sf.created_at DESC) AS indexs,
                     sf.id AS id,
                     s.name AS name
@@ -23,5 +23,5 @@ public interface Staff_SubjectManagementRepository extends ProjectRepository {
                 ) AND sf.status = 1
                 ORDER BY sf.created_at DESC
             """, nativeQuery = true)
-    List<Staff_SubjectResponse> getSubjectFacility(@Param("facilityId") String facilityId);
+    List<USSubjectResponse> getSubjectFacility(@Param("facilityId") String facilityId);
 }

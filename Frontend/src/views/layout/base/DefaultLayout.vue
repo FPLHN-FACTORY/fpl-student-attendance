@@ -34,6 +34,8 @@ const breadcrumbStore = useBreadcrumbStore()
 const applicationStore = useApplicationStore()
 
 const isLoading = ref(false)
+const isLoadingMarkReadAll = ref(false)
+const isLoadingDeleteAll = ref(false)
 const isShowAllNotification = ref(false)
 const lstAllNotification = ref([])
 
@@ -61,14 +63,14 @@ const handleShowAllNotification = () => {
 }
 
 const handleNotificationMarkReadAll = () => {
-  applicationStore.markReadAll(fetchDataListNotification)
+  applicationStore.markReadAll(fetchDataListNotification, isLoadingMarkReadAll)
 }
 
 const handleNotificationDeleteAll = () => {
   applicationStore.removeAll(() => {
     lstAllNotification.value = []
     pagination.value.total = 0
-  })
+  }, isLoadingDeleteAll)
 }
 
 const callbackLoadNotification = () => {
@@ -90,7 +92,6 @@ const fetchDataListNotification = (callback) => {
   if (isLoading.value === true) {
     return
   }
-
   isLoading.value = true
   requestAPI
     .get(`${API_ROUTES_NOTIFICATION.FETCH_LIST}`, {
@@ -134,7 +135,7 @@ watch(
   () => route.fullPath,
   () => {
     applicationStore.loadNotification()
-  }
+  },
 )
 </script>
 
@@ -160,6 +161,7 @@ watch(
         <a-button
           type="primary"
           class="btn-outline-primary w-100"
+          :loading="isLoadingMarkReadAll"
           @click="handleNotificationMarkReadAll"
         >
           <CheckOutlined /> Đánh dấu tất cả đã đọc
@@ -169,6 +171,7 @@ watch(
         <a-button
           type="primary"
           class="btn-outline-danger w-100"
+          :loading="isLoadingDeleteAll"
           @click="handleNotificationDeleteAll"
         >
           <DeleteOutlined />Xoá tất cả thông báo
@@ -279,7 +282,7 @@ watch(
                     class="notification-content_body-item"
                     v-for="o in applicationStore.lstNotification"
                     :key="o.id"
-                    @click="applicationStore.markRead(o.id)"
+                    @click="applicationStore.markRead(o)"
                   >
                     <a-badge status="processing" />
                     <span class="notification-time">

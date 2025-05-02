@@ -3,8 +3,8 @@ package udpm.hn.studentattendance.core.admin.subject_facility.repository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
-import udpm.hn.studentattendance.core.admin.subject_facility.model.request.Admin_SubjectFacilitySearchRequest;
-import udpm.hn.studentattendance.core.admin.subject_facility.model.response.Admin_FacilityResponse;
+import udpm.hn.studentattendance.core.admin.subject_facility.model.request.ADSubjectFacilitySearchRequest;
+import udpm.hn.studentattendance.core.admin.subject_facility.model.response.ADFacilityResponse;
 import udpm.hn.studentattendance.repositories.ProjectRepository;
 
 import java.util.List;
@@ -13,7 +13,7 @@ import java.util.List;
 public interface Admin_FacilityRepository extends ProjectRepository {
 
     @Query(value = """
-                SELECT 
+                SELECT
                     ROW_NUMBER() OVER (ORDER BY created_at DESC) AS indexs,
                     id AS id,
                     name AS name
@@ -21,7 +21,7 @@ public interface Admin_FacilityRepository extends ProjectRepository {
                 WHERE  status = 1
                 ORDER BY created_at DESC
             """, nativeQuery = true)
-    List<Admin_FacilityResponse> getFacility();
+    List<ADFacilityResponse> getFacility();
 
     @Query(value = """
             SELECT f.id, f.name
@@ -31,5 +31,5 @@ public interface Admin_FacilityRepository extends ProjectRepository {
               AND sf.id_subject = :#{#request.subjectId}
             WHERE sf.id_facility IS NULL;
             """, nativeQuery = true)
-    List<Admin_FacilityResponse> getListFacility(@Param("request") Admin_SubjectFacilitySearchRequest request);
+    List<ADFacilityResponse> getListFacility(@Param("request") ADSubjectFacilitySearchRequest request);
 }

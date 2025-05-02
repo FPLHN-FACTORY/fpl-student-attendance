@@ -10,8 +10,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
-import org.springframework.security.oauth2.core.OAuth2Error;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 import udpm.hn.studentattendance.core.authentication.repositories.AuthenticationRoleRepository;
@@ -51,7 +49,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final AuthenticationRoleRepository authenticationRoleRepository;
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain) throws ServletException, IOException {
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
+            throws ServletException, IOException {
         String token = JwtUtil.getAuthorization(request);
 
         if (token != null) {
@@ -68,20 +67,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
                 if (requiredRole == RoleConstant.ADMIN) {
                     authUser = getAccountAdmin(email);
-                }
-                else if(requiredRole == RoleConstant.STAFF || requiredRole == RoleConstant.TEACHER) {
+                } else if (requiredRole == RoleConstant.STAFF || requiredRole == RoleConstant.TEACHER) {
                     authUser = getAccountStaffOrTeacher(email, facilityID);
-                }
-                else if (requiredRole == RoleConstant.STUDENT) {
+                } else if (requiredRole == RoleConstant.STUDENT) {
                     authUser = getAccountStudent(email, facilityID);
                 } else {
                     if (role.contains(RoleConstant.ADMIN.name())) {
                         authUser = getAccountAdmin(email);
-                    }
-                    else if(role.contains(RoleConstant.STAFF.name()) || role.contains(RoleConstant.TEACHER.name())) {
+                    } else if (role.contains(RoleConstant.STAFF.name()) || role.contains(RoleConstant.TEACHER.name())) {
                         authUser = getAccountStaffOrTeacher(email, facilityID);
-                    }
-                    else if (role.contains(RoleConstant.STUDENT.name())) {
+                    } else if (role.contains(RoleConstant.STUDENT.name())) {
                         authUser = getAccountStudent(email, facilityID);
                     }
                 }
@@ -89,7 +84,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 if (authUser != null) {
                     sessionHelper.setCurrentUser(authUser);
                     List<GrantedAuthority> authorities = new ArrayList<>();
-                    for (RoleConstant r: authUser.getRole()) {
+                    for (RoleConstant r : authUser.getRole()) {
                         authorities.add(new SimpleGrantedAuthority(r.name()));
                     }
 
@@ -108,7 +103,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             Set<RoleConstant> roles = new HashSet<>();
 
             List<Role> lstRole = authenticationRoleRepository.findRolesByUserId(userStaff.get().getId());
-            for(Role r: lstRole) {
+            for (Role r : lstRole) {
                 roles.add(r.getCode());
             }
             return sessionHelper.buildAuthUser(userStaff.get(), roles, facilityID);
@@ -118,12 +113,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private AuthUser getAccountAdmin(String email) {
         Optional<UserAdmin> userAdmin = authenticationUserAdminRepository.findByEmail(email);
-        return userAdmin.map(admin -> sessionHelper.buildAuthUser(admin, Set.of(RoleConstant.ADMIN), null)).orElse(null);
+        return userAdmin.map(admin -> sessionHelper.buildAuthUser(admin, Set.of(RoleConstant.ADMIN), null))
+                .orElse(null);
     }
 
     private AuthUser getAccountStudent(String email, String facilityID) {
-        Optional<UserStudent> userStudent = authenticationUserStudentRepository.findByEmailAndFacility_Id(email, facilityID);
-        return userStudent.map(student -> sessionHelper.buildAuthUser(student, Set.of(RoleConstant.STUDENT), facilityID)).orElse(null);
+        Optional<UserStudent> userStudent = authenticationUserStudentRepository.findByEmailAndFacility_Id(email,
+                facilityID);
+        return userStudent
+                .map(student -> sessionHelper.buildAuthUser(student, Set.of(RoleConstant.STUDENT), facilityID))
+                .orElse(null);
     }
 
 }

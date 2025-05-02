@@ -2,6 +2,7 @@ package udpm.hn.studentattendance.core.staff.plan.services.impl;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -50,6 +51,9 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
 
     private final SessionHelper sessionHelper;
 
+    @Value("${app.config.shift.max-late-arrival}")
+    private int MAX_LATE_ARRIVAL;
+
     @Override
     public ResponseEntity<?> getDetail(String idPlanFactory) {
         Optional<SPDPlanFactoryResponse> data = spdPlanFactoryRepository.getDetail(idPlanFactory, sessionHelper.getFacilityId());
@@ -97,6 +101,10 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
     public ResponseEntity<?> updatePlanDate(SPDAddOrUpdatePlanDateRequest request) {
         request.setIdFacility(sessionHelper.getFacilityId());
 
+        if (request.getLateArrival() > MAX_LATE_ARRIVAL) {
+            return RouterHelper.responseError("Thời gian điểm danh muộn nhất không quá " + MAX_LATE_ARRIVAL + " phút");
+        }
+
         PlanDate planDate = spdPlanDateRepository.findById(request.getId()).orElse(null);
 
         if (planDate == null
@@ -108,9 +116,22 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
             return RouterHelper.responseError("Không thể cập nhật kế hoạch đã diễn ra");
         }
 
-        FacilityShift shift = spdFacilityShiftRepository.getOneById(request.getShift(), sessionHelper.getFacilityId()).orElse(null);
-        if (shift == null) {
-            return RouterHelper.responseError("Ca học không tồn tại");
+        List<List<Integer>> lstShift = ShiftHelper.findConsecutiveShift(request.getShift());
+
+        if (lstShift.isEmpty()) {
+            return RouterHelper.responseError("Vui lòng chọn ít nhất 1 ca học");
+        }
+
+        int startShift = lstShift.get(0).get(0);
+        int endShift = lstShift.get(0).get(lstShift.get(0).size() - 1);
+
+        FacilityShift shiftStart = spdFacilityShiftRepository.getOneById(startShift, sessionHelper.getFacilityId()).orElse(null);
+        FacilityShift shiftEnd = spdFacilityShiftRepository.getOneById(endShift, sessionHelper.getFacilityId()).orElse(null);
+        if (shiftStart == null) {
+            return RouterHelper.responseError("Ca học " + startShift + " không tồn tại");
+        }
+        if (shiftEnd == null) {
+            return RouterHelper.responseError("Ca học " + endShift + " không tồn tại");
         }
 
         ShiftType type;
@@ -120,7 +141,8 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
             return RouterHelper.responseError("Hình thức học không hợp lệ");
         }
 
-        Long startDate = ShiftHelper.getShiftTimeStart(request.getStartDate(), LocalTime.of(shift.getFromHour(), shift.getFromMinute()));
+        Long startDate = ShiftHelper.getShiftTimeStart(request.getStartDate(), LocalTime.of(shiftStart.getFromHour(), shiftStart.getFromMinute()));
+        Long endDate = startDate + ShiftHelper.getDiffTime(shiftStart.getFromHour(), shiftStart.getFromMinute(), shiftEnd.getToHour(), shiftEnd.getToMinute());
 
         if (startDate < DateTimeUtils.getCurrentTimeMillis()) {
             return RouterHelper.responseError("Thời gian diễn ra phải lớn hơn hoặc bằng ngày hiện tại");
@@ -132,11 +154,11 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
 
         Factory factory = planDate.getPlanFactory().getFactory();
 
-        if (spdPlanDateRepository.isExistsShiftInFactory(planDate.getPlanFactory().getId(), planDate.getId(), startDate, request.getShift())) {
+        if (spdPlanDateRepository.isExistsShiftInFactory(planDate.getPlanFactory().getId(), planDate.getId(), startDate, endDate)) {
             return RouterHelper.responseError("Đã tồn tại ca " + request.getShift() + " trong ngày " + DateTimeUtils.convertMillisToDate(startDate));
         }
 
-        if (spdPlanDateRepository.isExistsTeacherOnShift(factory.getUserStaff().getId(), startDate, request.getShift())) {
+        if (spdPlanDateRepository.isExistsTeacherOnShift(factory.getUserStaff().getId(), startDate, endDate)) {
             return RouterHelper.responseError("Giảng viên " + factory.getUserStaff().getName() + " - " + factory.getUserStaff().getCode() + " đã đứng lớp tại ca " + request.getShift() + " trong ngày " + DateTimeUtils.convertMillisToDate(startDate));
         }
 
@@ -153,7 +175,7 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
         String link = StringUtils.hasText(request.getLink()) ? request.getLink().trim() : null;
 
         planDate.setStartDate(startDate);
-        planDate.setEndDate(startDate + ShiftHelper.getDiffTime(shift));
+        planDate.setEndDate(endDate);
         planDate.setShift(request.getShift());
         planDate.setType(type);
         planDate.setLink(link);
@@ -164,7 +186,7 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
 
         PlanDate newEntity = spdPlanDateRepository.save(planDate);
 
-        commonUserStudentRepository.disableAllStudentDuplicateShiftByStartDateAndShift(planDate.getPlanFactory().getFactory().getId(), planDate.getStartDate(), planDate.getShift());
+        commonUserStudentRepository.disableAllStudentDuplicateShiftByStartDate(planDate.getPlanFactory().getFactory().getId(), planDate.getStartDate());
 
         return RouterHelper.responseSuccess("Cập nhật kế hoạch thành công", newEntity);
     }
@@ -172,6 +194,10 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
     @Override
     public ResponseEntity<?> addPlanDate(SPDAddOrUpdatePlanDateRequest request) {
         request.setIdFacility(sessionHelper.getFacilityId());
+
+        if (request.getLateArrival() > MAX_LATE_ARRIVAL) {
+            return RouterHelper.responseError("Thời gian điểm danh muộn nhất không quá " + MAX_LATE_ARRIVAL + " phút");
+        }
 
         PlanFactory planFactory = spdPlanFactoryRepository.findById(request.getIdPlanFactory()).orElse(null);
 
@@ -193,9 +219,22 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
             return RouterHelper.responseError("Không tìm thấy nhóm xưởng");
         }
 
-        FacilityShift shift = spdFacilityShiftRepository.getOneById(request.getShift(), sessionHelper.getFacilityId()).orElse(null);
-        if (shift == null) {
-            return RouterHelper.responseError("Ca học không tồn tại");
+        List<List<Integer>> lstShift = ShiftHelper.findConsecutiveShift(request.getShift());
+
+        if (lstShift.isEmpty()) {
+            return RouterHelper.responseError("Vui lòng chọn ít nhất 1 ca học");
+        }
+
+        int startShift = lstShift.get(0).get(0);
+        int endShift = lstShift.get(0).get(lstShift.get(0).size() - 1);
+
+        FacilityShift shiftStart = spdFacilityShiftRepository.getOneById(startShift, sessionHelper.getFacilityId()).orElse(null);
+        FacilityShift shiftEnd = spdFacilityShiftRepository.getOneById(endShift, sessionHelper.getFacilityId()).orElse(null);
+        if (shiftStart == null) {
+            return RouterHelper.responseError("Ca học " + startShift + " không tồn tại");
+        }
+        if (shiftEnd == null) {
+            return RouterHelper.responseError("Ca học " + endShift + " không tồn tại");
         }
 
         ShiftType type;
@@ -205,8 +244,8 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
             return RouterHelper.responseError("Hình thức học không hợp lệ");
         }
 
-
-        Long startDate = ShiftHelper.getShiftTimeStart(request.getStartDate(), LocalTime.of(shift.getFromHour(), shift.getFromMinute()));
+        Long startDate = ShiftHelper.getShiftTimeStart(request.getStartDate(), LocalTime.of(shiftStart.getFromHour(), shiftStart.getFromMinute()));
+        Long endDate = startDate + ShiftHelper.getDiffTime(shiftStart.getFromHour(), shiftStart.getFromMinute(), shiftEnd.getToHour(), shiftEnd.getToMinute());
 
         if (startDate < DateTimeUtils.getCurrentTimeMillis()) {
             return RouterHelper.responseError("Thời gian diễn ra phải lớn hơn hoặc bằng ngày hiện tại");
@@ -216,11 +255,11 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
             return RouterHelper.responseError("Thời gian diễn ra phải trong khoảng từ " + DateTimeUtils.convertMillisToDate(plan.getFromDate()) + " đến " + DateTimeUtils.convertMillisToDate(plan.getToDate()));
         }
 
-        if (spdPlanDateRepository.isExistsShiftInFactory(planFactory.getId(), null, startDate, request.getShift())) {
+        if (spdPlanDateRepository.isExistsShiftInFactory(planFactory.getId(), null, startDate, endDate)) {
             return RouterHelper.responseError("Đã tồn tại ca " + request.getShift() + " trong ngày " + DateTimeUtils.convertMillisToDate(startDate));
         }
 
-        if (spdPlanDateRepository.isExistsTeacherOnShift(factory.getUserStaff().getId(), startDate, request.getShift())) {
+        if (spdPlanDateRepository.isExistsTeacherOnShift(factory.getUserStaff().getId(), startDate, endDate)) {
             return RouterHelper.responseError("Giảng viên " + factory.getUserStaff().getName() + " - " + factory.getUserStaff().getCode() + " đã đứng lớp tại ca " + request.getShift() + " trong ngày " + DateTimeUtils.convertMillisToDate(startDate));
         }
 
@@ -239,7 +278,7 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
         PlanDate planDate = new PlanDate();
         planDate.setPlanFactory(planFactory);
         planDate.setStartDate(startDate);
-        planDate.setEndDate(startDate + ShiftHelper.getDiffTime(shift));
+        planDate.setEndDate(endDate);
         planDate.setShift(request.getShift());
         planDate.setType(type);
         planDate.setLink(link);
@@ -250,7 +289,7 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
 
         PlanDate newEntity = spdPlanDateRepository.save(planDate);
 
-        commonUserStudentRepository.disableAllStudentDuplicateShiftByStartDateAndShift(planDate.getPlanFactory().getFactory().getId(), planDate.getStartDate(), planDate.getShift());
+        commonUserStudentRepository.disableAllStudentDuplicateShiftByStartDate(planDate.getPlanFactory().getFactory().getId(), planDate.getStartDate());
 
         return RouterHelper.responseSuccess("Thêm mới kế hoạch thành công", newEntity);
     }

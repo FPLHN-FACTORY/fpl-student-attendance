@@ -24,6 +24,7 @@ import ExcelUploadButton from '@/components/excel/ExcelUploadButton.vue'
 
 const breadcrumbStore = useBreadcrumbStore()
 const loadingStore = useLoadingStore()
+const isLoading = ref(false)
 
 /* ----------------- Data & Reactive Variables ----------------- */
 const factories = ref([])
@@ -82,7 +83,7 @@ const breadcrumb = ref([
   },
   {
     name: ROUTE_NAMES.MANAGEMENT_FACTORY,
-    breadcrumbName: 'Nhóm xưởng',
+    breadcrumbName: 'Quản lý nhóm xưởng',
   },
 ])
 
@@ -478,7 +479,7 @@ onMounted(() => {
           <!-- First Row: Search Query and Status -->
           <div class="row g-2">
             <div class="col-md-6 col-sm-12">
-              <div class="label-title">Tìm kiếm tên xưởng</div>
+              <div class="label-title">Tìm kiếm tên xưởng:</div>
               <a-input
                 v-model:value="filter.factoryName"
                 placeholder="Tên xưởng"
@@ -488,7 +489,7 @@ onMounted(() => {
               />
             </div>
             <div class="col-md-3 col-sm-9">
-              <div class="label-title">Giảng viên</div>
+              <div class="label-title">Giảng viên:</div>
               <a-select
                 v-model:value="filter.idStaff"
                 placeholder="Chọn giảng viên"
@@ -512,7 +513,7 @@ onMounted(() => {
               </a-select>
             </div>
             <div class="col-md-3 col-sm-9">
-              <div class="label-title">Kỳ học</div>
+              <div class="label-title">Kỳ học:</div>
               <a-select
                 v-model:value="filter.idSemester"
                 placeholder="Chọn kỳ học"
@@ -539,7 +540,7 @@ onMounted(() => {
           <!-- Second Row: Project and Staff -->
           <div class="row g-2 mt-2">
             <div class="col-md-6 col-sm-12">
-              <div class="label-title">Dự án</div>
+              <div class="label-title">Dự án:</div>
               <a-select
                 v-model:value="filter.idProject"
                 placeholder="Chọn dự án"

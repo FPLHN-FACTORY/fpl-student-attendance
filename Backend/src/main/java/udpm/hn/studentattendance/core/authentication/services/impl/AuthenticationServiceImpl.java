@@ -13,7 +13,6 @@ import udpm.hn.studentattendance.core.authentication.model.request.Authenticatio
 import udpm.hn.studentattendance.core.authentication.model.request.AuthenticationStudentUpdateFaceIDRequest;
 import udpm.hn.studentattendance.core.authentication.oauth2.AuthUser;
 import udpm.hn.studentattendance.core.authentication.repositories.AuthenticationFacilityRepository;
-import udpm.hn.studentattendance.core.authentication.repositories.AuthenticationRoleRepository;
 import udpm.hn.studentattendance.core.authentication.repositories.AuthenticationUserAdminRepository;
 import udpm.hn.studentattendance.core.authentication.repositories.AuthenticationUserStaffRepository;
 import udpm.hn.studentattendance.core.authentication.repositories.AuthenticationUserStudentRepository;
@@ -34,7 +33,6 @@ import udpm.hn.studentattendance.entities.Facility;
 import udpm.hn.studentattendance.infrastructure.constants.SessionConstant;
 import udpm.hn.studentattendance.utils.FaceRecognitionUtils;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -92,14 +90,19 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 return null;
             }
             userData = sessionHelper.buildAuthUser(userAdmin.get(), sessionHelper.getUserRole(), facilityID);
-        } else if(role.equalsIgnoreCase(RoleConstant.STAFF.name()) || role.equalsIgnoreCase(RoleConstant.TEACHER.name())) {
-            Optional<UserStaff> userStaff = authenticationUserStaffRepository.findLogin(sessionHelper.getUserEmailFpt(), facilityID);
+        } else if (role.equalsIgnoreCase(RoleConstant.STAFF.name())
+                || role.equalsIgnoreCase(RoleConstant.TEACHER.name())) {
+            Optional<UserStaff> userStaff = authenticationUserStaffRepository.findLogin(sessionHelper.getUserEmailFpt(),
+                    facilityID);
             if (userStaff.isEmpty()) {
                 return null;
             }
             userData = sessionHelper.buildAuthUser(userStaff.get(), sessionHelper.getUserRole(), facilityID);
         } else if (role.equalsIgnoreCase(RoleConstant.STUDENT.name())) {
-            Optional<UserStudent> userStudent = facilityID != null && !facilityID.equalsIgnoreCase("null") ? authenticationUserStudentRepository.findByEmailAndFacility_Id(sessionHelper.getUserEmail(), facilityID) : authenticationUserStudentRepository.findByEmail(sessionHelper.getUserEmail());
+            Optional<UserStudent> userStudent = facilityID != null && !facilityID.equalsIgnoreCase("null")
+                    ? authenticationUserStudentRepository.findByEmailAndFacility_Id(sessionHelper.getUserEmail(),
+                            facilityID)
+                    : authenticationUserStudentRepository.findByEmail(sessionHelper.getUserEmail());
             if (userStudent.isEmpty()) {
                 return null;
             }
@@ -145,7 +148,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         student.setFaceEmbedding(request.getFaceEmbedding());
         authenticationUserStudentRepository.save(student);
 
-        String token = jwtUtil.generateToken(student.getEmail(), sessionHelper.buildAuthUser(student, Set.of(RoleConstant.STUDENT), student.getFacility().getId()));
+        String token = jwtUtil.generateToken(student.getEmail(),
+                sessionHelper.buildAuthUser(student, Set.of(RoleConstant.STUDENT), student.getFacility().getId()));
         return RouterHelper.responseSuccess("Đăng ký thông tin sinh viên thành công", token);
     }
 
@@ -192,15 +196,18 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         notificationAddRequest.setIdUser(student.getId());
         notificationService.add(notificationAddRequest);
 
-        return RouterHelper.responseSuccess("Cập nhật khuôn mặt thành công", authenticationUserStudentRepository.save(student));
+        return RouterHelper.responseSuccess("Cập nhật khuôn mặt thành công",
+                authenticationUserStudentRepository.save(student));
     }
 
     private boolean isFaceExists(double[] embedding) {
-        StringBuilder queryBuilder = new StringBuilder("SELECT COUNT(*) > 0 FROM user_student WHERE face_embedding IS NOT NULL AND face_embedding <> '' AND ");
+        StringBuilder queryBuilder = new StringBuilder(
+                "SELECT COUNT(*) > 0 FROM user_student WHERE face_embedding IS NOT NULL AND face_embedding <> '' AND ");
 
         queryBuilder.append("SQRT(");
         for (int i = 0; i < embedding.length; i++) {
-            if (i > 0) queryBuilder.append(" + ");
+            if (i > 0)
+                queryBuilder.append(" + ");
             queryBuilder.append("POW(IFNULL(JSON_EXTRACT(face_embedding, '$[").append(i).append("]'), 0) - :e")
                     .append(i).append(", 2)");
         }

@@ -8,8 +8,6 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import udpm.hn.studentattendance.infrastructure.constants.EntityProperties;
 
-import java.util.List;
-
 @Setter
 @Getter
 @NoArgsConstructor

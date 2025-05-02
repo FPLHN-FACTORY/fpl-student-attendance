@@ -15,6 +15,9 @@ public class NotificationHelper {
     public static final int TYPE_ADD_STUDENT_TO_FACTORY = 5;
     public static final int TYPE_REMOVE_STUDENT_TO_FACTORY = 6;
     public static final int TYPE_SUCCESS_UPDATE_FACE_ID = 7;
+    public static final int TYPE_ADD_ADMIN = 8;
+    public static final int TYPE_UPDATE_ADMIN = 9;
+    public static final int TYPE_CHANGE_POWER_SHIFT = 10;
 
     public static final String KEY_USER_ADMIN = "USER_ADMIN";
     public static final String KEY_USER_STAFF = "USER_STAFF";
@@ -90,6 +93,22 @@ public class NotificationHelper {
             case TYPE_SUCCESS_UPDATE_FACE_ID -> {
                 result
                         .append("Cập nhật thông tin khuôn mặt thành công");
+            }
+            case TYPE_ADD_ADMIN -> {
+                result
+                        .append("Bạn vừa thêm <b>")
+                        .append(data.get(KEY_USER_STAFF))
+                        .append("<b>")
+                        .append(" với quyền admin")
+                        .append("<b>");
+            }
+            case TYPE_UPDATE_ADMIN -> {
+                result
+                        .append("Bạn vừa sửa <b>")
+                        .append(data.get(KEY_USER_ADMIN))
+                        .append("<b>")
+                        .append(" với quyền admin")
+                        .append("<b>");
             }
         }
         return result.toString();

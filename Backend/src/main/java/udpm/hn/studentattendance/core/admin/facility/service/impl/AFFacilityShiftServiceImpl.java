@@ -1,6 +1,7 @@
 package udpm.hn.studentattendance.core.admin.facility.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -32,6 +33,9 @@ public class AFFacilityShiftServiceImpl implements AFFacilityShiftService {
 
     private final AFFacilityShiftRepository afFacilityShiftRepository;
 
+    @Value("${app.config.shift.min-diff}")
+    private int MIN_DIFF_SHIFT;
+
     @Override
     public ResponseEntity<?> getAllList(AFFilterFacilityShiftRequest request) {
         Pageable pageable = PaginationHelper.createPageable(request);
@@ -49,8 +53,8 @@ public class AFFacilityShiftServiceImpl implements AFFacilityShiftService {
         }
 
         int diffTime = ShiftHelper.getDiffTime(request.getFromHour(), request.getFromMinute(), request.getToHour(), request.getToMinute());
-        if (diffTime < ShiftHelper.MIN_DIFF) {
-            return RouterHelper.responseError("Ca học phải diễn ra tối thiểu trong " + ShiftHelper.MIN_DIFF / 60 + " phút");
+        if (diffTime / 1000 < MIN_DIFF_SHIFT * 60) {
+            return RouterHelper.responseError("Ca học phải diễn ra tối thiểu trong " + MIN_DIFF_SHIFT + " phút");
         }
 
         if (afFacilityShiftRepository.isExistsShift(request.getShift(), request.getIdFacility(), null)) {
@@ -80,8 +84,8 @@ public class AFFacilityShiftServiceImpl implements AFFacilityShiftService {
         }
 
         int diffTime = ShiftHelper.getDiffTime(request.getFromHour(), request.getFromMinute(), request.getToHour(), request.getToMinute());
-        if (diffTime < ShiftHelper.MIN_DIFF) {
-            return RouterHelper.responseError("Ca học phải diễn ra tối thiểu trong " + ShiftHelper.MIN_DIFF / 60 + " phút");
+        if (diffTime / 1000 < MIN_DIFF_SHIFT * 60) {
+            return RouterHelper.responseError("Ca học phải diễn ra tối thiểu trong " + MIN_DIFF_SHIFT + " phút");
         }
 
         Facility facility = afFacilityExtendRepository.findById(request.getIdFacility()).orElse(null);

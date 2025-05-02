@@ -6,11 +6,8 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Component;
 import udpm.hn.studentattendance.core.authentication.oauth2.AuthUser;
-import udpm.hn.studentattendance.core.authentication.oauth2.CustomOAuth2User;
-
 import javax.crypto.SecretKey;
 import java.util.Date;
 import java.util.HashMap;

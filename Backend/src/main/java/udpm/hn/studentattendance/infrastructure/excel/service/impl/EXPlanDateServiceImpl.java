@@ -51,6 +51,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 @Service
 @RequiredArgsConstructor
@@ -102,7 +103,8 @@ public class EXPlanDateServiceImpl implements EXPlanDateService {
         addOrUpdatePlanDateRequest.setIdPlanFactory(idPlanFactory);
 
         String ngayDienRa = item.get("NGAY_DIEN_RA");
-        String caHoc = item.get("CA_HOC");
+        String caBatDau = item.get("CA_BAT_DAU");
+        String caKetThuc = item.get("CA_KET_THUC");
         String hinhThucHoc = item.get("HINH_THUC_HOC");
         String diemDanhMuonToiDa = item.get("DIEM_DANH_MUON_TOI_DA");
         String noiDungBuoiHoc = item.get("NOI_DUNG_BUOI_HOC");
@@ -123,9 +125,17 @@ public class EXPlanDateServiceImpl implements EXPlanDateService {
         }
 
         try {
-            addOrUpdatePlanDateRequest.setShift((int) Double.parseDouble(caHoc));
+            int startShift = Integer.parseInt(caBatDau);
+            int endShift = Integer.parseInt(caKetThuc);
+            if (endShift < startShift) {
+                return error("Ca kết thúc phải lớn hơn ca bắt đầu", caBatDau + " - " + caKetThuc, request);
+            }
+
+            addOrUpdatePlanDateRequest.setShift(IntStream.rangeClosed(startShift, endShift)
+                    .boxed()
+                    .collect(Collectors.toList()));
         } catch (Exception e) {
-            return error("Ca học không hợp lệ (1, 2, 3, ...)", caHoc, request);
+            return error("Ca học không hợp lệ (1, 2, 3, ...)", caBatDau + " - " + caKetThuc, request);
         }
 
         try {
@@ -174,7 +184,7 @@ public class EXPlanDateServiceImpl implements EXPlanDateService {
         try (Workbook workbook = new XSSFWorkbook();
              ByteArrayOutputStream data = new ByteArrayOutputStream()) {
             String filename = "template-import-plan-date.xlsx";
-            List<String> headers = List.of("Ngày diễn ra", "Hình thức học", "Ca học", "Điểm danh muộn tối đa", "Nội dung buổi học", "Link học online", "Check IP", "Check địa điểm");
+            List<String> headers = List.of("Ngày diễn ra", "Hình thức học", "Ca bắt đầu", "Ca kết thúc", "Điểm danh muộn tối đa", "Nội dung buổi học", "Link học online", "Check IP", "Check địa điểm");
 
             int firstRow = 1;
             int lastRow = 500;
@@ -187,11 +197,11 @@ public class EXPlanDateServiceImpl implements EXPlanDateService {
 
             Sheet templateSheet = ExcelUtils.createTemplate(workbook, "Data Import", headers, new ArrayList<>());
             ExcelUtils.addDateValidation(templateSheet, firstRow, lastRow, 0, "dd/MM/yyyy", "01/01/1900", "31/12/9999");
-            ExcelUtils.addIntegerValidation(templateSheet, firstRow, lastRow, 3);
             ExcelUtils.addListValidation(templateSheet, firstRow, lastRow, 1, lstShiftType);
             ExcelUtils.addListValidation(templateSheet, firstRow, lastRow, 2, lstShift);
-            ExcelUtils.addListValidation(templateSheet, firstRow, lastRow, 6, List.of(true, false));
+            ExcelUtils.addListValidation(templateSheet, firstRow, lastRow, 3, lstShift);
             ExcelUtils.addListValidation(templateSheet, firstRow, lastRow, 7, List.of(true, false));
+            ExcelUtils.addListValidation(templateSheet, firstRow, lastRow, 8, List.of(true, false));
             workbook.write(data);
 
             HttpHeaders headersHttp = new HttpHeaders();

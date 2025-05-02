@@ -18,7 +18,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Service
-public class TeacherStudentAttendanceServiceImpl implements TeacherStudentAttendanceService{
+public class TeacherStudentAttendanceServiceImpl implements TeacherStudentAttendanceService {
 
     @Autowired
     private TeacherStudentAttendanceRepository repository;
@@ -28,7 +28,6 @@ public class TeacherStudentAttendanceServiceImpl implements TeacherStudentAttend
 
     @Autowired
     private PlanDateRepository planDateRepository;
-
 
     @Override
     public ResponseEntity<?> createAttendance(String request) {
@@ -47,8 +46,7 @@ public class TeacherStudentAttendanceServiceImpl implements TeacherStudentAttend
                 new ApiResponse(
                         RestApiStatus.SUCCESS,
                         "Tạo điểm danh thành công",
-                        null
-                ),
+                        null),
                 HttpStatus.OK);
     }
 
@@ -59,15 +57,14 @@ public class TeacherStudentAttendanceServiceImpl implements TeacherStudentAttend
                 new ApiResponse(
                         RestApiStatus.SUCCESS,
                         "Lấy danh sách sinh viên điểm danh thành công",
-                        list
-                ),
+                        list),
                 HttpStatus.OK);
     }
 
     @Override
-    public ResponseEntity<?> updateStatusAttendance(TeacherStudentAttendanceRequest req){
+    public ResponseEntity<?> updateStatusAttendance(TeacherStudentAttendanceRequest req) {
         Attendance attendance = repository.findById(req.getId()).get();
-        if(req.getStatus().equals("3")){
+        if (req.getStatus().equals("3")) {
             attendance.setAttendanceStatus(AttendanceStatus.PRESENT);
         } else {
             attendance.setAttendanceStatus(AttendanceStatus.ABSENT);
@@ -78,8 +75,7 @@ public class TeacherStudentAttendanceServiceImpl implements TeacherStudentAttend
                 new ApiResponse(
                         RestApiStatus.SUCCESS,
                         "Cập nhật thành coong",
-                        attendance
-                ),
+                        attendance),
                 HttpStatus.OK);
     }
 }
