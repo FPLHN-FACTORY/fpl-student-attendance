@@ -1,12 +1,8 @@
-package udpm.hn.studentattendance.core.teacher.teaching_schedule.model.request;
+package udpm.hn.studentattendance.core.teacher.teachingschedule.model.request;
 
-import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
-import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
-
-import javax.swing.text.html.parser.Entity;
 
 @Getter
 @Setter
