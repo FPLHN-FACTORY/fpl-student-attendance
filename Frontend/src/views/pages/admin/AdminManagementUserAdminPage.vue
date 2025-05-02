@@ -223,7 +223,7 @@ onMounted(() => {
 <template>
   <div class="container-fluid">
     <!-- Filter -->
-    <a-card bordered="false" class="mb-3">
+    <a-card class="mb-3">
       <template #title><FilterFilled /> Bộ lọc</template>
       <a-row :gutter="16" class="filter-container">
         <a-col :span="12">
@@ -253,10 +253,9 @@ onMounted(() => {
     </a-card>
 
     <!-- Table -->
-    <a-card bordered="false">
+    <a-card>
       <template #title><UnorderedListOutlined /> Danh sách Admin</template>
       <div class="d-flex justify-content-end mb-3 flex-wrap gap-3">
-        <ExcelUploadButton v-bind="configImportExcel" />
         <a-tooltip title="Thêm mới admin">
           <a-button type="primary" @click="modalAdd = true"><PlusOutlined /> Thêm mới</a-button>
         </a-tooltip>
