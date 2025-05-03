@@ -248,7 +248,33 @@ const handleStudentCheckboxChange = (student, checked) => {
     }
   }
 }
+// trong phần <script setup>
+function confirmDelete(record) {
+  Modal.confirm({
+    title: 'Xác nhận xóa sinh viên',
+    content: `Bạn có chắc muốn xóa sinh viên ${record.studentName} khỏi nhóm xưởng?`,
+    okType: 'danger',
+    onOk() {
+      deleteStudentFactory(record.studentFactoryId)
+    },
+  })
+}
 
+function deleteStudentFactory(studentFactoryId) {
+  loadingStore.show()
+  requestAPI
+    .delete(`${API_ROUTES_STAFF.FETCH_DATA_STUDENT_FACTORY}/${studentFactoryId}`)
+    .then((response) => {
+      message.success(response.data.message || 'Xóa sinh viên thành công')
+      fetchStudentFactories() // load lại danh sách
+    })
+    .catch((error) => {
+      message.error(error.response?.data?.message || 'Lỗi khi xóa sinh viên khỏi nhóm xưởng')
+    })
+    .finally(() => {
+      loadingStore.hide()
+    })
+}
 const handleAddStudents = () => {
   isAddStudentModalVisible.value = false
 }
@@ -456,9 +482,9 @@ onMounted(() => {
           <template #title> <UnorderedListOutlined /> Danh sách sinh viên </template>
           <div class="d-flex justify-content-end mb-3 flex-wrap gap-3">
             <ExcelUploadButton v-bind="configImportExcel" />
-            <a-tooltip title="Thêm học sinh vào nhóm xưởng">
+            <a-tooltip title="Thêm sinh viên vào nhóm xưởng">
               <a-button type="primary" @click="isAddStudentModalVisible = true">
-                <PlusOutlined /> Thêm học sinh
+                <PlusOutlined /> Thêm sinh viên
               </a-button>
             </a-tooltip>
           </div>
@@ -505,13 +531,24 @@ onMounted(() => {
                 </template>
               </template>
               <template v-else-if="column.key === 'action'">
-                <a-button
-                  type="text"
-                  @click="fetchDetailStudent(record.studentId)"
-                  class="btn btn-outline-primary"
-                >
-                  <EyeFilled />
-                </a-button>
+                <a-tooltip title="Xem chi tiết sinh viên">
+                  <a-button
+                    type="text"
+                    @click="fetchDetailStudent(record.studentId)"
+                    class="btn btn-outline-primary me-2"
+                  >
+                    <EyeFilled />
+                  </a-button>
+                </a-tooltip>
+                <a-tooltip title="Xoá sinh viên ra khỏi nhóm xưởng">
+                  <a-button
+                    type="text"
+                    @click="confirmDelete(record)"
+                    class="btn btn-outline-danger"
+                  >
+                    <DeleteFilled />
+                  </a-button>
+                </a-tooltip>
               </template>
             </template>
           </a-table>

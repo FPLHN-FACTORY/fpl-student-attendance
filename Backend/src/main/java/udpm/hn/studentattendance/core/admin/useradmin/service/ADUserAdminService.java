@@ -22,5 +22,7 @@ public interface ADUserAdminService {
 
     ResponseEntity<?> getAllUserStaff();
 
+    ResponseEntity<?> deleteUserAdmin(String userAdminId);
+
 
 }

@@ -6,6 +6,8 @@ import {
   EditFilled,
   UnorderedListOutlined,
   FilterFilled,
+  DeleteOutlined,
+  DeleteFilled
 } from '@ant-design/icons-vue'
 import requestAPI from '@/services/requestApiService'
 import { ROUTE_NAMES } from '@/router/adminRoute'
@@ -54,7 +56,7 @@ const columns = ref([
   { title: 'Tên ban đào tạo', dataIndex: 'userAdminName', key: 'userAdminName', width: 200 },
   { title: 'Email', dataIndex: 'userAdminEmail', key: 'userAdminEmail', width: 220 },
   { title: 'Trạng thái', dataIndex: 'userAdminStatus', key: 'userAdminStatus', width: 140 },
-  { title: 'Hành động', key: 'actions', width: 120 },
+  { title: 'Chức năng', key: 'actions', width: 120 },
 ])
 
 // --- API Calls ---
@@ -197,6 +199,9 @@ const handleChangePowerShift = () => {
 }
 
 const handleChangeStatus = (record) => {
+  if (record.isMySelf) {
+    return message.error('Không thể thay đổi trạng thái chính mình')
+  }
   Modal.confirm({
     title: 'Xác nhận đổi trạng thái',
     content: `Bạn có chắc muốn thay đổi trạng thái của ${record.userAdminName}?`,
@@ -214,6 +219,33 @@ const handleChangeStatus = (record) => {
   })
 }
 
+
+const handleDelete = (record) => {
+  Modal.confirm({
+    title: 'Xác nhận xóa',
+    content: `Bạn có chắc chắn muốn xóa admin ${record.userAdminName}?`,
+    onOk() {
+      handleDeleteUser(record.userAdminId)
+    },
+  })
+}
+
+const handleDeleteUser = (id) => {  
+  loadingStore.show()
+  requestAPI
+    .delete(`${API_ROUTES_ADMIN.FETCH_DATA_ADMIN}/${id}`)
+    .then(() => {
+      message.success('Xóa admin thành công')
+      fetchUsers()
+    })
+    .catch((err) => {
+      message.error(err?.response?.data?.message || 'Lỗi khi xóa admin')
+    })
+    .finally(() => {
+      loadingStore.hide()
+    })
+}
+
 onMounted(() => {
   breadcrumbStore.setRoutes(breadcrumb.value)
   fetchUsers()
@@ -223,7 +255,7 @@ onMounted(() => {
 <template>
   <div class="container-fluid">
     <!-- Filter -->
-    <a-card bordered="false" class="mb-3">
+    <a-card class="mb-3">
       <template #title><FilterFilled /> Bộ lọc</template>
       <a-row :gutter="16" class="filter-container">
         <a-col :span="12">
@@ -253,10 +285,9 @@ onMounted(() => {
     </a-card>
 
     <!-- Table -->
-    <a-card bordered="false">
+    <a-card>
       <template #title><UnorderedListOutlined /> Danh sách Admin</template>
       <div class="d-flex justify-content-end mb-3 flex-wrap gap-3">
-        <ExcelUploadButton v-bind="configImportExcel" />
         <a-tooltip title="Thêm mới admin">
           <a-button type="primary" @click="modalAdd = true"><PlusOutlined /> Thêm mới</a-button>
         </a-tooltip>
@@ -287,7 +318,7 @@ onMounted(() => {
                 ><EditFilled
               /></a-button>
             </a-tooltip>
-            <!-- Chuyển quyền: chỉ hiện khi không phải chính mình -->
+            <!-- Chuyển quyền: chỉ hiện khi là chính mình -->
             <a-tooltip title="Chuyển quyền" v-if="record.isMySelf">
               <a-button
                 type="text"
@@ -296,8 +327,14 @@ onMounted(() => {
                 ><FilterFilled
               /></a-button>
             </a-tooltip>
+            <template v-if="!record.isMySelf">
+              <a-tooltip title="Xóa admin">
+                <a-button type="text" class="btn-outline-danger" @click="handleDelete(record)">
+                 <DeleteFilled />
+                </a-button>
+              </a-tooltip>
+            </template>
           </template>
-
           <template v-else>
             {{ record[column.dataIndex] }}
           </template>

@@ -317,7 +317,6 @@ onMounted(() => {
               <div class="label-title">Tìm kiếm theo khoảng ngày :</div>
               <a-range-picker
                 v-model:value="filter.dateRange"
-                placeholder="Chọn khoảng ngày bắt đầu và kết thúc"
                 style="width: 100%"
                 format="DD/MM/YYYY"
                 @change="handleDateRangeChange"

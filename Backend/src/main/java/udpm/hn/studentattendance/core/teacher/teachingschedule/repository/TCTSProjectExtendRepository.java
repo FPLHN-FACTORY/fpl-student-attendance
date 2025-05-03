@@ -1,13 +1,11 @@
-package udpm.hn.studentattendance.core.teacher.teaching_schedule.repository;
+package udpm.hn.studentattendance.core.teacher.teachingschedule.repository;
 
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
-import org.springframework.web.servlet.tags.form.SelectTag;
 import udpm.hn.studentattendance.entities.Project;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.repositories.ProjectRepository;
 
-import javax.swing.text.html.parser.Entity;
 import java.util.List;
 
 @Repository

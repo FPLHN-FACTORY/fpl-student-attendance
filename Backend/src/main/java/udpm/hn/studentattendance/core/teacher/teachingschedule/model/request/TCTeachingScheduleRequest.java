@@ -1,9 +1,8 @@
-package udpm.hn.studentattendance.core.teacher.teaching_schedule.model.request;
+package udpm.hn.studentattendance.core.teacher.teachingschedule.model.request;
 
 import lombok.Getter;
 import lombok.Setter;
 import udpm.hn.studentattendance.infrastructure.common.PageableRequest;
-import udpm.hn.studentattendance.infrastructure.constants.ShiftType;
 
 @Getter
 @Setter
