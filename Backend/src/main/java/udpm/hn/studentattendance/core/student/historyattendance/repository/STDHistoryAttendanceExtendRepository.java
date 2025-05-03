@@ -24,7 +24,7 @@ public interface STDHistoryAttendanceExtendRepository extends FactoryRepository 
                 pd.shift AS planDateShift,
                 s.id AS semesterId,
                 CASE
-                    WHEN UNIX_TIMESTAMP(NOW()) * 1000 < pd.end_date THEN 'CHUA_DIEN_RA'
+                    WHEN UNIX_TIMESTAMP(NOW()) * 1000 < pd.start_date THEN 'CHUA_DIEN_RA'
                     WHEN
                     (
                     SELECT
@@ -32,10 +32,11 @@ public interface STDHistoryAttendanceExtendRepository extends FactoryRepository 
                     FROM attendance at
                     LEFT JOIN plan_date pdt ON at.id_plan_date = pdt.id
                     WHERE at.id_user_student = us.id
-                    AND DATE(FROM_UNIXTIME((pd.start_date + (pd.late_arrival * 60000)) / 1000))
+                    AND DATE(FROM_UNIXTIME((pd.start_date + (pd.late_arrival * 60)) / 1000))
                     >= DATE(FROM_UNIXTIME(at.updated_at / 1000))
                     AND pdt.shift = pd.shift
                     AND at.id_plan_date = pd.id
+                    AND at.status = 3
                     )
                     THEN 'CO_MAT'
                     ELSE 'VANG_MAT'

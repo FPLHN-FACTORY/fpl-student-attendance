@@ -21,6 +21,8 @@ import udpm.hn.studentattendance.infrastructure.common.ApiResponse;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.RestApiStatus;
+import udpm.hn.studentattendance.infrastructure.constants.RoleConstant;
+
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -90,7 +92,7 @@ public class USFactoryServiceImpl implements USFactoryService {
         @Override
         public ResponseEntity<?> getAllStaff() {
                 List<UserStaff> staffs = staffFactoryExtendRepository.getListUserStaff(EntityStatus.ACTIVE,
-                                EntityStatus.ACTIVE, sessionHelper.getFacilityId());
+                                EntityStatus.ACTIVE, sessionHelper.getFacilityId(), RoleConstant.TEACHER);
                 return new ResponseEntity<>(
                                 new ApiResponse(
                                                 RestApiStatus.SUCCESS,

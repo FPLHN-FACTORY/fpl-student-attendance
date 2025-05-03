@@ -24,6 +24,7 @@ import ExcelUploadButton from '@/components/excel/ExcelUploadButton.vue'
 
 const breadcrumbStore = useBreadcrumbStore()
 const loadingStore = useLoadingStore()
+const isLoading = ref(false)
 
 /* ----------------- Data & Reactive Variables ----------------- */
 const factories = ref([])

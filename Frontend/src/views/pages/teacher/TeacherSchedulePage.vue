@@ -162,7 +162,15 @@ const fetchTeachingSchedule = () => {
       loadingStore.hide()
     })
 }
-
+const handleAttendance = (record) => {
+  console.log('Detail record:', record)
+  router.push({
+    name: ROUTE_NAMES.MANAGEMENT_STUDENT_ATTENDANCE,
+    query: {
+      planDateId: record.idPlanDate || record.id,
+    },
+  })
+}
 // Lấy danh sách phụ trợ
 const fetchSubjects = () => {
   requestAPI

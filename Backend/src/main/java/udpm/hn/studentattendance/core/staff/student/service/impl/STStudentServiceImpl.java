@@ -23,10 +23,7 @@ import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.RestApiStatus;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -217,14 +214,14 @@ public class STStudentServiceImpl implements STStudentService {
 
     @Override
     public ResponseEntity<?> isExistFace() {
-        List<Boolean> isExistFace = studentExtendRepository.existFaceForAllStudents();
+        List<Integer> raw = studentExtendRepository.existFaceForAllStudents(sessionHelper.getFacilityId());
         return new ResponseEntity<>(
                 new ApiResponse(
                         RestApiStatus.ERROR,
                         "Sinh viên đã đăng ký mặt",
-                        isExistFace),
+                        raw),
                 HttpStatus.OK);
     }
 
-
 }
+
