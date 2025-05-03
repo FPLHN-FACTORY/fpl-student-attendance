@@ -22,6 +22,7 @@ import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.ImportLogType;
 import udpm.hn.studentattendance.infrastructure.constants.RestApiStatus;
+import udpm.hn.studentattendance.infrastructure.constants.RoleConstant;
 import udpm.hn.studentattendance.infrastructure.excel.model.request.EXDataRequest;
 import udpm.hn.studentattendance.infrastructure.excel.model.request.EXImportRequest;
 import udpm.hn.studentattendance.infrastructure.excel.model.request.EXUploadRequest;
@@ -145,7 +146,7 @@ public class EXFactoryServiceImpl implements EXFactoryService {
 
         List<String> staffList = staffFactoryExtendRepository.getListUserStaff(
                         EntityStatus.ACTIVE, EntityStatus.ACTIVE,
-                        sessionHelper.getFacilityId())
+                        sessionHelper.getFacilityId(), RoleConstant.TEACHER)
                 .stream().map(s -> s.getName() + " (" + s.getCode() + ")")
                 .collect(Collectors.toList());
 
