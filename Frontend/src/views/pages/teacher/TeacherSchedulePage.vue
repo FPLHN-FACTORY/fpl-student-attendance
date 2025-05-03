@@ -82,7 +82,6 @@ const columns = [
 // Cột hiển thị cho table lịch dạy hôm nay
 const columnsTeachingPresent = [
   { title: '#', dataIndex: 'indexs', key: 'indexs', width: 50 },
-  { title: 'Ngày dạy', dataIndex: 'startTeaching', key: 'startTeaching', width: 100 },
   { title: 'Thời gian', key: 'time', width: 100 },
   { title: 'Ca học', dataIndex: 'shift', key: 'shift', width: 50 },
   { title: 'Điểm danh muộn ', dataIndex: 'lateArrival', key: 'lateArrival', width: 50 },
@@ -504,7 +503,10 @@ onMounted(() => {
                   <a-badge status="warning" /> Chưa đến giờ điểm danh
                 </span>
                 <span
-                  v-else-if="Date.now() > record.startTeaching + record.lateArrival * 60 * 1000"
+                  v-else-if="
+                    Date.now() >
+                    record.startTeaching + record.endTeaching + record.lateArrival * 60 * 1000
+                  "
                 >
                   <a-badge status="error" /> Đã quá giờ điểm danh
                 </span>
