@@ -1,34 +1,37 @@
-# Stage 1: Build Stage
-FROM gradle:7.5.1-jdk17 as builder
-
+FROM gradle:8.12.1-jdk17 AS builder
 WORKDIR /app
-# Copy wrapper nếu có, hoặc chỉ copy gradle/ nếu bạn dùng wrapper
+
 COPY gradlew gradlew
 COPY gradle/ gradle/
+COPY build.gradle settings.gradle ./
 RUN chmod +x gradlew
 
-ENV GRADLE_USER_HOME=/app/.gradle
+# Khai báo ENV để wrapper dùng đúng thư mục mặc định của Gradle
+ENV GRADLE_USER_HOME=/home/gradle/.gradle
+RUN mkdir -p $GRADLE_USER_HOME
 
-COPY gradle/ gradle/
-COPY build.gradle settings.gradle ./
-COPY src src
+# Bước preload dependency (plugin + wrapper)
+RUN --mount=type=cache,id=gradle-cache,target=/home/gradle/.gradle,sharing=shared \
+    ./gradlew dependencies --no-daemon || true
 
-RUN ls -al
+COPY src/ src/
 
-# Build với Gradle wrapper (hoặc dùng gradle CLI)
-# Nếu dùng wrapper:
-RUN ./gradlew build --no-daemon -x test && ls build/libs
-# Nếu không có wrapper, dùng:
-# RUN gradle build --no-daemon -g /app/.gradle
+# Bước build jar
+RUN --mount=type=cache,id=gradle-cache,target=/home/gradle/.gradle,sharing=shared \
+    ./gradlew bootJar --no-daemon -x test
 
+
+# -------------------------
 # Stage 2: Runtime Stage
+# -------------------------
 FROM eclipse-temurin:17
-
 WORKDIR /app
 
-# Copy the JAR file from the build stage
-COPY --from=builder /app/build/libs/student-attendance-0.0.1-SNAPSHOT.jar app.jar
+# Copy any built JAR into app.jar
+COPY --from=builder /app/build/libs/*.jar app.jar
 
-# Command to run the Spring Boot application
+# Expose default Spring Boot port
+EXPOSE 8765
+
+# Run the application
 CMD ["java", "-jar", "app.jar"]
-

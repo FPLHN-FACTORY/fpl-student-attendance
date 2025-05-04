@@ -57,4 +57,9 @@ public class TCFactoryServiceImpl implements TCFactoryService {
                                                 projects),
                                 HttpStatus.OK);
         }
+
+        @Override
+        public ResponseEntity<?> getAllPlanDateByFactory() {
+                return null;
+        }
 }

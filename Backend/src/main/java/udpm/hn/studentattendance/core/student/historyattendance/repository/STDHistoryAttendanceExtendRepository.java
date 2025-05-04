@@ -36,7 +36,7 @@ public interface STDHistoryAttendanceExtendRepository extends FactoryRepository 
                     >= DATE(FROM_UNIXTIME(at.updated_at / 1000))
                     AND pdt.shift = pd.shift
                     AND at.id_plan_date = pd.id
-                    AND at.status = 3
+                    AND at.attendance_status = 3
                     )
                     THEN 'CO_MAT'
                     ELSE 'VANG_MAT'
