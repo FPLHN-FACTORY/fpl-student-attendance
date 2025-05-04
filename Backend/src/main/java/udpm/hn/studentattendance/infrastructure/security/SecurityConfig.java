@@ -12,6 +12,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import udpm.hn.studentattendance.infrastructure.constants.router.RouteWebsocketConstant;
 import udpm.hn.studentattendance.infrastructure.security.router.AdminSecurityConfig;
 import udpm.hn.studentattendance.infrastructure.security.router.AuthenticationSecurityConfig;
 import udpm.hn.studentattendance.infrastructure.security.exception.CustomAccessDeniedHandler;
@@ -88,7 +89,10 @@ public class SecurityConfig {
                         "/*.js",
                         "/*.css",
                         "/assets/**",
-                        "/static/**"
+                        "/static/**",
+                        RouteWebsocketConstant.END_POINT + "/**",
+                        RouteWebsocketConstant.PREFIX_SIMPLE_BROKER + "/**",
+                        RouteWebsocketConstant.PREFIX_AD + "/**"
                 ).permitAll()
                 .anyRequest().authenticated()
         );
