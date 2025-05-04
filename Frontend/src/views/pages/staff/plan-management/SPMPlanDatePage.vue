@@ -117,7 +117,6 @@ const formRules = reactive({
   shift: [{ required: true, message: 'Vui lòng chọn ca học!' }],
   type: [{ required: true, message: 'Vui lòng chọn hình thức học!' }],
   lateArrival: [{ required: true, message: 'Vui lòng nhập thời gian điểm danh muộn tối đa!' }],
-  description: [{ required: true, message: 'Vui lòng nhập nội dung buổi học!' }],
 })
 
 const disabledDate = (current) => {
@@ -459,7 +458,7 @@ watch(
   () => {
     debounceFilter()
   },
-  { deep: true }
+  { deep: true },
 )
 </script>
 
@@ -537,12 +536,7 @@ watch(
         />
       </a-form-item>
 
-      <a-form-item
-        class="col-sm-12"
-        label="Nội dung buổi học"
-        name="description"
-        :rules="formRules.description"
-      >
+      <a-form-item class="col-sm-12" label="Nội dung buổi học" name="description">
         <a-textarea
           :rows="4"
           class="w-100"
@@ -729,7 +723,7 @@ watch(
                   {{
                     `${dayOfWeek(record.startDate)}, ${formatDate(
                       record.startDate,
-                      DEFAULT_DATE_FORMAT
+                      DEFAULT_DATE_FORMAT,
                     )}`
                   }}
                 </template>
@@ -737,7 +731,7 @@ watch(
                   {{
                     `${formatDate(record.startDate, 'HH:mm')} - ${formatDate(
                       record.endDate,
-                      'HH:mm'
+                      'HH:mm',
                     )}`
                   }}
                 </template>
