@@ -1,9 +1,9 @@
-package udpm.hn.studentattendance.core.teacher.teaching_schedule.service;
+package udpm.hn.studentattendance.core.teacher.teachingschedule.service;
 
 import org.springframework.http.ResponseEntity;
-import udpm.hn.studentattendance.core.teacher.teaching_schedule.model.request.TCTSPlanDateUpdateRequest;
-import udpm.hn.studentattendance.core.teacher.teaching_schedule.model.request.TCTeachingScheduleRequest;
-import udpm.hn.studentattendance.core.teacher.teaching_schedule.model.response.TCTeachingScheduleResponse;
+import udpm.hn.studentattendance.core.teacher.teachingschedule.model.request.TCTSPlanDateUpdateRequest;
+import udpm.hn.studentattendance.core.teacher.teachingschedule.model.request.TCTeachingScheduleRequest;
+import udpm.hn.studentattendance.core.teacher.teachingschedule.model.response.TCTeachingScheduleResponse;
 
 import java.io.ByteArrayInputStream;
 import java.util.List;

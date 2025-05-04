@@ -1,4 +1,4 @@
-package udpm.hn.studentattendance.core.teacher.teaching_schedule.controller;
+package udpm.hn.studentattendance.core.teacher.teachingschedule.controller;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.InputStreamResource;
@@ -6,11 +6,11 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import udpm.hn.studentattendance.core.teacher.teaching_schedule.model.request.TCTSPlanDateUpdateRequest;
-import udpm.hn.studentattendance.core.teacher.teaching_schedule.model.request.TCTeachingScheduleRequest;
-import udpm.hn.studentattendance.core.teacher.teaching_schedule.model.response.TCTeachingScheduleResponse;
-import udpm.hn.studentattendance.core.teacher.teaching_schedule.repository.TCTeachingScheduleExtendRepository;
-import udpm.hn.studentattendance.core.teacher.teaching_schedule.service.TCTeachingScheduleService;
+import udpm.hn.studentattendance.core.teacher.teachingschedule.model.request.TCTSPlanDateUpdateRequest;
+import udpm.hn.studentattendance.core.teacher.teachingschedule.model.request.TCTeachingScheduleRequest;
+import udpm.hn.studentattendance.core.teacher.teachingschedule.model.response.TCTeachingScheduleResponse;
+import udpm.hn.studentattendance.core.teacher.teachingschedule.repository.TCTeachingScheduleExtendRepository;
+import udpm.hn.studentattendance.core.teacher.teachingschedule.service.TCTeachingScheduleService;
 import udpm.hn.studentattendance.helpers.SessionHelper;
 import udpm.hn.studentattendance.infrastructure.constants.router.RouteTeacherConstant;
 

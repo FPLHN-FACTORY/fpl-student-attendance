@@ -82,7 +82,6 @@ const columns = [
 // Cột hiển thị cho table lịch dạy hôm nay
 const columnsTeachingPresent = [
   { title: '#', dataIndex: 'indexs', key: 'indexs', width: 50 },
-  { title: 'Ngày dạy', dataIndex: 'startTeaching', key: 'startTeaching', width: 100 },
   { title: 'Thời gian', key: 'time', width: 100 },
   { title: 'Ca học', dataIndex: 'shift', key: 'shift', width: 50 },
   { title: 'Điểm danh muộn ', dataIndex: 'lateArrival', key: 'lateArrival', width: 50 },
@@ -162,7 +161,15 @@ const fetchTeachingSchedule = () => {
       loadingStore.hide()
     })
 }
-
+const handleAttendance = (record) => {
+  console.log('Detail record:', record)
+  router.push({
+    name: ROUTE_NAMES.MANAGEMENT_STUDENT_ATTENDANCE,
+    query: {
+      planDateId: record.idPlanDate || record.id,
+    },
+  })
+}
 // Lấy danh sách phụ trợ
 const fetchSubjects = () => {
   requestAPI
@@ -360,8 +367,8 @@ function confirmLinkModal() {
     // 2) sau đó toggle sang ONLINE
     .then(() =>
       requestAPI.put(
-        `${API_ROUTES_TEACHER.FETCH_DATA_SCHEDULE}/change-type/${pendingRecord.value.idPlanDate}`
-      )
+        `${API_ROUTES_TEACHER.FETCH_DATA_SCHEDULE}/change-type/${pendingRecord.value.idPlanDate}`,
+      ),
     )
     .then(() => {
       message.success('Chuyển Online thành công với link mới')
@@ -445,7 +452,7 @@ onMounted(() => {
                 {{
                   `${formatDate(record.startTeaching, 'HH:mm')} - ${formatDate(
                     record.endTeaching,
-                    'HH:mm'
+                    'HH:mm',
                   )}`
                 }}
               </template>
@@ -459,7 +466,7 @@ onMounted(() => {
                   {{
                     `${dayOfWeek(record.startTeaching)}, ${formatDate(
                       record.startTeaching,
-                      DEFAULT_DATE_FORMAT
+                      DEFAULT_DATE_FORMAT,
                     )}`
                   }}
                 </template>
@@ -495,9 +502,7 @@ onMounted(() => {
                 <span v-if="Date.now() <= record.startTeaching - 10 * 60 * 1000">
                   <a-badge status="warning" /> Chưa đến giờ điểm danh
                 </span>
-                <span
-                  v-else-if="Date.now() > record.startTeaching + record.lateArrival * 60 * 1000"
-                >
+                <span v-else-if="Date.now() > record.endTeaching">
                   <a-badge status="error" /> Đã quá giờ điểm danh
                 </span>
                 <a-tooltip v-else title="Điểm danh">
@@ -554,7 +559,7 @@ onMounted(() => {
                 {{
                   `${formatDate(record.startTeaching, 'HH:mm')} - ${formatDate(
                     record.endTeaching,
-                    'HH:mm'
+                    'HH:mm',
                   )}`
                 }}
               </template>
@@ -568,7 +573,7 @@ onMounted(() => {
                   {{
                     `${dayOfWeek(record.startTeaching)}, ${formatDate(
                       record.startTeaching,
-                      DEFAULT_DATE_FORMAT
+                      DEFAULT_DATE_FORMAT,
                     )}`
                   }}
                 </template>

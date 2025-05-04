@@ -8,6 +8,7 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
+import udpm.hn.studentattendance.infrastructure.constants.router.RouteWebsocketConstant;
 
 @Configuration
 @EnableWebSocketMessageBroker
@@ -20,16 +21,15 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         if (StringUtils.hasText(ALLOWED_ORIGIN)) {
             String[] origins = ALLOWED_ORIGIN.split(",");
-            registry.addEndpoint("/ws")
-                    .setAllowedOrigins(origins)
-                    .withSockJS();
+            registry.addEndpoint(RouteWebsocketConstant.END_POINT)
+                    .setAllowedOrigins(origins);
         }
     }
 
     @Override
     public void configureMessageBroker(MessageBrokerRegistry registry) {
-        registry.setApplicationDestinationPrefixes("/app");
-        registry.enableSimpleBroker("/topic");
+        registry.setApplicationDestinationPrefixes(RouteWebsocketConstant.PREFIX_AD);
+        registry.enableSimpleBroker(RouteWebsocketConstant.PREFIX_SIMPLE_BROKER);
     }
 
 }

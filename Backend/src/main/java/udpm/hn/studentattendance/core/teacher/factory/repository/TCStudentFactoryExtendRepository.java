@@ -56,4 +56,44 @@ public interface TCStudentFactoryExtendRepository extends UserStudentFactoryRepo
     Page<TCStudentFactoryResponse> getUserStudentInFactory(Pageable pageable, String factoryId,
                                                            TCStudentFactoryRequest studentRequest);
 
+    @Query(value = """
+            SELECT
+                CASE WHEN COUNT(distinct pd.id) > 0 THEN 'TRUE' ELSE 'FALSE' END
+            FROM plan_date pd
+            JOIN plan_factory pf ON pf.id = pd.id_plan_factory
+            JOIN factory f ON pf.id_factory = f.id
+            JOIN plan p ON pf.id_plan = p.id
+            JOIN project pj ON f.id_project = pj.id
+            JOIN subject_facility sf ON sf.id = pj.id_subject_facility
+            JOIN facility f2 ON sf.id_facility = f2.id
+            WHERE
+                pd.status = 1 AND
+                pf.status = 1 AND
+                p.status = 1 AND
+                f.status = 1 AND
+                f2.status = 1 AND
+                f.id = :idFactory AND
+                EXISTS(
+                    SELECT 1
+                    FROM user_student us
+                    JOIN user_student_factory usf ON usf.id_user_student = us.id
+                    JOIN plan_factory pf2 ON pf2.id_factory = usf.id_factory
+                    JOIN plan_date pd2 ON pd2.id_plan_factory = pf2.id
+                    WHERE
+                        us.id = :idUserStudent AND
+                        usf.status = 1 AND
+                        us.status = 1 AND
+                        pf2.status = 1 AND
+                        pd2.status = 1 AND
+                        pd2.id <> pd.id AND
+                        (
+                            (pd2.start_date BETWEEN pd.start_date AND pd.end_date) OR
+                            (pd2.end_date BETWEEN pd.start_date AND pd.end_date)
+                        ) AND
+                        pd2.start_date >= (UNIX_TIMESTAMP(CURRENT_DATE) * 1000)
+                ) AND
+                f2.id = :idFacility
+            """, nativeQuery = true)
+    boolean isStudentExistsShift(String idFacility, String idFactory, String idUserStudent);
+
 }

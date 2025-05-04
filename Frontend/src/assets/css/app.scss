@@ -231,6 +231,7 @@ hr {
   background: #f8f9fa;
   .ant-layout-sider-children {
     position: fixed;
+    width: 300px;
   }
   &-header {
     background: #fff !important;
@@ -318,6 +319,7 @@ hr {
       width: 0 !important;
       .ant-layout-sider-children {
         position: relative;
+        width: unset;
       }
       &-collapsed {
         flex: 0 0 250px !important;

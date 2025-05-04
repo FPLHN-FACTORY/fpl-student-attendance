@@ -8,6 +8,7 @@ const TIME_LOOP_RECHECK = 400
 const THRESHOLDS_IDENTIFY = 8
 
 const useFaceIDStore = defineStore('faceID', () => {
+  let isFullStep = false
   let video = null
   let canvas = null
   let onSuccess = null
@@ -23,6 +24,18 @@ const useFaceIDStore = defineStore('faceID', () => {
     if (text) {
       return (textStep.value = text)
     }
+
+    if (isFullStep) {
+      switch (step.value) {
+        case 0:
+          return (textStep.value = 'Vui lòng nhìn thẳng')
+        case 1:
+          return (textStep.value = 'Xác minh hoàn tất')
+        default:
+          return (textStep.value = 'Vui lòng nhìn vào camera')
+      }
+    }
+
     switch (step.value) {
       case 0:
         return (textStep.value = 'Vui lòng nhìn thẳng')
@@ -39,7 +52,8 @@ const useFaceIDStore = defineStore('faceID', () => {
     }
   }
 
-  const init = (v, c, callback) => {
+  const init = (v, c, fullStep, callback) => {
+    isFullStep = fullStep
     video = v
     canvas = c
     onSuccess = callback
@@ -156,20 +170,32 @@ const useFaceIDStore = defineStore('faceID', () => {
           }
 
           renderTextStep()
-          if (step.value === 0 && angle === 0) {
-            step.value = 1
-          } else if (step.value === 1 && angle === -1) {
-            step.value = 2
-          } else if (step.value === 2 && angle === 1) {
-            step.value = 3
-          } else if (step.value === 3 && angle === 0) {
-            step.value = 4
-            captureFace()
-            stopVideo()
-            typeof onSuccess == 'function' && onSuccess(descriptor)
-            isRunScan.value = false
+          if (isFullStep) {
+            if (step.value === 0 && angle === 0) {
+              step.value = 1
+              captureFace()
+              stopVideo()
+              typeof onSuccess == 'function' && onSuccess(descriptor)
+              isRunScan.value = false
+            } else {
+              faceDescriptor = null
+            }
           } else {
-            // faceDescriptor = null
+            if (step.value === 0 && angle === 0) {
+              step.value = 1
+            } else if (step.value === 1 && angle === -1) {
+              step.value = 2
+            } else if (step.value === 2 && angle === 1) {
+              step.value = 3
+            } else if (step.value === 3 && angle === 0) {
+              step.value = 4
+              captureFace()
+              stopVideo()
+              typeof onSuccess == 'function' && onSuccess(descriptor)
+              isRunScan.value = false
+            } else {
+              // faceDescriptor = null
+            }
           }
         }
       } else if (detections.length > 1) {
@@ -200,6 +226,12 @@ const useFaceIDStore = defineStore('faceID', () => {
   }
 
   const renderStyle = () => {
+    if (isFullStep) {
+      return {
+        checking: step.value > 0,
+        fullStep: step.value > 0,
+      }
+    }
     return {
       checking: step.value > 0,
       step1: step.value > 0,
