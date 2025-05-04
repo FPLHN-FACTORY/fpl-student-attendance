@@ -21,7 +21,8 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
         if (StringUtils.hasText(ALLOWED_ORIGIN)) {
             String[] origins = ALLOWED_ORIGIN.split(",");
             registry.addEndpoint("/ws")
-                    .setAllowedOrigins(origins);
+                    .setAllowedOrigins(origins)
+                    .withSockJS();
         }
     }
 
