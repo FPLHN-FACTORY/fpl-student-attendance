@@ -502,12 +502,7 @@ onMounted(() => {
                 <span v-if="Date.now() <= record.startTeaching - 10 * 60 * 1000">
                   <a-badge status="warning" /> Chưa đến giờ điểm danh
                 </span>
-                <span
-                  v-else-if="
-                    Date.now() >
-                    record.startTeaching + record.endTeaching + record.lateArrival * 60 * 1000
-                  "
-                >
+                <span v-else-if="Date.now() > record.endTeaching">
                   <a-badge status="error" /> Đã quá giờ điểm danh
                 </span>
                 <a-tooltip v-else title="Điểm danh">
