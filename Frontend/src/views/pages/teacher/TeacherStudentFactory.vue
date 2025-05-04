@@ -23,6 +23,7 @@ const factoryId = route.query.factoryId
 const factoryName = route.query.factoryName
 
 const breadcrumbStore = useBreadcrumbStore()
+const isLoading = ref(false)
 
 const breadcrumb = ref([
   {

@@ -57,4 +57,9 @@ public class ADUserAdminRestController {
     public ResponseEntity<?> changePowerShift(@RequestBody ADUserAdminChangePowerShiftRequest userAdminChangePowerShiftRequest) {
         return userAdminService.changePowerShift(userAdminChangePowerShiftRequest);
     }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteUserAdmin(@PathVariable(name = "id") String id){
+        return userAdminService.deleteUserAdmin(id);
+    }
 }

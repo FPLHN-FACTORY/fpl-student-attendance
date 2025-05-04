@@ -10,6 +10,7 @@ import udpm.hn.studentattendance.core.staff.student.model.response.USStudentResp
 import udpm.hn.studentattendance.entities.UserStudent;
 import udpm.hn.studentattendance.repositories.UserStudentRepository;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -89,15 +90,17 @@ public interface USStudentExtendRepository extends UserStudentRepository {
     boolean isExistEmailFeUpdate(String newEmail, String currentEmail);
 
 
-    @Query("""
-              SELECT
-                CASE 
-                  WHEN us.faceEmbedding IS NOT NULL THEN TRUE
-                  ELSE FALSE
-                END
-              FROM UserStudent us
-            """)
-    List<Boolean> existFaceForAllStudents();
+    @Query(value = """
+                           SELECT
+                                CASE
+                                  WHEN us.face_embedding IS NOT NULL THEN TRUE
+                                  ELSE FALSE
+                                END
+                              FROM user_student us
+                          WHERE us.id_facility = :facilityId
+                          ORDER BY us.created_at DESC
+            """, nativeQuery = true)
+    List<Integer> existFaceForAllStudents(String facilityId);
 }
 
 

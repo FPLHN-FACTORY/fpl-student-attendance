@@ -24,6 +24,7 @@ import ExcelUploadButton from '@/components/excel/ExcelUploadButton.vue'
 
 const breadcrumbStore = useBreadcrumbStore()
 const loadingStore = useLoadingStore()
+const isLoading = ref(false)
 
 /* ----------------- Data & Reactive Variables ----------------- */
 // Danh sách sinh viên
@@ -101,7 +102,7 @@ const fetchStudents = async () => {
     // gán thêm hasFace vào từng object
     students.value = list.map((s, idx) => ({
       ...s,
-      hasFace: flags[idx] === true,
+      hasFace: flags[idx] === 1,
     }))
 
     // cập nhật tổng bản ghi

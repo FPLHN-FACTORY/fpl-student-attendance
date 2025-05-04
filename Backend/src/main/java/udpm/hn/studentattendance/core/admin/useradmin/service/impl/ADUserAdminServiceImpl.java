@@ -17,10 +17,7 @@ import udpm.hn.studentattendance.core.notification.model.request.NotificationAdd
 import udpm.hn.studentattendance.core.notification.service.NotificationService;
 import udpm.hn.studentattendance.entities.UserAdmin;
 import udpm.hn.studentattendance.entities.UserStaff;
-import udpm.hn.studentattendance.helpers.MailerHelper;
-import udpm.hn.studentattendance.helpers.NotificationHelper;
-import udpm.hn.studentattendance.helpers.PaginationHelper;
-import udpm.hn.studentattendance.helpers.SessionHelper;
+import udpm.hn.studentattendance.helpers.*;
 import udpm.hn.studentattendance.infrastructure.common.ApiResponse;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.config.mailer.model.MailerDefaultRequest;
@@ -205,7 +202,7 @@ public class ADUserAdminServiceImpl implements ADUserAdminService {
                 MailerDefaultRequest mailerDefaultRequest = new MailerDefaultRequest();
                 mailerDefaultRequest.setTo(saveAdmin.getEmail());
                 mailerDefaultRequest.setTemplate(null);
-                mailerDefaultRequest.setTitle("Thông báo quan trọng về cấp/xoá quyền từ:  " + appName);
+                mailerDefaultRequest.setTitle("Thông báo quan trọng về xoá quyền từ:  " + appName);
 
                 Map<String, Object> vars = Map.of(
                         "ADMIN_NAME", saveAdmin.getCode() + " - " + saveAdmin.getName(),
@@ -299,5 +296,23 @@ public class ADUserAdminServiceImpl implements ADUserAdminService {
                 ),
                 HttpStatus.OK
         );
+    }
+
+    @Override
+    public ResponseEntity<?> deleteUserAdmin(String userAdminId) {
+        Optional<UserAdmin> existUserAdmin = userAdminExtendRepository.findById(userAdminId);
+        userAdminExtendRepository.deleteById(userAdminId);
+        MailerDefaultRequest mailerDefaultRequest = new MailerDefaultRequest();
+        mailerDefaultRequest.setTo(existUserAdmin.get().getEmail());
+        mailerDefaultRequest.setTemplate(null);
+        mailerDefaultRequest.setTitle("Thông báo quan trọng về xoá quyền từ:  " + appName);
+
+        Map<String, Object> vars = Map.of(
+                "ADMIN_NAME", existUserAdmin.get().getCode() + " - " + existUserAdmin.get().getName(),
+                "MY_NAME", sessionHelper.getUserCode() + " - " + sessionHelper.getUserName()
+        );
+        mailerDefaultRequest.setContent(MailerHelper.loadTemplate(MailerHelper.TEMPLATE_CHANGE_STATUS_ADMIN, vars));
+        mailerHelper.send(mailerDefaultRequest);
+        return RouterHelper.responseSuccess("Xóa tài khoản ban đào tạo thành công", userAdminId);
     }
 }

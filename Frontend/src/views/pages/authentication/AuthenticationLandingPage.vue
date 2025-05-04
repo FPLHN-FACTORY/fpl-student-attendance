@@ -142,10 +142,10 @@ const checkLogin = () => {
   redirectLoginRole()
 }
 
-onMounted(() => {
+onMounted(async () => {
   document.body.classList.add('bg-login')
   checkLogin()
-  fetchDataFacility()
+  await fetchDataFacility()
   loadingPage.hide()
 })
 </script>
@@ -211,7 +211,7 @@ onMounted(() => {
         <a-button
           type="primary"
           danger
-          class="bg-pink-500 text-white text-lg font-semibold flex items-center justify-center h-12"
+          class="bg-pink-500 text-white text-lg font-semibold flex items-center justify-center h-12 btn-google mb-3"
           size="large"
           @click="handleRedirectLogin()"
         >
@@ -233,6 +233,9 @@ onMounted(() => {
 }
 .logo {
   text-align: center;
+}
+.btn-google {
+  background-color: #ff5722;
 }
 .logo img {
   width: 200px;
