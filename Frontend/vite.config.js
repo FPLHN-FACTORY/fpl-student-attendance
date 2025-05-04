@@ -13,6 +13,7 @@ export default defineConfig({
     },
   },
   define: {
-    'process.env': {}, // Khắc phục lỗi `process is not defined`
+    'process.env': {},
+    global: {},
   },
 })
