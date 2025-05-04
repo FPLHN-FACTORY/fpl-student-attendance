@@ -41,7 +41,6 @@ public class SPDAddOrUpdatePlanDateRequest {
     @Min(value = 0, message = "Thời gian điểm danh muộn nhất phải lớn hơn hoặc bằng 0")
     private Integer lateArrival;
 
-    @NotBlank(message = "Vui lòng nhập nội dung buổi học")
     private String description;
 
 }

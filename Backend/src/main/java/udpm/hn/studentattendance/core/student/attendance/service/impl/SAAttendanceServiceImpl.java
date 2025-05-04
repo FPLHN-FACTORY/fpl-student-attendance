@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import udpm.hn.studentattendance.core.student.attendance.model.request.SACheckinAttendanceRequest;
@@ -26,10 +27,12 @@ import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.helpers.SessionHelper;
 import udpm.hn.studentattendance.helpers.ValidateHelper;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
+import udpm.hn.studentattendance.infrastructure.config.websocket.model.message.AttendanceMessage;
 import udpm.hn.studentattendance.infrastructure.constants.AttendanceStatus;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.ShiftType;
 import udpm.hn.studentattendance.infrastructure.constants.StatusType;
+import udpm.hn.studentattendance.infrastructure.constants.router.RouteWebsocketConstant;
 import udpm.hn.studentattendance.utils.DateTimeUtils;
 import udpm.hn.studentattendance.utils.FaceRecognitionUtils;
 import udpm.hn.studentattendance.utils.GeoUtils;
@@ -55,6 +58,8 @@ public class SAAttendanceServiceImpl implements SAAttendanceService {
     private final SAFacilityLocationRepository facilityLocationRepository;
 
     private final HttpServletRequest httpServletRequest;
+
+    private final SimpMessagingTemplate messagingTemplate;
 
     @Value("${app.config.attendance.early-checkin}")
     private int EARLY_CHECKIN;
@@ -142,6 +147,10 @@ public class SAAttendanceServiceImpl implements SAAttendanceService {
         if (attendance != null) {
             if (attendance.getAttendanceStatus() == AttendanceStatus.CHECKIN) {
                 attendance.setAttendanceStatus(AttendanceStatus.PRESENT);
+                AttendanceMessage attendanceMessage = new AttendanceMessage();
+                attendanceMessage.setPlanDateId(planDate.getId());
+                attendanceMessage.setUserStudentId(userStudent.getId());
+                messagingTemplate.convertAndSend(RouteWebsocketConstant.TOPIC_ATTENDANCE, attendanceMessage);
                 return RouterHelper.responseSuccess("Điểm danh thành công", attendanceRepository.save(attendance));
             } else {
                 return RouterHelper.responseError("Không thể checkin ca học này");
