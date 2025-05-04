@@ -10,5 +10,6 @@ public interface TCStudentFactoryService {
 
     ResponseEntity<?> changeStatusStudentFactory(String studentFactoryId);
 
-    ResponseEntity<?> deleteFaceStudentFactory(String studentId);
+
+
 }

@@ -11,7 +11,7 @@ services:
     volumes:
       - attendance_data:/var/lib/student_attendance
   attendance-fe:
-    image: quocanhh86/fpl-student-attendance-fe:1.0.1
+    image: quocanhh86/fpl-student-attendance-fe:1.0.2
     container_name: attendance-fe
     restart: always
     ports:
@@ -20,7 +20,7 @@ services:
       - attendance-be
   attendance-be:
     container_name: attendance-be
-    image: quocanhh86/fpl-student-attendance-be:1.0.1
+    image: quocanhh86/fpl-student-attendance-be:1.0.3
     restart: always
     ports:
       - "8765:8765"

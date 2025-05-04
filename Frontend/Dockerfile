@@ -10,7 +10,10 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 
 # 3. Cài dependencies
-RUN npm ci --frozen-lockfile
+RUN mkdir /root/.npm
+COPY package*.json ./
+RUN --mount=type=cache,target=/root/.npm \
+    npm ci
 
 # 4. Copy toàn bộ source code và build
 COPY . .
@@ -20,16 +23,10 @@ RUN npm run build
 # -------------------------
 # Stage 2: Serve with Nginx
 # -------------------------
+
 FROM nginx:stable-alpine
-
-# 1. Copy nginx config
 COPY nginx/nginx.conf /etc/nginx/nginx.conf
-
-# 2. Copy thư mục dist từ builder
 COPY --from=builder /app/dist /usr/share/nginx/html
-
-# 3. Expose port (trùng với port trong nginx.conf)
 EXPOSE 5173
-
-# 4. Chạy Nginx ở foreground
 CMD ["nginx", "-g", "daemon off;"]
+
