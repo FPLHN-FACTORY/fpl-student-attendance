@@ -1,10 +1,8 @@
 <script setup>
 import {
   ATTENDANCE_STATUS,
-  DEFAULT_DATE_FORMAT,
   DEFAULT_EARLY_MINUTE_CHECKIN,
   DEFAULT_PAGINATION,
-  SHIFT,
   TYPE_SHIFT,
 } from '@/constants'
 import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
@@ -12,7 +10,7 @@ import { API_ROUTES_STUDENT } from '@/constants/studentConstant'
 import { ROUTE_NAMES } from '@/router/studentRoute'
 import requestAPI from '@/services/requestApiService'
 import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
-import { dayOfWeek, debounce, formatDate } from '@/utils/utils'
+import { debounce, formatDate } from '@/utils/utils'
 import {
   CheckOutlined,
   ExclamationCircleOutlined,
@@ -181,7 +179,7 @@ const handleSubmitUpdateInfo = () => {
 
 const handleUpdateInfo = async () => {
   isShowCamera.value = true
-  faceIDStore.init(video, canvas, (descriptor) => {
+  faceIDStore.init(video, canvas, false, (descriptor) => {
     isShowCamera.value = false
     formData.faceEmbedding = JSON.stringify(Array.from(descriptor))
     Modal.confirm({
@@ -202,7 +200,7 @@ const handleUpdateInfo = async () => {
 const handleCheckin = async (item) => {
   formData.idPlanDate = item.idPlanDate
   isShowCamera.value = true
-  faceIDStore.init(video, canvas, (descriptor) => {
+  faceIDStore.init(video, canvas, true, (descriptor) => {
     isShowCamera.value = false
     formData.faceEmbedding = JSON.stringify(Array.from(descriptor))
     handleSubmitAttendance()

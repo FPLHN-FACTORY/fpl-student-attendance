@@ -97,7 +97,7 @@ const fetchSubmitRegister = () => {
 onMounted(async () => {
   document.body.classList.add('bg-login')
   fetchDataFacility()
-  faceIDStore.init(video, canvas, (descriptor) => {
+  faceIDStore.init(video, canvas, false, (descriptor) => {
     formData.faceEmbedding = JSON.stringify(Array.from(descriptor))
     isShowCamera.value = false
   })
