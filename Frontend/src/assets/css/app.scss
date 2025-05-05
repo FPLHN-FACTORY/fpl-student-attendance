@@ -230,7 +230,7 @@ hr {
 
 @media (max-width: 912px) {
   .disable-scroll-x {
-    overflow-x: clip;
+    overflow: clip;
   }
   .sider-content {
     width: 100% !important;
