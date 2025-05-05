@@ -258,6 +258,11 @@ onMounted(async () => {
   gap: 20px;
   margin-top: 20px;
 }
+@media (max-width: 687px) {
+  .role-container {
+    flex-direction: column-reverse;
+  }
+}
 .role-item {
   display: flex;
   flex-direction: column;
