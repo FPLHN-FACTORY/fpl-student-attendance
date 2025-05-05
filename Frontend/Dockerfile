@@ -22,23 +22,12 @@ COPY . .
 RUN npm run build
 
 
-# -------------------------
-# Stage 2: Serve với Nginx
-# -------------------------
 FROM nginx:stable-alpine
-WORKDIR /usr/share/nginx/html
 
-# 1. Xoá config mặc định (nếu bạn muốn mount conf riêng)
-RUN rm /etc/nginx/conf.d/default.conf
+COPY --from=builder /app/dist /usr/share/nginx/html
 
-# 2. Copy bản build từ builder sang thư mục serve tĩnh
-COPY --from=builder /app/dist .
+COPY nginx/nginx.conf /etc/nginx/nginx.conf
 
-# 3. Copy file cấu hình Nginx của bạn vào đúng vị trí
-COPY nginx/nginx.conf /etc/nginx/conf.d/default.conf
-
-# 4. Expose port 80 (Nginx sẽ listen 80 trong config)
 EXPOSE 80
 
-# 5. Khởi động Nginx ở foreground
 CMD ["nginx", "-g", "daemon off;"]
