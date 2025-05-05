@@ -227,6 +227,16 @@ hr {
     color: #5537b9;
   }
 }
+
+@media (max-width: 912px) {
+  .disable-scroll-x {
+    overflow-x: clip;
+  }
+  .sider-content {
+    width: 100% !important;
+  }
+}
+
 .ant-layout {
   background: #f8f9fa;
   .ant-layout-sider-children {
@@ -304,7 +314,7 @@ hr {
         min-width: 0 !important;
         width: 0 !important;
         .ant-layout-sider-children {
-          width: unset;
+          width: 250px;
         }
       }
     }

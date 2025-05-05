@@ -49,7 +49,7 @@ const breadcrumbStore = useBreadcrumbStore()
 
 const breadcrumb = ref([
   {
-    name: GLOBAL_ROUTE_NAMES.STAFF_PAGE,
+    name: GLOBAL_ROUTE_NAMES.STUDENT_PAGE,
     breadcrumbName: 'Sinh viên',
   },
   {
