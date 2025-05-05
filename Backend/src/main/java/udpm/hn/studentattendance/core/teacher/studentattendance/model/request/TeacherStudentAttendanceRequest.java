@@ -11,6 +11,10 @@ public class TeacherStudentAttendanceRequest {
 
     private String id;
 
+    private String userStudentId;
+
+    private String planDateId;
+
     private String status;
 
 }
