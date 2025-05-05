@@ -213,6 +213,7 @@ onMounted(async () => {
           danger
           class="bg-pink-500 text-white text-lg font-semibold flex items-center justify-center h-12 btn-google mb-3"
           size="large"
+          :disabled="lstFacility.length < 1"
           @click="handleRedirectLogin()"
         >
           <GoogleOutlined class="mr-2" /> Google
