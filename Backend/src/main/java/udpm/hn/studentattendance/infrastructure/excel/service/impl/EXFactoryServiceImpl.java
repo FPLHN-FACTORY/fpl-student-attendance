@@ -74,8 +74,6 @@ public class EXFactoryServiceImpl implements EXFactoryService {
     public ResponseEntity<?> importItem(EXImportRequest request) {
         Map<String, String> item = request.getItem();
 
-
-
         // Tên nhóm xưởng
         String factoryName = item.get("TEN_NHOM_XUONG");
         if (factoryName == null || factoryName.trim().isEmpty()) {
@@ -84,7 +82,11 @@ public class EXFactoryServiceImpl implements EXFactoryService {
             return RouterHelper.responseError(msg, HttpStatus.BAD_REQUEST);
         }
         String factoryDescription = item.get("MO_TA");
-
+        if (factoryDescription == null || factoryDescription.trim().isEmpty()) {
+            String msg = "Mô tả nhóm xưởng không được để trống.";
+            excelHelper.saveLogError(ImportLogType.FACTORY, msg, request);
+            return RouterHelper.responseError(msg, HttpStatus.BAD_REQUEST);
+        }
         // Giảng viên: giữ nguyên parse từ "Name (Code)"
         String lecturerValue = item.get("GIANG_VIEN");
         if (lecturerValue == null || lecturerValue.trim().isEmpty()) {
@@ -93,7 +95,7 @@ public class EXFactoryServiceImpl implements EXFactoryService {
             return RouterHelper.responseError(msg, HttpStatus.BAD_REQUEST);
         }
         int lecturerStart = lecturerValue.lastIndexOf("(");
-        int lecturerEnd   = lecturerValue.lastIndexOf(")");
+        int lecturerEnd = lecturerValue.lastIndexOf(")");
         if (lecturerStart < 0 || lecturerEnd < 0 || lecturerStart >= lecturerEnd) {
             String msg = "Định dạng giảng viên không hợp lệ. Vui lòng chọn giá trị từ menu sổ xuống.";
             excelHelper.saveLogError(ImportLogType.FACTORY, msg + " => " + lecturerValue, request);
@@ -142,7 +144,7 @@ public class EXFactoryServiceImpl implements EXFactoryService {
                 EntityStatus.ACTIVE, EntityStatus.ACTIVE,
                 sessionHelper.getFacilityId());
         List<String> projectNames = projects.stream().map(p -> p.getName()).collect(Collectors.toList());
-        List<String> projectIds   = projects.stream().map(p -> p.getId()).collect(Collectors.toList());
+        List<String> projectIds = projects.stream().map(p -> p.getId()).collect(Collectors.toList());
 
         List<String> staffList = staffFactoryExtendRepository.getListUserStaff(
                         EntityStatus.ACTIVE, EntityStatus.ACTIVE,
@@ -204,7 +206,8 @@ public class EXFactoryServiceImpl implements EXFactoryService {
         CellStyle headerStyle = workbook.createCellStyle();
         headerStyle.setFillForegroundColor(IndexedColors.LIGHT_GREEN.getIndex());
         headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
-        Font headerFont = workbook.createFont(); headerFont.setBold(true);
+        Font headerFont = workbook.createFont();
+        headerFont.setBold(true);
         headerStyle.setFont(headerFont);
         headerStyle.setWrapText(true);
         headerStyle.setVerticalAlignment(VerticalAlignment.CENTER);
