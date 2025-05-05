@@ -230,10 +230,14 @@ hr {
 
 @media (max-width: 912px) {
   .disable-scroll-x {
-    overflow-x: clip;
+    overflow: hidden;
   }
   .sider-content {
     width: 100% !important;
+    transition: 0.3s all;
+  }
+  .ant-layout-sider-collapsed + .sider-content {
+    transform: translateX(250px);
   }
 }
 
@@ -336,6 +340,9 @@ hr {
         max-width: 250px !important;
         min-width: 250px !important;
         width: 250px !important;
+        position: fixed !important;
+        height: 100%;
+        z-index: 9999;
         .ant-menu-item {
           visibility: visible !important;
         }
