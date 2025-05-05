@@ -70,7 +70,7 @@ const breadcrumb = ref([
   },
   {
     name: ROUTE_NAMES.MANAGEMENT_LEVEL_PROJECT,
-    breadcrumbName: 'Cấp dự án',
+    breadcrumbName: 'Quản lý cấp độ dự án',
   },
 ])
 
