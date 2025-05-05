@@ -31,7 +31,7 @@ const breadcrumb = ref([
   },
   {
     name: ROUTE_NAMES.MANAGEMENT_STUDENT,
-    breadcrumbName: 'Nhóm xưởng',
+    breadcrumbName: 'Nhóm xưởng của tôi',
   },
 ])
 
