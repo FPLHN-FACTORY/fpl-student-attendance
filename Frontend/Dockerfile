@@ -16,9 +16,6 @@ ENV VITE_PREFIX_API="/api/v1"
 
 # Copy package và cài dependencies
 COPY package.json package-lock.json ./
-# Tạo cache npm tại /root/.npm
-RUN mkdir -p /root/.npm && \
-    --mount=type=cache,target=/root/.npm npm ci
 
 # Copy toàn bộ source và build
 COPY . .
