@@ -23,7 +23,6 @@ import { formatDate } from '@/utils/utils'
 import { DEFAULT_DATE_FORMAT, DEFAULT_PAGINATION } from '@/constants'
 import requestAPI from '@/services/requestApiService'
 import { message } from 'ant-design-vue'
-import { BASE_API_URL } from '@/constants/routesConstant'
 
 const router = useRouter()
 const route = useRoute()
@@ -51,6 +50,15 @@ const dataFilter = reactive({
 })
 
 const pagination = ref({ ...DEFAULT_PAGINATION })
+
+const handleToggleNav = () => {
+  collapsed.value = !collapsed.value
+  if (collapsed.value) {
+    document.body.classList.add('disable-scroll-x')
+  } else {
+    document.body.classList.remove('disable-scroll-x')
+  }
+}
 
 const handleLogout = () => {
   authStore.logout()
@@ -242,13 +250,13 @@ watch(
       </a-menu>
     </a-layout-sider>
 
-    <a-layout>
+    <a-layout class="sider-content">
       <!-- HEADER -->
       <a-layout-header class="d-flex justify-content-between bg-white ps-0">
         <component
           :is="collapsed ? MenuUnfoldOutlined : MenuFoldOutlined"
           class="trigger"
-          @click="collapsed = !collapsed"
+          @click="handleToggleNav"
         />
         <img class="logo-mobile" :src="imgLogoUdpm" />
 

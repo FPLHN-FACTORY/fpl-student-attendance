@@ -66,7 +66,7 @@ const useFaceIDStore = defineStore('faceID', () => {
     isLoading.value = true
     try {
       const constraints = {
-        video: { facingMode: 'environment' },
+        video: { facingMode: 'user' },
       }
       const stream = await navigator.mediaDevices.getUserMedia(constraints)
       if (video.value) {
