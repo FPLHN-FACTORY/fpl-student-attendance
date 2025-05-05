@@ -7,7 +7,7 @@ import {
   UnorderedListOutlined,
   FilterFilled,
   DeleteOutlined,
-  DeleteFilled
+  DeleteFilled,
 } from '@ant-design/icons-vue'
 import requestAPI from '@/services/requestApiService'
 import { ROUTE_NAMES } from '@/router/adminRoute'
@@ -21,7 +21,7 @@ import useApplicationStore from '@/stores/useApplicationStore'
 const breadcrumbStore = useBreadcrumbStore()
 const breadcrumb = ref([
   { name: ROUTE_NAMES.ADMIN_PAGE, breadcrumbName: 'Quản lý' },
-  { name: ROUTE_NAMES.ADMIN_USER, breadcrumbName: 'Admin User' },
+  { name: ROUTE_NAMES.ADMIN_USER, breadcrumbName: 'Quản lý ban đào tạo' },
 ])
 
 // --- Data & State ---
@@ -219,7 +219,6 @@ const handleChangeStatus = (record) => {
   })
 }
 
-
 const handleDelete = (record) => {
   Modal.confirm({
     title: 'Xác nhận xóa',
@@ -230,7 +229,7 @@ const handleDelete = (record) => {
   })
 }
 
-const handleDeleteUser = (id) => {  
+const handleDeleteUser = (id) => {
   loadingStore.show()
   requestAPI
     .delete(`${API_ROUTES_ADMIN.FETCH_DATA_ADMIN}/${id}`)
@@ -330,7 +329,7 @@ onMounted(() => {
             <template v-if="!record.isMySelf">
               <a-tooltip title="Xóa admin">
                 <a-button type="text" class="btn-outline-danger" @click="handleDelete(record)">
-                 <DeleteFilled />
+                  <DeleteFilled />
                 </a-button>
               </a-tooltip>
             </template>

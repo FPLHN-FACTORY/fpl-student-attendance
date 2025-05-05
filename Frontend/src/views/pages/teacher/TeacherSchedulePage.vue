@@ -25,7 +25,7 @@ import router from '@/router'
 const breadcrumbStore = useBreadcrumbStore()
 const breadcrumb = ref([
   { name: GLOBAL_ROUTE_NAMES.TEACHER_PAGE, breadcrumbName: 'Giáo viên' },
-  { name: ROUTE_NAMES.TEACHING_SCHEDULE, breadcrumbName: 'Lịch dạy' },
+  { name: ROUTE_NAMES.TEACHING_SCHEDULE, breadcrumbName: 'Lịch giảng dạy' },
 ])
 
 // Store loading
