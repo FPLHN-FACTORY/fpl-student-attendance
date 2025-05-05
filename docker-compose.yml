@@ -55,7 +55,7 @@ services:
       MAILER_PORT: 587
 
       SERVER_PORT: 8765
-      SERVER_ALLOWED_ORIGIN: http://fptudpm.site
+      SERVER_ALLOWED_ORIGIN: http://fptudpm.site,http://server.fptudpm.site
       APP_CONFIG_DISABLED_CHECK_EMAIL_FPT: "true"
       TZ: Asia/Ho_Chi_Minh
     depends_on:
