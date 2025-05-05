@@ -14,19 +14,27 @@ public class TeacherStudentAttendanceRestController {
 
     private final TeacherStudentAttendanceService service;
 
-    @GetMapping("/{req}")
-    public ResponseEntity<?> create(@PathVariable("req") String req) {
-        return service.createAttendance(req);
+    /**
+     * Bulk tạo hoặc cập nhật điểm danh mặc định (PRESENT) cho toàn bộ sinh viên của planDate
+     */
+    @PostMapping("{planDateId}")
+    public ResponseEntity<?> createBulk(@PathVariable("planDateId") String planDateId) {
+        return service.createAttendance(planDateId);
     }
 
-    @GetMapping("/show/{req}")
-    public ResponseEntity<?> show(@PathVariable("req") String req) {
-        return service.getAllByPlanDate(req);
+    /**
+     * Lấy danh sách sinh viên và trạng thái điểm danh cho planDate
+     */
+    @GetMapping("/show/{planDateId}")
+    public ResponseEntity<?> show(@PathVariable("planDateId") String planDateId) {
+        return service.getAllByPlanDate(planDateId);
     }
 
-    @PutMapping
-    public ResponseEntity<?> update(@RequestBody TeacherStudentAttendanceRequest req) {
+    /**
+     * Cập nhật trạng thái điểm danh cho một bản ghi
+     */
+    @PutMapping()
+    public ResponseEntity<?> updateStatus(@RequestBody TeacherStudentAttendanceRequest req) {
         return service.updateStatusAttendance(req);
     }
-
 }
