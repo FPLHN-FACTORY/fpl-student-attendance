@@ -16,7 +16,7 @@ ENV VITE_PREFIX_API="/api/v1"
 
 # Copy package và cài dependencies
 COPY package.json package-lock.json ./
-
+RUN npm ci
 # Copy toàn bộ source và build
 COPY . .
 RUN npm run build
