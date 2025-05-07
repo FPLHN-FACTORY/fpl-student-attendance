@@ -166,7 +166,7 @@ const handleAttendance = (record) => {
   router.push({
     name: ROUTE_NAMES.MANAGEMENT_STUDENT_ATTENDANCE,
     query: {
-      planDateId: record.idPlanDate || record.id,
+      idPlanDate: record.idPlanDate || record.id,
     },
   })
 }
@@ -367,8 +367,8 @@ function confirmLinkModal() {
     // 2) sau đó toggle sang ONLINE
     .then(() =>
       requestAPI.put(
-        `${API_ROUTES_TEACHER.FETCH_DATA_SCHEDULE}/change-type/${pendingRecord.value.idPlanDate}`,
-      ),
+        `${API_ROUTES_TEACHER.FETCH_DATA_SCHEDULE}/change-type/${pendingRecord.value.idPlanDate}`
+      )
     )
     .then(() => {
       message.success('Chuyển Online thành công với link mới')
@@ -452,7 +452,7 @@ onMounted(() => {
                 {{
                   `${formatDate(record.startTeaching, 'HH:mm')} - ${formatDate(
                     record.endTeaching,
-                    'HH:mm',
+                    'HH:mm'
                   )}`
                 }}
               </template>
@@ -466,7 +466,7 @@ onMounted(() => {
                   {{
                     `${dayOfWeek(record.startTeaching)}, ${formatDate(
                       record.startTeaching,
-                      DEFAULT_DATE_FORMAT,
+                      DEFAULT_DATE_FORMAT
                     )}`
                   }}
                 </template>
@@ -559,7 +559,7 @@ onMounted(() => {
                 {{
                   `${formatDate(record.startTeaching, 'HH:mm')} - ${formatDate(
                     record.endTeaching,
-                    'HH:mm',
+                    'HH:mm'
                   )}`
                 }}
               </template>
@@ -573,7 +573,7 @@ onMounted(() => {
                   {{
                     `${dayOfWeek(record.startTeaching)}, ${formatDate(
                       record.startTeaching,
-                      DEFAULT_DATE_FORMAT,
+                      DEFAULT_DATE_FORMAT
                     )}`
                   }}
                 </template>

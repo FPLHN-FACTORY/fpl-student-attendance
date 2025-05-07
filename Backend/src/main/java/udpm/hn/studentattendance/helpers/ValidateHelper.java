@@ -18,6 +18,8 @@ import org.apache.commons.validator.routines.InetAddressValidator;
 
 public class ValidateHelper {
 
+    private static final String CODE_REGEX = "^[a-zA-Z0-9._]+$";
+
     private static final String EMAIL_REGEX = "^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$";
 
     private static final String EMAIL_FE_REGEX = "^[A-Za-z0-9._%+-]+@fe.edu.vn$";
@@ -39,6 +41,10 @@ public class ValidateHelper {
     public static boolean isValidEmail(String email) {
         Pattern pattern = Pattern.compile(EMAIL_REGEX);
         return email != null && pattern.matcher(email).matches();
+    }
+
+    public static boolean isValidCode(String code) {
+        return code != null && code.matches(CODE_REGEX);
     }
 
     public static boolean isValidEmailFE(String email) {

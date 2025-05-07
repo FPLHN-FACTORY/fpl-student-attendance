@@ -1,15 +1,16 @@
 package udpm.hn.studentattendance.core.teacher.studentattendance.model.response;
 
 public interface TeacherStudentAttendanceResponse {
-
     Integer getRowNumber();
 
-    String getId();
+    String getAttendanceId();
 
-    String getStudentCode();
+    String getUserStudentCode();
 
-    String getStudentName();
+    String getUserStudentName();
 
-    String getStatus();
+    String getUserStudentId();
+
+    Integer getAttendanceStatus();
 
 }

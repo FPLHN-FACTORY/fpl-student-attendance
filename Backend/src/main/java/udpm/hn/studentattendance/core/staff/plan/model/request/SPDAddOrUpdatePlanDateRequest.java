@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import udpm.hn.studentattendance.helpers.ShiftHelper;
 import udpm.hn.studentattendance.infrastructure.common.PageableRequest;
+import udpm.hn.studentattendance.infrastructure.constants.EntityProperties;
 import udpm.hn.studentattendance.infrastructure.constants.StatusType;
 
 import java.util.List;
@@ -29,6 +30,9 @@ public class SPDAddOrUpdatePlanDateRequest {
     private Long startDate;
 
     private String link;
+
+    @Size(max = EntityProperties.LENGTH_NAME, message = "Phòng học không được vượt quá " + EntityProperties.LENGTH_NAME + " ký tự")
+    private String room;
 
     private Integer requiredIp = StatusType.ENABLE.getKey();
 

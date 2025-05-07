@@ -1,8 +1,10 @@
 package udpm.hn.studentattendance.core.admin.subject.service.impl;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import udpm.hn.studentattendance.core.admin.subject.model.request.ADSubjectCreateRequest;
 import udpm.hn.studentattendance.core.admin.subject.model.request.ADSubjectSearchRequest;
@@ -11,75 +13,88 @@ import udpm.hn.studentattendance.core.admin.subject.repository.ADSubjectReposito
 import udpm.hn.studentattendance.core.admin.subject.service.ADSubjectManagementService;
 import udpm.hn.studentattendance.entities.Subject;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
+import udpm.hn.studentattendance.helpers.RouterHelper;
+import udpm.hn.studentattendance.helpers.ValidateHelper;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.common.ResponseObject;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 
 @Service
+@RequiredArgsConstructor
 public class ADSubjectManagementServiceImpl implements ADSubjectManagementService {
-
-    @Autowired
-    private ADSubjectRepository adminSubjectRepository;
+    
+    private final ADSubjectRepository adminSubjectRepository;
 
     @Override
-    public ResponseObject<?> getListSubject(ADSubjectSearchRequest request) {
+    public ResponseEntity<?> getListSubject(ADSubjectSearchRequest request) {
         Pageable pageable = PaginationHelper.createPageable(request, "id");
-        return new ResponseObject<>(
-                PageableObject.of(adminSubjectRepository.getAll(pageable, request)),
-                HttpStatus.OK,
-                "Lây danh sách bộ môn thành công");
+        return RouterHelper.responseSuccess("Lây danh sách bộ môn thành công", PageableObject.of(adminSubjectRepository.getAll(pageable, request)));
     }
 
     @Override
-    public ResponseObject<?> createSubject(ADSubjectCreateRequest request) {
+    public ResponseEntity<?> createSubject(ADSubjectCreateRequest request) {
+        if (!ValidateHelper.isValidCode(request.getCode())) {
+            return RouterHelper.responseError("Mã bộ môn không hợp lệ");
+        }
+
         Subject s = new Subject();
-        s = convertAdd(s, request);
-        adminSubjectRepository.save(s);
-        return new ResponseObject<>(s, HttpStatus.OK, "Thêm cấp bộ môn thành công");
-    }
+        s.setName(request.getName().trim());
+        s.setCode(request.getCode().toUpperCase());
 
-    @Override
-    public ResponseObject<?> updateSubject(String id, ADSubjectUpdateRequest request) {
-        Subject s = adminSubjectRepository.findById(id).get();
-        s = convertUpdate(s, request);
-        adminSubjectRepository.save(s);
-        return new ResponseObject<>(s, HttpStatus.OK, "Sửa bộ môn thành công");
-    }
-
-    @Override
-    public ResponseObject<?> detailSubject(String id) {
-        return adminSubjectRepository.findById(id)
-                .map(s -> new ResponseObject<>(s, HttpStatus.OK, "Detail thành công!"))
-                .orElseGet(() -> new ResponseObject<>(null, HttpStatus.CONFLICT, "Không tìm thấy bộ môn!"));
-    }
-
-    @Override
-    public ResponseObject<?> changeStatus(String id) {
-        Subject s = adminSubjectRepository.findById(id).get();
-        if (s.getStatus() == EntityStatus.ACTIVE) {
-            s.setStatus(EntityStatus.INACTIVE);
-        } else {
-            s.setStatus(EntityStatus.ACTIVE);
+        if (adminSubjectRepository.isExistsCodeSubject(s.getCode(), null)) {
+            return RouterHelper.responseError("Mã bộ môn đã tồn tại trên hệ thống");
         }
-        adminSubjectRepository.save(s);
-        return new ResponseObject<>(null, HttpStatus.OK, "Đổi trạng thái bộ môn thành công");
-    }
 
-    private Subject convertAdd(Subject subject, ADSubjectCreateRequest request) {
-        subject.setName(request.getName());
-        subject.setCode(request.getCode());
-        subject.setStatus(EntityStatus.ACTIVE);
-        return subject;
-    }
-
-    private Subject convertUpdate(Subject subject, ADSubjectUpdateRequest request) {
-        subject.setName(request.getName());
-        subject.setCode(request.getCode());
-        if (request.getStatus().equalsIgnoreCase("ACTIVE")) {
-            subject.setStatus(EntityStatus.ACTIVE);
-        } else {
-            subject.setStatus(EntityStatus.INACTIVE);
+        if (adminSubjectRepository.isExistsNameSubject(s.getName(), null)) {
+            return RouterHelper.responseError("Tên bộ môn đã tồn tại trên hệ thống");
         }
-        return subject;
+
+        return RouterHelper.responseSuccess("Thêm mới bộ môn thành công", adminSubjectRepository.save(s));
     }
+
+    @Override
+    public ResponseEntity<?> updateSubject(String id, ADSubjectUpdateRequest request) {
+
+        Subject s = adminSubjectRepository.findById(id).orElse(null);
+        if (s == null) {
+            return RouterHelper.responseError("Không tìm thấy bộ môn");
+        }
+
+        if (!ValidateHelper.isValidCode(request.getCode())) {
+            return RouterHelper.responseError("Mã bộ môn không hợp lệ");
+        }
+
+        s.setName(request.getName().trim());
+        s.setCode(request.getCode().toUpperCase());
+
+        if (adminSubjectRepository.isExistsCodeSubject(s.getCode(), s.getId())) {
+            return RouterHelper.responseError("Mã bộ môn đã tồn tại trên hệ thống");
+        }
+
+        if (adminSubjectRepository.isExistsNameSubject(s.getName(), s.getId())) {
+            return RouterHelper.responseError("Tên bộ môn đã tồn tại trên hệ thống");
+        }
+
+        return RouterHelper.responseSuccess("Cập nhật bộ môn thành công", adminSubjectRepository.save(s));
+    }
+
+    @Override
+    public ResponseEntity<?> detailSubject(String id) {
+        Subject s = adminSubjectRepository.findById(id).orElse(null);
+        if (s == null) {
+            return RouterHelper.responseError("Không tìm thấy bộ môn");
+        }
+        return RouterHelper.responseSuccess("Lấy thông tin bộ môn thành công", s);
+    }
+
+    @Override
+    public ResponseEntity<?> changeStatus(String id) {
+        Subject s = adminSubjectRepository.findById(id).orElse(null);
+        if (s == null) {
+            return RouterHelper.responseError("Không tìm thấy bộ môn");
+        }
+        s.setStatus(s.getStatus() == EntityStatus.ACTIVE ? EntityStatus.INACTIVE : EntityStatus.ACTIVE);
+        return RouterHelper.responseSuccess("Đổi trạng thái bộ môn thành công", adminSubjectRepository.save(s));
+    }
+
 }

@@ -11,4 +11,5 @@ public class ADLevelProjectSearchRequest extends PageableRequest {
     private String name;
 
     private Integer status;
+
 }
