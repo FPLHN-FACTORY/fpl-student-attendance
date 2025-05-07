@@ -17,7 +17,7 @@ import java.util.Optional;
 public interface TCTeachingScheduleExtendRepository extends PlanDateRepository {
 
     @Query(value = """
-            SELECT
+            SELECT 
                 pd.id AS idPlanDate,
                 pd.start_date AS startTeaching,
                 pd.end_date AS endTeaching,
@@ -30,7 +30,7 @@ public interface TCTeachingScheduleExtendRepository extends PlanDateRepository {
                 us.id AS userId,
                 CONCAT(p.name, ' - ', lp.name) AS projectName,
                 pd.late_arrival AS lateArrival,
-                fl.name as location,
+                pd.room as room,
                 pd.description AS description
             FROM
                 plan_date pd
@@ -40,7 +40,6 @@ public interface TCTeachingScheduleExtendRepository extends PlanDateRepository {
                 LEFT JOIN project p ON p.id = ft.id_project
                 LEFT JOIN subject_facility sf ON sf.id = p.id_subject_facility
                 LEFT JOIN facility f ON f.id = sf.id_facility
-                LEFT JOIN facility_location fl ON fl.id_facility = f.id
                 LEFT JOIN subject sb ON sb.id = sf.id_subject
                 LEFT JOIN level_project lp ON lp.id = p.id_level_project
             WHERE
@@ -70,7 +69,6 @@ public interface TCTeachingScheduleExtendRepository extends PlanDateRepository {
                 LEFT JOIN subject_facility sf ON sf.id = p.id_subject_facility
                 LEFT JOIN subject sb ON sb.id = sf.id_subject
                 LEFT JOIN facility f ON f.id = sf.id_facility
-                LEFT JOIN facility_location fl ON fl.id_facility = f.id
             WHERE
                 us.id = :userId
                 AND us.status = 1
@@ -105,7 +103,7 @@ public interface TCTeachingScheduleExtendRepository extends PlanDateRepository {
                                     pd.link as link,
                                     pd.late_arrival AS lateArrival,
                                     pd.description AS description,
-                                    fl.name as location
+                                    pd.room as room
                                 FROM
                                     plan_date pd
                                     LEFT JOIN plan_factory pf ON pf.id = pd.id_plan_factory
@@ -115,7 +113,6 @@ public interface TCTeachingScheduleExtendRepository extends PlanDateRepository {
                                     LEFT JOIN subject_facility sf ON sf.id = p.id_subject_facility
                                     LEFT JOIN subject sb ON sb.id = sf.id_subject
                                     LEFT JOIN facility f ON f.id = sf.id_facility
-                                    LEFT JOIN facility_location fl ON fl.id_facility = f.id
                                 WHERE
                                     us.id = :userId
                                     AND us.status = 1

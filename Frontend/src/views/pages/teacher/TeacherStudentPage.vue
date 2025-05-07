@@ -4,16 +4,7 @@ import { message } from 'ant-design-vue'
 import { useRouter } from 'vue-router'
 import requestAPI from '@/services/requestApiService'
 import { API_ROUTES_TEACHER } from '@/constants/teacherConstant'
-import {
-  PlusOutlined,
-  EyeOutlined,
-  EditOutlined,
-  SyncOutlined,
-  EyeFilled,
-  FilterFilled,
-  UnorderedListOutlined,
-  AlignLeftOutlined,
-} from '@ant-design/icons-vue'
+import { FilterFilled, UnorderedListOutlined, AlignLeftOutlined } from '@ant-design/icons-vue'
 import { ROUTE_NAMES } from '@/router/teacherRoute'
 import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
 import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
@@ -54,10 +45,28 @@ const pagination = reactive({
 // Column configuration
 const columns = ref([
   { title: '#', dataIndex: 'rowNumber', key: 'rowNumber', width: 50 },
-  { title: 'Tên nhóm xưởng', dataIndex: 'factoryName', key: 'factoryName', width: 150 },
-  { title: 'Tên dự án', dataIndex: 'projectName', key: 'projectName', width: 300 },
-  { title: 'Mô tả', dataIndex: 'factoryDescription', key: 'factoryDescription', width: 300 },
-  { title: 'Trạng thái', dataIndex: 'factoryStatus', key: 'factoryStatus', width: 120 },
+  {
+    title: 'Tên nhóm xưởng',
+    dataIndex: 'factoryName',
+    key: 'factoryName',
+    width: 150,
+    ellipsis: true,
+  },
+  { title: 'Tên dự án', dataIndex: 'projectName', key: 'projectName', width: 300, ellipsis: true },
+  {
+    title: 'Mô tả',
+    dataIndex: 'factoryDescription',
+    key: 'factoryDescription',
+    width: 300,
+    ellipsis: true,
+  },
+  {
+    title: 'Trạng thái',
+    dataIndex: 'factoryStatus',
+    key: 'factoryStatus',
+    width: 120,
+    ellipsis: true,
+  },
   { title: 'Chức năng', key: 'actions', width: 100 },
 ])
 
@@ -138,36 +147,32 @@ onMounted(() => {
       <div class="col-12">
         <a-card :bordered="false" class="cart mb-3">
           <template #title> <FilterFilled /> Bộ lọc tìm kiếm </template>
-          <a-row :gutter="16" class="filter-container">
-            <a-col :span="12" class="col">
-              <div class="form-group">
-                <label class="form-label">Tên nhóm xưởng</label>
-                <a-input
-                  v-model:value="filter.factoryName"
-                  placeholder="Nhập tên nhóm xưởng"
-                  allowClear
-                  @change="fetchFactoryByTeacher"
-                />
-              </div>
-            </a-col>
-            <a-col :span="12" class="col">
-              <div class="form-group">
-                <label class="form-label">Tên dự án</label>
-                <a-select
-                  v-model:value="filter.projectId"
-                  placeholder="Chọn dự án"
-                  allowClear
-                  style="width: 100%"
-                  @change="fetchFactoryByTeacher"
-                >
-                  <a-select-option :value="''">Tất cả dự án</a-select-option>
-                  <a-select-option v-for="item in projects" :key="item.id" :value="item.id">
-                    {{ item.name }}
-                  </a-select-option>
-                </a-select>
-              </div>
-            </a-col>
-          </a-row>
+          <div class="row g-4">
+            <div class="col-md-6 col-sm-6">
+              <label class="label-title">Từ khoá:</label>
+              <a-input
+                v-model:value="filter.factoryName"
+                placeholder="Nhập tên nhóm xưởng"
+                allowClear
+                @change="fetchFactoryByTeacher"
+              />
+            </div>
+            <div class="col-md-6 col-sm-6">
+              <label class="label-title">Dự án:</label>
+              <a-select
+                v-model:value="filter.projectId"
+                placeholder="Chọn dự án"
+                allowClear
+                class="w-100"
+                @change="fetchFactoryByTeacher"
+              >
+                <a-select-option :value="''">Tất cả dự án</a-select-option>
+                <a-select-option v-for="item in projects" :key="item.id" :value="item.id">
+                  {{ item.name }}
+                </a-select-option>
+              </a-select>
+            </div>
+          </div>
         </a-card>
       </div>
     </div>
@@ -178,6 +183,7 @@ onMounted(() => {
         <a-card :bordered="false" class="cart">
           <template #title> <UnorderedListOutlined /> Danh sách nhóm xưởng </template>
           <a-table
+            class="nowrap"
             :loading="isLoading"
             :dataSource="factories"
             :columns="columns"
