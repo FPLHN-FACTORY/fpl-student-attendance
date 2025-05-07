@@ -213,6 +213,7 @@ onMounted(async () => {
           danger
           class="bg-pink-500 text-white text-lg font-semibold flex items-center justify-center h-12 btn-google mb-3"
           size="large"
+          :disabled="lstFacility.length < 1"
           @click="handleRedirectLogin()"
         >
           <GoogleOutlined class="mr-2" /> Google
@@ -256,6 +257,11 @@ onMounted(async () => {
   flex-wrap: wrap;
   gap: 20px;
   margin-top: 20px;
+}
+@media (max-width: 687px) {
+  .role-container {
+    flex-direction: column-reverse;
+  }
 }
 .role-item {
   display: flex;
