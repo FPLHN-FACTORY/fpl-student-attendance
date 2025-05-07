@@ -66,13 +66,20 @@ const lstShift = ref([])
 
 const columns = ref([
   { title: 'Buổi', dataIndex: 'orderNumber', key: 'orderNumber', width: 50 },
-  { title: 'Ngày học', dataIndex: 'startDate', key: 'startDate' },
-  { title: 'Thời gian', key: 'time' },
-  { title: 'Ca học', dataIndex: 'shift', key: 'shift' },
-  { title: 'Nội dung', dataIndex: 'description', key: 'description', width: 300 },
-  { title: 'Link Online', dataIndex: 'link', key: 'link', width: 100 },
-  { title: 'Điểm danh trễ', dataIndex: 'lateArrival', key: 'lateArrival', width: 130 },
-  { title: 'Trạng thái', dataIndex: 'status', key: 'status' },
+  { title: 'Ngày học', dataIndex: 'startDate', key: 'startDate', ellipsis: true },
+  { title: 'Thời gian', key: 'time', ellipsis: true },
+  { title: 'Ca học', dataIndex: 'shift', key: 'shift', ellipsis: true },
+  { title: 'Nội dung', dataIndex: 'description', key: 'description', ellipsis: true },
+  { title: 'Phòng học', dataIndex: 'room', key: 'room', width: 100, ellipsis: true },
+  { title: 'Link Online', dataIndex: 'link', key: 'link', width: 100, ellipsis: true },
+  {
+    title: 'Điểm danh trễ',
+    dataIndex: 'lateArrival',
+    key: 'lateArrival',
+    width: 130,
+    ellipsis: true,
+  },
+  { title: 'Trạng thái', dataIndex: 'status', key: 'status', ellipsis: true },
   { title: '', key: 'actions' },
 ])
 
@@ -106,6 +113,7 @@ const formData = reactive({
   shift: [],
   link: null,
   type: null,
+  room: null,
   requiredLocation: STATUS_TYPE.ENABLE,
   requiredIp: STATUS_TYPE.ENABLE,
   startDate: null,
@@ -306,6 +314,7 @@ const handleShowAdd = () => {
   formData.shift = []
   formData.link = null
   formData.type = null
+  formData.room = null
   formData.requiredLocation = STATUS_TYPE.ENABLE
   formData.requiredIp = STATUS_TYPE.ENABLE
   formData.lateArrival = DEFAULT_LATE_ARRIVAL
@@ -329,6 +338,7 @@ const handleShowUpdate = (item) => {
   formData.startDate = dayjs(item.startDate)
   formData.shift = item.shift.split(',').map((o) => Number(o))
   formData.link = item.link
+  formData.room = item.room
   formData.type = String(item.type)
   formData.requiredLocation = item.requiredLocation
   formData.requiredIp = item.requiredIp
@@ -476,7 +486,7 @@ watch(
       :model="formData"
     >
       <a-form-item
-        class="col-sm-12"
+        class="col-sm-4"
         label="Ngày học diễn ra"
         name="startDate"
         :rules="formRules.startDate"
@@ -488,6 +498,15 @@ watch(
           :format="DEFAULT_DATE_FORMAT"
           :disabledDate="disabledDate"
           :disabled="modalAddOrUpdate.isLoading"
+        />
+      </a-form-item>
+      <a-form-item class="col-sm-8" label="Phòng học">
+        <a-input
+          class="w-100"
+          v-model:value="formData.room"
+          placeholder="Địa điểm học chi tiết"
+          :disabled="modalAddOrUpdate.isLoading || formData.type == '1'"
+          allowClear
         />
       </a-form-item>
       <a-form-item class="col-sm-12" label="Ca học" name="shift" :rules="formRules.shift">

@@ -25,12 +25,18 @@ public interface STProjectExtendRepository extends ProjectRepository {
                         p.description AS description,
                         p.status AS status
                     FROM project p
-                    LEFT JOIN level_project lp ON p.id_level_project = lp.id
-                    LEFT JOIN subject_facility sf ON p.id_subject_facility = sf.id
-                    LEFT JOIN subject s ON sf.id_subject = s.id
-                    LEFT JOIN semester sem ON p.id_semester = sem.id
-                    LEFT JOIN facility f ON sf.id_facility = f.id
-                    WHERE (
+                    JOIN level_project lp ON p.id_level_project = lp.id
+                    JOIN subject_facility sf ON p.id_subject_facility = sf.id
+                    JOIN subject s ON sf.id_subject = s.id
+                    JOIN semester sem ON p.id_semester = sem.id
+                    JOIN facility f ON sf.id_facility = f.id
+                    WHERE
+                        lp.status = 1 AND
+                        sf.status = 1 AND
+                        s.status = 1 AND
+                        sem.status = 1 AND
+                        f.status = 1 AND
+                    (
                         (:#{#request.name} IS NULL OR p.name LIKE CONCAT('%', :#{#request.name}, '%'))
                         AND (:#{#request.levelProjectId} IS NULL OR lp.id = :#{#request.levelProjectId})
                         AND (:#{#request.semesterId} IS NULL OR sem.id = :#{#request.semesterId})
@@ -43,12 +49,18 @@ public interface STProjectExtendRepository extends ProjectRepository {
                     SELECT
                        COUNT(*)
                     FROM project p
-                    LEFT JOIN level_project lp ON p.id_level_project = lp.id
-                    LEFT JOIN subject_facility sf ON p.id_subject_facility = sf.id
-                    LEFT JOIN subject s ON sf.id_subject = s.id
-                    LEFT JOIN semester sem ON p.id_semester = sem.id
-                    LEFT JOIN facility f ON sf.id_facility = f.id
-                    WHERE (
+                    JOIN level_project lp ON p.id_level_project = lp.id
+                    JOIN subject_facility sf ON p.id_subject_facility = sf.id
+                    JOIN subject s ON sf.id_subject = s.id
+                    JOIN semester sem ON p.id_semester = sem.id
+                    JOIN facility f ON sf.id_facility = f.id
+                    WHERE
+                        lp.status = 1 AND
+                        sf.status = 1 AND
+                        s.status = 1 AND
+                        sem.status = 1 AND
+                        f.status = 1 AND
+                    (
                         (:#{#request.name} IS NULL OR p.name LIKE CONCAT('%', :#{#request.name}, '%'))
                         AND (:#{#request.levelProjectId} IS NULL OR lp.id = :#{#request.levelProjectId})
                         AND (:#{#request.semesterId} IS NULL OR sem.id = :#{#request.semesterId})

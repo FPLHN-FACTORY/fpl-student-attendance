@@ -17,7 +17,7 @@ import java.util.Optional;
 public interface TCTeachingScheduleExtendRepository extends PlanDateRepository {
 
     @Query(value = """
-            SELECT
+            SELECT 
                 pd.id AS idPlanDate,
                 pd.start_date AS startTeaching,
                 pd.end_date AS endTeaching,
@@ -30,6 +30,7 @@ public interface TCTeachingScheduleExtendRepository extends PlanDateRepository {
                 us.id AS userId,
                 CONCAT(p.name, ' - ', lp.name) AS projectName,
                 pd.late_arrival AS lateArrival,
+                pd.room as room,
                 pd.description AS description
             FROM
                 plan_date pd
@@ -101,7 +102,8 @@ public interface TCTeachingScheduleExtendRepository extends PlanDateRepository {
                                     pd.type as type,
                                     pd.link as link,
                                     pd.late_arrival AS lateArrival,
-                                    pd.description AS description
+                                    pd.description AS description,
+                                    pd.room as room
                                 FROM
                                     plan_date pd
                                     LEFT JOIN plan_factory pf ON pf.id = pd.id_plan_factory

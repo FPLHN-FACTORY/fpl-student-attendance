@@ -1,10 +1,9 @@
 package udpm.hn.studentattendance.core.admin.levelproject.model.response;
 
-public interface ADLevelProjectResponse {
+import udpm.hn.studentattendance.infrastructure.common.HasOrderNumber;
+import udpm.hn.studentattendance.infrastructure.common.IsIdentify;
 
-    Integer getIndexs();
-
-    String getId();
+public interface ADLevelProjectResponse extends IsIdentify, HasOrderNumber {
 
     String getName();
 

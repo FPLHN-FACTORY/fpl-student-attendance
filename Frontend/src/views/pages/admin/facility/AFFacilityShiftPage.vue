@@ -41,10 +41,22 @@ const lstData = ref([])
 
 const columns = ref([
   { title: '#', dataIndex: 'orderNumber', key: 'orderNumber', width: 50 },
-  { title: 'Ca học', dataIndex: 'shift', key: 'shift', width: 100 },
-  { title: 'Thời gian bắt đầu', dataIndex: 'startTime', key: 'startTime', minWidth: 120 },
-  { title: 'Thời gian kết thúc', dataIndex: 'endTime', key: 'endTime', minWidth: 120 },
-  { title: 'Trạng thái', dataIndex: 'status', key: 'status', width: 150 },
+  { title: 'Ca học', dataIndex: 'shift', key: 'shift', width: 100, ellipsis: true },
+  {
+    title: 'Thời gian bắt đầu',
+    dataIndex: 'startTime',
+    key: 'startTime',
+    minWidth: 120,
+    ellipsis: true,
+  },
+  {
+    title: 'Thời gian kết thúc',
+    dataIndex: 'endTime',
+    key: 'endTime',
+    minWidth: 120,
+    ellipsis: true,
+  },
+  { title: 'Trạng thái', dataIndex: 'status', key: 'status', width: 150, ellipsis: true },
   { title: '', key: 'actions' },
 ])
 
@@ -290,7 +302,7 @@ const handleSubmitAdd = async () => {
         fetchAddItem()
       },
     })
-  } catch (error) { }
+  } catch (error) {}
 }
 
 const handleSubmitUpdate = async () => {
@@ -306,7 +318,7 @@ const handleSubmitUpdate = async () => {
         fetchUpdateItem()
       },
     })
-  } catch (error) { }
+  } catch (error) {}
 }
 
 const handleChangeStatus = (id) => {
@@ -357,20 +369,44 @@ watch(
 </script>
 
 <template>
-  <a-modal v-model:open="modalAddOrUpdate.isShow" v-bind="modalAddOrUpdate"
-    :okButtonProps="{ loading: modalAddOrUpdate.isLoading }">
-    <a-form ref="formRefAddOrUpdate" class="row mt-3" layout="vertical" autocomplete="off" :model="formData">
+  <a-modal
+    v-model:open="modalAddOrUpdate.isShow"
+    v-bind="modalAddOrUpdate"
+    :okButtonProps="{ loading: modalAddOrUpdate.isLoading }"
+  >
+    <a-form
+      ref="formRefAddOrUpdate"
+      class="row mt-3"
+      layout="vertical"
+      autocomplete="off"
+      :model="formData"
+    >
       <a-form-item class="col-sm-4" label="Ca học" name="shift" :rules="formRules.shift">
-        <a-select class="w-100" v-model:value="formData.shift" :disabled="modalAddOrUpdate.isLoading">
+        <a-select
+          class="w-100"
+          v-model:value="formData.shift"
+          :disabled="modalAddOrUpdate.isLoading"
+        >
           <a-select-option v-for="(name, id) in SHIFT" :key="id" :value="id">
             {{ name }}
           </a-select-option>
         </a-select>
       </a-form-item>
 
-      <a-form-item class="col-sm-8" label="Thời gian ca học" name="timeRange" :rules="formRules.timeRange">
-        <a-range-picker class="w-100" v-model:value="formData.timeRange" :show-time="{ format: 'HH:mm' }" format="HH:mm"
-          picker="time" :placeholder="['Thời gian bắt đầu', 'Thời gian kết thúc']" />
+      <a-form-item
+        class="col-sm-8"
+        label="Thời gian ca học"
+        name="timeRange"
+        :rules="formRules.timeRange"
+      >
+        <a-range-picker
+          class="w-100"
+          v-model:value="formData.timeRange"
+          :show-time="{ format: 'HH:mm' }"
+          format="HH:mm"
+          picker="time"
+          :placeholder="['Thời gian bắt đầu', 'Thời gian kết thúc']"
+        />
       </a-form-item>
     </a-form>
   </a-modal>
@@ -380,14 +416,17 @@ watch(
       <div class="col-12">
         <!-- Bộ lọc tìm kiếm -->
         <a-card :bordered="false" class="cart">
-          <template #title>
-            <FilterFilled /> Bộ lọc
-          </template>
+          <template #title> <FilterFilled /> Bộ lọc </template>
           <div class="row g-2">
             <div class="col-lg-4 col-md-6 col-sm-6">
               <div class="label-title">Ca học:</div>
-              <a-select v-model:value="dataFilter.shift" class="w-100" :dropdownMatchSelectWidth="false"
-                placeholder="-- Tất cả ca học --" allowClear>
+              <a-select
+                v-model:value="dataFilter.shift"
+                class="w-100"
+                :dropdownMatchSelectWidth="false"
+                placeholder="-- Tất cả ca học --"
+                allowClear
+              >
                 <a-select-option :value="null">-- Tất cả ca học --</a-select-option>
                 <a-select-option v-for="(name, id) in SHIFT" :key="id" :value="id">
                   {{ name }}
@@ -396,8 +435,13 @@ watch(
             </div>
             <div class="col-lg-4 col-md-6 col-sm-6">
               <div class="label-title">Trạng thái:</div>
-              <a-select v-model:value="dataFilter.status" class="w-100" :dropdownMatchSelectWidth="false"
-                placeholder="-- Tất cả trạng thái --" allowClear>
+              <a-select
+                v-model:value="dataFilter.status"
+                class="w-100"
+                :dropdownMatchSelectWidth="false"
+                placeholder="-- Tất cả trạng thái --"
+                allowClear
+              >
                 <a-select-option :value="null">-- Tất cả trạng thái --</a-select-option>
                 <a-select-option v-for="(name, id) in STATUS_FACILITY_IP" :key="id" :value="id">
                   {{ name }}
@@ -419,9 +463,7 @@ watch(
 
       <div class="col-12">
         <a-card :bordered="false" class="cart">
-          <template #title>
-            <UnorderedListOutlined /> Danh sách ca học
-          </template>
+          <template #title> <UnorderedListOutlined /> Danh sách ca học </template>
           <div class="d-flex justify-content-end mb-3 flex-wrap gap-3">
             <a-button type="primary" @click="handleShowAdd">
               <PlusOutlined /> Thêm ca học mới
@@ -429,17 +471,29 @@ watch(
           </div>
 
           <div>
-            <a-table rowKey="id" class="nowrap" :dataSource="lstData" :columns="columns" :loading="isLoading"
-              :pagination="pagination" :scroll="{ y: 500, x: 'auto' }" @change="handleTableChange">
+            <a-table
+              rowKey="id"
+              class="nowrap"
+              :dataSource="lstData"
+              :columns="columns"
+              :loading="isLoading"
+              :pagination="pagination"
+              :scroll="{ y: 500, x: 'auto' }"
+              @change="handleTableChange"
+            >
               <template #bodyCell="{ column, record }">
                 <template v-if="column.dataIndex === 'shift'">
                   <a-tag color="purple"> Ca {{ record.shift }} </a-tag>
                 </template>
                 <template v-if="column.dataIndex === 'status'">
-                  <a-switch class="me-2" :checked="record.status === 1" @change="handleChangeStatus(record.id)" />
+                  <a-switch
+                    class="me-2"
+                    :checked="record.status === 1"
+                    @change="handleChangeStatus(record.id)"
+                  />
                   <a-tag :color="record.status === 1 ? 'green' : 'red'">{{
                     record.status === 1 ? 'Đang áp dụng' : 'Không áp dụng'
-                    }}</a-tag>
+                  }}</a-tag>
                 </template>
                 <template v-if="column.key === 'actions'">
                   <a-tooltip title="Chỉnh sửa ca học">
@@ -448,7 +502,10 @@ watch(
                     </a-button>
                   </a-tooltip>
                   <a-tooltip title="Xoá ca học">
-                    <a-button class="btn-outline-danger border-0 ms-2" @click="handleShowAlertDelete(record)">
+                    <a-button
+                      class="btn-outline-danger border-0 ms-2"
+                      @click="handleShowAlertDelete(record)"
+                    >
                       <DeleteFilled />
                     </a-button>
                   </a-tooltip>

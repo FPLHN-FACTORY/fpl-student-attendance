@@ -41,7 +41,6 @@ const breadcrumb = ref([
 ])
 
 /* ----------------- Data & Reactive Variables ----------------- */
-const subject = ref({})
 const subjectFacility = ref([])
 const facility = ref([])
 const facilitySubject = ref([])
@@ -62,25 +61,39 @@ const modalDetail = ref(false)
 const modalUpdate = ref(false)
 
 const newSubjectFacility = reactive({
+  subjectId: null,
   name: '',
   facilityId: [],
 })
 
+const updateSubjectFacility = reactive({
+  id: null,
+  subjectId: null,
+  name: '',
+  facilityId: null,
+})
+
 const detailSubjectFacility = reactive({
   id: '',
-  subject: { name: '' },
-  facility: { name: '' },
+  subjectName: null,
+  facilityName: null,
   status: 1,
   createdAt: '',
   updatedAt: '',
 })
 
 const columns = ref([
-  { title: '#', dataIndex: 'indexs', key: 'indexs', width: 50 },
-  { title: 'Tên bộ môn', dataIndex: 'subjectName', key: 'subjectName', width: 200 },
-  { title: 'Tên cơ sở', dataIndex: 'facilityName', key: 'facilityName', width: 200 },
-  { title: 'Trạng thái', dataIndex: 'status', key: 'status', width: 100 },
-  { title: 'Chức năng', key: 'actions', width: 200 },
+  { title: '#', dataIndex: 'orderNumber', key: 'orderNumber', width: 50 },
+  { title: 'Tên bộ môn', dataIndex: 'subjectName', key: 'subjectName', width: 200, ellipsis: true },
+  {
+    title: 'Tên cơ sở',
+    dataIndex: 'facilityName',
+    key: 'facilityName',
+    width: 200,
+    ellipsis: true,
+  },
+  { title: 'Trạng thái', dataIndex: 'status', key: 'status', width: 100, ellipsis: true },
+  { title: 'Chức năng', key: 'actions' },
 ])
 
 /* ----------------- Methods ----------------- */
@@ -97,7 +110,7 @@ const fetchSubjectFacility = () => {
           page: pagination.current,
           size: pagination.pageSize,
         },
-      }
+      },
     )
     .then((response) => {
       const result = response.data.data
@@ -117,8 +130,8 @@ const fetchSubject = () => {
   requestAPI
     .get(`${API_ROUTES_ADMIN.FETCH_DATA_SUBJECT}/${filter.subjectId}`)
     .then((response) => {
-      subject.value = response.data.data
-      newSubjectFacility.name = subject.value.name
+      newSubjectFacility.subjectId = response.data.data.id
+      newSubjectFacility.name = response.data.data.name
     })
     .catch((error) => {
       message.error(error.response?.data?.message || 'Lỗi khi lấy thông tin bộ môn')
@@ -150,7 +163,7 @@ const fetchFacilitySubjectCombobox = () => {
       subjectId: filter.subjectId,
     })
     .then((response) => {
-      facilitySubject.value = response.data
+      facilitySubject.value = response.data.data
     })
     .catch((error) => {
       message.error(error.response?.data?.message || 'Lỗi khi lấy danh sách cơ sở chưa có')
@@ -168,44 +181,53 @@ const handleTableChange = (pageInfo) => {
 
 const showAddModal = () => {
   modalAdd.value = true
-  fetchFacilitySubjectCombobox()
   newSubjectFacility.facilityId = null
 }
 
 const handleAddSubjectFacility = () => {
-  loadingStore.show()
-  const requests = []
-
-  if (newSubjectFacility.facilityId === null || newSubjectFacility.facilityId.includes(null)) {
-    // Thêm tất cả cơ sở chưa có
-    facilitySubject.value.forEach((f) => {
-      requests.push(
-        requestAPI.post(API_ROUTES_ADMIN.FETCH_DATA_SUBJECT_FACILITY, {
-          facilityId: f.id,
-          subjectId: subject.value.id,
-        })
-      )
-    })
-  } else {
-    // Thêm các cơ sở được chọn
-    newSubjectFacility.facilityId.forEach((f) => {
-      requests.push(
-        requestAPI.post(API_ROUTES_ADMIN.FETCH_DATA_SUBJECT_FACILITY, {
-          facilityId: f,
-          subjectId: subject.value.id,
-        })
-      )
-    })
+  if (newSubjectFacility.facilityId === null) {
+    return message.error('Vui lòng chọn 1 cơ sở')
   }
 
-  Promise.all(requests)
-    .then(() => {
-      message.success('Thêm bộ môn cơ sở thành công')
+  loadingStore.show()
+
+  requestAPI
+    .post(API_ROUTES_ADMIN.FETCH_DATA_SUBJECT_FACILITY, {
+      facilityId: newSubjectFacility.facilityId,
+      subjectId: newSubjectFacility.subjectId,
+    })
+    .then(({ data: response }) => {
+      message.success(response.message)
       modalAdd.value = false
       fetchSubjectFacility()
     })
     .catch((error) => {
-      message.error(error.response?.data?.message || 'Lỗi khi thêm bộ môn cơ sở')
+      message.error(error.response?.data?.message || 'Không thể thêm bộ môn cơ sở')
+    })
+    .finally(() => {
+      loadingStore.hide()
+    })
+}
+
+const handleUpdateSubjectFacility = () => {
+  if (updateSubjectFacility.facilityId === null) {
+    return message.error('Vui lòng chọn 1 cơ sở')
+  }
+
+  loadingStore.show()
+
+  requestAPI
+    .put(
+      API_ROUTES_ADMIN.FETCH_DATA_SUBJECT_FACILITY + '/' + updateSubjectFacility.id,
+      updateSubjectFacility,
+    )
+    .then(({ data: response }) => {
+      message.success(response.message)
+      modalUpdate.value = false
+      fetchSubjectFacility()
+    })
+    .catch((error) => {
+      message.error(error.response?.data?.message || 'Không thể cập nhật bộ môn cơ sở')
     })
     .finally(() => {
       loadingStore.hide()
@@ -214,7 +236,10 @@ const handleAddSubjectFacility = () => {
 
 const handleUpdateProject = (record) => {
   modalUpdate.value = true
-  // TODO: Implement update logic
+  updateSubjectFacility.id = record.id
+  updateSubjectFacility.facilityId = record.facilityId
+  updateSubjectFacility.subjectId = record.subjectId
+  updateSubjectFacility.name = record.subjectName
 }
 
 const handleDeleteSubjectFacility = (record) => {
@@ -261,11 +286,11 @@ const formatDate = (timestamp) => {
 }
 
 const getStatusText = (status) => {
-  return status === '1' ? 'Hoạt động' : 'Không hoạt động'
+  return status == 1 || status === 'ACTIVE' ? 'Hoạt động' : 'Không hoạt động'
 }
 
 const getStatusColor = (status) => {
-  return status === '1' ? 'green' : 'red'
+  return status == 1 || status === 'ACTIVE' ? 'green' : 'red'
 }
 
 /* ----------------- Lifecycle Hooks ----------------- */
@@ -274,6 +299,7 @@ onMounted(() => {
   fetchSubjectFacility()
   fetchSubject()
   fetchFacilityCombobox()
+  fetchFacilitySubjectCombobox()
 })
 </script>
 
@@ -284,18 +310,18 @@ onMounted(() => {
       <div class="col-12">
         <a-card :bordered="false" class="cart mb-3">
           <template #title> <FilterFilled /> Bộ lọc </template>
-          <a-row :gutter="16" class="filter-container">
-            <a-col :span="8" class="col">
-              <div class="label-title">Tìm kiếm theo tên:</div>
+          <div class="row g-2">
+            <div class="col-lg-4 col-md-12 col-sm-12">
+              <div class="label-title">Từ khoá:</div>
               <a-input
                 v-model:value="filter.name"
                 placeholder="Tìm kiếm theo tên"
                 allowClear
                 @change="fetchSubjectFacility"
               />
-            </a-col>
+            </div>
 
-            <a-col :span="8" class="col">
+            <div class="col-lg-4 col-md-6 col-sm-12">
               <div class="label-title">Cơ sở:</div>
               <a-select
                 v-model:value="filter.facilityId"
@@ -309,9 +335,9 @@ onMounted(() => {
                   {{ f.name }}
                 </a-select-option>
               </a-select>
-            </a-col>
+            </div>
 
-            <a-col :span="8" class="col">
+            <div class="col-lg-4 col-md-6 col-sm-12">
               <div class="label-title">Trạng thái:</div>
               <a-select
                 v-model:value="filter.status"
@@ -324,23 +350,22 @@ onMounted(() => {
                 <a-select-option :value="1">Hoạt động</a-select-option>
                 <a-select-option :value="0">Không hoạt động</a-select-option>
               </a-select>
-            </a-col>
-          </a-row>
+            </div>
+          </div>
         </a-card>
       </div>
-    </div>
 
-    <!-- Card Danh sách bộ môn cơ sở -->
-    <div class="row g-3">
+      <!-- Card Danh sách bộ môn cơ sở -->
       <div class="col-12">
         <a-card :bordered="false" class="cart">
           <template #title> <UnorderedListOutlined /> Danh sách bộ môn cơ sở </template>
           <div class="d-flex justify-content-end mb-3">
             <a-tooltip title="Thêm bộ môn cơ sở">
-              <a-button type="primary" @click="showAddModal"> <PlusOutlined /> Thêm </a-button>
+              <a-button type="primary" @click="showAddModal"> <PlusOutlined /> Thêm mới </a-button>
             </a-tooltip>
           </div>
           <a-table
+            class="nowrap"
             :dataSource="subjectFacility"
             :columns="columns"
             rowKey="id"
@@ -350,27 +375,22 @@ onMounted(() => {
             :scroll="{ y: 500, x: 'auto' }"
           >
             <template #bodyCell="{ column, record, index }">
-              <template v-if="column.dataIndex">
-                <template v-if="column.dataIndex === 'indexs'">
-                  {{ index + 1 }}
-                </template>
-                <template v-else-if="column.dataIndex === 'status'">
-                  <span class="nowrap">
-                    <a-switch
-                      class="me-2"
-                      :checked="record.status == 'ACTIVE' || record.status == 1"
-                      @change="handleDeleteSubjectFacility(record)"
-                    />
-                    <a-tag :color="getStatusColor(record.status)">
-                      {{ getStatusText(record.status) }}
-                    </a-tag>
-                  </span>
-                </template>
-                <template v-else>
-                  {{ record[column.dataIndex] }}
-                </template>
+              <template v-if="column.dataIndex === 'status'">
+                <span class="nowrap">
+                  <a-switch
+                    class="me-2"
+                    :checked="record.status == 'ACTIVE' || record.status == 1"
+                    @change="handleDeleteSubjectFacility(record)"
+                  />
+                  <a-tag :color="getStatusColor(record.status)">
+                    {{ getStatusText(record.status) }}
+                  </a-tag>
+                </span>
               </template>
-              <template v-else-if="column.key === 'actions'">
+              <template v-else>
+                {{ record[column.dataIndex] }}
+              </template>
+              <template v-if="column.key === 'actions'">
                 <a-space>
                   <a-tooltip title="Xem chi tiết">
                     <a-button
@@ -409,33 +429,13 @@ onMounted(() => {
         <a-form-item label="Tên Bộ Môn">
           <a-input v-model:value="newSubjectFacility.name" disabled />
         </a-form-item>
-        <a-form-item label="Cơ Sở">
+        <a-form-item label="Cơ Sở" required>
           <a-select
             v-model:value="newSubjectFacility.facilityId"
-            placeholder="Chọn cơ sở"
+            placeholder="Chọn một cơ sở"
             allowClear
-            mode="multiple"
           >
-            <a-select-option
-              :value="null"
-              :disabled="
-                Array.isArray(newSubjectFacility.facilityId) &&
-                newSubjectFacility.facilityId.length > 0 &&
-                newSubjectFacility.facilityId.some((v) => v !== null)
-              "
-            >
-              Tất cả cơ sở
-            </a-select-option>
-
-            <a-select-option
-              v-for="f in facilitySubject"
-              :key="f.id"
-              :value="f.id"
-              :disabled="
-                Array.isArray(newSubjectFacility.facilityId) &&
-                newSubjectFacility.facilityId.includes(null)
-              "
-            >
+            <a-select-option v-for="f in facilitySubject" :key="f.id" :value="f.id">
               {{ f.name }}
             </a-select-option>
           </a-select>
@@ -447,10 +447,10 @@ onMounted(() => {
     <a-modal v-model:open="modalDetail" title="Chi tiết bộ môn cơ sở" :footer="null">
       <a-descriptions bordered :column="1">
         <a-descriptions-item label="Tên bộ môn">
-          {{ detailSubjectFacility.subject?.name }}
+          {{ detailSubjectFacility.subjectName }}
         </a-descriptions-item>
         <a-descriptions-item label="Tên cơ sở">
-          {{ detailSubjectFacility.facility?.name }}
+          {{ detailSubjectFacility.facilityName }}
         </a-descriptions-item>
         <a-descriptions-item label="Trạng thái">
           <a-tag :color="getStatusColor(detailSubjectFacility.status)">
@@ -470,10 +470,25 @@ onMounted(() => {
     <a-modal
       v-model:open="modalUpdate"
       title="Sửa bộ môn cơ sở"
-      @ok="modalUpdate = false"
+      @ok="handleUpdateSubjectFacility"
       :okButtonProps="{ loading: loadingStore.isLoading }"
     >
-      <p>Chức năng đang được phát triển</p>
+      <a-form layout="vertical">
+        <a-form-item label="Tên Bộ Môn">
+          <a-input v-model:value="updateSubjectFacility.name" disabled />
+        </a-form-item>
+        <a-form-item label="Cơ Sở" required>
+          <a-select
+            v-model:value="updateSubjectFacility.facilityId"
+            placeholder="Chọn một cơ sở"
+            allowClear
+          >
+            <a-select-option v-for="f in facilitySubject" :key="f.id" :value="f.id">
+              {{ f.name }}
+            </a-select-option>
+          </a-select>
+        </a-form-item>
+      </a-form>
     </a-modal>
   </div>
 </template>

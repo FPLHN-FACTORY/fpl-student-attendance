@@ -1,6 +1,7 @@
 package udpm.hn.studentattendance.core.teacher.teachingschedule.model.response;
 
 public interface TCTeachingScheduleResponse {
+
     Integer getIndexs();
 
     String getIdPlanDate();
@@ -29,5 +30,6 @@ public interface TCTeachingScheduleResponse {
 
     String getLink();
 
-    String getLocation();
+    String getRoom();
+
 }
