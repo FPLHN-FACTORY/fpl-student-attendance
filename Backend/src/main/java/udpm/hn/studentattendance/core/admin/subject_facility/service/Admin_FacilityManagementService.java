@@ -1,25 +1,13 @@
-package udpm.hn.studentattendance.core.admin.subject_facility.service.impl;
+package udpm.hn.studentattendance.core.admin.subject_facility.service;
 
-import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
+
+import org.springframework.http.ResponseEntity;
 import udpm.hn.studentattendance.core.admin.subject_facility.model.request.ADSubjectFacilitySearchRequest;
-import udpm.hn.studentattendance.core.admin.subject_facility.model.response.ADFacilityResponse;
-import udpm.hn.studentattendance.core.admin.subject_facility.repository.Admin_FacilityRepository;
 
-import java.util.List;
+public interface Admin_FacilityManagementService {
 
-@Service
-@RequiredArgsConstructor
-public class Admin_FacilityManagementService {
+    ResponseEntity<?> getComboboxFacility();
 
-    private final Admin_FacilityRepository repository;
+    ResponseEntity<?> getComboboxFacilitySubject(ADSubjectFacilitySearchRequest request);
 
-    public List<ADFacilityResponse> getComboboxFacility() {
-        return repository.getFacility();
-    }
-
-    public List<ADFacilityResponse> getComboboxFacilitySubject(ADSubjectFacilitySearchRequest request) {
-        return repository.getListFacility(request);
-    }
 }

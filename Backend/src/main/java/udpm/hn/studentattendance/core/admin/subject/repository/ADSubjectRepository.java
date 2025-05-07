@@ -13,7 +13,7 @@ public interface ADSubjectRepository extends SubjectRepository {
 
     @Query(value = """
              SELECT
-                 ROW_NUMBER() OVER (ORDER BY s.created_at DESC) AS indexs,
+                 ROW_NUMBER() OVER (ORDER BY s.status DESC, s.created_at DESC) AS orderNumber,
                  s.id AS id,
                  s.name AS name,
                  s.status AS status,
@@ -24,27 +24,46 @@ public interface ADSubjectRepository extends SubjectRepository {
              LEFT JOIN
                 subject_facility sf ON s.id = sf.id_subject AND sf.status = 1
             LEFT JOIN
-                facility f ON sf.id_facility = f.id
+                facility f ON sf.id_facility = f.id AND f.status = 1
              WHERE
                  (:#{#request.name} IS NULL OR s.name LIKE CONCAT('%', :#{#request.name}, '%'))
                  AND (:#{#request.status} IS NULL OR s.status = :#{#request.status})
              GROUP BY
                  s.id, s.name, s.status, s.code, s.created_at
              ORDER BY
-                 s.created_at DESC
+                s.status DESC,
+                s.created_at DESC
              """, countQuery = """
             SELECT
                 COUNT(*)
             FROM
                 subject s
-            LEFT JOIN
-                subject_facility sf ON s.id = sf.id_subject AND sf.status = 1
-            LEFT JOIN
-                facility f ON sf.id_facility = f.id
             WHERE
                 (:#{#request.name} IS NULL OR s.name LIKE CONCAT('%', :#{#request.name}, '%'))
                 AND (:#{#request.status} IS NULL OR s.status = :#{#request.status})
-                AND sf.status = 1
             """, nativeQuery = true)
     Page<ADSubjectResponse> getAll(Pageable pageable, ADSubjectSearchRequest request);
+
+    @Query(value = """
+                SELECT
+                    CASE WHEN COUNT(*) > 0 THEN 'TRUE' ELSE 'FALSE' END
+                FROM subject
+                WHERE
+                    status = 1 AND
+                    code LIKE :code AND
+                    (:idSubject IS NULL OR id != :idSubject)
+            """, nativeQuery = true)
+    boolean isExistsCodeSubject(String code, String idSubject);
+
+    @Query(value = """
+                SELECT
+                    CASE WHEN COUNT(*) > 0 THEN 'TRUE' ELSE 'FALSE' END
+                FROM subject
+                WHERE
+                    status = 1 AND
+                    name LIKE :name AND
+                    (:idSubject IS NULL OR id != :idSubject)
+            """, nativeQuery = true)
+    boolean isExistsNameSubject(String name, String idSubject);
+
 }

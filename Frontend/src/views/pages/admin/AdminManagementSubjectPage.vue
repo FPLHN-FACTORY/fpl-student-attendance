@@ -14,7 +14,7 @@ import {
   EditFilled,
   EyeFilled,
 } from '@ant-design/icons-vue'
-import { DEFAULT_PAGINATION } from '@/constants'
+import { DEFAULT_PAGINATION, STATUS_TYPE } from '@/constants'
 import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
 import useLoadingStore from '@/stores/useLoadingStore'
 import { API_ROUTES_ADMIN } from '@/constants/adminConstant'
@@ -57,17 +57,18 @@ const detailSubject = reactive({
 })
 
 const columns = ref([
-  { title: '#', dataIndex: 'indexs', key: 'indexs', width: 50 },
-  { title: 'Tên bộ môn', dataIndex: 'name', key: 'name', width: 200 },
-  { title: 'Mã bộ môn', dataIndex: 'code', key: 'code', width: 150 },
+  { title: '#', dataIndex: 'orderNumber', key: 'orderNumber', width: 50 },
+  { title: 'Tên bộ môn', dataIndex: 'name', key: 'name', width: 200, ellipsis: true },
+  { title: 'Mã bộ môn', dataIndex: 'code', key: 'code', width: 150, ellipsis: true },
   {
     title: 'Cơ sở hoạt động',
     dataIndex: 'sizeSubjectSemester',
     key: 'sizeSubjectSemester',
     width: 150,
+    ellipsis: true,
   },
-  { title: 'Trạng thái', dataIndex: 'status', key: 'status', width: 100 },
-  { title: 'Chức năng', key: 'actions', width: 200 },
+  { title: 'Trạng thái', dataIndex: 'status', key: 'status', width: 100, ellipsis: true },
+  { title: 'Chức năng', key: 'actions' },
 ])
 
 const breadcrumb = ref([
@@ -190,7 +191,6 @@ const updateSubject = () => {
     id: detailSubject.id,
     name: detailSubject.name,
     code: detailSubject.code,
-    status: detailSubject.status,
   }
 
   requestAPI
@@ -263,20 +263,20 @@ onMounted(() => {
       <div class="col-12">
         <a-card :bordered="false" class="cart mb-3">
           <template #title> <FilterFilled /> Bộ lọc </template>
-          <a-row :gutter="16" class="filter-container">
-            <!-- Input tìm kiếm theo tên -->
-            <a-col :span="12" class="col">
-              <div class="label-title">Tìm kiếm theo tên:</div>
+          <div class="row g-2">
+            <div class="col-lg-6 col-md-6 col-sm-12">
+              <!-- Input tìm kiếm theo tên -->
+              <div class="label-title">Từ khoá:</div>
               <a-input
                 v-model:value="filter.name"
                 placeholder="Tìm kiếm theo tên"
                 allowClear
                 @change="fetchSubjects"
               />
-            </a-col>
+            </div>
 
             <!-- Combobox trạng thái -->
-            <a-col :span="12" class="col">
+            <div class="col-lg-6 col-md-6 col-sm-12">
               <div class="label-title">Trạng thái:</div>
               <a-select
                 v-model:value="filter.status"
@@ -289,25 +289,23 @@ onMounted(() => {
                 <a-select-option :value="1">Hoạt động</a-select-option>
                 <a-select-option :value="0">Không hoạt động</a-select-option>
               </a-select>
-            </a-col>
-          </a-row>
+            </div>
+          </div>
         </a-card>
       </div>
-    </div>
 
-    <!-- Card Danh sách bộ môn -->
-    <div class="row g-3">
       <div class="col-12">
         <a-card :bordered="false" class="cart">
           <template #title> <UnorderedListOutlined /> Danh sách bộ môn </template>
           <div class="d-flex justify-content-end mb-3">
             <a-tooltip title="Thêm bộ môn">
               <a-button type="primary" @click="showAddModal(true)">
-                <PlusOutlined /> Thêm
+                <PlusOutlined /> Thêm mới
               </a-button>
             </a-tooltip>
           </div>
           <a-table
+            class="nowrap"
             :dataSource="subjects"
             :columns="columns"
             rowKey="id"
@@ -317,38 +315,33 @@ onMounted(() => {
             :scroll="{ y: 500, x: 'auto' }"
           >
             <template #bodyCell="{ column, record, index }">
-              <template v-if="column.dataIndex">
-                <template v-if="column.dataIndex === 'indexs'">
-                  {{ index + 1 }}
-                </template>
-                <template v-else-if="column.dataIndex === 'name'">
-                  <a @click="handleAddSubjectFacility(record)">{{ record.name }}</a>
-                </template>
-                <template v-else-if="column.dataIndex === 'status'">
-                  <span class="nowrap">
-                    <a-switch
-                      class="me-2"
-                      :checked="record.status === 'ACTIVE' || record.status === 1"
-                      @change="confirmChangeStatus(record)"
-                    />
-                    <a-tag
-                      :color="record.status === 'ACTIVE' || record.status === 1 ? 'green' : 'red'"
-                    >
-                      {{
-                        record.status === 'ACTIVE' || record.status === 1
-                          ? 'Hoạt động'
-                          : 'Không hoạt động'
-                      }}
-                    </a-tag>
-                  </span>
-                </template>
-                <template v-else>
-                  {{ record[column.dataIndex] }}
-                </template>
+              <template v-if="column.dataIndex === 'name'">
+                <a @click="handleAddSubjectFacility(record)">{{ record.name }}</a>
               </template>
-              <template v-else-if="column.key === 'actions'">
+              <template v-else-if="column.dataIndex === 'status'">
+                <span class="nowrap">
+                  <a-switch
+                    class="me-2"
+                    :checked="record.status === 'ACTIVE' || record.status === 1"
+                    @change="confirmChangeStatus(record)"
+                  />
+                  <a-tag
+                    :color="record.status === 'ACTIVE' || record.status === 1 ? 'green' : 'red'"
+                  >
+                    {{
+                      record.status === 'ACTIVE' || record.status === 1
+                        ? 'Hoạt động'
+                        : 'Không hoạt động'
+                    }}
+                  </a-tag>
+                </span>
+              </template>
+              <template v-else>
+                {{ record[column.dataIndex] }}
+              </template>
+              <template v-if="column.key === 'actions'">
                 <a-space>
-                  <a-tooltip title="Bộ môn cơ sở">
+                  <a-tooltip title="Bộ môn cơ sở" v-if="record.status === STATUS_TYPE.ENABLE">
                     <a-button
                       @click="handleAddSubjectFacility(record)"
                       type="text"
@@ -435,12 +428,6 @@ onMounted(() => {
         </a-form-item>
         <a-form-item label="Tên bộ môn" required>
           <a-input v-model:value="detailSubject.name" placeholder="Nhập tên bộ môn" />
-        </a-form-item>
-        <a-form-item label="Trạng thái">
-          <a-select v-model:value="detailSubject.status" placeholder="Chọn trạng thái">
-            <a-select-option value="ACTIVE">Hoạt động</a-select-option>
-            <a-select-option value="INACTIVE">Không hoạt động</a-select-option>
-          </a-select>
         </a-form-item>
       </a-form>
     </a-modal>
