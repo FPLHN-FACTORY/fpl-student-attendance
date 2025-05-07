@@ -47,6 +47,10 @@
     background-color: rgba(0, 0, 0, 0.6);
     mask-image: radial-gradient(circle, rgba(0, 0, 0, 0) 35%, rgba(0, 0, 0, 1) 42%);
     -webkit-mask-image: radial-gradient(circle, rgba(0, 0, 0, 0) 35%, rgba(0, 0, 0, 1) 42%);
+    @media (max-width: 512px) {
+      mask-image: radial-gradient(circle, rgba(0, 0, 0, 0) 40%, rgba(0, 0, 0, 1) 42%);
+      -webkit-mask-image: radial-gradient(circle, rgba(0, 0, 0, 0) 42%, rgba(0, 0, 0, 1) 50%);
+    }
   }
   video {
     position: absolute;

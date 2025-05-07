@@ -9,11 +9,10 @@ import udpm.hn.studentattendance.core.staff.project.model.request.USProjectSearc
 import udpm.hn.studentattendance.core.staff.project.model.response.USLevelProjectResponse;
 import udpm.hn.studentattendance.core.staff.project.model.response.USSemesterResponse;
 import udpm.hn.studentattendance.core.staff.project.model.response.USSubjectResponse;
-import udpm.hn.studentattendance.core.staff.project.service.Staff_ProjectManagementService;
-import udpm.hn.studentattendance.core.staff.project.service.ipml.Staff_LevelProjectManagementService;
-import udpm.hn.studentattendance.core.staff.project.service.ipml.Staff_SemesterManagementService;
-import udpm.hn.studentattendance.core.staff.project.service.ipml.Staff_SubjectFacilityManagementService;
-import udpm.hn.studentattendance.helpers.PaginationHelper;
+import udpm.hn.studentattendance.core.staff.project.service.STProjectManagementService;
+import udpm.hn.studentattendance.core.staff.project.service.ipml.STLevelProjectManagementService;
+import udpm.hn.studentattendance.core.staff.project.service.ipml.STSemesterManagementService;
+import udpm.hn.studentattendance.core.staff.project.service.ipml.STSubjectFacilityManagementService;
 import udpm.hn.studentattendance.helpers.SessionHelper;
 import udpm.hn.studentattendance.infrastructure.constants.router.RouteStaffConstant;
 
@@ -27,41 +26,41 @@ public class USProjectManagementRestController {
     private SessionHelper sessionHelper;
 
     @Autowired
-    private Staff_ProjectManagementService service;
+    private STProjectManagementService service;
 
     @Autowired
-    private Staff_LevelProjectManagementService serviceLevel;
+    private STLevelProjectManagementService serviceLevel;
 
     @Autowired
-    private Staff_SemesterManagementService serviceSemester;
+    private STSemesterManagementService serviceSemester;
 
     @Autowired
-    private Staff_SubjectFacilityManagementService serviceSubjectFacility;
+    private STSubjectFacilityManagementService serviceSubjectFacility;
 
     @PostMapping("/list")
     public ResponseEntity<?> getListProject(@RequestBody USProjectSearchRequest request) {
         request.setFacilityId(sessionHelper.getFacilityId());
-        return PaginationHelper.createResponseEntity(service.getListProject(request));
+        return service.getListProject(request);
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<?> getProject(@PathVariable String id) {
-        return PaginationHelper.createResponseEntity(service.detailProject(id));
+        return service.detailProject(id);
     }
 
     @PostMapping
     public ResponseEntity<?> addProject(@RequestBody USProjectCreateRequest request) {
-        return PaginationHelper.createResponseEntity(service.createProject(request));
+        return service.createProject(request);
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<?> updateProject(@PathVariable String id, @RequestBody USProjectUpdateRequest request) {
-        return PaginationHelper.createResponseEntity(service.updateProject(id, request));
+        return service.updateProject(id, request);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteProject(@PathVariable String id) {
-        return PaginationHelper.createResponseEntity(service.changeStatus(id));
+    public ResponseEntity<?> changeStatusProject(@PathVariable String id) {
+        return service.changeStatus(id);
     }
 
     // Get data show combobox
@@ -72,7 +71,7 @@ public class USProjectManagementRestController {
 
     @GetMapping("/semester-combobox")
     public List<USSemesterResponse> getSemester() {
-        return serviceSemester.getComboboxSemester(sessionHelper.getFacilityId());
+        return serviceSemester.getComboboxSemester();
     }
 
     @GetMapping("/subject-facility-combobox")

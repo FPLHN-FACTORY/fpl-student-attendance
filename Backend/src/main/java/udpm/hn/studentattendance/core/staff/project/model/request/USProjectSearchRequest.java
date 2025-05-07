@@ -1,13 +1,11 @@
 package udpm.hn.studentattendance.core.staff.project.model.request;
 
 import lombok.*;
+import org.hibernate.query.Page;
 import udpm.hn.studentattendance.infrastructure.common.PageableRequest;
 
 @Getter
 @Setter
-@AllArgsConstructor
-@NoArgsConstructor
-@ToString
 public class USProjectSearchRequest extends PageableRequest {
 
     private String name;

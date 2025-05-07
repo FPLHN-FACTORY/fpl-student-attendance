@@ -5,11 +5,12 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import udpm.hn.studentattendance.core.staff.project.model.response.USSubjectResponse;
 import udpm.hn.studentattendance.repositories.ProjectRepository;
+import udpm.hn.studentattendance.repositories.SubjectFacilityRepository;
 
 import java.util.List;
 
 @Repository
-public interface Staff_SubjectManagementRepository extends ProjectRepository {
+public interface STProjectSubjectFacilityExtendRepository extends SubjectFacilityRepository {
 
     @Query(value = """
                 SELECT

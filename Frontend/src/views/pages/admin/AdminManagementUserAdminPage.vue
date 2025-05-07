@@ -6,7 +6,6 @@ import {
   EditFilled,
   UnorderedListOutlined,
   FilterFilled,
-  DeleteOutlined,
   DeleteFilled,
 } from '@ant-design/icons-vue'
 import requestAPI from '@/services/requestApiService'
@@ -99,7 +98,7 @@ const fetchStaffList = async () => {
     const res = await requestAPI.get(API_ROUTES_ADMIN.FETCH_DATA_ADMIN + '/staff')
     staffList.value = res.data.data
   } catch (err) {
-    message.error('Lỗi khi tải danh sách nhân viên')
+    message.error(err?.response?.data?.message || 'Lỗi khi tải danh sách nhân viên')
   }
 }
 

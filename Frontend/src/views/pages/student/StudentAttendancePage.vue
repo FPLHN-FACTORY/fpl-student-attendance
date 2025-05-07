@@ -49,7 +49,7 @@ const breadcrumbStore = useBreadcrumbStore()
 
 const breadcrumb = ref([
   {
-    name: GLOBAL_ROUTE_NAMES.STAFF_PAGE,
+    name: GLOBAL_ROUTE_NAMES.STUDENT_PAGE,
     breadcrumbName: 'Sinh viên',
   },
   {
@@ -216,7 +216,7 @@ const getCurrentLocation = async () => {
       formData.latitude = latitude
       formData.longitude = longitude
     },
-    (error) => {
+    () => {
       Modal.confirm({
         title: 'Không thể lấy vị trí',
         icon: createVNode(ExclamationCircleOutlined),
@@ -294,8 +294,6 @@ watch(
         <div></div>
         <div></div>
         <div></div>
-        <div></div>
-        <div></div>
       </div>
       <div class="face-id-loading" v-show="faceIDStore.isLoading">
         <div class="bg-loading">
@@ -339,7 +337,7 @@ watch(
                 allowClear
               >
                 <a-select-option :value="null">-- Tất cả trạng thái --</a-select-option>
-                <a-select-option v-for="o in ATTENDANCE_STATUS" :value="o.id">{{
+                <a-select-option v-for="o in ATTENDANCE_STATUS" :key="o.id" :value="o.id">{{
                   o.name
                 }}</a-select-option>
               </a-select>
