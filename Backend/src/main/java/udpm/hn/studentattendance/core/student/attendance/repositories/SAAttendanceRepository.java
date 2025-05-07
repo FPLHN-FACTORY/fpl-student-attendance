@@ -18,7 +18,7 @@ public interface SAAttendanceRepository extends AttendanceRepository {
 
     @Query(value = """
         SELECT 
-            ROW_NUMBER() OVER (ORDER BY a.created_at DESC) as orderNumber,
+            ROW_NUMBER() OVER (ORDER BY pd.start_date ASC) as orderNumber,
             a.id AS id,
             pd.id AS idPlanDate,
             pd.start_date AS startDate,
@@ -61,7 +61,7 @@ public interface SAAttendanceRepository extends AttendanceRepository {
             usf.id_user_student = :#{#request.idUserStudent} AND
             f2.id = :#{#request.idFacility}
         ORDER BY
-            pd.start_date DESC 
+            pd.start_date ASC 
     """, countQuery = """
        SELECT 
             COUNT(*)

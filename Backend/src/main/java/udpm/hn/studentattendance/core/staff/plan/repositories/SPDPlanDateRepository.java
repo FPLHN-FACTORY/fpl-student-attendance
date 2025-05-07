@@ -27,6 +27,7 @@ public interface SPDPlanDateRepository extends PlanDateRepository {
             pd.late_arrival,
             pd.description,
             pd.link,
+            pd.room,
             pd.required_location,
             pd.required_ip,
             CASE
@@ -98,6 +99,7 @@ public interface SPDPlanDateRepository extends PlanDateRepository {
             pl.to_date,
             pl.from_date,
             pd.link,
+            pd.room,
             pd.required_location,
             pd.required_ip,
             CASE

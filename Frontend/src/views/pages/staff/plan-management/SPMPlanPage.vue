@@ -49,13 +49,13 @@ const currentProject = ref(null)
 
 const columns = ref([
   { title: '#', dataIndex: 'orderNumber', key: 'orderNumber', width: 50 },
-  { title: 'Tên kế hoạch', dataIndex: 'planName', key: 'planName', width: 120 },
-  { title: 'Tên dự án', dataIndex: 'projectName', key: 'projectName' },
-  { title: 'Nội dung', dataIndex: 'description', key: 'description' },
-  { title: 'Bộ môn', dataIndex: 'subjectName', key: 'subjectName' },
-  { title: 'Cấp độ', dataIndex: 'level', key: 'level', width: 120 },
-  { title: 'Ngày diễn ra', dataIndex: 'semesterName', key: 'semesterName' },
-  { title: 'Trạng thái', dataIndex: 'status', key: 'status' },
+  { title: 'Tên kế hoạch', dataIndex: 'planName', key: 'planName', width: 120, ellipsis: true },
+  { title: 'Tên dự án', dataIndex: 'projectName', key: 'projectName', ellipsis: true },
+  { title: 'Nội dung', dataIndex: 'description', key: 'description', ellipsis: true },
+  { title: 'Bộ môn', dataIndex: 'subjectName', key: 'subjectName', ellipsis: true },
+  { title: 'Cấp độ', dataIndex: 'level', key: 'level', width: 120, ellipsis: true },
+  { title: 'Ngày diễn ra', dataIndex: 'semesterName', key: 'semesterName', ellipsis: true },
+  { title: 'Trạng thái', dataIndex: 'status', key: 'status', ellipsis: true },
   { title: '', key: 'actions' },
 ])
 
