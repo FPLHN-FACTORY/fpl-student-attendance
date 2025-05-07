@@ -14,6 +14,7 @@ import udpm.hn.studentattendance.infrastructure.constants.RestApiStatus;
 import udpm.hn.studentattendance.repositories.PlanDateRepository;
 import udpm.hn.studentattendance.repositories.UserStudentRepository;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -22,60 +23,81 @@ public class TeacherStudentAttendanceServiceImpl implements TeacherStudentAttend
 
     @Autowired
     private TeacherStudentAttendanceRepository repository;
-
     @Autowired
     private UserStudentRepository userStudentRepository;
-
     @Autowired
     private PlanDateRepository planDateRepository;
 
     @Override
-    public ResponseEntity<?> createAttendance(String request) {
-        List<String> getIdStudentByPlanDate = repository.getIdStudentByIdPlanDate(request);
-        for (String id : getIdStudentByPlanDate) {
-            String check = repository.getIdAttendanceByIdStudentAndPlanDate(id, request);
-            if (check == null) {
-                Attendance attendance = new Attendance();
-                attendance.setUserStudent(userStudentRepository.findById(id).get());
-                attendance.setPlanDate(planDateRepository.findById(request).get());
-                attendance.setAttendanceStatus(AttendanceStatus.ABSENT);
-                repository.save(attendance);
-            }
+    public ResponseEntity<?> createAttendance(String planDateId) {
+        // Lấy danh sách học sinh cho planDate (nếu cần bulk tạo)
+        List<String> studentIds = repository.getUserStudentIdsByPlanDate(planDateId);
+        if (studentIds.isEmpty()) {
+            return new ResponseEntity<>(new ApiResponse(
+                    RestApiStatus.ERROR,
+                    "Không tìm thấy sinh viên cho ngày điểm danh",
+                    null), HttpStatus.BAD_REQUEST);
         }
-        return new ResponseEntity<>(
-                new ApiResponse(
-                        RestApiStatus.SUCCESS,
-                        "Tạo điểm danh thành công",
-                        null),
-                HttpStatus.OK);
+        List<Attendance> results = new ArrayList<>();
+        for (String studentId : studentIds) {
+            Optional<String> optAttId = repository.findAttendanceIdByPlanDateAndStudent(planDateId, studentId);
+            Attendance attendance;
+            if (optAttId.isPresent()) {
+                attendance = repository.findById(optAttId.get()).orElseThrow();
+            } else {
+                attendance = new Attendance();
+                attendance.setUserStudent(userStudentRepository.findById(studentId).orElseThrow());
+                attendance.setPlanDate(planDateRepository.findById(planDateId).orElseThrow());
+            }
+            attendance.setAttendanceStatus(AttendanceStatus.PRESENT);
+            results.add(repository.save(attendance));
+        }
+        return new ResponseEntity<>(new ApiResponse(
+                RestApiStatus.SUCCESS,
+                "Bulk điểm danh sinh viên thành công",
+                results), HttpStatus.CREATED);
     }
 
     @Override
-    public ResponseEntity<?> getAllByPlanDate(String req) {
-        List<TeacherStudentAttendanceResponse> list = repository.getAll(req);
-        return new ResponseEntity<>(
-                new ApiResponse(
-                        RestApiStatus.SUCCESS,
-                        "Lấy danh sách sinh viên điểm danh thành công",
-                        list),
-                HttpStatus.OK);
+    public ResponseEntity<?> getAllByPlanDate(String planDateId) {
+        List<TeacherStudentAttendanceResponse> list = repository.getAllByPlanDate(planDateId);
+        return new ResponseEntity<>(new ApiResponse(
+                RestApiStatus.SUCCESS,
+                "Lấy danh sách sinh viên điểm danh thành công",
+                list), HttpStatus.OK);
     }
 
     @Override
     public ResponseEntity<?> updateStatusAttendance(TeacherStudentAttendanceRequest req) {
-        Attendance attendance = repository.findById(req.getId()).get();
-        if (req.getStatus().equals("3")) {
+        Attendance attendance;
+        // Nếu đã có attendanceId từ client -> chỉ update
+        if (req.getId() != null) {
+            attendance = repository.findById(req.getId())
+                    .orElseThrow(() -> new IllegalArgumentException("Attendance không tồn tại"));
+        } else if ("3".equals(req.getStatus())) {
+            // Nếu chưa có record và user đánh dấu Có mặt -> tạo mới
+            attendance = new Attendance();
+            attendance.setUserStudent(
+                    userStudentRepository.findById(req.getUserStudentId()).orElseThrow());
+            attendance.setPlanDate(
+                    planDateRepository.findById(req.getPlanDateId()).orElseThrow());
+        } else {
+            // Chưa có record và đánh dấu Vắng mặt -> không cần lưu
+            return new ResponseEntity<>(new ApiResponse(
+                    RestApiStatus.SUCCESS,
+                    "Không có thay đổi",
+                    null), HttpStatus.OK);
+        }
+        // Cập nhật trạng thái
+        if ("3".equals(req.getStatus())) {
             attendance.setAttendanceStatus(AttendanceStatus.PRESENT);
         } else {
             attendance.setAttendanceStatus(AttendanceStatus.ABSENT);
         }
-        repository.save(attendance);
-
-        return new ResponseEntity<>(
-                new ApiResponse(
-                        RestApiStatus.SUCCESS,
-                        "Cập nhật thành coong",
-                        attendance),
-                HttpStatus.OK);
+        Attendance saved = repository.save(attendance);
+        return new ResponseEntity<>(new ApiResponse(
+                RestApiStatus.SUCCESS,
+                "Cập nhật trạng thái điểm danh thành công",
+                saved), HttpStatus.OK);
     }
 }

@@ -60,11 +60,11 @@ const breadcrumb = ref([
 
 const columns = ref([
   { title: '#', dataIndex: 'orderNumber', key: 'orderNumber', width: 50 },
-  { title: 'Thời gian', dataIndex: 'startDate', key: 'startDate', width: 100 },
-  { title: 'Ca học', dataIndex: 'shift', key: 'shift', width: 200 },
-  { title: 'Lớp học', dataIndex: 'factoryName', key: 'factoryName' },
-  { title: 'Giảng viên', dataIndex: 'teacherName', key: 'teacherName' },
-  { title: 'Trạng thái', dataIndex: 'status', key: 'status' },
+  { title: 'Thời gian', dataIndex: 'startDate', key: 'startDate', width: 100, ellipsis: true },
+  { title: 'Ca học', dataIndex: 'shift', key: 'shift', width: 200, ellipsis: true },
+  { title: 'Nhóm xưởng', dataIndex: 'factoryName', key: 'factoryName', ellipsis: true },
+  { title: 'Giảng viên', dataIndex: 'teacherName', key: 'teacherName', ellipsis: true },
+  { title: 'Trạng thái', dataIndex: 'status', key: 'status', ellipsis: true },
   { title: '', key: 'actions' },
 ])
 

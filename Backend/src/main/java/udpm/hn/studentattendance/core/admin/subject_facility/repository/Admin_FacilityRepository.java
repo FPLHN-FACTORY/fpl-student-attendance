@@ -14,11 +14,10 @@ public interface Admin_FacilityRepository extends ProjectRepository {
 
     @Query(value = """
                 SELECT
-                    ROW_NUMBER() OVER (ORDER BY created_at DESC) AS indexs,
                     id AS id,
                     name AS name
                 FROM facility
-                WHERE  status = 1
+                WHERE status = 1
                 ORDER BY created_at DESC
             """, nativeQuery = true)
     List<ADFacilityResponse> getFacility();
@@ -26,10 +25,9 @@ public interface Admin_FacilityRepository extends ProjectRepository {
     @Query(value = """
             SELECT f.id, f.name
             FROM facility f
-            LEFT JOIN subject_facility sf
-              ON f.id = sf.id_facility
-              AND sf.id_subject = :#{#request.subjectId}
-            WHERE sf.id_facility IS NULL;
+            WHERE
+                f.status = 1
             """, nativeQuery = true)
     List<ADFacilityResponse> getListFacility(@Param("request") ADSubjectFacilitySearchRequest request);
+
 }
