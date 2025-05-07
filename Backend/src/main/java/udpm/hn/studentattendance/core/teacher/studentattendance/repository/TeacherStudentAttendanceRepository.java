@@ -1,46 +1,74 @@
 package udpm.hn.studentattendance.core.teacher.studentattendance.repository;
 
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import udpm.hn.studentattendance.core.teacher.studentattendance.model.response.TeacherStudentAttendanceResponse;
 import udpm.hn.studentattendance.repositories.AttendanceRepository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface TeacherStudentAttendanceRepository extends AttendanceRepository {
 
+    /**
+     * Lấy danh sách sinh viên kèm trạng thái điểm danh (mặc định 1 nếu chưa có bản ghi)
+     */
     @Query(value = """
-        select
-        	ROW_NUMBER() OVER (ORDER BY a.created_at DESC) AS rowNumber,
-            a.id as id,
-        	us.code as studentCode,
-        	us.name as studentName,
-        	a.attendance_status as status
-        from attendance a
-        join user_student us
-        on a.id_user_student = us.id
-        where a.id_plan_date = :req
+        SELECT
+            at.id                  AS attendanceId,
+            us.code                AS userStudentCode,
+            us.name                AS userStudentName,
+            us.id                  AS userStudentId,
+            CASE
+                WHEN at.id IS NULL THEN 1
+                ELSE at.attendance_status
+            END                   AS attendanceStatus
+        FROM factory ft
+        LEFT JOIN user_student_factory usf
+            ON usf.id_factory = ft.id
+        LEFT JOIN user_student us
+            ON us.id = usf.id_user_student
+        LEFT JOIN plan_factory pf
+            ON pf.id_factory = ft.id
+        LEFT JOIN plan_date pd
+            ON pd.id_plan_factory = pf.id
+        LEFT JOIN attendance at
+            ON at.id_plan_date = pd.id
+           AND at.id_user_student = us.id
+        WHERE pd.id = :planDateId
     """, nativeQuery = true)
-    List<TeacherStudentAttendanceResponse> getAll(String req);
+    List<TeacherStudentAttendanceResponse> getAllByPlanDate(
+            String planDateId
+    );
 
+    /**
+     * Lấy danh sách userStudentId theo planDate
+     */
     @Query(value = """
-        select usf.id_user_student
-        from plan_date pd
-        join plan_factory pf on pd.id_plan_factory = pf.id
-        join factory f on pf.id_factory = f.id
-        join user_student_factory usf on usf.id_factory = f.id
-            
-        where pd.id = :req
+        SELECT usf.id_user_student
+        FROM plan_date pd
+        JOIN plan_factory pf  ON pd.id_plan_factory = pf.id
+        JOIN factory f        ON pf.id_factory = f.id
+        JOIN user_student_factory usf ON usf.id_factory = f.id
+        WHERE pd.id = :planDateId
     """, nativeQuery = true)
-    List<String> getIdStudentByIdPlanDate(String req);
+    List<String> getUserStudentIdsByPlanDate(
+            String planDateId
+    );
 
+    /**
+     * Lấy attendanceId theo planDate và userStudent
+     */
     @Query(value = """
-        select a.id
-        from attendance a
-        join plan_date pd on a.id_plan_date = pd.id
-        join user_student us on a.id_user_student = us.id
-        where pd.id = :b and us.id = :a  
+        SELECT a.id
+        FROM attendance a
+        WHERE a.id_plan_date = :planDateId
+          AND a.id_user_student = :userStudentId
     """, nativeQuery = true)
-    String getIdAttendanceByIdStudentAndPlanDate(String a, String b);
+    Optional<String> findAttendanceIdByPlanDateAndStudent(
+            String planDateId,
+            String userStudentId
+    );
 }
