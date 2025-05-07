@@ -67,29 +67,59 @@ const pagination = ref({ ...DEFAULT_PAGINATION })
 // Cột hiển thị trong table lịch dạy chung
 const columns = [
   { title: '#', dataIndex: 'indexs', key: 'indexs', width: 50 },
-  { title: 'Ngày dạy', dataIndex: 'startTeaching', key: 'startTeaching', width: 100 },
-  { title: 'Thời gian', key: 'time', width: 100 },
-  { title: 'Ca học', dataIndex: 'shift', key: 'shift', width: 50 },
-  { title: 'Điểm danh muộn', dataIndex: 'lateArrival', key: 'lateArrival', width: 50 },
-  { title: 'Xưởng', dataIndex: 'factoryName', key: 'factoryName', width: 100 },
-  { title: 'Dự án', dataIndex: 'projectName', key: 'projectName', width: 180 },
-  { title: 'Địa điểm', dataIndex: 'location', key: 'location', width: 100 },
-  { title: 'Hình thức', dataIndex: 'type', key: 'type', width: 100 },
-  { title: 'Link học', dataIndex: 'link', key: 'link', width: 180 },
-  { title: 'Chi tiết / Sửa', dataIndex: 'description', key: 'description', width: 100 },
+  {
+    title: 'Ngày dạy',
+    dataIndex: 'startTeaching',
+    key: 'startTeaching',
+    width: 100,
+    ellipsis: true,
+  },
+  { title: 'Thời gian', key: 'time', width: 100, ellipsis: true },
+  { title: 'Ca học', dataIndex: 'shift', key: 'shift', width: 50, ellipsis: true },
+  {
+    title: 'Điểm danh muộn',
+    dataIndex: 'lateArrival',
+    key: 'lateArrival',
+    width: 50,
+    ellipsis: true,
+  },
+  { title: 'Nhóm Xưởng', dataIndex: 'factoryName', key: 'factoryName', width: 100, ellipsis: true },
+  { title: 'Dự án', dataIndex: 'projectName', key: 'projectName', width: 180, ellipsis: true },
+  { title: 'Địa điểm học', dataIndex: 'room', key: 'room', width: 100, ellipsis: true },
+  { title: 'Hình thức', dataIndex: 'type', key: 'type', width: 100, ellipsis: true },
+  { title: 'Link học', dataIndex: 'link', key: 'link', width: 180, ellipsis: true },
+  {
+    title: 'Chi tiết / Sửa',
+    dataIndex: 'description',
+    key: 'description',
+    width: 100,
+    ellipsis: true,
+  },
 ]
 
 // Cột hiển thị cho table lịch dạy hôm nay
 const columnsTeachingPresent = [
   { title: '#', dataIndex: 'indexs', key: 'indexs', width: 50 },
-  { title: 'Thời gian', key: 'time', width: 100 },
-  { title: 'Ca học', dataIndex: 'shift', key: 'shift', width: 50 },
-  { title: 'Điểm danh muộn ', dataIndex: 'lateArrival', key: 'lateArrival', width: 50 },
-  { title: 'Xưởng', dataIndex: 'factoryName', key: 'factoryName', width: 100 },
-  { title: 'Dự án', dataIndex: 'projectName', key: 'projectName', width: 180 },
-  { title: 'Địa điểm', dataIndex: 'location', key: 'location', width: 100 },
-  { title: 'Link học', dataIndex: 'link', key: 'link', width: 180 },
-  { title: 'Chi tiết / Sửa', dataIndex: 'description', key: 'description', width: 100 },
+  { title: 'Thời gian', key: 'time', width: 100, ellipsis: true },
+  { title: 'Ca học', dataIndex: 'shift', key: 'shift', width: 50, ellipsis: true },
+  {
+    title: 'Điểm danh muộn ',
+    dataIndex: 'lateArrival',
+    key: 'lateArrival',
+    width: 50,
+    ellipsis: true,
+  },
+  { title: 'Xưởng', dataIndex: 'factoryName', key: 'factoryName', width: 100, ellipsis: true },
+  { title: 'Dự án', dataIndex: 'projectName', key: 'projectName', width: 180, ellipsis: true },
+  { title: 'Địa điểm học', dataIndex: 'room', key: 'room', width: 100, ellipsis: true },
+  { title: 'Link học', dataIndex: 'link', key: 'link', width: 180, ellipsis: true },
+  {
+    title: 'Chi tiết / Sửa',
+    dataIndex: 'description',
+    key: 'description',
+    width: 100,
+    ellipsis: true,
+  },
   { title: 'Điểm danh', key: 'action', width: 100 },
 ]
 
@@ -367,8 +397,8 @@ function confirmLinkModal() {
     // 2) sau đó toggle sang ONLINE
     .then(() =>
       requestAPI.put(
-        `${API_ROUTES_TEACHER.FETCH_DATA_SCHEDULE}/change-type/${pendingRecord.value.idPlanDate}`
-      )
+        `${API_ROUTES_TEACHER.FETCH_DATA_SCHEDULE}/change-type/${pendingRecord.value.idPlanDate}`,
+      ),
     )
     .then(() => {
       message.success('Chuyển Online thành công với link mới')
@@ -398,7 +428,7 @@ onMounted(() => {
           <template #title> <FilterFilled /> Bộ lọc tìm kiếm </template>
           <div class="row g-4">
             <!-- ... các filter giống cũ ... -->
-            <div class="col-6">
+            <div class="col-md-6 col-sm-6">
               <div class="label-title">Khoảng thời gian:</div>
               <a-select
                 v-model:value="filter.durationOption"
@@ -413,7 +443,7 @@ onMounted(() => {
                 >
               </a-select>
             </div>
-            <div class="col-6">
+            <div class="col-md-6 col-sm-6">
               <div class="label-title">Hình thức học:</div>
               <a-select
                 v-model:value="filter.shiftType"
@@ -452,7 +482,7 @@ onMounted(() => {
                 {{
                   `${formatDate(record.startTeaching, 'HH:mm')} - ${formatDate(
                     record.endTeaching,
-                    'HH:mm'
+                    'HH:mm',
                   )}`
                 }}
               </template>
@@ -466,7 +496,7 @@ onMounted(() => {
                   {{
                     `${dayOfWeek(record.startTeaching)}, ${formatDate(
                       record.startTeaching,
-                      DEFAULT_DATE_FORMAT
+                      DEFAULT_DATE_FORMAT,
                     )}`
                   }}
                 </template>
@@ -559,7 +589,7 @@ onMounted(() => {
                 {{
                   `${formatDate(record.startTeaching, 'HH:mm')} - ${formatDate(
                     record.endTeaching,
-                    'HH:mm'
+                    'HH:mm',
                   )}`
                 }}
               </template>
@@ -573,7 +603,7 @@ onMounted(() => {
                   {{
                     `${dayOfWeek(record.startTeaching)}, ${formatDate(
                       record.startTeaching,
-                      DEFAULT_DATE_FORMAT
+                      DEFAULT_DATE_FORMAT,
                     )}`
                   }}
                 </template>
