@@ -304,6 +304,7 @@ onMounted(() => {
           <template v-if="column.dataIndex === 'userAdminStatus'">
             <a-switch
               :checked="record.userAdminStatus === 1"
+              class="me-2"
               @change="handleChangeStatus(record)"
             />
             <a-tag :color="record.userAdminStatus === 1 ? 'green' : 'red'">{{
