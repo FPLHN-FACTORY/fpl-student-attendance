@@ -3,8 +3,8 @@ import {
   PlusOutlined,
   UnorderedListOutlined,
   EditFilled,
-  SyncOutlined,
   FilterFilled,
+  SearchOutlined,
 } from '@ant-design/icons-vue'
 import { message, Modal } from 'ant-design-vue'
 import { ref, reactive, onMounted } from 'vue'
@@ -63,6 +63,7 @@ const filter = reactive({
   semesterId: null,
   subjectId: null,
   levelProjectId: null,
+  facilityId: null,
 })
 
 const pagination = reactive({
@@ -93,11 +94,14 @@ const fetchProjects = () => {
   loadingStore.show()
   requestAPI
     .post(`${API_ROUTES_STAFF.FETCH_DATA_PROJECT}/list`, {
-      params: {
-        ...filter,
-        page: pagination.current,
-        size: pagination.pageSize,
-      },
+      name: filter.name,
+      levelProjectId: filter.levelProjectId,
+      semesterId: filter.semesterId,
+      subjectId: filter.subjectId,
+      facilityId: filter.facilityId,
+      status: filter.status,
+      page: pagination.current,
+      size: pagination.pageSize
     })
     .then((response) => {
       projects.value = response.data.data.data
@@ -148,10 +152,24 @@ const fetchSubjects = () => {
 
 // Xử lý phân trang
 const handleTableChange = (pageInfo) => {
-  filter.page = pageInfo.current
-  filter.pageSize = pageInfo.pageSize
   pagination.current = pageInfo.current
   pagination.pageSize = pageInfo.pageSize
+  fetchProjects()
+}
+
+// Xử lý clear filter
+const handleClearFilter = () => {
+  Object.assign(filter, {
+    name: null,
+    status: null,
+    page: 1,
+    pageSize: 5,
+    semesterId: null,
+    subjectId: null,
+    levelProjectId: null,
+    facilityId: null,
+  })
+  pagination.current = 1
   fetchProjects()
 }
 
@@ -184,19 +202,6 @@ const handleAddProject = () => {
     })
     .catch(() => {
       message.error('Lỗi khi thêm dự án')
-    })
-}
-
-// Xem chi tiết dự án
-const handleDetailProject = (record) => {
-  requestAPI
-    .get(`${API_ROUTES_STAFF.FETCH_DATA_PROJECT}/${record.id}`)
-    .then((response) => {
-      Object.assign(detailProject, response.data.data)
-      modalDetail.value = true
-    })
-    .catch(() => {
-      message.error('Lỗi khi lấy thông tin')
     })
 }
 
@@ -298,28 +303,35 @@ onMounted(() => {
 
 <template>
   <div class="container-fluid">
-    <!-- Card lọc dự án -->
     <div class="row g-3">
       <div class="col-12">
-        <a-card :bordered="false" class="filter-card">
+        <!-- Bộ lọc tìm kiếm -->
+        <a-card :bordered="false" class="cart">
           <template #title> <FilterFilled /> Bộ lọc </template>
-          <a-row :gutter="16" class="filter-container">
-            <a-col :span="8" class="col">
+          <div class="row g-2">
+            <div class="col-xxl-6 col-lg-8 col-md-10 col-sm-12">
+              <div class="label-title">Từ khoá:</div>
               <a-input
                 v-model:value="filter.name"
                 placeholder="Tìm kiếm theo tên"
                 allowClear
-                class="filter-input"
+                class="filter-input w-100"
                 @change="fetchProjects"
-              />
-            </a-col>
-            <a-col :span="4" class="col">
+              >
+                <template #prefix>
+                  <SearchOutlined />
+                </template>
+              </a-input>
+            </div>
+            <div class="col-xxl-6 col-lg-8 col-md-10 col-sm-12">
+              <div class="label-title">Cấp dự án:</div>
               <a-select
                 v-model:value="filter.levelProjectId"
                 placeholder="Cấp dự án"
                 allowClear
-                class="filter-select"
+                class="filter-select w-100"
                 :dropdownMatchSelectWidth="false"
+                :style="{ minWidth: '200px' }"
                 @change="fetchProjects"
               >
                 <a-select-option :value="null">Tất cả cấp dự án</a-select-option>
@@ -327,33 +339,35 @@ onMounted(() => {
                   {{ level.name }}
                 </a-select-option>
               </a-select>
-            </a-col>
-            <a-col :span="4" class="col">
+            </div>
+          </div>
+          <div class="row g-2 mt-2">
+            <div class="col-xxl-4 col-lg-6 col-md-8 col-sm-8">
+              <div class="label-title">Học kỳ:</div>
               <a-select
                 v-model:value="filter.semesterId"
                 placeholder="Học kỳ"
                 allowClear
-                class="filter-select"
+                class="filter-select w-100"
                 :dropdownMatchSelectWidth="false"
+                :style="{ minWidth: '200px' }"
                 @change="fetchProjects"
               >
                 <a-select-option :value="null">Tất cả học kỳ</a-select-option>
-                <a-select-option
-                  v-for="semester in semesters"
-                  :key="semester.id"
-                  :value="semester.id"
-                >
+                <a-select-option v-for="semester in semesters" :key="semester.id" :value="semester.id">
                   {{ semester.code }}
                 </a-select-option>
               </a-select>
-            </a-col>
-            <a-col :span="4" class="col">
+            </div>
+            <div class="col-xxl-4 col-lg-6 col-md-8 col-sm-8">
+              <div class="label-title">Môn học:</div>
               <a-select
                 v-model:value="filter.subjectId"
                 placeholder="Môn học"
                 allowClear
-                class="filter-select"
+                class="filter-select w-100"
                 :dropdownMatchSelectWidth="false"
+                :style="{ minWidth: '200px' }"
                 @change="fetchProjects"
               >
                 <a-select-option :value="null">Tất cả môn học</a-select-option>
@@ -361,31 +375,46 @@ onMounted(() => {
                   {{ subject.name }}
                 </a-select-option>
               </a-select>
-            </a-col>
-            <a-col :span="4" class="col">
+            </div>
+            <div class="col-xxl-4 col-lg-6 col-md-8 col-sm-8">
+              <div class="label-title">Trạng thái:</div>
               <a-select
                 v-model:value="filter.status"
                 placeholder="Trạng thái"
                 allowClear
-                class="filter-select"
+                class="filter-select w-100"
                 :dropdownMatchSelectWidth="false"
+                :style="{ minWidth: '200px' }"
                 @change="fetchProjects"
               >
                 <a-select-option :value="null">Tất cả trạng thái</a-select-option>
                 <a-select-option :value="1">Đang triển khai</a-select-option>
                 <a-select-option :value="0">Không hoạt động</a-select-option>
               </a-select>
-            </a-col>
-          </a-row>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-12">
+              <div class="d-flex justify-content-center flex-wrap gap-2 mt-3">
+                <a-button class="btn-light" @click="fetchProjects">
+                  <FilterFilled /> Lọc
+                </a-button>
+                <a-button class="btn-gray" @click="handleClearFilter"> Huỷ lọc </a-button>
+              </div>
+            </div>
+          </div>
         </a-card>
       </div>
 
       <div class="col-12">
         <a-card :bordered="false" class="cart">
-          <template #title> <UnorderedListOutlined /> Danh sách dự án </template>
-          <div class="d-flex justify-content-end mb-3">
-            <a-button type="primary" @click="modalAdd = true"> <PlusOutlined /> Thêm </a-button>
+          <template #title> <UnorderedListOutlined /> Danh sách dự án</template>
+          <div class="d-flex justify-content-end mb-3 flex-wrap gap-3">
+            <a-button type="primary" @click="modalAdd = true">
+              <PlusOutlined /> Thêm
+            </a-button>
           </div>
+
           <a-table
             :dataSource="projects"
             :columns="columns"
