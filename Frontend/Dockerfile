@@ -32,7 +32,6 @@ WORKDIR /usr/share/nginx/html
 # 1. Xoá config mặc định (nếu bạn muốn mount conf riêng)
 RUN rm /etc/nginx/conf.d/default.conf
 
-
 # 2. Copy bản build từ builder sang thư mục serve tĩnh
 COPY --from=builder /app/dist .
 
