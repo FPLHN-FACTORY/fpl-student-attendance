@@ -227,6 +227,20 @@ hr {
     color: #5537b9;
   }
 }
+
+@media (max-width: 912px) {
+  .disable-scroll-x {
+    overflow: hidden;
+  }
+  .sider-content {
+    width: 100% !important;
+    transition: 0.3s all;
+  }
+  .ant-layout-sider-collapsed + .sider-content {
+    transform: translateX(250px);
+  }
+}
+
 .ant-layout {
   background: #f8f9fa;
   .ant-layout-sider-children {
@@ -304,7 +318,7 @@ hr {
         min-width: 0 !important;
         width: 0 !important;
         .ant-layout-sider-children {
-          width: unset;
+          width: 250px;
         }
       }
     }
@@ -326,6 +340,9 @@ hr {
         max-width: 250px !important;
         min-width: 250px !important;
         width: 250px !important;
+        position: fixed !important;
+        height: 100%;
+        z-index: 9;
         .ant-menu-item {
           visibility: visible !important;
         }

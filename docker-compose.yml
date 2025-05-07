@@ -14,16 +14,21 @@ services:
       - attendance_data:/var/lib/mysql
 
   attendance-fe:
-    image: quocanhh86/fpl-student-attendance-fe:multi-arch
+    image: inuha98/fpt-attendance-fe:latest
     container_name: attendance-fe
     restart: always
     ports:
-      - "80:80"
+      - "8080:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./nginx/conf.d:/etc/nginx/conf.d
+      - ./nginx/ssl:/etc/nginx/ssl
     depends_on:
       - attendance-be
 
   attendance-be:
-    image: quocanhh86/fpl-student-attendance-be:multi-arch
+    image: inuha98/fpt-attendance-be:latest
     container_name: attendance-be
     restart: always
     ports:
@@ -55,7 +60,7 @@ services:
       MAILER_PORT: 587
 
       SERVER_PORT: 8765
-      SERVER_ALLOWED_ORIGIN: http://fptudpm.site,http://server.fptudpm.site
+      SERVER_ALLOWED_ORIGIN: http://fptudpm.site,http://server.fptudpm.site,https://fptudpm.site,https://server.fptudpm.site
       APP_CONFIG_DISABLED_CHECK_EMAIL_FPT: "true"
       TZ: Asia/Ho_Chi_Minh
     depends_on:
