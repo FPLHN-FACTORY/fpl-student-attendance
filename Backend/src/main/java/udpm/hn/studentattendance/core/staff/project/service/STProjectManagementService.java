@@ -1,20 +1,21 @@
 package udpm.hn.studentattendance.core.staff.project.service;
 
+import org.springframework.http.ResponseEntity;
 import udpm.hn.studentattendance.core.staff.project.model.request.USProjectCreateRequest;
 import udpm.hn.studentattendance.core.staff.project.model.request.USProjectUpdateRequest;
 import udpm.hn.studentattendance.core.staff.project.model.request.USProjectSearchRequest;
 import udpm.hn.studentattendance.infrastructure.common.ResponseObject;
 
-public interface Staff_ProjectManagementService {
+public interface STProjectManagementService {
 
-    ResponseObject<?> getListProject(USProjectSearchRequest request);
+    ResponseEntity<?> getListProject(USProjectSearchRequest request);
 
-    ResponseObject<?> createProject(USProjectCreateRequest request);
+    ResponseEntity<?> createProject(USProjectCreateRequest request);
 
-    ResponseObject<?> updateProject(String id, USProjectUpdateRequest request);
+    ResponseEntity<?> updateProject(String id, USProjectUpdateRequest request);
 
-    ResponseObject<?> detailProject(String id);
+    ResponseEntity<?> detailProject(String id);
 
-    ResponseObject<?> changeStatus(String id);
+    ResponseEntity<?> changeStatus(String id);
 
 }

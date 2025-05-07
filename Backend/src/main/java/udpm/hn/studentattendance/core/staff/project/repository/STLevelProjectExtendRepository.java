@@ -8,7 +8,7 @@ import udpm.hn.studentattendance.repositories.LevelProjectRepository;
 import java.util.List;
 
 @Repository
-public interface Staff_LevelProjectManagementRepository extends LevelProjectRepository {
+public interface STLevelProjectExtendRepository extends LevelProjectRepository {
 
     @Query(value = """
                 SELECT

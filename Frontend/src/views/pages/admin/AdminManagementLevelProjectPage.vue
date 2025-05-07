@@ -4,11 +4,8 @@ import { message, Modal } from 'ant-design-vue'
 import requestAPI from '@/services/requestApiService'
 import {
   PlusOutlined,
-  EyeOutlined,
-  EditOutlined,
   UnorderedListOutlined,
   FilterFilled,
-  SyncOutlined,
   EditFilled,
   EyeFilled,
 } from '@ant-design/icons-vue'
