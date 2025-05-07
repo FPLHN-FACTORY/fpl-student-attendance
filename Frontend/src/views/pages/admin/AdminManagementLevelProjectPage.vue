@@ -4,11 +4,8 @@ import { message, Modal } from 'ant-design-vue'
 import requestAPI from '@/services/requestApiService'
 import {
   PlusOutlined,
-  EyeOutlined,
-  EditOutlined,
   UnorderedListOutlined,
   FilterFilled,
-  SyncOutlined,
   EditFilled,
   EyeFilled,
 } from '@ant-design/icons-vue'
@@ -40,7 +37,6 @@ const modalDetail = ref(false)
 
 const newLevel = reactive({
   name: '',
-  code: '',
   description: '',
 })
 
@@ -55,12 +51,12 @@ const detailLevel = reactive({
 })
 
 const columns = ref([
-  { title: '#', dataIndex: 'rowNumber', key: 'rowNumber', width: 50 },
-  { title: 'Tên cấp dự án', dataIndex: 'name', key: 'name', width: 200 },
-  { title: 'Mã cấp dự án', dataIndex: 'code', key: 'code', width: 150 },
-  { title: 'Mô tả', dataIndex: 'description', key: 'description', width: 250 },
-  { title: 'Trạng thái', dataIndex: 'status', key: 'status', width: 100 },
-  { title: 'Chức năng', key: 'actions', width: 150 },
+  { title: '#', dataIndex: 'orderNumber', key: 'orderNumber', width: 50 },
+  { title: 'Mã', dataIndex: 'code', key: 'code', width: 150, ellipsis: true },
+  { title: 'Tên cấp dự án', dataIndex: 'name', key: 'name', width: 200, ellipsis: true },
+  { title: 'Mô tả', dataIndex: 'description', key: 'description', width: 250, ellipsis: true },
+  { title: 'Trạng thái', dataIndex: 'status', key: 'status', width: 100, ellipsis: true },
+  { title: 'Chức năng', key: 'actions' },
 ])
 
 const breadcrumb = ref([
@@ -102,7 +98,6 @@ const fetchLevels = () => {
 
 const clearNewLevelForm = () => {
   newLevel.name = ''
-  newLevel.code = ''
   newLevel.description = ''
 }
 
@@ -115,10 +110,6 @@ const handleTableChange = (pageInfo) => {
 const submitAddLevel = () => {
   if (!newLevel.name || !newLevel.name.trim()) {
     message.error('Vui lòng nhập tên cấp dự án')
-    return
-  }
-  if (!newLevel.code || !newLevel.code.trim()) {
-    message.error('Vui lòng nhập mã cấp dự án')
     return
   }
   loadingStore.show()
@@ -173,10 +164,6 @@ const prepareUpdateLevel = (record) => {
 const submitUpdateLevel = () => {
   if (!detailLevel.name) {
     message.error('Vui lòng nhập tên cấp dự án')
-    return
-  }
-  if (!detailLevel.code) {
-    message.error('Vui lòng nhập mã cấp dự án')
     return
   }
   loadingStore.show()
@@ -244,9 +231,6 @@ onMounted(() => {
   <!-- Modal Thêm cấp dự án -->
   <a-modal v-model:open="modalAdd" title="Thêm cấp dự án" @ok="submitAddLevel">
     <a-form :model="newLevel" layout="vertical">
-      <a-form-item label="Mã cấp dự án" required>
-        <a-input v-model:value="newLevel.code" placeholder="Nhập mã cấp dự án" />
-      </a-form-item>
       <a-form-item label="Tên cấp dự án" required>
         <a-input v-model:value="newLevel.name" placeholder="Nhập tên cấp dự án" />
       </a-form-item>
@@ -259,20 +243,11 @@ onMounted(() => {
   <!-- Modal Cập nhật cấp dự án -->
   <a-modal v-model:open="modalUpdate" title="Cập nhật cấp dự án" @ok="submitUpdateLevel">
     <a-form :model="detailLevel" layout="vertical">
-      <a-form-item label="Mã cấp dự án" required>
-        <a-input v-model:value="detailLevel.code" placeholder="Nhập mã cấp dự án" />
-      </a-form-item>
       <a-form-item label="Tên cấp dự án" required>
         <a-input v-model:value="detailLevel.name" placeholder="Nhập tên cấp dự án" />
       </a-form-item>
       <a-form-item label="Mô tả">
         <a-textarea v-model:value="detailLevel.description" placeholder="Nhập mô tả" :rows="4" />
-      </a-form-item>
-      <a-form-item label="Trạng thái">
-        <a-select v-model:value="detailLevel.status" placeholder="Chọn trạng thái">
-          <a-select-option value="ACTIVE">Hoạt động</a-select-option>
-          <a-select-option value="INACTIVE">Không hoạt động</a-select-option>
-        </a-select>
       </a-form-item>
     </a-form>
   </a-modal>
@@ -305,7 +280,7 @@ onMounted(() => {
           <template #title> <FilterFilled /> Bộ lọc </template>
           <div class="row g-2">
             <div class="col-md-6 col-sm-12">
-              <div class="label-title">Tìm kiếm theo tên, mã:</div>
+              <div class="label-title">Từ khoá:</div>
               <a-input
                 v-model:value="filter.name"
                 placeholder="Tên hoặc mã cấp dự án"
@@ -338,10 +313,13 @@ onMounted(() => {
           <template #title> <UnorderedListOutlined /> Danh sách cấp dự án </template>
           <div class="d-flex justify-content-end mb-3">
             <a-tooltip title="Thêm cấp dự án">
-              <a-button type="primary" @click="modalAdd = true"> <PlusOutlined /> Thêm </a-button>
+              <a-button type="primary" @click="modalAdd = true">
+                <PlusOutlined /> Thêm mới
+              </a-button>
             </a-tooltip>
           </div>
           <a-table
+            class="nowrap"
             rowKey="id"
             :dataSource="levels"
             :columns="columns"
@@ -351,33 +329,25 @@ onMounted(() => {
             :scroll="{ y: 500, x: 'auto' }"
           >
             <template #bodyCell="{ column, record, index }">
-              <template v-if="column.dataIndex">
-                <template v-if="column.dataIndex === 'rowNumber'">
-                  {{ index + 1 }}
-                </template>
-                <template v-else-if="column.dataIndex === 'status'">
-                  <span class="nowrap">
-                    <a-switch
-                      class="me-2"
-                      :checked="record.status === 'ACTIVE' || record.status === 1"
-                      @change="confirmChangeStatus(record)"
-                    />
-                    <a-tag
-                      :color="record.status === 'ACTIVE' || record.status === 1 ? 'green' : 'red'"
-                    >
-                      {{
-                        record.status === 'ACTIVE' || record.status === 1
-                          ? 'Hoạt động'
-                          : 'Không hoạt động'
-                      }}
-                    </a-tag>
-                  </span>
-                </template>
-
-                <template v-else>
-                  {{ record[column.dataIndex] }}
-                </template>
+              <template v-if="column.dataIndex === 'status'">
+                <span class="nowrap">
+                  <a-switch
+                    class="me-2"
+                    :checked="record.status === 'ACTIVE' || record.status === 1"
+                    @change="confirmChangeStatus(record)"
+                  />
+                  <a-tag
+                    :color="record.status === 'ACTIVE' || record.status === 1 ? 'green' : 'red'"
+                  >
+                    {{
+                      record.status === 'ACTIVE' || record.status === 1
+                        ? 'Hoạt động'
+                        : 'Không hoạt động'
+                    }}
+                  </a-tag>
+                </span>
               </template>
+
               <template v-else-if="column.key === 'actions'">
                 <a-space>
                   <a-tooltip title="Xem chi tiết">
@@ -407,4 +377,3 @@ onMounted(() => {
     </div>
   </div>
 </template>
-
