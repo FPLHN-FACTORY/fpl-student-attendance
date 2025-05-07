@@ -65,11 +65,11 @@ const lstData = ref([])
 
 const columns = ref([
   { title: '#', dataIndex: 'orderNumber', key: 'orderNumber', width: 50 },
-  { title: 'Tên địa điểm', dataIndex: 'name', key: 'name' },
-  { title: 'Vĩ độ', dataIndex: 'latitude', key: 'latitude' },
-  { title: 'Kinh độ', dataIndex: 'longitude', key: 'longitude' },
-  { title: 'Bán kính', dataIndex: 'radius', key: 'radius' },
-  { title: 'Trạng thái', dataIndex: 'status', key: 'status' },
+  { title: 'Tên địa điểm', dataIndex: 'name', key: 'name', ellipsis: true },
+  { title: 'Vĩ độ', dataIndex: 'latitude', key: 'latitude', ellipsis: true },
+  { title: 'Kinh độ', dataIndex: 'longitude', key: 'longitude', ellipsis: true },
+  { title: 'Bán kính', dataIndex: 'radius', key: 'radius', ellipsis: true },
+  { title: 'Trạng thái', dataIndex: 'status', key: 'status', ellipsis: true },
   { title: '', key: 'actions' },
 ])
 

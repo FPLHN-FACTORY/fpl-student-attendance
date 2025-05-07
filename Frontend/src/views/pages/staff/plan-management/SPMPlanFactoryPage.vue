@@ -51,13 +51,19 @@ const lstShift = ref([])
 const formRefAdd = ref(null)
 
 const columns = ref([
-  { title: '#', dataIndex: 'orderNumber', key: 'orderNumber', width: 50 },
-  { title: 'Tên nhóm xưởng', dataIndex: 'factoryName', key: 'factoryName', width: 150 },
-  { title: 'Giảng viên', dataIndex: 'staffName', key: 'staffName' },
-  { title: 'Thời gian thực tế', key: 'time' },
-  { title: 'Số buổi', dataIndex: 'totalShift', key: 'totalShift' },
-  { title: 'Số sinh viên', dataIndex: 'totalStudent', key: 'totalStudent' },
-  { title: 'Trạng thái', dataIndex: 'status', key: 'status' },
+  { title: '#', dataIndex: 'orderNumber', key: 'orderNumber', width: 50, ellipsis: true },
+  {
+    title: 'Tên nhóm xưởng',
+    dataIndex: 'factoryName',
+    key: 'factoryName',
+    width: 150,
+    ellipsis: true,
+  },
+  { title: 'Giảng viên', dataIndex: 'staffName', key: 'staffName', ellipsis: true },
+  { title: 'Thời gian thực tế', key: 'time', ellipsis: true },
+  { title: 'Số buổi', dataIndex: 'totalShift', key: 'totalShift', ellipsis: true },
+  { title: 'Số sinh viên', dataIndex: 'totalStudent', key: 'totalStudent', ellipsis: true },
+  { title: 'Trạng thái', dataIndex: 'status', key: 'status', ellipsis: true },
   { title: '', key: 'actions' },
 ])
 
@@ -86,6 +92,7 @@ const formDataAdd = reactive({
   days: [],
   shift: [],
   link: null,
+  room: null,
   requiredLocation: STATUS_TYPE.ENABLE,
   requiredIp: STATUS_TYPE.ENABLE,
   lateArrival: DEFAULT_LATE_ARRIVAL,
@@ -276,6 +283,7 @@ const handleShowModalAdd = () => {
   formDataAdd.shift = []
   formDataAdd.days = []
   formDataAdd.link = null
+  formDataAdd.room = null
   formDataAdd.requiredLocation = STATUS_TYPE.ENABLE
   formDataAdd.requiredIp = STATUS_TYPE.ENABLE
 }
@@ -398,7 +406,7 @@ watch(
         </a-select>
       </a-form-item>
       <a-form-item
-        class="col-sm-8"
+        class="col-sm-4"
         label="Điểm danh muộn tối đa (phút)"
         name="lateArrival"
         :rules="formRules.lateArrival"
@@ -410,6 +418,15 @@ watch(
           :max="DEFAULT_MAX_LATE_ARRIVAL"
           :step="1"
           :disabled="modalAdd.isLoading"
+          allowClear
+        />
+      </a-form-item>
+      <a-form-item class="col-sm-4" label="Phòng học">
+        <a-input
+          class="w-100"
+          v-model:value="formDataAdd.room"
+          placeholder="Địa điểm học chi tiết"
+          :disabled="modalAdd.isLoading || formDataAdd.type == '1'"
           allowClear
         />
       </a-form-item>

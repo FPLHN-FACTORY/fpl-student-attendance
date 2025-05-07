@@ -179,6 +179,7 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
         planDate.setShift(request.getShift());
         planDate.setType(type);
         planDate.setLink(link);
+        planDate.setRoom(type == ShiftType.ONLINE ? null : request.getRoom());
         planDate.setRequiredIp(requiredIp);
         planDate.setRequiredLocation(requiredLocation);
         planDate.setDescription(request.getDescription());
@@ -282,6 +283,7 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
         planDate.setShift(request.getShift());
         planDate.setType(type);
         planDate.setLink(link);
+        planDate.setRoom(type == ShiftType.ONLINE ? null : request.getRoom());
         planDate.setRequiredIp(requiredIp);
         planDate.setRequiredLocation(requiredLocation);
         planDate.setDescription(request.getDescription());
