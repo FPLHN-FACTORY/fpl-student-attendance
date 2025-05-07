@@ -1,8 +1,8 @@
 package udpm.hn.studentattendance.core.admin.subject_facility.model.response;
 
-public interface ADFacilityResponse {
+import udpm.hn.studentattendance.infrastructure.common.IsIdentify;
 
-    String getId();
+public interface ADFacilityResponse extends IsIdentify {
 
     String getName();
 

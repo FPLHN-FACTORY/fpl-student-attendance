@@ -1,12 +1,5 @@
 <script setup>
-import {
-  DeleteFilled,
-  FilterFilled,
-  SyncOutlined,
-  UnorderedListOutlined,
-  UserDeleteOutlined,
-  UserOutlined, // <-- Import icon mới
-} from '@ant-design/icons-vue'
+import { FilterFilled, UnorderedListOutlined } from '@ant-design/icons-vue'
 import { ref, reactive, onMounted } from 'vue'
 import { message, Modal } from 'ant-design-vue'
 import { useRoute } from 'vue-router'
@@ -57,14 +50,27 @@ const pagination = reactive({
 // Cấu hình cột cho bảng
 const columns = ref([
   { title: '#', dataIndex: 'rowNumber', key: 'rowNumber', width: 50 },
-  { title: 'Mã học sinh', dataIndex: 'studentCode', key: 'studentCode', width: 150 },
-  { title: 'Tên học sinh', dataIndex: 'studentName', key: 'studentName', width: 200 },
-  { title: 'Email', dataIndex: 'studentEmail', key: 'studentEmail', width: 250 },
+  {
+    title: 'Mã học sinh',
+    dataIndex: 'studentCode',
+    key: 'studentCode',
+    width: 150,
+    ellipsis: true,
+  },
+  {
+    title: 'Tên học sinh',
+    dataIndex: 'studentName',
+    key: 'studentName',
+    width: 200,
+    ellipsis: true,
+  },
+  { title: 'Email', dataIndex: 'studentEmail', key: 'studentEmail', width: 250, ellipsis: true },
   {
     title: 'Trạng thái',
     dataIndex: 'statusStudentFactory',
     key: 'statusStudentFactory',
     width: 120,
+    ellipsis: true,
   },
 ])
 
@@ -192,35 +198,31 @@ onMounted(() => {
       <div class="col-12">
         <a-card :bordered="false" class="cart mb-3">
           <template #title> <FilterFilled /> Bộ lọc tìm kiếm </template>
-          <a-row :gutter="16" class="filter-container">
-            <a-col :span="12" class="col">
-              <div class="form-group">
-                <label class="form-label">Tìm kiếm</label>
-                <a-input
-                  v-model:value="filter.searchQuery"
-                  placeholder="Nhập mã, tên hoặc email học sinh"
-                  allowClear
-                  @change="fetchStudentFactory"
-                />
-              </div>
-            </a-col>
-            <a-col :span="12" class="col">
-              <div class="form-group">
-                <label class="form-label">Trạng thái</label>
-                <a-select
-                  v-model:value="filter.status"
-                  placeholder="Chọn trạng thái"
-                  allowClear
-                  style="width: 100%"
-                  @change="fetchStudentFactory"
-                >
-                  <a-select-option :value="''">Tất cả trạng thái</a-select-option>
-                  <a-select-option value="1">Đang học</a-select-option>
-                  <a-select-option value="0">Ngưng học</a-select-option>
-                </a-select>
-              </div>
-            </a-col>
-          </a-row>
+          <div class="row g-4">
+            <div class="col-md-6 col-sm-6">
+              <label class="label-title">Từ khoá:</label>
+              <a-input
+                v-model:value="filter.searchQuery"
+                placeholder="Nhập mã, tên hoặc email học sinh"
+                allowClear
+                @change="fetchStudentFactory"
+              />
+            </div>
+            <div class="col-md-6 col-sm-6">
+              <label class="label-title">Trạng thái:</label>
+              <a-select
+                v-model:value="filter.status"
+                placeholder="Chọn trạng thái"
+                allowClear
+                style="width: 100%"
+                @change="fetchStudentFactory"
+              >
+                <a-select-option :value="''">Tất cả trạng thái</a-select-option>
+                <a-select-option value="1">Đang học</a-select-option>
+                <a-select-option value="0">Ngưng học</a-select-option>
+              </a-select>
+            </div>
+          </div>
         </a-card>
       </div>
     </div>
@@ -231,6 +233,7 @@ onMounted(() => {
         <a-card :bordered="false" class="cart">
           <template #title> <UnorderedListOutlined /> Danh sách học sinh </template>
           <a-table
+            class="nowrap"
             :loading="isLoading"
             :dataSource="students"
             :columns="columns"

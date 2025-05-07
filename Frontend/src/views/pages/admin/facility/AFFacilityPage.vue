@@ -68,9 +68,21 @@ const detailFacility = ref({})
 // Cấu hình cột cho bảng
 const columns = ref([
   { title: '#', dataIndex: 'facilityIndex', key: 'facilityIndex', width: 60 },
-  { title: 'Tên cơ sở', dataIndex: 'facilityName', key: 'facilityName', width: 200 },
-  { title: 'Mã cơ sở', dataIndex: 'facilityCode', key: 'facilityCode', width: 150 },
-  { title: 'Trạng thái', dataIndex: 'facilityStatus', key: 'facilityStatus', width: 120 },
+  {
+    title: 'Tên cơ sở',
+    dataIndex: 'facilityName',
+    key: 'facilityName',
+    width: 200,
+    ellipsis: true,
+  },
+  { title: 'Mã cơ sở', dataIndex: 'facilityCode', key: 'facilityCode', width: 150, ellipsis: true },
+  {
+    title: 'Trạng thái',
+    dataIndex: 'facilityStatus',
+    key: 'facilityStatus',
+    width: 120,
+    ellipsis: true,
+  },
   { title: 'Chức năng', key: 'actions', width: 120 },
 ])
 
@@ -100,7 +112,7 @@ const fetchFacilities = () => {
     .catch((error) => {
       message.error(
         (error.response && error.response.data && error.response.data.message) ||
-          'Lỗi khi lấy dữ liệu cơ sở'
+          'Lỗi khi lấy dữ liệu cơ sở',
       )
     })
     .finally(() => {
@@ -148,7 +160,7 @@ const handleAddFacility = () => {
     .catch((error) => {
       message.error(
         (error.response && error.response.data && error.response.data.message) ||
-          'Lỗi khi thêm cơ sở'
+          'Lỗi khi thêm cơ sở',
       )
     })
     .finally(() => {
@@ -169,7 +181,7 @@ const handleUpdateFacility = (record) => {
     .catch((error) => {
       message.error(
         (error.response && error.response.data && error.response.data.message) ||
-          'Lỗi khi lấy chi tiết cơ sở'
+          'Lỗi khi lấy chi tiết cơ sở',
       )
     })
     .finally(() => {
@@ -195,7 +207,7 @@ const updateFacility = () => {
     .catch((error) => {
       message.error(
         (error.response && error.response.data && error.response.data.message) ||
-          'Lỗi khi cập nhật cơ sở'
+          'Lỗi khi cập nhật cơ sở',
       )
     })
     .finally(() => {
@@ -232,7 +244,7 @@ const handleChangeStatusFacility = (record) => {
         .catch((error) => {
           message.error(
             (error.response && error.response.data && error.response.data.message) ||
-              'Lỗi khi cập nhật trạng thái cơ sở'
+              'Lỗi khi cập nhật trạng thái cơ sở',
           )
         })
         .finally(() => {
@@ -253,7 +265,7 @@ const handleUp = (id) => {
     .catch((error) => {
       message.error(
         (error.response && error.response.data && error.response.data.message) ||
-          'Có lỗi xảy ra. Vui lòng thử lại sau ít phút'
+          'Có lỗi xảy ra. Vui lòng thử lại sau ít phút',
       )
     })
     .finally(() => {
@@ -272,7 +284,7 @@ const handleDown = (id) => {
     .catch((error) => {
       message.error(
         (error.response && error.response.data && error.response.data.message) ||
-          'Có lỗi xảy ra. Vui lòng thử lại sau ít phút'
+          'Có lỗi xảy ra. Vui lòng thử lại sau ít phút',
       )
     })
     .finally(() => {

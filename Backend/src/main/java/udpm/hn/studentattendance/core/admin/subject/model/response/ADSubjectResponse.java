@@ -1,10 +1,9 @@
 package udpm.hn.studentattendance.core.admin.subject.model.response;
 
-public interface ADSubjectResponse {
+import udpm.hn.studentattendance.infrastructure.common.HasOrderNumber;
+import udpm.hn.studentattendance.infrastructure.common.IsIdentify;
 
-    Integer getIndexs();
-
-    String getId();
+public interface ADSubjectResponse extends IsIdentify, HasOrderNumber {
 
     String getName();
 

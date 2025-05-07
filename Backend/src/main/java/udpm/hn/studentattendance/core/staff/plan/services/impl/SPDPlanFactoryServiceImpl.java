@@ -190,6 +190,7 @@ public class SPDPlanFactoryServiceImpl implements SPDPlanFactoryService {
                     planDate.setShift(lstShift);
                     planDate.setType(type);
                     planDate.setLink(link);
+                    planDate.setRoom(type == ShiftType.ONLINE ? null : request.getRoom());
                     planDate.setRequiredIp(requiredIp);
                     planDate.setRequiredLocation(requiredLocation);
                     planDate.setDescription(null);
