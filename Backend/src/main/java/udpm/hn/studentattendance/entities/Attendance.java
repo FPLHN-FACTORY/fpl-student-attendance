@@ -25,7 +25,6 @@ import java.io.Serializable;
 @DynamicUpdate
 @ToString
 public class Attendance extends PrimaryEntity implements Serializable {
-
     @ManyToOne
     @JoinColumn(name = "id_plan_date")
     @OnDelete(action = OnDeleteAction.CASCADE)

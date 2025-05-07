@@ -6,9 +6,11 @@ import { useRoute } from 'vue-router'
 import requestAPI from '@/services/requestApiService'
 import { API_ROUTES_TEACHER } from '@/constants/teacherConstant'
 import { ROUTE_NAMES } from '@/router/teacherRoute'
-import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
+import { GLOBAL_ROUTE_NAMES, WS_ROUTES } from '@/constants/routesConstant'
 import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
 import useLoadingStore from '@/stores/useLoadingStore'
+import { Client } from '@stomp/stompjs'
+import { ATTENDANCE_STATUS } from '@/constants'
 
 // Lấy planDateId từ query
 const route = useRoute()
@@ -30,9 +32,27 @@ const students = ref([])
 // Cột bảng
 const columns = ref([
   { title: '#', dataIndex: 'rowNumber', key: 'rowNumber', width: 50 },
-  { title: 'Mã học sinh', dataIndex: 'userStudentCode', key: 'userStudentCode', width: 150 },
-  { title: 'Tên học sinh', dataIndex: 'userStudentName', key: 'userStudentName', width: 200 },
-  { title: 'Trạng thái', dataIndex: 'attendanceStatus', key: 'attendanceStatus', width: 120 },
+  {
+    title: 'Mã học sinh',
+    dataIndex: 'userStudentCode',
+    key: 'userStudentCode',
+    width: 150,
+    ellipsis: true,
+  },
+  {
+    title: 'Tên học sinh',
+    dataIndex: 'userStudentName',
+    key: 'userStudentName',
+    width: 200,
+    ellipsis: true,
+  },
+  {
+    title: 'Trạng thái',
+    dataIndex: 'attendanceStatus',
+    key: 'attendanceStatus',
+    width: 120,
+    ellipsis: true,
+  },
 ])
 
 // Fetch students + trạng thái hiện tại
@@ -40,7 +60,7 @@ const fetchStudentAttendance = async () => {
   loadingStore.show()
   try {
     const response = await requestAPI.get(
-      `${API_ROUTES_TEACHER.FETCH_DATA_STUDENT_PLAN_DATE}/show/${planDateId}`
+      `${API_ROUTES_TEACHER.FETCH_DATA_STUDENT_PLAN_DATE}/show/${planDateId}`,
     )
     const { data } = response.data
     students.value = data.map((item, idx) => ({
@@ -94,10 +114,35 @@ const saveAttendance = async () => {
   }
 }
 
+const connectSocket = () => {
+  const client = new Client({
+    brokerURL: WS_ROUTES.SERVER_HOST,
+    reconnectDelay: 3000,
+    onConnect: (frame) => {
+      client.subscribe(WS_ROUTES.TOPIC_ATTENDANCE, (msg) => {
+        const response = JSON.parse(msg.body)
+        const idPlanDate = response?.planDateId || null
+        if (planDateId != idPlanDate) {
+          return
+        }
+        const student = students.value.find((o) => o.userStudentId === response?.userStudentId)
+        if (!student) {
+          return
+        }
+
+        student.attendanceStatus = ATTENDANCE_STATUS.PRESENT.id
+      })
+    },
+  })
+
+  client.activate()
+}
+
 // onMounted
 onMounted(() => {
   breadcrumbStore.setRoutes(breadcrumb.value)
   fetchStudentAttendance()
+  connectSocket()
 })
 </script>
 
@@ -120,21 +165,14 @@ onMounted(() => {
     </div>
     <a-card :bordered="false" class="cart">
       <template #title><UnorderedListOutlined /> Danh sách học sinh</template>
-      <div class="my-3 text-end">
-        <a-button
-          type="primary"
-          @click="saveAttendance"
-          :disabled="students.every((s) => !s._edited)"
-        >
-          Lưu điểm danh
-        </a-button>
-      </div>
       <a-table
+        class="nowrap"
         :loading="loadingStore.loading"
         :dataSource="students"
         :columns="columns"
         rowKey="userStudentId"
         :pagination="false"
+        :scroll="{ y: 500, x: 'auto' }"
       >
         <template #bodyCell="{ column, record, index }">
           <template v-if="column.key === 'rowNumber'">
@@ -142,12 +180,12 @@ onMounted(() => {
           </template>
           <template v-else-if="column.dataIndex === 'attendanceStatus'">
             <a-switch
-              :checked="record.attendanceStatus === '3'"
+              :checked="record.attendanceStatus == 3"
               class="me-2"
               @change="(checked) => handleChangeStatus(record, checked)"
             />
-            <a-tag :color="record.attendanceStatus === '3' ? 'green' : 'red'">
-              {{ record.attendanceStatus === '3' ? 'Có mặt' : 'Vắng mặt' }}
+            <a-tag :color="record.attendanceStatus == 3 ? 'green' : 'red'">
+              {{ record.attendanceStatus == 3 ? 'Có mặt' : 'Vắng mặt' }}
             </a-tag>
           </template>
           <template v-else>
@@ -155,6 +193,16 @@ onMounted(() => {
           </template>
         </template>
       </a-table>
+      <div class="my-3">
+        <a-button
+          type="primary"
+          class="w-100"
+          @click="saveAttendance"
+          :disabled="students.every((s) => !s._edited)"
+        >
+          Lưu điểm danh
+        </a-button>
+      </div>
     </a-card>
   </div>
 </template>
