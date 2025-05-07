@@ -1,5 +1,6 @@
 package udpm.hn.studentattendance.core.admin.subject_facility.service;
 
+import org.springframework.http.ResponseEntity;
 import udpm.hn.studentattendance.core.admin.subject_facility.model.request.ADSubjectFacilityCreateRequest;
 import udpm.hn.studentattendance.core.admin.subject_facility.model.request.ADSubjectFacilitySearchRequest;
 import udpm.hn.studentattendance.core.admin.subject_facility.model.request.ADSubjectFacilityUpdateRequest;
@@ -7,14 +8,14 @@ import udpm.hn.studentattendance.infrastructure.common.ResponseObject;
 
 public interface Admin_SubjectFacilityService {
 
-    ResponseObject<?> getListSubjectFacility(ADSubjectFacilitySearchRequest request);
+    ResponseEntity<?> getListSubjectFacility(ADSubjectFacilitySearchRequest request);
 
-    ResponseObject<?> createSubjectFacility(ADSubjectFacilityCreateRequest request);
+    ResponseEntity<?> createSubjectFacility(ADSubjectFacilityCreateRequest request);
 
-    ResponseObject<?> updateSubjectFacility(String id, ADSubjectFacilityUpdateRequest request);
+    ResponseEntity<?> updateSubjectFacility(String id, ADSubjectFacilityUpdateRequest request);
 
-    ResponseObject<?> detailSubjectFacility(String id);
+    ResponseEntity<?> detailSubjectFacility(String id);
 
-    ResponseObject<?> changeStatus(String id);
+    ResponseEntity<?> changeStatus(String id);
 
 }
