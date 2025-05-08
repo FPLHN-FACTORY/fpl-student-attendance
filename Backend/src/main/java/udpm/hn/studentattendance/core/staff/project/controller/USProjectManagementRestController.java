@@ -13,6 +13,7 @@ import udpm.hn.studentattendance.core.staff.project.service.STProjectManagementS
 import udpm.hn.studentattendance.core.staff.project.service.ipml.STLevelProjectManagementService;
 import udpm.hn.studentattendance.core.staff.project.service.ipml.STSemesterManagementService;
 import udpm.hn.studentattendance.core.staff.project.service.ipml.STSubjectFacilityManagementService;
+import udpm.hn.studentattendance.entities.Semester;
 import udpm.hn.studentattendance.helpers.SessionHelper;
 import udpm.hn.studentattendance.infrastructure.constants.router.RouteStaffConstant;
 
@@ -72,6 +73,11 @@ public class USProjectManagementRestController {
     @GetMapping("/semester-combobox")
     public List<USSemesterResponse> getSemester() {
         return serviceSemester.getComboboxSemester();
+    }
+
+    @GetMapping("/semester")
+    public List<Semester> getAllSemester() {
+        return serviceSemester.getSemester();
     }
 
     @GetMapping("/subject-facility-combobox")
