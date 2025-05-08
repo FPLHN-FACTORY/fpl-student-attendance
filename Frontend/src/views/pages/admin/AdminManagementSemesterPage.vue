@@ -98,7 +98,7 @@ const handleDateRangeChange = (range) => {
 
 // Hàm lấy danh sách học kỳ, truyền phân trang từ pagination
 const fetchSemesters = () => {
-  if (isLoading.value) return
+  if (isLoading.value) return 
   loadingStore.show()
   isLoading.value = true
 
