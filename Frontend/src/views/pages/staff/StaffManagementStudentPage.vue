@@ -293,6 +293,15 @@ const clearNewStudentForm = () => {
   newStudent.email = ''
 }
 
+const handleClearFilter = () => {
+  // Clear all filter values
+  Object.keys(filter).forEach(key => {
+    filter[key] = ''
+  })
+  pagination.current = 1
+  fetchStudents() // or whatever your fetch function is named
+}
+
 onMounted(() => {
   breadcrumbStore.setRoutes(breadcrumb.value)
   fetchStudents()
@@ -334,6 +343,16 @@ onMounted(() => {
               </a-select>
             </a-col>
           </a-row>
+          <div class="row">
+            <div class="col-12">
+              <div class="d-flex justify-content-center flex-wrap gap-2 mt-3">
+                <a-button class="btn-light" @click="fetchStudents">
+                  <FilterFilled /> Lọc
+                </a-button>
+                <a-button class="btn-gray" @click="handleClearFilter"> Huỷ lọc </a-button>
+              </div>
+            </div>
+          </div>
         </a-card>
       </div>
     </div>

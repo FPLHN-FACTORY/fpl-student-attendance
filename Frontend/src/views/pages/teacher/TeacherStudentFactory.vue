@@ -96,7 +96,7 @@ const fetchStudentFactory = () => {
       pagination.current = filter.page
     })
     .catch((error) => {
-      message.error(error.response?.data?.message || 'Lỗi khi lấy danh sách học sinh')
+      message.error(error.data?.message || 'Lỗi khi lấy dữ liệu')
     })
     .finally(() => {
       loadingStore.hide()
@@ -132,7 +132,7 @@ const deleteStudentFactory = (studentFactoryId) => {
       fetchStudentFactory()
     })
     .catch((error) => {
-      message.error(error.response?.data?.message || 'Lỗi khi xoá học sinh')
+      message.error(error.data?.message || 'Lỗi khi xoá học sinh')
     })
     .finally(() => {
       loadingStore.hide()
@@ -152,7 +152,7 @@ const toggleStatusStudentFactory = (record) => {
           fetchStudentFactory() // Làm mới danh sách sau khi đổi trạng thái
         })
         .catch((error) => {
-          message.error(error.response?.data?.message || 'Lỗi khi đổi trạng thái sinh viên')
+          message.error(error.data?.message || 'Lỗi khi đổi trạng thái sinh viên')
         })
         .finally(() => {
           loadingStore.hide()
@@ -185,6 +185,17 @@ const toggleStatusStudentFactory = (record) => {
 //   })
 // }
 
+const handleClearFilter = () => {
+  // Clear all filter values
+  Object.keys(filter).forEach(key => {
+    if (key !== 'factoryId') { // Keep factoryId as it's from route
+      filter[key] = ''
+    }
+  })
+  pagination.current = 1
+  fetchStudentFactory()
+}
+
 onMounted(() => {
   breadcrumbStore.setRoutes(breadcrumb.value)
   fetchStudentFactory()
@@ -198,7 +209,7 @@ onMounted(() => {
       <div class="col-12">
         <a-card :bordered="false" class="cart mb-3">
           <template #title> <FilterFilled /> Bộ lọc tìm kiếm </template>
-          <div class="row g-4">
+          <a-row :gutter="16" class="filter-container">
             <div class="col-md-6 col-sm-6">
               <label class="label-title">Từ khoá:</label>
               <a-input
@@ -221,6 +232,16 @@ onMounted(() => {
                 <a-select-option value="1">Đang học</a-select-option>
                 <a-select-option value="0">Ngưng học</a-select-option>
               </a-select>
+            </div>
+          </a-row>
+          <div class="row">
+            <div class="col-12">
+              <div class="d-flex justify-content-center flex-wrap gap-2 mt-3">
+                <a-button class="btn-light" @click="fetchStudentFactory">
+                  <FilterFilled /> Lọc
+                </a-button>
+                <a-button class="btn-gray" @click="handleClearFilter"> Huỷ lọc </a-button>
+              </div>
             </div>
           </div>
         </a-card>

@@ -2,10 +2,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import {
   PlusOutlined,
-  EditOutlined,
-  SwapOutlined,
   EditFilled,
-  SyncOutlined,
   UnorderedListOutlined,
   FilterFilled,
 } from '@ant-design/icons-vue'
@@ -15,13 +12,11 @@ import dayjs from 'dayjs'
 import { API_ROUTES_ADMIN } from '@/constants/adminConstant'
 import { ROUTE_NAMES } from '@/router/adminRoute'
 import { DEFAULT_PAGINATION } from '@/constants'
-import { useRouter } from 'vue-router'
 
 import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
 import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
 import useLoadingStore from '@/stores/useLoadingStore'
 
-const router = useRouter()
 const breadcrumbStore = useBreadcrumbStore()
 const loadingStore = useLoadingStore()
 
@@ -243,7 +238,7 @@ const updateSemester = () => {
 const handleChangeStatusSemester = (record) => {
   Modal.confirm({
     title: 'Xác nhận thay đổi trạng thái',
-    content: `Bạn có chắc muốn thay đổi trạng thái của học kỳ ${record.semesterName}?`,
+    content: `Bạn có chắc muốn thay đổi trạng thái của học kỳ ${record.semesterCode}?`,
     onOk: () => {
       loadingStore.show()
       requestAPI
@@ -269,6 +264,15 @@ const clearFormAdd = () => {
   newSemester.semesterName = ''
   newSemester.fromDate = null
   newSemester.toDate = null
+}
+
+const handleClearFilter = () => {
+  // Clear all filter values
+  Object.keys(filter).forEach(key => {
+    filter[key] = ''
+  })
+  pagination.current = 1
+  fetchSemesters() // or whatever your fetch function is named
 }
 
 onMounted(() => {
@@ -323,6 +327,16 @@ onMounted(() => {
               />
             </a-col>
           </a-row>
+          <div class="row">
+            <div class="col-12">
+              <div class="d-flex justify-content-center flex-wrap gap-2 mt-3">
+                <a-button class="btn-light" @click="fetchSemesters">
+                  <FilterFilled /> Lọc
+                </a-button>
+                <a-button class="btn-gray" @click="handleClearFilter"> Huỷ lọc </a-button>
+              </div>
+            </div>
+          </div>
         </a-card>
       </div>
     </div>
