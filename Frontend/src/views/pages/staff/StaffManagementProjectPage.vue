@@ -108,8 +108,8 @@ const fetchProjects = () => {
       pagination.total = response.data.data.totalPages * filter.pageSize
       pagination.current = response.data.data.currentPage + 1
     })
-    .catch(() => {
-      message.error('Lỗi khi lấy dữ liệu')
+    .catch((error) => {
+      message.error(error.response?.data?.message || 'Lỗi khi lấy dữ liệu')
     })
     .finally(() => {
       loadingStore.hide()
@@ -123,8 +123,8 @@ const fetchLevelCombobox = () => {
     .then((response) => {
       levels.value = response.data
     })
-    .catch(() => {
-      message.error('Lỗi khi lấy dữ liệu combobox cấp dự án')
+    .catch((error) => {
+      message.error(error.response?.data?.message || 'Lỗi khi lấy dữ liệu combobox cấp dự án')
     })
 }
 
@@ -134,19 +134,29 @@ const fetchSemesters = () => {
     .then((response) => {
       semesters.value = response.data
     })
-    .catch(() => {
-      message.error('Lỗi khi lấy dữ liệu combobox học kỳ')
+    .catch((error) => {
+      message.error(error.response?.data?.message || 'Lỗi khi lấy dữ liệu combobox học kỳ')
     })
 }
-
+const allSemesters = ref([])
+const getAllSemesters = () => {
+  requestAPI
+    .get(`${API_ROUTES_STAFF.FETCH_DATA_PROJECT}/semester`)
+    .then((response) => {
+      allSemesters.value = response.data
+    })
+    .catch((error) => {
+      message.error(error.response?.data?.message || 'Lỗi khi lấy dữ liệu combobox học kỳ')
+    })
+}
 const fetchSubjects = () => {
   requestAPI
     .get(`${API_ROUTES_STAFF.FETCH_DATA_PROJECT}/subject-facility-combobox`)
     .then((response) => {
       subjects.value = response.data
     })
-    .catch(() => {
-      message.error('Lỗi khi lấy dữ liệu combobox môn học')
+    .catch((error) => {
+      message.error(error.response?.data?.message || 'Lỗi khi lấy dữ liệu combobox môn học')
     })
 }
 
@@ -200,8 +210,8 @@ const handleAddProject = () => {
       resetForm()
       modalAdd.value = false
     })
-    .catch(() => {
-      message.error('Lỗi khi thêm dự án')
+    .catch((error) => {
+      message.error(error.response?.data?.message || 'Lỗi khi thêm dự án')
     })
 }
 
@@ -213,8 +223,8 @@ const handleEditProject = (record) => {
       Object.assign(detailProject, response.data.data)
       modalEdit.value = true
     })
-    .catch(() => {
-      message.error('Lỗi khi lấy thông tin')
+    .catch((error) => {
+      message.error(error.response?.data?.message || 'Lỗi khi lấy thông tin')
     })
 }
 
@@ -252,8 +262,8 @@ const handleUpdateProject = () => {
       modalEdit.value = false
       fetchProjects()
     })
-    .catch(() => {
-      message.error('Lỗi khi cập nhật dự án')
+    .catch((error) => {
+      message.error(error.response?.data?.message || 'Lỗi khi cập nhật dự án')
     })
 }
 
@@ -269,8 +279,8 @@ const handleDeleteProject = (record) => {
           message.success('Đổi trạng thái dự án thành công')
           fetchProjects()
         })
-        .catch(() => {
-          message.error('Lỗi khi đổi trạng thái dự án')
+        .catch((error) => {
+          message.error(error.response?.data?.message || 'Lỗi khi đổi trạng thái dự án')
         })
     },
   })
@@ -298,6 +308,7 @@ onMounted(() => {
   fetchLevelCombobox()
   fetchSemesters()
   fetchSubjects()
+  getAllSemesters()
 })
 </script>
 
@@ -354,7 +365,7 @@ onMounted(() => {
                 @change="fetchProjects"
               >
                 <a-select-option :value="null">Tất cả học kỳ</a-select-option>
-                <a-select-option v-for="semester in semesters" :key="semester.id" :value="semester.id">
+                <a-select-option v-for="semester in allSemesters" :key="semester.id" :value="semester.id">
                   {{ semester.code }}
                 </a-select-option>
               </a-select>

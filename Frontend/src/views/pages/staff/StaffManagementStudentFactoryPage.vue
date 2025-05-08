@@ -98,9 +98,7 @@ const fetchStudentFactories = () => {
       pagination.current = filter.page
     })
     .catch((error) => {
-      message.error(
-        error.response?.data?.message || 'Lỗi khi lấy danh sách sinh viên trong nhóm xưởng'
-      )
+      message.error(error.response?.data?.message || 'Lỗi khi lấy dữ liệu')
     })
     .finally(() => {
       loadingStore.hide()
@@ -127,9 +125,7 @@ const fetchExistingStudents = () => {
       }
     })
     .catch((error) => {
-      message.error(
-        error.response?.data?.message || 'Lỗi khi lấy danh sách sinh viên đã có trong nhóm xưởng'
-      )
+      message.error(error.response?.data?.message || 'Lỗi khi lấy dữ liệu')
     })
     .finally(() => {
       loadingStore.hide()
@@ -190,7 +186,7 @@ const fetchAllStudents = () => {
       updateAllStudentsCheckStatus()
     })
     .catch((error) => {
-      message.error(error.response?.data?.message || 'Lỗi khi lấy danh sách sinh viên')
+      message.error(error.response?.data?.message || 'Lỗi khi lấy dữ liệu')
     })
     .finally(() => {
       loadingStore.hide()
@@ -352,8 +348,8 @@ function fetchDetailStudent(userStudentId) {
       detailStudent.value = res.data.data
       detailModalVisible.value = true
     })
-    .catch((err) => {
-      message.error(err.response?.data?.message || 'Lấy chi tiết sinh viên thất bại')
+    .catch((error) => {
+      message.error(error.response?.data?.message || 'Lấy chi tiết sinh viên thất bại')
     })
     .finally(() => loadingStore.hide())
 }
@@ -406,8 +402,8 @@ function fetchShiftDetails() {
       shiftData.value = result.data
       shiftPagination.total = result.totalRecords || result.totalPages * shiftPagination.pageSize
     })
-    .catch((err) => {
-      message.error(err.response?.data?.message || 'Lỗi khi lấy chi tiết ca học')
+    .catch((error) => {
+      message.error(error.response?.data?.message || 'Lỗi khi lấy chi tiết ca học')
     })
     .finally(() => {
       isLoading.value = false
@@ -430,6 +426,15 @@ watch(isAddStudentModalVisible, (newVal) => {
     fetchAllStudents()
   }
 })
+
+const handleClearFilter = () => {
+  // Clear all filter values
+  Object.keys(filter).forEach(key => {
+    filter[key] = ''
+  })
+  pagination.current = 1
+  fetchStudentFactories()
+}
 
 onMounted(() => {
   breadcrumbStore.setRoutes(breadcrumb.value)
@@ -471,6 +476,16 @@ onMounted(() => {
               </a-select>
             </a-col>
           </a-row>
+          <div class="row">
+            <div class="col-12">
+              <div class="d-flex justify-content-center flex-wrap gap-2 mt-3">
+                <a-button class="btn-light" @click="fetchStudentFactories">
+                  <FilterFilled /> Lọc
+                </a-button>
+                <a-button class="btn-gray" @click="handleClearFilter"> Huỷ lọc </a-button>
+              </div>
+            </div>
+          </div>
         </a-card>
       </div>
     </div>

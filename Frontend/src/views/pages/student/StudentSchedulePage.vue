@@ -7,11 +7,12 @@ import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
 import { DEFAULT_DATE_FORMAT, DEFAULT_PAGINATION, TYPE_SHIFT } from '@/constants'
 import { onMounted, ref } from 'vue'
 import useLoadingStore from '@/stores/useLoadingStore'
-import { Modal } from 'ant-design-vue'
+import { Modal, message } from 'ant-design-vue'
 import * as XLSX from 'xlsx'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import { dayOfWeek, formatDate } from '@/utils/utils'
+import { FilterFilled } from '@ant-design-vue'
 
 const breadcrumbStore = useBreadcrumbStore()
 
@@ -23,7 +24,7 @@ const breadcrumb = ref([
   {
     name: ROUTE_NAMES.SCHEDULE,
     breadcrumbName: 'Lịch học',
-  },
+  }
 ])
 const loadingStore = useLoadingStore()
 const isLoading = ref(false)
@@ -71,8 +72,8 @@ const fetchAttendanceList = () => {
       pagination.value.total = data.data.totalPages * filter.value.pageSize
       pagination.value.current = filter.value.page
     })
-    .catch(() => {
-      message.error('Lỗi khi lấy dữ liệu')
+    .catch((error) => {
+      message.error(error.response?.data?.message || 'Lỗi khi lấy dữ liệu')
     })
     .finally(() => {
       loadingStore.hide()
@@ -138,6 +139,15 @@ const exportToPDF = () => {
   doc.save('DiemDanh.pdf')
 }
 
+const handleClearFilter = () => {
+  // Clear all filter values
+  Object.keys(filter).forEach(key => {
+    filter[key] = ''
+  })
+  pagination.value.current = 1
+  fetchAttendanceList()
+}
+
 onMounted(() => {
   filter.value.plan = 7
   breadcrumbStore.setRoutes(breadcrumb.value)
@@ -150,8 +160,8 @@ onMounted(() => {
     <div class="row g-3">
       <div class="col-12">
         <div class="container-fluid">
-          <a-card title="Bộ lọc" :bordered="false" class="cart mb-3">
-            <div class="label-title">Thời gian:</div>
+          <a-card class="mb-3">
+            <template #title><FilterFilled /> Bộ lọc</template>
             <a-row :gutter="16" class="filter-container">
               <a-col :span="24">
                 <a-select
@@ -172,6 +182,16 @@ onMounted(() => {
                 </a-select>
               </a-col>
             </a-row>
+            <div class="row">
+              <div class="col-12">
+                <div class="d-flex justify-content-center flex-wrap gap-2 mt-3">
+                  <a-button class="btn-light" @click="fetchAttendanceList">
+                    <FilterFilled /> Lọc
+                  </a-button>
+                  <a-button class="btn-gray" @click="handleClearFilter"> Huỷ lọc </a-button>
+                </div>
+              </div>
+            </div>
           </a-card>
 
           <a-card title="Danh sách điểm danh" :bordered="false" class="cart">
