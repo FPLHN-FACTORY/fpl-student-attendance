@@ -155,7 +155,7 @@ public class USFactoryServiceImpl implements USFactoryService {
                 }
                 boolean teacherJoinThanThreeFactory = factoryRepository.isTeacherJoinThanThreeFactory(
                                 factoryCreateUpdateRequest.getIdUserStaff(), project.get().getSemester().getId());
-                if (teacherJoinThanThreeFactory) {
+                if (teacherJoinThanThreeFactory == true) {
                         return new ResponseEntity<>(
                                         new ApiResponse(
                                                         RestApiStatus.ERROR,
@@ -257,7 +257,12 @@ public class USFactoryServiceImpl implements USFactoryService {
                                         : EntityStatus.ACTIVE);
                         factoryRepository.save(factory);
                 }
-                return null;
+                return new ResponseEntity<>(
+                        new ApiResponse(
+                                RestApiStatus.SUCCESS,
+                                "Đổi trạng thái nhóm xưởng thành công",
+                                null),
+                        HttpStatus.OK);
         }
 
         @Override

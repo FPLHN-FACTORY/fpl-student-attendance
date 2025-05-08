@@ -21,6 +21,8 @@ public interface USProjectFactoryExtendRepository extends ProjectRepository {
                             Facility f on f.id = sf.facility.id
                             LEFT JOIN
                             LevelProject lp on lp.id = p.levelProject.id
+                            LEFT JOIN 
+                            Semester s ON s.id = p.semester.id
                             WHERE
                             p.status = :projectStatus
                             AND sf.status = :subjecFacilityStatus

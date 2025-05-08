@@ -160,6 +160,7 @@ public class ADUserAdminServiceImpl implements ADUserAdminService {
                             null),
                     HttpStatus.BAD_REQUEST);
         }
+
         UserAdmin userAdmin = opt.get();
         userAdmin.setCode(createOrUpdateRequest.getStaffCode().trim());
         userAdmin.setName(createOrUpdateRequest.getStaffName().trim());
@@ -255,7 +256,7 @@ public class ADUserAdminServiceImpl implements ADUserAdminService {
                 .anyMatch(a -> a.getEmail().equalsIgnoreCase(userStaff.get().getEmailFpt()));
         if (emailFeExists || emailFptExists) {
             return new ResponseEntity<>(
-                    new ApiResponse(RestApiStatus.ERROR, "Email này đã có quyền admin", null),
+                    new ApiResponse(RestApiStatus.ERROR, "Nhân viên này đã có quyền admin", null),
                     HttpStatus.BAD_REQUEST
             );
         }
