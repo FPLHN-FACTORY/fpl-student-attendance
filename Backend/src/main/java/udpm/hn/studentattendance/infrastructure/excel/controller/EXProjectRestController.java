@@ -1,0 +1,51 @@
+package udpm.hn.studentattendance.infrastructure.excel.controller;
+
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+import udpm.hn.studentattendance.helpers.PaginationHelper;
+import udpm.hn.studentattendance.helpers.RouterHelper;
+import udpm.hn.studentattendance.infrastructure.common.PageableObject;
+import udpm.hn.studentattendance.infrastructure.constants.ImportLogType;
+import udpm.hn.studentattendance.infrastructure.constants.router.RouteExcelConstant;
+import udpm.hn.studentattendance.infrastructure.excel.common.IEXDefaultController;
+import udpm.hn.studentattendance.infrastructure.excel.model.request.EXDataRequest;
+import udpm.hn.studentattendance.infrastructure.excel.model.request.EXImportRequest;
+import udpm.hn.studentattendance.infrastructure.excel.model.request.EXUploadRequest;
+import udpm.hn.studentattendance.infrastructure.excel.model.response.ExImportLogResponse;
+import udpm.hn.studentattendance.infrastructure.excel.service.EXProjectService;
+
+@RestController
+@RequiredArgsConstructor
+@RequestMapping(RouteExcelConstant.URL_API_PROJECT)
+public class EXProjectRestController implements IEXDefaultController {
+
+    private final EXProjectService service;
+
+    @Override
+    public ResponseEntity<?> getDataFromFile(EXUploadRequest request) {
+        return null;
+    }
+
+    @Override
+    public ResponseEntity<?> importItem(EXImportRequest request) {
+        return null;
+    }
+
+    @Override
+    public ResponseEntity<?> downloadTemplate(EXDataRequest request) {
+        return null;
+    }
+
+    @Override
+    public ResponseEntity<?> historyLog(EXDataRequest request) {
+        return null;
+    }
+
+    @Override
+    public ResponseEntity<?> historyLogDetail(EXDataRequest request, String id) {
+        return null;
+    }
+}

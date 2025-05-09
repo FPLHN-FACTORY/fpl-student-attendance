@@ -18,4 +18,6 @@ public interface STProjectManagementService {
 
     ResponseEntity<?> changeStatus(String id);
 
+    ResponseEntity<?> changeAllStatusPreviousSemester();
+
 }

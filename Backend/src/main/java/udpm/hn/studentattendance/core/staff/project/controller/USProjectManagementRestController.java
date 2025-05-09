@@ -85,4 +85,9 @@ public class USProjectManagementRestController {
         return serviceSubjectFacility.getComboboxSubjectFacility(sessionHelper.getFacilityId());
     }
 
+    @PutMapping("/change-status-semester")
+    public ResponseEntity<?> changeStatusProjectPreviousSemester(){
+        return service.changeAllStatusPreviousSemester();
+    }
+
 }

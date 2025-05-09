@@ -7,8 +7,10 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import udpm.hn.studentattendance.core.staff.project.model.request.USProjectSearchRequest;
 import udpm.hn.studentattendance.core.staff.project.model.response.USProjectResponse;
+import udpm.hn.studentattendance.entities.Project;
 import udpm.hn.studentattendance.repositories.ProjectRepository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -104,4 +106,16 @@ public interface STProjectExtendRepository extends ProjectRepository {
             AND sf.id_facility = :idFacility
             """, nativeQuery = true)
     boolean isExistProjectInSameLevel(String name, String idLevelProject, String idSemester, String idFacility);
+
+    @Query(value = """
+                        SELECT
+                        p
+                        FROM
+                        Project p
+                        JOIN Semester s ON p.semester.id = s.id
+                        JOIN SubjectFacility sf ON p.subjectFacility.id = sf.id
+                        AND sf.facility.id = :facilityId
+                        AND s.id = :semesterId
+""")
+    List<Project> getAllProjectBySemester(String facilityId, String semesterId);
 }

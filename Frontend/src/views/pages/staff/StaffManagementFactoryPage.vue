@@ -405,10 +405,10 @@ onMounted(() => {
           <a-select-option
             v-for="item in projects"
             :key="item.id"
-            :value="item.id"
-            :label="item.name"
+            :value="item.id"  
+            :label="item.projectName"
           >
-            {{ item.name + ' - ' + item.levelProject.name + '(' + item.semester.code + ')' }}
+            {{ item.projectName + ' - ' + item.levelProjectName + '(' + item.semesterCode + ')' }}
           </a-select-option>
         </a-select>
         <div v-else>Cơ sở chưa có dự án nào!</div>
@@ -466,9 +466,9 @@ onMounted(() => {
             v-for="item in projects"
             :key="item.id"
             :value="item.id"
-            :label="item.name"
+            :label="item.projectName"
           >
-            {{ item.name + ' - ' + item.levelProject.name }}
+            {{ item.projectName + ' - ' + item.levelProjectName + '(' + item.semesterCode + ')' }}
           </a-select-option>
         </a-select>
         <div v-else>Cơ sở chưa có dự án nào!</div>
@@ -482,7 +482,7 @@ onMounted(() => {
       <div class="col-12">
         <a-card :bordered="false" class="cart mb-3">
           <template #title> <FilterFilled /> Bộ lọc </template>
-          <a-row :gutter="16" class="filter-container">
+            <div class="row g-2">
             <div class="col-md-6 col-sm-12">
               <div class="label-title">Tìm kiếm tên xưởng:</div>
               <a-input
@@ -541,8 +541,8 @@ onMounted(() => {
                 </a-select-option>
               </a-select>
             </div>
-          </a-row>
-          <div class="row">
+          </div>
+            <div class="row">
             <div class="col-12">
               <div class="d-flex justify-content-center flex-wrap gap-2 mt-3">
                 <a-button class="btn-light" @click="fetchFactories">
