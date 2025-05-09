@@ -96,9 +96,9 @@ public interface STProjectExtendRepository extends ProjectRepository {
     @Query(value = """
             SELECT CASE WHEN COUNT(*) > 0 THEN 'TRUE' ELSE 'FALSE' END
             FROM project p 
+            LEFT JOIN subject_facility sf ON sf.id = p.id_subject_facility
             WHERE 
             p.name = :name
-            LEFT JOIN subject_facility sf ON sf.id = p.id_subject_facility
             AND p.id_level_project = :idLevelProject
             AND p.id_semester = :idSemester
             AND sf.id_facility = :idFacility

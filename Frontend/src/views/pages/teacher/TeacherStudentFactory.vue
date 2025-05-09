@@ -113,31 +113,7 @@ const handleTableChange = (pageInfo) => {
 }
 
 // Hàm xoá học sinh khỏi nhóm xưởng
-const confirmDeleteStudent = (record) => {
-  Modal.confirm({
-    title: 'Xác nhận xoá',
-    content: `Bạn có chắc chắn xoá học sinh ${record.studentName} khỏi nhóm xưởng?`,
-    onOk() {
-      deleteStudentFactory(record.studentFactoryId)
-    },
-  })
-}
 
-const deleteStudentFactory = (studentFactoryId) => {
-  loadingStore.show()
-  requestAPI
-    .delete(API_ROUTES_TEACHER.FETCH_DATA_STUDENT_FACTORY + '/' + studentFactoryId)
-    .then((response) => {
-      message.success(response.data.message || 'Xoá học sinh thành công')
-      fetchStudentFactory()
-    })
-    .catch((error) => {
-      message.error(error.data?.message || 'Lỗi khi xoá học sinh')
-    })
-    .finally(() => {
-      loadingStore.hide()
-    })
-}
 
 const toggleStatusStudentFactory = (record) => {
   Modal.confirm({
