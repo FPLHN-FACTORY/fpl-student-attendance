@@ -78,7 +78,7 @@ public class ADSemesterServiceImpl implements ADSemesterService {
                                 return new ResponseEntity<>(
                                                 new ApiResponse(
                                                                 RestApiStatus.ERROR,
-                                                                "Ngày bắt đầu học kỳ không thể là ngày trong quá khứ hoặc hiện tại",
+                                                                "Ngày bắt đầu học kỳ không thể là ngày quá khứ hoặc hiện tại",
                                                                 null),
                                                 HttpStatus.BAD_REQUEST);
                         }
