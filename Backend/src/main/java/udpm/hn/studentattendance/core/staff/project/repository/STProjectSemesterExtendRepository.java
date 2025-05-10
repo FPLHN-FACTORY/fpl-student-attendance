@@ -33,4 +33,11 @@ public interface STProjectSemesterExtendRepository extends SemesterRepository {
                     WHERE s.status = :status
             """)
     List<Semester> getAllSemester(EntityStatus status);
+
+    @Query(value = """
+            SELECT 
+            s
+            FROM Semester s WHERE s.code = :code
+            """)
+    Semester getSemesterByCode(String code);
 }

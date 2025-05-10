@@ -6,4 +6,6 @@ public interface USLevelProjectResponse {
 
     String getName();
 
+    String getCode();
+
 }

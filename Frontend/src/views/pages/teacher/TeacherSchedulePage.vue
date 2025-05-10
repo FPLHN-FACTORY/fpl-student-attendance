@@ -257,7 +257,6 @@ const currentPlanDateId = ref('')
 const isUpdateModalVisible = ref(false)
 const formUpdateData = reactive({ description: '', lateArrival: 0, planDateId: '', link: '' })
 const formUpdateRules = {
-  description: [{ required: true, message: 'Vui lòng nhập mô tả', trigger: 'blur' }],
   lateArrival: [
     { required: true, message: 'Vui lòng nhập thời gian điểm danh muộn', trigger: 'change' },
   ],
