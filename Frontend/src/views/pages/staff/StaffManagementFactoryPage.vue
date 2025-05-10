@@ -405,7 +405,7 @@ onMounted(() => {
           <a-select-option
             v-for="item in projects"
             :key="item.id"
-            :value="item.id"  
+            :value="item.id"
             :label="item.projectName"
           >
             {{ item.projectName + ' - ' + item.levelProjectName + '(' + item.semesterCode + ')' }}

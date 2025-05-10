@@ -43,7 +43,7 @@ public interface STDScheduleAttendanceRepository extends FacilityRepository {
                             FROM user_student_factory
                             WHERE id_user_student = :#{#request.idStudent}
                         )
-                    AND pd.start_date BETWEEN UNIX_TIMESTAMP(CURDATE()) * 1000 AND :#{#request.max}
+                    AND pd.start_date BETWEEN :#{#request.now} AND :#{#request.max}
             ORDER BY pd.start_date
             """, countQuery = """
             SELECT COUNT(*) FROM plan_date pd
@@ -61,7 +61,7 @@ public interface STDScheduleAttendanceRepository extends FacilityRepository {
                     FROM user_student_factory
                     WHERE id_user_student = :#{#request.idStudent}
                 )
-            AND pd.start_date BETWEEN UNIX_TIMESTAMP(CURDATE()) AND :#{#request.max}
+            AND pd.start_date BETWEEN :#{#request.now} AND :#{#request.max}
             """, nativeQuery = true)
     Page<STDScheduleAttendanceResponse> getAllListAttendanceByUser(Pageable pageable,
                                                                    @Param("request") STDScheduleAttendanceSearchRequest request);

@@ -98,7 +98,7 @@ const handleDateRangeChange = (range) => {
 
 // Hàm lấy danh sách học kỳ, truyền phân trang từ pagination
 const fetchSemesters = () => {
-  if (isLoading.value) return 
+  if (isLoading.value) return
   loadingStore.show()
   isLoading.value = true
 
@@ -290,8 +290,8 @@ onMounted(() => {
         <a-card :bordered="false" class="cart mb-3">
           <template #title> <FilterFilled /> Bộ lọc </template>
           <!-- Hàng 1: Input tìm kiếm & Select trạng thái -->
-          <a-row :gutter="16" class="filter-container">
-            <a-col :span="12" class="col">
+          <div class="row g-3 filter-container">
+            <div class="col-md-6 col-sm-6">
               <div class="label-title">Tìm kiếm mã học kỳ :</div>
               <a-input
                 v-model:value="filter.semesterCode"
@@ -299,8 +299,8 @@ onMounted(() => {
                 allowClear
                 @change="fetchSemesters"
               />
-            </a-col>
-            <a-col :span="12" class="col">
+            </div>
+            <div class="col-md-6 col-sm-6">
               <div class="label-title">Trạng thái :</div>
               <a-select
                 v-model:value="filter.status"
@@ -313,11 +313,11 @@ onMounted(() => {
                 <a-select-option value="ACTIVE">Đang hoạt động</a-select-option>
                 <a-select-option value="INACTIVE">Đã kết thúc</a-select-option>
               </a-select>
-            </a-col>
-          </a-row>
+            </div>
+          </div>
           <!-- Hàng 2: RangePicker để chọn khoảng ngày -->
-          <a-row :gutter="16" class="filter-container second-row mt-3">
-            <a-col :span="24" class="col">
+          <div class="row g-3 filter-container second-row mt-3">
+            <div class="col-12 col">
               <div class="label-title">Tìm kiếm theo khoảng ngày :</div>
               <a-range-picker
                 v-model:value="filter.dateRange"
@@ -325,8 +325,8 @@ onMounted(() => {
                 format="DD/MM/YYYY"
                 @change="handleDateRangeChange"
               />
-            </a-col>
-          </a-row>
+            </div>
+          </div>
           <div class="row">
             <div class="col-12">
               <div class="d-flex justify-content-center flex-wrap gap-2 mt-3">
