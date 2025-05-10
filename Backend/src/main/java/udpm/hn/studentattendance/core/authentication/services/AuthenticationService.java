@@ -14,14 +14,18 @@ public interface AuthenticationService {
 
     RedirectView authorSwitch(String role, String redirectUri, String facilityId) throws IOException;
 
-    List<Facility> getAllFacility();
+    ResponseEntity<?> getAllFacility();
 
-    AuthUser getInfoUser(String role);
+    ResponseEntity<?> getInfoUser(String role);
 
     ResponseEntity<?> studentRegister(AuthenticationStudentRegisterRequest request);
 
     ResponseEntity<?> studentInfo();
 
     ResponseEntity<?> studentUpdateFaceID(AuthenticationStudentUpdateFaceIDRequest requestBody);
+
+    ResponseEntity<?> refreshToken(String refreshToken);
+
+    ResponseEntity<?> getAvater(String urlImage);
 
 }
