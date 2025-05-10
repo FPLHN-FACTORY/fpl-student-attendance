@@ -59,11 +59,17 @@ const columns = ref([
     width: 150,
     ellipsis: true,
   },
-  { title: 'Giảng viên', dataIndex: 'staffName', key: 'staffName', ellipsis: true },
-  { title: 'Thời gian thực tế', key: 'time', ellipsis: true },
-  { title: 'Số buổi', dataIndex: 'totalShift', key: 'totalShift', ellipsis: true },
-  { title: 'Số sinh viên', dataIndex: 'totalStudent', key: 'totalStudent', ellipsis: true },
-  { title: 'Trạng thái', dataIndex: 'status', key: 'status', ellipsis: true },
+  { title: 'Giảng viên', dataIndex: 'staffName', key: 'staffName', width: 100, ellipsis: true },
+  { title: 'Thời gian thực tế', key: 'time', width: 100, ellipsis: true },
+  { title: 'Số buổi', dataIndex: 'totalShift', key: 'totalShift', width: 100, ellipsis: true },
+  {
+    title: 'Số sinh viên',
+    dataIndex: 'totalStudent',
+    key: 'totalStudent',
+    width: 100,
+    ellipsis: true,
+  },
+  { title: 'Trạng thái', dataIndex: 'status', key: 'status', width: 100, ellipsis: true },
   { title: '', key: 'actions' },
 ])
 

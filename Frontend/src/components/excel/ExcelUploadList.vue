@@ -20,8 +20,8 @@ const itemLog = ref(false)
 
 const columns = ref([
   { title: 'Dòng', dataIndex: 'index', key: 'index', width: 80 },
-  { title: 'Trạng thái', dataIndex: 'status', key: 'status', width: 120 },
-  { title: 'Nội dung', dataIndex: 'message', key: 'message' },
+  { title: 'Trạng thái', dataIndex: 'status', key: 'status', width: 120, ellipsis: true },
+  { title: 'Nội dung', dataIndex: 'message', key: 'message', width: 120, ellipsis: true },
 ])
 
 const handleToggle = () => {

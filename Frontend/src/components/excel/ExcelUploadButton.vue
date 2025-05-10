@@ -36,17 +36,23 @@ const props = defineProps({
 })
 
 const columns = ref([
-  { title: 'Thời gian', dataIndex: 'createdAt', key: 'createdAt', width: 150 },
-  { title: 'Tệp tin', dataIndex: 'fileName', key: 'fileName', width: 200 },
-  { title: 'Thành công', dataIndex: 'totalSuccess', key: 'totalSuccess' },
-  { title: 'Lỗi', dataIndex: 'totalError', key: 'totalError' },
+  { title: 'Thời gian', dataIndex: 'createdAt', key: 'createdAt', width: 150, ellipsis: true },
+  { title: 'Tệp tin', dataIndex: 'fileName', key: 'fileName', width: 200, ellipsis: true },
+  {
+    title: 'Thành công',
+    dataIndex: 'totalSuccess',
+    key: 'totalSuccess',
+    width: 100,
+    ellipsis: true,
+  },
+  { title: 'Lỗi', dataIndex: 'totalError', key: 'totalError', width: 50, ellipsis: true },
   { title: '', key: 'actions' },
 ])
 
 const columnsDetail = ref([
-  { title: 'Dòng', dataIndex: 'line', key: 'line', width: 80 },
-  { title: 'Trạng thái', dataIndex: 'status', key: 'status', width: 150 },
-  { title: 'Nội dung', dataIndex: 'message', key: 'message' },
+  { title: 'Dòng', dataIndex: 'line', key: 'line', width: 80, ellipsis: true },
+  { title: 'Trạng thái', dataIndex: 'status', key: 'status', width: 150, ellipsis: true },
+  { title: 'Nội dung', dataIndex: 'message', key: 'message', width: 200, ellipsis: true },
 ])
 
 const handleShowDetail = (id) => {
