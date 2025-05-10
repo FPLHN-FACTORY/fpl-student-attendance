@@ -1,7 +1,6 @@
 package udpm.hn.studentattendance.core.staff.factory.model.response;
 
 public interface USProjectFactoryResponse {
-
     String getId();
 
     String getProjectName();
@@ -9,5 +8,4 @@ public interface USProjectFactoryResponse {
     String getLevelProjectName();
 
     String getSemesterCode();
-
 }
