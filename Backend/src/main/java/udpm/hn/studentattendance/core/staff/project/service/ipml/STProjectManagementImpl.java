@@ -1,21 +1,18 @@
 package udpm.hn.studentattendance.core.staff.project.service.ipml;
 
-import jakarta.mail.Session;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
-import udpm.hn.studentattendance.core.staff.project.model.request.USProjectCreateRequest;
-import udpm.hn.studentattendance.core.staff.project.model.request.USProjectUpdateRequest;
+import udpm.hn.studentattendance.core.staff.project.model.request.USProjectCreateOrUpdateRequest;
 import udpm.hn.studentattendance.core.staff.project.model.request.USProjectSearchRequest;
 import udpm.hn.studentattendance.core.staff.project.repository.STLevelProjectExtendRepository;
 import udpm.hn.studentattendance.core.staff.project.repository.STProjectExtendRepository;
 import udpm.hn.studentattendance.core.staff.project.repository.STProjectSemesterExtendRepository;
 import udpm.hn.studentattendance.core.staff.project.repository.STProjectSubjectFacilityExtendRepository;
 import udpm.hn.studentattendance.core.staff.project.service.STProjectManagementService;
-import udpm.hn.studentattendance.entities.Factory;
 import udpm.hn.studentattendance.entities.Project;
 import udpm.hn.studentattendance.entities.Semester;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
@@ -54,7 +51,7 @@ public class STProjectManagementImpl implements STProjectManagementService {
     }
 
     @Override
-    public ResponseEntity<?> createProject(USProjectCreateRequest request) {
+    public ResponseEntity<?> createProject(USProjectCreateOrUpdateRequest request) {
         Project project = new Project();
 
         project = convertProjectRequestToProject(request, project);
@@ -70,13 +67,13 @@ public class STProjectManagementImpl implements STProjectManagementService {
     }
 
     @Override
-    public ResponseEntity<?> updateProject(String idProject, USProjectUpdateRequest request) {
+    public ResponseEntity<?> updateProject(String idProject, USProjectCreateOrUpdateRequest request) {
         Project project = projectManagementRepository.findById(idProject).get();
         project.setName(request.getName());
         project.setDescription(request.getDescription());
-        project.setLevelProject(levelProjectRepository.findById(request.getIdLevelProject()).get());
-        project.setSemester(semesterRepository.findById(request.getIdSemester()).get());
-        project.setSubjectFacility(subjectFacilityRepository.findById(request.getIdSubjectFacility()).get());
+        project.setLevelProject(levelProjectRepository.findById(request.getLevelProjectId()).get());
+        project.setSemester(semesterRepository.findById(request.getSemesterId()).get());
+        project.setSubjectFacility(subjectFacilityRepository.findById(request.getSemesterId()).get());
         projectManagementRepository.save(project);
         return RouterHelper.responseSuccess("Chuyển trạng thái thành công", project);
     }
@@ -144,7 +141,7 @@ public class STProjectManagementImpl implements STProjectManagementService {
                 HttpStatus.OK);
     }
 
-    private Project convertProjectRequestToProject(USProjectCreateRequest request, Project project) {
+    private Project convertProjectRequestToProject(USProjectCreateOrUpdateRequest request, Project project) {
 
         project.setName(request.getName());
         project.setDescription(request.getDescription());

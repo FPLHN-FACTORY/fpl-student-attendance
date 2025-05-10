@@ -3,8 +3,7 @@ package udpm.hn.studentattendance.core.staff.project.controller;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import udpm.hn.studentattendance.core.staff.project.model.request.USProjectCreateRequest;
-import udpm.hn.studentattendance.core.staff.project.model.request.USProjectUpdateRequest;
+import udpm.hn.studentattendance.core.staff.project.model.request.USProjectCreateOrUpdateRequest;
 import udpm.hn.studentattendance.core.staff.project.model.request.USProjectSearchRequest;
 import udpm.hn.studentattendance.core.staff.project.model.response.USLevelProjectResponse;
 import udpm.hn.studentattendance.core.staff.project.model.response.USSemesterResponse;
@@ -50,12 +49,12 @@ public class USProjectManagementRestController {
     }
 
     @PostMapping
-    public ResponseEntity<?> addProject(@RequestBody USProjectCreateRequest request) {
+    public ResponseEntity<?> addProject(@RequestBody USProjectCreateOrUpdateRequest request) {
         return service.createProject(request);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateProject(@PathVariable String id, @RequestBody USProjectUpdateRequest request) {
+    public ResponseEntity<?> updateProject(@PathVariable String id, @RequestBody USProjectCreateOrUpdateRequest request) {
         return service.updateProject(id, request);
     }
 
