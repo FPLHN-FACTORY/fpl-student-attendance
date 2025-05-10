@@ -78,7 +78,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
                         .findLoginStaff(customOAuth2User.getEmail(), roleCode, facilityID);
                 if (userStaff.isEmpty()) {
                     throw new OAuth2AuthenticationException(
-                            new OAuth2Error("login_failed", "Đăng nhập giảng viên thất bại", null));
+                            new OAuth2Error("login_failed", "Đăng nhập " + (roleCode == RoleConstant.STAFF ? "phụ trách xưởng" : "giảng viên") + " thất bại", null));
                 }
                 customOAuth2User.setId(userStaff.get().getId());
                 customOAuth2User.setCode(userStaff.get().getCode());
