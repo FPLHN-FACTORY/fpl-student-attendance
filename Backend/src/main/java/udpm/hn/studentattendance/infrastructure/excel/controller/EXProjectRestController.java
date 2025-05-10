@@ -1,20 +1,14 @@
 package udpm.hn.studentattendance.infrastructure.excel.controller;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import udpm.hn.studentattendance.helpers.PaginationHelper;
-import udpm.hn.studentattendance.helpers.RouterHelper;
-import udpm.hn.studentattendance.infrastructure.common.PageableObject;
-import udpm.hn.studentattendance.infrastructure.constants.ImportLogType;
 import udpm.hn.studentattendance.infrastructure.constants.router.RouteExcelConstant;
 import udpm.hn.studentattendance.infrastructure.excel.common.IEXDefaultController;
 import udpm.hn.studentattendance.infrastructure.excel.model.request.EXDataRequest;
 import udpm.hn.studentattendance.infrastructure.excel.model.request.EXImportRequest;
 import udpm.hn.studentattendance.infrastructure.excel.model.request.EXUploadRequest;
-import udpm.hn.studentattendance.infrastructure.excel.model.response.ExImportLogResponse;
 import udpm.hn.studentattendance.infrastructure.excel.service.EXProjectService;
 
 @RestController
@@ -26,26 +20,26 @@ public class EXProjectRestController implements IEXDefaultController {
 
     @Override
     public ResponseEntity<?> getDataFromFile(EXUploadRequest request) {
-        return null;
+        return service.getDataFromFile(request);
     }
 
     @Override
     public ResponseEntity<?> importItem(EXImportRequest request) {
-        return null;
+        return service.importItem(request);
     }
 
     @Override
     public ResponseEntity<?> downloadTemplate(EXDataRequest request) {
-        return null;
+        return service.downloadTemplate(request);
     }
 
     @Override
     public ResponseEntity<?> historyLog(EXDataRequest request) {
-        return null;
+        return service.historyLog(request);
     }
 
     @Override
     public ResponseEntity<?> historyLogDetail(EXDataRequest request, String id) {
-        return null;
+        return service.historyLogDetail(request, id);
     }
 }

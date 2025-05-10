@@ -157,7 +157,7 @@ onMounted(() => {
       <div class="col-12">
         <a-card :bordered="false" class="cart mb-3">
           <template #title> <FilterFilled /> Bộ lọc tìm kiếm </template>
-          <a-row :gutter="16" class="filter-container">
+          <div class="row g-3 filter-container">
             <div class="col-md-6 col-sm-6">
               <label class="label-title">Từ khoá:</label>
               <a-input
@@ -182,7 +182,7 @@ onMounted(() => {
                 </a-select-option>
               </a-select>
             </div>
-          </a-row>
+          </div>
           <div class="row">
             <div class="col-12">
               <div class="d-flex justify-content-center flex-wrap gap-2 mt-3">

@@ -15,7 +15,8 @@ import { ROUTE_NAMES } from '@/router/staffRoute'
 import { DEFAULT_PAGINATION } from '@/constants'
 import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
 import useLoadingStore from '@/stores/useLoadingStore'
-import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
+import { API_ROUTES_EXCEL, GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
+import ExcelUploadButton from '@/components/excel/ExcelUploadButton.vue'
 
 const breadcrumbStore = useBreadcrumbStore()
 const loadingStore = useLoadingStore()
@@ -303,6 +304,18 @@ const handleChangeStatusProjectBySemester = () => {
     },
   })
 }
+
+const configImportExcel = {
+  fetchUrl: API_ROUTES_EXCEL.FETCH_IMPORT_PROJECT,
+  onSuccess: () => {
+    fetchProjects()
+  },
+  onError: () => {
+    message.error('Không thể xử lý file excel')
+  },
+  showDownloadTemplate: true,
+  showHistoryLog: true,
+}
 // Reset form
 const resetForm = () => {
   Object.assign(newProject, {
@@ -438,6 +451,7 @@ onMounted(() => {
         <a-card :bordered="false" class="cart">
           <template #title> <UnorderedListOutlined /> Danh sách dự án</template>
           <div class="d-flex justify-content-end mb-3 flex-wrap gap-3">
+            <ExcelUploadButton v-bind="configImportExcel" />
             <a-tooltip title="Đổi trạng thái tất cả dự án kỳ trước">
               <a-button type="default" @click="handleChangeStatusProjectBySemester" class="btn-outline-warning me-2">
               <SyncOutlined /> Đổi trạng thái

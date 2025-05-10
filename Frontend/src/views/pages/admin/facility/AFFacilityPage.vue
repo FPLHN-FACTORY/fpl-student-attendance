@@ -309,7 +309,7 @@ onMounted(() => {
         <!-- Bộ lọc tìm kiếm -->
         <a-card :bordered="false" class="cart">
           <template #title> <FilterFilled /> Bộ lọc </template>
-          <div class="row g-2">
+          <div class="row g-3">
             <div class="col-xxl-6 col-md-8 col-sm-8">
               <div class="label-title">Từ khoá:</div>
               <a-input
@@ -326,6 +326,7 @@ onMounted(() => {
             <div class="col-xxl-6 col-md-8 col-sm-8">
               <div class="label-title">
                 Trạng thái:
+              </div>
                 <a-select
                   v-model:value="filter.status"
                   placeholder="Chọn trạng thái"
@@ -337,7 +338,7 @@ onMounted(() => {
                   <a-select-option value="ACTIVE">Hoạt động</a-select-option>
                   <a-select-option value="INACTIVE">Không hoạt động</a-select-option>
                 </a-select>
-              </div>
+
             </div>
             <div class="col-12">
               <div class="d-flex justify-content-center flex-wrap gap-2 mt-3">
