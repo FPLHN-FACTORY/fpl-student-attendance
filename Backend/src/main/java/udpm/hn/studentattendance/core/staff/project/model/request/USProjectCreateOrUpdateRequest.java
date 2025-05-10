@@ -8,19 +8,18 @@ import lombok.Setter;
 @Getter
 @Setter
 @AllArgsConstructor
-public class USProjectCreateRequest {
+public class USProjectCreateOrUpdateRequest {
 
     @NotBlank(message = "Không được bỏ trống")
     private String name;
 
     private String description;
 
-    private String code;
-
     private String levelProjectId;
 
     private String semesterId;
 
     private String subjectFacilityId;
+
 
 }

@@ -5,6 +5,7 @@ import {
   EditFilled,
   FilterFilled,
   SearchOutlined,
+  SyncOutlined,
 } from '@ant-design/icons-vue'
 import { message, Modal } from 'ant-design-vue'
 import { ref, reactive, onMounted } from 'vue'
@@ -285,7 +286,23 @@ const handleDeleteProject = (record) => {
     },
   })
 }
-
+const handleChangeStatusProjectBySemester = () => {
+  Modal.confirm({
+    title: 'Xác nhận',
+    content: 'Bạn có chắc chắn muốn đổi trạng thái tất cả dự án kỳ trước?',
+    onOk: () => {
+      requestAPI
+        .put(`${API_ROUTES_STAFF.FETCH_DATA_PROJECT}/change-status-semester`)
+        .then(() => {
+          message.success('Đổi trạng thái tất cả dự án kỳ trước thành công')
+          fetchProjects()
+        })
+        .catch((error) => {
+          message.error(error.response?.data?.message || 'Lỗi khi đổi trạng thái dự án')
+        })
+    },
+  })
+}
 // Reset form
 const resetForm = () => {
   Object.assign(newProject, {
@@ -421,9 +438,16 @@ onMounted(() => {
         <a-card :bordered="false" class="cart">
           <template #title> <UnorderedListOutlined /> Danh sách dự án</template>
           <div class="d-flex justify-content-end mb-3 flex-wrap gap-3">
-            <a-button type="primary" @click="modalAdd = true">
-              <PlusOutlined /> Thêm
+            <a-tooltip title="Đổi trạng thái tất cả dự án kỳ trước">
+              <a-button type="default" @click="handleChangeStatusProjectBySemester" class="btn-outline-warning me-2">
+              <SyncOutlined /> Đổi trạng thái
             </a-button>
+             </a-tooltip>
+
+            <a-button type="primary" @click="modalAdd = true">
+              <PlusOutlined /> Thêm dự án
+            </a-button>
+
           </div>
 
           <a-table
