@@ -204,11 +204,12 @@ onMounted(() => {
             </div>
 
             <a-table
+              class="nowrap"
               :dataSource="attendanceList"
               :columns="columns"
               :rowKey="'id'"
               :loading="isLoading"
-              :scroll="{ y: 500, x: 'auto' }"
+              :scroll="{ x: 'auto' }"
               :pagination="pagination"
               @change="handleTableChange"
             >

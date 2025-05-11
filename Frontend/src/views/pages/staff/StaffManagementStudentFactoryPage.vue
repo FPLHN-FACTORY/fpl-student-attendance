@@ -514,11 +514,12 @@ onMounted(() => {
             </a-tooltip>
           </div>
           <a-table
+            class="nowrap"
             :dataSource="studentFactories"
             :columns="columns"
             rowKey="studentFactoryId"
             :pagination="pagination"
-            :scroll="{ y: 500, x: 'auto' }"
+            :scroll="{ x: 'auto' }"
             :loading="isLoading"
             @change="handleTableChange"
           >
@@ -642,13 +643,14 @@ onMounted(() => {
       </div>
 
       <a-table
+        class="nowrap"
         :dataSource="shiftData"
         :columns="shiftColumns"
         rowKey="id"
         :pagination="shiftPagination"
         :loading="isLoading"
         @change="handleShiftTableChange"
-        :scroll="{ y: 500, x: 'auto' }"
+        :scroll="{ x: 'auto' }"
       >
         <template #bodyCell="{ column, record }">
           <template v-if="column.dataIndex === 'startDate'">
@@ -701,6 +703,7 @@ onMounted(() => {
       </div>
       <!-- Bảng danh sách tất cả sinh viên -->
       <a-table
+        class="nowrap"
         :key="isAddStudentModalVisible"
         :dataSource="allStudents"
         :columns="studentColumns"
@@ -709,7 +712,7 @@ onMounted(() => {
         :pagination="studentPagination"
         @change="handleStudentTableChange"
         :loading="isLoading"
-        :scroll="{ y: 500, x: 'auto' }"
+        :scroll="{ x: 'auto' }"
       >
         <template #bodyCell="{ column, record, index }">
           <template v-if="column.dataIndex">

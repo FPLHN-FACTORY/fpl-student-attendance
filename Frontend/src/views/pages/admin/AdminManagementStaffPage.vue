@@ -424,12 +424,13 @@ onMounted(() => {
             </a-tooltip>
           </div>
           <a-table
+            class="nowrap"
             :dataSource="staffs"
             :columns="columns"
             rowKey="id"
             :loading="isLoading"
             :pagination="pagination"
-            :scroll="{ y: 500, x: 'auto' }"
+            :scroll="{ x: 'auto' }"
             @change="handleTableChange"
           >
             <template #bodyCell="{ column, record }">

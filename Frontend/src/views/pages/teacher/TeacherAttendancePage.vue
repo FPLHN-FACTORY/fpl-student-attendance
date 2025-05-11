@@ -169,7 +169,7 @@ onMounted(() => {
         :columns="columns"
         rowKey="userStudentId"
         :pagination="false"
-        :scroll="{ y: 500, x: 'auto' }"
+        :scroll="{ x: 'auto' }"
       >
         <template #bodyCell="{ column, record, index }">
           <template v-if="column.key === 'rowNumber'">

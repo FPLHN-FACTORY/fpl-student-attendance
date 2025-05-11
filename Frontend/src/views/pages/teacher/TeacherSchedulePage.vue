@@ -518,14 +518,14 @@ onMounted(() => {
             @change="handlePresentTableChange"
             :loading="isLoading"
             class="nowrap"
-            :scroll="{ y: 500, x: 'auto' }"
+            :scroll="{ x: 'auto' }"
           >
             <template #bodyCell="{ column, record, index }">
               <template v-if="column.key === 'time'">
                 {{
                   `${formatDate(record.startTeaching, 'HH:mm')} - ${formatDate(
                     record.endTeaching,
-                    'HH:mm'
+                    'HH:mm',
                   )}`
                 }}
               </template>
@@ -539,7 +539,7 @@ onMounted(() => {
                   {{
                     `${dayOfWeek(record.startTeaching)}, ${formatDate(
                       record.startTeaching,
-                      DEFAULT_DATE_FORMAT
+                      DEFAULT_DATE_FORMAT,
                     )}`
                   }}
                 </template>
@@ -624,7 +624,7 @@ onMounted(() => {
             @change="handleTableChange"
             :loading="isLoading"
             class="nowrap"
-            :scroll="{ y: 500, x: 'auto' }"
+            :scroll="{ x: 'auto' }"
           >
             <template #bodyCell="{ column, record, index }">
               <!-- Xử lý cột Thời gian -->
@@ -632,7 +632,7 @@ onMounted(() => {
                 {{
                   `${formatDate(record.startTeaching, 'HH:mm')} - ${formatDate(
                     record.endTeaching,
-                    'HH:mm'
+                    'HH:mm',
                   )}`
                 }}
               </template>
@@ -646,7 +646,7 @@ onMounted(() => {
                   {{
                     `${dayOfWeek(record.startTeaching)}, ${formatDate(
                       record.startTeaching,
-                      DEFAULT_DATE_FORMAT
+                      DEFAULT_DATE_FORMAT,
                     )}`
                   }}
                 </template>

@@ -578,13 +578,14 @@ onMounted(() => {
             </a-tooltip>
           </div>
           <a-table
+            class="nowrap"
             rowKey="id"
             :dataSource="factories"
             :columns="columns"
             :pagination="pagination"
             @change="handleTableChange"
             :loading="isLoading"
-            :scroll="{ y: 500, x: 'auto' }"
+            :scroll="{ x: 'auto' }"
           >
             <template #bodyCell="{ column, record, index }">
               <template v-if="column.dataIndex">
