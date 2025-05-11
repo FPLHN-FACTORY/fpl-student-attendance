@@ -14,7 +14,7 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class SDPAddOrUpdatePlanRequest {
+public class SPDAddOrUpdatePlanRequest {
 
     private String id;
 
