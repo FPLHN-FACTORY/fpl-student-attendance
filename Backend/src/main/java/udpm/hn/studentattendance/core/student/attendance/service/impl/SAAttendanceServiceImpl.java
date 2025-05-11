@@ -68,7 +68,6 @@ public class SAAttendanceServiceImpl implements SAAttendanceService {
     public ResponseEntity<?> getAllList(SAFilterAttendanceRequest request) {
         request.setIdFacility(sessionHelper.getFacilityId());
         request.setIdUserStudent(sessionHelper.getUserId());
-        System.out.println(DateTimeUtils.getCurrentTimeMillis());
         Pageable pageable = PaginationHelper.createPageable(request);
         PageableObject<SAAttendanceResponse> data = PageableObject.of(attendanceRepository.getAllByFilter(pageable, request));
         return RouterHelper.responseSuccess("Lấy danh sách dữ liệu thành công", data);
