@@ -7,6 +7,7 @@ import {
   SearchOutlined,
   EditFilled,
   DeleteFilled,
+  EyeFilled,
 } from '@ant-design/icons-vue'
 import { message, Modal } from 'ant-design-vue'
 import requestAPI from '@/services/requestApiService'
@@ -27,7 +28,6 @@ import {
 import { autoAddColumnWidth, dayOfWeek, debounce, formatDate, rowSelectTable } from '@/utils/utils'
 import dayjs from 'dayjs'
 import ExcelUploadButton from '@/components/excel/ExcelUploadButton.vue'
-import { formatCountdown } from 'ant-design-vue/es/statistic/utils'
 
 const route = useRoute()
 const router = useRouter()
@@ -428,6 +428,13 @@ const handleShowDescription = (text) => {
   })
 }
 
+const handleShowAttendance = (id) => {
+  router.push({
+    name: ROUTE_NAMES.MANAGEMENT_PLAN_DATE_ATTENDANCE,
+    params: { id: id },
+  })
+}
+
 const handleChangeShift = (newValues) => {
   const updated = new Set(newValues)
 
@@ -789,7 +796,14 @@ watch(
                       </a-button>
                     </a-tooltip>
                   </template>
-                  <a-tag v-else>Không thể chỉnh sửa mục này</a-tag>
+                  <a-tooltip title="Chi tiết điểm danh" v-else>
+                    <a-button
+                      class="btn-outline-primary border-0 me-2"
+                      @click="handleShowAttendance(record.id)"
+                    >
+                      <EyeFilled />
+                    </a-button>
+                  </a-tooltip>
                 </template>
               </template>
             </a-table>

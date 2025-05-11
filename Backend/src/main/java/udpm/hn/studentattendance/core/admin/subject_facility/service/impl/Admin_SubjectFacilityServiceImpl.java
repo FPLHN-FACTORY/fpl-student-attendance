@@ -19,6 +19,7 @@ import udpm.hn.studentattendance.helpers.PaginationHelper;
 import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.common.ResponseObject;
+import udpm.hn.studentattendance.infrastructure.common.repositories.CommonUserStudentRepository;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.repositories.FacilityRepository;
 import udpm.hn.studentattendance.repositories.SubjectFacilityRepository;
@@ -33,6 +34,8 @@ public class Admin_SubjectFacilityServiceImpl implements Admin_SubjectFacilitySe
     private final SubjectRepository subjectRepository;
 
     private final FacilityRepository facilityRepository;
+
+    private final CommonUserStudentRepository commonUserStudentRepository;
 
     public ResponseEntity<?> getListSubjectFacility(ADSubjectFacilitySearchRequest request) {
         Pageable pageable = PaginationHelper.createPageable(request, "id");
@@ -105,7 +108,13 @@ public class Admin_SubjectFacilityServiceImpl implements Admin_SubjectFacilitySe
             return RouterHelper.responseError("Không tìm thấy bộ môn cơ sở");
         }
         subjectFacility.setStatus(subjectFacility.getStatus() == EntityStatus.ACTIVE ? EntityStatus.INACTIVE : EntityStatus.ACTIVE);
-        return RouterHelper.responseSuccess("Thay đổi trạng thái thành công", repository.save(subjectFacility));
+
+        SubjectFacility newEntity = repository.save(subjectFacility);
+
+        if (subjectFacility.getStatus() == EntityStatus.ACTIVE) {
+            commonUserStudentRepository.disableAllStudentDuplicateShiftByIdSubject(subjectFacility.getId());
+        }
+        return RouterHelper.responseSuccess("Thay đổi trạng thái thành công", newEntity);
     }
 
 }

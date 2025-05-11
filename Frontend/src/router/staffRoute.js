@@ -13,6 +13,7 @@ export const ROUTE_NAMES = {
   MANAGEMENT_STUDENT_FACTORY: 'route_staff_management_student_factory',
   MANAGEMENT_PLAN: 'route_staff_management_plan',
   MANAGEMENT_PLAN_DATE: 'route_staff_management_plan_date',
+  MANAGEMENT_PLAN_DATE_ATTENDANCE: 'route_staff_management_plan_date_attendance',
   MANAGEMENT_PLAN_FACTORY: 'route_staff_management_plan_factory',
   MANAGEMENT_STUDENT: 'route_staff_management_student',
 }
@@ -74,6 +75,15 @@ export const StaffRoutes = [
         component: () => import('@/views/pages/staff/plan-management/SPMPlanDatePage.vue'),
         meta: {
           name: 'Phân công kế hoạch',
+        },
+      },
+      {
+        path: 'management-plan-date-attendance/:id',
+        name: ROUTE_NAMES.MANAGEMENT_PLAN_DATE_ATTENDANCE,
+        component: () =>
+          import('@/views/pages/staff/plan-management/SPMPlanDateAttendancePage.vue'),
+        meta: {
+          name: 'Chi tiết điểm danh',
         },
       },
       {
