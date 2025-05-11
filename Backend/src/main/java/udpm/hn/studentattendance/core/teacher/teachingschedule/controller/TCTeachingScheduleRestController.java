@@ -68,8 +68,8 @@ public class TCTeachingScheduleRestController {
     }
 
     @PutMapping("/change-type/{id}")
-    public ResponseEntity<?> changeType(@PathVariable("id") String id) {
-        return service.changeTypePlanDate(id);
+    public ResponseEntity<?> changeType(@PathVariable("id") String id, @RequestParam String room) {
+        return service.changeTypePlanDate(id, room);
     }
 
     @GetMapping(value = "/export-pdf", produces = MediaType.APPLICATION_PDF_VALUE)

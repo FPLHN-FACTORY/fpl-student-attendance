@@ -9,5 +9,7 @@ public interface TCTSDetailPlanDateResponse {
 
     String getLink();
 
+    String getRoom();
+
     Integer getType();
 }

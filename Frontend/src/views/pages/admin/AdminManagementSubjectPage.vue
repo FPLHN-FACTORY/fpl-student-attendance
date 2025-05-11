@@ -327,7 +327,7 @@ onMounted(() => {
             :pagination="pagination"
             @change="handleTableChange"
             :loading="loadingStore.isLoading"
-            :scroll="{ y: 500, x: 'auto' }"
+            :scroll="{ x: 'auto' }"
           >
             <template #bodyCell="{ column, record, index }">
               <template v-if="column.dataIndex === 'name'">

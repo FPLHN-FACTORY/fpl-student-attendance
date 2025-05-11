@@ -139,7 +139,7 @@ onMounted(() => {
       :dataSource="lstDataDetail"
       :columns="columnsDetail"
       :pagination="false"
-      :scroll="{ y: 500, x: 'auto' }"
+      :scroll="{ x: 'auto' }"
     >
       <template #bodyCell="{ column, record }">
         <template v-if="column.dataIndex === 'status'">
@@ -162,7 +162,7 @@ onMounted(() => {
       :dataSource="lstData"
       :columns="columns"
       :pagination="pagination"
-      :scroll="{ y: 500, x: 'auto' }"
+      :scroll="{ x: 'auto' }"
       :loading="isLoadingTable"
       @change="handleTableChange"
     >

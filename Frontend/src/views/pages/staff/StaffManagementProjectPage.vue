@@ -255,9 +255,9 @@ const handleUpdateProject = () => {
   const req = {
     name: detailProject.name,
     description: detailProject.description,
-    idLevelProject: detailProject.levelProjectId,
-    idSemester: detailProject.semesterId,
-    idSubjectFacility: detailProject.subjectFacilityId,
+    levelProjectId: detailProject.levelProjectId,
+    semesterId: detailProject.semesterId,
+    subjectFacilityId: detailProject.subjectFacilityId,
   }
 
   requestAPI
@@ -473,11 +473,12 @@ onMounted(() => {
           </div>
 
           <a-table
+            class="nowrap"
             :dataSource="projects"
             :columns="columns"
             rowKey="id"
             :pagination="pagination"
-            :scroll="{ y: 500, x: 'auto' }"
+            :scroll="{ x: 'auto' }"
             :loading="isLoading"
             @change="handleTableChange"
           >

@@ -229,10 +229,6 @@ public class EXProjectServiceImpl implements EXProjectService {
         return RouterHelper.responseSuccess("Lấy danh sách dữ liệu thành công", data);
     }
 
-    /**
-     * Tạo file Excel mẫu với dropdown cho cột Học kỳ và Môn học,
-     * đồng thời tô màu nền cho hàng tiêu đề.
-     */
     public static byte[] createExcelStream(
             String sheetName,
             List<String> headers,
@@ -245,7 +241,7 @@ public class EXProjectServiceImpl implements EXProjectService {
         Workbook workbook = new XSSFWorkbook();
         Sheet sheet = workbook.createSheet(sheetName);
 
-        // Style cho header: màu xanh, đậm, wrap text
+        // Style cho header...
         CellStyle headerStyle = workbook.createCellStyle();
         headerStyle.setFillForegroundColor(IndexedColors.LIGHT_GREEN.getIndex());
         headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
@@ -255,17 +251,13 @@ public class EXProjectServiceImpl implements EXProjectService {
         headerStyle.setWrapText(true);
         headerStyle.setVerticalAlignment(VerticalAlignment.CENTER);
 
-        // Style chung cho wrap text
         CellStyle wrapStyle = workbook.createCellStyle();
         wrapStyle.setWrapText(true);
         wrapStyle.setVerticalAlignment(VerticalAlignment.CENTER);
 
-        // Tạo header và gán style
+        // Tạo header
         Row headerRow = sheet.createRow(0);
-        headerRow.setHeightInPoints(
-                sheet.getDefaultRowHeightInPoints() * 1.5f
-        );
-
+        headerRow.setHeightInPoints(sheet.getDefaultRowHeightInPoints() * 1.5f);
         for (int i = 0; i < headers.size(); i++) {
             Cell cell = headerRow.createCell(i);
             cell.setCellValue(headers.get(i));
@@ -273,7 +265,7 @@ public class EXProjectServiceImpl implements EXProjectService {
             sheet.setDefaultColumnStyle(i, wrapStyle);
         }
 
-        // Viết dữ liệu nếu có
+        // Viết dữ liệu body
         int rowIndex = 1;
         for (Map<String, String> rowData : data) {
             Row row = sheet.createRow(rowIndex++);
@@ -284,73 +276,68 @@ public class EXProjectServiceImpl implements EXProjectService {
             }
         }
 
-        // Auto-size các cột chung
-        for (int i = 0; i < headers.size(); i++) {
-            sheet.autoSizeColumn(i);
-        }
+        // Auto-size các cột
+        for (int i = 0; i < headers.size(); i++) sheet.autoSizeColumn(i);
+        sheet.setColumnWidth(1, 20 * 256);
+        sheet.setColumnWidth(2, 20 * 256);
+        sheet.setColumnWidth(3, 20 * 256);
+        sheet.setColumnWidth(4, 20 * 256);
+        sheet.setColumnWidth(5, 30 * 256);
 
-        // Tạo sheet DropdownData: SubjectFacility và Semester
-        Sheet dropdownSheet = workbook.createSheet("DropdownData");
-
+        // Tạo sheet chứa dropdown data
+        Sheet dd = workbook.createSheet("DropdownData");
+        // Cột A: LevelProjectList
         for (int i = 0; i < levelProjectList.size(); i++) {
-            Row row = dropdownSheet.createRow(i);
-            row.createCell(0).setCellValue(subjectFacilityList.get(i));
+            Row r = dd.createRow(i);
+            r.createCell(0).setCellValue(levelProjectList.get(i));
         }
-
+        // Cột B: SubjectFacilityList
         for (int i = 0; i < subjectFacilityList.size(); i++) {
-            Row row = dropdownSheet.createRow(i);
-            row.createCell(0).setCellValue(subjectFacilityList.get(i));
+            Row r = dd.getRow(i) == null ? dd.createRow(i) : dd.getRow(i);
+            r.createCell(1).setCellValue(subjectFacilityList.get(i));
         }
-
+        // Cột C: SemesterList
         for (int i = 0; i < semesterList.size(); i++) {
-            Row row = dropdownSheet.getRow(i);
-            if (row == null) row = dropdownSheet.createRow(i);
-            row.createCell(1).setCellValue(semesterList.get(i));
+            Row r = dd.getRow(i) == null ? dd.createRow(i) : dd.getRow(i);
+            r.createCell(2).setCellValue(semesterList.get(i));
         }
 
         // Named ranges
-        Name levelProjectName = workbook.createName();
-        levelProjectName.setNameName("LevelProjectList");
-        levelProjectName.setRefersToFormula(
-                "DropdownData!$A$1:$A$" + subjectFacilityList.size()
-        );
-        Name subjectFacilityName = workbook.createName();
-        subjectFacilityName.setNameName("SubjectFacilityList");
-        subjectFacilityName.setRefersToFormula(
-                "DropdownData!$B$1:$B$" + subjectFacilityList.size()
-        );
-        Name semesterName = workbook.createName();
-        semesterName.setNameName("SemesterList");
-        semesterName.setRefersToFormula(
-                "DropdownData!$C$1:$C$" + semesterList.size()
-        );
+        Name nmLevel = workbook.createName();
+        nmLevel.setNameName("LevelProjectList");
+        nmLevel.setRefersToFormula("DropdownData!$A$1:$A$" + levelProjectList.size());
+        Name nmSubject = workbook.createName();
+        nmSubject.setNameName("SubjectFacilityList");
+        nmSubject.setRefersToFormula("DropdownData!$B$1:$B$" + subjectFacilityList.size());
+        Name nmSemester = workbook.createName();
+        nmSemester.setNameName("SemesterList");
+        nmSemester.setRefersToFormula("DropdownData!$C$1:$C$" + semesterList.size());
 
-        // Data validation cho cột Học kỳ (index 3) và Môn học (index 4)
-        DataValidationHelper dvHelper = sheet.getDataValidationHelper();
-        // Cấp dự án
-        DataValidationConstraint levelProjectConstraint = dvHelper.createFormulaListConstraint("LevelProjectList");
-        CellRangeAddressList levelProjectAddr = new CellRangeAddressList(1, 100, 3, 3);
-        DataValidation levelProjectValid = dvHelper.createValidation(levelProjectConstraint, levelProjectAddr);
-        levelProjectValid.setSuppressDropDownArrow(true);
-        sheet.addValidationData(levelProjectValid);
-        // Học kỳ
-        DataValidationConstraint semesterConstraint = dvHelper.createFormulaListConstraint("SemesterList");
-        CellRangeAddressList semesterAddr = new CellRangeAddressList(1, 100, 4, 3);
-        DataValidation semesterValid = dvHelper.createValidation(semesterConstraint, semesterAddr);
-        semesterValid.setSuppressDropDownArrow(true);
-        sheet.addValidationData(semesterValid);
-        // Môn học
-        DataValidationConstraint subjectConstraint = dvHelper.createFormulaListConstraint("SubjectFacilityList");
-        CellRangeAddressList subjectAddr = new CellRangeAddressList(1, 100, 5, 4);
-        DataValidation subjectValid = dvHelper.createValidation(subjectConstraint, subjectAddr);
-        subjectValid.setSuppressDropDownArrow(true);
-        sheet.addValidationData(subjectValid);
+        // Data validation
+        DataValidationHelper dvh = sheet.getDataValidationHelper();
+        // Cấp dự án (col idx=2)
+        DataValidationConstraint cv1 = dvh.createFormulaListConstraint("LevelProjectList");
+        CellRangeAddressList addr1 = new CellRangeAddressList(1, 100, 2, 2);
+        DataValidation dv1 = dvh.createValidation(cv1, addr1);
+        dv1.setSuppressDropDownArrow(true);
+        sheet.addValidationData(dv1);
+
+        // Học kỳ (col idx=3)
+        DataValidationConstraint cv2 = dvh.createFormulaListConstraint("SemesterList");
+        CellRangeAddressList addr2 = new CellRangeAddressList(1, 100, 3, 3);
+        DataValidation dv2 = dvh.createValidation(cv2, addr2);
+        dv2.setSuppressDropDownArrow(true);
+        sheet.addValidationData(dv2);
+
+        // Môn học (col idx=4)
+        DataValidationConstraint cv3 = dvh.createFormulaListConstraint("SubjectFacilityList");
+        CellRangeAddressList addr3 = new CellRangeAddressList(1, 100, 4, 4);
+        DataValidation dv3 = dvh.createValidation(cv3, addr3);
+        dv3.setSuppressDropDownArrow(true);
+        sheet.addValidationData(dv3);
 
         // Ẩn sheet DropdownData
-        workbook.setSheetHidden(
-                workbook.getSheetIndex(dropdownSheet),
-                true
-        );
+        workbook.setSheetHidden(workbook.getSheetIndex(dd), true);
 
         // Xuất file
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
