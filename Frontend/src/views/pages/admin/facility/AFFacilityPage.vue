@@ -21,6 +21,7 @@ import { ROUTE_NAMES } from '@/router/adminRoute'
 import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
 import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
 import useLoadingStore from '@/stores/useLoadingStore'
+import { autoAddColumnWidth } from '@/utils/utils'
 
 const router = useRouter()
 const breadcrumbStore = useBreadcrumbStore()
@@ -66,25 +67,23 @@ const newFacility = reactive({ facilityName: '' })
 const detailFacility = ref({})
 
 // Cấu hình cột cho bảng
-const columns = ref([
-  { title: '#', dataIndex: 'facilityIndex', key: 'facilityIndex', width: 60 },
-  {
-    title: 'Tên cơ sở',
-    dataIndex: 'facilityName',
-    key: 'facilityName',
-    width: 200,
-    ellipsis: true,
-  },
-  { title: 'Mã cơ sở', dataIndex: 'facilityCode', key: 'facilityCode', width: 150, ellipsis: true },
-  {
-    title: 'Trạng thái',
-    dataIndex: 'facilityStatus',
-    key: 'facilityStatus',
-    width: 120,
-    ellipsis: true,
-  },
-  { title: 'Chức năng', key: 'actions', width: 120 },
-])
+const columns = ref(
+  autoAddColumnWidth([
+    { title: '#', dataIndex: 'facilityIndex', key: 'facilityIndex' },
+    {
+      title: 'Tên cơ sở',
+      dataIndex: 'facilityName',
+      key: 'facilityName',
+    },
+    { title: 'Mã cơ sở', dataIndex: 'facilityCode', key: 'facilityCode' },
+    {
+      title: 'Trạng thái',
+      dataIndex: 'facilityStatus',
+      key: 'facilityStatus',
+    },
+    { title: 'Chức năng', key: 'actions' },
+  ]),
+)
 
 // Hàm lấy danh sách cơ sở
 const fetchFacilities = () => {
@@ -309,7 +308,7 @@ onMounted(() => {
         <!-- Bộ lọc tìm kiếm -->
         <a-card :bordered="false" class="cart">
           <template #title> <FilterFilled /> Bộ lọc </template>
-          <div class="row g-2">
+          <div class="row g-3">
             <div class="col-xxl-6 col-md-8 col-sm-8">
               <div class="label-title">Từ khoá:</div>
               <a-input
@@ -324,20 +323,18 @@ onMounted(() => {
               </a-input>
             </div>
             <div class="col-xxl-6 col-md-8 col-sm-8">
-              <div class="label-title">
-                Trạng thái:
-                <a-select
-                  v-model:value="filter.status"
-                  placeholder="Chọn trạng thái"
-                  allowClear
-                  style="width: 100%"
-                  @change="fetchFacilities"
-                >
-                  <a-select-option :value="null">Tất cả trạng thái</a-select-option>
-                  <a-select-option value="ACTIVE">Hoạt động</a-select-option>
-                  <a-select-option value="INACTIVE">Không hoạt động</a-select-option>
-                </a-select>
-              </div>
+              <div class="label-title">Trạng thái:</div>
+              <a-select
+                v-model:value="filter.status"
+                placeholder="Chọn trạng thái"
+                allowClear
+                style="width: 100%"
+                @change="fetchFacilities"
+              >
+                <a-select-option :value="null">Tất cả trạng thái</a-select-option>
+                <a-select-option value="ACTIVE">Hoạt động</a-select-option>
+                <a-select-option value="INACTIVE">Không hoạt động</a-select-option>
+              </a-select>
             </div>
             <div class="col-12">
               <div class="d-flex justify-content-center flex-wrap gap-2 mt-3">

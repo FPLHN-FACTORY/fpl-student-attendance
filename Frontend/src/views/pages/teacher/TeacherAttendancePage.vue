@@ -11,6 +11,7 @@ import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
 import useLoadingStore from '@/stores/useLoadingStore'
 import { Client } from '@stomp/stompjs'
 import { ATTENDANCE_STATUS } from '@/constants'
+import { autoAddColumnWidth } from '@/utils/utils'
 
 // Lấy planDateId từ query
 const route = useRoute()
@@ -30,30 +31,26 @@ const breadcrumb = ref([
 const students = ref([])
 
 // Cột bảng
-const columns = ref([
-  { title: '#', dataIndex: 'rowNumber', key: 'rowNumber', width: 50 },
-  {
-    title: 'Mã học sinh',
-    dataIndex: 'userStudentCode',
-    key: 'userStudentCode',
-    width: 150,
-    ellipsis: true,
-  },
-  {
-    title: 'Tên học sinh',
-    dataIndex: 'userStudentName',
-    key: 'userStudentName',
-    width: 200,
-    ellipsis: true,
-  },
-  {
-    title: 'Trạng thái',
-    dataIndex: 'attendanceStatus',
-    key: 'attendanceStatus',
-    width: 120,
-    ellipsis: true,
-  },
-])
+const columns = ref(
+  autoAddColumnWidth([
+    { title: '#', dataIndex: 'rowNumber', key: 'rowNumber' },
+    {
+      title: 'Mã học sinh',
+      dataIndex: 'userStudentCode',
+      key: 'userStudentCode',
+    },
+    {
+      title: 'Tên học sinh',
+      dataIndex: 'userStudentName',
+      key: 'userStudentName',
+    },
+    {
+      title: 'Trạng thái',
+      dataIndex: 'attendanceStatus',
+      key: 'attendanceStatus',
+    },
+  ]),
+)
 
 // Fetch students + trạng thái hiện tại
 const fetchStudentAttendance = async () => {
@@ -71,8 +68,8 @@ const fetchStudentAttendance = async () => {
       // Thêm flag local để đánh dấu đã thay đổi
       _edited: false,
     }))
-  } catch (err) {
-    message.error(err.response?.data?.message || 'Lỗi khi lấy danh sách điểm danh')
+  } catch (error) {
+    message.error(error.response?.data?.message || 'Lỗi khi lấy dữ liệu')
   } finally {
     loadingStore.hide()
   }

@@ -17,7 +17,7 @@ import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
 import { ROUTE_NAMES } from '@/router/adminRoute'
 import useLoadingStore from '@/stores/useLoadingStore'
 import { useRoute, useRouter } from 'vue-router'
-import { debounce } from '@/utils/utils'
+import { autoAddColumnWidth, debounce } from '@/utils/utils'
 
 const route = useRoute()
 const router = useRouter()
@@ -39,13 +39,15 @@ const modalAddOrUpdate = reactive({
 const _detail = ref(null)
 const lstData = ref([])
 
-const columns = ref([
-  { title: '#', dataIndex: 'orderNumber', key: 'orderNumber', width: 50 },
-  { title: 'Kiểu IP', dataIndex: 'type', key: 'type', ellipsis: true },
-  { title: 'IP/Dải IP', dataIndex: 'ip', key: 'ip', ellipsis: true },
-  { title: 'Trạng thái', dataIndex: 'status', key: 'status', ellipsis: true },
-  { title: '', key: 'actions' },
-])
+const columns = ref(
+  autoAddColumnWidth([
+    { title: '#', dataIndex: 'orderNumber', key: 'orderNumber' },
+    { title: 'Kiểu IP', dataIndex: 'type', key: 'type' },
+    { title: 'IP/Dải IP', dataIndex: 'ip', key: 'ip' },
+    { title: 'Trạng thái', dataIndex: 'status', key: 'status' },
+    { title: '', key: 'actions' },
+  ]),
+)
 
 const breadcrumb = ref([
   {

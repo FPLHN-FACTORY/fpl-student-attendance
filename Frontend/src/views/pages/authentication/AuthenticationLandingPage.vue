@@ -126,9 +126,7 @@ const checkLogin = () => {
   roleLogin.value = route.query.role || null
   const authenticationToken = route.query.authencation_token || null
   const authenticationError = route.query.authencation_error || null
-
   loadingPage.show()
-
   if (authenticationToken) {
     if (!authStore.login(authenticationToken)) {
       loadingPage.hide()

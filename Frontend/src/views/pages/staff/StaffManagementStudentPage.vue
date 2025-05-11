@@ -1,15 +1,11 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { message, Modal } from 'ant-design-vue'
-import router from '@/router'
 import requestAPI from '@/services/requestApiService'
 import { API_ROUTES_STAFF } from '@/constants/staffConstant'
 import { API_ROUTES_EXCEL, GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
 import {
   PlusOutlined,
-  EyeOutlined,
-  EditOutlined,
-  SyncOutlined,
   EyeFilled,
   EditFilled,
   UnorderedListOutlined,
@@ -21,6 +17,7 @@ import { DEFAULT_PAGINATION } from '@/constants'
 import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
 import useLoadingStore from '@/stores/useLoadingStore'
 import ExcelUploadButton from '@/components/excel/ExcelUploadButton.vue'
+import { autoAddColumnWidth } from '@/utils/utils'
 
 const breadcrumbStore = useBreadcrumbStore()
 const loadingStore = useLoadingStore()
@@ -62,14 +59,16 @@ const detailStudent = reactive({
 })
 
 // Cấu hình cột cho bảng
-const columns = ref([
-  { title: 'STT', dataIndex: 'rowNumber', key: 'rowNumber', width: 50 },
-  { title: 'Mã sinh viên', dataIndex: 'studentCode', key: 'studentCode', width: 100 },
-  { title: 'Tên sinh viên', dataIndex: 'studentName', key: 'studentName', width: 150 },
-  { title: 'Email', dataIndex: 'studentEmail', key: 'studentEmail', width: 250 },
-  { title: 'Trạng thái', dataIndex: 'studentStatus', key: 'studentStatus', width: 80 },
-  { title: 'Chức năng', key: 'actions', width: 80 },
-])
+const columns = ref(
+  autoAddColumnWidth([
+    { title: 'STT', dataIndex: 'rowNumber', key: 'rowNumber' },
+    { title: 'Mã sinh viên', dataIndex: 'studentCode', key: 'studentCode' },
+    { title: 'Tên sinh viên', dataIndex: 'studentName', key: 'studentName' },
+    { title: 'Email', dataIndex: 'studentEmail', key: 'studentEmail' },
+    { title: 'Trạng thái', dataIndex: 'studentStatus', key: 'studentStatus' },
+    { title: 'Chức năng', key: 'actions' },
+  ]),
+)
 
 const breadcrumb = ref([
   {
@@ -147,7 +146,7 @@ const handleAddStudent = () => {
     .catch((error) => {
       message.error(
         (error.response && error.response.data && error.response.data.message) ||
-          'Lỗi khi thêm sinh viên'
+          'Lỗi khi thêm sinh viên',
       )
     })
     .finally(() => {
@@ -171,7 +170,7 @@ const handleUpdateStudent = (record) => {
     .catch((error) => {
       message.error(
         (error.response && error.response.data && error.response.data.message) ||
-          'Lỗi khi lấy chi tiết sinh viên'
+          'Lỗi khi lấy chi tiết sinh viên',
       )
     })
     .finally(() => {
@@ -195,7 +194,7 @@ const handleDetailStudent = (record) => {
     .catch((error) => {
       message.error(
         (error.response && error.response.data && error.response.data.message) ||
-          'Lỗi khi lấy chi tiết sinh viên'
+          'Lỗi khi lấy chi tiết sinh viên',
       )
     })
     .finally(() => {
@@ -220,7 +219,7 @@ const updateStudent = () => {
     .catch((error) => {
       message.error(
         (error.response && error.response.data && error.response.data.message) ||
-          'Lỗi khi cập nhật sinh viên'
+          'Lỗi khi cập nhật sinh viên',
       )
     })
     .finally(() => {
@@ -244,7 +243,7 @@ const handleChangeStatusStudent = (record) => {
         .catch((error) => {
           message.error(
             (error.response && error.response.data && error.response.data.message) ||
-              'Lỗi khi đổi trạng thái sinh viên'
+              'Lỗi khi đổi trạng thái sinh viên',
           )
         })
         .finally(() => {
@@ -293,6 +292,15 @@ const clearNewStudentForm = () => {
   newStudent.email = ''
 }
 
+const handleClearFilter = () => {
+  // Clear all filter values
+  Object.keys(filter).forEach((key) => {
+    filter[key] = ''
+  })
+  pagination.current = 1
+  fetchStudents() // or whatever your fetch function is named
+}
+
 onMounted(() => {
   breadcrumbStore.setRoutes(breadcrumb.value)
   fetchStudents()
@@ -306,9 +314,8 @@ onMounted(() => {
       <div class="col-12">
         <a-card :bordered="false" class="cart mb-3">
           <template #title> <FilterFilled /> Bộ lọc </template>
-          <a-row :gutter="16" class="filter-container">
+          <div class="row g-3 filter-container">
             <!-- Input tìm kiếm theo mã, tên, email -->
-
             <a-col :span="12" class="col">
               <div class="label-title">Tìm kiếm mã, tên, email:</div>
               <a-input
@@ -333,7 +340,15 @@ onMounted(() => {
                 <a-select-option value="INACTIVE">Không hoạt động</a-select-option>
               </a-select>
             </a-col>
-          </a-row>
+          </div>
+          <div class="row">
+            <div class="col-12">
+              <div class="d-flex justify-content-center flex-wrap gap-2 mt-3">
+                <a-button class="btn-light" @click="fetchStudents"> <FilterFilled /> Lọc </a-button>
+                <a-button class="btn-gray" @click="handleClearFilter"> Huỷ lọc </a-button>
+              </div>
+            </div>
+          </div>
         </a-card>
       </div>
     </div>

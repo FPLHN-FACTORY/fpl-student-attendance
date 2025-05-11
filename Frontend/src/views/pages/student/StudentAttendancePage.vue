@@ -10,7 +10,7 @@ import { API_ROUTES_STUDENT } from '@/constants/studentConstant'
 import { ROUTE_NAMES } from '@/router/studentRoute'
 import requestAPI from '@/services/requestApiService'
 import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
-import { debounce, formatDate } from '@/utils/utils'
+import { debounce, formatDate, autoAddColumnWidth } from '@/utils/utils'
 import {
   CheckOutlined,
   ExclamationCircleOutlined,
@@ -58,15 +58,17 @@ const breadcrumb = ref([
   },
 ])
 
-const columns = ref([
-  { title: '#', dataIndex: 'orderNumber', key: 'orderNumber', width: 50 },
-  { title: 'Thời gian', dataIndex: 'startDate', key: 'startDate', width: 100, ellipsis: true },
-  { title: 'Ca học', dataIndex: 'shift', key: 'shift', width: 200, ellipsis: true },
-  { title: 'Nhóm xưởng', dataIndex: 'factoryName', key: 'factoryName', ellipsis: true },
-  { title: 'Giảng viên', dataIndex: 'teacherName', key: 'teacherName', ellipsis: true },
-  { title: 'Trạng thái', dataIndex: 'status', key: 'status', ellipsis: true },
-  { title: '', key: 'actions' },
-])
+const columns = ref(
+  autoAddColumnWidth([
+    { title: '#', dataIndex: 'orderNumber', key: 'orderNumber' },
+    { title: 'Thời gian', dataIndex: 'startDate', key: 'startDate' },
+    { title: 'Ca học', dataIndex: 'shift', key: 'shift' },
+    { title: 'Nhóm xưởng', dataIndex: 'factoryName', key: 'factoryName' },
+    { title: 'Giảng viên', dataIndex: 'teacherName', key: 'teacherName' },
+    { title: 'Trạng thái', dataIndex: 'status', key: 'status' },
+    { title: '', key: 'actions' },
+  ]),
+)
 
 const pagination = ref({ ...DEFAULT_PAGINATION })
 
@@ -95,7 +97,7 @@ const fetchDataList = () => {
       pagination.value.total = response.data.totalPages * pagination.value.pageSize
     })
     .catch((error) => {
-      message.error(error?.response?.data?.message || 'Không thể tải danh sách dữ liệu')
+      message.error(error.response?.data?.message || 'Lỗi khi lấy dữ liệu')
     })
     .finally(() => {
       isLoading.value = false
@@ -120,8 +122,7 @@ const fetchDataStudentInfo = () => {
       }
     })
     .catch((error) => {
-      console.log(error)
-      message.error(error?.response?.data?.message || 'Không thể tải thông tin sinh viên')
+      message.error(error.response?.data?.message || 'Lỗi khi lấy thông tin sinh viên')
     })
 }
 
@@ -154,7 +155,7 @@ const handleSubmitAttendance = () => {
       fetchDataList()
     })
     .catch((error) => {
-      message.error(error?.response?.data?.message || 'Không thể điểm danh ca học này')
+      message.error(error.response?.data?.message || 'Lỗi khi điểm danh ca học này')
     })
     .finally(() => {
       loadingPage.hide()
@@ -170,7 +171,7 @@ const handleSubmitUpdateInfo = () => {
       applicationStore.loadNotification()
     })
     .catch((error) => {
-      message.error(error?.response?.data?.message || 'Không thể cập nhật khuôn mặt')
+      message.error(error.response?.data?.message || 'Lỗi khi cập nhật khuôn mặt')
     })
     .finally(() => {
       loadingPage.hide()
@@ -216,7 +217,7 @@ const getCurrentLocation = async () => {
       formData.latitude = latitude
       formData.longitude = longitude
     },
-    (error) => {
+    () => {
       Modal.confirm({
         title: 'Không thể lấy vị trí',
         icon: createVNode(ExclamationCircleOutlined),
@@ -294,8 +295,6 @@ watch(
         <div></div>
         <div></div>
         <div></div>
-        <div></div>
-        <div></div>
       </div>
       <div class="face-id-loading" v-show="faceIDStore.isLoading">
         <div class="bg-loading">
@@ -321,7 +320,7 @@ watch(
               <div class="label-title">Từ khoá:</div>
               <a-input
                 v-model:value="dataFilter.keyword"
-                placeholder="Tìm theo tên lớp học..."
+                placeholder="Tìm theo nhóm xưởng, giảng viên..."
                 allowClear
               >
                 <template #prefix>
@@ -339,7 +338,7 @@ watch(
                 allowClear
               >
                 <a-select-option :value="null">-- Tất cả trạng thái --</a-select-option>
-                <a-select-option v-for="o in ATTENDANCE_STATUS" :value="o.id">{{
+                <a-select-option v-for="o in ATTENDANCE_STATUS" :key="o.id" :value="o.id">{{
                   o.name
                 }}</a-select-option>
               </a-select>

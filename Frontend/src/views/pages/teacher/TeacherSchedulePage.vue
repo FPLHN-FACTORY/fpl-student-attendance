@@ -16,7 +16,7 @@ import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
 import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
 import { ROUTE_NAMES } from '@/router/teacherRoute'
 import { DEFAULT_DATE_FORMAT, DEFAULT_PAGINATION, SHIFT, TYPE_SHIFT } from '@/constants'
-import { formatDate, dayOfWeek } from '@/utils/utils'
+import { formatDate, dayOfWeek, autoAddColumnWidth } from '@/utils/utils'
 import useLoadingStore from '@/stores/useLoadingStore'
 import dayjs from 'dayjs'
 import router from '@/router'
@@ -65,63 +65,53 @@ const teachingScheduleRecords = ref([])
 const pagination = ref({ ...DEFAULT_PAGINATION })
 
 // Cột hiển thị trong table lịch dạy chung
-const columns = [
-  { title: '#', dataIndex: 'indexs', key: 'indexs', width: 50 },
+const columns = autoAddColumnWidth([
+  { title: '#', dataIndex: 'indexs', key: 'indexs' },
   {
     title: 'Ngày dạy',
     dataIndex: 'startTeaching',
     key: 'startTeaching',
-    width: 100,
-    ellipsis: true,
   },
-  { title: 'Thời gian', key: 'time', width: 100, ellipsis: true },
-  { title: 'Ca học', dataIndex: 'shift', key: 'shift', width: 50, ellipsis: true },
+  { title: 'Thời gian', key: 'time' },
+  { title: 'Ca học', dataIndex: 'shift', key: 'shift' },
   {
     title: 'Điểm danh muộn',
     dataIndex: 'lateArrival',
     key: 'lateArrival',
-    width: 50,
-    ellipsis: true,
   },
-  { title: 'Nhóm Xưởng', dataIndex: 'factoryName', key: 'factoryName', width: 100, ellipsis: true },
-  { title: 'Dự án', dataIndex: 'projectName', key: 'projectName', width: 180, ellipsis: true },
-  { title: 'Địa điểm học', dataIndex: 'room', key: 'room', width: 100, ellipsis: true },
-  { title: 'Hình thức', dataIndex: 'type', key: 'type', width: 100, ellipsis: true },
-  { title: 'Link học', dataIndex: 'link', key: 'link', width: 180, ellipsis: true },
+  { title: 'Nhóm Xưởng', dataIndex: 'factoryName', key: 'factoryName' },
+  { title: 'Dự án', dataIndex: 'projectName', key: 'projectName' },
+  { title: 'Địa điểm học', dataIndex: 'room', key: 'room' },
+  { title: 'Hình thức', dataIndex: 'type', key: 'type' },
+  { title: 'Link học', dataIndex: 'link', key: 'link' },
   {
     title: 'Chi tiết / Sửa',
     dataIndex: 'description',
     key: 'description',
-    width: 100,
-    ellipsis: true,
   },
-]
+])
 
 // Cột hiển thị cho table lịch dạy hôm nay
-const columnsTeachingPresent = [
-  { title: '#', dataIndex: 'indexs', key: 'indexs', width: 50 },
-  { title: 'Thời gian', key: 'time', width: 100, ellipsis: true },
-  { title: 'Ca học', dataIndex: 'shift', key: 'shift', width: 50, ellipsis: true },
+const columnsTeachingPresent = autoAddColumnWidth([
+  { title: '#', dataIndex: 'indexs', key: 'indexs' },
+  { title: 'Thời gian', key: 'time' },
+  { title: 'Ca học', dataIndex: 'shift', key: 'shift' },
   {
     title: 'Điểm danh muộn ',
     dataIndex: 'lateArrival',
     key: 'lateArrival',
-    width: 50,
-    ellipsis: true,
   },
-  { title: 'Xưởng', dataIndex: 'factoryName', key: 'factoryName', width: 100, ellipsis: true },
-  { title: 'Dự án', dataIndex: 'projectName', key: 'projectName', width: 180, ellipsis: true },
-  { title: 'Địa điểm học', dataIndex: 'room', key: 'room', width: 100, ellipsis: true },
-  { title: 'Link học', dataIndex: 'link', key: 'link', width: 180, ellipsis: true },
+  { title: 'Xưởng', dataIndex: 'factoryName', key: 'factoryName' },
+  { title: 'Dự án', dataIndex: 'projectName', key: 'projectName' },
+  { title: 'Địa điểm học', dataIndex: 'room', key: 'room' },
+  { title: 'Link học', dataIndex: 'link', key: 'link' },
   {
     title: 'Chi tiết / Sửa',
     dataIndex: 'description',
     key: 'description',
-    width: 100,
-    ellipsis: true,
   },
-  { title: 'Điểm danh', key: 'action', width: 100 },
-]
+  { title: 'Điểm danh', key: 'action' },
+])
 
 // Các danh sách dropdown
 const subjects = ref([])
@@ -207,7 +197,9 @@ const fetchSubjects = () => {
     .then((res) => {
       subjects.value = res.data.data
     })
-    .catch(() => message.error(error.response?.data?.message || 'Lỗi khi tải danh sách môn học'))
+    .catch((error) => {
+      message.error(error.response?.data?.message || 'Lỗi khi tải danh sách môn học')
+    })
 }
 const fetchFactories = () => {
   requestAPI
@@ -215,7 +207,9 @@ const fetchFactories = () => {
     .then((res) => {
       factories.value = res.data.data
     })
-    .catch(() => message.error('Lỗi khi tải danh sách xưởng'))
+    .catch((error) => {
+      message.error(error.response?.data?.message || 'Lỗi khi tải danh sách xưởng')
+    })
 }
 const fetchProjects = () => {
   requestAPI
@@ -223,7 +217,9 @@ const fetchProjects = () => {
     .then((res) => {
       projects.value = res.data.data
     })
-    .catch(() => message.error(error.response?.data?.message || 'Lỗi khi tải danh sách dự án'))
+    .catch((error) => {
+      message.error(error.response?.data?.message || 'Lỗi khi tải danh sách dự án')
+    })
 }
 
 // Phân trang
@@ -251,7 +247,6 @@ const currentPlanDateId = ref('')
 const isUpdateModalVisible = ref(false)
 const formUpdateData = reactive({ description: '', lateArrival: 0, planDateId: '', link: '' })
 const formUpdateRules = {
-  description: [{ required: true, message: 'Vui lòng nhập mô tả', trigger: 'blur' }],
   lateArrival: [
     { required: true, message: 'Vui lòng nhập thời gian điểm danh muộn', trigger: 'change' },
   ],
@@ -267,7 +262,9 @@ const handleShowDescription = (record) => {
       currentPlanDateId.value = d.planDateId
       isDetailModalVisible.value = true
     })
-    .catch((e) => message.error(error.response?.data?.message || 'Lỗi khi lấy chi tiết kế hoạch'))
+    .catch((error) => {
+      message.error(error.response?.data?.message || 'Lỗi khi lấy chi tiết kế hoạch')
+    })
 }
 const handleShowUpdate = () => {
   formUpdateData.description = detailModalContent.value
@@ -323,7 +320,9 @@ const handleExportPDF = () => {
       link.click()
       message.success('Xuất file PDF thành công')
     })
-    .catch((e) => message.error(e.response?.data?.message || 'Lỗi khi xuất file PDF'))
+    .catch((error) => {
+      message.error(error.response?.data?.message || 'Lỗi khi xuất file PDF')
+    })
     .finally(() => loadingStore.hide())
 }
 
@@ -349,7 +348,9 @@ function handleChangeType(record) {
       fetchTeachingSchedule()
       fetchTeachingSchedulePresent()
     })
-    .catch((e) => message.error(e.response?.data?.message || 'Lỗi đổi hình thức'))
+    .catch((error) => {
+      message.error(error.response?.data?.message || 'Lỗi đổi hình thức')
+    })
     .finally(() => loadingStore.hide())
 }
 
@@ -405,8 +406,21 @@ function confirmLinkModal() {
       fetchTeachingSchedule()
       fetchTeachingSchedulePresent()
     })
-    .catch((e) => message.error(e.response?.data?.message || 'Lỗi khi cập nhật link/kiểu học'))
+    .catch((error) => {
+      message.error(error.response?.data?.message || 'Lỗi khi cập nhật link/kiểu học')
+    })
     .finally(() => loadingStore.hide())
+}
+
+const handleClearFilter = () => {
+  // Clear all filter values except durationOption
+  Object.keys(filter).forEach((key) => {
+    if (key !== 'durationOption' && key !== 'page' && key !== 'pageSize') {
+      filter[key] = ''
+    }
+  })
+  pagination.value.current = 1
+  fetchTeachingSchedule()
 }
 
 onMounted(() => {
@@ -421,13 +435,11 @@ onMounted(() => {
 
 <template>
   <div class="container-fluid">
-    <!-- Bộ lọc -->
-    <div class="row g-5 mb-3">
+    <div class="row g-3">
       <div class="col-12">
-        <a-card :bordered="false" class="cart">
+        <a-card :bordered="false" class="cart mb-3">
           <template #title> <FilterFilled /> Bộ lọc tìm kiếm </template>
-          <div class="row g-4">
-            <!-- ... các filter giống cũ ... -->
+          <div class="row g-3 filter-container">
             <div class="col-md-6 col-sm-6">
               <div class="label-title">Khoảng thời gian:</div>
               <a-select
@@ -456,6 +468,16 @@ onMounted(() => {
                 <a-select-option value="1">Online</a-select-option>
                 <a-select-option value="0">Offline</a-select-option>
               </a-select>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-12">
+              <div class="d-flex justify-content-center flex-wrap gap-2 mt-3">
+                <a-button class="btn-light" @click="fetchTeachingSchedule">
+                  <FilterFilled /> Lọc
+                </a-button>
+                <a-button class="btn-gray" @click="handleClearFilter"> Huỷ lọc </a-button>
+              </div>
             </div>
           </div>
         </a-card>

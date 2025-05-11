@@ -20,6 +20,7 @@ import { API_ROUTES_ADMIN } from '@/constants/adminConstant'
 import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
 import { ROUTE_NAMES } from '@/router/adminRoute'
 import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
+import { autoAddColumnWidth } from '@/utils/utils'
 
 const route = useRoute()
 const loadingStore = useLoadingStore()
@@ -82,19 +83,19 @@ const detailSubjectFacility = reactive({
   updatedAt: '',
 })
 
-const columns = ref([
-  { title: '#', dataIndex: 'orderNumber', key: 'orderNumber', width: 50 },
-  { title: 'Tên bộ môn', dataIndex: 'subjectName', key: 'subjectName', width: 200, ellipsis: true },
-  {
-    title: 'Tên cơ sở',
-    dataIndex: 'facilityName',
-    key: 'facilityName',
-    width: 200,
-    ellipsis: true,
-  },
-  { title: 'Trạng thái', dataIndex: 'status', key: 'status', width: 100, ellipsis: true },
-  { title: 'Chức năng', key: 'actions' },
-])
+const columns = ref(
+  autoAddColumnWidth([
+    { title: '#', dataIndex: 'orderNumber', key: 'orderNumber' },
+    { title: 'Tên bộ môn', dataIndex: 'subjectName', key: 'subjectName' },
+    {
+      title: 'Tên cơ sở',
+      dataIndex: 'facilityName',
+      key: 'facilityName',
+    },
+    { title: 'Trạng thái', dataIndex: 'status', key: 'status' },
+    { title: 'Chức năng', key: 'actions' },
+  ]),
+)
 
 /* ----------------- Methods ----------------- */
 const fetchSubjectFacility = () => {
@@ -293,6 +294,15 @@ const getStatusColor = (status) => {
   return status == 1 || status === 'ACTIVE' ? 'green' : 'red'
 }
 
+const handleClearFilter = () => {
+  // Clear all filter values
+  Object.keys(filter).forEach((key) => {
+    filter[key] = ''
+  })
+  pagination.current = 1
+  fetchSubjectFacility()
+}
+
 /* ----------------- Lifecycle Hooks ----------------- */
 onMounted(() => {
   breadcrumbStore.setRoutes(breadcrumb.value)
@@ -309,36 +319,34 @@ onMounted(() => {
     <div class="row g-3">
       <div class="col-12">
         <a-card :bordered="false" class="cart mb-3">
-          <template #title> <FilterFilled /> Bộ lọc </template>
-          <div class="row g-2">
-            <div class="col-lg-4 col-md-12 col-sm-12">
-              <div class="label-title">Từ khoá:</div>
+          <template #title> <FilterFilled /> Bộ lọc tìm kiếm </template>
+          <div class="row g-3 filter-container">
+            <div class="col-md-4 col-sm-6">
+              <label class="label-title">Từ khoá:</label>
               <a-input
                 v-model:value="filter.name"
-                placeholder="Tìm kiếm theo tên"
+                placeholder="Nhập tên hoặc mã cơ sở vật chất"
                 allowClear
                 @change="fetchSubjectFacility"
               />
             </div>
-
-            <div class="col-lg-4 col-md-6 col-sm-12">
-              <div class="label-title">Cơ sở:</div>
+            <div class="col-md-4 col-sm-6">
+              <label class="label-title">Bộ môn:</label>
               <a-select
-                v-model:value="filter.facilityId"
-                placeholder="Chọn cơ sở"
+                v-model:value="filter.idSubject"
+                placeholder="Chọn bộ môn"
                 allowClear
                 style="width: 100%"
                 @change="fetchSubjectFacility"
               >
-                <a-select-option :value="null">Tất cả cơ sở</a-select-option>
-                <a-select-option v-for="f in facility" :key="f.id" :value="f.id">
-                  {{ f.name }}
+                <a-select-option :value="''">Tất cả bộ môn</a-select-option>
+                <a-select-option v-for="item in subject" :key="item.id" :value="item.id">
+                  {{ item.name }}
                 </a-select-option>
               </a-select>
             </div>
-
-            <div class="col-lg-4 col-md-6 col-sm-12">
-              <div class="label-title">Trạng thái:</div>
+            <div class="col-md-4 col-sm-6">
+              <label class="label-title">Trạng thái:</label>
               <a-select
                 v-model:value="filter.status"
                 placeholder="Chọn trạng thái"
@@ -346,10 +354,20 @@ onMounted(() => {
                 style="width: 100%"
                 @change="fetchSubjectFacility"
               >
-                <a-select-option :value="null">Tất cả trạng thái</a-select-option>
-                <a-select-option :value="1">Hoạt động</a-select-option>
-                <a-select-option :value="0">Không hoạt động</a-select-option>
+                <a-select-option :value="''">Tất cả trạng thái</a-select-option>
+                <a-select-option value="1">Hoạt động</a-select-option>
+                <a-select-option value="0">Không hoạt động</a-select-option>
               </a-select>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-12">
+              <div class="d-flex justify-content-center flex-wrap gap-2 mt-3">
+                <a-button class="btn-light" @click="fetchSubjectFacility">
+                  <FilterFilled /> Lọc
+                </a-button>
+                <a-button class="btn-gray" @click="handleClearFilter"> Huỷ lọc </a-button>
+              </div>
             </div>
           </div>
         </a-card>

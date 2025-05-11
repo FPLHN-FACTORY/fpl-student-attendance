@@ -1,5 +1,6 @@
 <script setup>
 import useImportExcelStore from '@/stores/useImportExcelStore'
+import { autoAddColumnWidth } from '@/utils/utils'
 import {
   CloseOutlined,
   DownOutlined,
@@ -18,11 +19,13 @@ const isShow = ref(true)
 const isShowLog = ref(false)
 const itemLog = ref(false)
 
-const columns = ref([
-  { title: 'Dòng', dataIndex: 'index', key: 'index', width: 80 },
-  { title: 'Trạng thái', dataIndex: 'status', key: 'status', width: 120, ellipsis: true },
-  { title: 'Nội dung', dataIndex: 'message', key: 'message', width: 120, ellipsis: true },
-])
+const columns = ref(
+  autoAddColumnWidth([
+    { title: 'Dòng', dataIndex: 'index', key: 'index' },
+    { title: 'Trạng thái', dataIndex: 'status', key: 'status' },
+    { title: 'Nội dung', dataIndex: 'message', key: 'message' },
+  ]),
+)
 
 const handleToggle = () => {
   isShow.value = !isShow.value

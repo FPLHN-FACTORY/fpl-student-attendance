@@ -10,6 +10,7 @@ import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
 import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
 import useLoadingStore from '@/stores/useLoadingStore'
 import { DEFAULT_PAGINATION } from '@/constants'
+import { autoAddColumnWidth } from '@/utils/utils'
 
 const router = useRouter()
 const breadcrumbStore = useBreadcrumbStore()
@@ -43,32 +44,28 @@ const pagination = reactive({
 })
 
 // Column configuration
-const columns = ref([
-  { title: '#', dataIndex: 'rowNumber', key: 'rowNumber', width: 50 },
-  {
-    title: 'Tên nhóm xưởng',
-    dataIndex: 'factoryName',
-    key: 'factoryName',
-    width: 150,
-    ellipsis: true,
-  },
-  { title: 'Tên dự án', dataIndex: 'projectName', key: 'projectName', width: 300, ellipsis: true },
-  {
-    title: 'Mô tả',
-    dataIndex: 'factoryDescription',
-    key: 'factoryDescription',
-    width: 300,
-    ellipsis: true,
-  },
-  {
-    title: 'Trạng thái',
-    dataIndex: 'factoryStatus',
-    key: 'factoryStatus',
-    width: 120,
-    ellipsis: true,
-  },
-  { title: 'Chức năng', key: 'actions', width: 100 },
-])
+const columns = ref(
+  autoAddColumnWidth([
+    { title: '#', dataIndex: 'rowNumber', key: 'rowNumber' },
+    {
+      title: 'Tên nhóm xưởng',
+      dataIndex: 'factoryName',
+      key: 'factoryName',
+    },
+    { title: 'Tên dự án', dataIndex: 'projectName', key: 'projectName' },
+    {
+      title: 'Mô tả',
+      dataIndex: 'factoryDescription',
+      key: 'factoryDescription',
+    },
+    {
+      title: 'Trạng thái',
+      dataIndex: 'factoryStatus',
+      key: 'factoryStatus',
+    },
+    { title: 'Chức năng', key: 'actions' },
+  ]),
+)
 
 // Fetch danh sách nhóm xưởng do giảng viên quản lý
 const fetchFactoryByTeacher = () => {
@@ -133,6 +130,18 @@ const handleDetailFactory = (record) => {
   })
 }
 
+const handleClearFilter = () => {
+  // Clear all filter values
+  Object.keys(filter).forEach((key) => {
+    if (key !== 'page' && key !== 'pageSize') {
+      // Keep pagination values
+      filter[key] = ''
+    }
+  })
+  pagination.current = 1
+  fetchFactoryByTeacher()
+}
+
 onMounted(() => {
   breadcrumbStore.setRoutes(breadcrumb.value)
   fetchFactoryByTeacher()
@@ -142,12 +151,11 @@ onMounted(() => {
 
 <template>
   <div class="container-fluid">
-    <!-- Bộ lọc tìm kiếm -->
     <div class="row g-3">
       <div class="col-12">
         <a-card :bordered="false" class="cart mb-3">
           <template #title> <FilterFilled /> Bộ lọc tìm kiếm </template>
-          <div class="row g-4">
+          <div class="row g-3 filter-container">
             <div class="col-md-6 col-sm-6">
               <label class="label-title">Từ khoá:</label>
               <a-input
@@ -171,6 +179,16 @@ onMounted(() => {
                   {{ item.name }}
                 </a-select-option>
               </a-select>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-12">
+              <div class="d-flex justify-content-center flex-wrap gap-2 mt-3">
+                <a-button class="btn-light" @click="fetchFactoryByTeacher">
+                  <FilterFilled /> Lọc
+                </a-button>
+                <a-button class="btn-gray" @click="handleClearFilter"> Huỷ lọc </a-button>
+              </div>
             </div>
           </div>
         </a-card>

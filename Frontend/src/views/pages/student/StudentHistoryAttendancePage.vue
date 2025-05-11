@@ -1,12 +1,10 @@
 <script setup>
 import { ref, computed, onMounted, reactive } from 'vue'
 import dayjs from 'dayjs'
-import { dayOfWeek, formatDate } from '@/utils/utils'
+import { autoAddColumnWidth, dayOfWeek } from '@/utils/utils'
 import {
   FilterFilled,
   UnorderedListOutlined,
-  EyeOutlined,
-  EyeFilled,
   ExclamationCircleOutlined,
 } from '@ant-design/icons-vue'
 import { message, Modal } from 'ant-design-vue'
@@ -15,7 +13,6 @@ import { API_ROUTES_STUDENT } from '@/constants/studentConstant'
 import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
 import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
 import { ROUTE_NAMES } from '@/router/studentRoute'
-import { SHIFT } from '@/constants'
 import { DEFAULT_DATE_FORMAT } from '@/constants'
 import { DEFAULT_PAGINATION } from '@/constants'
 import useLoadingStore from '@/stores/useLoadingStore'
@@ -26,7 +23,6 @@ const breadcrumb = ref([
   { name: ROUTE_NAMES.HISTORY_ATTENDANCE, breadcrumbName: 'Lịch sử điểm danh' },
 ])
 const loadingStore = useLoadingStore()
-const isLoading = ref(false)
 
 const filter = reactive({
   semesterId: '',
@@ -36,23 +32,22 @@ const filter = reactive({
 })
 
 const attendanceRecords = ref([])
-const loading = ref(false)
+const isLoading = ref(false)
 const paginations = ref({})
 const loadingExport = reactive({})
 
-const columns = [
-  { title: 'Bài học', dataIndex: 'rowNumber', key: 'rowNumber', width: 50 },
-  { title: 'Ngày học', dataIndex: 'planDateStartDate', key: 'planDateStartDate', width: 150 },
-  { title: 'Ca học', dataIndex: 'planDateShift', key: 'planDateShift', width: 30 },
+const columns = autoAddColumnWidth([
+  { title: 'Bài học', dataIndex: 'rowNumber', key: 'rowNumber' },
+  { title: 'Ngày học', dataIndex: 'planDateStartDate', key: 'planDateStartDate' },
+  { title: 'Ca học', dataIndex: 'planDateShift', key: 'planDateShift' },
   {
     title: 'Điểm danh muộn tối đa (phút)',
     dataIndex: 'lateArrival',
     key: 'lateArrival',
-    width: 100,
   },
-  { title: 'Nội dung', dataIndex: 'planDateDescription', key: 'planDateDescription', width: 80 },
-  { title: 'Trạng thái đi học', dataIndex: 'statusAttendance', key: 'statusAttendance', width: 80 },
-]
+  { title: 'Nội dung', dataIndex: 'planDateDescription', key: 'planDateDescription' },
+  { title: 'Trạng thái đi học', dataIndex: 'statusAttendance', key: 'statusAttendance' },
+])
 
 const semesters = ref([])
 const factories = ref([])
@@ -84,7 +79,7 @@ const fetchAllAttendanceHistory = async () => {
       attendanceRecords.value = allData
     }
 
-    const grouped = groupBy(attendanceRecords.value, 'factoryId')
+    const grouped = groupBy(attendanceRecords.value)
     paginations.value = {}
     for (const factoryId in grouped) {
       paginations.value[factoryId] = {
@@ -133,7 +128,7 @@ const fetchFactories = () => {
     })
 }
 
-const groupBy = (array, key) => {
+const groupBy = (array) => {
   return array.reduce((result, currentItem) => {
     const groupKey = currentItem.factoryId || 'Chưa xác định'
     if (!result[groupKey]) {
@@ -145,17 +140,12 @@ const groupBy = (array, key) => {
 }
 
 const groupedAttendance = computed(() => {
-  return groupBy(attendanceRecords.value, 'factoryId')
+  return groupBy(attendanceRecords.value)
 })
 
 const handleTableChange = (factoryId, pagination) => {
   paginations.value[factoryId].current = pagination.current
   paginations.value[factoryId].pageSize = pagination.pageSize
-}
-
-const handleDetail = (record) => {
-  message.warning('Chưa triển khai tính năng chi tiết')
-  console.log('Chi tiết điểm danh:', record)
 }
 
 const getFactoryName = (factoryId) => {
@@ -185,6 +175,12 @@ const exportPDF = async (factoryId, factoryName) => {
   } finally {
     loadingExport[factoryId] = false
   }
+}
+
+const handleClearFilter = () => {
+  filter.semesterId = ''
+  filter.factoryId = ''
+  fetchAllAttendanceHistory()
 }
 
 onMounted(() => {
@@ -237,6 +233,16 @@ onMounted(() => {
               </a-select>
             </a-col>
           </a-row>
+          <div class="row">
+            <div class="col-12">
+              <div class="d-flex justify-content-center flex-wrap gap-2 mt-3">
+                <a-button class="btn-light" @click="fetchAllAttendanceHistory">
+                  <FilterFilled /> Lọc
+                </a-button>
+                <a-button class="btn-gray" @click="handleClearFilter"> Huỷ lọc </a-button>
+              </div>
+            </div>
+          </div>
         </a-card>
       </div>
     </div>
@@ -263,7 +269,7 @@ onMounted(() => {
             :rowKey="(record) => record.id"
             :pagination="paginations[factoryId]"
             @change="(pagination, filters, sorter) => handleTableChange(factoryId, pagination)"
-            :loading="loading"
+            :loading="isLoading"
             :scroll="{ y: 4000, x: 'auto' }"
           >
             <template #bodyCell="{ column, record }">
@@ -285,7 +291,7 @@ onMounted(() => {
                 </template>
                 <template v-else-if="column.dataIndex === 'lateArrival'">
                   <a-tag :color="record.lateArrival > 0 ? 'gold' : 'green'">
-                    <ExclamationCircleOutlined /> 
+                    <ExclamationCircleOutlined />
                     {{ record.lateArrival + ' phút' }}
                   </a-tag>
                 </template>

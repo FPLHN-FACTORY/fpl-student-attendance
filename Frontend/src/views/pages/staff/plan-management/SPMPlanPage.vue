@@ -17,7 +17,7 @@ import { useRouter } from 'vue-router'
 import { ROUTE_NAMES } from '@/router/staffRoute'
 import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
 import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
-import { debounce, formatDate } from '@/utils/utils'
+import { autoAddColumnWidth, debounce, formatDate } from '@/utils/utils'
 import dayjs from 'dayjs'
 
 const router = useRouter()
@@ -47,17 +47,19 @@ const maxRangeDate = ref(dayjs())
 
 const currentProject = ref(null)
 
-const columns = ref([
-  { title: '#', dataIndex: 'orderNumber', key: 'orderNumber', width: 50 },
-  { title: 'Tên kế hoạch', dataIndex: 'planName', key: 'planName', width: 120, ellipsis: true },
-  { title: 'Tên dự án', dataIndex: 'projectName', key: 'projectName', ellipsis: true },
-  { title: 'Nội dung', dataIndex: 'description', key: 'description', ellipsis: true },
-  { title: 'Bộ môn', dataIndex: 'subjectName', key: 'subjectName', ellipsis: true },
-  { title: 'Cấp độ', dataIndex: 'level', key: 'level', width: 120, ellipsis: true },
-  { title: 'Ngày diễn ra', dataIndex: 'semesterName', key: 'semesterName', ellipsis: true },
-  { title: 'Trạng thái', dataIndex: 'status', key: 'status', ellipsis: true },
-  { title: '', key: 'actions' },
-])
+const columns = ref(
+  autoAddColumnWidth([
+    { title: '#', dataIndex: 'orderNumber', key: 'orderNumber' },
+    { title: 'Tên kế hoạch', dataIndex: 'planName', key: 'planName' },
+    { title: 'Tên dự án', dataIndex: 'projectName', key: 'projectName' },
+    { title: 'Nội dung', dataIndex: 'description', key: 'description' },
+    { title: 'Bộ môn', dataIndex: 'subjectName', key: 'subjectName' },
+    { title: 'Cấp độ', dataIndex: 'level', key: 'level' },
+    { title: 'Ngày diễn ra', dataIndex: 'semesterName', key: 'semesterName' },
+    { title: 'Trạng thái', dataIndex: 'status', key: 'status' },
+    { title: '', key: 'actions' },
+  ]),
+)
 
 const breadcrumb = ref([
   {
@@ -99,7 +101,6 @@ const formData = reactive({
 const formRules = reactive({
   idProject: [{ required: true, message: 'Vui lòng chọn 1 dự án!' }],
   name: [{ required: true, message: 'Vui lòng nhập mục này!' }],
-  description: [{ required: true, message: 'Vui lòng nhập mục này!' }],
   rangeDate: [{ required: true, message: 'Vui lòng nhập mục này!' }],
 })
 

@@ -109,6 +109,7 @@ public class EXPlanDateServiceImpl implements EXPlanDateService {
         String diemDanhMuonToiDa = item.get("DIEM_DANH_MUON_TOI_DA");
         String noiDungBuoiHoc = item.get("NOI_DUNG_BUOI_HOC");
         String linkHocOnline = item.get("LINK_HOC_ONLINE");
+        String phongHoc = item.get("PHONG_HOC");
         String checkIp = item.get("CHECK_IP");
         String checkDiaDiem = item.get("CHECK_DIA_DIEM");
 
@@ -164,6 +165,7 @@ public class EXPlanDateServiceImpl implements EXPlanDateService {
             return error("Check địa điểm không hợp lệ (TRUE / FALSE)", checkDiaDiem, request);
         }
 
+        addOrUpdatePlanDateRequest.setRoom(phongHoc);
         addOrUpdatePlanDateRequest.setDescription(noiDungBuoiHoc);
         addOrUpdatePlanDateRequest.setLink(linkHocOnline);
 
@@ -184,7 +186,7 @@ public class EXPlanDateServiceImpl implements EXPlanDateService {
         try (Workbook workbook = new XSSFWorkbook();
              ByteArrayOutputStream data = new ByteArrayOutputStream()) {
             String filename = "template-import-plan-date.xlsx";
-            List<String> headers = List.of("Ngày diễn ra", "Hình thức học", "Ca bắt đầu", "Ca kết thúc", "Điểm danh muộn tối đa", "Nội dung buổi học", "Link học online", "Check IP", "Check địa điểm");
+            List<String> headers = List.of("Ngày diễn ra", "Hình thức học", "Ca bắt đầu", "Ca kết thúc", "Điểm danh muộn tối đa", "Nội dung buổi học", "Link học online", "Phòng học", "Check IP", "Check địa điểm");
 
             int firstRow = 1;
             int lastRow = 500;
@@ -200,8 +202,8 @@ public class EXPlanDateServiceImpl implements EXPlanDateService {
             ExcelUtils.addListValidation(templateSheet, firstRow, lastRow, 1, lstShiftType);
             ExcelUtils.addListValidation(templateSheet, firstRow, lastRow, 2, lstShift);
             ExcelUtils.addListValidation(templateSheet, firstRow, lastRow, 3, lstShift);
-            ExcelUtils.addListValidation(templateSheet, firstRow, lastRow, 7, List.of(true, false));
             ExcelUtils.addListValidation(templateSheet, firstRow, lastRow, 8, List.of(true, false));
+            ExcelUtils.addListValidation(templateSheet, firstRow, lastRow, 9, List.of(true, false));
             workbook.write(data);
 
             HttpHeaders headersHttp = new HttpHeaders();

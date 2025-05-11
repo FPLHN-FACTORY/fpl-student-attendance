@@ -105,7 +105,7 @@ public class USStudentFactoryServiceImpl implements USStudentFactoryService {
                 .isStudentExistsShift(
                         sessionHelper.getFacilityId(),
                         existStudentFactory.get().getFactory().getId(),
-                        existStudentFactory.get().getId());
+                        existStudentFactory.get().getUserStudent().getId());
         if (isExistsShift) {
             return new ResponseEntity<>(
                     new ApiResponse(
