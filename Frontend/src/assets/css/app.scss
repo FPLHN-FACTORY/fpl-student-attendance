@@ -298,6 +298,14 @@ hr {
 
   &-content {
     padding: 15px;
+    @media (max-width: 576px) {
+      & {
+        padding: 15px 0;
+      }
+      .ant-card-body {
+        padding: 15px;
+      }
+    }
   }
   &-sider {
     flex: 0 0 300px !important;

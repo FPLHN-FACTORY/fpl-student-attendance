@@ -63,6 +63,7 @@ const columns = ref(
     { title: '#', dataIndex: 'orderNumber', key: 'orderNumber' },
     { title: 'Thời gian', dataIndex: 'startDate', key: 'startDate' },
     { title: 'Ca học', dataIndex: 'shift', key: 'shift' },
+    { title: 'Điểm danh muộn', dataIndex: 'lateArrival', key: 'lateArrival' },
     { title: 'Nhóm xưởng', dataIndex: 'factoryName', key: 'factoryName' },
     { title: 'Giảng viên', dataIndex: 'teacherName', key: 'teacherName' },
     { title: 'Trạng thái', dataIndex: 'status', key: 'status' },
@@ -343,7 +344,7 @@ watch(
                 }}</a-select-option>
               </a-select>
             </div>
-            <div class="col-lg-3 col-md-4 col-sm-6">
+            <div class="col-md-3 col-sm-6">
               <div class="label-title">Hình thức học:</div>
               <a-select
                 v-model:value="dataFilter.type"
@@ -411,6 +412,11 @@ watch(
                   ATTENDANCE_STATUS.PRESENT.name
                 }}</a-tag>
                 <a-tag color="orange" v-else>{{ ATTENDANCE_STATUS.NOTCHECKIN.name }}</a-tag>
+              </template>
+              <template v-if="column.dataIndex === 'lateArrival'">
+                <a-tag :color="record.lateArrival > 0 ? 'gold' : 'green'">
+                  <ExclamationCircleOutlined /> {{ record.lateArrival + ' phút' }}
+                </a-tag>
               </template>
 
               <template v-if="column.key === 'actions'">
