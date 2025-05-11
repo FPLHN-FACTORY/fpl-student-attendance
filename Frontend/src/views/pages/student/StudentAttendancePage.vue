@@ -95,7 +95,7 @@ const fetchDataList = () => {
       pagination.value.total = response.data.totalPages * pagination.value.pageSize
     })
     .catch((error) => {
-      message.error(error?.response?.data?.message || 'Không thể tải danh sách dữ liệu')
+      message.error(error.response?.data?.message || 'Lỗi khi lấy dữ liệu')
     })
     .finally(() => {
       isLoading.value = false
@@ -120,8 +120,7 @@ const fetchDataStudentInfo = () => {
       }
     })
     .catch((error) => {
-      console.log(error)
-      message.error(error?.response?.data?.message || 'Không thể tải thông tin sinh viên')
+      message.error(error.response?.data?.message || 'Lỗi khi lấy thông tin sinh viên')
     })
 }
 
@@ -154,7 +153,7 @@ const handleSubmitAttendance = () => {
       fetchDataList()
     })
     .catch((error) => {
-      message.error(error?.response?.data?.message || 'Không thể điểm danh ca học này')
+      message.error(error.response?.data?.message || 'Lỗi khi điểm danh ca học này')
     })
     .finally(() => {
       loadingPage.hide()
@@ -170,7 +169,7 @@ const handleSubmitUpdateInfo = () => {
       applicationStore.loadNotification()
     })
     .catch((error) => {
-      message.error(error?.response?.data?.message || 'Không thể cập nhật khuôn mặt')
+      message.error(error.response?.data?.message || 'Lỗi khi cập nhật khuôn mặt')
     })
     .finally(() => {
       loadingPage.hide()
@@ -216,7 +215,7 @@ const getCurrentLocation = async () => {
       formData.latitude = latitude
       formData.longitude = longitude
     },
-    (error) => {
+    () => {
       Modal.confirm({
         title: 'Không thể lấy vị trí',
         icon: createVNode(ExclamationCircleOutlined),
@@ -294,8 +293,6 @@ watch(
         <div></div>
         <div></div>
         <div></div>
-        <div></div>
-        <div></div>
       </div>
       <div class="face-id-loading" v-show="faceIDStore.isLoading">
         <div class="bg-loading">
@@ -339,7 +336,7 @@ watch(
                 allowClear
               >
                 <a-select-option :value="null">-- Tất cả trạng thái --</a-select-option>
-                <a-select-option v-for="o in ATTENDANCE_STATUS" :value="o.id">{{
+                <a-select-option v-for="o in ATTENDANCE_STATUS" :key="o.id" :value="o.id">{{
                   o.name
                 }}</a-select-option>
               </a-select>

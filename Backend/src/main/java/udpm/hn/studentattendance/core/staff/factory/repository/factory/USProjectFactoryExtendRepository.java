@@ -2,6 +2,7 @@ package udpm.hn.studentattendance.core.staff.factory.repository.factory;
 
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
+import udpm.hn.studentattendance.core.staff.factory.model.response.USProjectFactoryResponse;
 import udpm.hn.studentattendance.entities.Project;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.repositories.ProjectRepository;
@@ -12,24 +13,26 @@ import java.util.List;
 public interface USProjectFactoryExtendRepository extends ProjectRepository {
         @Query(value = """
                             SELECT
-                            p
+                            p.id,
+                            p.name as projectName,
+                            lp.name as levelProjectName,
+                            s.code as semesterCode
                             FROM
-                            Project p
+                            project p
                             LEFT JOIN
-                            SubjectFacility sf on p.subjectFacility.id = sf.id
+                            subject_facility sf on p.id_subject_facility = sf.id
                             LEFT JOIN
-                            Facility f on f.id = sf.facility.id
+                            facility f on f.id = sf.id_facility
                             LEFT JOIN
-                            LevelProject lp on lp.id = p.levelProject.id
+                            level_project lp on lp.id = p.id_level_project
+                            LEFT JOIN 
+                            semester s ON s.id = p.id_semester
                             WHERE
-                            p.status = :projectStatus
-                            AND sf.status = :subjecFacilityStatus
-                            AND f.status = :facilityStatus
-                            AND lp.status = :levelProjectStatus
+                            p.status = 1
+                            AND sf.status = 1
+                            AND f.status = 1
+                            AND lp.status = 1
                             AND f.id = :facilityId
-
-
-                        """)
-        List<Project> getAllProject(EntityStatus projectStatus, EntityStatus subjecFacilityStatus,
-                        EntityStatus facilityStatus, EntityStatus levelProjectStatus, String facilityId);
+                        """, nativeQuery = true)
+        List<USProjectFactoryResponse> getAllProject(String facilityId);
 }

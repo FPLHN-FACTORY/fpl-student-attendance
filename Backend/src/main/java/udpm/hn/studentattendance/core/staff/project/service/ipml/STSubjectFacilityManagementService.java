@@ -3,15 +3,15 @@ package udpm.hn.studentattendance.core.staff.project.service.ipml;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import udpm.hn.studentattendance.core.staff.project.model.response.USSubjectResponse;
-import udpm.hn.studentattendance.core.staff.project.repository.Staff_SubjectManagementRepository;
+import udpm.hn.studentattendance.core.staff.project.repository.STProjectSubjectFacilityExtendRepository;
 
 import java.util.List;
 
 @Service
-public class Staff_SubjectFacilityManagementService {
+public class STSubjectFacilityManagementService {
 
     @Autowired
-    private Staff_SubjectManagementRepository repository;
+    private STProjectSubjectFacilityExtendRepository repository;
 
     public List<USSubjectResponse> getComboboxSubjectFacility(String facilityId) {
         return repository.getSubjectFacility(facilityId);

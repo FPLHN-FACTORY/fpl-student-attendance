@@ -139,16 +139,13 @@ public class EXFactoryServiceImpl implements EXFactoryService {
         String filename = "template-import-factory.xlsx";
         List<String> headers = List.of("Tên Nhóm Xưởng", "Mô Tả", "Dự Án", "Giảng Viên");
 
-        var projects = projectFactoryExtendRepository.getAllProject(
-                EntityStatus.ACTIVE, EntityStatus.ACTIVE,
-                EntityStatus.ACTIVE, EntityStatus.ACTIVE,
-                sessionHelper.getFacilityId());
-        List<String> projectNames = projects.stream().map(p -> p.getName()).collect(Collectors.toList());
+        var projects = projectFactoryExtendRepository.getAllProject(sessionHelper.getFacilityId());
+        List<String> projectNames = projects.stream().map(p -> p.getProjectName()).collect(Collectors.toList());
         List<String> projectIds = projects.stream().map(p -> p.getId()).collect(Collectors.toList());
 
         List<String> staffList = staffFactoryExtendRepository.getListUserStaff(
-                        EntityStatus.ACTIVE, EntityStatus.ACTIVE,
-                        sessionHelper.getFacilityId(), RoleConstant.TEACHER)
+                EntityStatus.ACTIVE, EntityStatus.ACTIVE,
+                sessionHelper.getFacilityId(), RoleConstant.TEACHER)
                 .stream().map(s -> s.getName() + " (" + s.getCode() + ")")
                 .collect(Collectors.toList());
 

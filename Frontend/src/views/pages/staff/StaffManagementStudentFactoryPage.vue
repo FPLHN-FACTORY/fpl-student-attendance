@@ -98,9 +98,7 @@ const fetchStudentFactories = () => {
       pagination.current = filter.page
     })
     .catch((error) => {
-      message.error(
-        error.response?.data?.message || 'Lỗi khi lấy danh sách sinh viên trong nhóm xưởng'
-      )
+      message.error(error.response?.data?.message || 'Lỗi khi lấy dữ liệu')
     })
     .finally(() => {
       loadingStore.hide()
@@ -127,9 +125,7 @@ const fetchExistingStudents = () => {
       }
     })
     .catch((error) => {
-      message.error(
-        error.response?.data?.message || 'Lỗi khi lấy danh sách sinh viên đã có trong nhóm xưởng'
-      )
+      message.error(error.response?.data?.message || 'Lỗi khi lấy dữ liệu')
     })
     .finally(() => {
       loadingStore.hide()
@@ -190,7 +186,7 @@ const fetchAllStudents = () => {
       updateAllStudentsCheckStatus()
     })
     .catch((error) => {
-      message.error(error.response?.data?.message || 'Lỗi khi lấy danh sách sinh viên')
+      message.error(error.response?.data?.message || 'Lỗi khi lấy dữ liệu')
     })
     .finally(() => {
       loadingStore.hide()
@@ -352,8 +348,8 @@ function fetchDetailStudent(userStudentId) {
       detailStudent.value = res.data.data
       detailModalVisible.value = true
     })
-    .catch((err) => {
-      message.error(err.response?.data?.message || 'Lấy chi tiết sinh viên thất bại')
+    .catch((error) => {
+      message.error(error.response?.data?.message || 'Lấy chi tiết sinh viên thất bại')
     })
     .finally(() => loadingStore.hide())
 }
@@ -406,8 +402,8 @@ function fetchShiftDetails() {
       shiftData.value = result.data
       shiftPagination.total = result.totalRecords || result.totalPages * shiftPagination.pageSize
     })
-    .catch((err) => {
-      message.error(err.response?.data?.message || 'Lỗi khi lấy chi tiết ca học')
+    .catch((error) => {
+      message.error(error.response?.data?.message || 'Lỗi khi lấy chi tiết ca học')
     })
     .finally(() => {
       isLoading.value = false
@@ -431,6 +427,15 @@ watch(isAddStudentModalVisible, (newVal) => {
   }
 })
 
+const handleClearFilter = () => {
+  // Clear all filter values
+  Object.keys(filter).forEach(key => {
+    filter[key] = ''
+  })
+  pagination.current = 1
+  fetchStudentFactories()
+}
+
 onMounted(() => {
   breadcrumbStore.setRoutes(breadcrumb.value)
   fetchStudentFactories()
@@ -446,8 +451,8 @@ onMounted(() => {
       <div class="col-12">
         <a-card :bordered="false" class="cart mb-3">
           <template #title> <FilterFilled /> Bộ lọc </template>
-          <a-row :gutter="16" class="filter-container row">
-            <a-col :span="6" class="col">
+          <div class="row g-3 filter-container">
+            <div class="col-6">
               <div class="label-title">Tìm kiếm mã, tên, email:</div>
               <a-input
                 v-model:value="filter.searchQuery"
@@ -455,8 +460,8 @@ onMounted(() => {
                 allowClear
                 @change="fetchStudentFactories"
               />
-            </a-col>
-            <a-col :span="6" class="col">
+            </div>
+            <div class="col-6">
               <div class="label-title">Trạng thái:</div>
               <a-select
                 v-model:value="filter.status"
@@ -469,8 +474,18 @@ onMounted(() => {
                 <a-select-option value="1">Đang học</a-select-option>
                 <a-select-option value="0">Ngưng học</a-select-option>
               </a-select>
-            </a-col>
-          </a-row>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-12">
+              <div class="d-flex justify-content-center flex-wrap gap-2 mt-3">
+                <a-button class="btn-light" @click="fetchStudentFactories">
+                  <FilterFilled /> Lọc
+                </a-button>
+                <a-button class="btn-gray" @click="handleClearFilter"> Huỷ lọc </a-button>
+              </div>
+            </div>
+          </div>
         </a-card>
       </div>
     </div>
@@ -591,11 +606,31 @@ onMounted(() => {
       width="80%"
       @cancel="closeShiftModal"
     >
-      <a-row :gutter="16" class="filter-container mb-3">
-        <!-- filters… -->
-      </a-row>
+      <div class="row g-3 filter-container mb-3">
+        <div class="col-6">
+          <div class="label-title">Ngày học:</div>
+          <a-date-picker
+            v-model:value="shiftFilter.startDate"
+            format="YYYY-MM-DD"
+            @change="fetchShiftDetails"
+          />
+        </div>
+        <div class="col-6">
+          <div class="label-title">Trạng thái:</div>
+          <a-select
+            v-model:value="shiftFilter.status"
+            placeholder="Chọn trạng thái"
+            allowClear
+            style="width: 100%"
+            @change="fetchShiftDetails"
+          >
+            <a-select-option :value="''">Tất cả trạng thái</a-select-option>
+            <a-select-option value="DA_DIEN_RA">Đã diễn ra</a-select-option>
+            <a-select-option value="CHUA_DIEN_RA">Chưa diễn ra</a-select-option>
+          </a-select>
+        </div>
+      </div>
 
-      <!-- 1. Chuyển từ self-closing thành mở–đóng -->
       <a-table
         :dataSource="shiftData"
         :columns="shiftColumns"
@@ -605,7 +640,6 @@ onMounted(() => {
         @change="handleShiftTableChange"
         :scroll="{ y: 500, x: 'auto' }"
       >
-        <!-- 2. Kéo <template #bodyCell> vào trong đây -->
         <template #bodyCell="{ column, record }">
           <template v-if="column.dataIndex === 'startDate'">
             {{
@@ -645,19 +679,14 @@ onMounted(() => {
       @cancel="resetStudentModal"
       @ok="handleAddStudents"
     >
-      <div class="row">
-        <div class="col-12">
-          <!-- Bộ lọc cho modal danh sách tất cả sinh viên -->
-          <a-row :gutter="16" class="filter-container row" style="margin-bottom: 16px">
-            <a-col :span="21" class="col">
-              <a-input
-                v-model:value="studentFilter.searchQuery"
-                placeholder="Mã, tên hoặc email sinh viên"
-                allowClear
-                @change="fetchAllStudents"
-              />
-            </a-col>
-          </a-row>
+      <div class="row g-3 filter-container" style="margin-bottom: 16px">
+        <div class="col-21">
+          <a-input
+            v-model:value="studentFilter.searchQuery"
+            placeholder="Mã, tên hoặc email sinh viên"
+            allowClear
+            @change="fetchAllStudents"
+          />
         </div>
       </div>
       <!-- Bảng danh sách tất cả sinh viên -->

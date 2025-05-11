@@ -7,12 +7,14 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import udpm.hn.studentattendance.core.staff.project.model.request.USProjectSearchRequest;
 import udpm.hn.studentattendance.core.staff.project.model.response.USProjectResponse;
+import udpm.hn.studentattendance.entities.Project;
 import udpm.hn.studentattendance.repositories.ProjectRepository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface Staff_ProjectManagementRepository extends ProjectRepository {
+public interface STProjectExtendRepository extends ProjectRepository {
 
     @Query(value = """
                     SELECT
@@ -69,7 +71,7 @@ public interface Staff_ProjectManagementRepository extends ProjectRepository {
                         AND (:#{#request.status} IS NULL OR p.status = :#{#request.status})
                     )
             """, nativeQuery = true)
-    Page<USProjectResponse> getListProject(Pageable pageable, @Param("request") USProjectSearchRequest request);
+    Page<USProjectResponse> getListProject(Pageable pageable, USProjectSearchRequest request);
 
     @Query(value = """
                 SELECT
@@ -93,4 +95,27 @@ public interface Staff_ProjectManagementRepository extends ProjectRepository {
             """, nativeQuery = true)
     Optional<USProjectResponse> getDetailProject(String projectId);
 
+    @Query(value = """
+            SELECT CASE WHEN COUNT(*) > 0 THEN 'TRUE' ELSE 'FALSE' END
+            FROM project p 
+            LEFT JOIN subject_facility sf ON sf.id = p.id_subject_facility
+            WHERE 
+            p.name = :name
+            AND p.id_level_project = :idLevelProject
+            AND p.id_semester = :idSemester
+            AND sf.id_facility = :idFacility
+            """, nativeQuery = true)
+    boolean isExistProjectInSameLevel(String name, String idLevelProject, String idSemester, String idFacility);
+
+    @Query(value = """
+                        SELECT
+                        p
+                        FROM
+                        Project p
+                        JOIN Semester s ON p.semester.id = s.id
+                        JOIN SubjectFacility sf ON p.subjectFacility.id = sf.id
+                        AND sf.facility.id = :facilityId
+                        AND s.id = :semesterId
+""")
+    List<Project> getAllProjectBySemester(String facilityId, String semesterId);
 }

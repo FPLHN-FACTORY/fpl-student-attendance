@@ -14,4 +14,5 @@ export const API_ROUTES_STAFF = {
   FETCH_DATA_PLAN_FACTORY: API_URL + '/staff/plan-factory-management',
 
   FETCH_DATA_PLAN_DATE: API_URL + '/staff/plan-date-management',
+
 }

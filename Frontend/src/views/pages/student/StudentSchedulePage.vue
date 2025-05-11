@@ -5,13 +5,14 @@ import { API_ROUTES_STUDENT } from '@/constants/studentConstant'
 import requestAPI from '@/services/requestApiService'
 import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
 import { DEFAULT_DATE_FORMAT, DEFAULT_PAGINATION, TYPE_SHIFT } from '@/constants'
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, reactive } from 'vue'
 import useLoadingStore from '@/stores/useLoadingStore'
-import { Modal } from 'ant-design-vue'
+import { Modal, message } from 'ant-design-vue'
 import * as XLSX from 'xlsx'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import { dayOfWeek, formatDate } from '@/utils/utils'
+import { FilterFilled } from '@ant-design/icons-vue'
 
 const breadcrumbStore = useBreadcrumbStore()
 
@@ -23,13 +24,17 @@ const breadcrumb = ref([
   {
     name: ROUTE_NAMES.SCHEDULE,
     breadcrumbName: 'Lịch học',
-  },
+  }
 ])
 const loadingStore = useLoadingStore()
 const isLoading = ref(false)
 
 const attendanceList = ref([])
-const filter = ref({ page: 1, pageSize: 5, plan: '' })
+const filter = reactive({
+  page: 1,
+  pageSize: 5,
+  plan: 7 // Default to 7 days ahead
+})
 const pagination = ref({ ...DEFAULT_PAGINATION })
 
 const columns = [
@@ -46,8 +51,8 @@ const columns = [
 
 const getTimeRange = () => {
   const now = Date.now()
-  const offset = (filter.value.plan || 0) * 24 * 60 * 60 * 1000
-  if (filter.value.plan >= 0) {
+  const offset = (filter.plan || 0) * 24 * 60 * 60 * 1000
+  if (filter.plan >= 0) {
     return { now, max: now + offset }
   } else {
     return { now: now + offset, max: now }
@@ -68,11 +73,11 @@ const fetchAttendanceList = () => {
     })
     .then(({ data }) => {
       attendanceList.value = data.data.data
-      pagination.value.total = data.data.totalPages * filter.value.pageSize
-      pagination.value.current = filter.value.page
+      pagination.value.total = data.data.totalPages * pagination.value.pageSize
+      pagination.value.current = filter.page
     })
-    .catch(() => {
-      message.error('Lỗi khi lấy dữ liệu')
+    .catch((error) => {
+      message.error(error.response?.data?.message || 'Lỗi khi lấy dữ liệu')
     })
     .finally(() => {
       loadingStore.hide()
@@ -82,8 +87,8 @@ const fetchAttendanceList = () => {
 const handleTableChange = (pageInfo) => {
   pagination.value.current = pageInfo.current
   pagination.value.pageSize = pageInfo.pageSize
-  filter.value.page = pageInfo.current
-  filter.value.pageSize = pageInfo.pageSize
+  filter.page = pageInfo.current
+  filter.pageSize = pageInfo.pageSize
   fetchAttendanceList()
 }
 const handleShowDescription = (text) => {
@@ -138,8 +143,14 @@ const exportToPDF = () => {
   doc.save('DiemDanh.pdf')
 }
 
+const handleClearFilter = () => {
+  filter.plan = 7 // Reset to default 7 days ahead
+  filter.page = 1
+  pagination.value.current = 1
+  fetchAttendanceList()
+}
+
 onMounted(() => {
-  filter.value.plan = 7
   breadcrumbStore.setRoutes(breadcrumb.value)
   fetchAttendanceList()
 })
@@ -150,13 +161,13 @@ onMounted(() => {
     <div class="row g-3">
       <div class="col-12">
         <div class="container-fluid">
-          <a-card title="Bộ lọc" :bordered="false" class="cart mb-3">
-            <div class="label-title">Thời gian:</div>
-            <a-row :gutter="16" class="filter-container">
+          <a-card class="mb-3">
+            <template #title><FilterFilled /> Bộ lọc</template>
+            <div class="row g-3 filter-container">
               <a-col :span="24">
                 <a-select
                   v-model:value="filter.plan"
-                  placeholder="Chọn trạng thái"
+                  placeholder="Chọn khoảng thời gian"
                   allowClear
                   style="width: 100%"
                   @change="fetchAttendanceList"
@@ -171,7 +182,17 @@ onMounted(() => {
                   <a-select-option :value="90">90 ngày tới</a-select-option>
                 </a-select>
               </a-col>
-            </a-row>
+            </div>
+            <div class="row">
+              <div class="col-12">
+                <div class="d-flex justify-content-center flex-wrap gap-2 mt-3">
+                  <a-button class="btn-light" @click="fetchAttendanceList">
+                    <FilterFilled /> Lọc
+                  </a-button>
+                  <a-button class="btn-gray" @click="handleClearFilter"> Huỷ lọc </a-button>
+                </div>
+              </div>
+            </div>
           </a-card>
 
           <a-card title="Danh sách điểm danh" :bordered="false" class="cart">
