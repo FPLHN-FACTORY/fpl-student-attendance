@@ -473,11 +473,12 @@ onMounted(() => {
           </div>
 
           <a-table
+            class="nowrap"
             :dataSource="projects"
             :columns="columns"
             rowKey="id"
             :pagination="pagination"
-            :scroll="{ y: 500, x: 'auto' }"
+            :scroll="{ x: 'auto' }"
             :loading="isLoading"
             @change="handleTableChange"
           >

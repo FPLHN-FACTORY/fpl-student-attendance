@@ -74,7 +74,7 @@ const handleShowLog = (item) => {
       :dataSource="itemLog.items"
       :columns="columns"
       :pagination="false"
-      :scroll="{ y: 500, x: 'auto' }"
+      :scroll="{ x: 'auto' }"
     >
       <template #bodyCell="{ column, record }">
         <template v-if="column.dataIndex === 'status'">

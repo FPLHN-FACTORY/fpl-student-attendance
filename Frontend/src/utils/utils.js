@@ -17,12 +17,12 @@ export const debounce = (func, delay) => {
   }
 }
 
-export const autoAddColumnWidth = (columns, ellipsis = true, charWidth = 10, padding = 20) => {
+export const autoAddColumnWidth = (columns, ellipsis = false, charWidth = 10, padding = 20) => {
   return columns.map((col) => {
     if (!col.width) {
       const titleLength = (col.title || '').length
       const estimatedWidth = titleLength * charWidth + padding
-      return { ...col, width: estimatedWidth, ellipsis }
+      return { ...col, width: estimatedWidth, minWidth: estimatedWidth, ellipsis }
     }
     return col
   })

@@ -729,7 +729,7 @@ watch(
               :columns="columns"
               :loading="isLoading"
               :pagination="pagination"
-              :scroll="{ y: 500, x: 'auto' }"
+              :scroll="{ x: 'auto' }"
               :row-selection="rowSelection"
               @change="handleTableChange"
             >

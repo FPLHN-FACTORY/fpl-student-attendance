@@ -360,12 +360,13 @@ onMounted(() => {
           </div>
 
           <a-table
+            class="nowrap"
             :dataSource="facilities"
             :columns="columns"
             rowKey="id"
             :pagination="pagination"
             @change="handleTableChange"
-            :scroll="{ y: 500, x: 'auto' }"
+            :scroll="{ x: 'auto' }"
             :loading="isLoading"
           >
             <template #bodyCell="{ column, record }">

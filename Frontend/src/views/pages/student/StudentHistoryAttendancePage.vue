@@ -264,13 +264,14 @@ onMounted(() => {
             </a-button>
           </template>
           <a-table
+            class="nowrap"
             :dataSource="records"
             :columns="columns"
             :rowKey="(record) => record.id"
             :pagination="paginations[factoryId]"
             @change="(pagination, filters, sorter) => handleTableChange(factoryId, pagination)"
             :loading="isLoading"
-            :scroll="{ y: 4000, x: 'auto' }"
+            :scroll="{ x: 'auto' }"
           >
             <template #bodyCell="{ column, record }">
               <template v-if="column.dataIndex">

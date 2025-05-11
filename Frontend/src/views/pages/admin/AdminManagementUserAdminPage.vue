@@ -343,13 +343,14 @@ onMounted(() => {
         </a-tooltip>
       </div>
       <a-table
+        class="nowrap"
         :dataSource="users"
         :columns="columns"
         rowKey="userAdminId"
         :loading="isLoading"
         :pagination="pagination"
         @change="handleTableChange"
-        :scroll="{ x: 'auto', y: 500 }"
+        :scroll="{ x: 'auto' }"
       >
         <template #bodyCell="{ column, record }">
           <template v-if="column.dataIndex === 'userAdminStatus'">

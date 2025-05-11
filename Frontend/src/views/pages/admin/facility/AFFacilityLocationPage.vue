@@ -580,7 +580,7 @@ watch(mapCenter, (newCenter) => {
               :columns="columns"
               :loading="isLoading"
               :pagination="pagination"
-              :scroll="{ y: 500, x: 'auto' }"
+              :scroll="{ x: 'auto' }"
               @change="handleTableChange"
             >
               <template #bodyCell="{ column, record }">
