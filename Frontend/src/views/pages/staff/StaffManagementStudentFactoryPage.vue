@@ -26,7 +26,7 @@ import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
 import useLoadingStore from '@/stores/useLoadingStore'
 import { ROUTE_NAMES } from '@/router/staffRoute'
 import ExcelUploadButton from '@/components/excel/ExcelUploadButton.vue'
-import { dayOfWeek, formatDate } from '@/utils/utils'
+import { autoAddColumnWidth, dayOfWeek, formatDate } from '@/utils/utils'
 
 const route = useRoute()
 const factoryId = route.query.factoryId
@@ -65,14 +65,16 @@ const pagination = reactive({
   ...DEFAULT_PAGINATION,
 })
 
-const columns = ref([
-  { title: '#', dataIndex: 'rowNumber', key: 'rowNumber' },
-  { title: 'Mã sinh viên', dataIndex: 'studentCode', key: 'studentCode' },
-  { title: 'Tên sinh viên', dataIndex: 'studentName', key: 'studentName' },
-  { title: 'Email sinh viên', dataIndex: 'studentEmail', key: 'studentEmail' },
-  { title: 'Trạng thái', dataIndex: 'statusStudentFactory', key: 'statusStudentFactory' },
-  { title: 'Chi tiết', key: 'action', width: 280 },
-])
+const columns = ref(
+  autoAddColumnWidth([
+    { title: '#', dataIndex: 'rowNumber', key: 'rowNumber' },
+    { title: 'Mã sinh viên', dataIndex: 'studentCode', key: 'studentCode' },
+    { title: 'Tên sinh viên', dataIndex: 'studentName', key: 'studentName' },
+    { title: 'Email sinh viên', dataIndex: 'studentEmail', key: 'studentEmail' },
+    { title: 'Trạng thái', dataIndex: 'statusStudentFactory', key: 'statusStudentFactory' },
+    { title: 'Chi tiết', key: 'action' },
+  ]),
+)
 
 /* -------------------- Phân trang cho danh sách sinh viên trong nhóm xưởng -------------------- */
 const fetchStudentFactories = () => {
@@ -142,13 +144,15 @@ const studentPagination = reactive({
   ...DEFAULT_PAGINATION,
 })
 const allStudents = ref([])
-const studentColumns = ref([
-  { title: '#', dataIndex: 'rowNumber', key: 'rowNumber' },
-  { title: 'Mã sinh viên', dataIndex: 'code', key: 'code' },
-  { title: 'Tên sinh viên', dataIndex: 'name', key: 'name' },
-  { title: 'Email', dataIndex: 'email', key: 'email' },
-  { title: 'Chọn', key: 'select' },
-])
+const studentColumns = ref(
+  autoAddColumnWidth([
+    { title: '#', dataIndex: 'rowNumber', key: 'rowNumber' },
+    { title: 'Mã sinh viên', dataIndex: 'code', key: 'code' },
+    { title: 'Tên sinh viên', dataIndex: 'name', key: 'name' },
+    { title: 'Email', dataIndex: 'email', key: 'email' },
+    { title: 'Chọn', key: 'select' },
+  ]),
+)
 const selectedStudents = reactive({})
 
 const updateAllStudentsCheckStatus = () => {
@@ -362,13 +366,15 @@ const shiftModalVisible = ref(false)
 const shiftFilter = reactive({ startDate: null, status: '' })
 const shiftPagination = reactive({ current: 1, pageSize: 5, total: 0 })
 const shiftData = ref([])
-const shiftColumns = ref([
-  { title: 'Buổi', dataIndex: 'orderNumber', key: 'orderNumber', width: 150 },
-  { title: 'Ngày học', dataIndex: 'startDate', key: 'startDate' },
-  { title: 'Thời gian', key: 'time' },
-  { title: 'Ca học', dataIndex: 'shift', key: 'shift' },
-  { title: 'Trạng thái', dataIndex: 'status', key: 'status' },
-])
+const shiftColumns = ref(
+  autoAddColumnWidth([
+    { title: 'Buổi', dataIndex: 'orderNumber', key: 'orderNumber' },
+    { title: 'Ngày học', dataIndex: 'startDate', key: 'startDate' },
+    { title: 'Thời gian', key: 'time' },
+    { title: 'Ca học', dataIndex: 'shift', key: 'shift' },
+    { title: 'Trạng thái', dataIndex: 'status', key: 'status' },
+  ]),
+)
 
 let currentStudentForShift = null
 
@@ -429,7 +435,7 @@ watch(isAddStudentModalVisible, (newVal) => {
 
 const handleClearFilter = () => {
   // Clear all filter values
-  Object.keys(filter).forEach(key => {
+  Object.keys(filter).forEach((key) => {
     filter[key] = ''
   })
   pagination.current = 1

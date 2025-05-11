@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed, onMounted, reactive } from 'vue'
 import dayjs from 'dayjs'
-import { dayOfWeek } from '@/utils/utils'
+import { autoAddColumnWidth, dayOfWeek } from '@/utils/utils'
 import {
   FilterFilled,
   UnorderedListOutlined,
@@ -36,19 +36,18 @@ const isLoading = ref(false)
 const paginations = ref({})
 const loadingExport = reactive({})
 
-const columns = [
-  { title: 'Bài học', dataIndex: 'rowNumber', key: 'rowNumber', width: 50 },
-  { title: 'Ngày học', dataIndex: 'planDateStartDate', key: 'planDateStartDate', width: 150 },
-  { title: 'Ca học', dataIndex: 'planDateShift', key: 'planDateShift', width: 30 },
+const columns = autoAddColumnWidth([
+  { title: 'Bài học', dataIndex: 'rowNumber', key: 'rowNumber' },
+  { title: 'Ngày học', dataIndex: 'planDateStartDate', key: 'planDateStartDate' },
+  { title: 'Ca học', dataIndex: 'planDateShift', key: 'planDateShift' },
   {
     title: 'Điểm danh muộn tối đa (phút)',
     dataIndex: 'lateArrival',
     key: 'lateArrival',
-    width: 100,
   },
-  { title: 'Nội dung', dataIndex: 'planDateDescription', key: 'planDateDescription', width: 80 },
-  { title: 'Trạng thái đi học', dataIndex: 'statusAttendance', key: 'statusAttendance', width: 80 },
-]
+  { title: 'Nội dung', dataIndex: 'planDateDescription', key: 'planDateDescription' },
+  { title: 'Trạng thái đi học', dataIndex: 'statusAttendance', key: 'statusAttendance' },
+])
 
 const semesters = ref([])
 const factories = ref([])

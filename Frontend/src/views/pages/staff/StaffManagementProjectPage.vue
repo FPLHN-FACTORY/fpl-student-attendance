@@ -17,6 +17,7 @@ import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
 import useLoadingStore from '@/stores/useLoadingStore'
 import { API_ROUTES_EXCEL, GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
 import ExcelUploadButton from '@/components/excel/ExcelUploadButton.vue'
+import { autoAddColumnWidth } from '@/utils/utils'
 
 const breadcrumbStore = useBreadcrumbStore()
 const loadingStore = useLoadingStore()
@@ -73,16 +74,18 @@ const pagination = reactive({
 })
 
 // Cấu hình cột bảng
-const columns = ref([
-  { title: '#', dataIndex: 'indexs', key: 'indexs' },
-  { title: 'Tên', dataIndex: 'name', key: 'name' },
-  { title: 'Cấp dự án', dataIndex: 'nameLevelProject', key: 'nameLevelProject' },
-  { title: 'Học kỳ', dataIndex: 'nameSemester', key: 'nameSemester' },
-  { title: 'Môn học', dataIndex: 'nameSubject', key: 'nameSubject' },
-  { title: 'Mô tả', dataIndex: 'description', key: 'description' },
-  { title: 'Trạng thái', dataIndex: 'status', key: 'status' },
-  { title: 'Chức năng', key: 'actions' },
-])
+const columns = ref(
+  autoAddColumnWidth([
+    { title: '#', dataIndex: 'indexs', key: 'indexs' },
+    { title: 'Tên', dataIndex: 'name', key: 'name' },
+    { title: 'Cấp dự án', dataIndex: 'nameLevelProject', key: 'nameLevelProject' },
+    { title: 'Học kỳ', dataIndex: 'nameSemester', key: 'nameSemester' },
+    { title: 'Môn học', dataIndex: 'nameSubject', key: 'nameSubject' },
+    { title: 'Mô tả', dataIndex: 'description', key: 'description' },
+    { title: 'Trạng thái', dataIndex: 'status', key: 'status' },
+    { title: 'Chức năng', key: 'actions' },
+  ]),
+)
 
 /* ----------------- Methods ----------------- */
 // Chuyển đổi thời gian
@@ -103,7 +106,7 @@ const fetchProjects = () => {
       facilityId: filter.facilityId,
       status: filter.status,
       page: pagination.current,
-      size: pagination.pageSize
+      size: pagination.pageSize,
     })
     .then((response) => {
       projects.value = response.data.data.data
@@ -395,7 +398,11 @@ onMounted(() => {
                 @change="fetchProjects"
               >
                 <a-select-option :value="null">Tất cả học kỳ</a-select-option>
-                <a-select-option v-for="semester in allSemesters" :key="semester.id" :value="semester.id">
+                <a-select-option
+                  v-for="semester in allSemesters"
+                  :key="semester.id"
+                  :value="semester.id"
+                >
                   {{ semester.code }}
                 </a-select-option>
               </a-select>
@@ -437,9 +444,7 @@ onMounted(() => {
           <div class="row">
             <div class="col-12">
               <div class="d-flex justify-content-center flex-wrap gap-2 mt-3">
-                <a-button class="btn-light" @click="fetchProjects">
-                  <FilterFilled /> Lọc
-                </a-button>
+                <a-button class="btn-light" @click="fetchProjects"> <FilterFilled /> Lọc </a-button>
                 <a-button class="btn-gray" @click="handleClearFilter"> Huỷ lọc </a-button>
               </div>
             </div>
@@ -453,15 +458,18 @@ onMounted(() => {
           <div class="d-flex justify-content-end mb-3 flex-wrap gap-3">
             <ExcelUploadButton v-bind="configImportExcel" />
             <a-tooltip title="Đổi trạng thái tất cả dự án kỳ trước">
-              <a-button type="default" @click="handleChangeStatusProjectBySemester" class="btn-outline-warning me-2">
-              <SyncOutlined /> Đổi trạng thái
-            </a-button>
-             </a-tooltip>
+              <a-button
+                type="default"
+                @click="handleChangeStatusProjectBySemester"
+                class="btn-outline-warning me-2"
+              >
+                <SyncOutlined /> Đổi trạng thái
+              </a-button>
+            </a-tooltip>
 
             <a-button type="primary" @click="modalAdd = true">
               <PlusOutlined /> Thêm dự án
             </a-button>
-
           </div>
 
           <a-table

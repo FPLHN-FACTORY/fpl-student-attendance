@@ -19,7 +19,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { API_ROUTES_NOTIFICATION, GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
 import useApplicationStore from '@/stores/useApplicationStore'
 import ExcelUploadList from '@/components/excel/ExcelUploadList.vue'
-import { formatDate } from '@/utils/utils'
+import { autoAddColumnWidth, formatDate } from '@/utils/utils'
 import { DEFAULT_DATE_FORMAT, DEFAULT_PAGINATION } from '@/constants'
 import requestAPI from '@/services/requestApiService'
 import { message } from 'ant-design-vue'
@@ -38,12 +38,14 @@ const isLoadingDeleteAll = ref(false)
 const isShowAllNotification = ref(false)
 const lstAllNotification = ref([])
 
-const columns = ref([
-  { title: 'Trạng thái', dataIndex: 'status', key: 'status', width: 100, ellipsis: true },
-  { title: 'Thời gian', dataIndex: 'createdAt', key: 'createdAt', width: 100, ellipsis: true },
-  { title: 'Nội dung thông báo', dataIndex: 'message', key: 'message', width: 300, ellipsis: true },
-  { title: '', key: 'actions' },
-])
+const columns = ref(
+  autoAddColumnWidth([
+    { title: 'Trạng thái', dataIndex: 'status', key: 'status' },
+    { title: 'Thời gian', dataIndex: 'createdAt', key: 'createdAt' },
+    { title: 'Nội dung thông báo', dataIndex: 'message', key: 'message' },
+    { title: '', key: 'actions' },
+  ]),
+)
 
 const dataFilter = reactive({
   status: null,
