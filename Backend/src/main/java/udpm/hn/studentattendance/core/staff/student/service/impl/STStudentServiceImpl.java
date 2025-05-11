@@ -17,7 +17,9 @@ import udpm.hn.studentattendance.entities.Facility;
 import udpm.hn.studentattendance.entities.UserStudent;
 import udpm.hn.studentattendance.helpers.NotificationHelper;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
+import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.helpers.SessionHelper;
+import udpm.hn.studentattendance.helpers.ValidateHelper;
 import udpm.hn.studentattendance.infrastructure.common.ApiResponse;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
@@ -82,6 +84,14 @@ public class STStudentServiceImpl implements STStudentService {
 
         Optional<Facility> facility = facilityRepository.findById(sessionHelper.getFacilityId());
 
+        if(!ValidateHelper.isValidCode(studentCreateUpdateRequest.getCode())) {
+            return RouterHelper.responseError("Mã sinh viên không hợp lệ");
+        }
+
+        if(!ValidateHelper.isValidFullname(studentCreateUpdateRequest.getName())) {
+            return RouterHelper.responseError("Họ tên sinh viên không hợp lệ");
+        }
+
         if (existStudentCode.isPresent()) {
             return new ResponseEntity<>(
                     new ApiResponse(
@@ -120,6 +130,14 @@ public class STStudentServiceImpl implements STStudentService {
                 .getStudentById(studentCreateUpdateRequest.getId());
 
         UserStudent current = existStudent.get();
+
+        if(!ValidateHelper.isValidCode(studentCreateUpdateRequest.getCode())) {
+            return RouterHelper.responseError("Mã sinh viên không hợp lệ");
+        }
+
+        if(!ValidateHelper.isValidFullname(studentCreateUpdateRequest.getName())) {
+            return RouterHelper.responseError("Họ tên sinh viên không hợp lệ");
+        }
 
         // 2. Check trùng code
         if (studentExtendRepository.isExistCodeUpdate(studentCreateUpdateRequest.getCode(), current.getCode())) {
