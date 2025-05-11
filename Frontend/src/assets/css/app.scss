@@ -454,6 +454,20 @@ hr {
 span.disabled {
   opacity: 0.6;
 }
+.ant-table-container {
+  .ant-table-thead {
+    position: sticky;
+    top: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    z-index: 1;
+  }
+  .ant-table-content {
+    overflow: auto !important;
+    max-height: 500px;
+  }
+}
 
 @import url(color.scss);
 @import url(face-id.scss);

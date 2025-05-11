@@ -82,11 +82,7 @@ public class EXFactoryServiceImpl implements EXFactoryService {
             return RouterHelper.responseError(msg, HttpStatus.BAD_REQUEST);
         }
         String factoryDescription = item.get("MO_TA");
-        if (factoryDescription == null || factoryDescription.trim().isEmpty()) {
-            String msg = "Mô tả nhóm xưởng không được để trống.";
-            excelHelper.saveLogError(ImportLogType.FACTORY, msg, request);
-            return RouterHelper.responseError(msg, HttpStatus.BAD_REQUEST);
-        }
+
         // Giảng viên: giữ nguyên parse từ "Name (Code)"
         String lecturerValue = item.get("GIANG_VIEN");
         if (lecturerValue == null || lecturerValue.trim().isEmpty()) {
@@ -245,7 +241,7 @@ public class EXFactoryServiceImpl implements EXFactoryService {
         for (int i = 0; i < headers.size(); i++) sheet.autoSizeColumn(i);
         sheet.setColumnWidth(1, 30 * 256);
         sheet.setColumnWidth(2, 30 * 256);
-        sheet.setColumnWidth(2, 20 * 256);
+        sheet.setColumnWidth(3, 20 * 256);
 
         // Sheet DropdownData
         Sheet dropdownSheet = workbook.createSheet("DropdownData");

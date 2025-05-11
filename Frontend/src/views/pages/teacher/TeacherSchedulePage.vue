@@ -243,9 +243,16 @@ const isDetailModalVisible = ref(false)
 const detailModalContent = ref('')
 const detailLateArrival = ref(0)
 const detailLink = ref('')
+const detailRoom = ref('')
 const currentPlanDateId = ref('')
 const isUpdateModalVisible = ref(false)
-const formUpdateData = reactive({ description: '', lateArrival: 0, planDateId: '', link: '' })
+const formUpdateData = reactive({
+  description: '',
+  lateArrival: 0,
+  planDateId: '',
+  link: '',
+  room: '',
+})
 const formUpdateRules = {
   lateArrival: [
     { required: true, message: 'Vui lòng nhập thời gian điểm danh muộn', trigger: 'change' },
@@ -259,6 +266,7 @@ const handleShowDescription = (record) => {
       detailModalContent.value = d.description || 'Không có mô tả'
       detailLateArrival.value = d.lateArrival
       detailLink.value = d.link
+      detailRoom.value = d.room || ''
       currentPlanDateId.value = d.planDateId
       isDetailModalVisible.value = true
     })
@@ -270,6 +278,7 @@ const handleShowUpdate = () => {
   formUpdateData.description = detailModalContent.value
   formUpdateData.lateArrival = detailLateArrival.value
   formUpdateData.link = detailLink.value
+  formUpdateData.room = detailRoom.value
   isUpdateModalVisible.value = true
 }
 const handleUpdatePlanDate = () => {
@@ -285,6 +294,7 @@ const handleUpdatePlanDate = () => {
           description: formUpdateData.description,
           lateArrival: formUpdateData.lateArrival,
           link: formUpdateData.link,
+          room: formUpdateData.room,
         })
         .then(() => {
           message.success('Cập nhật buổi học thành công')
@@ -339,10 +349,11 @@ const durationOptions = [
 ]
 
 // --- MỞ ĐẦU: thêm hàm để gọi endpoint PUT /change-type/{id}
-function handleChangeType(record) {
+function handleChangeType(record, room = '') {
   loadingStore.show()
+  const id = record.idPlanDate
   requestAPI
-    .put(`${API_ROUTES_TEACHER.FETCH_DATA_SCHEDULE}/change-type/${record.idPlanDate}`)
+    .put(`${API_ROUTES_TEACHER.FETCH_DATA_SCHEDULE}/change-type/${id}`, null, { params: { room } })
     .then(() => {
       message.success('Đã đổi hình thức ca học')
       fetchTeachingSchedule()
@@ -357,7 +368,9 @@ function handleChangeType(record) {
 const showLinkModal = ref(false)
 const pendingRecord = ref(null)
 const linkInput = ref('')
-
+const showRoomModal = ref(false)
+const roomInput = ref('')
+const pendingChangeRecord = ref(null)
 function handleTypeToggle(record, checked) {
   Modal.confirm({
     title: 'Xác nhận thay đổi hình thức',
@@ -373,13 +386,24 @@ function handleTypeToggle(record, checked) {
         linkInput.value = record.link || ''
         showLinkModal.value = true
       } else {
-        // tắt → gọi API ngay
-        handleChangeType(record)
+        // tắt → mở modal nhập phòng
+        pendingChangeRecord.value = record
+        roomInput.value = record.room || ''
+        showRoomModal.value = true
       }
     },
   })
 }
-
+// 3) Khi confirm chuyển về Offline: gọi change-type với roomInput.value
+function confirmRoomModal() {
+  if (!roomInput.value) {
+    return message.error('Vui lòng nhập phòng học!')
+  }
+  showRoomModal.value = false
+  loadingStore.show()
+  // Gọi chung hàm, ghi đè room mới
+  handleChangeType(pendingChangeRecord.value, roomInput.value)
+}
 // khi user confirm nhập link
 function confirmLinkModal() {
   if (!linkInput.value) {
@@ -387,20 +411,17 @@ function confirmLinkModal() {
   }
   showLinkModal.value = false
   loadingStore.show()
-  // 1) update link
+  // 1) Cập nhật link
   requestAPI
     .put(API_ROUTES_TEACHER.FETCH_DATA_SCHEDULE, {
       idPlanDate: pendingRecord.value.idPlanDate,
       link: linkInput.value,
       description: pendingRecord.value.description,
       lateArrival: pendingRecord.value.lateArrival,
+      room: pendingRecord.value.room, // giữ nguyên phòng cũ trên update nếu cần
     })
-    // 2) sau đó toggle sang ONLINE
-    .then(() =>
-      requestAPI.put(
-        `${API_ROUTES_TEACHER.FETCH_DATA_SCHEDULE}/change-type/${pendingRecord.value.idPlanDate}`,
-      ),
-    )
+    // 2) Sau đó toggle sang ONLINE và clear room bằng ''
+    .then(() => handleChangeType(pendingRecord.value, ''))
     .then(() => {
       message.success('Chuyển Online thành công với link mới')
       fetchTeachingSchedule()
@@ -497,7 +518,7 @@ onMounted(() => {
             @change="handlePresentTableChange"
             :loading="isLoading"
             class="nowrap"
-            :scroll="{ y: 500, x: 'auto' }"
+            :scroll="{ x: 'auto' }"
           >
             <template #bodyCell="{ column, record, index }">
               <template v-if="column.key === 'time'">
@@ -603,7 +624,7 @@ onMounted(() => {
             @change="handleTableChange"
             :loading="isLoading"
             class="nowrap"
-            :scroll="{ y: 500, x: 'auto' }"
+            :scroll="{ x: 'auto' }"
           >
             <template #bodyCell="{ column, record, index }">
               <!-- Xử lý cột Thời gian -->
@@ -676,7 +697,7 @@ onMounted(() => {
       maskClosable
     >
       <div class="mb-3">{{ detailModalContent }}</div>
-
+      <div v-if="detailRoom">Địa điểm học: {{ detailRoom }}</div>
       <div v-if="detailLink">
         Link học: <a :href="detailLink" target="_blank">{{ detailLink }}</a>
       </div>
@@ -709,6 +730,9 @@ onMounted(() => {
             allowClear
           />
         </a-form-item>
+        <a-form-item label="Địa điểm học" name="room">
+          <a-input v-model:value="formUpdateData.room" placeholder="Nhập phòng học" class="w-100" />
+        </a-form-item>
       </a-form>
     </a-modal>
 
@@ -722,6 +746,19 @@ onMounted(() => {
       <a-form layout="vertical">
         <a-form-item label="Link học">
           <a-input v-model:value="linkInput" placeholder="https://" />
+        </a-form-item>
+      </a-form>
+    </a-modal>
+
+    <a-modal
+      v-model:open="showRoomModal"
+      title="Nhập phòng học để chuyển sang Offline"
+      @ok="confirmRoomModal"
+      @cancel="showRoomModal = false"
+    >
+      <a-form layout="vertical">
+        <a-form-item label="Phòng học">
+          <a-input v-model:value="roomInput" placeholder="Nhập phòng học" />
         </a-form-item>
       </a-form>
     </a-modal>
