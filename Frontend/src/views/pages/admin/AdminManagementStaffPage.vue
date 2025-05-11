@@ -20,6 +20,7 @@ import { API_ROUTES_EXCEL, GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant
 import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
 import useLoadingStore from '@/stores/useLoadingStore'
 import ExcelUploadButton from '@/components/excel/ExcelUploadButton.vue'
+import { autoAddColumnWidth } from '@/utils/utils'
 
 const breadcrumbStore = useBreadcrumbStore()
 const loadingStore = useLoadingStore()
@@ -107,17 +108,19 @@ const detailStaff = reactive({
 })
 
 // Cấu hình cột cho bảng
-const columns = ref([
-  { title: '#', dataIndex: 'orderNumber', key: 'orderNumber', width: 50 },
-  { title: 'Mã nhân viên', dataIndex: 'staffCode', key: 'staffCode', width: 250 },
-  { title: 'Tên nhân viên', dataIndex: 'staffName', key: 'staffName', width: 250 },
-  { title: 'Email FE', dataIndex: 'staffEmailFe', key: 'staffEmailFe', width: 250 },
-  { title: 'Email FPT', dataIndex: 'staffEmailFpt', key: 'staffEmailFpt', width: 250 },
-  { title: 'Cơ sở', dataIndex: 'facilityName', key: 'facilityName', width: 200 },
-  { title: 'Vai trò', dataIndex: 'roleCode', key: 'roleCode', width: 300 },
-  { title: 'Trạng thái', dataIndex: 'staffStatus', key: 'staffStatus', width: 180 },
-  { title: 'Chức năng', key: 'actions', width: 120 },
-])
+const columns = ref(
+  autoAddColumnWidth([
+    { title: '#', dataIndex: 'orderNumber', key: 'orderNumber' },
+    { title: 'Mã nhân viên', dataIndex: 'staffCode', key: 'staffCode' },
+    { title: 'Tên nhân viên', dataIndex: 'staffName', key: 'staffName' },
+    { title: 'Email FE', dataIndex: 'staffEmailFe', key: 'staffEmailFe' },
+    { title: 'Email FPT', dataIndex: 'staffEmailFpt', key: 'staffEmailFpt' },
+    { title: 'Cơ sở', dataIndex: 'facilityName', key: 'facilityName' },
+    { title: 'Vai trò', dataIndex: 'roleCode', key: 'roleCode' },
+    { title: 'Trạng thái', dataIndex: 'staffStatus', key: 'staffStatus' },
+    { title: 'Chức năng', key: 'actions' },
+  ]),
+)
 
 // Hàm lấy danh sách nhân viên, dùng pagination.value.current và pagination.value.pageSize
 const fetchStaffs = () => {
@@ -139,7 +142,7 @@ const fetchStaffs = () => {
     .catch((error) => {
       message.error(
         (error.response && error.response.data && error.response.data.message) ||
-          'Lỗi khi lấy danh sách nhân viên'
+          'Lỗi khi lấy danh sách nhân viên',
       )
     })
     .finally(() => {
@@ -157,7 +160,7 @@ const fetchFacilitiesListCombobox = () => {
     .catch((error) => {
       message.error(
         (error.response && error.response.data && error.response.data.message) ||
-          'Lỗi khi lấy danh sách cơ sở'
+          'Lỗi khi lấy danh sách cơ sở',
       )
     })
 }
@@ -195,7 +198,7 @@ const handleAddStaff = () => {
     .catch((error) => {
       message.error(
         (error.response && error.response.data && error.response.data.message) ||
-          'Lỗi khi thêm nhân viên'
+          'Lỗi khi thêm nhân viên',
       )
     })
     .finally(() => {
@@ -223,7 +226,7 @@ const handleUpdateStaff = (record) => {
     .catch((error) => {
       message.error(
         (error.response && error.response.data && error.response.data.message) ||
-          'Lỗi khi lấy chi tiết nhân viên'
+          'Lỗi khi lấy chi tiết nhân viên',
       )
     })
     .finally(() => {
@@ -256,7 +259,7 @@ const updateStaff = () => {
     .catch((error) => {
       message.error(
         (error.response && error.response.data && error.response.data.message) ||
-          'Lỗi khi cập nhật nhân viên'
+          'Lỗi khi cập nhật nhân viên',
       )
     })
     .finally(() => {
@@ -281,7 +284,7 @@ const handleChangeStatusStaff = (record) => {
         .catch((error) => {
           message.error(
             (error.response && error.response.data && error.response.data.message) ||
-              'Lỗi khi đổi trạng thái nhân viên'
+              'Lỗi khi đổi trạng thái nhân viên',
           )
         })
         .finally(() => {

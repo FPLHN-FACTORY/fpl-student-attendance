@@ -10,6 +10,7 @@ import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
 import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
 import useLoadingStore from '@/stores/useLoadingStore'
 import { DEFAULT_PAGINATION } from '@/constants'
+import { autoAddColumnWidth } from '@/utils/utils'
 
 const route = useRoute()
 const factoryId = route.query.factoryId
@@ -48,31 +49,27 @@ const pagination = reactive({
 })
 
 // Cấu hình cột cho bảng
-const columns = ref([
-  { title: '#', dataIndex: 'rowNumber', key: 'rowNumber', width: 50 },
-  {
-    title: 'Mã học sinh',
-    dataIndex: 'studentCode',
-    key: 'studentCode',
-    width: 150,
-    ellipsis: true,
-  },
-  {
-    title: 'Tên học sinh',
-    dataIndex: 'studentName',
-    key: 'studentName',
-    width: 200,
-    ellipsis: true,
-  },
-  { title: 'Email', dataIndex: 'studentEmail', key: 'studentEmail', width: 250, ellipsis: true },
-  {
-    title: 'Trạng thái',
-    dataIndex: 'statusStudentFactory',
-    key: 'statusStudentFactory',
-    width: 120,
-    ellipsis: true,
-  },
-])
+const columns = ref(
+  autoAddColumnWidth([
+    { title: '#', dataIndex: 'rowNumber', key: 'rowNumber' },
+    {
+      title: 'Mã học sinh',
+      dataIndex: 'studentCode',
+      key: 'studentCode',
+    },
+    {
+      title: 'Tên học sinh',
+      dataIndex: 'studentName',
+      key: 'studentName',
+    },
+    { title: 'Email', dataIndex: 'studentEmail', key: 'studentEmail' },
+    {
+      title: 'Trạng thái',
+      dataIndex: 'statusStudentFactory',
+      key: 'statusStudentFactory',
+    },
+  ]),
+)
 
 const loadingStore = useLoadingStore()
 

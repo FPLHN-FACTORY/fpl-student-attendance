@@ -16,7 +16,7 @@ import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
 import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
 import { ROUTE_NAMES } from '@/router/teacherRoute'
 import { DEFAULT_DATE_FORMAT, DEFAULT_PAGINATION, SHIFT, TYPE_SHIFT } from '@/constants'
-import { formatDate, dayOfWeek } from '@/utils/utils'
+import { formatDate, dayOfWeek, autoAddColumnWidth } from '@/utils/utils'
 import useLoadingStore from '@/stores/useLoadingStore'
 import dayjs from 'dayjs'
 import router from '@/router'
@@ -65,63 +65,53 @@ const teachingScheduleRecords = ref([])
 const pagination = ref({ ...DEFAULT_PAGINATION })
 
 // Cột hiển thị trong table lịch dạy chung
-const columns = [
-  { title: '#', dataIndex: 'indexs', key: 'indexs', width: 50 },
+const columns = autoAddColumnWidth([
+  { title: '#', dataIndex: 'indexs', key: 'indexs' },
   {
     title: 'Ngày dạy',
     dataIndex: 'startTeaching',
     key: 'startTeaching',
-    width: 100,
-    ellipsis: true,
   },
-  { title: 'Thời gian', key: 'time', width: 100, ellipsis: true },
-  { title: 'Ca học', dataIndex: 'shift', key: 'shift', width: 50, ellipsis: true },
+  { title: 'Thời gian', key: 'time' },
+  { title: 'Ca học', dataIndex: 'shift', key: 'shift' },
   {
     title: 'Điểm danh muộn',
     dataIndex: 'lateArrival',
     key: 'lateArrival',
-    width: 50,
-    ellipsis: true,
   },
-  { title: 'Nhóm Xưởng', dataIndex: 'factoryName', key: 'factoryName', width: 100, ellipsis: true },
-  { title: 'Dự án', dataIndex: 'projectName', key: 'projectName', width: 180, ellipsis: true },
-  { title: 'Địa điểm học', dataIndex: 'room', key: 'room', width: 100, ellipsis: true },
-  { title: 'Hình thức', dataIndex: 'type', key: 'type', width: 100, ellipsis: true },
-  { title: 'Link học', dataIndex: 'link', key: 'link', width: 180, ellipsis: true },
+  { title: 'Nhóm Xưởng', dataIndex: 'factoryName', key: 'factoryName' },
+  { title: 'Dự án', dataIndex: 'projectName', key: 'projectName' },
+  { title: 'Địa điểm học', dataIndex: 'room', key: 'room' },
+  { title: 'Hình thức', dataIndex: 'type', key: 'type' },
+  { title: 'Link học', dataIndex: 'link', key: 'link' },
   {
     title: 'Chi tiết / Sửa',
     dataIndex: 'description',
     key: 'description',
-    width: 100,
-    ellipsis: true,
   },
-]
+])
 
 // Cột hiển thị cho table lịch dạy hôm nay
-const columnsTeachingPresent = [
-  { title: '#', dataIndex: 'indexs', key: 'indexs', width: 50 },
-  { title: 'Thời gian', key: 'time', width: 100, ellipsis: true },
-  { title: 'Ca học', dataIndex: 'shift', key: 'shift', width: 50, ellipsis: true },
+const columnsTeachingPresent = autoAddColumnWidth([
+  { title: '#', dataIndex: 'indexs', key: 'indexs' },
+  { title: 'Thời gian', key: 'time' },
+  { title: 'Ca học', dataIndex: 'shift', key: 'shift' },
   {
     title: 'Điểm danh muộn ',
     dataIndex: 'lateArrival',
     key: 'lateArrival',
-    width: 50,
-    ellipsis: true,
   },
-  { title: 'Xưởng', dataIndex: 'factoryName', key: 'factoryName', width: 100, ellipsis: true },
-  { title: 'Dự án', dataIndex: 'projectName', key: 'projectName', width: 180, ellipsis: true },
-  { title: 'Địa điểm học', dataIndex: 'room', key: 'room', width: 100, ellipsis: true },
-  { title: 'Link học', dataIndex: 'link', key: 'link', width: 180, ellipsis: true },
+  { title: 'Xưởng', dataIndex: 'factoryName', key: 'factoryName' },
+  { title: 'Dự án', dataIndex: 'projectName', key: 'projectName' },
+  { title: 'Địa điểm học', dataIndex: 'room', key: 'room' },
+  { title: 'Link học', dataIndex: 'link', key: 'link' },
   {
     title: 'Chi tiết / Sửa',
     dataIndex: 'description',
     key: 'description',
-    width: 100,
-    ellipsis: true,
   },
-  { title: 'Điểm danh', key: 'action', width: 100 },
-]
+  { title: 'Điểm danh', key: 'action' },
+])
 
 // Các danh sách dropdown
 const subjects = ref([])

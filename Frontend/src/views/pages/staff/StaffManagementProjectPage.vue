@@ -17,6 +17,7 @@ import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
 import useLoadingStore from '@/stores/useLoadingStore'
 import { API_ROUTES_EXCEL, GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
 import ExcelUploadButton from '@/components/excel/ExcelUploadButton.vue'
+import { autoAddColumnWidth } from '@/utils/utils'
 
 const breadcrumbStore = useBreadcrumbStore()
 const loadingStore = useLoadingStore()
@@ -73,16 +74,18 @@ const pagination = reactive({
 })
 
 // Cấu hình cột bảng
-const columns = ref([
-  { title: '#', dataIndex: 'indexs', key: 'indexs' },
-  { title: 'Tên', dataIndex: 'name', key: 'name' },
-  { title: 'Cấp dự án', dataIndex: 'nameLevelProject', key: 'nameLevelProject' },
-  { title: 'Học kỳ', dataIndex: 'nameSemester', key: 'nameSemester' },
-  { title: 'Môn học', dataIndex: 'nameSubject', key: 'nameSubject' },
-  { title: 'Mô tả', dataIndex: 'description', key: 'description' },
-  { title: 'Trạng thái', dataIndex: 'status', key: 'status' },
-  { title: 'Chức năng', key: 'actions' },
-])
+const columns = ref(
+  autoAddColumnWidth([
+    { title: '#', dataIndex: 'indexs', key: 'indexs' },
+    { title: 'Tên', dataIndex: 'name', key: 'name' },
+    { title: 'Cấp dự án', dataIndex: 'nameLevelProject', key: 'nameLevelProject' },
+    { title: 'Học kỳ', dataIndex: 'nameSemester', key: 'nameSemester' },
+    { title: 'Môn học', dataIndex: 'nameSubject', key: 'nameSubject' },
+    { title: 'Mô tả', dataIndex: 'description', key: 'description' },
+    { title: 'Trạng thái', dataIndex: 'status', key: 'status' },
+    { title: 'Chức năng', key: 'actions' },
+  ]),
+)
 
 /* ----------------- Methods ----------------- */
 // Chuyển đổi thời gian
