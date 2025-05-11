@@ -255,9 +255,9 @@ const handleUpdateProject = () => {
   const req = {
     name: detailProject.name,
     description: detailProject.description,
-    idLevelProject: detailProject.levelProjectId,
-    idSemester: detailProject.semesterId,
-    idSubjectFacility: detailProject.subjectFacilityId,
+    levelProjectId: detailProject.levelProjectId,
+    semesterId: detailProject.semesterId,
+    subjectFacilityId: detailProject.subjectFacilityId,
   }
 
   requestAPI

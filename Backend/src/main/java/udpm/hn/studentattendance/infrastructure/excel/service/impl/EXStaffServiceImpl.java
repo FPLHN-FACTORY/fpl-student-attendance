@@ -257,6 +257,8 @@ public class EXStaffServiceImpl implements EXStaffService {
         // 6. Đặt width riêng cho 2 cột Email (index 2 và 3): rộng hơn
         sheet.setColumnWidth(2, 40 * 256);
         sheet.setColumnWidth(3, 40 * 256);
+        sheet.setColumnWidth(4, 30 * 256);
+        sheet.setColumnWidth(5, 20 * 256);
 
         // 7. Tạo sheet DropdownData: vai trò và cơ sở
         Sheet dropdownSheet = workbook.createSheet("DropdownData");

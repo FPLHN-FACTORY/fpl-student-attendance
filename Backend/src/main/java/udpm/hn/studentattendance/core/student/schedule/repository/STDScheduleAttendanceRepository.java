@@ -24,6 +24,7 @@ public interface STDScheduleAttendanceRepository extends FacilityRepository {
                        pd.link,
                        pd.shift AS shift,
                        pd.description AS description,
+                       pd.room as location,
                        ft.name as factoryName,
                        CONCAT(p.name, ' - ', lp.name) as projectName
                    FROM
