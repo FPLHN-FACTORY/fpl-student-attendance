@@ -25,7 +25,6 @@ public interface STDScheduleAttendanceRepository extends FacilityRepository {
                        pd.shift AS shift,
                        pd.description AS description,
                        ft.name as factoryName,
-                       fl.name as location,
                        CONCAT(p.name, ' - ', lp.name) as projectName
                    FROM
                    plan_date pd
@@ -38,14 +37,13 @@ public interface STDScheduleAttendanceRepository extends FacilityRepository {
                    LEFT JOIN subject s ON sf.id_subject = s.id
                    LEFT JOIN level_project lp ON lp.id = p.id_level_project
                    LEFT JOIN facility f ON f.id = sf.id_facility
-                   LEFT JOIN facility_location fl ON fl.id_facility = f.id
                    WHERE
                        ft.id IN (
                             SELECT id_factory
                             FROM user_student_factory
                             WHERE id_user_student = :#{#request.idStudent}
                         )
-                    AND pd.start_date BETWEEN UNIX_TIMESTAMP(CURDATE()) * 1000 AND :#{#request.max}
+                    AND pd.start_date BETWEEN :#{#request.now} AND :#{#request.max}
             ORDER BY pd.start_date
             """, countQuery = """
             SELECT COUNT(*) FROM plan_date pd
@@ -57,14 +55,13 @@ public interface STDScheduleAttendanceRepository extends FacilityRepository {
                    LEFT JOIN subject_facility sf ON p.id_subject_facility = sf.id
                    LEFT JOIN subject s ON sf.id_subject = s.id
                    LEFT JOIN facility f ON f.id = sf.id_facility
-                   LEFT JOIN facility_location fl ON fl.id_facility = f.id
             WHERE
                 ft.id IN (
                     SELECT id_factory
                     FROM user_student_factory
                     WHERE id_user_student = :#{#request.idStudent}
                 )
-            AND pd.start_date BETWEEN UNIX_TIMESTAMP(CURDATE()) AND :#{#request.max}
+            AND pd.start_date BETWEEN :#{#request.now} AND :#{#request.max}
             """, nativeQuery = true)
     Page<STDScheduleAttendanceResponse> getAllListAttendanceByUser(Pageable pageable,
                                                                    @Param("request") STDScheduleAttendanceSearchRequest request);

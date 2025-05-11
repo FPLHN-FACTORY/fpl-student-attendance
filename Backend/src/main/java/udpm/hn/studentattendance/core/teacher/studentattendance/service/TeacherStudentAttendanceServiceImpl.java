@@ -8,6 +8,7 @@ import udpm.hn.studentattendance.core.teacher.studentattendance.model.request.Te
 import udpm.hn.studentattendance.core.teacher.studentattendance.model.response.TeacherStudentAttendanceResponse;
 import udpm.hn.studentattendance.core.teacher.studentattendance.repository.TeacherStudentAttendanceRepository;
 import udpm.hn.studentattendance.entities.Attendance;
+import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.infrastructure.common.ApiResponse;
 import udpm.hn.studentattendance.infrastructure.constants.AttendanceStatus;
 import udpm.hn.studentattendance.infrastructure.constants.RestApiStatus;
@@ -54,17 +55,14 @@ public class TeacherStudentAttendanceServiceImpl implements TeacherStudentAttend
         }
         return new ResponseEntity<>(new ApiResponse(
                 RestApiStatus.SUCCESS,
-                "Bulk điểm danh sinh viên thành công",
+                "Tạo điểm danh sinh viên thành công",
                 results), HttpStatus.CREATED);
     }
 
     @Override
     public ResponseEntity<?> getAllByPlanDate(String planDateId) {
         List<TeacherStudentAttendanceResponse> list = repository.getAllByPlanDate(planDateId);
-        return new ResponseEntity<>(new ApiResponse(
-                RestApiStatus.SUCCESS,
-                "Lấy danh sách sinh viên điểm danh thành công",
-                list), HttpStatus.OK);
+        return RouterHelper.responseSuccess("Lấy tất cả sinh viên nhóm xưởng", list);
     }
 
     @Override

@@ -70,6 +70,15 @@ public interface ADUserAdminExtendRepository extends UserAdminRepository {
     boolean isExistEmailUpdate(String newEmailFe, String currentEmailFe);
 
     @Query(value = """
+        SELECT CASE WHEN COUNT(*) > 0 THEN 'TRUE' ELSE 'FALSE' END 
+        FROM user_admin ua
+        WHERE
+        ua.email = :email
+        OR ua.code = :code
+""", nativeQuery = true)
+    boolean isAdmin(String email, String code);
+
+    @Query(value = """
             SELECT CASE 
             WHEN cnt >= 5 THEN 'TRUE' ELSE 'FALSE'
             END AS result

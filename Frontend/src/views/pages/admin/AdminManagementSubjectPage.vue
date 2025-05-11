@@ -20,6 +20,7 @@ import useLoadingStore from '@/stores/useLoadingStore'
 import { API_ROUTES_ADMIN } from '@/constants/adminConstant'
 import { ROUTE_NAMES } from '@/router/adminRoute'
 import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
+import { autoAddColumnWidth } from '@/utils/utils'
 
 const router = useRouter()
 const breadcrumbStore = useBreadcrumbStore()
@@ -56,20 +57,20 @@ const detailSubject = reactive({
   sizeSubjectSemester: 0,
 })
 
-const columns = ref([
-  { title: '#', dataIndex: 'orderNumber', key: 'orderNumber', width: 50 },
-  { title: 'Tên bộ môn', dataIndex: 'name', key: 'name', width: 200, ellipsis: true },
-  { title: 'Mã bộ môn', dataIndex: 'code', key: 'code', width: 150, ellipsis: true },
-  {
-    title: 'Cơ sở hoạt động',
-    dataIndex: 'sizeSubjectSemester',
-    key: 'sizeSubjectSemester',
-    width: 150,
-    ellipsis: true,
-  },
-  { title: 'Trạng thái', dataIndex: 'status', key: 'status', width: 100, ellipsis: true },
-  { title: 'Chức năng', key: 'actions' },
-])
+const columns = ref(
+  autoAddColumnWidth([
+    { title: '#', dataIndex: 'orderNumber', key: 'orderNumber' },
+    { title: 'Tên bộ môn', dataIndex: 'name', key: 'name' },
+    { title: 'Mã bộ môn', dataIndex: 'code', key: 'code' },
+    {
+      title: 'Cơ sở hoạt động',
+      dataIndex: 'sizeSubjectSemester',
+      key: 'sizeSubjectSemester',
+    },
+    { title: 'Trạng thái', dataIndex: 'status', key: 'status' },
+    { title: 'Chức năng', key: 'actions' },
+  ]),
+)
 
 const breadcrumb = ref([
   {
@@ -250,6 +251,15 @@ const getStatusColor = (status) => {
   return status === 'ACTIVE' ? 'green' : 'red'
 }
 
+const handleClearFilter = () => {
+  // Clear all filter values
+  Object.keys(filter).forEach((key) => {
+    filter[key] = ''
+  })
+  pagination.current = 1
+  fetchSubjects()
+}
+
 onMounted(() => {
   breadcrumbStore.setRoutes(breadcrumb.value)
   fetchSubjects()
@@ -262,22 +272,19 @@ onMounted(() => {
     <div class="row g-3">
       <div class="col-12">
         <a-card :bordered="false" class="cart mb-3">
-          <template #title> <FilterFilled /> Bộ lọc </template>
-          <div class="row g-2">
-            <div class="col-lg-6 col-md-6 col-sm-12">
-              <!-- Input tìm kiếm theo tên -->
-              <div class="label-title">Từ khoá:</div>
+          <template #title> <FilterFilled /> Bộ lọc tìm kiếm </template>
+          <div class="row g-3 filter-container">
+            <div class="col-md-6 col-sm-6">
+              <label class="label-title">Từ khoá:</label>
               <a-input
                 v-model:value="filter.name"
-                placeholder="Tìm kiếm theo tên"
+                placeholder="Nhập tên hoặc mã bộ môn"
                 allowClear
                 @change="fetchSubjects"
               />
             </div>
-
-            <!-- Combobox trạng thái -->
-            <div class="col-lg-6 col-md-6 col-sm-12">
-              <div class="label-title">Trạng thái:</div>
+            <div class="col-md-6 col-sm-6">
+              <label class="label-title">Trạng thái:</label>
               <a-select
                 v-model:value="filter.status"
                 placeholder="Chọn trạng thái"
@@ -285,10 +292,18 @@ onMounted(() => {
                 style="width: 100%"
                 @change="fetchSubjects"
               >
-                <a-select-option :value="null">Tất cả trạng thái</a-select-option>
-                <a-select-option :value="1">Hoạt động</a-select-option>
-                <a-select-option :value="0">Không hoạt động</a-select-option>
+                <a-select-option :value="''">Tất cả trạng thái</a-select-option>
+                <a-select-option value="1">Hoạt động</a-select-option>
+                <a-select-option value="0">Không hoạt động</a-select-option>
               </a-select>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-12">
+              <div class="d-flex justify-content-center flex-wrap gap-2 mt-3">
+                <a-button class="btn-light" @click="fetchSubjects"> <FilterFilled /> Lọc </a-button>
+                <a-button class="btn-gray" @click="handleClearFilter"> Huỷ lọc </a-button>
+              </div>
             </div>
           </div>
         </a-card>

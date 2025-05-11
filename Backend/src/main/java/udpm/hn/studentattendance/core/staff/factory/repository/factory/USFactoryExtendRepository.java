@@ -127,16 +127,14 @@ public interface USFactoryExtendRepository extends FactoryRepository {
                         factory ft
                         LEFT JOIN
                         project p ON p.id = ft.id_project
-                        LEFT JOIN
-                        semester s ON s.id = p.id_semester
                         WHERE
                         ft.id_user_staff = :userStaffId
                         AND
-                        s.id = :semesterId
+                        p.id_semester = :semesterId
                         AND
                         ft.status = 1
                         AND 
-                        p.id_semester = 1
+                        p.status = 1
                             """, nativeQuery = true)
         boolean isTeacherJoinThanThreeFactory(String userStaffId, String semesterId);
 }

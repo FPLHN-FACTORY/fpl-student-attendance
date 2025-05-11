@@ -17,7 +17,7 @@ import { ROUTE_NAMES } from '@/router/adminRoute'
 import useLoadingStore from '@/stores/useLoadingStore'
 import { useRoute, useRouter } from 'vue-router'
 import dayjs from 'dayjs'
-import { debounce } from '@/utils/utils'
+import { autoAddColumnWidth, debounce } from '@/utils/utils'
 
 const route = useRoute()
 const router = useRouter()
@@ -39,26 +39,24 @@ const modalAddOrUpdate = reactive({
 const _detail = ref(null)
 const lstData = ref([])
 
-const columns = ref([
-  { title: '#', dataIndex: 'orderNumber', key: 'orderNumber', width: 50 },
-  { title: 'Ca học', dataIndex: 'shift', key: 'shift', width: 100, ellipsis: true },
-  {
-    title: 'Thời gian bắt đầu',
-    dataIndex: 'startTime',
-    key: 'startTime',
-    minWidth: 120,
-    ellipsis: true,
-  },
-  {
-    title: 'Thời gian kết thúc',
-    dataIndex: 'endTime',
-    key: 'endTime',
-    minWidth: 120,
-    ellipsis: true,
-  },
-  { title: 'Trạng thái', dataIndex: 'status', key: 'status', width: 150, ellipsis: true },
-  { title: '', key: 'actions' },
-])
+const columns = ref(
+  autoAddColumnWidth([
+    { title: '#', dataIndex: 'orderNumber', key: 'orderNumber' },
+    { title: 'Ca học', dataIndex: 'shift', key: 'shift' },
+    {
+      title: 'Thời gian bắt đầu',
+      dataIndex: 'startTime',
+      key: 'startTime',
+    },
+    {
+      title: 'Thời gian kết thúc',
+      dataIndex: 'endTime',
+      key: 'endTime',
+    },
+    { title: 'Trạng thái', dataIndex: 'status', key: 'status' },
+    { title: '', key: 'actions' },
+  ]),
+)
 
 const breadcrumb = ref([
   {

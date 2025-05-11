@@ -23,7 +23,7 @@ import {
   DEFAULT_MAX_LATE_ARRIVAL,
   SHIFT,
 } from '@/constants'
-import { debounce, formatDate } from '@/utils/utils'
+import { autoAddColumnWidth, debounce, formatDate } from '@/utils/utils'
 import useLoadingStore from '@/stores/useLoadingStore'
 
 const router = useRouter()
@@ -50,28 +50,26 @@ const lstShift = ref([])
 
 const formRefAdd = ref(null)
 
-const columns = ref([
-  { title: '#', dataIndex: 'orderNumber', key: 'orderNumber', width: 50, ellipsis: true },
-  {
-    title: 'Tên nhóm xưởng',
-    dataIndex: 'factoryName',
-    key: 'factoryName',
-    width: 150,
-    ellipsis: true,
-  },
-  { title: 'Giảng viên', dataIndex: 'staffName', key: 'staffName', width: 100, ellipsis: true },
-  { title: 'Thời gian thực tế', key: 'time', width: 100, ellipsis: true },
-  { title: 'Số buổi', dataIndex: 'totalShift', key: 'totalShift', width: 100, ellipsis: true },
-  {
-    title: 'Số sinh viên',
-    dataIndex: 'totalStudent',
-    key: 'totalStudent',
-    width: 100,
-    ellipsis: true,
-  },
-  { title: 'Trạng thái', dataIndex: 'status', key: 'status', width: 100, ellipsis: true },
-  { title: '', key: 'actions' },
-])
+const columns = ref(
+  autoAddColumnWidth([
+    { title: '#', dataIndex: 'orderNumber', key: 'orderNumber' },
+    {
+      title: 'Tên nhóm xưởng',
+      dataIndex: 'factoryName',
+      key: 'factoryName',
+    },
+    { title: 'Giảng viên', dataIndex: 'staffName', key: 'staffName' },
+    { title: 'Thời gian thực tế', key: 'time' },
+    { title: 'Số buổi', dataIndex: 'totalShift', key: 'totalShift' },
+    {
+      title: 'Số sinh viên',
+      dataIndex: 'totalStudent',
+      key: 'totalStudent',
+    },
+    { title: 'Trạng thái', dataIndex: 'status', key: 'status' },
+    { title: '', key: 'actions' },
+  ]),
+)
 
 const breadcrumb = ref([
   {

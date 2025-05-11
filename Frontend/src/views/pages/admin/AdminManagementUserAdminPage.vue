@@ -6,7 +6,6 @@ import {
   EditFilled,
   UnorderedListOutlined,
   FilterFilled,
-  DeleteOutlined,
   DeleteFilled,
 } from '@ant-design/icons-vue'
 import requestAPI from '@/services/requestApiService'
@@ -16,6 +15,7 @@ import { DEFAULT_PAGINATION } from '@/constants'
 import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
 import useLoadingStore from '@/stores/useLoadingStore'
 import useApplicationStore from '@/stores/useApplicationStore'
+import { autoAddColumnWidth } from '@/utils/utils'
 
 // --- Breadcrumb ---
 const breadcrumbStore = useBreadcrumbStore()
@@ -50,14 +50,16 @@ const newUser = reactive({ staffCode: '', staffName: '', email: '' })
 const editUser = reactive({ id: '', staffCode: '', staffName: '', email: '' })
 
 // Column config
-const columns = ref([
-  { title: '#', dataIndex: 'rowNumber', key: 'rowNumber', width: 60 },
-  { title: 'Mã ban đào tạo', dataIndex: 'userAdminCode', key: 'userAdminCode', width: 180 },
-  { title: 'Tên ban đào tạo', dataIndex: 'userAdminName', key: 'userAdminName', width: 200 },
-  { title: 'Email', dataIndex: 'userAdminEmail', key: 'userAdminEmail', width: 220 },
-  { title: 'Trạng thái', dataIndex: 'userAdminStatus', key: 'userAdminStatus', width: 140 },
-  { title: 'Chức năng', key: 'actions', width: 120 },
-])
+const columns = ref(
+  autoAddColumnWidth([
+    { title: '#', dataIndex: 'rowNumber', key: 'rowNumber' },
+    { title: 'Mã ban đào tạo', dataIndex: 'userAdminCode', key: 'userAdminCode' },
+    { title: 'Tên ban đào tạo', dataIndex: 'userAdminName', key: 'userAdminName' },
+    { title: 'Email', dataIndex: 'userAdminEmail', key: 'userAdminEmail' },
+    { title: 'Trạng thái', dataIndex: 'userAdminStatus', key: 'userAdminStatus' },
+    { title: 'Chức năng', key: 'actions' },
+  ]),
+)
 
 // --- API Calls ---
 const fetchUsers = async () => {
@@ -79,10 +81,10 @@ const fetchUsers = async () => {
     const usersWithFlag = await Promise.all(
       data.data.map(async (user) => {
         const flagRes = await requestAPI.get(
-          `${API_ROUTES_ADMIN.FETCH_DATA_ADMIN}/is-myself/${user.userAdminId}`
+          `${API_ROUTES_ADMIN.FETCH_DATA_ADMIN}/is-myself/${user.userAdminId}`,
         )
         return { ...user, isMySelf: flagRes.data.data }
-      })
+      }),
     )
 
     users.value = usersWithFlag
@@ -99,7 +101,7 @@ const fetchStaffList = async () => {
     const res = await requestAPI.get(API_ROUTES_ADMIN.FETCH_DATA_ADMIN + '/staff')
     staffList.value = res.data.data
   } catch (err) {
-    message.error('Lỗi khi tải danh sách nhân viên')
+    message.error(err?.response?.data?.message || 'Lỗi khi tải danh sách nhân viên')
   }
 }
 
@@ -123,7 +125,7 @@ const handleAddUser = () => {
   requestAPI
     .post(API_ROUTES_ADMIN.FETCH_DATA_ADMIN, newUser)
     .then(() => {
-      message.success('Thêm admin thành công')
+      message.success('Thêm ban đào tạo thành công')
       modalAdd.value = false
       applicationStore.loadNotification()
       clearNewUser()
@@ -149,6 +151,35 @@ const handleUpdateUser = () => {
   if (!editUser.staffCode || !editUser.staffName || !editUser.email) {
     return message.error('Vui lòng điền đầy đủ thông tin')
   }
+
+  // Check if editing own information
+  const isEditingSelf = users.value.find((user) => user.userAdminId === editUser.id)?.isMySelf
+  const originalUser = users.value.find((user) => user.userAdminId === editUser.id)
+  const isEmailChanged = originalUser && originalUser.userAdminEmail !== editUser.email
+
+  if (isEditingSelf && isEmailChanged) {
+    Modal.confirm({
+      title: 'Xác nhận thay đổi email',
+      content:
+        'Bạn đang thay đổi email của chính mình. Sau khi thay đổi, phiên đăng nhập sẽ hết hạn và bạn sẽ bị đăng xuất khỏi hệ thống. Bạn có chắc chắn muốn tiếp tục?',
+      onOk() {
+        performUpdate()
+      },
+    })
+  } else if (isEditingSelf) {
+    Modal.confirm({
+      title: 'Xác nhận cập nhật',
+      content: 'Bạn đang cập nhật thông tin của chính mình. Bạn có chắc chắn muốn tiếp tục?',
+      onOk() {
+        performUpdate()
+      },
+    })
+  } else {
+    performUpdate()
+  }
+}
+
+const performUpdate = () => {
   modalEditLoading.value = true
   requestAPI
     .put(`${API_ROUTES_ADMIN.FETCH_DATA_ADMIN}/${editUser.id}`, editUser)
@@ -178,7 +209,7 @@ const handleChangePowerShift = () => {
   const staffName = selectedStaff ? selectedStaff.name : 'nhân viên này'
   Modal.confirm({
     title: 'Xác nhận chuyển quyền',
-    content: `Bạn có chắc chắn muốn chuyển quyền ban đào toạ cho ${staffName}?
+    content: `Bạn có chắc chắn muốn chuyển quyền ban đào tạo cho ${staffName}?
     , nếu đông ý bạn sẽ đăng xuất ngay bây giờ`,
     onOk() {
       modalChangePowerLoading.value = true
@@ -222,7 +253,7 @@ const handleChangeStatus = (record) => {
 const handleDelete = (record) => {
   Modal.confirm({
     title: 'Xác nhận xóa',
-    content: `Bạn có chắc chắn muốn xóa admin ${record.userAdminName}?`,
+    content: `Bạn có chắc chắn muốn xóa ban đào tạo ${record.userAdminName}?`,
     onOk() {
       handleDeleteUser(record.userAdminId)
     },
@@ -234,15 +265,24 @@ const handleDeleteUser = (id) => {
   requestAPI
     .delete(`${API_ROUTES_ADMIN.FETCH_DATA_ADMIN}/${id}`)
     .then(() => {
-      message.success('Xóa admin thành công')
+      message.success('Xóa ban đào tạo thành công')
       fetchUsers()
     })
     .catch((err) => {
-      message.error(err?.response?.data?.message || 'Lỗi khi xóa admin')
+      message.error(err?.response?.data?.message || 'Lỗi khi xóa ban đào tạo')
     })
     .finally(() => {
       loadingStore.hide()
     })
+}
+
+const handleClearFilter = () => {
+  // Clear all filter values
+  Object.keys(filter).forEach((key) => {
+    filter[key] = ''
+  })
+  pagination.value.current = 1
+  fetchUsers()
 }
 
 onMounted(() => {
@@ -253,41 +293,52 @@ onMounted(() => {
 
 <template>
   <div class="container-fluid">
-    <!-- Filter -->
-    <a-card class="mb-3">
-      <template #title><FilterFilled /> Bộ lọc</template>
-      <a-row :gutter="16" class="filter-container">
-        <a-col :span="12">
-          <div class="label-title">Tìm kiếm:</div>
-          <a-input
-            v-model:value="filter.searchQuery"
-            placeholder="Nhập mã, tên hoặc email"
-            allowClear
-            @change="fetchUsers"
-          />
-        </a-col>
-        <a-col :span="12">
-          <div class="label-title">Trạng thái:</div>
-          <a-select
-            v-model:value="filter.status"
-            placeholder="Chọn trạng thái"
-            allowClear
-            style="width: 100%"
-            @change="fetchUsers"
-          >
-            <a-select-option :value="''">Tất cả</a-select-option>
-            <a-select-option value="1">Đang hoạt động</a-select-option>
-            <a-select-option value="0">Ngừng hoạt động</a-select-option>
-          </a-select>
-        </a-col>
-      </a-row>
-    </a-card>
+    <div class="row g-3">
+      <div class="col-12">
+        <a-card :bordered="false" class="cart mb-3">
+          <template #title> <FilterFilled /> Bộ lọc tìm kiếm </template>
+          <div class="row g-3 filter-container">
+            <div class="col-md-6 col-sm-6">
+              <label class="label-title">Từ khoá:</label>
+              <a-input
+                v-model:value="filter.searchQuery"
+                placeholder="Nhập mã, tên hoặc email"
+                allowClear
+                @change="fetchUsers"
+              />
+            </div>
+            <div class="col-md-6 col-sm-6">
+              <label class="label-title">Trạng thái:</label>
+              <a-select
+                v-model:value="filter.status"
+                placeholder="Chọn trạng thái"
+                allowClear
+                style="width: 100%"
+                @change="fetchUsers"
+              >
+                <a-select-option :value="''">Tất cả trạng thái</a-select-option>
+                <a-select-option value="1">Hoạt động</a-select-option>
+                <a-select-option value="0">Không hoạt động</a-select-option>
+              </a-select>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-12">
+              <div class="d-flex justify-content-center flex-wrap gap-2 mt-3">
+                <a-button class="btn-light" @click="fetchUsers"> <FilterFilled /> Lọc </a-button>
+                <a-button class="btn-gray" @click="handleClearFilter"> Huỷ lọc </a-button>
+              </div>
+            </div>
+          </div>
+        </a-card>
+      </div>
+    </div>
 
     <!-- Table -->
     <a-card>
-      <template #title><UnorderedListOutlined /> Danh sách Admin</template>
+      <template #title><UnorderedListOutlined /> Danh sách Ban đào tạo</template>
       <div class="d-flex justify-content-end mb-3 flex-wrap gap-3">
-        <a-tooltip title="Thêm mới admin">
+        <a-tooltip title="Thêm mới ban đào tạo">
           <a-button type="primary" @click="modalAdd = true"><PlusOutlined /> Thêm mới</a-button>
         </a-tooltip>
       </div>
@@ -304,6 +355,7 @@ onMounted(() => {
           <template v-if="column.dataIndex === 'userAdminStatus'">
             <a-switch
               :checked="record.userAdminStatus === 1"
+              class="me-2"
               @change="handleChangeStatus(record)"
             />
             <a-tag :color="record.userAdminStatus === 1 ? 'green' : 'red'">{{
@@ -312,7 +364,7 @@ onMounted(() => {
           </template>
 
           <template v-else-if="column.key === 'actions'">
-            <a-tooltip title="Sửa nhân viên">
+            <a-tooltip title="Sửa ban đào tạo">
               <a-button type="text" class="btn-outline-info me-2" @click="handleEditUser(record)"
                 ><EditFilled
               /></a-button>
@@ -327,7 +379,7 @@ onMounted(() => {
               /></a-button>
             </a-tooltip>
             <template v-if="!record.isMySelf">
-              <a-tooltip title="Xóa admin">
+              <a-tooltip title="Xóa ban đào tạo">
                 <a-button type="text" class="btn-outline-danger" @click="handleDelete(record)">
                   <DeleteFilled />
                 </a-button>
@@ -344,16 +396,16 @@ onMounted(() => {
     <!-- Modal Thêm -->
     <a-modal
       v-model:open="modalAdd"
-      title="Thêm Admin"
+      title="Thêm Ban đào tạo"
       @ok="handleAddUser"
       :okButtonProps="{ loading: modalAddLoading }"
     >
       <a-form layout="vertical">
-        <a-form-item label="Mã admin" required>
-          <a-input v-model:value="newUser.staffCode" placeholder="Nhập mã admin" />
+        <a-form-item label="Mã ban đào tạo" required>
+          <a-input v-model:value="newUser.staffCode" placeholder="Nhập mã ban đào tạo" />
         </a-form-item>
-        <a-form-item label="Tên admin" required>
-          <a-input v-model:value="newUser.staffName" placeholder="Nhập tên admin" />
+        <a-form-item label="Tên ban đào tạo" required>
+          <a-input v-model:value="newUser.staffName" placeholder="Nhập tên ban đào tạo" />
         </a-form-item>
         <a-form-item label="Email" required>
           <a-input v-model:value="newUser.email" placeholder="Nhập email" />
@@ -364,16 +416,16 @@ onMounted(() => {
     <!-- Modal Sửa -->
     <a-modal
       v-model:open="modalEdit"
-      title="Cập nhật Admin"
+      title="Cập nhật Ban đào tạo"
       @ok="handleUpdateUser"
       :okButtonProps="{ loading: modalEditLoading }"
     >
       <a-form layout="vertical">
-        <a-form-item label="Mã admin" required>
-          <a-input v-model:value="editUser.staffCode" placeholder="Nhập mã admin" />
+        <a-form-item label="Mã ban đào tạo" required>
+          <a-input v-model:value="editUser.staffCode" placeholder="Nhập mã ban đào tạo" />
         </a-form-item>
-        <a-form-item label="Tên admin" required>
-          <a-input v-model:value="editUser.staffName" placeholder="Nhập tên admin" />
+        <a-form-item label="Tên ban đào tạo" required>
+          <a-input v-model:value="editUser.staffName" placeholder="Nhập tên ban đào tạo" />
         </a-form-item>
         <a-form-item label="Email" required>
           <a-input v-model:value="editUser.email" placeholder="Nhập email" />
@@ -384,7 +436,7 @@ onMounted(() => {
     <!-- Modal chuyển quyền -->
     <a-modal
       v-model:open="modalChangePower"
-      title="Chuyển quyền Admin"
+      title="Chuyển quyền Ban đào tạo"
       @ok="handleChangePowerShift"
       :okButtonProps="{ loading: modalChangePowerLoading, disabled: !selectedStaffId }"
       @cancel="
