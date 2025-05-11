@@ -39,9 +39,9 @@ const isShowAllNotification = ref(false)
 const lstAllNotification = ref([])
 
 const columns = ref([
-  { title: 'Trạng thái', dataIndex: 'status', key: 'status' },
-  { title: 'Thời gian', dataIndex: 'createdAt', key: 'createdAt', width: 100 },
-  { title: 'Nội dung thông báo', dataIndex: 'message', key: 'message', width: '300' },
+  { title: 'Trạng thái', dataIndex: 'status', key: 'status', width: 100, ellipsis: true },
+  { title: 'Thời gian', dataIndex: 'createdAt', key: 'createdAt', width: 100, ellipsis: true },
+  { title: 'Nội dung thông báo', dataIndex: 'message', key: 'message', width: 300, ellipsis: true },
   { title: '', key: 'actions' },
 ])
 

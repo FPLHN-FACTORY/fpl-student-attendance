@@ -12,7 +12,7 @@ import * as XLSX from 'xlsx'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import { dayOfWeek, formatDate } from '@/utils/utils'
-import { FilterFilled } from '@ant-design/icons-vue'
+import { FilterFilled, UnorderedListOutlined } from '@ant-design/icons-vue'
 
 const breadcrumbStore = useBreadcrumbStore()
 
@@ -24,7 +24,7 @@ const breadcrumb = ref([
   {
     name: ROUTE_NAMES.SCHEDULE,
     breadcrumbName: 'Lịch học',
-  }
+  },
 ])
 const loadingStore = useLoadingStore()
 const isLoading = ref(false)
@@ -33,7 +33,7 @@ const attendanceList = ref([])
 const filter = reactive({
   page: 1,
   pageSize: 5,
-  plan: 7 // Default to 7 days ahead
+  plan: 7, // Default to 7 days ahead
 })
 const pagination = ref({ ...DEFAULT_PAGINATION })
 
@@ -194,8 +194,8 @@ onMounted(() => {
               </div>
             </div>
           </a-card>
-
-          <a-card title="Danh sách điểm danh" :bordered="false" class="cart">
+          <a-card :bordered="false" class="cart">
+            <template #title> <UnorderedListOutlined />Lịch học</template>
             <div class="d-flex justify-content-end mb-3">
               <a-button type="primary" @click="exportToExcel" class="me-3"
                 >Tải xuống Excel</a-button

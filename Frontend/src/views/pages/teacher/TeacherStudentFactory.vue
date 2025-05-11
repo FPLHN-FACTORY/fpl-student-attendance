@@ -114,7 +114,6 @@ const handleTableChange = (pageInfo) => {
 
 // Hàm xoá học sinh khỏi nhóm xưởng
 
-
 const toggleStatusStudentFactory = (record) => {
   Modal.confirm({
     title: 'Xác nhận đổi trạng thái',
@@ -163,8 +162,9 @@ const toggleStatusStudentFactory = (record) => {
 
 const handleClearFilter = () => {
   // Clear all filter values
-  Object.keys(filter).forEach(key => {
-    if (key !== 'factoryId') { // Keep factoryId as it's from route
+  Object.keys(filter).forEach((key) => {
+    if (key !== 'factoryId') {
+      // Keep factoryId as it's from route
       filter[key] = ''
     }
   })
@@ -254,7 +254,6 @@ onMounted(() => {
                         record.statusStudentFactory === 'ACTIVE' ||
                         record.statusStudentFactory === 1
                       "
-                      @change="toggleStatusStudentFactory(record)"
                     />
                   </span>
                   <a-tag

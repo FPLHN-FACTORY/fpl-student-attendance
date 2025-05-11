@@ -21,6 +21,7 @@ public interface STDHistoryAttendanceExtendRepository extends FactoryRepository 
                 ft.name AS factoryName,
                 p.name AS projectName,
                 pd.start_date AS planDateStartDate,
+                pd.end_date AS planDateEndDate,
                 pd.shift AS planDateShift,
                 s.id AS semesterId,
                 CASE
@@ -103,6 +104,7 @@ public interface STDHistoryAttendanceExtendRepository extends FactoryRepository 
                 ft.name AS factoryName,
                 p.name AS projectName,
                 pd.start_date AS planDateStartDate,
+                pd.end_date AS planDateEndDate,
                 pd.shift AS planDateShift,
                 s.id AS semesterId,
                 CASE

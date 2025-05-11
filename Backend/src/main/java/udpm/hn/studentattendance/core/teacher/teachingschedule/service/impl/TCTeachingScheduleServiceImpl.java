@@ -275,6 +275,7 @@ public class TCTeachingScheduleServiceImpl implements TCTeachingScheduleService 
             planDate.setDescription(planDateUpdateRequest.getDescription());
             planDate.setLateArrival(planDateUpdateRequest.getLateArrival());
             planDate.setLink(planDateUpdateRequest.getLink());
+            planDate.setRoom(planDateUpdateRequest.getRoom());
             teacherTeachingScheduleExtendRepository.save(planDate);
             return new ResponseEntity<>(
                     new ApiResponse(
@@ -328,13 +329,15 @@ public class TCTeachingScheduleServiceImpl implements TCTeachingScheduleService 
     }
 
     @Override
-    public ResponseEntity<?> changeTypePlanDate(String planDateId) {
+    public ResponseEntity<?> changeTypePlanDate(String planDateId, String room) {
         Optional<PlanDate> planDate = teacherTeachingScheduleExtendRepository.findById(planDateId);
         if (planDate.isPresent()) {
             PlanDate updatePlanDate = planDate.get();
             updatePlanDate.setType(updatePlanDate.getType() == ShiftType.ONLINE ? ShiftType.OFFLINE : ShiftType.ONLINE);
             updatePlanDate.setRequiredIp(updatePlanDate.getRequiredIp() == StatusType.DISABLE ? StatusType.ENABLE : StatusType.DISABLE);
             updatePlanDate.setRequiredLocation(updatePlanDate.getRequiredLocation() == StatusType.DISABLE ? StatusType.ENABLE : StatusType.DISABLE);
+            updatePlanDate.setRoom(updatePlanDate.getType() == ShiftType.ONLINE ? "" : room);
+            updatePlanDate.setLink(updatePlanDate.getType() == ShiftType.ONLINE ? updatePlanDate.getLink() : "");
             teacherTeachingScheduleExtendRepository.save(updatePlanDate);
             return new ResponseEntity<>(
                     new ApiResponse(

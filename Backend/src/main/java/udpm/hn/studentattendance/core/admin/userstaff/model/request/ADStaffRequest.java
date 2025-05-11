@@ -13,4 +13,6 @@ public class ADStaffRequest extends PageableRequest {
     private String idFacility;
 
     private EntityStatus status;
+
+    private Integer roleCodeFilter;
 }

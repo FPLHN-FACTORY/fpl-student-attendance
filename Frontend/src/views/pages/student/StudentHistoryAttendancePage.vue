@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed, onMounted, reactive } from 'vue'
 import dayjs from 'dayjs'
-import { dayOfWeek } from '@/utils/utils'
+import { dayOfWeek, formatDate } from '@/utils/utils'
 import {
   FilterFilled,
   UnorderedListOutlined,
@@ -70,7 +70,7 @@ const fetchAllAttendanceHistory = async () => {
         promises.push(
           requestAPI.get(API_ROUTES_STUDENT.FETCH_DATA_HISTORY_ATTENDANCE, {
             params: { ...filter, page },
-          }),
+          })
         )
       }
       const responses = await Promise.all(promises)
@@ -162,7 +162,7 @@ const exportPDF = async (factoryId, factoryName) => {
       {
         params: { factoryName, factoryId },
         responseType: 'blob',
-      },
+      }
     )
     const url = window.URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }))
     const link = document.createElement('a')
@@ -276,8 +276,19 @@ onMounted(() => {
             <template #bodyCell="{ column, record }">
               <template v-if="column.dataIndex">
                 <template v-if="column.dataIndex === 'planDateStartDate'">
-                  {{ dayOfWeek(record.planDateStartDate) }} -
-                  {{ dayjs(record.planDateStartDate).format(DEFAULT_DATE_FORMAT + ' HH:mm') }}
+                  {{
+                    `${dayOfWeek(record.planDateStartDate)}, ${formatDate(
+                      record.planDateStartDate,
+                      DEFAULT_DATE_FORMAT
+                    )}`
+                  }}
+                  -
+                  {{
+                    `${formatDate(record.planDateStartDate, 'HH:mm')} - ${formatDate(
+                      record.planDateEndDate,
+                      'HH:mm'
+                    )}`
+                  }}
                 </template>
                 <template v-else-if="column.dataIndex === 'planDateShift'">
                   <a-tag color="purple">
@@ -307,15 +318,15 @@ onMounted(() => {
                       record.statusAttendance === 'CHUA_DIEN_RA'
                         ? 'warning'
                         : record.statusAttendance === 'CO_MAT'
-                          ? 'success'
-                          : 'error'
+                        ? 'success'
+                        : 'error'
                     "
                     :text="
                       record.statusAttendance === 'CHUA_DIEN_RA'
                         ? 'Chưa diễn ra'
                         : record.statusAttendance === 'CO_MAT'
-                          ? 'Có mặt'
-                          : 'Vắng mặt'
+                        ? 'Có mặt'
+                        : 'Vắng mặt'
                     "
                   />
                 </template>

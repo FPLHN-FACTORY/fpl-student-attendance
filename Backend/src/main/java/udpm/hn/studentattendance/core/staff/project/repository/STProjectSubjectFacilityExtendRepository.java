@@ -24,6 +24,7 @@ public interface STProjectSubjectFacilityExtendRepository extends SubjectFacilit
                 WHERE (
                     :facilityId IS NULL OR sf.id_facility = :facilityId
                 ) AND sf.status = 1
+                AND s.status = 1
                 ORDER BY sf.created_at DESC
             """, nativeQuery = true)
     List<USSubjectResponse> getSubjectFacility(@Param("facilityId") String facilityId);
