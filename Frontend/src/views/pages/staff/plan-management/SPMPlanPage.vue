@@ -99,7 +99,6 @@ const formData = reactive({
 const formRules = reactive({
   idProject: [{ required: true, message: 'Vui lòng chọn 1 dự án!' }],
   name: [{ required: true, message: 'Vui lòng nhập mục này!' }],
-  description: [{ required: true, message: 'Vui lòng nhập mục này!' }],
   rangeDate: [{ required: true, message: 'Vui lòng nhập mục này!' }],
 })
 

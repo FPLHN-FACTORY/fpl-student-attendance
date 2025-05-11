@@ -4,12 +4,15 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import udpm.hn.studentattendance.core.staff.project.model.response.USSubjectResponse;
+import udpm.hn.studentattendance.entities.Subject;
+import udpm.hn.studentattendance.entities.SubjectFacility;
 import udpm.hn.studentattendance.repositories.ProjectRepository;
+import udpm.hn.studentattendance.repositories.SubjectFacilityRepository;
 
 import java.util.List;
 
 @Repository
-public interface Staff_SubjectManagementRepository extends ProjectRepository {
+public interface STProjectSubjectFacilityExtendRepository extends SubjectFacilityRepository {
 
     @Query(value = """
                 SELECT
@@ -24,4 +27,16 @@ public interface Staff_SubjectManagementRepository extends ProjectRepository {
                 ORDER BY sf.created_at DESC
             """, nativeQuery = true)
     List<USSubjectResponse> getSubjectFacility(@Param("facilityId") String facilityId);
+
+    @Query(value = """
+            SELECT 
+            sf
+            FROM SubjectFacility sf 
+            LEFT JOIN Subject sb ON sf.subject.id = sb.id
+            LEFT JOIN Facility f ON f.id = sf.facility.id
+            WHERE 
+            f.id = :facilityId
+            AND sf.id = :subjectFacilityId
+            """)
+    SubjectFacility getSubjectFacilityByName(String facilityId, String subjectFacilityId);
 }

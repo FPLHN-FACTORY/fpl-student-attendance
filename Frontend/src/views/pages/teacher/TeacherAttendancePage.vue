@@ -71,8 +71,8 @@ const fetchStudentAttendance = async () => {
       // Thêm flag local để đánh dấu đã thay đổi
       _edited: false,
     }))
-  } catch (err) {
-    message.error(err.response?.data?.message || 'Lỗi khi lấy danh sách điểm danh')
+  } catch (error) {
+    message.error(error.response?.data?.message || 'Lỗi khi lấy dữ liệu')
   } finally {
     loadingStore.hide()
   }

@@ -72,7 +72,7 @@ public class ADStaffServiceImpl implements ADStaffService {
     @Override
     public ResponseEntity<?> createStaff(ADCreateUpdateStaffRequest adCreateUpdateStaffRequest) {
         // Kiểm tra định dạng email
-        if (isCheckEmailFpt.equals("false")) {
+        if (isCheckEmailFpt.equals("true")) {
             if (!ValidateHelper.isValidEmailFE(adCreateUpdateStaffRequest.getEmailFe().trim())) {
                 return RouterHelper.responseError("Không chứa khoảng trắng và kết thúc bằng @fe.edu.vn");
             }

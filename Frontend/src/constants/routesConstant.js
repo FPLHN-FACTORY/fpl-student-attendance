@@ -28,6 +28,7 @@ export const API_ROUTES_EXCEL = {
   FETCH_IMPORT_FACTORY: API_URL + '/excel/factory',
   FETCH_IMPORT_STUDENT: API_URL + '/excel/student',
   FETCH_IMPORT_STUDENT_FACTORY: API_URL + '/excel/student-factory',
+  FETCH_IMPORT_PROJECT: API_URL + '/excel/project',
 }
 
 export const API_ROUTES_NOTIFICATION = {

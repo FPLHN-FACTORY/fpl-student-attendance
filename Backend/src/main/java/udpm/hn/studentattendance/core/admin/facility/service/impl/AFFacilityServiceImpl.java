@@ -137,14 +137,15 @@ public class AFFacilityServiceImpl implements AFFacilityService {
         }
 
         Facility facility = facilityOptional.get();
+
         long lastUpdatedMillis = facility.getUpdatedAt(); // epoch millis
         LocalDate lastUpdatedDate = Instant
                 .ofEpochMilli(lastUpdatedMillis)
                 .atZone(ZoneId.of("Asia/Ho_Chi_Minh"))    // dùng timezone phù hợp
                 .toLocalDate();
         LocalDate today = LocalDate.now(ZoneId.of("Asia/Ho_Chi_Minh"));
-        if (lastUpdatedDate.isEqual(today)) {
-            return RouterHelper.responseError("Chỉ được thay đổi trạng thái cơ sở 1 lần mỗi ngày");
+        if (lastUpdatedDate.isEqual(today) && facility.getStatus() == EntityStatus.ACTIVE) {
+            return RouterHelper.responseError("Chỉ được đổi trạng thái cơ sở ngừng hoạt động 1 lần mỗi ngày");
         }
         // ---------------------------------------------------------------
 

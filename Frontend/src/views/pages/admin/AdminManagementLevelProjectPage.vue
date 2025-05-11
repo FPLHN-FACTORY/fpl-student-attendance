@@ -221,6 +221,15 @@ const getStatusColor = (status) => {
   return status === 'ACTIVE' ? 'green' : 'red'
 }
 
+const handleClearFilter = () => {
+  // Clear all filter values
+  Object.keys(filter).forEach(key => {
+    filter[key] = ''
+  })
+  pagination.current = 1
+  fetchLevels()
+}
+
 onMounted(() => {
   breadcrumbStore.setRoutes(breadcrumb.value)
   fetchLevels()
@@ -274,34 +283,42 @@ onMounted(() => {
 
   <div class="container-fluid">
     <div class="row g-3">
-      <!-- Bộ lọc tìm kiếm -->
       <div class="col-12">
-        <a-card :bordered="false" class="cart">
-          <template #title> <FilterFilled /> Bộ lọc </template>
-          <div class="row g-2">
-            <div class="col-md-6 col-sm-12">
-              <div class="label-title">Từ khoá:</div>
+        <a-card :bordered="false" class="cart mb-3">
+          <template #title> <FilterFilled /> Bộ lọc tìm kiếm </template>
+          <div class="row g-3 filter-container">
+            <div class="col-md-6 col-sm-6">
+              <label class="label-title">Từ khoá:</label>
               <a-input
                 v-model:value="filter.name"
-                placeholder="Tên hoặc mã cấp dự án"
+                placeholder="Nhập tên hoặc mã cấp độ"
                 allowClear
                 @change="fetchLevels"
-                class="w-100"
               />
             </div>
-            <div class="col-md-6 col-sm-12">
-              <div class="label-title">Trạng thái:</div>
+            <div class="col-md-6 col-sm-6">
+              <label class="label-title">Trạng thái:</label>
               <a-select
                 v-model:value="filter.status"
                 placeholder="Chọn trạng thái"
                 allowClear
-                class="w-100"
+                style="width: 100%"
                 @change="fetchLevels"
               >
-                <a-select-option :value="null">Tất cả trạng thái</a-select-option>
-                <a-select-option :value="1">Hoạt động</a-select-option>
-                <a-select-option :value="0">Không hoạt động</a-select-option>
+                <a-select-option :value="''">Tất cả trạng thái</a-select-option>
+                <a-select-option value="1">Hoạt động</a-select-option>
+                <a-select-option value="0">Không hoạt động</a-select-option>
               </a-select>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-12">
+              <div class="d-flex justify-content-center flex-wrap gap-2 mt-3">
+                <a-button class="btn-light" @click="fetchLevels">
+                  <FilterFilled /> Lọc
+                </a-button>
+                <a-button class="btn-gray" @click="handleClearFilter"> Huỷ lọc </a-button>
+              </div>
             </div>
           </div>
         </a-card>
@@ -328,7 +345,7 @@ onMounted(() => {
             :loading="loadingStore.isLoading"
             :scroll="{ y: 500, x: 'auto' }"
           >
-            <template #bodyCell="{ column, record, index }">
+            <template #bodyCell="{ column, record }">
               <template v-if="column.dataIndex === 'status'">
                 <span class="nowrap">
                   <a-switch
