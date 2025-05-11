@@ -73,7 +73,7 @@ public class STProjectManagementImpl implements STProjectManagementService {
         project.setDescription(request.getDescription());
         project.setLevelProject(levelProjectRepository.findById(request.getLevelProjectId()).get());
         project.setSemester(semesterRepository.findById(request.getSemesterId()).get());
-        project.setSubjectFacility(subjectFacilityRepository.findById(request.getSemesterId()).get());
+        project.setSubjectFacility(subjectFacilityRepository.findById(request.getSubjectFacilityId()).get());
         projectManagementRepository.save(project);
         return RouterHelper.responseSuccess("Chuyển trạng thái thành công", project);
     }

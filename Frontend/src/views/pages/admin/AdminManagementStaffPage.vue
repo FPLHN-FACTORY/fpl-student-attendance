@@ -69,6 +69,7 @@ const convertRole = (roleCodes) => {
 // Biến lọc và phân trang gửi lên API
 const filter = reactive({
   searchQuery: '',
+  roleCodeFilter: '',
   idFacility: '',
   status: '',
 })
@@ -338,7 +339,7 @@ onMounted(() => {
           <template #title> <FilterFilled /> Bộ lọc </template>
           <div class="row g-3 filter-container">
             <!-- Input tìm kiếm theo mã, tên, email -->
-            <a-col :span="8" class="col">
+            <a-col class="col-md-6 col-sm-6">
               <div class="label-title">Tìm kiếm theo mã, tên, email :</div>
               <a-input
                 v-model:value="filter.searchQuery"
@@ -348,7 +349,7 @@ onMounted(() => {
               />
             </a-col>
             <!-- Combobox trạng thái -->
-            <a-col :span="8" class="col">
+            <a-col class="col-md-6 col-sm-6">
               <div class="label-title">Trạng thái :</div>
               <a-select
                 v-model:value="filter.status"
@@ -362,8 +363,24 @@ onMounted(() => {
                 <a-select-option value="INACTIVE">Ngừng hoạt động</a-select-option>
               </a-select>
             </a-col>
+
+            <!-- Combobox vai trò -->
+            <a-col class="col-md-6 col-sm-6">
+              <div class="label-title">Vai trò:</div>
+              <a-select
+                v-model:value="filter.roleCodeFilter"
+                placeholder="Chọn vai trò"
+                allowClear
+                style="width: 100%"
+                @change="fetchStaffs"
+              >
+                <a-select-option :value="''">Tất cả vai trò</a-select-option>
+                <a-select-option value="1">Phụ trách xưởng</a-select-option>
+                <a-select-option value="3">Giảng viên</a-select-option>
+              </a-select>
+            </a-col>
             <!-- Combobox cơ sở -->
-            <a-col :span="8" class="col">
+            <a-col class="col-md-6 col-sm-6">
               <div class="label-title">Cơ sở :</div>
               <a-select
                 v-model:value="filter.idFacility"

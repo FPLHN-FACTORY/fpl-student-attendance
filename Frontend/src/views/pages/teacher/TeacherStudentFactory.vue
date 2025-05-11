@@ -251,7 +251,6 @@ onMounted(() => {
                         record.statusStudentFactory === 'ACTIVE' ||
                         record.statusStudentFactory === 1
                       "
-                      @change="toggleStatusStudentFactory(record)"
                     />
                   </span>
                   <a-tag

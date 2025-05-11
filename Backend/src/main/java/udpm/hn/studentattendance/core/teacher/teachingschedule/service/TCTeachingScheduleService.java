@@ -27,5 +27,5 @@ public interface TCTeachingScheduleService {
 
     ResponseEntity<?> getAllTeachingSchedulePresent(TCTeachingScheduleRequest teachingScheduleRequest);
 
-    ResponseEntity<?> changeTypePlanDate(String planDateId);
+    ResponseEntity<?> changeTypePlanDate(String planDateId, String room);
 }

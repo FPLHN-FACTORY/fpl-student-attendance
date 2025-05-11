@@ -219,7 +219,9 @@ const handleStudentCheckboxChange = (student, checked) => {
       .post(API_ROUTES_STAFF.FETCH_DATA_STUDENT_FACTORY, payload)
       .then((response) => {
         message.success(response.data.message || 'Thêm sinh viên vào nhóm xưởng thành công')
-        fetchStudentFactories()
+        fetchExistingStudents() // Cập nhật danh sách sinh viên đã có trong nhóm
+        fetchAllStudents() // Cập nhật danh sách tất cả sinh viên trong modal
+        fetchStudentFactories() // Cập nhật bảng danh sách
       })
       .catch((error) => {
         message.error(error.response?.data?.message || 'Lỗi khi thêm sinh viên vào nhóm xưởng')
@@ -235,7 +237,9 @@ const handleStudentCheckboxChange = (student, checked) => {
         .delete(API_ROUTES_STAFF.FETCH_DATA_STUDENT_FACTORY + '/' + existing.studentFactoryId)
         .then((response) => {
           message.success(response.data.message || 'Xóa sinh viên khỏi nhóm xưởng thành công')
-          fetchStudentFactories()
+          fetchExistingStudents() // Cập nhật danh sách sinh viên đã có trong nhóm
+          fetchAllStudents() // Cập nhật danh sách tất cả sinh viên trong modal
+          fetchStudentFactories() // Cập nhật bảng danh sách
         })
         .catch((error) => {
           message.error(error.response?.data?.message || 'Lỗi khi xóa sinh viên khỏi nhóm xưởng')
