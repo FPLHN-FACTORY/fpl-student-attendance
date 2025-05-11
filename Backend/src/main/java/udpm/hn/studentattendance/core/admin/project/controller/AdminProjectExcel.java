@@ -96,7 +96,6 @@ public class AdminProjectExcel {
             project.setSemesterCode(getCellStringValue(row.getCell(5)));
             project.setSubjectCode(getCellStringValue(row.getCell(4)));
             project.setFacilityCode(getCellStringValue(row.getCell(6)));
-            System.out.println(convertProjectImport(project).toString());
             projectRepository.save(convertProjectImport(project));
         }
 
