@@ -129,7 +129,6 @@ public interface USStudentFactoryRepository extends UserStudentFactoryRepository
                             ELSE 'CHUA_DIEN_RA'
                         END
                     ) = :#{#request.status})
-                    AND pd.start_date > UNIX_TIMESTAMP(NOW()) * 1000
                     AND us.id = :userStudentId
                 ORDER BY pd.start_date ASC
             """, countQuery = """
@@ -155,7 +154,6 @@ public interface USStudentFactoryRepository extends UserStudentFactoryRepository
                             ELSE 'CHUA_DIEN_RA'
                         END
                     ) = :#{#request.status})
-                    AND pd.start_date > UNIX_TIMESTAMP(NOW()) * 1000 
                     AND us.id = :userStudentId
             """, nativeQuery = true)
     Page<Staff_PDDetailShiftByStudentResponse> getAllPlanDateByStudent(Pageable pageable, USPDDetailShiftByStudentRequest request, String userStudentId);

@@ -4,12 +4,8 @@ import { useRoute } from 'vue-router'
 import { message, Modal } from 'ant-design-vue'
 import {
   PlusOutlined,
-  EyeOutlined,
-  EditOutlined,
-  DeleteOutlined,
   UnorderedListOutlined,
   FilterFilled,
-  SyncOutlined,
   EyeFilled,
   EditFilled,
 } from '@ant-design/icons-vue'
@@ -101,18 +97,11 @@ const columns = ref(
 const fetchSubjectFacility = () => {
   loadingStore.show()
   requestAPI
-    .post(
-      `${API_ROUTES_ADMIN.FETCH_DATA_SUBJECT_FACILITY}/list`,
-      {
-        ...filter,
-      },
-      {
-        params: {
-          page: pagination.current,
-          size: pagination.pageSize,
-        },
-      },
-    )
+    .post(`${API_ROUTES_ADMIN.FETCH_DATA_SUBJECT_FACILITY}/list`, {
+      ...filter,
+      page: pagination.current,
+      size: pagination.pageSize,
+    })
     .then((response) => {
       const result = response.data.data
       subjectFacility.value = result.data
@@ -345,7 +334,7 @@ onMounted(() => {
                 </a-select-option>
               </a-select>
             </div>
-            <div class="col-md-4 col-sm-6">
+            <div class="col-md-4 col-sm-12">
               <label class="label-title">Trạng thái:</label>
               <a-select
                 v-model:value="filter.status"

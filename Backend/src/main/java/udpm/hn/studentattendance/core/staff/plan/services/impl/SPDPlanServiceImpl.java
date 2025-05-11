@@ -4,7 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import udpm.hn.studentattendance.core.staff.plan.model.request.SDPAddOrUpdatePlanRequest;
+import udpm.hn.studentattendance.core.staff.plan.model.request.SPDAddOrUpdatePlanRequest;
 import udpm.hn.studentattendance.core.staff.plan.model.request.SPDFilterCreatePlanRequest;
 import udpm.hn.studentattendance.core.staff.plan.model.request.SPDFilterPlanRequest;
 import udpm.hn.studentattendance.core.staff.plan.model.response.SPDLevelProjectResponse;
@@ -103,7 +103,7 @@ public class SPDPlanServiceImpl implements SPDPlanService {
     }
 
     @Override
-    public ResponseEntity<?> createPlan(SDPAddOrUpdatePlanRequest request) {
+    public ResponseEntity<?> createPlan(SPDAddOrUpdatePlanRequest request) {
 
         Project project = spdProjectRepository.findById(request.getIdProject()).orElse(null);
 
@@ -198,7 +198,7 @@ public class SPDPlanServiceImpl implements SPDPlanService {
     }
 
     @Override
-    public ResponseEntity<?> updatePlan(SDPAddOrUpdatePlanRequest request) {
+    public ResponseEntity<?> updatePlan(SPDAddOrUpdatePlanRequest request) {
         Plan plan = spdPlanRepository.findById(request.getId()).orElse(null);
         if (plan == null) {
             return RouterHelper.responseError("Không tìm thấy kế hoạch muốn cập nhật");

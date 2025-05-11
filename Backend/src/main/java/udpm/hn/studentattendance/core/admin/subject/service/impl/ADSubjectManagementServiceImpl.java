@@ -17,6 +17,7 @@ import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.helpers.ValidateHelper;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.common.ResponseObject;
+import udpm.hn.studentattendance.infrastructure.common.repositories.CommonUserStudentRepository;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 
 @Service
@@ -24,6 +25,8 @@ import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 public class ADSubjectManagementServiceImpl implements ADSubjectManagementService {
     
     private final ADSubjectRepository adminSubjectRepository;
+
+    private final CommonUserStudentRepository commonUserStudentRepository;
 
     @Override
     public ResponseEntity<?> getListSubject(ADSubjectSearchRequest request) {
@@ -94,7 +97,13 @@ public class ADSubjectManagementServiceImpl implements ADSubjectManagementServic
             return RouterHelper.responseError("Không tìm thấy bộ môn");
         }
         s.setStatus(s.getStatus() == EntityStatus.ACTIVE ? EntityStatus.INACTIVE : EntityStatus.ACTIVE);
-        return RouterHelper.responseSuccess("Đổi trạng thái bộ môn thành công", adminSubjectRepository.save(s));
+
+        Subject newEntity = adminSubjectRepository.save(s);
+
+        if (s.getStatus() == EntityStatus.ACTIVE) {
+            commonUserStudentRepository.disableAllStudentDuplicateShiftByIdSubject(s.getId());
+        }
+        return RouterHelper.responseSuccess("Đổi trạng thái bộ môn thành công", newEntity);
     }
 
 }

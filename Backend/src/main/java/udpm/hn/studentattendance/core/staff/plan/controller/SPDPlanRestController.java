@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import udpm.hn.studentattendance.core.staff.plan.model.request.SDPAddOrUpdatePlanRequest;
+import udpm.hn.studentattendance.core.staff.plan.model.request.SPDAddOrUpdatePlanRequest;
 import udpm.hn.studentattendance.core.staff.plan.model.request.SPDFilterCreatePlanRequest;
 import udpm.hn.studentattendance.core.staff.plan.model.request.SPDFilterPlanRequest;
 import udpm.hn.studentattendance.core.staff.plan.services.SPDPlanService;
@@ -70,12 +70,12 @@ public class SPDPlanRestController {
     }
 
     @PostMapping
-    public ResponseEntity<?> createPlan(@Valid @RequestBody SDPAddOrUpdatePlanRequest request) {
+    public ResponseEntity<?> createPlan(@Valid @RequestBody SPDAddOrUpdatePlanRequest request) {
         return spdPlanService.createPlan(request);
     }
 
     @PutMapping
-    public ResponseEntity<?> updatePlan(@Valid @RequestBody SDPAddOrUpdatePlanRequest request) {
+    public ResponseEntity<?> updatePlan(@Valid @RequestBody SPDAddOrUpdatePlanRequest request) {
         return spdPlanService.updatePlan(request);
     }
 }
