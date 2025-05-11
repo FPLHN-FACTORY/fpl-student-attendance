@@ -10,7 +10,7 @@ import { API_ROUTES_STUDENT } from '@/constants/studentConstant'
 import { ROUTE_NAMES } from '@/router/studentRoute'
 import requestAPI from '@/services/requestApiService'
 import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
-import { debounce, formatDate } from '@/utils/utils'
+import { debounce, formatDate, autoAddColumnWidth } from '@/utils/utils'
 import {
   CheckOutlined,
   ExclamationCircleOutlined,
@@ -58,15 +58,17 @@ const breadcrumb = ref([
   },
 ])
 
-const columns = ref([
-  { title: '#', dataIndex: 'orderNumber', key: 'orderNumber', width: 50 },
-  { title: 'Thời gian', dataIndex: 'startDate', key: 'startDate', width: 100, ellipsis: true },
-  { title: 'Ca học', dataIndex: 'shift', key: 'shift', width: 200, ellipsis: true },
-  { title: 'Nhóm xưởng', dataIndex: 'factoryName', key: 'factoryName', ellipsis: true },
-  { title: 'Giảng viên', dataIndex: 'teacherName', key: 'teacherName', ellipsis: true },
-  { title: 'Trạng thái', dataIndex: 'status', key: 'status', ellipsis: true },
-  { title: '', key: 'actions' },
-])
+const columns = ref(
+  autoAddColumnWidth([
+    { title: '#', dataIndex: 'orderNumber', key: 'orderNumber' },
+    { title: 'Thời gian', dataIndex: 'startDate', key: 'startDate' },
+    { title: 'Ca học', dataIndex: 'shift', key: 'shift' },
+    { title: 'Nhóm xưởng', dataIndex: 'factoryName', key: 'factoryName' },
+    { title: 'Giảng viên', dataIndex: 'teacherName', key: 'teacherName' },
+    { title: 'Trạng thái', dataIndex: 'status', key: 'status' },
+    { title: '', key: 'actions' },
+  ]),
+)
 
 const pagination = ref({ ...DEFAULT_PAGINATION })
 
@@ -318,7 +320,7 @@ watch(
               <div class="label-title">Từ khoá:</div>
               <a-input
                 v-model:value="dataFilter.keyword"
-                placeholder="Tìm theo tên lớp học..."
+                placeholder="Tìm theo nhóm xưởng, giảng viên..."
                 allowClear
               >
                 <template #prefix>

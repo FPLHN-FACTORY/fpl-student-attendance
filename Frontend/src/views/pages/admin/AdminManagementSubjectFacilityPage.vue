@@ -20,6 +20,7 @@ import { API_ROUTES_ADMIN } from '@/constants/adminConstant'
 import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
 import { ROUTE_NAMES } from '@/router/adminRoute'
 import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
+import { autoAddColumnWidth } from '@/utils/utils'
 
 const route = useRoute()
 const loadingStore = useLoadingStore()
@@ -82,19 +83,19 @@ const detailSubjectFacility = reactive({
   updatedAt: '',
 })
 
-const columns = ref([
-  { title: '#', dataIndex: 'orderNumber', key: 'orderNumber', width: 50 },
-  { title: 'Tên bộ môn', dataIndex: 'subjectName', key: 'subjectName', width: 200, ellipsis: true },
-  {
-    title: 'Tên cơ sở',
-    dataIndex: 'facilityName',
-    key: 'facilityName',
-    width: 200,
-    ellipsis: true,
-  },
-  { title: 'Trạng thái', dataIndex: 'status', key: 'status', width: 100, ellipsis: true },
-  { title: 'Chức năng', key: 'actions' },
-])
+const columns = ref(
+  autoAddColumnWidth([
+    { title: '#', dataIndex: 'orderNumber', key: 'orderNumber' },
+    { title: 'Tên bộ môn', dataIndex: 'subjectName', key: 'subjectName' },
+    {
+      title: 'Tên cơ sở',
+      dataIndex: 'facilityName',
+      key: 'facilityName',
+    },
+    { title: 'Trạng thái', dataIndex: 'status', key: 'status' },
+    { title: 'Chức năng', key: 'actions' },
+  ]),
+)
 
 /* ----------------- Methods ----------------- */
 const fetchSubjectFacility = () => {
@@ -295,7 +296,7 @@ const getStatusColor = (status) => {
 
 const handleClearFilter = () => {
   // Clear all filter values
-  Object.keys(filter).forEach(key => {
+  Object.keys(filter).forEach((key) => {
     filter[key] = ''
   })
   pagination.current = 1

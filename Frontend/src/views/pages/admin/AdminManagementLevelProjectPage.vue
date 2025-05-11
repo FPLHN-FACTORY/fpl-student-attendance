@@ -15,6 +15,7 @@ import useLoadingStore from '@/stores/useLoadingStore'
 import { API_ROUTES_ADMIN } from '@/constants/adminConstant'
 import { ROUTE_NAMES } from '@/router/adminRoute'
 import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
+import { autoAddColumnWidth } from '@/utils/utils'
 
 const breadcrumbStore = useBreadcrumbStore()
 const loadingStore = useLoadingStore()
@@ -50,14 +51,16 @@ const detailLevel = reactive({
   updatedAt: '',
 })
 
-const columns = ref([
-  { title: '#', dataIndex: 'orderNumber', key: 'orderNumber', width: 50 },
-  { title: 'Mã', dataIndex: 'code', key: 'code', width: 150, ellipsis: true },
-  { title: 'Tên cấp dự án', dataIndex: 'name', key: 'name', width: 200, ellipsis: true },
-  { title: 'Mô tả', dataIndex: 'description', key: 'description', width: 250, ellipsis: true },
-  { title: 'Trạng thái', dataIndex: 'status', key: 'status', width: 100, ellipsis: true },
-  { title: 'Chức năng', key: 'actions' },
-])
+const columns = ref(
+  autoAddColumnWidth([
+    { title: '#', dataIndex: 'orderNumber', key: 'orderNumber' },
+    { title: 'Mã', dataIndex: 'code', key: 'code' },
+    { title: 'Tên cấp dự án', dataIndex: 'name', key: 'name' },
+    { title: 'Mô tả', dataIndex: 'description', key: 'description' },
+    { title: 'Trạng thái', dataIndex: 'status', key: 'status' },
+    { title: 'Chức năng', key: 'actions' },
+  ]),
+)
 
 const breadcrumb = ref([
   {
@@ -223,7 +226,7 @@ const getStatusColor = (status) => {
 
 const handleClearFilter = () => {
   // Clear all filter values
-  Object.keys(filter).forEach(key => {
+  Object.keys(filter).forEach((key) => {
     filter[key] = ''
   })
   pagination.current = 1
@@ -314,9 +317,7 @@ onMounted(() => {
           <div class="row">
             <div class="col-12">
               <div class="d-flex justify-content-center flex-wrap gap-2 mt-3">
-                <a-button class="btn-light" @click="fetchLevels">
-                  <FilterFilled /> Lọc
-                </a-button>
+                <a-button class="btn-light" @click="fetchLevels"> <FilterFilled /> Lọc </a-button>
                 <a-button class="btn-gray" @click="handleClearFilter"> Huỷ lọc </a-button>
               </div>
             </div>

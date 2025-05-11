@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed, onMounted, reactive } from 'vue'
 import dayjs from 'dayjs'
-import { dayOfWeek, formatDate } from '@/utils/utils'
+import { autoAddColumnWidth, dayOfWeek } from '@/utils/utils'
 import {
   FilterFilled,
   UnorderedListOutlined,
@@ -36,19 +36,18 @@ const isLoading = ref(false)
 const paginations = ref({})
 const loadingExport = reactive({})
 
-const columns = [
-  { title: 'Bài học', dataIndex: 'rowNumber', key: 'rowNumber', width: 50 },
-  { title: 'Ngày học', dataIndex: 'planDateStartDate', key: 'planDateStartDate', width: 150 },
-  { title: 'Ca học', dataIndex: 'planDateShift', key: 'planDateShift', width: 30 },
+const columns = autoAddColumnWidth([
+  { title: 'Bài học', dataIndex: 'rowNumber', key: 'rowNumber' },
+  { title: 'Ngày học', dataIndex: 'planDateStartDate', key: 'planDateStartDate' },
+  { title: 'Ca học', dataIndex: 'planDateShift', key: 'planDateShift' },
   {
     title: 'Điểm danh muộn tối đa (phút)',
     dataIndex: 'lateArrival',
     key: 'lateArrival',
-    width: 100,
   },
-  { title: 'Nội dung', dataIndex: 'planDateDescription', key: 'planDateDescription', width: 80 },
-  { title: 'Trạng thái đi học', dataIndex: 'statusAttendance', key: 'statusAttendance', width: 80 },
-]
+  { title: 'Nội dung', dataIndex: 'planDateDescription', key: 'planDateDescription' },
+  { title: 'Trạng thái đi học', dataIndex: 'statusAttendance', key: 'statusAttendance' },
+])
 
 const semesters = ref([])
 const factories = ref([])
@@ -70,7 +69,7 @@ const fetchAllAttendanceHistory = async () => {
         promises.push(
           requestAPI.get(API_ROUTES_STUDENT.FETCH_DATA_HISTORY_ATTENDANCE, {
             params: { ...filter, page },
-          })
+          }),
         )
       }
       const responses = await Promise.all(promises)
@@ -162,7 +161,7 @@ const exportPDF = async (factoryId, factoryName) => {
       {
         params: { factoryName, factoryId },
         responseType: 'blob',
-      }
+      },
     )
     const url = window.URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }))
     const link = document.createElement('a')
@@ -276,19 +275,8 @@ onMounted(() => {
             <template #bodyCell="{ column, record }">
               <template v-if="column.dataIndex">
                 <template v-if="column.dataIndex === 'planDateStartDate'">
-                  {{
-                    `${dayOfWeek(record.planDateStartDate)}, ${formatDate(
-                      record.planDateStartDate,
-                      DEFAULT_DATE_FORMAT
-                    )}`
-                  }}
-                  -
-                  {{
-                    `${formatDate(record.planDateStartDate, 'HH:mm')} - ${formatDate(
-                      record.planDateEndDate,
-                      'HH:mm'
-                    )}`
-                  }}
+                  {{ dayOfWeek(record.planDateStartDate) }} -
+                  {{ dayjs(record.planDateStartDate).format(DEFAULT_DATE_FORMAT + ' HH:mm') }}
                 </template>
                 <template v-else-if="column.dataIndex === 'planDateShift'">
                   <a-tag color="purple">
@@ -318,15 +306,15 @@ onMounted(() => {
                       record.statusAttendance === 'CHUA_DIEN_RA'
                         ? 'warning'
                         : record.statusAttendance === 'CO_MAT'
-                        ? 'success'
-                        : 'error'
+                          ? 'success'
+                          : 'error'
                     "
                     :text="
                       record.statusAttendance === 'CHUA_DIEN_RA'
                         ? 'Chưa diễn ra'
                         : record.statusAttendance === 'CO_MAT'
-                        ? 'Có mặt'
-                        : 'Vắng mặt'
+                          ? 'Có mặt'
+                          : 'Vắng mặt'
                     "
                   />
                 </template>

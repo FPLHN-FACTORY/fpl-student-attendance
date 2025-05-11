@@ -17,6 +17,7 @@ import { DEFAULT_PAGINATION } from '@/constants'
 import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
 import useLoadingStore from '@/stores/useLoadingStore'
 import ExcelUploadButton from '@/components/excel/ExcelUploadButton.vue'
+import { autoAddColumnWidth } from '@/utils/utils'
 
 const breadcrumbStore = useBreadcrumbStore()
 const loadingStore = useLoadingStore()
@@ -58,14 +59,16 @@ const detailStudent = reactive({
 })
 
 // Cấu hình cột cho bảng
-const columns = ref([
-  { title: 'STT', dataIndex: 'rowNumber', key: 'rowNumber', width: 50 },
-  { title: 'Mã sinh viên', dataIndex: 'studentCode', key: 'studentCode', width: 100 },
-  { title: 'Tên sinh viên', dataIndex: 'studentName', key: 'studentName', width: 150 },
-  { title: 'Email', dataIndex: 'studentEmail', key: 'studentEmail', width: 250 },
-  { title: 'Trạng thái', dataIndex: 'studentStatus', key: 'studentStatus', width: 80 },
-  { title: 'Chức năng', key: 'actions', width: 80 },
-])
+const columns = ref(
+  autoAddColumnWidth([
+    { title: 'STT', dataIndex: 'rowNumber', key: 'rowNumber' },
+    { title: 'Mã sinh viên', dataIndex: 'studentCode', key: 'studentCode' },
+    { title: 'Tên sinh viên', dataIndex: 'studentName', key: 'studentName' },
+    { title: 'Email', dataIndex: 'studentEmail', key: 'studentEmail' },
+    { title: 'Trạng thái', dataIndex: 'studentStatus', key: 'studentStatus' },
+    { title: 'Chức năng', key: 'actions' },
+  ]),
+)
 
 const breadcrumb = ref([
   {
@@ -143,7 +146,7 @@ const handleAddStudent = () => {
     .catch((error) => {
       message.error(
         (error.response && error.response.data && error.response.data.message) ||
-          'Lỗi khi thêm sinh viên'
+          'Lỗi khi thêm sinh viên',
       )
     })
     .finally(() => {
@@ -167,7 +170,7 @@ const handleUpdateStudent = (record) => {
     .catch((error) => {
       message.error(
         (error.response && error.response.data && error.response.data.message) ||
-          'Lỗi khi lấy chi tiết sinh viên'
+          'Lỗi khi lấy chi tiết sinh viên',
       )
     })
     .finally(() => {
@@ -191,7 +194,7 @@ const handleDetailStudent = (record) => {
     .catch((error) => {
       message.error(
         (error.response && error.response.data && error.response.data.message) ||
-          'Lỗi khi lấy chi tiết sinh viên'
+          'Lỗi khi lấy chi tiết sinh viên',
       )
     })
     .finally(() => {
@@ -216,7 +219,7 @@ const updateStudent = () => {
     .catch((error) => {
       message.error(
         (error.response && error.response.data && error.response.data.message) ||
-          'Lỗi khi cập nhật sinh viên'
+          'Lỗi khi cập nhật sinh viên',
       )
     })
     .finally(() => {
@@ -240,7 +243,7 @@ const handleChangeStatusStudent = (record) => {
         .catch((error) => {
           message.error(
             (error.response && error.response.data && error.response.data.message) ||
-              'Lỗi khi đổi trạng thái sinh viên'
+              'Lỗi khi đổi trạng thái sinh viên',
           )
         })
         .finally(() => {
@@ -291,7 +294,7 @@ const clearNewStudentForm = () => {
 
 const handleClearFilter = () => {
   // Clear all filter values
-  Object.keys(filter).forEach(key => {
+  Object.keys(filter).forEach((key) => {
     filter[key] = ''
   })
   pagination.current = 1
@@ -341,9 +344,7 @@ onMounted(() => {
           <div class="row">
             <div class="col-12">
               <div class="d-flex justify-content-center flex-wrap gap-2 mt-3">
-                <a-button class="btn-light" @click="fetchStudents">
-                  <FilterFilled /> Lọc
-                </a-button>
+                <a-button class="btn-light" @click="fetchStudents"> <FilterFilled /> Lọc </a-button>
                 <a-button class="btn-gray" @click="handleClearFilter"> Huỷ lọc </a-button>
               </div>
             </div>

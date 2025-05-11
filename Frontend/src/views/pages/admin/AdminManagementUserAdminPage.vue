@@ -15,6 +15,7 @@ import { DEFAULT_PAGINATION } from '@/constants'
 import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
 import useLoadingStore from '@/stores/useLoadingStore'
 import useApplicationStore from '@/stores/useApplicationStore'
+import { autoAddColumnWidth } from '@/utils/utils'
 
 // --- Breadcrumb ---
 const breadcrumbStore = useBreadcrumbStore()
@@ -49,14 +50,16 @@ const newUser = reactive({ staffCode: '', staffName: '', email: '' })
 const editUser = reactive({ id: '', staffCode: '', staffName: '', email: '' })
 
 // Column config
-const columns = ref([
-  { title: '#', dataIndex: 'rowNumber', key: 'rowNumber', width: 60 },
-  { title: 'Mã ban đào tạo', dataIndex: 'userAdminCode', key: 'userAdminCode', width: 180 },
-  { title: 'Tên ban đào tạo', dataIndex: 'userAdminName', key: 'userAdminName', width: 200 },
-  { title: 'Email', dataIndex: 'userAdminEmail', key: 'userAdminEmail', width: 220 },
-  { title: 'Trạng thái', dataIndex: 'userAdminStatus', key: 'userAdminStatus', width: 140 },
-  { title: 'Chức năng', key: 'actions', width: 120 },
-])
+const columns = ref(
+  autoAddColumnWidth([
+    { title: '#', dataIndex: 'rowNumber', key: 'rowNumber' },
+    { title: 'Mã ban đào tạo', dataIndex: 'userAdminCode', key: 'userAdminCode' },
+    { title: 'Tên ban đào tạo', dataIndex: 'userAdminName', key: 'userAdminName' },
+    { title: 'Email', dataIndex: 'userAdminEmail', key: 'userAdminEmail' },
+    { title: 'Trạng thái', dataIndex: 'userAdminStatus', key: 'userAdminStatus' },
+    { title: 'Chức năng', key: 'actions' },
+  ]),
+)
 
 // --- API Calls ---
 const fetchUsers = async () => {
@@ -78,10 +81,10 @@ const fetchUsers = async () => {
     const usersWithFlag = await Promise.all(
       data.data.map(async (user) => {
         const flagRes = await requestAPI.get(
-          `${API_ROUTES_ADMIN.FETCH_DATA_ADMIN}/is-myself/${user.userAdminId}`
+          `${API_ROUTES_ADMIN.FETCH_DATA_ADMIN}/is-myself/${user.userAdminId}`,
         )
         return { ...user, isMySelf: flagRes.data.data }
-      })
+      }),
     )
 
     users.value = usersWithFlag
@@ -150,17 +153,18 @@ const handleUpdateUser = () => {
   }
 
   // Check if editing own information
-  const isEditingSelf = users.value.find(user => user.userAdminId === editUser.id)?.isMySelf
-  const originalUser = users.value.find(user => user.userAdminId === editUser.id)
+  const isEditingSelf = users.value.find((user) => user.userAdminId === editUser.id)?.isMySelf
+  const originalUser = users.value.find((user) => user.userAdminId === editUser.id)
   const isEmailChanged = originalUser && originalUser.userAdminEmail !== editUser.email
 
   if (isEditingSelf && isEmailChanged) {
     Modal.confirm({
       title: 'Xác nhận thay đổi email',
-      content: 'Bạn đang thay đổi email của chính mình. Sau khi thay đổi, phiên đăng nhập sẽ hết hạn và bạn sẽ bị đăng xuất khỏi hệ thống. Bạn có chắc chắn muốn tiếp tục?',
+      content:
+        'Bạn đang thay đổi email của chính mình. Sau khi thay đổi, phiên đăng nhập sẽ hết hạn và bạn sẽ bị đăng xuất khỏi hệ thống. Bạn có chắc chắn muốn tiếp tục?',
       onOk() {
         performUpdate()
-      }
+      },
     })
   } else if (isEditingSelf) {
     Modal.confirm({
@@ -168,7 +172,7 @@ const handleUpdateUser = () => {
       content: 'Bạn đang cập nhật thông tin của chính mình. Bạn có chắc chắn muốn tiếp tục?',
       onOk() {
         performUpdate()
-      }
+      },
     })
   } else {
     performUpdate()
@@ -274,7 +278,7 @@ const handleDeleteUser = (id) => {
 
 const handleClearFilter = () => {
   // Clear all filter values
-  Object.keys(filter).forEach(key => {
+  Object.keys(filter).forEach((key) => {
     filter[key] = ''
   })
   pagination.value.current = 1
@@ -321,9 +325,7 @@ onMounted(() => {
           <div class="row">
             <div class="col-12">
               <div class="d-flex justify-content-center flex-wrap gap-2 mt-3">
-                <a-button class="btn-light" @click="fetchUsers">
-                  <FilterFilled /> Lọc
-                </a-button>
+                <a-button class="btn-light" @click="fetchUsers"> <FilterFilled /> Lọc </a-button>
                 <a-button class="btn-gray" @click="handleClearFilter"> Huỷ lọc </a-button>
               </div>
             </div>

@@ -11,8 +11,8 @@ import { Modal, message } from 'ant-design-vue'
 import * as XLSX from 'xlsx'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
-import { dayOfWeek, formatDate } from '@/utils/utils'
-import { FilterFilled, UnorderedListOutlined } from '@ant-design/icons-vue'
+import { autoAddColumnWidth, dayOfWeek, formatDate } from '@/utils/utils'
+import { FilterFilled } from '@ant-design/icons-vue'
 
 const breadcrumbStore = useBreadcrumbStore()
 
@@ -37,17 +37,17 @@ const filter = reactive({
 })
 const pagination = ref({ ...DEFAULT_PAGINATION })
 
-const columns = [
-  { title: '#', dataIndex: 'indexs', key: 'indexs', width: 50 },
-  { title: 'Ngày học', key: 'time', width: 250 },
-  { title: 'Ca', dataIndex: 'shift', key: 'shift', width: 150 },
-  { title: 'Nhóm xưởng', dataIndex: 'factoryName', key: 'factoryName', width: 150 },
-  { title: 'Dự án', dataIndex: 'projectName', key: 'projectName', width: 250 },
-  { title: 'Link học', dataIndex: 'link', key: 'link', width: 250 },
-  { title: 'Địa điểm', dataIndex: 'location', key: 'location', width: 150 },
-  { title: 'Tên giảng viên', dataIndex: 'staffName', key: 'staffName', width: 150 },
-  { title: 'Mô tả', dataIndex: 'description', key: 'description', width: 150 },
-]
+const columns = autoAddColumnWidth([
+  { title: '#', dataIndex: 'indexs', key: 'indexs' },
+  { title: 'Ngày học', key: 'time' },
+  { title: 'Ca', dataIndex: 'shift', key: 'shift' },
+  { title: 'Nhóm xưởng', dataIndex: 'factoryName', key: 'factoryName' },
+  { title: 'Dự án', dataIndex: 'projectName', key: 'projectName' },
+  { title: 'Link học', dataIndex: 'link', key: 'link' },
+  { title: 'Địa điểm', dataIndex: 'location', key: 'location' },
+  { title: 'Tên giảng viên', dataIndex: 'staffName', key: 'staffName' },
+  { title: 'Mô tả', dataIndex: 'description', key: 'description' },
+])
 
 const getTimeRange = () => {
   const now = Date.now()
@@ -114,7 +114,7 @@ const exportToExcel = () => {
       'Tên môn học': item.subjectName,
       'Tên giảng viên': item.staffName,
       'Mô tả': item.description || '',
-    }))
+    })),
   )
   const workbook = XLSX.utils.book_new()
   XLSX.utils.book_append_sheet(workbook, worksheet, 'DanhSach')
@@ -194,8 +194,8 @@ onMounted(() => {
               </div>
             </div>
           </a-card>
-          <a-card :bordered="false" class="cart">
-            <template #title> <UnorderedListOutlined />Lịch học</template>
+
+          <a-card title="Danh sách điểm danh" :bordered="false" class="cart">
             <div class="d-flex justify-content-end mb-3">
               <a-button type="primary" @click="exportToExcel" class="me-3"
                 >Tải xuống Excel</a-button
@@ -217,13 +217,13 @@ onMounted(() => {
                   {{
                     `${dayOfWeek(record.attendanceDayStart)}, ${formatDate(
                       record.attendanceDayStart,
-                      DEFAULT_DATE_FORMAT
+                      DEFAULT_DATE_FORMAT,
                     )}`
                   }}
                   {{
                     `${formatDate(record.attendanceDayStart, 'HH:mm')} - ${formatDate(
                       record.attendanceDayEnd,
-                      'HH:mm'
+                      'HH:mm',
                     )}`
                   }}
                 </template>
