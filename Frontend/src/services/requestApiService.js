@@ -22,13 +22,22 @@ requestAPI.interceptors.request.use((config) => {
 requestAPI.interceptors.response.use(
   (response) => response,
   async (error) => {
-    if (error.response && error.response.status === 401) {
-      const originalRequest = error.config
+    const originalRequest = error.config
+    if (error.response && error.response.status === 401 && !originalRequest.isRetry) {
+      originalRequest.isRetry = true
       const authStore = useAuthStore()
       try {
-        const { data: response } = await axios.post(ROUTE_NAMES_API.FETCH_DATA_REFRESH_TOKEN, {
-          refreshToken: authStore.refreshToken,
-        })
+        const { data: response } = await axios.post(
+          ROUTE_NAMES_API.FETCH_DATA_REFRESH_TOKEN,
+          {
+            refreshToken: authStore.refreshToken,
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${authStore.refreshToken}`,
+            },
+          },
+        )
         authStore.setToken(response.data.accessToken, response.data.refreshToken)
         originalRequest.headers.Authorization = `Bearer ${response.data.accessToken}`
         return requestAPI(originalRequest)
