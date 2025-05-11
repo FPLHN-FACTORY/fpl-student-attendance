@@ -16,6 +16,7 @@ import { DEFAULT_PAGINATION } from '@/constants'
 import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
 import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
 import useLoadingStore from '@/stores/useLoadingStore'
+import { autoAddColumnWidth } from '@/utils/utils'
 
 const breadcrumbStore = useBreadcrumbStore()
 const loadingStore = useLoadingStore()
@@ -64,15 +65,17 @@ const newSemester = reactive({
 const detailSemester = ref({})
 
 // Cấu hình cột cho bảng
-const columns = ref([
-  { title: '#', dataIndex: 'semesterIndex', key: 'semesterIndex', width: 80 },
-  { title: 'Mã học kỳ', dataIndex: 'semesterCode', key: 'semesterCode', width: 180 },
-  { title: 'Tên học kỳ', dataIndex: 'semesterName', key: 'semesterName', width: 180 },
-  { title: 'Ngày bắt đầu', dataIndex: 'startDate', key: 'startDate', width: 180 },
-  { title: 'Ngày kết thúc', dataIndex: 'endDate', key: 'endDate', width: 180 },
-  { title: 'Trạng thái', dataIndex: 'semesterStatus', key: 'semesterStatus', width: 180 },
-  { title: 'Chức năng', key: 'actions', width: 120 },
-])
+const columns = ref(
+  autoAddColumnWidth([
+    { title: '#', dataIndex: 'semesterIndex', key: 'semesterIndex' },
+    { title: 'Mã học kỳ', dataIndex: 'semesterCode', key: 'semesterCode' },
+    { title: 'Tên học kỳ', dataIndex: 'semesterName', key: 'semesterName' },
+    { title: 'Ngày bắt đầu', dataIndex: 'startDate', key: 'startDate' },
+    { title: 'Ngày kết thúc', dataIndex: 'endDate', key: 'endDate' },
+    { title: 'Trạng thái', dataIndex: 'semesterStatus', key: 'semesterStatus' },
+    { title: 'Chức năng', key: 'actions' },
+  ]),
+)
 
 // Hàm định dạng epoch sang "DD/MM/YYYY"
 const formatEpochToDate = (epoch) => {
@@ -127,7 +130,7 @@ const fetchSemesters = () => {
     .catch((error) => {
       message.error(
         (error.response && error.response.data && error.response.data.message) ||
-          'Lỗi khi lấy dữ liệu học kỳ'
+          'Lỗi khi lấy dữ liệu học kỳ',
       )
     })
     .finally(() => {
@@ -166,7 +169,7 @@ const handleAddSemester = () => {
     .catch((error) => {
       message.error(
         (error.response && error.response.data && error.response.data.message) ||
-          'Lỗi khi thêm học kỳ'
+          'Lỗi khi thêm học kỳ',
       )
     })
     .finally(() => {
@@ -192,7 +195,7 @@ const handleUpdateSemester = (record) => {
     .catch((error) => {
       message.error(
         (error.response && error.response.data && error.response.data.message) ||
-          'Lỗi khi lấy chi tiết học kỳ'
+          'Lỗi khi lấy chi tiết học kỳ',
       )
     })
     .finally(() => {
@@ -226,7 +229,7 @@ const updateSemester = () => {
     .catch((error) => {
       message.error(
         (error.response && error.response.data && error.response.data.message) ||
-          'Lỗi khi cập nhật học kỳ'
+          'Lỗi khi cập nhật học kỳ',
       )
     })
     .finally(() => {
@@ -250,7 +253,7 @@ const handleChangeStatusSemester = (record) => {
         .catch((error) => {
           message.error(
             (error.response && error.response.data && error.response.data.message) ||
-              'Lỗi khi cập nhật trạng thái học kỳ'
+              'Lỗi khi cập nhật trạng thái học kỳ',
           )
         })
         .finally(() => {
@@ -268,7 +271,7 @@ const clearFormAdd = () => {
 
 const handleClearFilter = () => {
   // Clear all filter values
-  Object.keys(filter).forEach(key => {
+  Object.keys(filter).forEach((key) => {
     filter[key] = ''
   })
   pagination.current = 1
@@ -280,7 +283,6 @@ onMounted(() => {
   fetchSemesters()
 })
 </script>
-
 
 <template>
   <div class="container-fluid">

@@ -24,7 +24,7 @@ import {
   SHIFT,
   STATUS_PLAN_DATE_DETAIL,
 } from '@/constants'
-import { dayOfWeek, debounce, formatDate, rowSelectTable } from '@/utils/utils'
+import { autoAddColumnWidth, dayOfWeek, debounce, formatDate, rowSelectTable } from '@/utils/utils'
 import dayjs from 'dayjs'
 import ExcelUploadButton from '@/components/excel/ExcelUploadButton.vue'
 import { formatCountdown } from 'ant-design-vue/es/statistic/utils'
@@ -64,24 +64,24 @@ const _detail = ref(null)
 const lstData = ref([])
 const lstShift = ref([])
 
-const columns = ref([
-  { title: 'Buổi', dataIndex: 'orderNumber', key: 'orderNumber', width: 50 },
-  { title: 'Ngày học', dataIndex: 'startDate', key: 'startDate', ellipsis: true },
-  { title: 'Thời gian', key: 'time', width: 100, ellipsis: true },
-  { title: 'Ca học', dataIndex: 'shift', key: 'shift', width: 100, ellipsis: true },
-  { title: 'Nội dung', dataIndex: 'description', key: 'description', width: 100, ellipsis: true },
-  { title: 'Phòng học', dataIndex: 'room', key: 'room', width: 100, ellipsis: true },
-  { title: 'Link Online', dataIndex: 'link', key: 'link', width: 100, ellipsis: true },
-  {
-    title: 'Điểm danh trễ',
-    dataIndex: 'lateArrival',
-    key: 'lateArrival',
-    width: 130,
-    ellipsis: true,
-  },
-  { title: 'Trạng thái', dataIndex: 'status', key: 'status', width: 100, ellipsis: true },
-  { title: '', key: 'actions' },
-])
+const columns = ref(
+  autoAddColumnWidth([
+    { title: 'Buổi', dataIndex: 'orderNumber', key: 'orderNumber' },
+    { title: 'Ngày học', dataIndex: 'startDate', key: 'startDate' },
+    { title: 'Thời gian', key: 'time' },
+    { title: 'Ca học', dataIndex: 'shift', key: 'shift' },
+    { title: 'Nội dung', dataIndex: 'description', key: 'description' },
+    { title: 'Phòng học', dataIndex: 'room', key: 'room' },
+    { title: 'Link Online', dataIndex: 'link', key: 'link' },
+    {
+      title: 'Điểm danh trễ',
+      dataIndex: 'lateArrival',
+      key: 'lateArrival',
+    },
+    { title: 'Trạng thái', dataIndex: 'status', key: 'status' },
+    { title: '', key: 'actions' },
+  ]),
+)
 
 const breadcrumb = ref([
   {

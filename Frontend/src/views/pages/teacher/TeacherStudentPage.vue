@@ -10,6 +10,7 @@ import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
 import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
 import useLoadingStore from '@/stores/useLoadingStore'
 import { DEFAULT_PAGINATION } from '@/constants'
+import { autoAddColumnWidth } from '@/utils/utils'
 
 const router = useRouter()
 const breadcrumbStore = useBreadcrumbStore()
@@ -43,32 +44,28 @@ const pagination = reactive({
 })
 
 // Column configuration
-const columns = ref([
-  { title: '#', dataIndex: 'rowNumber', key: 'rowNumber', width: 50 },
-  {
-    title: 'Tên nhóm xưởng',
-    dataIndex: 'factoryName',
-    key: 'factoryName',
-    width: 150,
-    ellipsis: true,
-  },
-  { title: 'Tên dự án', dataIndex: 'projectName', key: 'projectName', width: 300, ellipsis: true },
-  {
-    title: 'Mô tả',
-    dataIndex: 'factoryDescription',
-    key: 'factoryDescription',
-    width: 300,
-    ellipsis: true,
-  },
-  {
-    title: 'Trạng thái',
-    dataIndex: 'factoryStatus',
-    key: 'factoryStatus',
-    width: 120,
-    ellipsis: true,
-  },
-  { title: 'Chức năng', key: 'actions', width: 100 },
-])
+const columns = ref(
+  autoAddColumnWidth([
+    { title: '#', dataIndex: 'rowNumber', key: 'rowNumber' },
+    {
+      title: 'Tên nhóm xưởng',
+      dataIndex: 'factoryName',
+      key: 'factoryName',
+    },
+    { title: 'Tên dự án', dataIndex: 'projectName', key: 'projectName' },
+    {
+      title: 'Mô tả',
+      dataIndex: 'factoryDescription',
+      key: 'factoryDescription',
+    },
+    {
+      title: 'Trạng thái',
+      dataIndex: 'factoryStatus',
+      key: 'factoryStatus',
+    },
+    { title: 'Chức năng', key: 'actions' },
+  ]),
+)
 
 // Fetch danh sách nhóm xưởng do giảng viên quản lý
 const fetchFactoryByTeacher = () => {
@@ -135,8 +132,9 @@ const handleDetailFactory = (record) => {
 
 const handleClearFilter = () => {
   // Clear all filter values
-  Object.keys(filter).forEach(key => {
-    if (key !== 'page' && key !== 'pageSize') { // Keep pagination values
+  Object.keys(filter).forEach((key) => {
+    if (key !== 'page' && key !== 'pageSize') {
+      // Keep pagination values
       filter[key] = ''
     }
   })

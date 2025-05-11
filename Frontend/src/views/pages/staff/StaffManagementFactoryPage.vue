@@ -18,6 +18,7 @@ import { DEFAULT_PAGINATION } from '@/constants'
 import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
 import useLoadingStore from '@/stores/useLoadingStore'
 import ExcelUploadButton from '@/components/excel/ExcelUploadButton.vue'
+import { autoAddColumnWidth } from '@/utils/utils'
 
 const breadcrumbStore = useBreadcrumbStore()
 const loadingStore = useLoadingStore()
@@ -62,16 +63,18 @@ const detailFactory = reactive({
   staffName: '',
 })
 
-const columns = ref([
-  { title: '#', dataIndex: 'rowNumber', key: 'rowNumber', width: 50 },
-  { title: 'Tên nhóm xưởng', dataIndex: 'name', key: 'name', width: 200 },
-  { title: 'Tên dự án', dataIndex: 'projectName', key: 'projectName', width: 200 },
-  { title: 'Mã bộ môn', dataIndex: 'subjectCode', key: 'subjectCode', width: 100 },
-  { title: 'Tên giảng viên', dataIndex: 'staffName', key: 'staffName', width: 100 },
-  { title: 'Mô tả', dataIndex: 'factoryDescription', key: 'factoryDescription', width: 200 },
-  { title: 'Trạng thái', dataIndex: 'factoryStatus', key: 'factoryStatus', width: 80 },
-  { title: 'Chức năng', key: 'actions', width: 100 },
-])
+const columns = ref(
+  autoAddColumnWidth([
+    { title: '#', dataIndex: 'rowNumber', key: 'rowNumber' },
+    { title: 'Tên nhóm xưởng', dataIndex: 'name', key: 'name' },
+    { title: 'Tên dự án', dataIndex: 'projectName', key: 'projectName' },
+    { title: 'Mã bộ môn', dataIndex: 'subjectCode', key: 'subjectCode' },
+    { title: 'Tên giảng viên', dataIndex: 'staffName', key: 'staffName' },
+    { title: 'Mô tả', dataIndex: 'factoryDescription', key: 'factoryDescription' },
+    { title: 'Trạng thái', dataIndex: 'factoryStatus', key: 'factoryStatus' },
+    { title: 'Chức năng', key: 'actions' },
+  ]),
+)
 
 const breadcrumb = ref([
   {
@@ -336,7 +339,7 @@ const configImportExcel = {
 
 const handleClearFilter = () => {
   // Clear all filter values
-  Object.keys(filter).forEach(key => {
+  Object.keys(filter).forEach((key) => {
     filter[key] = ''
   })
   pagination.current = 1
@@ -482,7 +485,7 @@ onMounted(() => {
       <div class="col-12">
         <a-card :bordered="false" class="cart mb-3">
           <template #title> <FilterFilled /> Bộ lọc </template>
-            <div class="row g-2">
+          <div class="row g-2">
             <div class="col-md-6 col-sm-12">
               <div class="label-title">Tìm kiếm tên xưởng:</div>
               <a-input
@@ -542,7 +545,7 @@ onMounted(() => {
               </a-select>
             </div>
           </div>
-            <div class="row">
+          <div class="row">
             <div class="col-12">
               <div class="d-flex justify-content-center flex-wrap gap-2 mt-3">
                 <a-button class="btn-light" @click="fetchFactories">
