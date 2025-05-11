@@ -162,6 +162,7 @@ public interface TCTeachingScheduleExtendRepository extends PlanDateRepository {
                 pd.description as description,
                 pd.link as link,
                 pd.type as type,
+                pd.room as room,
                 pd.id as planDateId
                 FROM plan_date pd
                 WHERE pd.id = :planDateId

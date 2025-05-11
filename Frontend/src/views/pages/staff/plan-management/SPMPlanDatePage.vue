@@ -67,9 +67,9 @@ const lstShift = ref([])
 const columns = ref([
   { title: 'Buổi', dataIndex: 'orderNumber', key: 'orderNumber', width: 50 },
   { title: 'Ngày học', dataIndex: 'startDate', key: 'startDate', ellipsis: true },
-  { title: 'Thời gian', key: 'time', ellipsis: true },
-  { title: 'Ca học', dataIndex: 'shift', key: 'shift', ellipsis: true },
-  { title: 'Nội dung', dataIndex: 'description', key: 'description', ellipsis: true },
+  { title: 'Thời gian', key: 'time', width: 100, ellipsis: true },
+  { title: 'Ca học', dataIndex: 'shift', key: 'shift', width: 100, ellipsis: true },
+  { title: 'Nội dung', dataIndex: 'description', key: 'description', width: 100, ellipsis: true },
   { title: 'Phòng học', dataIndex: 'room', key: 'room', width: 100, ellipsis: true },
   { title: 'Link Online', dataIndex: 'link', key: 'link', width: 100, ellipsis: true },
   {
@@ -79,7 +79,7 @@ const columns = ref([
     width: 130,
     ellipsis: true,
   },
-  { title: 'Trạng thái', dataIndex: 'status', key: 'status', ellipsis: true },
+  { title: 'Trạng thái', dataIndex: 'status', key: 'status', width: 100, ellipsis: true },
   { title: '', key: 'actions' },
 ])
 

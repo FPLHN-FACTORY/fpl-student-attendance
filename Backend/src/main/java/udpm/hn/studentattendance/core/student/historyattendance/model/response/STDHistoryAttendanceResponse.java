@@ -25,4 +25,6 @@ public interface STDHistoryAttendanceResponse {
 
     Integer getLateArrival();
 
+    Long getPlanDateEndDate();
+
 }

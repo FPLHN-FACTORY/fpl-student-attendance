@@ -18,4 +18,6 @@ public class TCTSPlanDateUpdateRequest {
     @Size(max = 255)
     private String link;
 
+    private String room;
+
 }
