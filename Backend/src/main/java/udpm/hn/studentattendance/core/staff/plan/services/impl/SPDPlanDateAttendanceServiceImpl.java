@@ -58,7 +58,7 @@ public class SPDPlanDateAttendanceServiceImpl implements SPDPlanDateAttendanceSe
     @Override
     public ResponseEntity<?> changeStatus(SPDModifyPlanDateAttendanceRequest request) {
         PlanDate planDate = spdPlanDateRepository.findById(request.getIdPlanDate()).orElse(null);
-        if (planDate == null || planDate.getEndDate() > DateTimeUtils.getCurrentTimeMillis()) {
+        if (planDate == null || planDate.getStartDate() > DateTimeUtils.getCurrentTimeMillis()) {
             return RouterHelper.responseError("Không tìm thấy kế hoạch");
         }
 

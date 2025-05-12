@@ -131,7 +131,7 @@ const useFaceIDStore = defineStore('faceID', () => {
 
   const detectFace = async () => {
     const options = DEEP_CHECK
-      ? new faceapi.SsdMobilenetv1Options({ minConfidence: 0.6 })
+      ? new faceapi.SsdMobilenetv1Options({ minConfidence: 0.5 })
       : new faceapi.TinyFaceDetectorOptions()
     const displaySize = { width: video.value.videoWidth, height: video.value.videoHeight }
 
@@ -258,13 +258,15 @@ const useFaceIDStore = defineStore('faceID', () => {
       const eyeCenterY = (leftEye[0].y + rightEye[3].y) / 2
 
       const noseOffset = noseX - eyeCenterX
-      const verticalOffset = Math.abs(noseY - eyeCenterY) / video.value.videoHeight
+      const eyeDistance = Math.abs(eyeCenterX - eyeCenterY)
+      const verticalOffset = Math.abs(noseY - eyeCenterY) / eyeDistance
 
       if (
         Math.abs(eyeAngle) < THRESHOLD_X &&
-        Math.abs(noseOffset) < THRESHOLD_NOSE &&
-        verticalOffset > 0.18 &&
-        verticalOffset < 0.22
+        Math.abs(noseOffset) < THRESHOLD_NOSE
+        // &&
+        // verticalOffset < 0.9 &&
+        // verticalOffset > 0.5
       ) {
         return 0
       }
