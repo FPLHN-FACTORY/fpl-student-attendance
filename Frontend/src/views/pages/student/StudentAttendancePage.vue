@@ -423,7 +423,7 @@ watch(
 
               <template v-if="column.key === 'actions'">
                 <span v-if="record.status == ATTENDANCE_STATUS.NOTCHECKIN.id">
-                  <!-- <span
+                  <span
                     v-if="Date.now() < record.startDate - DEFAULT_EARLY_MINUTE_CHECKIN * 60 * 1000"
                   >
                     <a-badge status="warning" />
@@ -432,8 +432,8 @@ watch(
                   <span v-else-if="Date.now() > record.startDate + record.lateArrival * 60 * 1000">
                     <a-badge status="error" />
                     Đã quá giờ checkin đầu giờ</span
-                  > -->
-                  <a-tooltip title="Checkin đầu giờ">
+                  >
+                  <a-tooltip title="Checkin đầu giờ" v-else>
                     <a-button
                       type="primary"
                       class="btn-info ms-2 border-0"
