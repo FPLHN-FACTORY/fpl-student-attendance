@@ -136,7 +136,7 @@ public class SAAttendanceServiceImpl implements SAAttendanceService {
             }
         }
 
-        double[] inputEmbedding = FaceRecognitionUtils.parseEmbedding(request.getFaceEmbedding());
+        List<double[]> inputEmbedding = FaceRecognitionUtils.parseEmbeddings(request.getFaceEmbedding());
         double[] storedEmbedding = FaceRecognitionUtils.parseEmbedding(userStudent.getFaceEmbedding());
         boolean isMatch = FaceRecognitionUtils.isSameFace(inputEmbedding, storedEmbedding);
         if (!isMatch) {

@@ -24,7 +24,7 @@ const useFaceIDStore = defineStore('faceID', () => {
   const step = ref(0)
   const textStep = ref('Vui lòng đợi camera...')
   const dataImage = ref(null)
-  const dataImageTemp = ref(null)
+  const lstDescriptor = ref([])
 
   const renderTextStep = (text) => {
     if (text) {
@@ -84,6 +84,7 @@ const useFaceIDStore = defineStore('faceID', () => {
   const startVideo = async () => {
     step.value = 0
     dataImage.value = null
+    lstDescriptor.value = []
     isRunScan.value = true
     isLoading.value = true
     try {
@@ -283,7 +284,7 @@ const useFaceIDStore = defineStore('faceID', () => {
       canvas.value.height = video.value.videoHeight
 
       context.drawImage(video.value, 0, 0, canvas.value.width, canvas.value.height)
-      dataImageTemp.value = canvas.value.toDataURL('image/png')
+      dataImage.value = canvas.value.toDataURL('image/png')
     }
 
     const runTask = async () => {
@@ -356,13 +357,17 @@ const useFaceIDStore = defineStore('faceID', () => {
           }
 
           renderTextStep()
+
           if (isFullStep) {
             if (step.value === 0 && angle === 0) {
               step.value = 1
+              lstDescriptor.value.push(Array.from(descriptor))
+            } else if (step.value === 1) {
+              step.value = 2
+              lstDescriptor.value.push(Array.from(descriptor))
               captureFace()
               stopVideo()
-              dataImage.value = dataImageTemp.value
-              typeof onSuccess == 'function' && onSuccess(descriptor)
+              typeof onSuccess == 'function' && onSuccess(lstDescriptor.value)
               isRunScan.value = false
             } else {
               faceDescriptor = null
@@ -370,16 +375,19 @@ const useFaceIDStore = defineStore('faceID', () => {
           } else {
             if (step.value === 0 && angle === 0) {
               step.value = 1
-              captureFace()
+              lstDescriptor.value.push(Array.from(descriptor))
             } else if (step.value === 1 && angle === -1) {
               step.value = 2
+              lstDescriptor.value.push(Array.from(descriptor))
             } else if (step.value === 2 && angle === 1) {
               step.value = 3
+              lstDescriptor.value.push(Array.from(descriptor))
             } else if (step.value === 3 && angle === 0) {
               step.value = 4
+              lstDescriptor.value.push(Array.from(descriptor))
+              captureFace()
               stopVideo()
-              dataImage.value = dataImageTemp.value
-              typeof onSuccess == 'function' && onSuccess(descriptor)
+              typeof onSuccess == 'function' && onSuccess(lstDescriptor.value)
               isRunScan.value = false
             } else {
               // faceDescriptor = null

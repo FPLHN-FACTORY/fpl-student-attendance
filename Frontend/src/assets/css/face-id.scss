@@ -194,7 +194,7 @@
       @for $i from 1 through 40 {
         & > div:nth-child(#{$i}) {
           animation: step1 0s alternate forwards;
-          animation-delay: #{math.div($i, 50)}s;
+          animation-delay: #{math.div(math.div($i, 50), 2)}s;
         }
       }
     }
