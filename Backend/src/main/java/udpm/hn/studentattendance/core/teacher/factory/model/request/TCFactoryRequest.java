@@ -17,4 +17,6 @@ public class TCFactoryRequest extends PageableRequest {
 
     private String factoryStatus;
 
+    private String semesterId;
+
 }
