@@ -36,6 +36,7 @@ const projects = ref([])
 const filter = reactive({
   factoryName: '',
   projectId: '',
+  semesterId: null,
   page: 1,
   pageSize: 5,
 })
@@ -64,7 +65,7 @@ const columns = ref(
       key: 'factoryStatus',
     },
     { title: 'Chức năng', key: 'actions' },
-  ]),
+  ])
 )
 
 // Fetch danh sách nhóm xưởng do giảng viên quản lý
@@ -108,6 +109,23 @@ const fetchProjectByFacility = () => {
       loadingStore.hide()
     })
 }
+const semesters = ref([])
+const fetchSemesters = () => {
+  loadingStore.show()
+  requestAPI
+    .get(API_ROUTES_TEACHER.FETCH_DATA_STUDENT + '/semesters')
+    .then((response) => {
+      console.log('Projects response:', response.data)
+      const result = response.data.data
+      semesters.value = result
+    })
+    .catch((error) => {
+      message.error(error.response?.data?.message || 'Lỗi khi lấy danh sách học kỳ')
+    })
+    .finally(() => {
+      loadingStore.hide()
+    })
+}
 
 // Xử lý phân trang
 const handleTableChange = (pageInfo) => {
@@ -146,6 +164,7 @@ onMounted(() => {
   breadcrumbStore.setRoutes(breadcrumb.value)
   fetchFactoryByTeacher()
   fetchProjectByFacility()
+  fetchSemesters()
 })
 </script>
 
@@ -177,6 +196,21 @@ onMounted(() => {
                 <a-select-option :value="''">Tất cả dự án</a-select-option>
                 <a-select-option v-for="item in projects" :key="item.id" :value="item.id">
                   {{ item.name }}
+                </a-select-option>
+              </a-select>
+            </div>
+            <div class="col-md-6 col-sm-6">
+              <label class="label-title">Học kỳ:</label>
+              <a-select
+                v-model:value="filter.semesterId"
+                placeholder="Chọn học kỳ"
+                allowClear
+                class="w-100"
+                @change="fetchFactoryByTeacher"
+              >
+                <a-select-option :value="null">Tất cả học kỳ</a-select-option>
+                <a-select-option v-for="item in semesters" :key="item.id" :value="item.id">
+                  {{ item.code }}
                 </a-select-option>
               </a-select>
             </div>

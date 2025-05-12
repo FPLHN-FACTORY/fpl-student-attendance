@@ -26,6 +26,7 @@ public interface TCFactoryExtendRepository extends FactoryRepository {
             LEFT JOIN project p ON p.id = ft.id_project
             LEFT JOIN subject_facility sf ON sf.id = p.id_subject_facility
             LEFT JOIN facility f ON f.id = sf.id_facility
+            LEFT JOIN semester s ON p.id_semester = s.id
             WHERE
                 us.code = :userStaffCode
                 AND f.id = :facilityId
@@ -33,6 +34,7 @@ public interface TCFactoryExtendRepository extends FactoryRepository {
                 AND p.status = 1
                 AND sf.status = 1
                 AND ft.status = 1
+                AND (:#{#teacherStudentRequest.semesterId} IS NULL OR s.id = :#{#teacherStudentRequest.semesterId})
                 AND (:#{#teacherStudentRequest.factoryName} IS NULL OR ft.name LIKE CONCAT('%', :#{#teacherStudentRequest.factoryName}, '%'))
                 AND (:#{#teacherStudentRequest.projectId} IS NULL OR p.id LIKE CONCAT('%', :#{#teacherStudentRequest.projectId}, '%'))
                 AND (:#{#teacherStudentRequest.factoryStatus} IS NULL OR ft.status = :#{#teacherStudentRequest.factoryStatus})
@@ -45,6 +47,7 @@ public interface TCFactoryExtendRepository extends FactoryRepository {
             LEFT JOIN project p ON p.id = ft.id_project
             LEFT JOIN subject_facility sf ON sf.id = p.id_subject_facility
             LEFT JOIN facility f ON f.id = sf.id_facility
+            LEFT JOIN semester s ON p.id_semester = s.id
             WHERE
                 us.code = :userStaffCode
                 AND f.id = :facilityId
@@ -55,6 +58,7 @@ public interface TCFactoryExtendRepository extends FactoryRepository {
                 AND (:#{#teacherStudentRequest.factoryName} IS NULL OR ft.name LIKE CONCAT('%', :#{#teacherStudentRequest.factoryName}, '%'))
                 AND (:#{#teacherStudentRequest.projectId} IS NULL OR p.id LIKE CONCAT('%', :#{#teacherStudentRequest.projectId}, '%'))
                 AND (:#{#teacherStudentRequest.factoryStatus} IS NULL OR ft.status = :#{#teacherStudentRequest.factoryStatus})
+                AND (:#{#teacherStudentRequest.semesterId} IS NULL OR s.id = :#{#teacherStudentRequest.semesterId})
 
             """, nativeQuery = true)
     Page<TCFactoryResponse> getAllFactoryByTeacher(Pageable pageable, String facilityId, String userStaffCode,
