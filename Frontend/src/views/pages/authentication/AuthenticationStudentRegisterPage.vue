@@ -98,7 +98,7 @@ onMounted(async () => {
   document.body.classList.add('bg-login')
   fetchDataFacility()
   faceIDStore.init(video, canvas, false, (descriptor) => {
-    formData.faceEmbedding = JSON.stringify(Array.from(descriptor))
+    formData.faceEmbedding = JSON.stringify(descriptor)
     isShowCamera.value = false
   })
   await faceIDStore.loadModels()
@@ -116,6 +116,8 @@ onMounted(async () => {
       <canvas ref="canvas"></canvas>
       <video ref="video" autoplay muted></video>
       <div class="face-id-step" :class="faceIDStore.renderStyle()">
+        <div></div>
+        <div></div>
         <div></div>
         <div></div>
         <div></div>
@@ -373,6 +375,11 @@ onMounted(async () => {
   border: 1px solid #d6bfda;
   padding: 20px 40px;
   box-shadow: 4px 6px 1px 1px #efefef;
+}
+@media (max-width: 576px) {
+  .role-container {
+    padding: 20px 15px;
+  }
 }
 .role-item {
   display: flex;

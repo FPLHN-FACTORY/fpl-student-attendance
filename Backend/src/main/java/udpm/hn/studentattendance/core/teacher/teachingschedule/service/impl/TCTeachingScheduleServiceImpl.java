@@ -149,7 +149,7 @@ public class TCTeachingScheduleServiceImpl implements TCTeachingScheduleService 
             pdfTable.setWidthPercentage(100);
             pdfTable.setSpacingBefore(10f);
             pdfTable.setSpacingAfter(10f);
-            pdfTable.setWidths(new float[]{30, 20, 20, 20, 30, 50, 25, 30});
+            pdfTable.setWidths(new float[]{50, 30, 30, 20, 30, 30, 25, 30});
 
             // Header: sử dụng màu cam đậm từ ảnh mẫu (ví dụ: RGB 237,125,49)
             Color headerColor = new Color(2, 3, 51);
@@ -159,7 +159,7 @@ public class TCTeachingScheduleServiceImpl implements TCTeachingScheduleService 
             Color rowColor2 = new Color(245, 245, 245);
 
             // Thêm header cho bảng
-            Stream.of("Ngày dạy", "Ca học", "Điểm danh muộn", "Mã môn", "Xưởng", "Dự án", "Hình thức",
+            Stream.of("Ngày dạy", "Ca học", "Điểm danh muộn", "Mã môn", "Xưởng", "Địa điểm", "Hình thức",
                             "Mô tả")
                     .forEach(headerTitle -> {
                         PdfPCell headerCell = new PdfPCell();
@@ -211,10 +211,10 @@ public class TCTeachingScheduleServiceImpl implements TCTeachingScheduleService 
                 pdfTable.addCell(factoryCell);
 
                 // Cột "Dự án"
-                PdfPCell projectCell = new PdfPCell(new Phrase(
-                        String.valueOf(teachingScheduleResponse.getProjectName()), cellFont));
-                styleCell(projectCell, backgroundColor);
-                pdfTable.addCell(projectCell);
+                PdfPCell roomCell = new PdfPCell(new Phrase(
+                        String.valueOf(teachingScheduleResponse.getRoom()), cellFont));
+                styleCell(roomCell, backgroundColor);
+                pdfTable.addCell(roomCell);
 
                 // Cột "Dự án"
                 PdfPCell typeCell = new PdfPCell(new Phrase(

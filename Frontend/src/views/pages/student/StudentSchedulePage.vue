@@ -11,20 +11,16 @@ import { Modal, message } from 'ant-design-vue'
 import * as XLSX from 'xlsx'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
+import ExcelJS from 'exceljs'
+import { saveAs } from 'file-saver'
 import { autoAddColumnWidth, dayOfWeek, formatDate } from '@/utils/utils'
 import { FilterFilled } from '@ant-design/icons-vue'
 
 const breadcrumbStore = useBreadcrumbStore()
 
 const breadcrumb = ref([
-  {
-    name: GLOBAL_ROUTE_NAMES.STAFF_PAGE,
-    breadcrumbName: 'Sinh viên',
-  },
-  {
-    name: ROUTE_NAMES.SCHEDULE,
-    breadcrumbName: 'Lịch học',
-  },
+  { name: GLOBAL_ROUTE_NAMES.STAFF_PAGE, breadcrumbName: 'Sinh viên' },
+  { name: ROUTE_NAMES.SCHEDULE, breadcrumbName: 'Lịch học' },
 ])
 const loadingStore = useLoadingStore()
 const isLoading = ref(false)
@@ -33,7 +29,7 @@ const attendanceList = ref([])
 const filter = reactive({
   page: 1,
   pageSize: 5,
-  plan: 7, // Default to 7 days ahead
+  plan: 7, // Mặc định 7 ngày tới
 })
 const pagination = ref({ ...DEFAULT_PAGINATION })
 
@@ -91,60 +87,131 @@ const handleTableChange = (pageInfo) => {
   filter.pageSize = pageInfo.pageSize
   fetchAttendanceList()
 }
+
 const handleShowDescription = (text) => {
   Modal.info({
     title: 'Nội dung buổi học',
     type: 'info',
     content: text || 'Buổi học chưa có nội dung',
     okText: 'Đóng',
-    okButtonProps: {
-      class: 'btn-gray',
-    },
+    okButtonProps: { class: 'btn-gray' },
   })
 }
 
-const exportToExcel = () => {
-  const worksheet = XLSX.utils.json_to_sheet(
-    attendanceList.value.map((item, index) => ({
-      STT: index + 1,
-      'Ngày điểm danh': formatDate(item.attendanceDay),
-      Ca: 'Ca ' + item.shift,
-      'Nhóm xưởng': item.factoryName,
-      'Dự án': item.projectName,
-      'Tên môn học': item.subjectName,
-      'Tên giảng viên': item.staffName,
-      'Mô tả': item.description || '',
-    })),
+const exportToExcel = async () => {
+  const wb = new ExcelJS.Workbook()
+  const ws = wb.addWorksheet('DanhSach')
+
+  // 1. Định nghĩa cột + độ rộng
+  ws.columns = [
+    { header: 'STT', key: 'stt', width: 6 },
+    { header: 'Ngày điểm danh', key: 'day', width: 45 },
+    { header: 'Ca', key: 'shift', width: 35 },
+    { header: 'Nhóm xưởng', key: 'factoryName', width: 30 },
+    { header: 'Dự án', key: 'projectName', width: 30 },
+    { header: 'Tên môn học', key: 'subjectName', width: 30 },
+    { header: 'Tên giảng viên', key: 'staffName', width: 30 },
+    { header: 'Mô tả', key: 'description', width: 40 },
+  ]
+
+  // 2. Thêm dữ liệu (giữ nguyên logic cũ của bạn)
+  attendanceList.value.forEach((item, idx) => {
+    const dayString = `${dayOfWeek(item.attendanceDayStart)}, ${formatDate(
+      item.attendanceDayStart,
+      DEFAULT_DATE_FORMAT
+    )}`
+    const timeRange = `${formatDate(item.attendanceDayStart, 'HH:mm')} - ${formatDate(
+      item.attendanceDayEnd,
+      'HH:mm'
+    )}`
+
+    ws.addRow({
+      stt: idx + 1,
+      day: `${dayString} ${timeRange}`,
+      shift: `Ca ${item.shift}`,
+      factoryName: item.factoryName,
+      projectName: item.projectName,
+      subjectName: item.subjectName,
+      staffName: item.staffName,
+      description: item.description || '',
+    })
+  })
+
+  // 3. Style header
+  const headerRow = ws.getRow(1)
+  headerRow.font = { bold: true, size: 12 }
+  headerRow.alignment = { vertical: 'middle', horizontal: 'center' }
+  headerRow.eachCell((cell) => {
+    cell.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FFADD8E6' },
+    }
+  })
+
+  // 4. Wrap text cho cột description
+  ws.getColumn('description').alignment = { wrapText: true }
+
+  // —— BẮT ĐẦU CHO READ-ONLY —— //
+
+  // 5. Đánh dấu tất cả các ô là locked (mặc định locked=true, nhưng làm rõ lại)
+  ws.eachRow((row) =>
+    row.eachCell((cell) => {
+      cell.protection = { locked: true }
+    })
   )
-  const workbook = XLSX.utils.book_new()
-  XLSX.utils.book_append_sheet(workbook, worksheet, 'DanhSach')
-  XLSX.writeFile(workbook, 'DiemDanh.xlsx')
+
+  // 6. Protect toàn bộ worksheet
+  //    - Nếu muốn để không có mật khẩu thì gọi ws.protect() không tham số.
+  //    - Nếu muốn mật khẩu, truyền vào string, ví dụ '1234'.
+  await ws.protect('', {
+    selectLockedCells: true,
+    selectUnlockedCells: true,
+    formatCells: false,
+    formatRows: false,
+    formatColumns: false,
+    insertRows: false,
+    deleteRows: false,
+    // ... bạn có thể tắt thêm các quyền khác nếu cần
+  })
+
+  // —— KẾT THÚC READ-ONLY —— //
+
+  // 7. Xuất file
+  const buf = await wb.xlsx.writeBuffer()
+  saveAs(new Blob([buf]), 'DiemDanh.xlsx')
 }
 
 const exportToPDF = () => {
-  const doc = new jsPDF()
-  const rows = attendanceList.value.map((item, index) => [
-    index + 1,
-    formatDate(item.attendanceDay),
-    'Ca ' + item.shift,
-    item.factoryName,
-    item.projectName,
-    item.subjectName,
-    item.staffName,
-    item.description || '',
-  ])
-  autoTable(doc, {
-    head: [
-      ['STT', 'Ngày điểm danh', 'Ca', 'Nhóm xưởng', 'Dự án', 'Môn học', 'Giảng viên', 'Mô tả'],
-    ],
-    body: rows,
-    startY: 20,
-  })
-  doc.save('DiemDanh.pdf')
+  const { now, max } = getTimeRange()
+
+  loadingStore.show()
+  requestAPI
+    .get(API_ROUTES_STUDENT.FETCH_DATA_STUDENT_PLAN + '/export-pdf', {
+      params: {
+        now,
+        max,
+        page: pagination.value.current,
+        size: pagination.value.pageSize,
+      },
+      responseType: 'blob',
+    })
+    .then((res) => {
+      const blob = new Blob([res.data], { type: 'application/pdf' })
+      // đặt tên file có dấu Unicode
+      const fileName = 'DiemDanh.pdf'
+      // sử dụng FileSaver để đảm bảo cross-browser
+      saveAs(blob, fileName)
+      message.success('Xuất file PDF thành công')
+    })
+    .catch((err) => {
+      message.error(err.response?.data?.message || 'Lỗi khi xuất file PDF')
+    })
+    .finally(() => loadingStore.hide())
 }
 
 const handleClearFilter = () => {
-  filter.plan = 7 // Reset to default 7 days ahead
+  filter.plan = 7
   filter.page = 1
   pagination.value.current = 1
   fetchAttendanceList()
@@ -218,13 +285,13 @@ onMounted(() => {
                   {{
                     `${dayOfWeek(record.attendanceDayStart)}, ${formatDate(
                       record.attendanceDayStart,
-                      DEFAULT_DATE_FORMAT,
+                      DEFAULT_DATE_FORMAT
                     )}`
                   }}
                   {{
                     `${formatDate(record.attendanceDayStart, 'HH:mm')} - ${formatDate(
                       record.attendanceDayEnd,
-                      'HH:mm',
+                      'HH:mm'
                     )}`
                   }}
                 </template>
@@ -247,8 +314,8 @@ onMounted(() => {
                   <a v-if="record.link" :href="record.link" target="_blank">{{ record.link }}</a>
                 </template>
                 <template v-if="column.dataIndex === 'staffName'">
-                  <a-tag color="green">{{ record.staffName }}</a-tag></template
-                >
+                  <a-tag color="green">{{ record.staffName }}</a-tag>
+                </template>
                 <template v-if="column.dataIndex === 'factoryName'">
                   <a-badge status="processing" :text="record.factoryName" />
                 </template>
