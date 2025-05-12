@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class FaceRecognitionUtils {
 
-    public final static double THRESHOLD = 0.6;
+    public final static double THRESHOLD = 0.45;
 
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -16,6 +16,7 @@ public class FaceRecognitionUtils {
             return new double[0];
         }
     }
+
     public static double calculateEuclideanDistance(double[] emb1, double[] emb2) {
         if (emb1.length != emb2.length) {
             return 0.0;

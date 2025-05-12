@@ -5,7 +5,12 @@ import * as faceapi from 'face-api.js'
 
 const DEEP_CHECK = true
 const TIME_LOOP_RECHECK = 400
-const THRESHOLDS_IDENTIFY = 8
+const THRESHOLD_X = 5
+const THRESHOLD_NOSE = 10
+const MIN_BRIGHTNESS = 80
+const MAX_BRIGHTNESS = 180
+const THRESHOLD_LIGHT = 10
+const REGION_WIDTH_LIGHT = 30
 
 const useFaceIDStore = defineStore('faceID', () => {
   let isFullStep = false
@@ -19,6 +24,7 @@ const useFaceIDStore = defineStore('faceID', () => {
   const step = ref(0)
   const textStep = ref('Vui lòng đợi camera...')
   const dataImage = ref(null)
+  const dataImageTemp = ref(null)
 
   const renderTextStep = (text) => {
     if (text) {
@@ -27,6 +33,14 @@ const useFaceIDStore = defineStore('faceID', () => {
 
     if (isFullStep) {
       switch (step.value) {
+        case -1:
+          return (textStep.value = 'Camera quá tối, vui lòng tăng độ sáng')
+        case -2:
+          return (textStep.value = 'Camera quá sáng, vui lòng giảm độ sáng')
+        case -3:
+          return (textStep.value = 'Ánh sáng không đều. Vui lòng thử lại')
+        case -4:
+          return (textStep.value = 'Không được biểu cảm. Vui lòng thử lại')
         case 0:
           return (textStep.value = 'Vui lòng nhìn thẳng')
         case 1:
@@ -37,6 +51,14 @@ const useFaceIDStore = defineStore('faceID', () => {
     }
 
     switch (step.value) {
+      case -1:
+        return (textStep.value = 'Camera quá tối, vui lòng tăng độ sáng')
+      case -2:
+        return (textStep.value = 'Camera quá sáng, vui lòng giảm độ sáng')
+      case -3:
+        return (textStep.value = 'Ánh sáng không đều. Vui lòng thử lại')
+      case -4:
+        return (textStep.value = 'Không được biểu cảm. Vui lòng thử lại')
       case 0:
         return (textStep.value = 'Vui lòng nhìn thẳng')
       case 1:
@@ -108,7 +130,7 @@ const useFaceIDStore = defineStore('faceID', () => {
 
   const detectFace = async () => {
     const options = DEEP_CHECK
-      ? new faceapi.SsdMobilenetv1Options({ minConfidence: 0.5 })
+      ? new faceapi.SsdMobilenetv1Options({ minConfidence: 0.6 })
       : new faceapi.TinyFaceDetectorOptions()
     const displaySize = { width: video.value.videoWidth, height: video.value.videoHeight }
 
@@ -116,7 +138,111 @@ const useFaceIDStore = defineStore('faceID', () => {
 
     let faceDescriptor = null
 
-    const getFaceAngle = (landmarks) => {
+    const getAverageBrightness = async (faceBox) => {
+      const cvs = document.createElement('canvas')
+      const context = cvs.getContext('2d')
+      cvs.width = faceBox.width
+      cvs.height = faceBox.height
+
+      context.drawImage(
+        video.value,
+        faceBox.x,
+        faceBox.y,
+        cvs.width,
+        cvs.height,
+        0,
+        0,
+        faceBox.width,
+        faceBox.height,
+      )
+      const frame = context.getImageData(0, 0, cvs.width, cvs.height)
+      const data = frame.data
+
+      let totalLuminance = 0
+
+      for (let i = 0; i < data.length; i += 4) {
+        const r = data[i]
+        const g = data[i + 1]
+        const b = data[i + 2]
+        const brightness = 0.299 * r + 0.587 * g + 0.114 * b
+        totalLuminance += brightness
+      }
+
+      const averageBrightness = totalLuminance / (data.length / 4)
+      return averageBrightness
+    }
+
+    const isLightBalance = async (landmarks, faceBox) => {
+      const cvs = document.createElement('canvas')
+      const context = cvs.getContext('2d')
+      cvs.width = faceBox.width
+      cvs.height = faceBox.height
+
+      context.drawImage(
+        video.value,
+        faceBox.x,
+        faceBox.y,
+        cvs.width,
+        cvs.height,
+        0,
+        0,
+        faceBox.width,
+        faceBox.height,
+      )
+      const frame = context.getImageData(0, 0, cvs.width, cvs.height)
+      const frameData = frame.data
+
+      const positions = landmarks.positions
+      const leftEyebrow = positions.slice(17, 22)
+      const rightEyebrow = positions.slice(22, 27)
+      const leftCheek = [positions[2], positions[3], positions[4]]
+      const rightCheek = [positions[12], positions[13], positions[14]]
+
+      const leftSidePoints = [landmarks.getLeftEye(), leftEyebrow, leftCheek]
+
+      const rightSidePoints = [landmarks.getRightEye(), rightEyebrow, rightCheek]
+
+      const getRegionBrightness = (sidePoints) => {
+        let totalLuminance = 0
+        let count = 0
+
+        sidePoints.forEach((point) => {
+          const x = point[0].x
+          const y = point[0].y
+
+          const regionWidth = REGION_WIDTH_LIGHT
+          for (let i = -regionWidth; i < regionWidth; i++) {
+            for (let j = -regionWidth; j < regionWidth; j++) {
+              const pixelIndex = ((y + j) * frame.width + (x + i)) * 4
+              if (pixelIndex < 0 || pixelIndex >= frameData.length) continue
+              const r = frameData[pixelIndex]
+              const g = frameData[pixelIndex + 1]
+              const b = frameData[pixelIndex + 2]
+
+              const brightness = 0.299 * r + 0.587 * g + 0.114 * b
+              totalLuminance += brightness
+              count++
+            }
+          }
+        })
+
+        return totalLuminance / count
+      }
+
+      const leftBrightness = getRegionBrightness(leftSidePoints)
+      const rightBrightness = getRegionBrightness(rightSidePoints)
+
+      const brightnessDifference = Math.abs(leftBrightness - rightBrightness)
+      const threshold = THRESHOLD_LIGHT
+
+      if (brightnessDifference > threshold) {
+        return false
+      }
+
+      return true
+    }
+
+    const getFaceAngle = async (landmarks) => {
       const leftEye = landmarks.getLeftEye()
       const rightEye = landmarks.getRightEye()
       const nose = landmarks.getNose()
@@ -125,15 +251,30 @@ const useFaceIDStore = defineStore('faceID', () => {
       const deltaY = rightEye[0].y - leftEye[0].y
       const eyeAngle = Math.atan2(deltaY, deltaX) * (180 / Math.PI)
 
-      const noseX = nose[0].x
-      const faceCenterX = (leftEye[0].x + rightEye[3].x) / 2
+      const noseX = nose[3].x
+      const noseY = nose[3].y
+      const eyeCenterX = (leftEye[0].x + rightEye[3].x) / 2
+      const eyeCenterY = (leftEye[0].y + rightEye[3].y) / 2
 
-      if (noseX < faceCenterX - THRESHOLDS_IDENTIFY) {
+      const noseOffset = noseX - eyeCenterX
+      const verticalOffset = Math.abs(noseY - eyeCenterY) / video.value.videoHeight
+
+      if (
+        Math.abs(eyeAngle) < THRESHOLD_X &&
+        Math.abs(noseOffset) < THRESHOLD_NOSE &&
+        verticalOffset > 0.18 &&
+        verticalOffset < 0.22
+      ) {
+        return 0
+      }
+
+      if (noseOffset < -THRESHOLD_NOSE) {
         return -1
-      } else if (noseX > faceCenterX + THRESHOLDS_IDENTIFY) {
+      } else if (noseOffset > THRESHOLD_NOSE) {
         return 1
       }
-      return Math.abs(eyeAngle) < 5 ? 0 : -2
+
+      return -2
     }
 
     const captureFace = () => {
@@ -142,7 +283,7 @@ const useFaceIDStore = defineStore('faceID', () => {
       canvas.value.height = video.value.videoHeight
 
       context.drawImage(video.value, 0, 0, canvas.value.width, canvas.value.height)
-      dataImage.value = canvas.value.toDataURL('image/png')
+      dataImageTemp.value = canvas.value.toDataURL('image/png')
     }
 
     const runTask = async () => {
@@ -150,17 +291,62 @@ const useFaceIDStore = defineStore('faceID', () => {
         .detectAllFaces(video.value, options)
         .withFaceLandmarks()
         .withFaceDescriptors()
+        .withFaceExpressions()
 
       if (detections.length === 1) {
         const detection = detections[0]
         const landmarks = detection.landmarks
         const descriptor = detection.descriptor
+        const expressions = detection.expressions
 
-        const angle = getFaceAngle(landmarks)
+        const angle = await getFaceAngle(landmarks)
 
-        if (!faceDescriptor && angle === 0) {
+        if (!faceDescriptor) {
           faceDescriptor = descriptor
+          if (step.value >= 0) {
+            step.value = 0
+          }
           return renderTextStep()
+        }
+
+        const faceBox = detections[0].detection.box
+
+        const avgBrightness = await getAverageBrightness(faceBox)
+
+        if (avgBrightness < MIN_BRIGHTNESS) {
+          step.value = -1
+          faceDescriptor = null
+          return renderTextStep()
+        }
+
+        if (avgBrightness > MAX_BRIGHTNESS) {
+          step.value = -2
+          faceDescriptor = null
+          return renderTextStep()
+        }
+
+        if (
+          expressions.happy > 0.7 ||
+          expressions.surprised > 0.7 ||
+          expressions.sad > 0.7 ||
+          expressions.surprised > 0.7 ||
+          expressions.disgusted > 0.7 ||
+          expressions.fearful > 0.7
+        ) {
+          step.value = -4
+          faceDescriptor = null
+          return renderTextStep()
+        }
+
+        if (!isLightBalance(landmarks, faceBox)) {
+          step.value = -3
+          faceDescriptor = null
+          return renderTextStep()
+        }
+
+        if (step.value === -1 || step.value === -2 || step.value === -3 || step.value === -4) {
+          step.value = 0
+          renderTextStep()
         }
 
         if (faceDescriptor) {
@@ -175,6 +361,7 @@ const useFaceIDStore = defineStore('faceID', () => {
               step.value = 1
               captureFace()
               stopVideo()
+              dataImage.value = dataImageTemp.value
               typeof onSuccess == 'function' && onSuccess(descriptor)
               isRunScan.value = false
             } else {
@@ -183,14 +370,15 @@ const useFaceIDStore = defineStore('faceID', () => {
           } else {
             if (step.value === 0 && angle === 0) {
               step.value = 1
+              captureFace()
             } else if (step.value === 1 && angle === -1) {
               step.value = 2
             } else if (step.value === 2 && angle === 1) {
               step.value = 3
             } else if (step.value === 3 && angle === 0) {
               step.value = 4
-              captureFace()
               stopVideo()
+              dataImage.value = dataImageTemp.value
               typeof onSuccess == 'function' && onSuccess(descriptor)
               isRunScan.value = false
             } else {
