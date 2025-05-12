@@ -131,7 +131,7 @@ const useFaceIDStore = defineStore('faceID', () => {
 
   const detectFace = async () => {
     const options = DEEP_CHECK
-      ? new faceapi.SsdMobilenetv1Options({ minConfidence: 0.6 })
+      ? new faceapi.SsdMobilenetv1Options({ minConfidence: 0.5 })
       : new faceapi.TinyFaceDetectorOptions()
     const displaySize = { width: video.value.videoWidth, height: video.value.videoHeight }
 
