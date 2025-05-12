@@ -183,6 +183,7 @@ public interface TCTeachingScheduleExtendRepository extends PlanDateRepository {
             p.name AS projectName,
             pd.type as type,
             pd.link as link,
+            pd.room as room,
             pd.late_arrival AS lateArrival,
             pd.description AS description
             FROM
