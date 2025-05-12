@@ -25,4 +25,9 @@ public class TCFactoryRestController {
     public ResponseEntity<?> getAllProjectByFacility() {
         return teacherStudentService.getAllProjectByFacility();
     }
+
+    @GetMapping("/semesters")
+    public ResponseEntity<?> getAllSemester() {
+        return teacherStudentService.getAllSemester();
+    }
 }

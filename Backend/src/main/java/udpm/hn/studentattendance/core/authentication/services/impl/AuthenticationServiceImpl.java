@@ -35,6 +35,7 @@ import udpm.hn.studentattendance.infrastructure.constants.SessionConstant;
 import udpm.hn.studentattendance.utils.AppUtils;
 import udpm.hn.studentattendance.utils.FaceRecognitionUtils;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -148,7 +149,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         student.setFacility(facility);
         student.setCode(request.getCode());
         student.setName(request.getName());
-        student.setFaceEmbedding(request.getFaceEmbedding());
+        student.setFaceEmbedding(Arrays.toString(faceEmbeddings.get(0)));
         authenticationUserStudentRepository.save(student);
 
         String accessToken = jwtUtil.generateToken(student.getEmail(),
@@ -194,7 +195,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             return RouterHelper.responseError("Đã tồn tại khuôn mặt trên hệ thống");
         }
 
-        student.setFaceEmbedding(request.getFaceEmbedding());
+        student.setFaceEmbedding(Arrays.toString(faceEmbeddings.get(0)));
 
         NotificationAddRequest notificationAddRequest = new NotificationAddRequest();
         notificationAddRequest.setType(NotificationHelper.TYPE_SUCCESS_UPDATE_FACE_ID);
