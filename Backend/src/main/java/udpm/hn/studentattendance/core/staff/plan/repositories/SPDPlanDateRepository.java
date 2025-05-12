@@ -31,7 +31,7 @@ public interface SPDPlanDateRepository extends PlanDateRepository {
             pd.required_location,
             pd.required_ip,
             CASE
-                WHEN UNIX_TIMESTAMP(NOW()) * 1000 > pd.end_date
+                WHEN UNIX_TIMESTAMP(NOW()) * 1000 > pd.start_date
                 THEN 'DA_DIEN_RA'
                 ELSE 'CHUA_DIEN_RA'
             END AS status
@@ -53,7 +53,7 @@ public interface SPDPlanDateRepository extends PlanDateRepository {
             )) AND
             (:#{#request.status} IS NULL OR (
                 CASE
-                    WHEN UNIX_TIMESTAMP(NOW()) * 1000 > pd.end_date
+                    WHEN UNIX_TIMESTAMP(NOW()) * 1000 > pd.start_date
                     THEN 'DA_DIEN_RA'
                     ELSE 'CHUA_DIEN_RA'
                 END
@@ -80,7 +80,7 @@ public interface SPDPlanDateRepository extends PlanDateRepository {
             )) AND
             (:#{#request.status} IS NULL OR (
                 CASE
-                    WHEN UNIX_TIMESTAMP(NOW()) * 1000 > pd.end_date
+                    WHEN UNIX_TIMESTAMP(NOW()) * 1000 > pd.start_date
                     THEN 'DA_DIEN_RA'
                     ELSE 'CHUA_DIEN_RA'
                 END
@@ -103,7 +103,7 @@ public interface SPDPlanDateRepository extends PlanDateRepository {
             pd.required_location,
             pd.required_ip,
             CASE
-                WHEN UNIX_TIMESTAMP(NOW()) * 1000 > pd.end_date
+                WHEN UNIX_TIMESTAMP(NOW()) * 1000 > pd.start_date
                 THEN 'DA_DIEN_RA'
                 ELSE 'CHUA_DIEN_RA'
             END AS status
