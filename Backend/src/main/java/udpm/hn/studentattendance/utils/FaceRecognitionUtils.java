@@ -1,7 +1,11 @@
 package udpm.hn.studentattendance.utils;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
+import java.util.Collections;
+import java.util.List;
 
 public class FaceRecognitionUtils {
 
@@ -17,9 +21,17 @@ public class FaceRecognitionUtils {
         }
     }
 
+    public static List<double[]> parseEmbeddings(String embeddingsStr) {
+        try {
+            return objectMapper.readValue(embeddingsStr, new TypeReference<>() {});
+        } catch (JsonProcessingException e) {
+            return Collections.emptyList();
+        }
+    }
+
     public static double calculateEuclideanDistance(double[] emb1, double[] emb2) {
         if (emb1.length != emb2.length) {
-            return 0.0;
+            return THRESHOLD;
         }
 
         double sum = 0.0;
@@ -29,12 +41,17 @@ public class FaceRecognitionUtils {
         return Math.sqrt(sum);
     }
 
-    public static boolean isSameFace(double[] emb1, double[] emb2) {
+    public static boolean isSameFace(List<double[]> emb1, double[] emb2) {
         return isSameFace(emb1, emb2, THRESHOLD);
     }
 
-    public static boolean isSameFace(double[] emb1, double[] emb2, double threshold) {
-        return calculateEuclideanDistance(emb1, emb2) < threshold;
+    public static boolean isSameFace(List<double[]> emb1, double[] emb2, double threshold) {
+        for (double[] input : emb1) {
+            if (calculateEuclideanDistance(input, emb2) < threshold) {
+                return true;
+            }
+        }
+        return false;
     }
 
 }

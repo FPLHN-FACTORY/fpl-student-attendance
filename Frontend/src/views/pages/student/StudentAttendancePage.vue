@@ -160,6 +160,7 @@ const handleSubmitAttendance = () => {
     })
     .finally(() => {
       loadingPage.hide()
+      isShowCamera.value = false
     })
 }
 
@@ -183,7 +184,7 @@ const handleUpdateInfo = async () => {
   isShowCamera.value = true
   faceIDStore.init(video, canvas, false, (descriptor) => {
     isShowCamera.value = false
-    formData.faceEmbedding = JSON.stringify(Array.from(descriptor))
+    formData.faceEmbedding = JSON.stringify(descriptor)
     Modal.confirm({
       title: 'Xác nhận cập nhật dữ liệu khuôn mặt',
       icon: createVNode(ExclamationCircleOutlined),
@@ -203,8 +204,7 @@ const handleCheckin = async (item) => {
   formData.idPlanDate = item.idPlanDate
   isShowCamera.value = true
   faceIDStore.init(video, canvas, true, (descriptor) => {
-    isShowCamera.value = false
-    formData.faceEmbedding = JSON.stringify(Array.from(descriptor))
+    formData.faceEmbedding = JSON.stringify(descriptor)
     handleSubmitAttendance()
   })
   await nextTick()
@@ -423,7 +423,7 @@ watch(
 
               <template v-if="column.key === 'actions'">
                 <span v-if="record.status == ATTENDANCE_STATUS.NOTCHECKIN.id">
-                  <span
+                  <!-- <span
                     v-if="Date.now() < record.startDate - DEFAULT_EARLY_MINUTE_CHECKIN * 60 * 1000"
                   >
                     <a-badge status="warning" />
@@ -432,8 +432,8 @@ watch(
                   <span v-else-if="Date.now() > record.startDate + record.lateArrival * 60 * 1000">
                     <a-badge status="error" />
                     Đã quá giờ checkin đầu giờ</span
-                  >
-                  <a-tooltip title="Checkin đầu giờ" v-else>
+                  > -->
+                  <a-tooltip title="Checkin đầu giờ">
                     <a-button
                       type="primary"
                       class="btn-info ms-2 border-0"
