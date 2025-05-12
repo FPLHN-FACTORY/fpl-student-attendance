@@ -108,7 +108,7 @@ onMounted(async () => {
 <template>
   <a-modal
     v-model:open="isShowCamera"
-    title="Checkin khuôn mặt"
+    title="Xác nhận khuôn mặt"
     @cancel="faceIDStore.stopVideo()"
     :footer="null"
   >
