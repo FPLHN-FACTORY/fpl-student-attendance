@@ -152,6 +152,8 @@ onMounted(async () => {
         <div></div>
         <div></div>
         <div></div>
+        <div></div>
+        <div></div>
       </div>
       <div class="face-id-loading" v-show="faceIDStore.isLoading">
         <div class="bg-loading">
@@ -373,6 +375,11 @@ onMounted(async () => {
   border: 1px solid #d6bfda;
   padding: 20px 40px;
   box-shadow: 4px 6px 1px 1px #efefef;
+}
+@media (max-width: 576px) {
+  .role-container {
+    padding: 20px 15px;
+  }
 }
 .role-item {
   display: flex;
