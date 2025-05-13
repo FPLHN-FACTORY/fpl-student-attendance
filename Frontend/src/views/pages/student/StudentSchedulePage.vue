@@ -14,7 +14,7 @@ import autoTable from 'jspdf-autotable'
 import ExcelJS from 'exceljs'
 import { saveAs } from 'file-saver'
 import { autoAddColumnWidth, dayOfWeek, formatDate } from '@/utils/utils'
-import { FilterFilled } from '@ant-design/icons-vue'
+import { FilterFilled, UnorderedListOutlined } from '@ant-design/icons-vue'
 
 const breadcrumbStore = useBreadcrumbStore()
 
@@ -118,11 +118,11 @@ const exportToExcel = async () => {
   attendanceList.value.forEach((item, idx) => {
     const dayString = `${dayOfWeek(item.attendanceDayStart)}, ${formatDate(
       item.attendanceDayStart,
-      DEFAULT_DATE_FORMAT
+      DEFAULT_DATE_FORMAT,
     )}`
     const timeRange = `${formatDate(item.attendanceDayStart, 'HH:mm')} - ${formatDate(
       item.attendanceDayEnd,
-      'HH:mm'
+      'HH:mm',
     )}`
 
     ws.addRow({
@@ -158,7 +158,7 @@ const exportToExcel = async () => {
   ws.eachRow((row) =>
     row.eachCell((cell) => {
       cell.protection = { locked: true }
-    })
+    }),
   )
 
   // 6. Protect toàn bộ worksheet
@@ -227,102 +227,103 @@ onMounted(() => {
   <div class="container-fluid">
     <div class="row g-3">
       <div class="col-12">
-        <div class="container-fluid">
-          <a-card class="mb-3">
-            <template #title><FilterFilled /> Bộ lọc</template>
-            <div class="row g-3 filter-container">
-              <a-col :span="24">
-                <a-select
-                  v-model:value="filter.plan"
-                  placeholder="Chọn khoảng thời gian"
-                  allowClear
-                  style="width: 100%"
-                  @change="fetchAttendanceList"
-                >
-                  <a-select-option :value="-90">90 ngày trước</a-select-option>
-                  <a-select-option :value="-30">30 ngày trước</a-select-option>
-                  <a-select-option :value="-14">14 ngày trước</a-select-option>
-                  <a-select-option :value="-7">7 ngày trước</a-select-option>
-                  <a-select-option :value="7">7 ngày tới</a-select-option>
-                  <a-select-option :value="14">14 ngày tới</a-select-option>
-                  <a-select-option :value="30">30 ngày tới</a-select-option>
-                  <a-select-option :value="90">90 ngày tới</a-select-option>
-                </a-select>
-              </a-col>
+        <a-card class="mb-3">
+          <template #title><FilterFilled /> Bộ lọc</template>
+          <div class="row g-3 filter-container">
+            <div class="col-md-12">
+              <div class="label-title">Lịch học:</div>
+              <a-select
+                v-model:value="filter.plan"
+                placeholder="Chọn khoảng thời gian"
+                allowClear
+                class="w-100"
+                @change="fetchAttendanceList"
+              >
+                <a-select-option :value="-90">90 ngày trước</a-select-option>
+                <a-select-option :value="-30">30 ngày trước</a-select-option>
+                <a-select-option :value="-14">14 ngày trước</a-select-option>
+                <a-select-option :value="-7">7 ngày trước</a-select-option>
+                <a-select-option :value="7">7 ngày tới</a-select-option>
+                <a-select-option :value="14">14 ngày tới</a-select-option>
+                <a-select-option :value="30">30 ngày tới</a-select-option>
+                <a-select-option :value="90">90 ngày tới</a-select-option>
+              </a-select>
             </div>
-            <div class="row">
-              <div class="col-12">
-                <div class="d-flex justify-content-center flex-wrap gap-2 mt-3">
-                  <a-button class="btn-light" @click="fetchAttendanceList">
-                    <FilterFilled /> Lọc
-                  </a-button>
-                  <a-button class="btn-gray" @click="handleClearFilter"> Huỷ lọc </a-button>
-                </div>
+          </div>
+          <div class="row">
+            <div class="col-12">
+              <div class="d-flex justify-content-center flex-wrap gap-2 mt-3">
+                <a-button class="btn-light" @click="fetchAttendanceList">
+                  <FilterFilled /> Lọc
+                </a-button>
+                <a-button class="btn-gray" @click="handleClearFilter"> Huỷ lọc </a-button>
               </div>
             </div>
-          </a-card>
+          </div>
+        </a-card>
 
-          <a-card title="Danh sách điểm danh" :bordered="false" class="cart">
-            <div class="d-flex justify-content-end mb-3">
-              <a-button type="primary" @click="exportToExcel" class="me-3"
-                >Tải xuống Excel</a-button
-              >
-              <a-button type="default" @click="exportToPDF">Tải xuống PDF</a-button>
-            </div>
+        <a-card :bordered="false" class="cart">
+          <template #title>
+            <UnorderedListOutlined />
+            Danh sách điểm danh
+          </template>
+          <div class="d-flex justify-content-end mb-3">
+            <a-button type="primary" @click="exportToExcel" class="me-3">Tải xuống Excel</a-button>
+            <a-button type="default" @click="exportToPDF">Tải xuống PDF</a-button>
+          </div>
 
-            <a-table
-              class="nowrap"
-              :dataSource="attendanceList"
-              :columns="columns"
-              :rowKey="'id'"
-              :loading="isLoading"
-              :scroll="{ x: 'auto' }"
-              :pagination="pagination"
-              @change="handleTableChange"
-            >
-              <template #bodyCell="{ column, record }">
-                <template v-if="column.key === 'time'">
-                  {{
-                    `${dayOfWeek(record.attendanceDayStart)}, ${formatDate(
-                      record.attendanceDayStart,
-                      DEFAULT_DATE_FORMAT
-                    )}`
-                  }}
-                  {{
-                    `${formatDate(record.attendanceDayStart, 'HH:mm')} - ${formatDate(
-                      record.attendanceDayEnd,
-                      'HH:mm'
-                    )}`
-                  }}
-                </template>
-                <template v-else-if="column.dataIndex === 'shift'">
-                  <a-tag :color="record.type === 1 ? 'blue' : 'purple'">
-                    {{
-                      `Ca ${record.shift
-                        .split(',')
-                        .map((o) => Number(o))
-                        .join(', ')} - ${TYPE_SHIFT[record.type]}`
-                    }}
-                  </a-tag>
-                </template>
-                <template v-if="column.dataIndex === 'description'">
-                  <a-typography-link @click="handleShowDescription(record.description)"
-                    >Chi tiết</a-typography-link
-                  >
-                </template>
-                <template v-else-if="column.dataIndex === 'link'">
-                  <a v-if="record.link" :href="record.link" target="_blank">{{ record.link }}</a>
-                </template>
-                <template v-if="column.dataIndex === 'staffName'">
-                  <a-tag color="green">{{ record.staffName }}</a-tag>
-                </template>
-                <template v-if="column.dataIndex === 'factoryName'">
-                  <a-badge status="processing" :text="record.factoryName" />
-                </template>
+          <a-table
+            class="nowrap"
+            :dataSource="attendanceList"
+            :columns="columns"
+            :rowKey="'id'"
+            :loading="isLoading"
+            :scroll="{ x: 'auto' }"
+            :pagination="pagination"
+            @change="handleTableChange"
+          >
+            <template #bodyCell="{ column, record }">
+              <template v-if="column.key === 'time'">
+                {{
+                  `${dayOfWeek(record.attendanceDayStart)}, ${formatDate(
+                    record.attendanceDayStart,
+                    DEFAULT_DATE_FORMAT,
+                  )}`
+                }}
+                {{
+                  `${formatDate(record.attendanceDayStart, 'HH:mm')} - ${formatDate(
+                    record.attendanceDayEnd,
+                    'HH:mm',
+                  )}`
+                }}
               </template>
-            </a-table>
-          </a-card>
-        </div>
+              <template v-else-if="column.dataIndex === 'shift'">
+                <a-tag :color="record.type === 1 ? 'blue' : 'purple'">
+                  {{
+                    `Ca ${record.shift
+                      .split(',')
+                      .map((o) => Number(o))
+                      .join(', ')} - ${TYPE_SHIFT[record.type]}`
+                  }}
+                </a-tag>
+              </template>
+              <template v-if="column.dataIndex === 'description'">
+                <a-typography-link @click="handleShowDescription(record.description)"
+                  >Chi tiết</a-typography-link
+                >
+              </template>
+              <template v-else-if="column.dataIndex === 'link'">
+                <a v-if="record.link" :href="record.link" target="_blank">{{ record.link }}</a>
+              </template>
+              <template v-if="column.dataIndex === 'staffName'">
+                <a-tag color="green">{{ record.staffName }}</a-tag>
+              </template>
+              <template v-if="column.dataIndex === 'factoryName'">
+                <a-badge status="processing" :text="record.factoryName" />
+              </template>
+            </template>
+          </a-table>
+        </a-card>
       </div>
     </div>
   </div>

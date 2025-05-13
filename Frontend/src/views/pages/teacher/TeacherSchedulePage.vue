@@ -459,7 +459,7 @@ onMounted(() => {
     <div class="row g-3">
       <div class="col-12">
         <a-card :bordered="false" class="cart mb-3">
-          <template #title> <FilterFilled /> Bộ lọc tìm kiếm </template>
+          <template #title> <FilterFilled /> Bộ lọc</template>
           <div class="row g-3 filter-container">
             <div class="col-md-6 col-sm-6">
               <div class="label-title">Khoảng thời gian:</div>
@@ -482,7 +482,7 @@ onMounted(() => {
                 v-model:value="filter.shiftType"
                 placeholder="Chọn hình thức học"
                 allowClear
-                style="width: 100%"
+                class="w-100"
                 @change="fetchTeachingSchedule"
               >
                 <a-select-option :value="''">Tất cả hình thức học</a-select-option>

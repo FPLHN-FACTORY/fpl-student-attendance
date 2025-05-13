@@ -13,6 +13,7 @@ import {
   SyncOutlined,
   EditFilled,
   EyeFilled,
+  SearchOutlined,
 } from '@ant-design/icons-vue'
 import { DEFAULT_PAGINATION, STATUS_TYPE } from '@/constants'
 import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
@@ -272,24 +273,28 @@ onMounted(() => {
     <div class="row g-3">
       <div class="col-12">
         <a-card :bordered="false" class="cart mb-3">
-          <template #title> <FilterFilled /> Bộ lọc tìm kiếm </template>
+          <template #title> <FilterFilled /> Bộ lọc</template>
           <div class="row g-3 filter-container">
-            <div class="col-md-6 col-sm-6">
-              <label class="label-title">Từ khoá:</label>
+            <div class="col-md-8 col-sm-6">
+              <div class="label-title">Từ khoá:</div>
               <a-input
                 v-model:value="filter.name"
                 placeholder="Nhập tên hoặc mã bộ môn"
                 allowClear
                 @change="fetchSubjects"
-              />
+              >
+                <template #prefix>
+                  <SearchOutlined />
+                </template>
+              </a-input>
             </div>
-            <div class="col-md-6 col-sm-6">
-              <label class="label-title">Trạng thái:</label>
+            <div class="col-md-4 col-sm-6">
+              <div class="label-title">Trạng thái:</div>
               <a-select
                 v-model:value="filter.status"
                 placeholder="Chọn trạng thái"
                 allowClear
-                style="width: 100%"
+                class="w-100"
                 @change="fetchSubjects"
               >
                 <a-select-option :value="''">Tất cả trạng thái</a-select-option>

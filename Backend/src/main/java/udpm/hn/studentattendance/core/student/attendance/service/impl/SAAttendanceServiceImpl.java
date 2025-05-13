@@ -95,7 +95,7 @@ public class SAAttendanceServiceImpl implements SAAttendanceService {
 
                 Set<String> allowIPs = facilityIPRepository.getAllIP(sessionHelper.getFacilityId());
                 if (!allowIPs.isEmpty() && !ValidateHelper.isAllowedIP(clientIP, allowIPs)) {
-                    return RouterHelper.responseError("Vui lòng kết nối bằng mạng trường để có thể Checkin");
+                    return RouterHelper.responseError("Vui lòng kết nối bằng mạng trường để tiếp tục checkin/checkout");
                 }
             }
 
@@ -105,7 +105,7 @@ public class SAAttendanceServiceImpl implements SAAttendanceService {
                 }
                 List<FacilityLocation> lstLocation = facilityLocationRepository.getAllList(sessionHelper.getFacilityId());
                 if (!GeoUtils.isAllowedLocation(lstLocation, request.getLatitude(), request.getLongitude())) {
-                    return RouterHelper.responseError("Địa điểm checkin nằm ngoài vùng cho phép");
+                    return RouterHelper.responseError("Địa điểm checkin/checkout nằm ngoài vùng cho phép");
                 }
             }
         }
@@ -128,11 +128,11 @@ public class SAAttendanceServiceImpl implements SAAttendanceService {
             }
         } else {
             if (DateTimeUtils.getCurrentTimeMillis() < planDate.getEndDate()) {
-                return RouterHelper.responseError("Chưa đến giờ checkin cuối giờ");
+                return RouterHelper.responseError("Chưa đến giờ checkout cuối giờ");
             }
 
             if (DateTimeUtils.getCurrentTimeMillis() > planDate.getEndDate() + planDate.getLateArrival() * 60 * 1000) {
-                return RouterHelper.responseError("Đã quá giờ checkin cuối giờ");
+                return RouterHelper.responseError("Đã quá giờ checkout cuối giờ");
             }
         }
 
