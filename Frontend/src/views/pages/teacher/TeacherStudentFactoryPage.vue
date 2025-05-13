@@ -25,8 +25,8 @@ const breadcrumb = ref([
     breadcrumbName: 'Giảng viên',
   },
   {
-    name: ROUTE_NAMES.MANAGEMENT_STUDENT,
-    breadcrumbName: 'Nhóm xưởng',
+    name: ROUTE_NAMES.MANAGEMENT_FACTORY,
+    breadcrumbName: 'Nhóm xưởng của tôi',
   },
   {
     name: ROUTE_NAMES.MANAGEMENT_STUDENT_FACTORY,
@@ -63,6 +63,12 @@ const columns = ref(
       key: 'studentName',
     },
     { title: 'Email', dataIndex: 'studentEmail', key: 'studentEmail' },
+    {
+      title: 'Số buổi đã nghỉ',
+      dataIndex: 'totalAbsentShift',
+      key: 'totalAbsentShift',
+      align: 'center',
+    },
     {
       title: 'Trạng thái',
       dataIndex: 'statusStudentFactory',
@@ -248,15 +254,6 @@ onMounted(() => {
                 </template>
                 <!-- Hiển thị trạng thái -->
                 <template v-else-if="column.dataIndex === 'statusStudentFactory'">
-                  <span class="nowrap">
-                    <a-switch
-                      class="me-2"
-                      :checked="
-                        record.statusStudentFactory === 'ACTIVE' ||
-                        record.statusStudentFactory === 1
-                      "
-                    />
-                  </span>
                   <a-tag
                     :color="
                       record.statusStudentFactory === 'ACTIVE' || record.statusStudentFactory === 1
@@ -271,9 +268,10 @@ onMounted(() => {
                     }}
                   </a-tag>
                 </template>
-                <!-- Các cột khác -->
-                <template v-else>
-                  {{ record[column.dataIndex] }}
+                <template v-if="column.dataIndex === 'totalAbsentShift'">
+                  <a-tag :color="record.totalAbsentShift > 0 ? 'red' : 'green'">{{
+                    record.totalAbsentShift || 0
+                  }}</a-tag>
                 </template>
               </template>
               <!-- Các nút hành động -->

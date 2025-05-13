@@ -199,7 +199,6 @@ const fetchAllStudents = () => {
 }
 
 const handleStudentTableChange = (paginationObj) => {
-  console.log('Student Table Change:', paginationObj)
   studentPagination.current = paginationObj.current
   studentPagination.pageSize = paginationObj.pageSize
   studentFilter.page = paginationObj.current

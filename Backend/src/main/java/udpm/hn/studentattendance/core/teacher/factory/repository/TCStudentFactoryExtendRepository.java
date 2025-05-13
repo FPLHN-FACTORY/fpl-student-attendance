@@ -11,6 +11,17 @@ import udpm.hn.studentattendance.repositories.UserStudentFactoryRepository;
 @Repository
 public interface TCStudentFactoryExtendRepository extends UserStudentFactoryRepository {
     @Query(value = """
+            WITH cte_total_shift AS (
+                SELECT COUNT(DISTINCT pd.id) AS total_shift
+                FROM plan_date pd
+                JOIN plan_factory pf ON pd.id_plan_factory = pf.id
+                WHERE
+                    pd.status = 1 AND
+                    pf.status = 1 AND
+                    pd.id_plan_factory = pf.id AND
+                    pf.id_factory = :factoryId AND
+                    pd.end_date <= UNIX_TIMESTAMP(NOW()) * 1000
+            )
             SELECT
                 usf.id AS studentFactoryId,
                 us.id AS studentId,
@@ -19,12 +30,27 @@ public interface TCStudentFactoryExtendRepository extends UserStudentFactoryRepo
                 us.name AS studentName,
                 us.email AS studentEmail,
                 usf.status AS statusStudentFactory,
+                (cte_ts.total_shift - (
+                        SELECT COUNT(a.id)
+                        FROM attendance a
+                        JOIN plan_date pd ON a.id_plan_date = pd.id
+                        JOIN plan_factory pf ON pd.id_plan_factory = pf.id
+                        WHERE
+                            pd.status = 1 AND
+                            pf.status = 1 AND
+                            a.attendance_status = 3 AND
+                            pf.id_factory = ft.id AND
+                            a.id_user_student = usf.id_user_student
+                    )
+                ) AS totalAbsentShift,
                 ROW_NUMBER() OVER (ORDER BY usf.created_at DESC) AS rowNumber
             FROM user_student_factory usf
+            CROSS JOIN cte_total_shift cte_ts
             LEFT JOIN user_student us ON us.id = usf.id_user_student
             LEFT JOIN factory ft ON ft.id = usf.id_factory
             WHERE
                 ft.id = :factoryId
+                AND usf.status = 1
                 AND ft.status = 1
                 AND us.status = 1
                 AND (:#{#studentRequest.status} IS NULL OR usf.status = :#{#studentRequest.status})
@@ -42,6 +68,7 @@ public interface TCStudentFactoryExtendRepository extends UserStudentFactoryRepo
             LEFT JOIN factory ft ON ft.id = usf.id_factory
             WHERE
                 ft.id = :factoryId
+                AND usf.status = 1
                 AND ft.status = 1
                 AND us.status = 1
                 AND (:#{#studentRequest.status} IS NULL OR usf.status = :#{#studentRequest.status})

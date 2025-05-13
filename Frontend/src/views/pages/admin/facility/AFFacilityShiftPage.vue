@@ -47,11 +47,13 @@ const columns = ref(
       title: 'Thời gian bắt đầu',
       dataIndex: 'startTime',
       key: 'startTime',
+      align: 'center',
     },
     {
       title: 'Thời gian kết thúc',
       dataIndex: 'endTime',
       key: 'endTime',
+      align: 'center',
     },
     { title: 'Trạng thái', dataIndex: 'status', key: 'status' },
     { title: '', key: 'actions' },

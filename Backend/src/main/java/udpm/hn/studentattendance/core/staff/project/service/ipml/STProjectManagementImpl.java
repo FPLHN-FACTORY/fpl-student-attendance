@@ -20,6 +20,7 @@ import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.helpers.SessionHelper;
 import udpm.hn.studentattendance.infrastructure.common.ApiResponse;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
+import udpm.hn.studentattendance.infrastructure.common.repositories.CommonUserStudentRepository;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.RestApiStatus;
 
@@ -39,6 +40,8 @@ public class STProjectManagementImpl implements STProjectManagementService {
     private final STProjectSemesterExtendRepository semesterRepository;
 
     private final STProjectSubjectFacilityExtendRepository subjectFacilityRepository;
+
+    private final CommonUserStudentRepository commonUserStudentRepository;
 
     private final SessionHelper sessionHelper;
 
@@ -94,6 +97,9 @@ public class STProjectManagementImpl implements STProjectManagementService {
             project.setStatus(EntityStatus.ACTIVE);
         }
         projectManagementRepository.save(project);
+        if (project.getStatus() == EntityStatus.ACTIVE) {
+            commonUserStudentRepository.disableAllStudentDuplicateShiftByIdProject(project.getId());
+        }
         return RouterHelper.responseSuccess("Chuyển trạng thái thành công", project);
     }
 
@@ -133,6 +139,9 @@ public class STProjectManagementImpl implements STProjectManagementService {
             project.setStatus(project.getStatus() == EntityStatus.ACTIVE ? EntityStatus.INACTIVE
                     : EntityStatus.ACTIVE);
             projectManagementRepository.save(project);
+            if (project.getStatus() == EntityStatus.ACTIVE) {
+                commonUserStudentRepository.disableAllStudentDuplicateShiftByIdProject(project.getId());
+            }
         }
 
         return new ResponseEntity<>(

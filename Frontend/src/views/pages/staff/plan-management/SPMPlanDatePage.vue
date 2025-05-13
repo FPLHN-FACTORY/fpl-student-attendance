@@ -8,6 +8,7 @@ import {
   EditFilled,
   DeleteFilled,
   EyeFilled,
+  ExclamationCircleOutlined,
 } from '@ant-design/icons-vue'
 import { message, Modal } from 'ant-design-vue'
 import requestAPI from '@/services/requestApiService'
@@ -77,6 +78,7 @@ const columns = ref(
       title: 'Điểm danh trễ',
       dataIndex: 'lateArrival',
       key: 'lateArrival',
+      align: 'center',
     },
     { title: 'Trạng thái', dataIndex: 'status', key: 'status' },
     { title: '', key: 'actions' },
@@ -664,7 +666,7 @@ watch(
               <div class="label-title">Từ khoá:</div>
               <a-input
                 v-model:value="dataFilter.keyword"
-                placeholder="Tìm theo mô tả..."
+                placeholder="Tìm theo nội dung..."
                 allowClear
               >
                 <template #prefix>
@@ -781,7 +783,9 @@ watch(
                   <a target="_blank" :href="record.link">Link</a>
                 </template>
                 <template v-if="column.dataIndex === 'lateArrival'">
-                  {{ `${record.lateArrival} phút` }}
+                  <a-tag color="gold">
+                    <ExclamationCircleOutlined /> {{ `${record.lateArrival} phút` }}
+                  </a-tag>
                 </template>
                 <template v-if="column.dataIndex === 'startDate'">
                   {{
@@ -825,7 +829,7 @@ watch(
                         <EditFilled />
                       </a-button>
                     </a-tooltip>
-                    <a-tooltip title="Xoá kế hoạch chi tiết">
+                    <a-tooltip title="Xoá ca học">
                       <a-button
                         class="btn-outline-danger border-0 ms-2"
                         @click="handleShowAlertDelete(record)"
