@@ -347,6 +347,18 @@ const handleClearFilter = () => {
   fetchFactories()
 }
 
+const handleShowDescription = (text) => {
+  Modal.info({
+    title: 'Mô tả nhóm xưởng',
+    type: 'info',
+    content: text,
+    okText: 'Đóng',
+    okButtonProps: {
+      class: 'btn-gray',
+    },
+  })
+}
+
 onMounted(() => {
   breadcrumbStore.setRoutes(breadcrumb.value)
   fetchFactories()
@@ -622,8 +634,12 @@ onMounted(() => {
                     </a-tag>
                   </span>
                 </template>
-                <template v-else>
-                  {{ record[column.dataIndex] }}
+                <template
+                  v-if="column.dataIndex === 'factoryDescription' && record.factoryDescription"
+                >
+                  <a-typography-link @click="handleShowDescription(record.factoryDescription)"
+                    >Chi tiết</a-typography-link
+                  >
                 </template>
               </template>
               <template v-else-if="column.key === 'actions'">

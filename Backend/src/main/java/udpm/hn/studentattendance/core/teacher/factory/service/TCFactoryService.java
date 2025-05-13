@@ -12,4 +12,5 @@ public interface TCFactoryService {
     ResponseEntity<?> getAllPlanDateByFactory();
 
     ResponseEntity<?> getAllSemester();
+    
 }

@@ -24,6 +24,7 @@ import udpm.hn.studentattendance.helpers.SessionHelper;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.constants.AttendanceStatus;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
+import udpm.hn.studentattendance.infrastructure.constants.StatusType;
 import udpm.hn.studentattendance.utils.DateTimeUtils;
 
 import java.util.Optional;
@@ -73,6 +74,9 @@ public class SPDPlanDateAttendanceServiceImpl implements SPDPlanDateAttendanceSe
             return RouterHelper.responseError("Không tìm thấy sinh viên");
         }
 
+        boolean isEnableCheckin = planDate.getRequiredCheckin() == StatusType.ENABLE;
+        boolean isEnableCheckout = planDate.getRequiredCheckout() == StatusType.ENABLE;
+
         Attendance attendance = spdAttendanceRepository.findByPlanDate_IdAndUserStudent_Id(planDate.getId(), userStudent.getId()).orElse(null);
         if (attendance == null) {
             attendance = new Attendance();
@@ -88,13 +92,18 @@ public class SPDPlanDateAttendanceServiceImpl implements SPDPlanDateAttendanceSe
         String message = "Thay đổi trạng thái điểm danh thành công";
 
         if (request.getStatus() == 0) {
-            status = AttendanceStatus.CHECKIN;
+            status = !isEnableCheckout ? AttendanceStatus.PRESENT : AttendanceStatus.CHECKIN;
             message = "Thay đổi trạng thái checkin thành công";
         } else if (request.getStatus() == 1) {
-            if (attendance.getAttendanceStatus() != AttendanceStatus.CHECKIN) {
+            if (isEnableCheckin && attendance.getAttendanceStatus() != AttendanceStatus.CHECKIN) {
                 return RouterHelper.responseError("Không thể checkout khi chưa checkin");
             }
             message = "Thay đổi trạng thái checkout thành công";
+        }
+
+        if (!isEnableCheckin && !isEnableCheckout) {
+            status = AttendanceStatus.PRESENT;
+            message = "Thay đổi trạng thái điểm danh thành công";
         }
 
         attendance.setAttendanceStatus(status);

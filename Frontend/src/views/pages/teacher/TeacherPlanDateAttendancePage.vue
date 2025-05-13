@@ -7,10 +7,11 @@ import { ATTENDANCE_STATUS, DEFAULT_PAGINATION, STATUS_REQUIRED_ATTENDANCE } fro
 import { API_ROUTES_STAFF } from '@/constants/staffConstant'
 import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
 import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
-import { ROUTE_NAMES } from '@/router/staffRoute'
+import { ROUTE_NAMES } from '@/router/teacherRoute'
 import { useRoute, useRouter } from 'vue-router'
 import { autoAddColumnWidth, debounce, formatDate } from '@/utils/utils'
 import useLoadingStore from '@/stores/useLoadingStore'
+import { API_ROUTES_TEACHER } from '@/constants/teacherConstant'
 
 const route = useRoute()
 const router = useRouter()
@@ -36,12 +37,12 @@ const columns = ref(
 
 const breadcrumb = ref([
   {
-    name: GLOBAL_ROUTE_NAMES.STAFF_PAGE,
-    breadcrumbName: 'Phụ trách xưởng',
+    name: GLOBAL_ROUTE_NAMES.TEACHER_PAGE,
+    breadcrumbName: 'Giảng viên',
   },
   {
-    name: ROUTE_NAMES.MANAGEMENT_PLAN,
-    breadcrumbName: 'Danh sách kế hoạch',
+    name: ROUTE_NAMES.MANAGEMENT_FACTORY,
+    breadcrumbName: 'Nhóm xưởng của tôi',
   },
 ])
 
@@ -55,18 +56,13 @@ const dataFilter = reactive({
 const fetchDataDetail = () => {
   loadingStore.show()
   requestAPI
-    .get(`${API_ROUTES_STAFF.FETCH_DATA_PLAN_DATE_ATTENDANCE}/${route.params.id}`)
+    .get(`${API_ROUTES_TEACHER.FETCH_DATA_ATTENDANCE_FACTORY}/${route.params.id}`)
     .then(({ data: response }) => {
       _detail.value = response.data
       breadcrumbStore.push({
-        name: ROUTE_NAMES.MANAGEMENT_PLAN_FACTORY,
-        params: { id: _detail.value.planId },
-        breadcrumbName: _detail.value.planName,
-      })
-      breadcrumbStore.push({
-        name: ROUTE_NAMES.MANAGEMENT_PLAN_DATE,
+        name: ROUTE_NAMES.MANAGEMENT_SHIFT_FACTORY,
         params: { id: _detail.value.factoryId },
-        breadcrumbName: _detail.value.factoryName,
+        breadcrumbName: 'Danh sách ca học - ' + _detail.value.factoryName,
       })
       breadcrumbStore.push({
         breadcrumbName: 'Chi tiết điểm danh',
@@ -75,7 +71,7 @@ const fetchDataDetail = () => {
     })
     .catch((error) => {
       message.error(error?.response?.data?.message || 'Không thể tải thông tin kế hoạch')
-      router.push({ name: ROUTE_NAMES.MANAGEMENT_PLAN_FACTORY, params: { id: route.params?.id } })
+      //router.push({ name: ROUTE_NAMES.MANAGEMENT_PLAN_FACTORY, params: { id: route.params?.id } })
     })
     .finally(() => {
       loadingStore.hide()
@@ -108,22 +104,6 @@ const fetchDataList = () => {
     })
 }
 
-const fetchChangeStatus = (id, status) => {
-  requestAPI
-    .put(`${API_ROUTES_STAFF.FETCH_DATA_PLAN_DATE_ATTENDANCE}/change-status`, {
-      idUserStudent: id,
-      idPlanDate: _detail.value.id,
-      status,
-    })
-    .then(({ data: response }) => {
-      message.success(response.message)
-      fetchDataList()
-    })
-    .catch((error) => {
-      message.error(error?.response?.data?.message || 'Không thể thay đổi trạng thái kế hoạch')
-    })
-}
-
 const handleClearFilter = () => {
   Object.assign(dataFilter, {
     keyword: null,
@@ -141,45 +121,6 @@ const handleTableChange = (page) => {
   pagination.value.current = page.current
   pagination.value.pageSize = page.pageSize
   fetchDataList()
-}
-
-const handleSubmitCheckin = async (item) => {
-  Modal.confirm({
-    title: `${item.code} - ${item.name}`,
-    type: 'info',
-    content: `Không thể hoàn tác. Bạn thực sự muốn đánh dấu đã checkin sinh viên này?`,
-    okText: 'Tiếp tục',
-    cancelText: 'Hủy bỏ',
-    onOk() {
-      fetchChangeStatus(item.id, 0)
-    },
-  })
-}
-
-const handleSubmitCheckout = async (item) => {
-  Modal.confirm({
-    title: `${item.code} - ${item.name}`,
-    type: 'info',
-    content: `Không thể hoàn tác. Bạn thực sự muốn đánh dấu đã checkout sinh viên này?`,
-    okText: 'Tiếp tục',
-    cancelText: 'Hủy bỏ',
-    onOk() {
-      fetchChangeStatus(item.id, 1)
-    },
-  })
-}
-
-const handleSubmitAttendance = async (item) => {
-  Modal.confirm({
-    title: `${item.code} - ${item.name}`,
-    type: 'info',
-    content: `Không thể hoàn tác. Bạn thực sự muốn đánh dấu đã điểm danh sinh viên này?`,
-    okText: 'Tiếp tục',
-    cancelText: 'Hủy bỏ',
-    onOk() {
-      fetchChangeStatus(item.id, 2)
-    },
-  })
 }
 
 onMounted(() => {
@@ -266,11 +207,6 @@ watch(
                 <template v-if="column.dataIndex === 'createdAt'">
                   <template v-if="_detail.requiredCheckin === STATUS_REQUIRED_ATTENDANCE.ENABLE">
                     <span v-if="record.status === ATTENDANCE_STATUS.NOTCHECKIN.id">
-                      <a-switch
-                        class="me-2"
-                        checked="false"
-                        @change="handleSubmitCheckin(record)"
-                      />
                       <a-badge status="error" /> Chưa checkin
                     </span>
                     <span v-else>
@@ -286,14 +222,6 @@ watch(
                 <template v-if="column.dataIndex === 'updatedAt'">
                   <template v-if="_detail.requiredCheckout === STATUS_REQUIRED_ATTENDANCE.ENABLE">
                     <span v-if="record.status !== ATTENDANCE_STATUS.PRESENT.id">
-                      <a-switch
-                        class="me-2"
-                        checked="false"
-                        :disabled="
-                          record.status !== ATTENDANCE_STATUS.CHECKIN.id && _detail.requiredCheckin
-                        "
-                        @change="handleSubmitCheckout(record)"
-                      />
                       <a-badge status="error" /> Chưa checkout
                     </span>
                     <span v-else>
@@ -307,12 +235,6 @@ watch(
                   </template>
                 </template>
                 <template v-if="column.dataIndex === 'status'">
-                  <a-switch
-                    class="me-2"
-                    :checked="record.status === ATTENDANCE_STATUS.PRESENT.id"
-                    :disabled="record.status === ATTENDANCE_STATUS.PRESENT.id"
-                    @change="handleSubmitAttendance(record)"
-                  />
                   <a-tag color="green" v-if="record.status === ATTENDANCE_STATUS.PRESENT.id">
                     Có mặt
                   </a-tag>
