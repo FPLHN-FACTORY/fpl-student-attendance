@@ -3,6 +3,7 @@ import {
   ATTENDANCE_STATUS,
   DEFAULT_EARLY_MINUTE_CHECKIN,
   DEFAULT_PAGINATION,
+  STATUS_REQUIRED_ATTENDANCE,
   TYPE_SHIFT,
 } from '@/constants'
 import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
@@ -202,6 +203,7 @@ const handleUpdateInfo = async () => {
 
 const handleCheckin = async (item) => {
   formData.idPlanDate = item.idPlanDate
+
   isShowCamera.value = true
   faceIDStore.init(video, canvas, true, (descriptor) => {
     formData.faceEmbedding = JSON.stringify(descriptor)
@@ -403,18 +405,39 @@ watch(
                   `${formatDate(record.startDate, 'HH:mm')} - ${formatDate(record.endDate, 'HH:mm')}`
                 }}
               </template>
+
               <template v-if="column.dataIndex === 'status'">
-                <a-tag color="blue" v-if="record.status === ATTENDANCE_STATUS.CHECKIN.id">{{
-                  ATTENDANCE_STATUS.CHECKIN.name
-                }}</a-tag>
-                <a-tag color="red" v-else-if="record.status === ATTENDANCE_STATUS.ABSENT.id">{{
-                  ATTENDANCE_STATUS.ABSENT.name
-                }}</a-tag>
-                <a-tag color="green" v-else-if="record.status === ATTENDANCE_STATUS.PRESENT.id">{{
-                  ATTENDANCE_STATUS.PRESENT.name
-                }}</a-tag>
-                <a-tag color="orange" v-else>{{ ATTENDANCE_STATUS.NOTCHECKIN.name }}</a-tag>
+                <span
+                  v-if="
+                    record.requiredCheckin === STATUS_REQUIRED_ATTENDANCE.ENABLE &&
+                    record.requiredCheckout === STATUS_REQUIRED_ATTENDANCE.ENABLE
+                  "
+                >
+                  <a-tag color="blue" v-if="record.status === ATTENDANCE_STATUS.CHECKIN.id">{{
+                    ATTENDANCE_STATUS.CHECKIN.name
+                  }}</a-tag>
+                  <a-tag color="red" v-else-if="record.status === ATTENDANCE_STATUS.ABSENT.id">{{
+                    ATTENDANCE_STATUS.ABSENT.name
+                  }}</a-tag>
+                  <a-tag color="green" v-else-if="record.status === ATTENDANCE_STATUS.PRESENT.id">{{
+                    ATTENDANCE_STATUS.PRESENT.name
+                  }}</a-tag>
+                  <a-tag color="orange" v-else>{{ ATTENDANCE_STATUS.NOTCHECKIN.name }}</a-tag>
+                </span>
+                <span v-else-if="record.requiredCheckin === STATUS_REQUIRED_ATTENDANCE.ENABLE">
+                  <a-tag color="green" v-if="record.status === ATTENDANCE_STATUS.PRESENT.id">{{
+                    ATTENDANCE_STATUS.PRESENT.name
+                  }}</a-tag>
+                  <a-tag color="orange" v-else>{{ ATTENDANCE_STATUS.NOTCHECKIN.name }}</a-tag>
+                </span>
+                <span v-else>
+                  <a-tag color="green" v-if="record.status === ATTENDANCE_STATUS.PRESENT.id">{{
+                    ATTENDANCE_STATUS.PRESENT.name
+                  }}</a-tag>
+                  <a-tag color="orange" v-else>{{ ATTENDANCE_STATUS.NOTCHECKOUT.name }}</a-tag>
+                </span>
               </template>
+
               <template v-if="column.dataIndex === 'lateArrival'">
                 <a-tag :color="record.lateArrival > 0 ? 'gold' : 'green'">
                   <ExclamationCircleOutlined /> {{ record.lateArrival + ' phút' }}
@@ -422,34 +445,83 @@ watch(
               </template>
 
               <template v-if="column.key === 'actions'">
-                <span v-if="record.status == ATTENDANCE_STATUS.NOTCHECKIN.id">
-                  <span
-                    v-if="Date.now() < record.startDate - DEFAULT_EARLY_MINUTE_CHECKIN * 60 * 1000"
-                  >
-                    <a-badge status="warning" />
-                    Chưa đến giờ checkin</span
-                  >
-                  <span v-else-if="Date.now() > record.startDate + record.lateArrival * 60 * 1000">
-                    <a-badge status="error" />
-                    Đã quá giờ checkin đầu giờ</span
-                  >
-                  <a-tooltip title="Checkin đầu giờ" v-else>
-                    <a-button
-                      type="primary"
-                      class="btn-info ms-2 border-0"
-                      @click="handleCheckin(record)"
+                <template
+                  v-if="
+                    record.requiredCheckin === STATUS_REQUIRED_ATTENDANCE.ENABLE &&
+                    record.requiredCheckout === STATUS_REQUIRED_ATTENDANCE.ENABLE
+                  "
+                >
+                  <span v-if="record.status == ATTENDANCE_STATUS.NOTCHECKIN.id">
+                    <span
+                      v-if="
+                        Date.now() < record.startDate - DEFAULT_EARLY_MINUTE_CHECKIN * 60 * 1000
+                      "
                     >
-                      <CheckOutlined /> Checkin đầu giờ
-                    </a-button>
-                  </a-tooltip>
-                </span>
-                <span v-else-if="record.status == ATTENDANCE_STATUS.CHECKIN.id">
-                  <span v-if="Date.now() > record.endDate + record.lateArrival * 60 * 1000">
+                      <a-badge status="warning" />
+                      Chưa đến giờ checkin
+                    </span>
+                    <span
+                      v-else-if="Date.now() > record.startDate + record.lateArrival * 60 * 1000"
+                    >
+                      <a-badge status="error" />
+                      Đã quá giờ checkin
+                    </span>
+                    <a-tooltip title="Checkin đầu giờ" v-else>
+                      <a-button
+                        type="primary"
+                        class="btn-info ms-2 border-0"
+                        @click="handleCheckin(record)"
+                      >
+                        <CheckOutlined />
+                        Checkin đầu giờ
+                      </a-button>
+                    </a-tooltip>
+                  </span>
+                  <span v-else-if="record.status == ATTENDANCE_STATUS.CHECKIN.id">
+                    <span v-if="Date.now() > record.endDate + record.lateArrival * 60 * 1000">
+                      <a-badge status="error" />
+                      Đã quá giờ checkout</span
+                    >
+                    <a-tooltip
+                      title="Checkin cuối giờ"
+                      v-else-if="
+                        Date.now() >= record.endDate &&
+                        Date.now() <= record.endDate + record.lateArrival * 60 * 1000
+                      "
+                    >
+                      <a-button
+                        type="primary"
+                        class="btn-success ms-2 border-0"
+                        @click="handleCheckin(record)"
+                      >
+                        <CheckOutlined /> Checkout cuối giờ
+                      </a-button>
+                    </a-tooltip>
+                    <span v-else>
+                      <a-badge status="warning" /> Checkin đầu giờ
+                      {{ formatDate(record.timeCheckin, 'dd/MM/yyyy HH:mm') }}</span
+                    >
+                  </span>
+                  <span v-else-if="record.status == ATTENDANCE_STATUS.PRESENT.id">
+                    <a-badge status="success" />
+                    <span class="text-success">Đã điểm danh</span>
+                  </span>
+                  <span v-else>
                     <a-badge status="error" />
-                    Đã quá giờ checkin cuối giờ</span
+                    <span class="text-danger">Chưa điểm danh</span>
+                  </span>
+                </template>
+                <template v-else-if="record.requiredCheckout != STATUS_REQUIRED_ATTENDANCE.DISABLE">
+                  <span v-if="record.status === ATTENDANCE_STATUS.PRESENT.id">
+                    <a-badge status="success" />
+                    <span class="text-success">Đã điểm danh</span>
+                  </span>
+                  <span v-else-if="Date.now() > record.endDate + record.lateArrival * 60 * 1000">
+                    <a-badge status="error" />
+                    Đã quá giờ checkout</span
                   >
                   <a-tooltip
-                    title="Checkin cuối giờ"
+                    title="Checkout cuối giờ"
                     v-else-if="
                       Date.now() >= record.endDate &&
                       Date.now() <= record.endDate + record.lateArrival * 60 * 1000
@@ -460,22 +532,61 @@ watch(
                       class="btn-success ms-2 border-0"
                       @click="handleCheckin(record)"
                     >
-                      <CheckOutlined /> Checkin cuối giờ
+                      <CheckOutlined /> Checkout cuối giờ
                     </a-button>
                   </a-tooltip>
-                  <span v-else>
-                    <a-badge status="warning" /> Checkin đầu giờ
-                    {{ formatDate(record.timeCheckin, 'dd/MM/yyyy HH:mm') }}</span
+                  <span v-else> <a-badge status="warning" /> Chưa đến giờ checkout</span>
+                </template>
+                <template v-else-if="record.requiredCheckin !== STATUS_REQUIRED_ATTENDANCE.DISABLE">
+                  <span v-if="record.status === ATTENDANCE_STATUS.PRESENT.id">
+                    <a-badge status="success" />
+                    <span class="text-success">Đã điểm danh</span>
+                  </span>
+                  <span
+                    v-else-if="
+                      Date.now() < record.startDate - DEFAULT_EARLY_MINUTE_CHECKIN * 60 * 1000
+                    "
                   >
-                </span>
-                <span v-else-if="record.status == ATTENDANCE_STATUS.PRESENT.id">
-                  <a-badge status="success" />
-                  <span class="text-success">Đã điểm danh</span>
-                </span>
-                <span v-else>
-                  <a-badge status="error" />
-                  <span class="text-danger"></span>
-                </span>
+                    <a-badge status="warning" />
+                    Chưa đến giờ checkin
+                  </span>
+                  <span v-else-if="Date.now() > record.startDate + record.lateArrival * 60 * 1000">
+                    <a-badge status="error" />
+                    Đã quá giờ checkin
+                  </span>
+                  <a-tooltip title="Checkin đầu giờ" v-else>
+                    <a-button
+                      type="primary"
+                      class="btn-info ms-2 border-0"
+                      @click="handleCheckin(record)"
+                    >
+                      <CheckOutlined />
+                      Checkin đầu giờ
+                    </a-button>
+                  </a-tooltip>
+                </template>
+                <template v-else>
+                  <span
+                    v-if="Date.now() < record.startDate - DEFAULT_EARLY_MINUTE_CHECKIN * 60 * 1000"
+                  >
+                    <a-badge status="warning" />
+                    Chưa đến giờ điểm danh
+                  </span>
+                  <span v-else-if="Date.now() > record.startDate + record.lateArrival * 60 * 1000">
+                    <a-badge status="error" />
+                    Đã quá giờ điểm danh
+                  </span>
+                  <a-tooltip title="Điểm danh" v-else>
+                    <a-button
+                      type="primary"
+                      class="btn-info ms-2 border-0"
+                      @click="handleCheckin(record)"
+                    >
+                      <CheckOutlined />
+                      Điểm danh
+                    </a-button>
+                  </a-tooltip>
+                </template>
               </template>
             </template>
           </a-table>

@@ -29,6 +29,8 @@ public interface SAAttendanceRepository extends AttendanceRepository {
             pd.type AS type,
             pd.link AS link,
             f.name AS factoryName,
+            pd.required_checkin AS requiredCheckin,
+            pd.required_checkout AS requiredCheckout,
             CONCAT(us.code, ' - ', us.name) AS teacherName,
             COALESCE(a.attendance_status, 0) AS status
         FROM user_student_factory usf
