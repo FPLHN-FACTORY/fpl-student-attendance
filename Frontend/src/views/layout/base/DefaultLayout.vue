@@ -64,7 +64,7 @@ const handleToggleNav = () => {
 
 const handleLogout = () => {
   authStore.logout()
-  window.location.reload()
+  window.location.href = BASE_URL
 }
 
 const handleShowAllNotification = () => {
