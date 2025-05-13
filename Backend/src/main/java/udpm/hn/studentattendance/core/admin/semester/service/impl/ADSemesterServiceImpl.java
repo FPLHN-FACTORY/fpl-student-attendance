@@ -15,6 +15,7 @@ import udpm.hn.studentattendance.entities.Semester;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
 import udpm.hn.studentattendance.infrastructure.common.ApiResponse;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
+import udpm.hn.studentattendance.infrastructure.common.repositories.CommonUserStudentRepository;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.RestApiStatus;
 import udpm.hn.studentattendance.infrastructure.constants.SemesterName;
@@ -31,7 +32,10 @@ import java.util.Optional;
 @RequiredArgsConstructor
 @Validated
 public class ADSemesterServiceImpl implements ADSemesterService {
+
         private final ADSemesterRepository adSemesterRepository;
+
+        private final CommonUserStudentRepository commonUserStudentRepository;
 
         @Override
         public ResponseEntity<?> getAllSemester(ADSemesterRequest request) {
@@ -248,6 +252,11 @@ public class ADSemesterServiceImpl implements ADSemesterService {
                                 semester.setStatus(EntityStatus.ACTIVE);
                         }
                         adSemesterRepository.save(semester);
+
+                        if (semester.getStatus() == EntityStatus.ACTIVE) {
+                                commonUserStudentRepository.disableAllStudentDuplicateShiftByIdSemester(semester.getId());
+                        }
+
                         return new ResponseEntity<>(
                                         new ApiResponse(
                                                         RestApiStatus.SUCCESS,
