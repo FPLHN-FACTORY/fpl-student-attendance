@@ -416,7 +416,7 @@ watch(
         <a-card :bordered="false" class="cart">
           <template #title> <FilterFilled /> Bộ lọc </template>
           <div class="row g-2">
-            <div class="col-lg-4 col-md-6 col-sm-6">
+            <div class="col-lg-6 col-md-6 col-sm-6">
               <div class="label-title">Ca học:</div>
               <a-select
                 v-model:value="dataFilter.shift"
@@ -431,7 +431,7 @@ watch(
                 </a-select-option>
               </a-select>
             </div>
-            <div class="col-lg-4 col-md-6 col-sm-6">
+            <div class="col-lg-6 col-md-6 col-sm-6">
               <div class="label-title">Trạng thái:</div>
               <a-select
                 v-model:value="dataFilter.status"

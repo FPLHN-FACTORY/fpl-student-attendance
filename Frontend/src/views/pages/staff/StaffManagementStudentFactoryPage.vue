@@ -14,6 +14,7 @@ import {
   FilterFilled,
   UnorderedListOutlined,
   UserDeleteOutlined,
+  SearchOutlined,
 } from '@ant-design/icons-vue'
 import { useRoute } from 'vue-router'
 import {
@@ -462,22 +463,26 @@ onMounted(() => {
         <a-card :bordered="false" class="cart mb-3">
           <template #title> <FilterFilled /> Bộ lọc </template>
           <div class="row g-3 filter-container">
-            <div class="col-6">
-              <div class="label-title">Tìm kiếm mã, tên, email:</div>
+            <div class="col-md-6 col-sm-12">
+              <div class="label-title">Từ khoá:</div>
               <a-input
                 v-model:value="filter.searchQuery"
-                placeholder="Mã, tên hoặc email sinh viên"
+                placeholder="Tìm theo mã, tên hoặc email sinh viên"
                 allowClear
                 @change="fetchStudentFactories"
-              />
+              >
+                <template #prefix>
+                  <SearchOutlined />
+                </template>
+              </a-input>
             </div>
-            <div class="col-6">
+            <div class="col-md-6 col-sm-12">
               <div class="label-title">Trạng thái:</div>
               <a-select
                 v-model:value="filter.status"
                 placeholder="Chọn trạng thái"
                 allowClear
-                style="width: 100%"
+                class="w-100"
                 @change="fetchStudentFactories"
               >
                 <a-select-option :value="''">Tất cả trạng thái</a-select-option>
@@ -618,21 +623,21 @@ onMounted(() => {
       @cancel="closeShiftModal"
     >
       <div class="row g-3 filter-container mb-3">
-        <div class="col-6">
-          <div class="label-title">Ngày học:</div>
+        <div class="col-md-6">
           <a-date-picker
+            class="w-100"
+            placeholder="Ngày học"
             v-model:value="shiftFilter.startDate"
             format="YYYY-MM-DD"
             @change="fetchShiftDetails"
           />
         </div>
-        <div class="col-6">
-          <div class="label-title">Trạng thái:</div>
+        <div class="col-md-6">
           <a-select
             v-model:value="shiftFilter.status"
             placeholder="Chọn trạng thái"
             allowClear
-            style="width: 100%"
+            class="w-100"
             @change="fetchShiftDetails"
           >
             <a-select-option :value="''">Tất cả trạng thái</a-select-option>

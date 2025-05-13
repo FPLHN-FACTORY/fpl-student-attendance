@@ -4,7 +4,12 @@ import { message } from 'ant-design-vue'
 import { useRouter } from 'vue-router'
 import requestAPI from '@/services/requestApiService'
 import { API_ROUTES_TEACHER } from '@/constants/teacherConstant'
-import { FilterFilled, UnorderedListOutlined, AlignLeftOutlined } from '@ant-design/icons-vue'
+import {
+  FilterFilled,
+  UnorderedListOutlined,
+  AlignLeftOutlined,
+  SearchOutlined,
+} from '@ant-design/icons-vue'
 import { ROUTE_NAMES } from '@/router/teacherRoute'
 import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
 import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
@@ -65,7 +70,7 @@ const columns = ref(
       key: 'factoryStatus',
     },
     { title: 'Chức năng', key: 'actions' },
-  ])
+  ]),
 )
 
 // Fetch danh sách nhóm xưởng do giảng viên quản lý
@@ -173,19 +178,23 @@ onMounted(() => {
     <div class="row g-3">
       <div class="col-12">
         <a-card :bordered="false" class="cart mb-3">
-          <template #title> <FilterFilled /> Bộ lọc tìm kiếm </template>
+          <template #title> <FilterFilled /> Bộ lọc</template>
           <div class="row g-3 filter-container">
-            <div class="col-md-6 col-sm-6">
-              <label class="label-title">Từ khoá:</label>
+            <div class="col-xl-6 col-md-12 col-sm-12">
+              <div class="label-title">Từ khoá:</div>
               <a-input
                 v-model:value="filter.factoryName"
-                placeholder="Nhập tên nhóm xưởng"
+                placeholder="Tìm theo tên nhóm xưởng"
                 allowClear
                 @change="fetchFactoryByTeacher"
-              />
+              >
+                <template #prefix>
+                  <SearchOutlined />
+                </template>
+              </a-input>
             </div>
-            <div class="col-md-6 col-sm-6">
-              <label class="label-title">Dự án:</label>
+            <div class="col-xl-3 col-md-6 col-sm-6">
+              <div class="label-title">Dự án:</div>
               <a-select
                 v-model:value="filter.projectId"
                 placeholder="Chọn dự án"
@@ -199,8 +208,8 @@ onMounted(() => {
                 </a-select-option>
               </a-select>
             </div>
-            <div class="col-md-6 col-sm-6">
-              <label class="label-title">Học kỳ:</label>
+            <div class="col-xl-3 col-md-6 col-sm-6">
+              <div class="label-title">Học kỳ:</div>
               <a-select
                 v-model:value="filter.semesterId"
                 placeholder="Chọn học kỳ"

@@ -5,6 +5,7 @@ import {
   EditFilled,
   UnorderedListOutlined,
   FilterFilled,
+  SearchOutlined,
 } from '@ant-design/icons-vue'
 import { message, Modal } from 'ant-design-vue'
 import requestAPI from '@/services/requestApiService'
@@ -293,22 +294,26 @@ onMounted(() => {
           <template #title> <FilterFilled /> Bộ lọc </template>
           <!-- Hàng 1: Input tìm kiếm & Select trạng thái -->
           <div class="row g-3 filter-container">
-            <div class="col-md-6 col-sm-6">
-              <div class="label-title">Tìm kiếm mã học kỳ :</div>
+            <div class="col-xl-6 col-md-12 col-sm-12">
+              <div class="label-title">Từ khoá:</div>
               <a-input
                 v-model:value="filter.semesterCode"
                 placeholder="Tìm kiếm theo mã học kỳ"
                 allowClear
                 @change="fetchSemesters"
-              />
+              >
+                <template #prefix>
+                  <SearchOutlined />
+                </template>
+              </a-input>
             </div>
-            <div class="col-md-6 col-sm-6">
-              <div class="label-title">Trạng thái :</div>
+            <div class="col-xl-3 col-md-6 col-sm-6">
+              <div class="label-title">Trạng thái:</div>
               <a-select
                 v-model:value="filter.status"
                 placeholder="Chọn trạng thái"
                 allowClear
-                style="width: 100%"
+                class="w-100"
                 @change="fetchSemesters"
               >
                 <a-select-option :value="''">Tất cả trạng thái</a-select-option>
@@ -316,14 +321,12 @@ onMounted(() => {
                 <a-select-option value="INACTIVE">Đã kết thúc</a-select-option>
               </a-select>
             </div>
-          </div>
-          <!-- Hàng 2: RangePicker để chọn khoảng ngày -->
-          <div class="row g-3 filter-container second-row mt-3">
-            <div class="col-12 col">
-              <div class="label-title">Tìm kiếm theo khoảng ngày :</div>
+
+            <div class="col-xl-3 col-md-6 col-sm-6">
+              <div class="label-title">Khoảng ngày:</div>
               <a-range-picker
                 v-model:value="filter.dateRange"
-                style="width: 100%"
+                class="w-100"
                 format="DD/MM/YYYY"
                 @change="handleDateRangeChange"
               />
@@ -436,7 +439,7 @@ onMounted(() => {
           <a-select
             v-model:value="newSemester.semesterName"
             placeholder="Chọn kỳ học"
-            style="width: 100%"
+            class="w-100"
           >
             <a-select-option value="SPRING">SPRING</a-select-option>
             <a-select-option value="SUMMER">SUMMER</a-select-option>
@@ -447,7 +450,7 @@ onMounted(() => {
           <a-date-picker
             v-model:value="newSemester.fromDate"
             placeholder="Chọn ngày bắt đầu"
-            style="width: 100%"
+            class="w-100"
             format="DD/MM/YYYY"
           />
         </a-form-item>
@@ -455,7 +458,7 @@ onMounted(() => {
           <a-date-picker
             v-model:value="newSemester.toDate"
             placeholder="Chọn ngày kết thúc"
-            style="width: 100%"
+            class="w-100"
             format="DD/MM/YYYY"
           />
         </a-form-item>
@@ -474,7 +477,7 @@ onMounted(() => {
           <a-select
             v-model:value="detailSemester.semesterName"
             placeholder="Chọn kỳ học"
-            style="width: 100%"
+            class="w-100"
           >
             <a-select-option value="SPRING">SPRING</a-select-option>
             <a-select-option value="SUMMER">SUMMER</a-select-option>
@@ -485,7 +488,7 @@ onMounted(() => {
           <a-date-picker
             v-model:value="detailSemester.fromDate"
             placeholder="Chọn ngày bắt đầu"
-            style="width: 100%"
+            class="w-100"
             format="DD/MM/YYYY"
           />
         </a-form-item>
@@ -493,7 +496,7 @@ onMounted(() => {
           <a-date-picker
             v-model:value="detailSemester.toDate"
             placeholder="Chọn ngày kết thúc"
-            style="width: 100%"
+            class="w-100"
             format="DD/MM/YYYY"
           />
         </a-form-item>

@@ -524,7 +524,7 @@ watch(mapCenter, (newCenter) => {
         <a-card :bordered="false" class="cart">
           <template #title> <FilterFilled /> Bộ lọc </template>
           <div class="row g-2">
-            <div class="col-lg-6 col-md-12 col-sm-12">
+            <div class="col-lg-8 col-md-6 col-sm-6">
               <div class="label-title">Từ khoá:</div>
               <a-input
                 v-model:value="dataFilter.keyword"
@@ -536,7 +536,7 @@ watch(mapCenter, (newCenter) => {
                 </template>
               </a-input>
             </div>
-            <div class="col-lg-3 col-md-6 col-sm-6">
+            <div class="col-lg-4 col-md-6 col-sm-6">
               <div class="label-title">Trạng thái:</div>
               <a-select
                 v-model:value="dataFilter.status"
