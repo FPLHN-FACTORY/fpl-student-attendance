@@ -305,7 +305,12 @@ onMounted(() => {
                   {{ index + 1 }}
                 </template>
                 <template v-else-if="column.dataIndex === 'factoryName'">
-                  <a @click="handleDetailFactory(record)">{{ record.factoryName }}</a>
+                  <a
+                    @click="
+                      record.totalShift > 0 ? handleListShift(record) : handleDetailFactory(record)
+                    "
+                    >{{ record.factoryName }}</a
+                  >
                 </template>
                 <template v-else-if="column.dataIndex === 'factoryStatus'">
                   <a-tag

@@ -115,7 +115,7 @@ public interface TCAttendanceRepository extends AttendanceRepository {
                     pd.id,
                     pl.id AS planId,
                     pl.name AS planName,
-                    pf.id AS factoryId,
+                    f.id AS factoryId,
                     f.name AS factoryName,
                     pd.required_checkin,
                     pd.required_checkout
