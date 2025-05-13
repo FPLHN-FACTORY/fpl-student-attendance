@@ -9,7 +9,7 @@ import useLoadingStore from '@/stores/useLoadingStore'
 import { ROUTE_NAMES_API } from '@/router/authenticationRoute'
 
 import { message, Modal } from 'ant-design-vue'
-import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
+import { BASE_URL, GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
 import useFaceIDStore from '@/stores/useFaceIDStore'
 
 const router = useRouter()
@@ -33,7 +33,7 @@ const lstFacility = ref([])
 
 const handleLogout = () => {
   authStore.logout()
-  window.location.reload()
+  window.location.href = BASE_URL
 }
 
 const formRules = reactive({
