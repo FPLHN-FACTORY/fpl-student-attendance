@@ -8,16 +8,23 @@
     "build": "vite build",
     "preview": "vite preview",
     "lint": "eslint . --fix",
-    "format": "prettier --write src/"
+    "format": "prettier --write src/",
+    "build:prod": "vite build --mode production",
+    "build:staging": "vite build --mode staging"
   },
   "dependencies": {
     "@ant-design/icons-vue": "^7.0.1",
+    "@stomp/stompjs": "^7.1.1",
     "@vue-leaflet/vue-leaflet": "^0.10.1",
     "ant-design-vue": "^4.2.6",
     "axios": "^1.7.9",
     "bootstrap": "^5.3.3",
     "dayjs": "^1.11.13",
+    "exceljs": "^4.4.0",
     "face-api.js": "^0.22.2",
+    "file-saver": "^2.0.5",
+    "jspdf": "^3.0.1",
+    "jspdf-autotable": "^5.0.2",
     "jwt-decode": "^4.0.0",
     "leaflet": "^1.9.4",
     "leaflet-control-geocoder": "^3.1.0",
@@ -26,7 +33,9 @@
     "unplugin-vue-components": "^28.4.0",
     "vue": "^3.5.13",
     "vue-router": "^4.5.0",
-    "vue3-toastify": "^0.2.8"
+    "vue3-toastify": "^0.2.8",
+    "ws": "^8.18.2",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@eslint/js": "^9.18.0",

@@ -1,29 +1,28 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { message, Modal } from 'ant-design-vue'
-import router from '@/router'
 import requestAPI from '@/services/requestApiService'
 import { API_ROUTES_STAFF } from '@/constants/staffConstant'
 import { API_ROUTES_EXCEL, GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
 import {
   PlusOutlined,
-  EyeOutlined,
-  EditOutlined,
-  SyncOutlined,
   EyeFilled,
   EditFilled,
   UnorderedListOutlined,
   FilterFilled,
   UserDeleteOutlined,
+  SearchOutlined,
 } from '@ant-design/icons-vue'
 import { ROUTE_NAMES } from '@/router/staffRoute'
 import { DEFAULT_PAGINATION } from '@/constants'
 import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
 import useLoadingStore from '@/stores/useLoadingStore'
 import ExcelUploadButton from '@/components/excel/ExcelUploadButton.vue'
+import { autoAddColumnWidth } from '@/utils/utils'
 
 const breadcrumbStore = useBreadcrumbStore()
 const loadingStore = useLoadingStore()
+const isLoading = ref(false)
 
 /* ----------------- Data & Reactive Variables ----------------- */
 // Danh sách sinh viên
@@ -61,14 +60,16 @@ const detailStudent = reactive({
 })
 
 // Cấu hình cột cho bảng
-const columns = ref([
-  { title: 'STT', dataIndex: 'rowNumber', key: 'rowNumber', width: 50 },
-  { title: 'Mã sinh viên', dataIndex: 'studentCode', key: 'studentCode', width: 100 },
-  { title: 'Tên sinh viên', dataIndex: 'studentName', key: 'studentName', width: 150 },
-  { title: 'Email', dataIndex: 'studentEmail', key: 'studentEmail', width: 250 },
-  { title: 'Trạng thái', dataIndex: 'studentStatus', key: 'studentStatus', width: 80 },
-  { title: 'Chức năng', key: 'actions', width: 80 },
-])
+const columns = ref(
+  autoAddColumnWidth([
+    { title: 'STT', dataIndex: 'rowNumber', key: 'rowNumber' },
+    { title: 'Mã sinh viên', dataIndex: 'studentCode', key: 'studentCode' },
+    { title: 'Tên sinh viên', dataIndex: 'studentName', key: 'studentName' },
+    { title: 'Email', dataIndex: 'studentEmail', key: 'studentEmail' },
+    { title: 'Trạng thái', dataIndex: 'studentStatus', key: 'studentStatus' },
+    { title: 'Chức năng', key: 'actions' },
+  ]),
+)
 
 const breadcrumb = ref([
   {
@@ -77,41 +78,44 @@ const breadcrumb = ref([
   },
   {
     name: ROUTE_NAMES.MANAGEMENT_STUDENT,
-    breadcrumbName: 'Sinh viên',
+    breadcrumbName: 'Quản lý Sinh viên',
   },
 ])
 
 /* ----------------- Methods ----------------- */
 // Lấy danh sách sinh viên từ backend, truyền phân trang động
-const fetchStudents = () => {
+const fetchStudents = async () => {
   loadingStore.show()
-  requestAPI
-    .get(API_ROUTES_STAFF.FETCH_DATA_STUDENT, {
-      params: {
-        ...filter,
-        page: pagination.current,
-        size: pagination.pageSize,
-      },
-    })
-    .then((response) => {
-      students.value = response.data.data.data
-      // Tính tổng số bản ghi: nếu có totalRecords thì dùng luôn, nếu không nhân totalPages với pageSize
-      if (response.data.data.totalRecords !== undefined) {
-        pagination.total = response.data.data.totalRecords
-      } else {
-        pagination.total = response.data.data.totalPages * pagination.pageSize
-      }
-      // Đồng bộ current nếu cần (ở đây giữ nguyên giá trị của filter hoặc pagination)
-    })
-    .catch((error) => {
-      message.error(
-        (error.response && error.response.data && error.response.data.message) ||
-          'Lỗi khi lấy danh sách sinh viên',
-      )
-    })
-    .finally(() => {
-      loadingStore.hide()
-    })
+  const params = {
+    ...filter,
+    page: pagination.current,
+    size: pagination.pageSize,
+  }
+  try {
+    const [stuRes, faceRes] = await Promise.all([
+      requestAPI.get(API_ROUTES_STAFF.FETCH_DATA_STUDENT, { params }),
+      requestAPI.get(API_ROUTES_STAFF.FETCH_DATA_STUDENT + '/exist-face', { params }),
+    ])
+
+    const list = stuRes.data.data.data // danh sách sinh viên
+    const flags = faceRes.data.data // mảng Boolean
+    // gán thêm hasFace vào từng object
+    students.value = list.map((s, idx) => ({
+      ...s,
+      hasFace: flags[idx] === 1,
+    }))
+
+    // cập nhật tổng bản ghi
+    if (stuRes.data.data.totalRecords !== undefined) {
+      pagination.total = stuRes.data.data.totalRecords
+    } else {
+      pagination.total = stuRes.data.data.totalPages * pagination.pageSize
+    }
+  } catch (error) {
+    message.error(error.response?.data?.message || 'Lỗi khi lấy danh sách sinh viên')
+  } finally {
+    loadingStore.hide()
+  }
 }
 
 // Sự kiện thay đổi trang bảng: cập nhật pagination rồi gọi lại API
@@ -252,7 +256,7 @@ const handleChangeStatusStudent = (record) => {
 const changeFaceStudent = (record) => {
   Modal.confirm({
     title: 'Xác nhận đổi mặt',
-    content: `Bạn có chắc muốn đổi mặt của học sinh ${record.studentName}?`,
+    content: `Bạn có chắc muốn đổi mặt của sinh viên ${record.studentName}?`,
     onOk() {
       loadingStore.show()
       // Giả sử record chứa studentId, nếu không hãy thay đổi cho phù hợp
@@ -289,6 +293,15 @@ const clearNewStudentForm = () => {
   newStudent.email = ''
 }
 
+const handleClearFilter = () => {
+  // Clear all filter values
+  Object.keys(filter).forEach((key) => {
+    filter[key] = ''
+  })
+  pagination.current = 1
+  fetchStudents() // or whatever your fetch function is named
+}
+
 onMounted(() => {
   breadcrumbStore.setRoutes(breadcrumb.value)
   fetchStudents()
@@ -302,34 +315,45 @@ onMounted(() => {
       <div class="col-12">
         <a-card :bordered="false" class="cart mb-3">
           <template #title> <FilterFilled /> Bộ lọc </template>
-          <a-row :gutter="16" class="filter-container">
+          <div class="row g-3">
             <!-- Input tìm kiếm theo mã, tên, email -->
-
-            <a-col :span="12" class="col">
-              <div class="label-title">Tìm kiếm mã, tên, email:</div>
+            <div class="col-md-6 col-sm-12">
+              <div class="label-title">Từ khoá:</div>
               <a-input
                 v-model:value="filter.searchQuery"
                 placeholder="Tìm kiếm theo mã, tên, email"
                 allowClear
                 @change="fetchStudents"
-              />
-            </a-col>
+              >
+                <template #prefix>
+                  <SearchOutlined />
+                </template>
+              </a-input>
+            </div>
             <!-- Combobox trạng thái -->
-            <a-col :span="12" class="col">
+            <div class="col-md-6 col-sm-12">
               <div class="label-title">Trạng thái:</div>
               <a-select
                 v-model:value="filter.studentStatus"
                 placeholder="Chọn trạng thái"
                 allowClear
-                style="width: 100%"
+                class="w-100"
                 @change="fetchStudents"
               >
                 <a-select-option :value="''">Tất cả trạng thái</a-select-option>
                 <a-select-option value="ACTIVE">Hoạt động</a-select-option>
                 <a-select-option value="INACTIVE">Không hoạt động</a-select-option>
               </a-select>
-            </a-col>
-          </a-row>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-12">
+              <div class="d-flex justify-content-center flex-wrap gap-2 mt-3">
+                <a-button class="btn-light" @click="fetchStudents"> <FilterFilled /> Lọc </a-button>
+                <a-button class="btn-gray" @click="handleClearFilter"> Huỷ lọc </a-button>
+              </div>
+            </div>
+          </div>
         </a-card>
       </div>
     </div>
@@ -351,7 +375,7 @@ onMounted(() => {
             :dataSource="students"
             :columns="columns"
             rowKey="studentId"
-            :scroll="{ y: 500, x: 'auto' }"
+            :scroll="{ x: 'auto' }"
             :loading="isLoading"
             :pagination="pagination"
             @change="handleTableChange"
@@ -402,10 +426,10 @@ onMounted(() => {
                       <EditFilled />
                     </a-button>
                   </a-tooltip>
-                  <a-tooltip title="Cấp quyền thay đổi mặt sinh viên">
+                  <a-tooltip title="Cấp quyền thay đổi mặt sinh viên" v-if="record.hasFace">
                     <a-button
                       type="text"
-                      class="btn-outline-default"
+                      class="btn-outline-warning"
                       @click="changeFaceStudent(record)"
                     >
                       <UserDeleteOutlined />

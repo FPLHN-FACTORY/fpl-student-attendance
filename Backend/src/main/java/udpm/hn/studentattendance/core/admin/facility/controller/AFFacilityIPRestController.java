@@ -30,13 +30,15 @@ public class AFFacilityIPRestController {
     }
 
     @PostMapping("/{idFacility}/add-ip")
-    public ResponseEntity<?> addIP(@Valid @RequestBody AFAddOrUpdateFacilityIPRequest request, @PathVariable String idFacility) {
+    public ResponseEntity<?> addIP(@Valid @RequestBody AFAddOrUpdateFacilityIPRequest request,
+            @PathVariable String idFacility) {
         request.setIdFacility(idFacility);
         return afFacilityIPService.addIP(request);
     }
 
     @PutMapping("/{idFacility}/update-ip")
-    public ResponseEntity<?> updateIP(@Valid @RequestBody AFAddOrUpdateFacilityIPRequest request, @PathVariable String idFacility) {
+    public ResponseEntity<?> updateIP(@Valid @RequestBody AFAddOrUpdateFacilityIPRequest request,
+            @PathVariable String idFacility) {
         request.setIdFacility(idFacility);
         return afFacilityIPService.updateIP(request);
     }

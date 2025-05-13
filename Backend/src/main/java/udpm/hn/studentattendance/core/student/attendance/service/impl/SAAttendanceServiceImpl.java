@@ -2,8 +2,10 @@ package udpm.hn.studentattendance.core.student.attendance.service.impl;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import udpm.hn.studentattendance.core.student.attendance.model.request.SACheckinAttendanceRequest;
@@ -25,10 +27,12 @@ import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.helpers.SessionHelper;
 import udpm.hn.studentattendance.helpers.ValidateHelper;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
+import udpm.hn.studentattendance.infrastructure.config.websocket.model.message.AttendanceMessage;
 import udpm.hn.studentattendance.infrastructure.constants.AttendanceStatus;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.ShiftType;
 import udpm.hn.studentattendance.infrastructure.constants.StatusType;
+import udpm.hn.studentattendance.infrastructure.constants.router.RouteWebsocketConstant;
 import udpm.hn.studentattendance.utils.DateTimeUtils;
 import udpm.hn.studentattendance.utils.FaceRecognitionUtils;
 import udpm.hn.studentattendance.utils.GeoUtils;
@@ -55,11 +59,15 @@ public class SAAttendanceServiceImpl implements SAAttendanceService {
 
     private final HttpServletRequest httpServletRequest;
 
+    private final SimpMessagingTemplate messagingTemplate;
+
+    @Value("${app.config.attendance.early-checkin}")
+    private int EARLY_CHECKIN;
+
     @Override
     public ResponseEntity<?> getAllList(SAFilterAttendanceRequest request) {
         request.setIdFacility(sessionHelper.getFacilityId());
         request.setIdUserStudent(sessionHelper.getUserId());
-        System.out.println(DateTimeUtils.getCurrentTimeMillis());
         Pageable pageable = PaginationHelper.createPageable(request);
         PageableObject<SAAttendanceResponse> data = PageableObject.of(attendanceRepository.getAllByFilter(pageable, request));
         return RouterHelper.responseSuccess("Lấy danh sách dữ liệu thành công", data);
@@ -87,7 +95,7 @@ public class SAAttendanceServiceImpl implements SAAttendanceService {
 
                 Set<String> allowIPs = facilityIPRepository.getAllIP(sessionHelper.getFacilityId());
                 if (!allowIPs.isEmpty() && !ValidateHelper.isAllowedIP(clientIP, allowIPs)) {
-                    return RouterHelper.responseError("Vui lòng kết nối bằng mạng trường để có thể Checkin");
+                    return RouterHelper.responseError("Vui lòng kết nối bằng mạng trường để tiếp tục checkin/checkout");
                 }
             }
 
@@ -97,35 +105,80 @@ public class SAAttendanceServiceImpl implements SAAttendanceService {
                 }
                 List<FacilityLocation> lstLocation = facilityLocationRepository.getAllList(sessionHelper.getFacilityId());
                 if (!GeoUtils.isAllowedLocation(lstLocation, request.getLatitude(), request.getLongitude())) {
-                    return RouterHelper.responseError("Địa điểm checkin nằm ngoài vùng cho phép");
+                    return RouterHelper.responseError("Địa điểm checkin/checkout nằm ngoài vùng cho phép");
                 }
             }
         }
 
         UserStudent userStudent = userStudentFactory.getUserStudent();
 
+        boolean isEnableCheckin = planDate.getRequiredCheckin() == StatusType.ENABLE;
+        boolean isEnableCheckout = planDate.getRequiredCheckout() == StatusType.ENABLE;
+
         if (!StringUtils.hasText(userStudent.getFaceEmbedding())) {
             return RouterHelper.responseError("Tài khoản chưa đăng ký thông tin khuôn mặt");
         }
 
-        if (DateTimeUtils.getCurrentTimeMillis() <= planDate.getStartDate() - 10 * 60 * 1000) {
-            return RouterHelper.responseError("Chưa đến giờ checkin");
-        }
-
-        if (DateTimeUtils.getCurrentTimeMillis() > planDate.getStartDate() + planDate.getLateArrival() * 60 * 1000) {
-            return RouterHelper.responseError("Đã quá giờ checkin");
-        }
-
         Attendance attendance = attendanceRepository.findByUserStudent_IdAndPlanDate_Id(userStudent.getId(), planDate.getId()).orElse(null);
-        if (attendance != null) {
-            return RouterHelper.responseError("Ca học đã được checkin từ trước");
+
+        if (attendance != null && attendance.getAttendanceStatus() == AttendanceStatus.PRESENT) {
+            return RouterHelper.responseError("Ca học đã được điểm danh");
         }
 
-        double[] inputEmbedding = FaceRecognitionUtils.parseEmbedding(request.getFaceEmbedding());
+        if (attendance == null || attendance.getAttendanceStatus() == AttendanceStatus.NOTCHECKIN) {
+            if (isEnableCheckin || !isEnableCheckout) {
+                if (DateTimeUtils.getCurrentTimeMillis() <= planDate.getStartDate() - (long) EARLY_CHECKIN * 60 * 1000) {
+                    return RouterHelper.responseError("Chưa đến giờ " + (isEnableCheckin ? "checkin đầu giờ" : "điểm danh"));
+                }
+
+                if (DateTimeUtils.getCurrentTimeMillis() > planDate.getStartDate() + planDate.getLateArrival() * 60 * 1000) {
+                    return RouterHelper.responseError("Đã quá giờ " + (isEnableCheckin ? "checkin đầu giờ" : "điểm danh"));
+                }
+            }
+
+            if (!isEnableCheckin && isEnableCheckout) {
+                if (DateTimeUtils.getCurrentTimeMillis() < planDate.getEndDate()) {
+                    return RouterHelper.responseError("Chưa đến giờ checkout cuối giờ");
+                }
+
+                if (DateTimeUtils.getCurrentTimeMillis() > planDate.getEndDate() + planDate.getLateArrival() * 60 * 1000) {
+                    return RouterHelper.responseError("Đã quá giờ checkout cuối giờ");
+                }
+            }
+
+        } else {
+
+            if (isEnableCheckin && attendance.getAttendanceStatus() != AttendanceStatus.CHECKIN) {
+                return RouterHelper.responseError("Không thể checkout khi chưa checkin");
+            }
+
+            if (DateTimeUtils.getCurrentTimeMillis() < planDate.getEndDate()) {
+                return RouterHelper.responseError("Chưa đến giờ checkout cuối giờ");
+            }
+
+            if (DateTimeUtils.getCurrentTimeMillis() > planDate.getEndDate() + planDate.getLateArrival() * 60 * 1000) {
+                return RouterHelper.responseError("Đã quá giờ checkout cuối giờ");
+            }
+
+        }
+
+        List<double[]> inputEmbedding = FaceRecognitionUtils.parseEmbeddings(request.getFaceEmbedding());
         double[] storedEmbedding = FaceRecognitionUtils.parseEmbedding(userStudent.getFaceEmbedding());
         boolean isMatch = FaceRecognitionUtils.isSameFace(inputEmbedding, storedEmbedding);
         if (!isMatch) {
             return RouterHelper.responseError("Xác thực khuôn mặt thất bại");
+        }
+
+        if (attendance != null) {
+            if (attendance.getAttendanceStatus() == AttendanceStatus.CHECKIN || !isEnableCheckin || !isEnableCheckout) {
+                return RouterHelper.responseSuccess("Điểm danh thành công", markPresent(attendance, planDate, userStudent));
+            } else {
+                return RouterHelper.responseError("Không thể checkin/checkout ca học này");
+            }
+        }
+
+        if (!isEnableCheckin || !isEnableCheckout) {
+            return RouterHelper.responseSuccess("Điểm danh thành công", markPresent(attendance, planDate, userStudent));
         }
 
         attendance = new Attendance();
@@ -133,7 +186,21 @@ public class SAAttendanceServiceImpl implements SAAttendanceService {
         attendance.setUserStudent(userStudent);
         attendance.setPlanDate(planDate);
 
-        return RouterHelper.responseSuccess("Checkin thành công ca học", attendanceRepository.save(attendance));
+        return RouterHelper.responseSuccess("Checkin đầu giờ thành công", attendanceRepository.save(attendance));
+    }
+
+    private Attendance markPresent(Attendance attendance, PlanDate planDate, UserStudent userStudent) {
+        if (attendance == null) {
+            attendance = new Attendance();
+            attendance.setUserStudent(userStudent);
+            attendance.setPlanDate(planDate);
+        }
+        attendance.setAttendanceStatus(AttendanceStatus.PRESENT);
+        AttendanceMessage attendanceMessage = new AttendanceMessage();
+        attendanceMessage.setPlanDateId(planDate.getId());
+        attendanceMessage.setUserStudentId(userStudent.getId());
+        messagingTemplate.convertAndSend(RouteWebsocketConstant.TOPIC_ATTENDANCE, attendanceMessage);
+        return attendanceRepository.save(attendance);
     }
 
 }

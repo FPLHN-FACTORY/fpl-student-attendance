@@ -1,7 +1,7 @@
 <script setup>
 import { DEFAULT_PAGINATION } from '@/constants'
 import useImportExcelStore from '@/stores/useImportExcelStore'
-import { formatDate } from '@/utils/utils'
+import { autoAddColumnWidth, formatDate } from '@/utils/utils'
 import {
   FileExcelOutlined,
   UploadOutlined,
@@ -35,19 +35,27 @@ const props = defineProps({
   showHistoryLog: { type: Boolean, default: false },
 })
 
-const columns = ref([
-  { title: 'Thời gian', dataIndex: 'createdAt', key: 'createdAt', width: 150 },
-  { title: 'Tệp tin', dataIndex: 'fileName', key: 'fileName', width: 200 },
-  { title: 'Thành công', dataIndex: 'totalSuccess', key: 'totalSuccess' },
-  { title: 'Lỗi', dataIndex: 'totalError', key: 'totalError' },
-  { title: '', key: 'actions' },
-])
+const columns = ref(
+  autoAddColumnWidth([
+    { title: 'Thời gian', dataIndex: 'createdAt', key: 'createdAt' },
+    { title: 'Tệp tin', dataIndex: 'fileName', key: 'fileName' },
+    {
+      title: 'Thành công',
+      dataIndex: 'totalSuccess',
+      key: 'totalSuccess',
+    },
+    { title: 'Lỗi', dataIndex: 'totalError', key: 'totalError' },
+    { title: '', key: 'actions' },
+  ]),
+)
 
-const columnsDetail = ref([
-  { title: 'Dòng', dataIndex: 'line', key: 'line', width: 80 },
-  { title: 'Trạng thái', dataIndex: 'status', key: 'status', width: 150 },
-  { title: 'Nội dung', dataIndex: 'message', key: 'message' },
-])
+const columnsDetail = ref(
+  autoAddColumnWidth([
+    { title: 'Dòng', dataIndex: 'line', key: 'line' },
+    { title: 'Trạng thái', dataIndex: 'status', key: 'status' },
+    { title: 'Nội dung', dataIndex: 'message', key: 'message' },
+  ]),
+)
 
 const handleShowDetail = (id) => {
   isLoadingTable.value = true
@@ -93,6 +101,7 @@ const fetchDataHistoryLog = async () => {
     lstData.value = response?.data?.data?.data || []
     isShowHistoryLog.value = true
     isLoadingShowLog.value = false
+    pagination.value.total = response.data.data.totalPages * pagination.value.pageSize
   } catch (error) {
     lstData.value = []
     isLoadingShowLog.value = false
@@ -130,7 +139,7 @@ onMounted(() => {
       :dataSource="lstDataDetail"
       :columns="columnsDetail"
       :pagination="false"
-      :scroll="{ y: 500, x: 'auto' }"
+      :scroll="{ x: 'auto' }"
     >
       <template #bodyCell="{ column, record }">
         <template v-if="column.dataIndex === 'status'">
@@ -153,7 +162,7 @@ onMounted(() => {
       :dataSource="lstData"
       :columns="columns"
       :pagination="pagination"
-      :scroll="{ y: 500, x: 'auto' }"
+      :scroll="{ x: 'auto' }"
       :loading="isLoadingTable"
       @change="handleTableChange"
     >

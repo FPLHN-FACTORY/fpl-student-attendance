@@ -11,16 +11,17 @@ import {
   SyncOutlined,
   UnorderedListOutlined,
   FilterFilled,
+  SearchOutlined,
 } from '@ant-design/icons-vue'
 import requestAPI from '@/services/requestApiService'
 import { ROUTE_NAMES } from '@/router/adminRoute'
-import router from '@/router'
 import { API_ROUTES_ADMIN } from '@/constants/adminConstant'
 import { DEFAULT_PAGINATION } from '@/constants'
 import { API_ROUTES_EXCEL, GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
 import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
 import useLoadingStore from '@/stores/useLoadingStore'
 import ExcelUploadButton from '@/components/excel/ExcelUploadButton.vue'
+import { autoAddColumnWidth } from '@/utils/utils'
 
 const breadcrumbStore = useBreadcrumbStore()
 const loadingStore = useLoadingStore()
@@ -28,11 +29,11 @@ const loadingStore = useLoadingStore()
 const breadcrumb = ref([
   {
     name: GLOBAL_ROUTE_NAMES.ADMIN_PAGE,
-    breadcrumbName: 'Ban đào tạo',
+    breadcrumbName: 'Quản lý',
   },
   {
     name: ROUTE_NAMES.MANAGEMENT_STAFF,
-    breadcrumbName: 'Giảng viên',
+    breadcrumbName: 'Quản lý giảng viên/ phụ trách xưởng',
   },
 ])
 
@@ -40,19 +41,16 @@ const breadcrumb = ref([
 const staffs = ref([])
 
 // Danh sách cơ sở (để hiển thị trong select option)
-const facilitiesList = ref([])
 const facilitiesListCombobox = ref([])
 
-// Danh sách vai trò (cố định dựa trên backend)
+// Danh sách vai trò (cố định dựa trên backend, xoá vai trò 'Ban đào tạo')
 const rolesList = ref([
-  { code: '0', name: 'Ban đào tạo' },
   { code: '1', name: 'Phụ trách xưởng' },
   { code: '3', name: 'Giảng viên' },
 ])
 
-// Hàm mapping để chuyển đổi mã vai trò thành tên hiển thị
+// Hàm mapping để chuyển đổi mã vai trò thành tên hiển thị, xoá vai trò 'Ban đào tạo'
 const roleMapping = {
-  0: 'Ban đào tạo',
   1: 'Phụ trách xưởng',
   3: 'Giảng viên',
 }
@@ -72,6 +70,7 @@ const convertRole = (roleCodes) => {
 // Biến lọc và phân trang gửi lên API
 const filter = reactive({
   searchQuery: '',
+  roleCodeFilter: '',
   idFacility: '',
   status: '',
 })
@@ -110,17 +109,19 @@ const detailStaff = reactive({
 })
 
 // Cấu hình cột cho bảng
-const columns = ref([
-  { title: '#', dataIndex: 'orderNumber', key: 'orderNumber', width: 50 },
-  { title: 'Mã nhân viên', dataIndex: 'staffCode', key: 'staffCode', width: 250 },
-  { title: 'Tên nhân viên', dataIndex: 'staffName', key: 'staffName', width: 250 },
-  { title: 'Email FE', dataIndex: 'staffEmailFe', key: 'staffEmailFe', width: 250 },
-  { title: 'Email FPT', dataIndex: 'staffEmailFpt', key: 'staffEmailFpt', width: 250 },
-  { title: 'Cơ sở', dataIndex: 'facilityName', key: 'facilityName', width: 200 },
-  { title: 'Vai trò', dataIndex: 'roleCode', key: 'roleCode', width: 300 },
-  { title: 'Trạng thái', dataIndex: 'staffStatus', key: 'staffStatus', width: 180 },
-  { title: 'Chức năng', key: 'actions', width: 120 },
-])
+const columns = ref(
+  autoAddColumnWidth([
+    { title: '#', dataIndex: 'orderNumber', key: 'orderNumber' },
+    { title: 'Mã nhân viên', dataIndex: 'staffCode', key: 'staffCode' },
+    { title: 'Tên nhân viên', dataIndex: 'staffName', key: 'staffName' },
+    { title: 'Email FE', dataIndex: 'staffEmailFe', key: 'staffEmailFe' },
+    { title: 'Email FPT', dataIndex: 'staffEmailFpt', key: 'staffEmailFpt' },
+    { title: 'Cơ sở', dataIndex: 'facilityName', key: 'facilityName' },
+    { title: 'Vai trò', dataIndex: 'roleCode', key: 'roleCode' },
+    { title: 'Trạng thái', dataIndex: 'staffStatus', key: 'staffStatus' },
+    { title: 'Chức năng', key: 'actions' },
+  ]),
+)
 
 // Hàm lấy danh sách nhân viên, dùng pagination.value.current và pagination.value.pageSize
 const fetchStaffs = () => {
@@ -137,13 +138,12 @@ const fetchStaffs = () => {
     })
     .then((response) => {
       staffs.value = response.data.data.data
-      // Tính tổng số bản ghi theo mẫu plandate: totalPages * pageSize
       pagination.value.total = response.data.data.totalPages * pagination.value.pageSize
     })
     .catch((error) => {
       message.error(
         (error.response && error.response.data && error.response.data.message) ||
-          'Lỗi khi lấy danh sách nhân viên'
+          'Lỗi khi lấy danh sách nhân viên',
       )
     })
     .finally(() => {
@@ -152,20 +152,6 @@ const fetchStaffs = () => {
     })
 }
 
-// Hàm lấy danh sách cơ sở cho combobox
-const fetchFacilitiesList = () => {
-  requestAPI
-    .get(`${API_ROUTES_ADMIN.FETCH_DATA_STAFF_ROLE}/facilities`)
-    .then((response) => {
-      facilitiesList.value = response.data.data.data || response.data.data
-    })
-    .catch((error) => {
-      message.error(
-        (error.response && error.response.data && error.response.data.message) ||
-          'Lỗi khi lấy danh sách cơ sở'
-      )
-    })
-}
 const fetchFacilitiesListCombobox = () => {
   requestAPI
     .get(`${API_ROUTES_ADMIN.FETCH_DATA_STAFF}/facility`)
@@ -175,7 +161,7 @@ const fetchFacilitiesListCombobox = () => {
     .catch((error) => {
       message.error(
         (error.response && error.response.data && error.response.data.message) ||
-          'Lỗi khi lấy danh sách cơ sở'
+          'Lỗi khi lấy danh sách cơ sở',
       )
     })
 }
@@ -213,7 +199,7 @@ const handleAddStaff = () => {
     .catch((error) => {
       message.error(
         (error.response && error.response.data && error.response.data.message) ||
-          'Lỗi khi thêm nhân viên'
+          'Lỗi khi thêm nhân viên',
       )
     })
     .finally(() => {
@@ -241,7 +227,7 @@ const handleUpdateStaff = (record) => {
     .catch((error) => {
       message.error(
         (error.response && error.response.data && error.response.data.message) ||
-          'Lỗi khi lấy chi tiết nhân viên'
+          'Lỗi khi lấy chi tiết nhân viên',
       )
     })
     .finally(() => {
@@ -265,7 +251,7 @@ const updateStaff = () => {
   modalUpdateLoading.value = true
   loadingStore.show()
   requestAPI
-    .put(API_ROUTES_ADMIN.FETCH_DATA_STAFF, detailStaff)
+    .put(`${API_ROUTES_ADMIN.FETCH_DATA_STAFF}/${detailStaff.id}`, detailStaff)
     .then(() => {
       message.success('Cập nhật nhân viên thành công')
       modalUpdate.value = false
@@ -274,7 +260,7 @@ const updateStaff = () => {
     .catch((error) => {
       message.error(
         (error.response && error.response.data && error.response.data.message) ||
-          'Lỗi khi cập nhật nhân viên'
+          'Lỗi khi cập nhật nhân viên',
       )
     })
     .finally(() => {
@@ -299,7 +285,7 @@ const handleChangeStatusStaff = (record) => {
         .catch((error) => {
           message.error(
             (error.response && error.response.data && error.response.data.message) ||
-              'Lỗi khi đổi trạng thái nhân viên'
+              'Lỗi khi đổi trạng thái nhân viên',
           )
         })
         .finally(() => {
@@ -328,17 +314,22 @@ const configImportExcel = {
   showDownloadTemplate: true,
   showHistoryLog: true,
 }
+
+const handleClearFilter = () => {
+  // Clear all filter values
+  Object.keys(filter).forEach((key) => {
+    filter[key] = ''
+  })
+  pagination.value.current = 1
+  fetchStaffs()
+}
+
 onMounted(() => {
   breadcrumbStore.setRoutes(breadcrumb.value)
   fetchStaffs()
   fetchFacilitiesListCombobox()
-  fetchFacilitiesList()
 })
 </script>
-
-
-
-
 
 <template>
   <div class="container-fluid">
@@ -347,25 +338,29 @@ onMounted(() => {
       <div class="col-12">
         <a-card :bordered="false" class="cart mb-3">
           <template #title> <FilterFilled /> Bộ lọc </template>
-          <a-row :gutter="16" class="filter-container">
+          <div class="row g-3 filter-container">
             <!-- Input tìm kiếm theo mã, tên, email -->
-            <a-col :span="8" class="col">
-              <div class="label-title">Tìm kiếm theo mã, tên, email :</div>
+            <a-col class="col-lg-12 col-md-12 col-sm-12">
+              <div class="label-title">Từ khoá:</div>
               <a-input
                 v-model:value="filter.searchQuery"
                 placeholder="Tìm kiếm theo mã, tên, email"
                 allowClear
                 @change="fetchStaffs"
-              />
+              >
+                <template #prefix>
+                  <SearchOutlined />
+                </template>
+              </a-input>
             </a-col>
             <!-- Combobox trạng thái -->
-            <a-col :span="8" class="col">
-              <div class="label-title">Trạng thái :</div>
+            <a-col class="col-lg-4 col-md-4 col-sm-12">
+              <div class="label-title">Trạng thái:</div>
               <a-select
                 v-model:value="filter.status"
                 placeholder="Chọn trạng thái"
                 allowClear
-                style="width: 100%"
+                class="w-100"
                 @change="fetchStaffs"
               >
                 <a-select-option :value="''">Tất cả trạng thái</a-select-option>
@@ -373,27 +368,51 @@ onMounted(() => {
                 <a-select-option value="INACTIVE">Ngừng hoạt động</a-select-option>
               </a-select>
             </a-col>
+
+            <!-- Combobox vai trò -->
+            <a-col class="col-lg-4 col-md-4 col-sm-6">
+              <div class="label-title">Vai trò:</div>
+              <a-select
+                v-model:value="filter.roleCodeFilter"
+                placeholder="Chọn vai trò"
+                allowClear
+                class="w-100"
+                @change="fetchStaffs"
+              >
+                <a-select-option :value="''">Tất cả vai trò</a-select-option>
+                <a-select-option value="1">Phụ trách xưởng</a-select-option>
+                <a-select-option value="3">Giảng viên</a-select-option>
+              </a-select>
+            </a-col>
             <!-- Combobox cơ sở -->
-            <a-col :span="8" class="col">
-              <div class="label-title">Cơ sở :</div>
+            <a-col class="col-lg-4 col-md-4 col-sm-6">
+              <div class="label-title">Cơ sở:</div>
               <a-select
                 v-model:value="filter.idFacility"
                 placeholder="Chọn cơ sở"
                 allowClear
-                style="width: 100%"
+                class="w-100"
                 @change="fetchStaffs"
               >
                 <a-select-option :value="''">Tất cả cơ sở</a-select-option>
                 <a-select-option
-                  v-for="facility in facilitiesList"
-                  :key="facility.facilityId"
-                  :value="facility.facilityId"
+                  v-for="facility in facilitiesListCombobox"
+                  :key="facility.id"
+                  :value="facility.id"
                 >
-                  {{ facility.facilityName }}
+                  {{ facility.name }}
                 </a-select-option>
               </a-select>
             </a-col>
-          </a-row>
+          </div>
+          <div class="row">
+            <div class="col-12">
+              <div class="d-flex justify-content-center flex-wrap gap-2 mt-3">
+                <a-button class="btn-light" @click="fetchStaffs"> <FilterFilled /> Lọc </a-button>
+                <a-button class="btn-gray" @click="handleClearFilter"> Huỷ lọc </a-button>
+              </div>
+            </div>
+          </div>
         </a-card>
       </div>
     </div>
@@ -410,12 +429,13 @@ onMounted(() => {
             </a-tooltip>
           </div>
           <a-table
+            class="nowrap"
             :dataSource="staffs"
             :columns="columns"
             rowKey="id"
             :loading="isLoading"
             :pagination="pagination"
-            :scroll="{ y: 500, x: 'auto' }"
+            :scroll="{ x: 'auto' }"
             @change="handleTableChange"
           >
             <template #bodyCell="{ column, record }">
@@ -444,15 +464,6 @@ onMounted(() => {
               </template>
               <template v-else-if="column.key === 'actions'">
                 <a-space>
-                  <!-- <a-tooltip title="Chức vụ/ cơ sở/ bộ môn">
-                    <a-button
-                      @click="handleDetailStaff(record)"
-                      type="text"
-                      class="btn-outline-primary me-2"
-                    >
-                      <EyeFilled />
-                    </a-button>
-                  </a-tooltip> -->
                   <a-tooltip title="Sửa nhân viên">
                     <a-button
                       @click="handleUpdateStaff(record)"

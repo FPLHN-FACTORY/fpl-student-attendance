@@ -4,12 +4,11 @@ import { message, Modal } from 'ant-design-vue'
 import requestAPI from '@/services/requestApiService'
 import {
   PlusOutlined,
-  EyeOutlined,
-  EditOutlined,
-  DeleteOutlined,
   UnorderedListOutlined,
   FilterFilled,
-  SyncOutlined,
+  EditFilled,
+  EyeFilled,
+  SearchOutlined,
 } from '@ant-design/icons-vue'
 import { DEFAULT_PAGINATION } from '@/constants'
 import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
@@ -17,6 +16,7 @@ import useLoadingStore from '@/stores/useLoadingStore'
 import { API_ROUTES_ADMIN } from '@/constants/adminConstant'
 import { ROUTE_NAMES } from '@/router/adminRoute'
 import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
+import { autoAddColumnWidth } from '@/utils/utils'
 
 const breadcrumbStore = useBreadcrumbStore()
 const loadingStore = useLoadingStore()
@@ -26,7 +26,7 @@ const levels = ref([])
 
 const filter = reactive({
   name: '',
-  status: null, // Sử dụng null thay vì chuỗi rỗng để phù hợp với số
+  status: null,
 })
 
 const pagination = reactive({
@@ -39,7 +39,6 @@ const modalDetail = ref(false)
 
 const newLevel = reactive({
   name: '',
-  code: '',
   description: '',
 })
 
@@ -53,23 +52,25 @@ const detailLevel = reactive({
   updatedAt: '',
 })
 
-const columns = ref([
-  { title: '#', dataIndex: 'rowNumber', key: 'rowNumber', width: 50 },
-  { title: 'Tên cấp dự án', dataIndex: 'name', key: 'name', width: 200 },
-  { title: 'Mã cấp dự án', dataIndex: 'code', key: 'code', width: 150 },
-  { title: 'Mô tả', dataIndex: 'description', key: 'description', width: 250 },
-  { title: 'Trạng thái', dataIndex: 'status', key: 'status', width: 100 },
-  { title: 'Chức năng', key: 'actions', width: 150 },
-])
+const columns = ref(
+  autoAddColumnWidth([
+    { title: '#', dataIndex: 'orderNumber', key: 'orderNumber' },
+    { title: 'Mã', dataIndex: 'code', key: 'code' },
+    { title: 'Tên cấp dự án', dataIndex: 'name', key: 'name' },
+    { title: 'Mô tả', dataIndex: 'description', key: 'description' },
+    { title: 'Trạng thái', dataIndex: 'status', key: 'status' },
+    { title: 'Chức năng', key: 'actions' },
+  ]),
+)
 
 const breadcrumb = ref([
-{
+  {
     name: GLOBAL_ROUTE_NAMES.ADMIN_PAGE,
     breadcrumbName: 'Ban đào tạo',
   },
   {
     name: ROUTE_NAMES.MANAGEMENT_LEVEL_PROJECT,
-    breadcrumbName: 'Học kỳ',
+    breadcrumbName: 'Quản lý cấp độ dự án',
   },
 ])
 
@@ -85,13 +86,11 @@ const fetchLevels = () => {
       },
     })
     .then((response) => {
-      console.log(filter);
-      
       const result = response.data.data
       levels.value = result.data
       // Tổng số bản ghi
       pagination.total =
-        result.totalElements || result.totalItems || (result.totalPages * pagination.pageSize)
+        result.totalElements || result.totalItems || result.totalPages * pagination.pageSize
     })
     .catch((error) => {
       message.error(error.response?.data?.message || 'Lỗi khi lấy danh sách cấp dự án')
@@ -101,15 +100,12 @@ const fetchLevels = () => {
     })
 }
 
-
 const clearNewLevelForm = () => {
   newLevel.name = ''
-  newLevel.code = ''
   newLevel.description = ''
 }
 
 const handleTableChange = (pageInfo) => {
-  
   pagination.current = pageInfo.current
   pagination.pageSize = pageInfo.pageSize
   fetchLevels()
@@ -229,6 +225,14 @@ const getStatusColor = (status) => {
   return status === 'ACTIVE' ? 'green' : 'red'
 }
 
+const handleClearFilter = () => {
+  // Clear all filter values
+  Object.keys(filter).forEach((key) => {
+    filter[key] = ''
+  })
+  pagination.current = 1
+  fetchLevels()
+}
 
 onMounted(() => {
   breadcrumbStore.setRoutes(breadcrumb.value)
@@ -243,9 +247,6 @@ onMounted(() => {
       <a-form-item label="Tên cấp dự án" required>
         <a-input v-model:value="newLevel.name" placeholder="Nhập tên cấp dự án" />
       </a-form-item>
-      <a-form-item label="Mã cấp dự án">
-        <a-input v-model:value="newLevel.code" placeholder="Nhập mã cấp dự án" />
-      </a-form-item>
       <a-form-item label="Mô tả">
         <a-textarea v-model:value="newLevel.description" placeholder="Nhập mô tả" :rows="4" />
       </a-form-item>
@@ -258,17 +259,8 @@ onMounted(() => {
       <a-form-item label="Tên cấp dự án" required>
         <a-input v-model:value="detailLevel.name" placeholder="Nhập tên cấp dự án" />
       </a-form-item>
-      <a-form-item label="Mã cấp dự án">
-        <a-input v-model:value="detailLevel.code" placeholder="Nhập mã cấp dự án" />
-      </a-form-item>
       <a-form-item label="Mô tả">
         <a-textarea v-model:value="detailLevel.description" placeholder="Nhập mô tả" :rows="4" />
-      </a-form-item>
-      <a-form-item label="Trạng thái">
-        <a-select v-model:value="detailLevel.status" placeholder="Chọn trạng thái">
-          <a-select-option value="ACTIVE">Hoạt động</a-select-option>
-          <a-select-option value="INACTIVE">Không hoạt động</a-select-option>
-        </a-select>
       </a-form-item>
     </a-form>
   </a-modal>
@@ -276,37 +268,43 @@ onMounted(() => {
   <!-- Modal Xem chi tiết cấp dự án -->
   <a-modal v-model:open="modalDetail" title="Chi tiết cấp dự án" :footer="null">
     <a-descriptions bordered :column="1">
-      <a-descriptions-item label="Tên">{{ detailLevel.name }}</a-descriptions-item>
       <a-descriptions-item label="Mã">{{ detailLevel.code }}</a-descriptions-item>
+      <a-descriptions-item label="Tên">{{ detailLevel.name }}</a-descriptions-item>
       <a-descriptions-item label="Mô tả">{{ detailLevel.description }}</a-descriptions-item>
       <a-descriptions-item label="Trạng thái">
         <a-tag :color="getStatusColor(detailLevel.status)">
           {{ getStatusText(detailLevel.status) }}
         </a-tag>
       </a-descriptions-item>
-      <a-descriptions-item label="Ngày tạo">{{ formatDate(detailLevel.createdAt) }}</a-descriptions-item>
-      <a-descriptions-item label="Ngày cập nhật">{{ formatDate(detailLevel.updatedAt) }}</a-descriptions-item>
+      <a-descriptions-item label="Ngày tạo">{{
+        formatDate(detailLevel.createdAt)
+      }}</a-descriptions-item>
+      <a-descriptions-item label="Ngày cập nhật">{{
+        formatDate(detailLevel.updatedAt)
+      }}</a-descriptions-item>
     </a-descriptions>
   </a-modal>
 
   <div class="container-fluid">
     <div class="row g-3">
-      <!-- Bộ lọc tìm kiếm -->
       <div class="col-12">
-        <a-card :bordered="false" class="cart">
-          <template #title> <FilterFilled /> Bộ lọc </template>
-          <div class="row g-2">
-            <div class="col-md-6 col-sm-12">
-              <div class="label-title">Tìm kiếm theo tên, mã:</div>
+        <a-card :bordered="false" class="cart mb-3">
+          <template #title> <FilterFilled /> Bộ lọc</template>
+          <div class="row g-3 filter-container">
+            <div class="col-md-8 col-sm-6">
+              <div class="label-title">Từ khoá:</div>
               <a-input
                 v-model:value="filter.name"
-                placeholder="Tên hoặc mã cấp dự án"
+                placeholder="Tìm theo tên hoặc mã cấp độ"
                 allowClear
                 @change="fetchLevels"
-                class="w-100"
-              />
+              >
+                <template #prefix>
+                  <SearchOutlined />
+                </template>
+              </a-input>
             </div>
-            <div class="col-md-6 col-sm-12">
+            <div class="col-md-4 col-sm-6">
               <div class="label-title">Trạng thái:</div>
               <a-select
                 v-model:value="filter.status"
@@ -315,10 +313,18 @@ onMounted(() => {
                 class="w-100"
                 @change="fetchLevels"
               >
-                <a-select-option :value="null">Tất cả trạng thái</a-select-option>
-                <a-select-option :value="1">Hoạt động</a-select-option>
-                <a-select-option :value="0">Không hoạt động</a-select-option>
+                <a-select-option :value="''">Tất cả trạng thái</a-select-option>
+                <a-select-option value="1">Hoạt động</a-select-option>
+                <a-select-option value="0">Không hoạt động</a-select-option>
               </a-select>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-12">
+              <div class="d-flex justify-content-center flex-wrap gap-2 mt-3">
+                <a-button class="btn-light" @click="fetchLevels"> <FilterFilled /> Lọc </a-button>
+                <a-button class="btn-gray" @click="handleClearFilter"> Huỷ lọc </a-button>
+              </div>
             </div>
           </div>
         </a-card>
@@ -330,35 +336,41 @@ onMounted(() => {
           <template #title> <UnorderedListOutlined /> Danh sách cấp dự án </template>
           <div class="d-flex justify-content-end mb-3">
             <a-tooltip title="Thêm cấp dự án">
-              <a-button type="primary" @click="modalAdd = true"> 
-                <PlusOutlined /> Thêm 
+              <a-button type="primary" @click="modalAdd = true">
+                <PlusOutlined /> Thêm mới
               </a-button>
             </a-tooltip>
           </div>
           <a-table
+            class="nowrap"
             rowKey="id"
             :dataSource="levels"
             :columns="columns"
             :pagination="pagination"
             @change="handleTableChange"
             :loading="loadingStore.isLoading"
-            :scroll="{ y: 500, x: 'auto' }"
+            :scroll="{ x: 'auto' }"
           >
-            <template #bodyCell="{ column, record, index }">
-              <template v-if="column.dataIndex">
-                <template v-if="column.dataIndex === 'rowNumber'">
-                  {{ index + 1 }}
-                </template>
-                <template v-else-if="column.dataIndex === 'status'">
-                  <a-tag :color="record.status === 1 ? 'green' : 'red'">
-                    {{ record.status === 1 ? 'Hoạt động' : 'Không hoạt động' }}
+            <template #bodyCell="{ column, record }">
+              <template v-if="column.dataIndex === 'status'">
+                <span class="nowrap">
+                  <a-switch
+                    class="me-2"
+                    :checked="record.status === 'ACTIVE' || record.status === 1"
+                    @change="confirmChangeStatus(record)"
+                  />
+                  <a-tag
+                    :color="record.status === 'ACTIVE' || record.status === 1 ? 'green' : 'red'"
+                  >
+                    {{
+                      record.status === 'ACTIVE' || record.status === 1
+                        ? 'Hoạt động'
+                        : 'Không hoạt động'
+                    }}
                   </a-tag>
-                </template>
-
-                <template v-else>
-                  {{ record[column.dataIndex] }}
-                </template>
+                </span>
               </template>
+
               <template v-else-if="column.key === 'actions'">
                 <a-space>
                   <a-tooltip title="Xem chi tiết">
@@ -367,7 +379,7 @@ onMounted(() => {
                       class="btn-outline-primary"
                       @click="handleDetailLevel(record)"
                     >
-                      <EyeOutlined />
+                      <EyeFilled />
                     </a-button>
                   </a-tooltip>
                   <a-tooltip title="Chỉnh sửa">
@@ -376,16 +388,7 @@ onMounted(() => {
                       class="btn-outline-info"
                       @click="prepareUpdateLevel(record)"
                     >
-                      <EditOutlined />
-                    </a-button>
-                  </a-tooltip>
-                  <a-tooltip title="Đổi trạng thái">
-                    <a-button
-                      type="text"
-                      class="btn-outline-warning"
-                      @click="confirmChangeStatus(record)"
-                    >
-                      <SyncOutlined />
+                      <EditFilled />
                     </a-button>
                   </a-tooltip>
                 </a-space>
@@ -397,34 +400,3 @@ onMounted(() => {
     </div>
   </div>
 </template>
-
-<style scoped>
-.cart {
-  margin-top: 5px;
-}
-
-.label-title {
-  font-weight: 500;
-  margin-bottom: 5px;
-}
-
-.btn-outline-primary {
-  color: #1890ff;
-  border-color: #1890ff;
-}
-
-.btn-outline-info {
-  color: #13c2c2;
-  border-color: #13c2c2;
-}
-
-.btn-outline-warning {
-  color: #faad14;
-  border-color: #faad14;
-}
-
-.btn-outline-danger {
-  color: #ff4d4f;
-  border-color: #ff4d4f;
-}
-</style>

@@ -11,9 +11,9 @@ import java.util.List;
 public interface AuthenticationRoleRepository extends RoleRepository {
 
     @Query(value = """
-        SELECT * FROM role 
-        WHERE id_user_staff = :userId
-    """, nativeQuery = true)
+                SELECT * FROM role
+                WHERE id_user_staff = :userId
+            """, nativeQuery = true)
     List<Role> findRolesByUserId(String userId);
 
 }

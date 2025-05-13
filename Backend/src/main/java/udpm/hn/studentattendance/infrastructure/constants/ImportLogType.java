@@ -5,5 +5,6 @@ public enum ImportLogType {
     STAFF,
     FACTORY,
     STUDENT,
-    STUDENT_FACTORY
+    STUDENT_FACTORY,
+    PROJECT
 }

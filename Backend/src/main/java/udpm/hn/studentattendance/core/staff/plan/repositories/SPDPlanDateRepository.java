@@ -27,10 +27,13 @@ public interface SPDPlanDateRepository extends PlanDateRepository {
             pd.late_arrival,
             pd.description,
             pd.link,
+            pd.room,
             pd.required_location,
             pd.required_ip,
+            pd.required_checkin,
+            pd.required_checkout,
             CASE
-                WHEN UNIX_TIMESTAMP(NOW()) * 1000 > pd.end_date
+                WHEN UNIX_TIMESTAMP(NOW()) * 1000 > pd.start_date
                 THEN 'DA_DIEN_RA'
                 ELSE 'CHUA_DIEN_RA'
             END AS status
@@ -39,7 +42,12 @@ public interface SPDPlanDateRepository extends PlanDateRepository {
         JOIN factory f ON f.id = pf.id_factory
         JOIN project p ON p.id = f.id_project
         JOIN subject_facility sf ON sf.id = p.id_subject_facility
+        JOIN facility f2 ON sf.id_facility = f2.id
         WHERE 
+            f.status = 1 AND
+            p.status = 1 AND
+            sf.status = 1 AND
+            f2.status = 1 AND
             sf.id_facility = :#{#request.idFacility} AND
             pf.id = :#{#request.idPlanFactory} AND
             (NULLIF(TRIM(:#{#request.keyword}), '') IS NULL OR pd.description LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%')) AND
@@ -52,7 +60,7 @@ public interface SPDPlanDateRepository extends PlanDateRepository {
             )) AND
             (:#{#request.status} IS NULL OR (
                 CASE
-                    WHEN UNIX_TIMESTAMP(NOW()) * 1000 > pd.end_date
+                    WHEN UNIX_TIMESTAMP(NOW()) * 1000 > pd.start_date
                     THEN 'DA_DIEN_RA'
                     ELSE 'CHUA_DIEN_RA'
                 END
@@ -66,7 +74,12 @@ public interface SPDPlanDateRepository extends PlanDateRepository {
         JOIN factory f ON f.id = pf.id_factory
         JOIN project p ON p.id = f.id_project
         JOIN subject_facility sf ON sf.id = p.id_subject_facility
+        JOIN facility f2 ON sf.id_facility = f2.id
         WHERE 
+            f.status = 1 AND
+            p.status = 1 AND
+            sf.status = 1 AND
+            f2.status = 1 AND 
             sf.id_facility = :#{#request.idFacility} AND
             pf.id = :#{#request.idPlanFactory} AND
             (NULLIF(TRIM(:#{#request.keyword}), '') IS NULL OR pd.description LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%')) AND
@@ -79,7 +92,7 @@ public interface SPDPlanDateRepository extends PlanDateRepository {
             )) AND
             (:#{#request.status} IS NULL OR (
                 CASE
-                    WHEN UNIX_TIMESTAMP(NOW()) * 1000 > pd.end_date
+                    WHEN UNIX_TIMESTAMP(NOW()) * 1000 > pd.start_date
                     THEN 'DA_DIEN_RA'
                     ELSE 'CHUA_DIEN_RA'
                 END
@@ -98,10 +111,13 @@ public interface SPDPlanDateRepository extends PlanDateRepository {
             pl.to_date,
             pl.from_date,
             pd.link,
+            pd.room,
             pd.required_location,
             pd.required_ip,
+            pd.required_checkin,
+            pd.required_checkout,
             CASE
-                WHEN UNIX_TIMESTAMP(NOW()) * 1000 > pd.end_date
+                WHEN UNIX_TIMESTAMP(NOW()) * 1000 > pd.start_date
                 THEN 'DA_DIEN_RA'
                 ELSE 'CHUA_DIEN_RA'
             END AS status
@@ -111,7 +127,12 @@ public interface SPDPlanDateRepository extends PlanDateRepository {
         JOIN factory f ON f.id = pf.id_factory
         JOIN project p ON p.id = f.id_project
         JOIN subject_facility sf ON sf.id = p.id_subject_facility
+        JOIN facility f2 ON sf.id_facility = f2.id
         WHERE 
+            f.status = 1 AND
+            p.status = 1 AND
+            sf.status = 1 AND
+            f2.status = 1 AND
             sf.id_facility = :idFacility AND
             pd.id = :idPlanDate
     """, nativeQuery = true)
@@ -140,11 +161,11 @@ public interface SPDPlanDateRepository extends PlanDateRepository {
         WHERE 
             status = 1 AND
             id_plan_factory = :idPlanFactory AND
-            start_date = :startDate AND
-            shift = :shift AND
+            start_date <= :endDate AND
+            end_date >= :startDate AND
             (:idPlanDate IS NULL OR id != :idPlanDate)
     """, nativeQuery = true)
-    boolean isExistsShiftInFactory(String idPlanFactory, String idPlanDate, Long startDate, Integer shift);
+    boolean isExistsShiftInFactory(String idPlanFactory, String idPlanDate, Long startDate, Long endDate);
 
     @Query(value = """
         SELECT 
@@ -155,10 +176,10 @@ public interface SPDPlanDateRepository extends PlanDateRepository {
             pd.status = 1 AND
             f.status = 1 AND
             f.id_user_staff = :idUserStaff AND
-            pd.start_date = :startDate AND
-            pd.shift = :shift
+            pd.start_date <= :endDate AND
+            pd.end_date >= :startDate
     """, nativeQuery = true)
-    boolean isExistsTeacherOnShift(String idUserStaff, Long startDate, Integer shift);
+    boolean isExistsTeacherOnShift(String idUserStaff, Long startDate, Long endDate);
 
 
 }

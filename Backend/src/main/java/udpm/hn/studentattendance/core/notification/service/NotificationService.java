@@ -6,8 +6,6 @@ import udpm.hn.studentattendance.core.notification.model.request.NotificationMod
 import udpm.hn.studentattendance.core.notification.model.request.NotificationFilterRequest;
 import udpm.hn.studentattendance.entities.Notification;
 
-import java.util.Map;
-
 public interface NotificationService {
 
     ResponseEntity<?> getAllList(NotificationFilterRequest request);

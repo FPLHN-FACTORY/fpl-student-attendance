@@ -29,7 +29,6 @@ public class DateTimeUtils {
             try {
                 return Long.parseLong(date);
             } catch (NumberFormatException ex) {
-                ex.printStackTrace(System.err);
                 return null;
             }
         }

@@ -11,37 +11,35 @@ import udpm.hn.studentattendance.core.admin.facility.model.response.AFFacilityRe
 import udpm.hn.studentattendance.entities.Facility;
 import udpm.hn.studentattendance.repositories.FacilityRepository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
 public interface AFFacilityExtendRepository extends FacilityRepository {
-    @Query(
-            value = """
-            SELECT 
+    @Query(value = """
+            SELECT
                 f.position AS facilityIndex,
                 f.id AS id,
                 f.code AS facilityCode,
                 f.name AS facilityName,
                 f.status AS facilityStatus,
-                (SELECT 
-                    COALESCE(MAX(position), 0) 
+                (SELECT
+                    COALESCE(MAX(position), 0)
                 FROM Facility ) AS maxPosition
             FROM Facility f
-            WHERE (:#{#request.name} IS NULL 
-                   OR f.code LIKE CONCAT('%', TRIM(:#{#request.q}), '%') 
+            WHERE (:#{#request.name} IS NULL
+                   OR f.code LIKE CONCAT('%', TRIM(:#{#request.q}), '%')
                    OR f.name LIKE CONCAT('%', TRIM(:#{#request.name}), '%'))
               AND (:#{#request.status} IS NULL OR f.status = (:#{#request.status}))
-            ORDER BY f.position ASC 
-            """,
-            countQuery = """
+            ORDER BY f.position ASC
+            """, countQuery = """
             SELECT COUNT(f.id)
             FROM Facility f
-            WHERE (:#{#request.name} IS NULL 
-                   OR f.code LIKE CONCAT('%', TRIM(:#{#request.q}), '%') 
+            WHERE (:#{#request.name} IS NULL
+                   OR f.code LIKE CONCAT('%', TRIM(:#{#request.q}), '%')
                    OR f.name LIKE CONCAT('%', TRIM(:#{#request.name}), '%'))
               AND (:#{#request.status} IS NULL OR f.status = (:#{#request.status}))
-            """
-    )
+            """)
     Page<AFFacilityResponse> getAllFacility(Pageable pageable, AFFacilitySearchRequest request);
 
     @Query(value = """
@@ -52,7 +50,7 @@ public interface AFFacilityExtendRepository extends FacilityRepository {
     boolean existByName(String name, String code);
 
     @Query(value = """
-            SELECT 
+            SELECT
             f.id as id,
             f.code as facilityCode,
             f.name as facilityName,
@@ -63,8 +61,8 @@ public interface AFFacilityExtendRepository extends FacilityRepository {
     Optional<AFFacilityResponse> getDetailFacilityById(String facilityId);
 
     @Query(value = """
-            SELECT 
-            COALESCE(MAX(position), 0) 
+            SELECT
+            COALESCE(MAX(position), 0)
             FROM facility
             """, nativeQuery = true)
     Integer getLastPosition();
@@ -72,24 +70,41 @@ public interface AFFacilityExtendRepository extends FacilityRepository {
     @Transactional
     @Modifying
     @Query(value = """
-        UPDATE facility 
-        SET position = position + 1
-        WHERE 
-            position = :position AND
-            id != :idFacility
-    """, nativeQuery = true)
+                UPDATE facility
+                SET position = position + 1
+                WHERE
+                    position = :position AND
+                    id != :idFacility
+            """, nativeQuery = true)
     Integer updatePositionPreUp(int position, String idFacility);
 
     @Transactional
     @Modifying
     @Query(value = """
-        UPDATE facility 
-        SET position = position - 1
-        WHERE 
-            position = :position AND
-            id != :idFacility
-    """, nativeQuery = true)
+                UPDATE facility
+                SET position = position - 1
+                WHERE
+                    position = :position AND
+                    id != :idFacility
+            """, nativeQuery = true)
     Integer updatePositionNextDown(int position, String idFacility);
 
     Optional<Facility> findByName(String nameFacility);
+
+    @Query(value = """
+        SELECT
+            DISTINCT COALESCE(us.email, ust.email_fe) AS email
+        From facility f
+        LEFT JOIN role r ON r.id_facility = f.id
+        LEFT JOIN user_staff ust ON ust.id = r.id_user_staff
+        LEFT JOIN user_student us ON us.id_facility = f.id
+        WHERE
+            f.id = :idFacility AND
+            ust.status = 1 AND
+            us.status = 1 AND
+            ust.email_fe IS NOT NULL AND
+            us.email IS NOT NULL
+    """, nativeQuery = true)
+    List<String> getListEmailUserDisableFacility(String idFacility);
+
 }

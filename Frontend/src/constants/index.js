@@ -2,7 +2,9 @@ export const DEFAULT_DATE_FORMAT = 'DD/MM/YYYY'
 
 export const DEFAULT_LATE_ARRIVAL = 15
 
-export const DEFAULT_MAX_LATE_ARRIVAL = 60
+export const DEFAULT_EARLY_MINUTE_CHECKIN = 10
+
+export const DEFAULT_MAX_LATE_ARRIVAL = 90
 
 export const PAGINATION_SIZE = 10
 
@@ -84,8 +86,14 @@ export const ROLE = {
 }
 
 export const ATTENDANCE_STATUS = {
-  NOTCHECKIN: { id: 0, name: 'Chưa điểm danh' },
+  NOTCHECKIN: { id: 0, name: 'Chưa checkin' },
   ABSENT: { id: 1, name: 'Vắng mặt' },
   CHECKIN: { id: 2, name: 'Đã checkin' },
   PRESENT: { id: 3, name: 'Có mặt' },
+  NOTCHECKOUT: { id: 4, name: 'Chưa checkout' },
+}
+
+export const STATUS_REQUIRED_ATTENDANCE = {
+  DISABLE: 0,
+  ENABLE: 1,
 }

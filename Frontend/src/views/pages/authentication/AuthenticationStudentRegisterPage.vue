@@ -3,14 +3,13 @@ import { useRouter } from 'vue-router'
 import imgLogoFpt from '@/assets/images/logo-fpt.png'
 import imgLogoUdpm from '@/assets/images/logo-udpm.png'
 import { nextTick, onMounted, reactive, ref } from 'vue'
-import { toast } from 'vue3-toastify'
 import requestAPI from '@/services/requestApiService'
 import useAuthStore from '@/stores/useAuthStore'
 import useLoadingStore from '@/stores/useLoadingStore'
 import { ROUTE_NAMES_API } from '@/router/authenticationRoute'
 
 import { message, Modal } from 'ant-design-vue'
-import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
+import { BASE_URL, GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
 import useFaceIDStore from '@/stores/useFaceIDStore'
 
 const router = useRouter()
@@ -34,7 +33,7 @@ const lstFacility = ref([])
 
 const handleLogout = () => {
   authStore.logout()
-  window.location.reload()
+  window.location.href = BASE_URL
 }
 
 const formRules = reactive({
@@ -68,7 +67,7 @@ const fetchDataFacility = async () => {
     const response = await requestAPI.get(ROUTE_NAMES_API.FETCH_DATA_FACILITY)
     lstFacility.value = response.data.data
   } catch (error) {
-    toast.error('Không thể tải danh sách cơ sở')
+    message.error('Không thể tải danh sách cơ sở')
   }
 }
 
@@ -83,7 +82,7 @@ const fetchSubmitRegister = () => {
         name: formData.name,
         code: formData.code,
       })
-      authStore.setToken(response.data)
+      authStore.setToken(response.data.accessToken, response.data.refreshToken)
       router.push({ name: GLOBAL_ROUTE_NAMES.STUDENT_PAGE })
     })
     .catch((error) => {
@@ -97,8 +96,8 @@ const fetchSubmitRegister = () => {
 onMounted(async () => {
   document.body.classList.add('bg-login')
   fetchDataFacility()
-  faceIDStore.init(video, canvas, (descriptor) => {
-    formData.faceEmbedding = JSON.stringify(Array.from(descriptor))
+  faceIDStore.init(video, canvas, false, (descriptor) => {
+    formData.faceEmbedding = JSON.stringify(descriptor)
     isShowCamera.value = false
   })
   await faceIDStore.loadModels()
@@ -108,7 +107,7 @@ onMounted(async () => {
 <template>
   <a-modal
     v-model:open="isShowCamera"
-    title="Checkin khuôn mặt"
+    title="Xác nhận khuôn mặt"
     @cancel="faceIDStore.stopVideo()"
     :footer="null"
   >
@@ -116,6 +115,8 @@ onMounted(async () => {
       <canvas ref="canvas"></canvas>
       <video ref="video" autoplay muted></video>
       <div class="face-id-step" :class="faceIDStore.renderStyle()">
+        <div></div>
+        <div></div>
         <div></div>
         <div></div>
         <div></div>
@@ -373,6 +374,11 @@ onMounted(async () => {
   border: 1px solid #d6bfda;
   padding: 20px 40px;
   box-shadow: 4px 6px 1px 1px #efefef;
+}
+@media (max-width: 576px) {
+  .role-container {
+    padding: 20px 15px;
+  }
 }
 .role-item {
   display: flex;

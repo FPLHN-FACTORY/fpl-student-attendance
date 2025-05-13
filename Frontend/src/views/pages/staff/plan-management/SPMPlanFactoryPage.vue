@@ -23,7 +23,7 @@ import {
   DEFAULT_MAX_LATE_ARRIVAL,
   SHIFT,
 } from '@/constants'
-import { formatDate } from '@/utils/utils'
+import { autoAddColumnWidth, debounce, formatDate } from '@/utils/utils'
 import useLoadingStore from '@/stores/useLoadingStore'
 
 const router = useRouter()
@@ -40,6 +40,7 @@ const modalAdd = reactive({
   isLoading: false,
   okText: 'Xác nhận',
   cancelText: 'Huỷ bỏ',
+  width: 800,
   onOk: () => handleSubmitAdd(),
 })
 
@@ -49,16 +50,26 @@ const lstShift = ref([])
 
 const formRefAdd = ref(null)
 
-const columns = ref([
-  { title: '#', dataIndex: 'orderNumber', key: 'orderNumber', width: 50 },
-  { title: 'Tên nhóm xưởng', dataIndex: 'factoryName', key: 'factoryName', width: 150 },
-  { title: 'Giảng viên', dataIndex: 'staffName', key: 'staffName' },
-  { title: 'Thời gian thực tế', key: 'time' },
-  { title: 'Số buổi', dataIndex: 'totalShift', key: 'totalShift' },
-  { title: 'Số sinh viên', dataIndex: 'totalStudent', key: 'totalStudent' },
-  { title: 'Trạng thái', dataIndex: 'status', key: 'status' },
-  { title: '', key: 'actions' },
-])
+const columns = ref(
+  autoAddColumnWidth([
+    { title: '#', dataIndex: 'orderNumber', key: 'orderNumber' },
+    {
+      title: 'Tên nhóm xưởng',
+      dataIndex: 'factoryName',
+      key: 'factoryName',
+    },
+    { title: 'Giảng viên', dataIndex: 'staffName', key: 'staffName' },
+    { title: 'Thời gian thực tế', key: 'time' },
+    { title: 'Số buổi', dataIndex: 'totalShift', key: 'totalShift' },
+    {
+      title: 'Số sinh viên',
+      dataIndex: 'totalStudent',
+      key: 'totalStudent',
+    },
+    { title: 'Trạng thái', dataIndex: 'status', key: 'status' },
+    { title: '', key: 'actions' },
+  ]),
+)
 
 const breadcrumb = ref([
   {
@@ -83,8 +94,11 @@ const formDataAdd = reactive({
   idFactory: null,
   type: Object.keys(TYPE_SHIFT)[0],
   days: [],
-  shift: null,
+  shift: [],
   link: null,
+  room: null,
+  requiredCheckin: STATUS_TYPE.ENABLE,
+  requiredCheckout: STATUS_TYPE.ENABLE,
   requiredLocation: STATUS_TYPE.ENABLE,
   requiredIp: STATUS_TYPE.ENABLE,
   lateArrival: DEFAULT_LATE_ARRIVAL,
@@ -272,11 +286,14 @@ const handleShowModalAdd = () => {
   formDataAdd.idFactory = null
   formDataAdd.type = Object.keys(TYPE_SHIFT)[0]
   formDataAdd.lateArrival = DEFAULT_LATE_ARRIVAL
-  formDataAdd.shift = null
+  formDataAdd.shift = []
   formDataAdd.days = []
   formDataAdd.link = null
+  formDataAdd.room = null
   formDataAdd.requiredLocation = STATUS_TYPE.ENABLE
   formDataAdd.requiredIp = STATUS_TYPE.ENABLE
+  formDataAdd.requiredCheckin = STATUS_TYPE.ENABLE
+  formDataAdd.requiredCheckout = STATUS_TYPE.ENABLE
 }
 
 const handleChangeStatus = (id) => {
@@ -312,10 +329,11 @@ onMounted(() => {
   fetchDataShift()
 })
 
+const debounceFilter = debounce(handleSubmitFilter, 100)
 watch(
   dataFilter,
   () => {
-    handleSubmitFilter()
+    debounceFilter()
   },
   { deep: true },
 )
@@ -370,7 +388,20 @@ watch(
           </a-select-option>
         </a-select>
       </a-form-item>
-      <a-form-item class="col-sm-3" label="Hình thức học" name="type" :rules="formRules.type">
+      <a-form-item class="col-sm-12" label="Ca học" name="shift" :rules="formRules.shift">
+        <a-select
+          class="w-100"
+          v-model:value="formDataAdd.shift"
+          :disabled="modalAdd.isLoading"
+          mode="multiple"
+          allow-clear
+        >
+          <a-select-option v-for="o in lstShift" :key="o.id" :value="o.shift">
+            {{ SHIFT[o.shift] }}
+          </a-select-option>
+        </a-select>
+      </a-form-item>
+      <a-form-item class="col-sm-4" label="Hình thức học" name="type" :rules="formRules.type">
         <a-select
           v-model:value="formDataAdd.type"
           class="w-100"
@@ -382,15 +413,8 @@ watch(
           </a-select-option>
         </a-select>
       </a-form-item>
-      <a-form-item class="col-sm-3" label="Ca học" name="shift" :rules="formRules.shift">
-        <a-select class="w-100" v-model:value="formDataAdd.shift" :disabled="modalAdd.isLoading">
-          <a-select-option v-for="o in lstShift" :key="o.id" :value="o.shift">
-            {{ SHIFT[o.shift] }}
-          </a-select-option>
-        </a-select>
-      </a-form-item>
       <a-form-item
-        class="col-sm-6"
+        class="col-sm-4"
         label="Điểm danh muộn tối đa (phút)"
         name="lateArrival"
         :rules="formRules.lateArrival"
@@ -405,6 +429,15 @@ watch(
           allowClear
         />
       </a-form-item>
+      <a-form-item class="col-sm-4" label="Phòng học">
+        <a-input
+          class="w-100"
+          v-model:value="formDataAdd.room"
+          placeholder="Địa điểm học chi tiết"
+          :disabled="modalAdd.isLoading || formDataAdd.type == '1'"
+          allowClear
+        />
+      </a-form-item>
       <a-form-item class="col-sm-12" label="Link học online" name="link">
         <a-input
           class="w-100"
@@ -415,35 +448,67 @@ watch(
         />
       </a-form-item>
       <a-form-item class="col-sm-12" label="Điều kiện điểm danh">
-        <div class="mt-2">
-          <a-switch
-            class="me-2"
-            :checked="formDataAdd.requiredIp === STATUS_TYPE.ENABLE"
-            @change="
-              formDataAdd.requiredIp =
-                formDataAdd.requiredIp === STATUS_TYPE.ENABLE
-                  ? STATUS_TYPE.DISABLE
-                  : STATUS_TYPE.ENABLE
-            "
-          />
-          <span :class="{ disabled: formDataAdd.requiredIp !== STATUS_TYPE.ENABLE }"
-            >Phải kết nối mạng trường</span
-          >
-        </div>
-        <div class="mt-3">
-          <a-switch
-            class="me-2"
-            :checked="formDataAdd.requiredLocation === STATUS_TYPE.ENABLE"
-            @change="
-              formDataAdd.requiredLocation =
-                formDataAdd.requiredLocation === STATUS_TYPE.ENABLE
-                  ? STATUS_TYPE.DISABLE
-                  : STATUS_TYPE.ENABLE
-            "
-          />
-          <span :class="{ disabled: formDataAdd.requiredLocation !== STATUS_TYPE.ENABLE }"
-            >Phải ở trong địa điểm cơ sở</span
-          >
+        <div class="row g-3">
+          <div class="col-sm-6">
+            <a-switch
+              class="me-2"
+              :checked="formDataAdd.requiredCheckin === STATUS_TYPE.ENABLE"
+              @change="
+                formDataAdd.requiredCheckin =
+                  formDataAdd.requiredCheckin === STATUS_TYPE.ENABLE
+                    ? STATUS_TYPE.DISABLE
+                    : STATUS_TYPE.ENABLE
+              "
+            />
+            <span :class="{ disabled: formDataAdd.requiredCheckin !== STATUS_TYPE.ENABLE }"
+              >Yêu cầu checkin</span
+            >
+          </div>
+          <div class="col-sm-6">
+            <a-switch
+              class="me-2"
+              :checked="formDataAdd.requiredCheckout === STATUS_TYPE.ENABLE"
+              @change="
+                formDataAdd.requiredCheckout =
+                  formDataAdd.requiredCheckout === STATUS_TYPE.ENABLE
+                    ? STATUS_TYPE.DISABLE
+                    : STATUS_TYPE.ENABLE
+              "
+            />
+            <span :class="{ disabled: formDataAdd.requiredCheckout !== STATUS_TYPE.ENABLE }"
+              >Yêu cầu checkout</span
+            >
+          </div>
+          <div class="col-sm-6">
+            <a-switch
+              class="me-2"
+              :checked="formDataAdd.requiredIp === STATUS_TYPE.ENABLE"
+              @change="
+                formDataAdd.requiredIp =
+                  formDataAdd.requiredIp === STATUS_TYPE.ENABLE
+                    ? STATUS_TYPE.DISABLE
+                    : STATUS_TYPE.ENABLE
+              "
+            />
+            <span :class="{ disabled: formDataAdd.requiredIp !== STATUS_TYPE.ENABLE }"
+              >Phải kết nối mạng trường</span
+            >
+          </div>
+          <div class="col-sm-6">
+            <a-switch
+              class="me-2"
+              :checked="formDataAdd.requiredLocation === STATUS_TYPE.ENABLE"
+              @change="
+                formDataAdd.requiredLocation =
+                  formDataAdd.requiredLocation === STATUS_TYPE.ENABLE
+                    ? STATUS_TYPE.DISABLE
+                    : STATUS_TYPE.ENABLE
+              "
+            />
+            <span :class="{ disabled: formDataAdd.requiredLocation !== STATUS_TYPE.ENABLE }"
+              >Phải ở trong địa điểm cơ sở</span
+            >
+          </div>
         </div>
       </a-form-item>
     </a-form>
@@ -519,7 +584,7 @@ watch(
             :columns="columns"
             :loading="isLoading"
             :pagination="pagination"
-            :scroll="{ y: 500, x: 'auto' }"
+            :scroll="{ x: 'auto' }"
             @change="handleTableChange"
           >
             <template #bodyCell="{ column, record }">

@@ -1,19 +1,16 @@
 package udpm.hn.studentattendance.core.authentication.oauth2;
 
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.core.user.OAuth2User;
-import org.springframework.stereotype.Component;
 import udpm.hn.studentattendance.infrastructure.constants.RoleConstant;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 @Getter
 @Setter
@@ -33,7 +30,7 @@ public class CustomOAuth2User extends AuthUser implements OAuth2User {
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         List<GrantedAuthority> authorities = new ArrayList<>();
-        for(RoleConstant r: this.role) {
+        for (RoleConstant r : this.role) {
             authorities.add(new SimpleGrantedAuthority(r.name()));
         }
         return authorities;
@@ -57,6 +54,5 @@ public class CustomOAuth2User extends AuthUser implements OAuth2User {
     public String getPicture() {
         return oauth2User.getAttribute("picture");
     }
-
 
 }
