@@ -20,6 +20,7 @@ import udpm.hn.studentattendance.helpers.PaginationHelper;
 import udpm.hn.studentattendance.helpers.SessionHelper;
 import udpm.hn.studentattendance.infrastructure.common.ApiResponse;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
+import udpm.hn.studentattendance.infrastructure.common.repositories.CommonUserStudentRepository;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.RestApiStatus;
 import udpm.hn.studentattendance.infrastructure.constants.RoleConstant;
@@ -48,6 +49,8 @@ public class USFactoryServiceImpl implements USFactoryService {
     private final USFactorySemesterExtendRepository semesterRepository;
 
     private final NotificationService notificationService;
+
+    private final CommonUserStudentRepository commonUserStudentRepository;
 
     private final SessionHelper sessionHelper;
 
@@ -256,6 +259,9 @@ public class USFactoryServiceImpl implements USFactoryService {
             factory.setStatus(existFactory.get().getStatus() == EntityStatus.ACTIVE ? EntityStatus.INACTIVE
                     : EntityStatus.ACTIVE);
             factoryRepository.save(factory);
+            if (factory.getStatus() == EntityStatus.ACTIVE) {
+                commonUserStudentRepository.disableAllStudentDuplicateShiftByIdFactory(factory.getId());
+            }
         }
         return new ResponseEntity<>(
                 new ApiResponse(
@@ -331,6 +337,9 @@ public class USFactoryServiceImpl implements USFactoryService {
             factory.setStatus(factory.getStatus() == EntityStatus.ACTIVE ? EntityStatus.INACTIVE
                     : EntityStatus.ACTIVE);
             factoryRepository.save(factory);
+            if (factory.getStatus() == EntityStatus.ACTIVE) {
+                commonUserStudentRepository.disableAllStudentDuplicateShiftByIdFactory(factory.getId());
+            }
         }
 
         return new ResponseEntity<>(

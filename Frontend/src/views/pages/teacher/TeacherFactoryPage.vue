@@ -1,6 +1,6 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
-import { message } from 'ant-design-vue'
+import { message, Modal } from 'ant-design-vue'
 import { useRouter } from 'vue-router'
 import requestAPI from '@/services/requestApiService'
 import { API_ROUTES_TEACHER } from '@/constants/teacherConstant'
@@ -9,6 +9,7 @@ import {
   UnorderedListOutlined,
   AlignLeftOutlined,
   SearchOutlined,
+  UsergroupAddOutlined,
 } from '@ant-design/icons-vue'
 import { ROUTE_NAMES } from '@/router/teacherRoute'
 import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
@@ -65,6 +66,18 @@ const columns = ref(
       key: 'factoryDescription',
     },
     {
+      title: 'Số lượng sinh viên',
+      dataIndex: 'totalStudent',
+      key: 'totalStudent',
+      align: 'center',
+    },
+    {
+      title: 'Số buổi dạy',
+      dataIndex: 'totalShift',
+      key: 'totalShift',
+      align: 'center',
+    },
+    {
       title: 'Trạng thái',
       dataIndex: 'factoryStatus',
       key: 'factoryStatus',
@@ -77,11 +90,10 @@ const columns = ref(
 const fetchFactoryByTeacher = () => {
   loadingStore.show()
   requestAPI
-    .get(API_ROUTES_TEACHER.FETCH_DATA_STUDENT, {
+    .get(API_ROUTES_TEACHER.FETCH_DATA_FACTORY, {
       params: { ...filter, page: pagination.current, size: pagination.pageSize },
     })
     .then((response) => {
-      console.log('Factory response:', response.data)
       const result = response.data.data
       factories.value = result.data
       // Nếu API trả về tổng số trang, sử dụng:
@@ -101,9 +113,8 @@ const fetchFactoryByTeacher = () => {
 const fetchProjectByFacility = () => {
   loadingStore.show()
   requestAPI
-    .get(API_ROUTES_TEACHER.FETCH_DATA_STUDENT + '/projects')
+    .get(API_ROUTES_TEACHER.FETCH_DATA_FACTORY + '/projects')
     .then((response) => {
-      console.log('Projects response:', response.data)
       const result = response.data.data
       projects.value = result
     })
@@ -118,9 +129,8 @@ const semesters = ref([])
 const fetchSemesters = () => {
   loadingStore.show()
   requestAPI
-    .get(API_ROUTES_TEACHER.FETCH_DATA_STUDENT + '/semesters')
+    .get(API_ROUTES_TEACHER.FETCH_DATA_FACTORY + '/semesters')
     .then((response) => {
-      console.log('Projects response:', response.data)
       const result = response.data.data
       semesters.value = result
     })
@@ -143,12 +153,20 @@ const handleTableChange = (pageInfo) => {
 
 // Khi nhấn nút "Chi tiết", chuyển hướng sang trang quản lý sinh viên của nhóm xưởng
 const handleDetailFactory = (record) => {
-  console.log('Detail record:', record)
   router.push({
     name: ROUTE_NAMES.MANAGEMENT_STUDENT_FACTORY,
     query: {
       factoryId: record.factoryId || record.id,
       factoryName: record.factoryName || record.name,
+    },
+  })
+}
+
+const handleListShift = (record) => {
+  router.push({
+    name: ROUTE_NAMES.MANAGEMENT_SHIFT_FACTORY,
+    params: {
+      id: record.factoryId || record.id,
     },
   })
 }
@@ -163,6 +181,18 @@ const handleClearFilter = () => {
   })
   pagination.current = 1
   fetchFactoryByTeacher()
+}
+
+const handleShowDescription = (text) => {
+  Modal.info({
+    title: 'Mô tả nhóm xưởng',
+    type: 'info',
+    content: text,
+    okText: 'Đóng',
+    okButtonProps: {
+      class: 'btn-gray',
+    },
+  })
 }
 
 onMounted(() => {
@@ -255,11 +285,32 @@ onMounted(() => {
           >
             <template #bodyCell="{ column, record, index }">
               <template v-if="column.dataIndex">
+                <template
+                  v-if="column.dataIndex === 'factoryDescription' && record.factoryDescription"
+                >
+                  <a-typography-link @click="handleShowDescription(record.factoryDescription)"
+                    >Chi tiết</a-typography-link
+                  >
+                </template>
+
+                <template v-if="column.dataIndex === 'totalStudent'">
+                  <a-tag color="purple">{{ record.totalStudent || 0 }} sinh viên</a-tag>
+                </template>
+
+                <template v-if="column.dataIndex === 'totalShift'">
+                  <a-tag color="blue">{{ record.totalShift || 0 }} buổi</a-tag>
+                </template>
+
                 <template v-if="column.dataIndex === 'rowNumber'">
                   {{ index + 1 }}
                 </template>
                 <template v-else-if="column.dataIndex === 'factoryName'">
-                  <a @click="handleDetailFactory(record)">{{ record.factoryName }}</a>
+                  <a
+                    @click="
+                      record.totalShift > 0 ? handleListShift(record) : handleDetailFactory(record)
+                    "
+                    >{{ record.factoryName }}</a
+                  >
                 </template>
                 <template v-else-if="column.dataIndex === 'factoryStatus'">
                   <a-tag
@@ -276,22 +327,26 @@ onMounted(() => {
                     }}
                   </a-tag>
                 </template>
-                <template v-else>
-                  {{ record[column.dataIndex] }}
-                </template>
               </template>
               <template v-else-if="column.key === 'actions'">
-                <a-space>
-                  <a-tooltip title="Quản lý sinh viên nhóm xưởng">
-                    <a-button
-                      type="text"
-                      class="btn-outline-primary"
-                      @click="handleDetailFactory(record)"
-                    >
-                      <AlignLeftOutlined />
-                    </a-button>
-                  </a-tooltip>
-                </a-space>
+                <a-tooltip title="Danh sách sinh viên">
+                  <a-button
+                    type="text"
+                    class="btn-outline-info border-0 me-2"
+                    @click="handleDetailFactory(record)"
+                  >
+                    <UsergroupAddOutlined />
+                  </a-button>
+                </a-tooltip>
+                <a-tooltip title="Danh sách ca học" v-if="record.totalShift > 0">
+                  <a-button
+                    type="text"
+                    class="btn-outline-primary border-0 me-2"
+                    @click="handleListShift(record)"
+                  >
+                    <AlignLeftOutlined />
+                  </a-button>
+                </a-tooltip>
               </template>
             </template>
           </a-table>

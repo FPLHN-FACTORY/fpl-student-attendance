@@ -233,6 +233,18 @@ const handleEditProject = (record) => {
     })
 }
 
+const handleShowDescription = (text) => {
+  Modal.info({
+    title: 'Mô tả dự án',
+    type: 'info',
+    content: text,
+    okText: 'Đóng',
+    okButtonProps: {
+      class: 'btn-gray',
+    },
+  })
+}
+
 // Cập nhật dự án
 const handleUpdateProject = () => {
   if (!detailProject.name) {
@@ -479,6 +491,11 @@ onMounted(() => {
           >
             <template #bodyCell="{ column, record }">
               <!-- Hiển thị trạng thái -->
+              <template v-if="column.dataIndex === 'description' && record.description">
+                <a-typography-link @click="handleShowDescription(record.description)"
+                  >Chi tiết</a-typography-link
+                >
+              </template>
               <template v-if="column.dataIndex === 'status'">
                 <span class="nowrap">
                   <a-switch
@@ -504,9 +521,6 @@ onMounted(() => {
                     </a-button>
                   </a-tooltip>
                 </a-space>
-              </template>
-              <template v-else>
-                {{ record[column.dataIndex] }}
               </template>
             </template>
           </a-table>

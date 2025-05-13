@@ -11,7 +11,7 @@ import udpm.hn.studentattendance.infrastructure.constants.router.RouteTeacherCon
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping(RouteTeacherConstant.URL_API_STUDENT_MANAGEMENT)
+@RequestMapping(RouteTeacherConstant.URL_API_FACTORY_MANAGEMENT)
 public class TCFactoryRestController {
 
     private final TCFactoryService teacherStudentService;
@@ -30,4 +30,5 @@ public class TCFactoryRestController {
     public ResponseEntity<?> getAllSemester() {
         return teacherStudentService.getAllSemester();
     }
+
 }
