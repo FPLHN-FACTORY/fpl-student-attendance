@@ -17,7 +17,7 @@ import { useRouter } from 'vue-router'
 import { ROUTE_NAMES } from '@/router/staffRoute'
 import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
 import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
-import { formatDate } from '@/utils/utils'
+import { autoAddColumnWidth, debounce, formatDate } from '@/utils/utils'
 import dayjs from 'dayjs'
 
 const router = useRouter()
@@ -47,17 +47,19 @@ const maxRangeDate = ref(dayjs())
 
 const currentProject = ref(null)
 
-const columns = ref([
-  { title: '#', dataIndex: 'orderNumber', key: 'orderNumber', width: 50 },
-  { title: 'Tên kế hoạch', dataIndex: 'planName', key: 'planName', width: 120 },
-  { title: 'Tên dự án', dataIndex: 'projectName', key: 'projectName' },
-  { title: 'Nội dung', dataIndex: 'description', key: 'description' },
-  { title: 'Bộ môn', dataIndex: 'subjectName', key: 'subjectName' },
-  { title: 'Cấp độ', dataIndex: 'level', key: 'level', width: 120 },
-  { title: 'Ngày diễn ra', dataIndex: 'semesterName', key: 'semesterName' },
-  { title: 'Trạng thái', dataIndex: 'status', key: 'status' },
-  { title: '', key: 'actions' },
-])
+const columns = ref(
+  autoAddColumnWidth([
+    { title: '#', dataIndex: 'orderNumber', key: 'orderNumber' },
+    { title: 'Tên kế hoạch', dataIndex: 'planName', key: 'planName' },
+    { title: 'Tên dự án', dataIndex: 'projectName', key: 'projectName' },
+    { title: 'Nội dung', dataIndex: 'description', key: 'description' },
+    { title: 'Bộ môn', dataIndex: 'subjectName', key: 'subjectName' },
+    { title: 'Cấp độ', dataIndex: 'level', key: 'level' },
+    { title: 'Ngày diễn ra', dataIndex: 'semesterName', key: 'semesterName' },
+    { title: 'Trạng thái', dataIndex: 'status', key: 'status' },
+    { title: '', key: 'actions' },
+  ]),
+)
 
 const breadcrumb = ref([
   {
@@ -99,7 +101,6 @@ const formData = reactive({
 const formRules = reactive({
   idProject: [{ required: true, message: 'Vui lòng chọn 1 dự án!' }],
   name: [{ required: true, message: 'Vui lòng nhập mục này!' }],
-  description: [{ required: true, message: 'Vui lòng nhập mục này!' }],
   rangeDate: [{ required: true, message: 'Vui lòng nhập mục này!' }],
 })
 
@@ -375,9 +376,9 @@ const handleTableChange = (page) => {
 }
 
 const handleChangeProjectId = (id) => {
-  const project = lstDataProject.value.find((o) => o.id === id)
-  minRangeDate.value = dayjs(project.fromDate)
-  maxRangeDate.value = dayjs(project.toDate)
+  currentProject.value = lstDataProject.value.find((o) => o.id === id)
+  minRangeDate.value = dayjs(currentProject.value.fromDate)
+  maxRangeDate.value = dayjs(currentProject.value.toDate)
   formData.rangeDate = [currentProject.value ? minRangeDate.value : dayjs(), maxRangeDate.value]
 }
 
@@ -463,10 +464,11 @@ onMounted(() => {
   fetchDataList()
 })
 
+const debounceFilter = debounce(handleSubmitFilter, 100)
 watch(
   dataFilter,
   () => {
-    handleSubmitFilter()
+    debounceFilter()
   },
   { deep: true },
 )
@@ -634,7 +636,7 @@ watch(
                 </template>
               </a-input>
             </div>
-            <div class="col-xxl-2 col-md-4 col-sm-6">
+            <div class="col-xxl-2 col-md-4 col-sm-12">
               <div class="label-title">Trạng thái:</div>
               <a-select
                 v-model:value="dataFilter.status"
@@ -736,7 +738,7 @@ watch(
             :columns="columns"
             :loading="isLoading"
             :pagination="pagination"
-            :scroll="{ y: 500, x: 'auto' }"
+            :scroll="{ x: 'auto' }"
             @change="handleTableChange"
           >
             <template #bodyCell="{ column, record }">

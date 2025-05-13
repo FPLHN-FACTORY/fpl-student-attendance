@@ -10,13 +10,13 @@ import java.util.List;
 public interface SPDSemesterRepository extends SemesterRepository {
 
     @Query(value = """
-        SELECT DISTINCT 
-            year
-        FROM semester
-        WHERE
-            status = 1
-        ORDER BY year DESC
-    """, nativeQuery = true)
+                SELECT DISTINCT
+                    year
+                FROM semester
+                WHERE
+                    status = 1
+                ORDER BY year DESC
+            """, nativeQuery = true)
     List<Integer> getAllYear();
 
 }

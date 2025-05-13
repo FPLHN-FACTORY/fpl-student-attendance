@@ -17,6 +17,7 @@ import { ROUTE_NAMES } from '@/router/adminRoute'
 import useLoadingStore from '@/stores/useLoadingStore'
 import { useRoute, useRouter } from 'vue-router'
 import dayjs from 'dayjs'
+import { autoAddColumnWidth, debounce } from '@/utils/utils'
 
 const route = useRoute()
 const router = useRouter()
@@ -38,14 +39,26 @@ const modalAddOrUpdate = reactive({
 const _detail = ref(null)
 const lstData = ref([])
 
-const columns = ref([
-  { title: '#', dataIndex: 'orderNumber', key: 'orderNumber', width: 50 },
-  { title: 'Ca học', dataIndex: 'shift', key: 'shift' },
-  { title: 'Thời gian bắt đầu', dataIndex: 'startTime', key: 'startTime', minWidth: 120 },
-  { title: 'Thời gian kết thúc', dataIndex: 'endTime', key: 'endTime', minWidth: 120 },
-  { title: 'Trạng thái', dataIndex: 'status', key: 'status' },
-  { title: '', key: 'actions' },
-])
+const columns = ref(
+  autoAddColumnWidth([
+    { title: '#', dataIndex: 'orderNumber', key: 'orderNumber' },
+    { title: 'Ca học', dataIndex: 'shift', key: 'shift' },
+    {
+      title: 'Thời gian bắt đầu',
+      dataIndex: 'startTime',
+      key: 'startTime',
+      align: 'center',
+    },
+    {
+      title: 'Thời gian kết thúc',
+      dataIndex: 'endTime',
+      key: 'endTime',
+      align: 'center',
+    },
+    { title: 'Trạng thái', dataIndex: 'status', key: 'status' },
+    { title: '', key: 'actions' },
+  ]),
+)
 
 const breadcrumb = ref([
   {
@@ -298,7 +311,7 @@ const handleSubmitUpdate = async () => {
     Modal.confirm({
       title: `Xác nhận cập nhật`,
       type: 'info',
-      content: `Bạn có chắc muốn lưu lại thay đổi?`,
+      content: `Mọi thay đổi chỉ áp dụng cho kế hoạch tạo mới. Bạn có chắc muốn lưu lại thay đổi?`,
       okText: 'Tiếp tục',
       cancelText: 'Hủy bỏ',
       onOk() {
@@ -345,10 +358,11 @@ onMounted(() => {
   fetchDataDetail()
 })
 
+const debounceFilter = debounce(handleSubmitFilter, 100)
 watch(
   dataFilter,
   () => {
-    handleSubmitFilter()
+    debounceFilter()
   },
   { deep: true },
 )
@@ -404,7 +418,7 @@ watch(
         <a-card :bordered="false" class="cart">
           <template #title> <FilterFilled /> Bộ lọc </template>
           <div class="row g-2">
-            <div class="col-lg-4 col-md-6 col-sm-6">
+            <div class="col-lg-6 col-md-6 col-sm-6">
               <div class="label-title">Ca học:</div>
               <a-select
                 v-model:value="dataFilter.shift"
@@ -419,7 +433,7 @@ watch(
                 </a-select-option>
               </a-select>
             </div>
-            <div class="col-lg-4 col-md-6 col-sm-6">
+            <div class="col-lg-6 col-md-6 col-sm-6">
               <div class="label-title">Trạng thái:</div>
               <a-select
                 v-model:value="dataFilter.status"
@@ -464,7 +478,7 @@ watch(
               :columns="columns"
               :loading="isLoading"
               :pagination="pagination"
-              :scroll="{ y: 500, x: 'auto' }"
+              :scroll="{ x: 'auto' }"
               @change="handleTableChange"
             >
               <template #bodyCell="{ column, record }">

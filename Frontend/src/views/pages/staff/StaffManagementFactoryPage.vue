@@ -7,32 +7,35 @@ import { API_ROUTES_STAFF } from '@/constants/staffConstant'
 import { API_ROUTES_EXCEL, GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
 import {
   PlusOutlined,
-  EyeOutlined,
-  EditOutlined,
   SyncOutlined,
-  EyeFilled,
   EditFilled,
   UnorderedListOutlined,
   FilterFilled,
   AlignLeftOutlined,
+  SearchOutlined,
 } from '@ant-design/icons-vue'
 import { ROUTE_NAMES } from '@/router/staffRoute'
 import { DEFAULT_PAGINATION } from '@/constants'
 import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
 import useLoadingStore from '@/stores/useLoadingStore'
 import ExcelUploadButton from '@/components/excel/ExcelUploadButton.vue'
+import { autoAddColumnWidth } from '@/utils/utils'
 
 const breadcrumbStore = useBreadcrumbStore()
 const loadingStore = useLoadingStore()
+const isLoading = ref(false)
 
 /* ----------------- Data & Reactive Variables ----------------- */
 const factories = ref([])
 const projects = ref([])
 const staffs = ref([])
-
+const semesters = ref([])
 const filter = reactive({
-  searchQuery: '',
+  factoryName: '',
   status: '',
+  idProject: null,
+  idStaff: null,
+  idSemester: null,
 })
 
 const pagination = reactive({
@@ -61,16 +64,18 @@ const detailFactory = reactive({
   staffName: '',
 })
 
-const columns = ref([
-  { title: '#', dataIndex: 'rowNumber', key: 'rowNumber', width: 50 },
-  { title: 'Tên nhóm xưởng', dataIndex: 'name', key: 'name', width: 200 },
-  { title: 'Tên dự án', dataIndex: 'projectName', key: 'projectName', width: 200 },
-  { title: 'Mã bộ môn', dataIndex: 'subjectCode', key: 'subjectCode', width: 100 },
-  { title: 'Tên giảng viên', dataIndex: 'staffName', key: 'staffName', width: 100 },
-  { title: 'Mô tả', dataIndex: 'factoryDescription', key: 'factoryDescription', width: 200 },
-  { title: 'Trạng thái', dataIndex: 'factoryStatus', key: 'factoryStatus', width: 80 },
-  { title: 'Chức năng', key: 'actions', width: 100 },
-])
+const columns = ref(
+  autoAddColumnWidth([
+    { title: '#', dataIndex: 'rowNumber', key: 'rowNumber' },
+    { title: 'Tên nhóm xưởng', dataIndex: 'name', key: 'name' },
+    { title: 'Tên dự án', dataIndex: 'projectName', key: 'projectName' },
+    { title: 'Mã bộ môn', dataIndex: 'subjectCode', key: 'subjectCode' },
+    { title: 'Tên giảng viên', dataIndex: 'staffName', key: 'staffName' },
+    { title: 'Mô tả', dataIndex: 'factoryDescription', key: 'factoryDescription' },
+    { title: 'Trạng thái', dataIndex: 'factoryStatus', key: 'factoryStatus' },
+    { title: 'Chức năng', key: 'actions' },
+  ]),
+)
 
 const breadcrumb = ref([
   {
@@ -79,7 +84,7 @@ const breadcrumb = ref([
   },
   {
     name: ROUTE_NAMES.MANAGEMENT_FACTORY,
-    breadcrumbName: 'Nhóm xưởng',
+    breadcrumbName: 'Quản lý nhóm xưởng',
   },
 ])
 
@@ -147,9 +152,27 @@ const fetchStaffs = () => {
     })
 }
 
+const fetchSemesters = () => {
+  loadingStore.show()
+  requestAPI
+    .get(API_ROUTES_STAFF.FETCH_DATA_FACTORY + '/semesters')
+    .then((response) => {
+      semesters.value = response.data.data
+    })
+    .catch((error) => {
+      message.error(error.response?.data?.message || 'Lỗi khi lấy danh sách kỳ học')
+    })
+    .finally(() => {
+      loadingStore.hide()
+    })
+}
+
+const onFilterChange = () => {
+  pagination.current = 1
+  fetchFactories()
+}
+
 const handleTableChange = (pageInfo) => {
-  filter.page = pageInfo.current
-  filter.pageSize = pageInfo.pageSize
   pagination.current = pageInfo.current
   pagination.pageSize = pageInfo.pageSize
   fetchFactories()
@@ -315,11 +338,33 @@ const configImportExcel = {
   showHistoryLog: true,
 }
 
+const handleClearFilter = () => {
+  // Clear all filter values
+  Object.keys(filter).forEach((key) => {
+    filter[key] = ''
+  })
+  pagination.current = 1
+  fetchFactories()
+}
+
+const handleShowDescription = (text) => {
+  Modal.info({
+    title: 'Mô tả nhóm xưởng',
+    type: 'info',
+    content: text,
+    okText: 'Đóng',
+    okButtonProps: {
+      class: 'btn-gray',
+    },
+  })
+}
+
 onMounted(() => {
   breadcrumbStore.setRoutes(breadcrumb.value)
   fetchFactories()
   fetchProjects()
   fetchStaffs()
+  fetchSemesters()
 })
 </script>
 
@@ -330,13 +375,13 @@ onMounted(() => {
       <a-form-item label="Tên nhóm xưởng" required>
         <a-input v-model:value="newFactory.factoryName" placeholder="-- Tên nhóm xưởng --" />
       </a-form-item>
-      <a-form-item label="Mô tả" required>
+      <a-form-item label="Mô tả nhóm xưởng" required>
         <a-input
           v-model:value="newFactory.factoryDescription"
           placeholder="-- Mô tả nhóm xưởng --"
         />
       </a-form-item>
-      <a-form-item label="Giảng viên" required>
+      <a-form-item label="Giảng viên giảng dạy" required>
         <a-select
           v-if="staffs.length > 0"
           v-model:value="newFactory.idUserStaff"
@@ -377,9 +422,9 @@ onMounted(() => {
             v-for="item in projects"
             :key="item.id"
             :value="item.id"
-            :label="item.name"
+            :label="item.projectName"
           >
-            {{ item.name + ' - ' + item.levelProject.name }}
+            {{ item.projectName + ' - ' + item.levelProjectName + '(' + item.semesterCode + ')' }}
           </a-select-option>
         </a-select>
         <div v-else>Cơ sở chưa có dự án nào!</div>
@@ -396,7 +441,7 @@ onMounted(() => {
       <a-form-item label="Mô tả" required>
         <a-input v-model:value="detailFactory.factoryDescription" />
       </a-form-item>
-      <a-form-item label="Giảng viên" required>
+      <a-form-item label="Giảng viên giảng dạy" required>
         <a-select
           v-if="staffs.length > 0"
           v-model:value="detailFactory.idUserStaff"
@@ -437,9 +482,9 @@ onMounted(() => {
             v-for="item in projects"
             :key="item.id"
             :value="item.id"
-            :label="item.name"
+            :label="item.projectName"
           >
-            {{ item.name + ' - ' + item.levelProject.name }}
+            {{ item.projectName + ' - ' + item.levelProjectName + '(' + item.semesterCode + ')' }}
           </a-select-option>
         </a-select>
         <div v-else>Cơ sở chưa có dự án nào!</div>
@@ -451,32 +496,80 @@ onMounted(() => {
     <div class="row g-3">
       <!-- Bộ lọc tìm kiếm -->
       <div class="col-12">
-        <a-card :bordered="false" class="cart">
+        <a-card :bordered="false" class="cart mb-3">
           <template #title> <FilterFilled /> Bộ lọc </template>
           <div class="row g-2">
             <div class="col-md-6 col-sm-12">
-              <div class="label-title">Tìm kiếm tên xưởng, dự án, giảng viên:</div>
+              <div class="label-title">Từ khoá:</div>
               <a-input
-                v-model:value="filter.searchQuery"
-                placeholder="Tên xưởng, dự án, bộ môn, giảng viên"
+                v-model:value="filter.factoryName"
+                placeholder="Tìm theo tên nhóm xưởng"
                 allowClear
-                @change="fetchFactories"
+                @change="onFilterChange"
                 class="w-100"
-              />
-            </div>
-            <div class="col-md-6 col-sm-12">
-              <div class="label-title">Trạng thái:</div>
-              <a-select
-                v-model:value="filter.status"
-                placeholder="Chọn trạng thái"
-                allowClear
-                class="w-100"
-                @change="fetchFactories"
               >
-                <a-select-option :value="''">Tất cả trạng thái</a-select-option>
-                <a-select-option value="ACTIVE">Đang hoạt động</a-select-option>
-                <a-select-option value="INACTIVE">Ngừng hoạt động</a-select-option>
+                <template #prefix>
+                  <SearchOutlined />
+                </template>
+              </a-input>
+            </div>
+            <div class="col-md-3 col-sm-6">
+              <div class="label-title">Giảng viên:</div>
+              <a-select
+                v-model:value="filter.idStaff"
+                placeholder="Chọn giảng viên"
+                allowClear
+                show-search
+                @change="onFilterChange"
+                class="w-100"
+                :filter-option="
+                  (input, option) =>
+                    (option.label || '').toLowerCase().includes(input.toLowerCase())
+                "
+              >
+                <a-select-option
+                  v-for="staff in staffs"
+                  :key="staff.id"
+                  :value="staff.id"
+                  :label="staff.code + ' - ' + staff.name"
+                >
+                  {{ staff.code + ' - ' + staff.name }}
+                </a-select-option>
               </a-select>
+            </div>
+            <div class="col-md-3 col-sm-6">
+              <div class="label-title">Kỳ học:</div>
+              <a-select
+                v-model:value="filter.idSemester"
+                placeholder="Chọn kỳ học"
+                allowClear
+                show-search
+                @change="onFilterChange"
+                class="w-100"
+                :filter-option="
+                  (input, option) =>
+                    (option.label || '').toLowerCase().includes(input.toLowerCase())
+                "
+              >
+                <a-select-option
+                  v-for="semester in semesters"
+                  :key="semester.id"
+                  :value="semester.id"
+                  :label="semester.code"
+                >
+                  {{ semester.code }}
+                </a-select-option>
+              </a-select>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-12">
+              <div class="d-flex justify-content-center flex-wrap gap-2 mt-3">
+                <a-button class="btn-light" @click="fetchFactories">
+                  <FilterFilled /> Lọc
+                </a-button>
+                <a-button class="btn-gray" @click="handleClearFilter"> Huỷ lọc </a-button>
+              </div>
             </div>
           </div>
         </a-card>
@@ -502,18 +595,22 @@ onMounted(() => {
             </a-tooltip>
           </div>
           <a-table
+            class="nowrap"
             rowKey="id"
             :dataSource="factories"
             :columns="columns"
             :pagination="pagination"
             @change="handleTableChange"
             :loading="isLoading"
-            :scroll="{ y: 500, x: 'auto' }"
+            :scroll="{ x: 'auto' }"
           >
             <template #bodyCell="{ column, record, index }">
               <template v-if="column.dataIndex">
                 <template v-if="column.dataIndex === 'rowNumber'">
                   {{ index + 1 }}
+                </template>
+                <template v-else-if="column.dataIndex === 'name'">
+                  <a @click="handleDetailFactory(record)">{{ record.name }}</a>
                 </template>
                 <template v-else-if="column.dataIndex === 'factoryStatus'">
                   <span class="nowrap">
@@ -537,8 +634,12 @@ onMounted(() => {
                     </a-tag>
                   </span>
                 </template>
-                <template v-else>
-                  {{ record[column.dataIndex] }}
+                <template
+                  v-if="column.dataIndex === 'factoryDescription' && record.factoryDescription"
+                >
+                  <a-typography-link @click="handleShowDescription(record.factoryDescription)"
+                    >Chi tiết</a-typography-link
+                  >
                 </template>
               </template>
               <template v-else-if="column.key === 'actions'">

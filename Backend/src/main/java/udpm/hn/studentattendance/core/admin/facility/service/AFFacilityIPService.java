@@ -4,7 +4,6 @@ import org.springframework.http.ResponseEntity;
 import udpm.hn.studentattendance.core.admin.facility.model.request.AFAddOrUpdateFacilityIPRequest;
 import udpm.hn.studentattendance.core.admin.facility.model.request.AFFilterFacilityIPRequest;
 
-
 public interface AFFacilityIPService {
 
     ResponseEntity<?> getAllList(AFFilterFacilityIPRequest request);

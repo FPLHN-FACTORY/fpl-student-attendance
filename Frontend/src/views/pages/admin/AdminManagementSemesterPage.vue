@@ -2,12 +2,10 @@
 import { ref, reactive, onMounted } from 'vue'
 import {
   PlusOutlined,
-  EditOutlined,
-  SwapOutlined,
   EditFilled,
-  SyncOutlined,
   UnorderedListOutlined,
   FilterFilled,
+  SearchOutlined,
 } from '@ant-design/icons-vue'
 import { message, Modal } from 'ant-design-vue'
 import requestAPI from '@/services/requestApiService'
@@ -15,13 +13,12 @@ import dayjs from 'dayjs'
 import { API_ROUTES_ADMIN } from '@/constants/adminConstant'
 import { ROUTE_NAMES } from '@/router/adminRoute'
 import { DEFAULT_PAGINATION } from '@/constants'
-import { useRouter } from 'vue-router'
 
 import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
 import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
 import useLoadingStore from '@/stores/useLoadingStore'
+import { autoAddColumnWidth } from '@/utils/utils'
 
-const router = useRouter()
 const breadcrumbStore = useBreadcrumbStore()
 const loadingStore = useLoadingStore()
 
@@ -32,7 +29,7 @@ const breadcrumb = ref([
   },
   {
     name: ROUTE_NAMES.MANAGEMENT_SEMESTER,
-    breadcrumbName: 'Học kỳ',
+    breadcrumbName: 'Quản lý học kỳ',
   },
 ])
 
@@ -69,15 +66,17 @@ const newSemester = reactive({
 const detailSemester = ref({})
 
 // Cấu hình cột cho bảng
-const columns = ref([
-  { title: '#', dataIndex: 'semesterIndex', key: 'semesterIndex', width: 80 },
-  { title: 'Mã học kỳ', dataIndex: 'semesterCode', key: 'semesterCode', width: 180 },
-  { title: 'Tên học kỳ', dataIndex: 'semesterName', key: 'semesterName', width: 180 },
-  { title: 'Ngày bắt đầu', dataIndex: 'startDate', key: 'startDate', width: 180 },
-  { title: 'Ngày kết thúc', dataIndex: 'endDate', key: 'endDate', width: 180 },
-  { title: 'Trạng thái', dataIndex: 'semesterStatus', key: 'semesterStatus', width: 180 },
-  { title: 'Chức năng', key: 'actions', width: 120 },
-])
+const columns = ref(
+  autoAddColumnWidth([
+    { title: '#', dataIndex: 'semesterIndex', key: 'semesterIndex' },
+    { title: 'Mã học kỳ', dataIndex: 'semesterCode', key: 'semesterCode' },
+    { title: 'Tên học kỳ', dataIndex: 'semesterName', key: 'semesterName' },
+    { title: 'Ngày bắt đầu', dataIndex: 'startDate', key: 'startDate' },
+    { title: 'Ngày kết thúc', dataIndex: 'endDate', key: 'endDate' },
+    { title: 'Trạng thái', dataIndex: 'semesterStatus', key: 'semesterStatus' },
+    { title: 'Chức năng', key: 'actions' },
+  ]),
+)
 
 // Hàm định dạng epoch sang "DD/MM/YYYY"
 const formatEpochToDate = (epoch) => {
@@ -132,7 +131,7 @@ const fetchSemesters = () => {
     .catch((error) => {
       message.error(
         (error.response && error.response.data && error.response.data.message) ||
-          'Lỗi khi lấy dữ liệu học kỳ'
+          'Lỗi khi lấy dữ liệu học kỳ',
       )
     })
     .finally(() => {
@@ -171,7 +170,7 @@ const handleAddSemester = () => {
     .catch((error) => {
       message.error(
         (error.response && error.response.data && error.response.data.message) ||
-          'Lỗi khi thêm học kỳ'
+          'Lỗi khi thêm học kỳ',
       )
     })
     .finally(() => {
@@ -197,7 +196,7 @@ const handleUpdateSemester = (record) => {
     .catch((error) => {
       message.error(
         (error.response && error.response.data && error.response.data.message) ||
-          'Lỗi khi lấy chi tiết học kỳ'
+          'Lỗi khi lấy chi tiết học kỳ',
       )
     })
     .finally(() => {
@@ -231,7 +230,7 @@ const updateSemester = () => {
     .catch((error) => {
       message.error(
         (error.response && error.response.data && error.response.data.message) ||
-          'Lỗi khi cập nhật học kỳ'
+          'Lỗi khi cập nhật học kỳ',
       )
     })
     .finally(() => {
@@ -243,7 +242,7 @@ const updateSemester = () => {
 const handleChangeStatusSemester = (record) => {
   Modal.confirm({
     title: 'Xác nhận thay đổi trạng thái',
-    content: `Bạn có chắc muốn thay đổi trạng thái của học kỳ ${record.semesterName}?`,
+    content: `Bạn có chắc muốn thay đổi trạng thái của học kỳ ${record.semesterCode}?`,
     onOk: () => {
       loadingStore.show()
       requestAPI
@@ -255,7 +254,7 @@ const handleChangeStatusSemester = (record) => {
         .catch((error) => {
           message.error(
             (error.response && error.response.data && error.response.data.message) ||
-              'Lỗi khi cập nhật trạng thái học kỳ'
+              'Lỗi khi cập nhật trạng thái học kỳ',
           )
         })
         .finally(() => {
@@ -271,12 +270,20 @@ const clearFormAdd = () => {
   newSemester.toDate = null
 }
 
+const handleClearFilter = () => {
+  // Clear all filter values
+  Object.keys(filter).forEach((key) => {
+    filter[key] = ''
+  })
+  pagination.current = 1
+  fetchSemesters() // or whatever your fetch function is named
+}
+
 onMounted(() => {
   breadcrumbStore.setRoutes(breadcrumb.value)
   fetchSemesters()
 })
 </script>
-
 
 <template>
   <div class="container-fluid">
@@ -286,44 +293,55 @@ onMounted(() => {
         <a-card :bordered="false" class="cart mb-3">
           <template #title> <FilterFilled /> Bộ lọc </template>
           <!-- Hàng 1: Input tìm kiếm & Select trạng thái -->
-          <a-row :gutter="16" class="filter-container">
-            <a-col :span="12" class="col">
-              <div class="label-title">Tìm kiếm mã học kỳ :</div>
+          <div class="row g-3 filter-container">
+            <div class="col-xl-6 col-md-12 col-sm-12">
+              <div class="label-title">Từ khoá:</div>
               <a-input
                 v-model:value="filter.semesterCode"
                 placeholder="Tìm kiếm theo mã học kỳ"
                 allowClear
                 @change="fetchSemesters"
-              />
-            </a-col>
-            <a-col :span="12" class="col">
-              <div class="label-title">Trạng thái :</div>
+              >
+                <template #prefix>
+                  <SearchOutlined />
+                </template>
+              </a-input>
+            </div>
+            <div class="col-xl-3 col-md-6 col-sm-6">
+              <div class="label-title">Trạng thái:</div>
               <a-select
                 v-model:value="filter.status"
                 placeholder="Chọn trạng thái"
                 allowClear
-                style="width: 100%"
+                class="w-100"
                 @change="fetchSemesters"
               >
                 <a-select-option :value="''">Tất cả trạng thái</a-select-option>
                 <a-select-option value="ACTIVE">Đang hoạt động</a-select-option>
                 <a-select-option value="INACTIVE">Đã kết thúc</a-select-option>
               </a-select>
-            </a-col>
-          </a-row>
-          <!-- Hàng 2: RangePicker để chọn khoảng ngày -->
-          <a-row :gutter="16" class="filter-container second-row mt-3">
-            <a-col :span="24" class="col">
-              <div class="label-title">Tìm kiếm theo khoảng ngày :</div>
+            </div>
+
+            <div class="col-xl-3 col-md-6 col-sm-6">
+              <div class="label-title">Khoảng ngày:</div>
               <a-range-picker
                 v-model:value="filter.dateRange"
-                placeholder="Chọn khoảng ngày bắt đầu và kết thúc"
-                style="width: 100%"
+                class="w-100"
                 format="DD/MM/YYYY"
                 @change="handleDateRangeChange"
               />
-            </a-col>
-          </a-row>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-12">
+              <div class="d-flex justify-content-center flex-wrap gap-2 mt-3">
+                <a-button class="btn-light" @click="fetchSemesters">
+                  <FilterFilled /> Lọc
+                </a-button>
+                <a-button class="btn-gray" @click="handleClearFilter"> Huỷ lọc </a-button>
+              </div>
+            </div>
+          </div>
         </a-card>
       </div>
     </div>
@@ -350,7 +368,7 @@ onMounted(() => {
             :columns="columns"
             rowKey="id"
             :pagination="pagination"
-            :scroll="{ y: 500, x: 'auto' }"
+            :scroll="{ x: 'auto' }"
             @change="handleTableChange"
           >
             <template #bodyCell="{ column, record }">
@@ -421,7 +439,7 @@ onMounted(() => {
           <a-select
             v-model:value="newSemester.semesterName"
             placeholder="Chọn kỳ học"
-            style="width: 100%"
+            class="w-100"
           >
             <a-select-option value="SPRING">SPRING</a-select-option>
             <a-select-option value="SUMMER">SUMMER</a-select-option>
@@ -432,7 +450,7 @@ onMounted(() => {
           <a-date-picker
             v-model:value="newSemester.fromDate"
             placeholder="Chọn ngày bắt đầu"
-            style="width: 100%"
+            class="w-100"
             format="DD/MM/YYYY"
           />
         </a-form-item>
@@ -440,7 +458,7 @@ onMounted(() => {
           <a-date-picker
             v-model:value="newSemester.toDate"
             placeholder="Chọn ngày kết thúc"
-            style="width: 100%"
+            class="w-100"
             format="DD/MM/YYYY"
           />
         </a-form-item>
@@ -459,7 +477,7 @@ onMounted(() => {
           <a-select
             v-model:value="detailSemester.semesterName"
             placeholder="Chọn kỳ học"
-            style="width: 100%"
+            class="w-100"
           >
             <a-select-option value="SPRING">SPRING</a-select-option>
             <a-select-option value="SUMMER">SUMMER</a-select-option>
@@ -470,7 +488,7 @@ onMounted(() => {
           <a-date-picker
             v-model:value="detailSemester.fromDate"
             placeholder="Chọn ngày bắt đầu"
-            style="width: 100%"
+            class="w-100"
             format="DD/MM/YYYY"
           />
         </a-form-item>
@@ -478,7 +496,7 @@ onMounted(() => {
           <a-date-picker
             v-model:value="detailSemester.toDate"
             placeholder="Chọn ngày kết thúc"
-            style="width: 100%"
+            class="w-100"
             format="DD/MM/YYYY"
           />
         </a-form-item>

@@ -1,5 +1,6 @@
 package udpm.hn.studentattendance.core.admin.facility.controller;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -16,32 +17,29 @@ public class AFFacilityRestController {
     private final AFFacilityService adFacilityService;
 
     @GetMapping
-    public ResponseEntity<?> getAllFacility
-            (AFFacilitySearchRequest request) {
+    public ResponseEntity<?> getAllFacility(AFFacilitySearchRequest request) {
         return adFacilityService.getAllFacility(request);
     }
 
     @GetMapping("/{facilityId}")
-    public ResponseEntity<?> getFacility
-            (@PathVariable("facilityId") String facilityId){
+    public ResponseEntity<?> getFacility(@Valid @PathVariable("facilityId") String facilityId) {
         return adFacilityService.getFacilityById(facilityId);
     }
+
     @PostMapping
-    public ResponseEntity<?> createFacility
-            (@RequestBody AFCreateUpdateFacilityRequest createUpdateFacilityRequest) {
+    public ResponseEntity<?> createFacility(
+            @Valid @RequestBody AFCreateUpdateFacilityRequest createUpdateFacilityRequest) {
         return adFacilityService.createFacility(createUpdateFacilityRequest);
     }
 
     @PutMapping("/{facilityId}")
-    public ResponseEntity<?> updateFacility
-            (@PathVariable("facilityId") String facilityId,
-             @RequestBody AFCreateUpdateFacilityRequest createUpdateFacilityRequest) {
+    public ResponseEntity<?> updateFacility(@PathVariable("facilityId") String facilityId,
+            @RequestBody AFCreateUpdateFacilityRequest createUpdateFacilityRequest) {
         return adFacilityService.updateFacility(facilityId, createUpdateFacilityRequest);
     }
 
     @PutMapping("/status/{facilityId}")
-    public ResponseEntity<?> changeStatusFacility
-            (@PathVariable("facilityId") String facilityId) {
+    public ResponseEntity<?> changeStatusFacility(@PathVariable("facilityId") String facilityId) {
         return adFacilityService.changeFacilityStatus(facilityId);
     }
 

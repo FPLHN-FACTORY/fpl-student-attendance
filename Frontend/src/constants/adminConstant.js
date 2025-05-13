@@ -17,5 +17,6 @@ export const API_ROUTES_ADMIN = {
 
   FETCH_DATA_STAFF: API_URL + '/admin/staff-management',
 
-  FETCH_DATA_STAFF_ROLE: API_URL + '/admin/staff-management/roles',
+  FETCH_DATA_ADMIN: API_URL + '/admin/admin-management',
+
 }

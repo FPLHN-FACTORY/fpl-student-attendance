@@ -7,6 +7,8 @@ import {
   SearchOutlined,
   EditFilled,
   DeleteFilled,
+  EyeFilled,
+  ExclamationCircleOutlined,
 } from '@ant-design/icons-vue'
 import { message, Modal } from 'ant-design-vue'
 import requestAPI from '@/services/requestApiService'
@@ -24,7 +26,7 @@ import {
   SHIFT,
   STATUS_PLAN_DATE_DETAIL,
 } from '@/constants'
-import { dayOfWeek, formatDate, rowSelectTable } from '@/utils/utils'
+import { autoAddColumnWidth, dayOfWeek, debounce, formatDate, rowSelectTable } from '@/utils/utils'
 import dayjs from 'dayjs'
 import ExcelUploadButton from '@/components/excel/ExcelUploadButton.vue'
 
@@ -56,22 +58,32 @@ const modalAddOrUpdate = reactive({
   cancelText: 'Hủy bỏ',
   okText: 'Xác nhận',
   onOk: null,
+  width: 800,
 })
 
 const _detail = ref(null)
 const lstData = ref([])
 const lstShift = ref([])
 
-const columns = ref([
-  { title: 'Buổi', dataIndex: 'orderNumber', key: 'orderNumber', width: 50 },
-  { title: 'Ngày học', dataIndex: 'startDate', key: 'startDate' },
-  { title: 'Ca học', dataIndex: 'shift', key: 'shift' },
-  { title: 'Nội dung', dataIndex: 'description', key: 'description', width: 300 },
-  { title: 'Link Online', dataIndex: 'link', key: 'link', width: 100 },
-  { title: 'Điểm danh trễ', dataIndex: 'lateArrival', key: 'lateArrival', width: 130 },
-  { title: 'Trạng thái', dataIndex: 'status', key: 'status' },
-  { title: '', key: 'actions' },
-])
+const columns = ref(
+  autoAddColumnWidth([
+    { title: 'Buổi', dataIndex: 'orderNumber', key: 'orderNumber' },
+    { title: 'Ngày học', dataIndex: 'startDate', key: 'startDate' },
+    { title: 'Thời gian', key: 'time' },
+    { title: 'Ca học', dataIndex: 'shift', key: 'shift' },
+    { title: 'Nội dung', dataIndex: 'description', key: 'description' },
+    { title: 'Phòng học', dataIndex: 'room', key: 'room' },
+    { title: 'Link Online', dataIndex: 'link', key: 'link' },
+    {
+      title: 'Điểm danh trễ',
+      dataIndex: 'lateArrival',
+      key: 'lateArrival',
+      align: 'center',
+    },
+    { title: 'Trạng thái', dataIndex: 'status', key: 'status' },
+    { title: '', key: 'actions' },
+  ]),
+)
 
 const breadcrumb = ref([
   {
@@ -100,11 +112,14 @@ const formData = reactive({
   id: null,
   idPlan: null,
   description: null,
-  shift: null,
+  shift: [],
   link: null,
   type: null,
+  room: null,
   requiredLocation: STATUS_TYPE.ENABLE,
   requiredIp: STATUS_TYPE.ENABLE,
+  requiredCheckin: STATUS_TYPE.ENABLE,
+  requiredCheckout: STATUS_TYPE.ENABLE,
   startDate: null,
   lateArrival: DEFAULT_LATE_ARRIVAL,
 })
@@ -114,7 +129,6 @@ const formRules = reactive({
   shift: [{ required: true, message: 'Vui lòng chọn ca học!' }],
   type: [{ required: true, message: 'Vui lòng chọn hình thức học!' }],
   lateArrival: [{ required: true, message: 'Vui lòng nhập thời gian điểm danh muộn tối đa!' }],
-  description: [{ required: true, message: 'Vui lòng nhập nội dung buổi học!' }],
 })
 
 const disabledDate = (current) => {
@@ -301,11 +315,14 @@ const handleShowAdd = () => {
 
   formData.id = null
   formData.startDate = dayjs()
-  formData.shift = null
+  formData.shift = []
   formData.link = null
   formData.type = null
+  formData.room = null
   formData.requiredLocation = STATUS_TYPE.ENABLE
   formData.requiredIp = STATUS_TYPE.ENABLE
+  formData.requiredCheckin = STATUS_TYPE.ENABLE
+  formData.requiredCheckout = STATUS_TYPE.ENABLE
   formData.lateArrival = DEFAULT_LATE_ARRIVAL
   formData.description = null
 }
@@ -318,18 +335,21 @@ const handleShowUpdate = (item) => {
   modalAddOrUpdate.isLoading = false
   modalAddOrUpdate.title = h('span', [
     h(EditFilled, { class: 'me-2 text-primary' }),
-    'Chỉnh sửa kế hoạch',
+    'Chỉnh sửa ca học',
   ])
   modalAddOrUpdate.okText = 'Lưu lại'
   modalAddOrUpdate.onOk = () => handleSubmitUpdate()
 
   formData.id = item.id
   formData.startDate = dayjs(item.startDate)
-  formData.shift = item.shift
+  formData.shift = item.shift.split(',').map((o) => Number(o))
   formData.link = item.link
+  formData.room = item.room
   formData.type = String(item.type)
-  formData.requiredLocation = item.requiredLocation
-  formData.requiredIp = item.requiredIp
+  formData.requiredLocation = item.requiredLocation || STATUS_TYPE.DISABLE
+  formData.requiredIp = item.requiredIp || STATUS_TYPE.DISABLE
+  formData.requiredCheckin = item.requiredCheckin || STATUS_TYPE.DISABLE
+  formData.requiredCheckout = item.requiredCheckout || STATUS_TYPE.DISABLE
   formData.lateArrival = item.lateArrival
   formData.description = item.description
 }
@@ -340,7 +360,7 @@ const handleSubmitAdd = async () => {
     Modal.confirm({
       title: `Xác nhận thêm mới`,
       type: 'info',
-      content: `Bạn có chắc muốn thêm mới kế hoạch này?`,
+      content: `Bạn có chắc muốn thêm mới ca học này?`,
       okText: 'Tiếp tục',
       cancelText: 'Hủy bỏ',
       onOk() {
@@ -368,9 +388,9 @@ const handleSubmitUpdate = async () => {
 
 const handleShowAlertDelete = (item) => {
   Modal.confirm({
-    title: `Xoá kế hoạch: ${dayOfWeek(item.startDate)} - ${formatDate(item.startDate)}`,
+    title: `Xoá ca học: ${dayOfWeek(item.startDate)} - ${formatDate(item.startDate)}`,
     type: 'error',
-    content: `Bạn có chắc muốn xoá kế hoạch chi tiết này?`,
+    content: `Bạn có chắc muốn xoá ca học này?`,
     okText: 'Tiếp tục',
     cancelText: 'Hủy bỏ',
     okButtonProps: {
@@ -387,9 +407,9 @@ const handleShowAlertDelete = (item) => {
 
 const handleShowAlertMultipleDelete = () => {
   Modal.confirm({
-    title: `Xoá kế hoạch đã chọn`,
+    title: `Xoá ca học đã chọn`,
     type: 'error',
-    content: `Bạn có chắc muốn xoá ${selectedRowKeys.value.length} kế hoạch đã chọn?`,
+    content: `Bạn có chắc muốn xoá ${selectedRowKeys.value.length} ca học đã chọn?`,
     okText: 'Tiếp tục',
     cancelText: 'Hủy bỏ',
     okButtonProps: {
@@ -416,6 +436,32 @@ const handleShowDescription = (text) => {
   })
 }
 
+const handleShowAttendance = (id) => {
+  router.push({
+    name: ROUTE_NAMES.MANAGEMENT_PLAN_DATE_ATTENDANCE,
+    params: { id: id },
+  })
+}
+
+const handleChangeShift = (newValues) => {
+  const updated = new Set(newValues)
+
+  const sorted = [...updated].sort((a, b) => a - b)
+
+  for (let i = 0; i < sorted.length - 1; i++) {
+    const start = sorted[i]
+    const end = sorted[i + 1]
+
+    if (end - start > 1) {
+      for (let j = start + 1; j < end; j++) {
+        updated.add(j)
+      }
+    }
+  }
+
+  formData.shift = Array.from(updated).sort((a, b) => a - b)
+}
+
 const selectedRowKeys = ref([])
 
 const isDisabledSelectTable = (key) => {
@@ -431,10 +477,11 @@ onMounted(() => {
   fetchDataShift()
 })
 
+const debounceFilter = debounce(handleSubmitFilter, 100)
 watch(
   dataFilter,
   () => {
-    handleSubmitFilter()
+    debounceFilter()
   },
   { deep: true },
 )
@@ -454,7 +501,7 @@ watch(
       :model="formData"
     >
       <a-form-item
-        class="col-sm-8"
+        class="col-sm-4"
         label="Ngày học diễn ra"
         name="startDate"
         :rules="formRules.startDate"
@@ -468,11 +515,23 @@ watch(
           :disabled="modalAddOrUpdate.isLoading"
         />
       </a-form-item>
-      <a-form-item class="col-sm-4" label="Ca học" name="shift" :rules="formRules.shift">
+      <a-form-item class="col-sm-8" label="Phòng học">
+        <a-input
+          class="w-100"
+          v-model:value="formData.room"
+          placeholder="Địa điểm học chi tiết"
+          :disabled="modalAddOrUpdate.isLoading || formData.type == '1'"
+          allowClear
+        />
+      </a-form-item>
+      <a-form-item class="col-sm-12" label="Ca học" name="shift" :rules="formRules.shift">
         <a-select
           class="w-100"
           v-model:value="formData.shift"
           :disabled="modalAddOrUpdate.isLoading"
+          @change="handleChangeShift"
+          mode="multiple"
+          allow-clear
         >
           <a-select-option v-for="o in lstShift" :key="o.id" :value="o.shift">
             {{ SHIFT[o.shift] }}
@@ -511,12 +570,7 @@ watch(
         />
       </a-form-item>
 
-      <a-form-item
-        class="col-sm-12"
-        label="Nội dung buổi học"
-        name="description"
-        :rules="formRules.description"
-      >
+      <a-form-item class="col-sm-12" label="Nội dung buổi học" name="description">
         <a-textarea
           :rows="4"
           class="w-100"
@@ -535,35 +589,67 @@ watch(
         />
       </a-form-item>
       <a-form-item class="col-sm-12" label="Điều kiện điểm danh">
-        <div class="mt-2">
-          <a-switch
-            class="me-2"
-            :checked="formData.requiredIp === STATUS_TYPE.ENABLE"
-            @change="
-              formData.requiredIp =
-                formData.requiredIp === STATUS_TYPE.ENABLE
-                  ? STATUS_TYPE.DISABLE
-                  : STATUS_TYPE.ENABLE
-            "
-          />
-          <span :class="{ disabled: formData.requiredIp !== STATUS_TYPE.ENABLE }"
-            >Phải kết nối mạng trường</span
-          >
-        </div>
-        <div class="mt-3">
-          <a-switch
-            class="me-2"
-            :checked="formData.requiredLocation === STATUS_TYPE.ENABLE"
-            @change="
-              formData.requiredLocation =
-                formData.requiredLocation === STATUS_TYPE.ENABLE
-                  ? STATUS_TYPE.DISABLE
-                  : STATUS_TYPE.ENABLE
-            "
-          />
-          <span :class="{ disabled: formData.requiredLocation !== STATUS_TYPE.ENABLE }"
-            >Phải ở trong địa điểm cơ sở</span
-          >
+        <div class="row g-3">
+          <div class="col-sm-6">
+            <a-switch
+              class="me-2"
+              :checked="formData.requiredCheckin === STATUS_TYPE.ENABLE"
+              @change="
+                formData.requiredCheckin =
+                  formData.requiredCheckin === STATUS_TYPE.ENABLE
+                    ? STATUS_TYPE.DISABLE
+                    : STATUS_TYPE.ENABLE
+              "
+            />
+            <span :class="{ disabled: formData.requiredCheckin !== STATUS_TYPE.ENABLE }"
+              >Yêu cầu checkin</span
+            >
+          </div>
+          <div class="col-sm-6">
+            <a-switch
+              class="me-2"
+              :checked="formData.requiredCheckout === STATUS_TYPE.ENABLE"
+              @change="
+                formData.requiredCheckout =
+                  formData.requiredCheckout === STATUS_TYPE.ENABLE
+                    ? STATUS_TYPE.DISABLE
+                    : STATUS_TYPE.ENABLE
+              "
+            />
+            <span :class="{ disabled: formData.requiredCheckout !== STATUS_TYPE.ENABLE }"
+              >Yêu cầu checkout</span
+            >
+          </div>
+          <div class="col-sm-6">
+            <a-switch
+              class="me-2"
+              :checked="formData.requiredIp === STATUS_TYPE.ENABLE"
+              @change="
+                formData.requiredIp =
+                  formData.requiredIp === STATUS_TYPE.ENABLE
+                    ? STATUS_TYPE.DISABLE
+                    : STATUS_TYPE.ENABLE
+              "
+            />
+            <span :class="{ disabled: formData.requiredIp !== STATUS_TYPE.ENABLE }"
+              >Phải kết nối mạng trường</span
+            >
+          </div>
+          <div class="col-sm-6">
+            <a-switch
+              class="me-2"
+              :checked="formData.requiredLocation === STATUS_TYPE.ENABLE"
+              @change="
+                formData.requiredLocation =
+                  formData.requiredLocation === STATUS_TYPE.ENABLE
+                    ? STATUS_TYPE.DISABLE
+                    : STATUS_TYPE.ENABLE
+              "
+            />
+            <span :class="{ disabled: formData.requiredLocation !== STATUS_TYPE.ENABLE }"
+              >Phải ở trong địa điểm cơ sở</span
+            >
+          </div>
         </div>
       </a-form-item>
     </a-form>
@@ -580,7 +666,7 @@ watch(
               <div class="label-title">Từ khoá:</div>
               <a-input
                 v-model:value="dataFilter.keyword"
-                placeholder="Tìm theo mô tả..."
+                placeholder="Tìm theo nội dung..."
                 allowClear
               >
                 <template #prefix>
@@ -661,7 +747,7 @@ watch(
       <div class="col-12">
         <a-card :bordered="false" class="cart">
           <template #title>
-            <UnorderedListOutlined /> Danh sách kế hoạch
+            <UnorderedListOutlined /> Danh sách ca học
             {{ `(${formatDate(_detail?.fromDate)} - ${formatDate(_detail?.toDate)})` }}
           </template>
           <div class="d-flex justify-content-end mb-3 flex-wrap gap-3">
@@ -683,7 +769,7 @@ watch(
               :columns="columns"
               :loading="isLoading"
               :pagination="pagination"
-              :scroll="{ y: 500, x: 'auto' }"
+              :scroll="{ x: 'auto' }"
               :row-selection="rowSelection"
               @change="handleTableChange"
             >
@@ -697,19 +783,34 @@ watch(
                   <a target="_blank" :href="record.link">Link</a>
                 </template>
                 <template v-if="column.dataIndex === 'lateArrival'">
-                  {{ `${record.lateArrival} phút` }}
+                  <a-tag color="gold">
+                    <ExclamationCircleOutlined /> {{ `${record.lateArrival} phút` }}
+                  </a-tag>
                 </template>
                 <template v-if="column.dataIndex === 'startDate'">
                   {{
-                    `${dayOfWeek(record.startDate)} ${formatDate(
+                    `${dayOfWeek(record.startDate)}, ${formatDate(
                       record.startDate,
-                      DEFAULT_DATE_FORMAT + ' HH:mm',
-                    )} - ${formatDate(record.endDate, 'HH:mm')}`
+                      DEFAULT_DATE_FORMAT,
+                    )}`
+                  }}
+                </template>
+                <template v-if="column.key === 'time'">
+                  {{
+                    `${formatDate(record.startDate, 'HH:mm')} - ${formatDate(
+                      record.endDate,
+                      'HH:mm',
+                    )}`
                   }}
                 </template>
                 <template v-if="column.dataIndex === 'shift'">
                   <a-tag :color="record.type === 1 ? 'blue' : 'purple'">
-                    {{ `${SHIFT[record.shift]} - ${TYPE_SHIFT[record.type]}` }}
+                    {{
+                      `Ca ${record.shift
+                        .split(',')
+                        .map((o) => Number(o))
+                        .join(', ')} - ${TYPE_SHIFT[record.type]}`
+                    }}
                   </a-tag>
                 </template>
                 <template v-if="column.dataIndex === 'status'">
@@ -728,7 +829,7 @@ watch(
                         <EditFilled />
                       </a-button>
                     </a-tooltip>
-                    <a-tooltip title="Xoá kế hoạch chi tiết">
+                    <a-tooltip title="Xoá ca học">
                       <a-button
                         class="btn-outline-danger border-0 ms-2"
                         @click="handleShowAlertDelete(record)"
@@ -737,7 +838,14 @@ watch(
                       </a-button>
                     </a-tooltip>
                   </template>
-                  <a-tag v-else>Không thể chỉnh sửa mục này</a-tag>
+                  <a-tooltip title="Chi tiết điểm danh" v-else>
+                    <a-button
+                      class="btn-outline-primary border-0 me-2"
+                      @click="handleShowAttendance(record.id)"
+                    >
+                      <EyeFilled />
+                    </a-button>
+                  </a-tooltip>
                 </template>
               </template>
             </a-table>

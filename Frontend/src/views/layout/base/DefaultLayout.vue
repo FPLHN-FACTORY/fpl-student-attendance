@@ -16,14 +16,13 @@ import imgLogoUdpm from '@/assets/images/logo-udpm.png'
 import useAuthStore from '@/stores/useAuthStore'
 import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
 import { useRoute, useRouter } from 'vue-router'
-import { API_ROUTES_NOTIFICATION, GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
+import { API_ROUTES_NOTIFICATION, BASE_URL, GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
 import useApplicationStore from '@/stores/useApplicationStore'
 import ExcelUploadList from '@/components/excel/ExcelUploadList.vue'
-import { formatDate } from '@/utils/utils'
+import { autoAddColumnWidth, formatDate } from '@/utils/utils'
 import { DEFAULT_DATE_FORMAT, DEFAULT_PAGINATION } from '@/constants'
 import requestAPI from '@/services/requestApiService'
 import { message } from 'ant-design-vue'
-import { BASE_URL } from '@/constants/routesConstant'
 
 const router = useRouter()
 const route = useRoute()
@@ -34,21 +33,34 @@ const breadcrumbStore = useBreadcrumbStore()
 const applicationStore = useApplicationStore()
 
 const isLoading = ref(false)
+const isLoadingMarkReadAll = ref(false)
+const isLoadingDeleteAll = ref(false)
 const isShowAllNotification = ref(false)
 const lstAllNotification = ref([])
 
-const columns = ref([
-  { title: 'Trạng thái', dataIndex: 'status', key: 'status' },
-  { title: 'Thời gian', dataIndex: 'createdAt', key: 'createdAt', width: 100 },
-  { title: 'Nội dung thông báo', dataIndex: 'message', key: 'message', width: '300' },
-  { title: '', key: 'actions' },
-])
+const columns = ref(
+  autoAddColumnWidth([
+    { title: 'Trạng thái', dataIndex: 'status', key: 'status' },
+    { title: 'Thời gian', dataIndex: 'createdAt', key: 'createdAt' },
+    { title: 'Nội dung thông báo', dataIndex: 'message', key: 'message' },
+    { title: '', key: 'actions' },
+  ]),
+)
 
 const dataFilter = reactive({
   status: null,
 })
 
 const pagination = ref({ ...DEFAULT_PAGINATION })
+
+const handleToggleNav = () => {
+  collapsed.value = !collapsed.value
+  if (collapsed.value) {
+    document.body.classList.add('disable-scroll-x')
+  } else {
+    document.body.classList.remove('disable-scroll-x')
+  }
+}
 
 const handleLogout = () => {
   authStore.logout()
@@ -61,14 +73,14 @@ const handleShowAllNotification = () => {
 }
 
 const handleNotificationMarkReadAll = () => {
-  applicationStore.markReadAll(fetchDataListNotification)
+  applicationStore.markReadAll(fetchDataListNotification, isLoadingMarkReadAll)
 }
 
 const handleNotificationDeleteAll = () => {
   applicationStore.removeAll(() => {
     lstAllNotification.value = []
     pagination.value.total = 0
-  })
+  }, isLoadingDeleteAll)
 }
 
 const callbackLoadNotification = () => {
@@ -90,7 +102,6 @@ const fetchDataListNotification = (callback) => {
   if (isLoading.value === true) {
     return
   }
-
   isLoading.value = true
   requestAPI
     .get(`${API_ROUTES_NOTIFICATION.FETCH_LIST}`, {
@@ -160,6 +171,7 @@ watch(
         <a-button
           type="primary"
           class="btn-outline-primary w-100"
+          :loading="isLoadingMarkReadAll"
           @click="handleNotificationMarkReadAll"
         >
           <CheckOutlined /> Đánh dấu tất cả đã đọc
@@ -169,6 +181,7 @@ watch(
         <a-button
           type="primary"
           class="btn-outline-danger w-100"
+          :loading="isLoadingDeleteAll"
           @click="handleNotificationDeleteAll"
         >
           <DeleteOutlined />Xoá tất cả thông báo
@@ -182,7 +195,7 @@ watch(
           :columns="columns"
           :loading="isLoading"
           :pagination="pagination"
-          :scroll="{ y: 500, x: 'auto' }"
+          :scroll="{ x: 'auto' }"
           @change="handleTableChange"
         >
           <template #bodyCell="{ column, record }">
@@ -239,13 +252,13 @@ watch(
       </a-menu>
     </a-layout-sider>
 
-    <a-layout>
+    <a-layout class="sider-content">
       <!-- HEADER -->
       <a-layout-header class="d-flex justify-content-between bg-white ps-0">
         <component
           :is="collapsed ? MenuUnfoldOutlined : MenuFoldOutlined"
           class="trigger"
-          @click="collapsed = !collapsed"
+          @click="handleToggleNav"
         />
         <img class="logo-mobile" :src="imgLogoUdpm" />
 
@@ -279,7 +292,7 @@ watch(
                     class="notification-content_body-item"
                     v-for="o in applicationStore.lstNotification"
                     :key="o.id"
-                    @click="applicationStore.markRead(o.id)"
+                    @click="applicationStore.markRead(o)"
                   >
                     <a-badge status="processing" />
                     <span class="notification-time">

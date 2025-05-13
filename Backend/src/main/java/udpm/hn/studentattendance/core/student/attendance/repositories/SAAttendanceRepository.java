@@ -18,7 +18,7 @@ public interface SAAttendanceRepository extends AttendanceRepository {
 
     @Query(value = """
         SELECT 
-            ROW_NUMBER() OVER (ORDER BY a.created_at DESC) as orderNumber,
+            ROW_NUMBER() OVER (ORDER BY pd.start_date ASC) as orderNumber,
             a.id AS id,
             pd.id AS idPlanDate,
             pd.start_date AS startDate,
@@ -29,39 +29,50 @@ public interface SAAttendanceRepository extends AttendanceRepository {
             pd.type AS type,
             pd.link AS link,
             f.name AS factoryName,
+            pd.required_checkin AS requiredCheckin,
+            pd.required_checkout AS requiredCheckout,
             CONCAT(us.code, ' - ', us.name) AS teacherName,
             COALESCE(a.attendance_status, 0) AS status
         FROM user_student_factory usf
         JOIN factory f ON usf.id_factory = f.id
         JOIN plan_factory pf ON f.id = pf.id_factory
         JOIN plan_date pd ON pd.id_plan_factory = pf.id
-        JOIN plan p ON pf.id_plan = p.id
-        JOIN project pj ON f.id_project = pj.id
-        JOIN subject_facility sf ON sf.id = pj.id_subject_facility
-        JOIN subject s2 ON s2.id = sf.id_subject
-        JOIN facility f2 ON sf.id_facility = f2.id
-        JOIN semester s ON pj.id_semester = s.id
         LEFT JOIN user_staff us ON f.id_user_staff = us.id
         LEFT JOIN attendance a ON pd.id = a.id_plan_date AND a.id_user_student = usf.id_user_student
         WHERE
             pd.status = 1 AND
             pf.status = 1 AND
-            p.status = 1 AND
             f.status = 1 AND
-            pj.status = 1 AND
-            s.status = 1 AND
-            s2.status = 1 AND
-            f2.status = 1 AND
-            sf.status = 1 AND
             usf.status = 1 AND
-            (NULLIF(TRIM(:#{#request.keyword}), '') IS NULL OR BINARY f.name LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%')) AND
-            (:#{#request.status} IS NULL OR a.status = :#{#request.status}) AND
+            EXISTS(
+                SELECT 1
+                FROM plan p
+                JOIN project pj ON f.id_project = pj.id
+                JOIN subject_facility sf ON sf.id = pj.id_subject_facility
+                JOIN subject s2 ON s2.id = sf.id_subject
+                JOIN facility f2 ON sf.id_facility = f2.id
+                JOIN semester s ON pj.id_semester = s.id
+                WHERE
+                     pf.id_plan = p.id AND
+                     f2.id = :#{#request.idFacility} AND
+                     p.status = 1 AND
+                     pj.status = 1 AND
+                     sf.status = 1 AND
+                     s.status = 1 AND
+                     s2.status = 1 AND
+                     f2.status = 1
+            ) AND
+            (NULLIF(TRIM(:#{#request.keyword}), '') IS NULL OR (
+                BINARY f.name LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%') OR
+                BINARY us.code LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%') OR
+                BINARY us.name LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%')
+            )) AND
+            (COALESCE(:#{#request.status}, 0) = 0 OR a.status = :#{#request.status}) AND
             (:#{#request.type} IS NULL OR pd.type = :#{#request.type}) AND
             DATE(FROM_UNIXTIME(pd.start_date / 1000)) = CURDATE() AND
-            usf.id_user_student = :#{#request.idUserStudent} AND
-            f2.id = :#{#request.idFacility}
+            usf.id_user_student = :#{#request.idUserStudent}
         ORDER BY
-            pd.start_date DESC 
+            pd.start_date ASC 
     """, countQuery = """
        SELECT 
             COUNT(*)
@@ -69,31 +80,40 @@ public interface SAAttendanceRepository extends AttendanceRepository {
         JOIN factory f ON usf.id_factory = f.id
         JOIN plan_factory pf ON f.id = pf.id_factory
         JOIN plan_date pd ON pd.id_plan_factory = pf.id
-        JOIN plan p ON pf.id_plan = p.id
-        JOIN project pj ON f.id_project = pj.id
-        JOIN subject_facility sf ON sf.id = pj.id_subject_facility
-        JOIN subject s2 ON s2.id = sf.id_subject
-        JOIN facility f2 ON sf.id_facility = f2.id
-        JOIN semester s ON pj.id_semester = s.id
         LEFT JOIN user_staff us ON f.id_user_staff = us.id
         LEFT JOIN attendance a ON pd.id = a.id_plan_date AND a.id_user_student = usf.id_user_student
         WHERE
             pd.status = 1 AND
             pf.status = 1 AND
-            p.status = 1 AND
             f.status = 1 AND
-            pj.status = 1 AND
-            s.status = 1 AND
-            s2.status = 1 AND
-            f2.status = 1 AND
-            sf.status = 1 AND
             usf.status = 1 AND
-            (NULLIF(TRIM(:#{#request.keyword}), '') IS NULL OR BINARY f.name LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%')) AND
-            (:#{#request.status} IS NULL OR a.status = :#{#request.status}) AND
+            EXISTS(
+                SELECT 1
+                FROM plan p
+                JOIN project pj ON f.id_project = pj.id
+                JOIN subject_facility sf ON sf.id = pj.id_subject_facility
+                JOIN subject s2 ON s2.id = sf.id_subject
+                JOIN facility f2 ON sf.id_facility = f2.id
+                JOIN semester s ON pj.id_semester = s.id
+                WHERE
+                     pf.id_plan = p.id AND
+                     f2.id = :#{#request.idFacility} AND
+                     p.status = 1 AND
+                     pj.status = 1 AND
+                     sf.status = 1 AND
+                     s.status = 1 AND
+                     s2.status = 1 AND
+                     f2.status = 1
+            ) AND
+            (NULLIF(TRIM(:#{#request.keyword}), '') IS NULL OR (
+                BINARY f.name LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%') OR
+                BINARY us.code LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%') OR
+                BINARY us.name LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%')
+            )) AND
+            (COALESCE(:#{#request.status}, 0) = 0 OR a.status = :#{#request.status}) AND
             (:#{#request.type} IS NULL OR pd.type = :#{#request.type}) AND
             DATE(FROM_UNIXTIME(pd.start_date / 1000)) = CURDATE() AND
-            usf.id_user_student = :#{#request.idUserStudent} AND
-            f2.id = :#{#request.idFacility}
+            usf.id_user_student = :#{#request.idUserStudent}
     """, nativeQuery = true)
     Page<SAAttendanceResponse> getAllByFilter(Pageable pageable, SAFilterAttendanceRequest request);
 

@@ -9,11 +9,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.servlet.view.RedirectView;
+import udpm.hn.studentattendance.core.authentication.model.request.AuthenticationToken;
 import udpm.hn.studentattendance.core.authentication.model.request.AuthenticationStudentRegisterRequest;
 import udpm.hn.studentattendance.core.authentication.model.request.AuthenticationStudentUpdateFaceIDRequest;
 import udpm.hn.studentattendance.core.authentication.oauth2.AuthUser;
 import udpm.hn.studentattendance.core.authentication.repositories.AuthenticationFacilityRepository;
-import udpm.hn.studentattendance.core.authentication.repositories.AuthenticationRoleRepository;
 import udpm.hn.studentattendance.core.authentication.repositories.AuthenticationUserAdminRepository;
 import udpm.hn.studentattendance.core.authentication.repositories.AuthenticationUserStaffRepository;
 import udpm.hn.studentattendance.core.authentication.repositories.AuthenticationUserStudentRepository;
@@ -32,12 +32,14 @@ import udpm.hn.studentattendance.infrastructure.constants.router.RouteAuthentica
 import udpm.hn.studentattendance.core.authentication.services.AuthenticationService;
 import udpm.hn.studentattendance.entities.Facility;
 import udpm.hn.studentattendance.infrastructure.constants.SessionConstant;
+import udpm.hn.studentattendance.utils.AppUtils;
 import udpm.hn.studentattendance.utils.FaceRecognitionUtils;
 
-import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -72,14 +74,14 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     }
 
     @Override
-    public List<Facility> getAllFacility() {
-        return authenticationFacilityRepository.findAllByStatusOrderByPositionAsc(EntityStatus.ACTIVE);
+    public ResponseEntity<?> getAllFacility() {
+        return RouterHelper.responseSuccess("Tải dữ liệu danh sách cơ sở thành công", authenticationFacilityRepository.findAllByStatusOrderByPositionAsc(EntityStatus.ACTIVE));
     }
 
     @Override
-    public AuthUser getInfoUser(String role) {
+    public ResponseEntity<?> getInfoUser(String role) {
         if (role == null) {
-            return null;
+            return RouterHelper.responseError("Token đăng nhập không hợp lệ");
         }
 
         role = role.trim();
@@ -89,24 +91,29 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         if (role.equalsIgnoreCase(RoleConstant.ADMIN.name())) {
             Optional<UserAdmin> userAdmin = authenticationUserAdminRepository.findByEmail(sessionHelper.getUserEmail());
             if (userAdmin.isEmpty()) {
-                return null;
+                return RouterHelper.responseError("Token đăng nhập không hợp lệ hoặc đã hết hạn");
             }
             userData = sessionHelper.buildAuthUser(userAdmin.get(), sessionHelper.getUserRole(), facilityID);
-        } else if(role.equalsIgnoreCase(RoleConstant.STAFF.name()) || role.equalsIgnoreCase(RoleConstant.TEACHER.name())) {
-            Optional<UserStaff> userStaff = authenticationUserStaffRepository.findLogin(sessionHelper.getUserEmailFpt(), facilityID);
+        } else if (role.equalsIgnoreCase(RoleConstant.STAFF.name())
+                || role.equalsIgnoreCase(RoleConstant.TEACHER.name())) {
+            Optional<UserStaff> userStaff = authenticationUserStaffRepository.findLogin(sessionHelper.getUserEmailFpt(),
+                    facilityID);
             if (userStaff.isEmpty()) {
-                return null;
+                return RouterHelper.responseError("Token đăng nhập không hợp lệ hoặc đã hết hạn");
             }
             userData = sessionHelper.buildAuthUser(userStaff.get(), sessionHelper.getUserRole(), facilityID);
         } else if (role.equalsIgnoreCase(RoleConstant.STUDENT.name())) {
-            Optional<UserStudent> userStudent = facilityID != null && !facilityID.equalsIgnoreCase("null") ? authenticationUserStudentRepository.findByEmailAndFacility_Id(sessionHelper.getUserEmail(), facilityID) : authenticationUserStudentRepository.findByEmail(sessionHelper.getUserEmail());
+            Optional<UserStudent> userStudent = facilityID != null && !facilityID.equalsIgnoreCase("null")
+                    ? authenticationUserStudentRepository.findByEmailAndFacility_Id(sessionHelper.getUserEmail(),
+                            facilityID)
+                    : authenticationUserStudentRepository.findByEmail(sessionHelper.getUserEmail());
             if (userStudent.isEmpty()) {
-                return null;
+                return RouterHelper.responseError("Token đăng nhập không hợp lệ hoặc đã hết hạn");
             }
             userData = sessionHelper.buildAuthUser(userStudent.get(), sessionHelper.getUserRole(), facilityID);
         }
 
-        return userData;
+        return RouterHelper.responseSuccess("Lấy thông tin người dùng thành công", userData);
     }
 
     @Override
@@ -134,19 +141,22 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             return RouterHelper.responseError("Thông tin khuôn mặt không hợp lệ");
         }
 
-        double[] faceEmbedding = FaceRecognitionUtils.parseEmbedding(request.getFaceEmbedding());
-        if (isFaceExists(faceEmbedding)) {
+        List<double[]> faceEmbeddings = FaceRecognitionUtils.parseEmbeddings(request.getFaceEmbedding());
+        if (isFaceExists(faceEmbeddings)) {
             return RouterHelper.responseError("Đã tồn tại khuôn mặt trên hệ thống");
         }
 
         student.setFacility(facility);
         student.setCode(request.getCode());
         student.setName(request.getName());
-        student.setFaceEmbedding(request.getFaceEmbedding());
+        student.setFaceEmbedding(Arrays.toString(faceEmbeddings.get(0)));
         authenticationUserStudentRepository.save(student);
 
-        String token = jwtUtil.generateToken(student.getEmail(), sessionHelper.buildAuthUser(student, Set.of(RoleConstant.STUDENT), student.getFacility().getId()));
-        return RouterHelper.responseSuccess("Đăng ký thông tin sinh viên thành công", token);
+        String accessToken = jwtUtil.generateToken(student.getEmail(),
+                sessionHelper.buildAuthUser(student, Set.of(RoleConstant.STUDENT), student.getFacility().getId()));
+        String refreshToken = jwtUtil.generateRefreshToken(accessToken);
+
+        return RouterHelper.responseSuccess("Đăng ký thông tin sinh viên thành công", new AuthenticationToken(accessToken, refreshToken));
     }
 
     @Override
@@ -180,27 +190,65 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             return RouterHelper.responseError("Thông tin khuôn mặt không hợp lệ");
         }
 
-        double[] faceEmbedding = FaceRecognitionUtils.parseEmbedding(request.getFaceEmbedding());
-        if (isFaceExists(faceEmbedding)) {
+        List<double[]> faceEmbeddings = FaceRecognitionUtils.parseEmbeddings(request.getFaceEmbedding());
+        if (isFaceExists(faceEmbeddings)) {
             return RouterHelper.responseError("Đã tồn tại khuôn mặt trên hệ thống");
         }
 
-        student.setFaceEmbedding(request.getFaceEmbedding());
+        student.setFaceEmbedding(Arrays.toString(faceEmbeddings.get(0)));
 
         NotificationAddRequest notificationAddRequest = new NotificationAddRequest();
         notificationAddRequest.setType(NotificationHelper.TYPE_SUCCESS_UPDATE_FACE_ID);
         notificationAddRequest.setIdUser(student.getId());
         notificationService.add(notificationAddRequest);
 
-        return RouterHelper.responseSuccess("Cập nhật khuôn mặt thành công", authenticationUserStudentRepository.save(student));
+        return RouterHelper.responseSuccess("Cập nhật khuôn mặt thành công",
+                authenticationUserStudentRepository.save(student));
     }
 
-    private boolean isFaceExists(double[] embedding) {
-        StringBuilder queryBuilder = new StringBuilder("SELECT COUNT(*) > 0 FROM user_student WHERE face_embedding IS NOT NULL AND face_embedding <> '' AND ");
+    @Override
+    public ResponseEntity<?> refreshToken(String refreshToken) {
+        if (!jwtUtil.validateToken(refreshToken)) {
+            return RouterHelper.responseError("Refresh Token không hợp lệ hoặc đã hết hạn");
+        }
 
+        String newToken = jwtUtil.generateToken(refreshToken);
+        String newRefreshToken = jwtUtil.generateRefreshToken(newToken);
+
+        AuthenticationToken data = new AuthenticationToken();
+        data.setAccessToken(newToken);
+        data.setRefreshToken(newRefreshToken);
+        return RouterHelper.responseSuccess("Gia hạn token thành công", data);
+    }
+
+    @Override
+    public ResponseEntity<?> getAvater(String urlImage) {
+        return RouterHelper.responseSuccess("Lấy dữ liệu avatar thành công", AppUtils.imageUrlToBase64(urlImage));
+    }
+
+    private boolean isFaceExists(List<double[]> embeddings) {
+        double[] embedding = embeddings.remove(0);
+        List<String> matchedIds = isFaceExists(embedding);
+        if (matchedIds.isEmpty()) {
+            return false;
+        }
+        for (double[] emb: embeddings) {
+            boolean isExist = !isFaceExists(emb).isEmpty();
+            if(!isExist) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private List<String> isFaceExists(double[] embedding) {
+        StringBuilder queryBuilder = new StringBuilder(
+                "SELECT id FROM user_student WHERE face_embedding IS NOT NULL AND face_embedding <> '' AND ");
         queryBuilder.append("SQRT(");
+
         for (int i = 0; i < embedding.length; i++) {
-            if (i > 0) queryBuilder.append(" + ");
+            if (i > 0)
+                queryBuilder.append(" + ");
             queryBuilder.append("POW(IFNULL(JSON_EXTRACT(face_embedding, '$[").append(i).append("]'), 0) - :e")
                     .append(i).append(", 2)");
         }
@@ -213,9 +261,10 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         }
 
         query.setParameter("threshold", FaceRecognitionUtils.THRESHOLD);
-
-        Number count = (Number) query.getSingleResult();
-        return count != null && count.longValue() > 0;
+        return ((List<?>) query.getResultList())
+                .stream()
+                .map(Object::toString)
+                .toList();
     }
 
 }

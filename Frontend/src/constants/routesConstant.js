@@ -17,12 +17,18 @@ export const GLOBAL_ROUTE_NAMES = {
   STUDENT_REGISTER_PAGE: 'student_register_page',
 }
 
+export const WS_ROUTES = {
+  SERVER_HOST: BASE_API_URL.replace(/^https?:\/\//, 'ws://') + '/ws',
+  TOPIC_ATTENDANCE: '/topic/attendance',
+}
+
 export const API_ROUTES_EXCEL = {
   FETCH_IMPORT_PLAN_DATE: API_URL + '/excel/plan-date',
   FETCH_IMPORT_STAFF: API_URL + '/excel/staff',
   FETCH_IMPORT_FACTORY: API_URL + '/excel/factory',
   FETCH_IMPORT_STUDENT: API_URL + '/excel/student',
   FETCH_IMPORT_STUDENT_FACTORY: API_URL + '/excel/student-factory',
+  FETCH_IMPORT_PROJECT: API_URL + '/excel/project',
 }
 
 export const API_ROUTES_NOTIFICATION = {

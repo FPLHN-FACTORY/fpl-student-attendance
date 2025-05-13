@@ -23,6 +23,7 @@ import 'leaflet-control-geocoder'
 
 import 'leaflet/dist/leaflet.css'
 import 'leaflet-control-geocoder/dist/Control.Geocoder.css'
+import { autoAddColumnWidth, debounce } from '@/utils/utils'
 
 delete L.Icon.Default.prototype._getIconUrl
 
@@ -62,15 +63,17 @@ const modalAddOrUpdate = reactive({
 const _detail = ref(null)
 const lstData = ref([])
 
-const columns = ref([
-  { title: '#', dataIndex: 'orderNumber', key: 'orderNumber', width: 50 },
-  { title: 'Tên địa điểm', dataIndex: 'name', key: 'name' },
-  { title: 'Vĩ độ', dataIndex: 'latitude', key: 'latitude' },
-  { title: 'Kinh độ', dataIndex: 'longitude', key: 'longitude' },
-  { title: 'Bán kính', dataIndex: 'radius', key: 'radius' },
-  { title: 'Trạng thái', dataIndex: 'status', key: 'status' },
-  { title: '', key: 'actions' },
-])
+const columns = ref(
+  autoAddColumnWidth([
+    { title: '#', dataIndex: 'orderNumber', key: 'orderNumber' },
+    { title: 'Tên địa điểm', dataIndex: 'name', key: 'name' },
+    { title: 'Vĩ độ', dataIndex: 'latitude', key: 'latitude' },
+    { title: 'Kinh độ', dataIndex: 'longitude', key: 'longitude' },
+    { title: 'Bán kính', dataIndex: 'radius', key: 'radius' },
+    { title: 'Trạng thái', dataIndex: 'status', key: 'status' },
+    { title: '', key: 'actions' },
+  ]),
+)
 
 const breadcrumb = ref([
   {
@@ -408,10 +411,11 @@ onMounted(() => {
   fetchDataDetail()
 })
 
+const debounceFilter = debounce(handleSubmitFilter, 100)
 watch(
   dataFilter,
   () => {
-    handleSubmitFilter()
+    debounceFilter()
   },
   { deep: true },
 )
@@ -520,7 +524,7 @@ watch(mapCenter, (newCenter) => {
         <a-card :bordered="false" class="cart">
           <template #title> <FilterFilled /> Bộ lọc </template>
           <div class="row g-2">
-            <div class="col-lg-6 col-md-12 col-sm-12">
+            <div class="col-lg-8 col-md-6 col-sm-6">
               <div class="label-title">Từ khoá:</div>
               <a-input
                 v-model:value="dataFilter.keyword"
@@ -532,7 +536,7 @@ watch(mapCenter, (newCenter) => {
                 </template>
               </a-input>
             </div>
-            <div class="col-lg-3 col-md-6 col-sm-6">
+            <div class="col-lg-4 col-md-6 col-sm-6">
               <div class="label-title">Trạng thái:</div>
               <a-select
                 v-model:value="dataFilter.status"
@@ -576,7 +580,7 @@ watch(mapCenter, (newCenter) => {
               :columns="columns"
               :loading="isLoading"
               :pagination="pagination"
-              :scroll="{ y: 500, x: 'auto' }"
+              :scroll="{ x: 'auto' }"
               @change="handleTableChange"
             >
               <template #bodyCell="{ column, record }">

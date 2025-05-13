@@ -7,6 +7,27 @@ export const decodeBase64 = (base64String) => {
   return new TextDecoder('utf-8').decode(byteArray)
 }
 
+export const debounce = (func, delay) => {
+  let timer
+  return function (...args) {
+    clearTimeout(timer)
+    timer = setTimeout(() => {
+      func.apply(this, args)
+    }, delay)
+  }
+}
+
+export const autoAddColumnWidth = (columns, ellipsis = false, charWidth = 10, padding = 20) => {
+  return columns.map((col) => {
+    if (!col.width) {
+      const titleLength = (col.title || '').length
+      const estimatedWidth = titleLength * charWidth + padding
+      return { ...col, width: estimatedWidth, minWidth: estimatedWidth, ellipsis }
+    }
+    return col
+  })
+}
+
 export const dayOfWeek = (timestamp) => {
   const date = new Date(timestamp)
   const daysOfWeek = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy']

@@ -2,10 +2,12 @@ package udpm.hn.studentattendance.core.staff.plan.model.request;
 
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import udpm.hn.studentattendance.infrastructure.constants.EntityProperties;
 import udpm.hn.studentattendance.infrastructure.constants.StatusType;
 
 import java.util.List;
@@ -26,16 +28,20 @@ public class SPDAddPlanFactoryRequest {
 
     private String link;
 
+    @Size(max = EntityProperties.LENGTH_NAME, message = "Phòng học không được vượt quá " + EntityProperties.LENGTH_NAME + " ký tự")
+    private String room;
+
     private Integer requiredIp = StatusType.ENABLE.getKey();
 
     private Integer requiredLocation = StatusType.ENABLE.getKey();
 
-    @Min(value = 1, message = "Ca học sớm nhất là ca 1")
-    @Max(value = 6, message = "Ca học muộn nhất là ca 6")
-    private Integer shift;
+    private Integer requiredCheckin = StatusType.ENABLE.getKey();
+
+    private Integer requiredCheckout = StatusType.ENABLE.getKey();
+
+    private List<Integer> shift;
 
     @Min(value = 0, message = "Thời gian điểm danh muộn nhất phải lớn hơn 0")
-    @Max(value = 60, message = "Thời gian điểm danh muộn nhất không quá 60 phút")
     private Integer lateArrival;
 
 }

@@ -2,6 +2,7 @@ package udpm.hn.studentattendance.core.admin.facility.service.impl;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -13,21 +14,38 @@ import udpm.hn.studentattendance.core.admin.facility.repository.AFFacilityExtend
 import udpm.hn.studentattendance.core.admin.facility.service.AFFacilityService;
 import udpm.hn.studentattendance.entities.Facility;
 import udpm.hn.studentattendance.helpers.GenerateNameHelper;
+import udpm.hn.studentattendance.helpers.MailerHelper;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
 import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.infrastructure.common.ApiResponse;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
+import udpm.hn.studentattendance.infrastructure.common.repositories.CommonUserStudentRepository;
+import udpm.hn.studentattendance.infrastructure.config.mailer.model.MailerDefaultRequest;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.RestApiStatus;
 
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 
 @Service
 @RequiredArgsConstructor
 @Validated
 public class AFFacilityServiceImpl implements AFFacilityService {
+
     private final AFFacilityExtendRepository facilityRepository;
+
+    private final CommonUserStudentRepository commonUserStudentRepository;
+
+    private final MailerHelper mailerHelper;
+
+    @Value("${app.config.app-name}")
+    private String appName;
 
     @Override
     public ResponseEntity<?> getAllFacility(AFFacilitySearchRequest request) {
@@ -42,7 +60,7 @@ public class AFFacilityServiceImpl implements AFFacilityService {
     }
 
     @Override
-    public ResponseEntity<?> createFacility(@Valid AFCreateUpdateFacilityRequest request) {
+    public ResponseEntity<?> createFacility(AFCreateUpdateFacilityRequest request) {
         Optional<Facility> existFacility = facilityRepository.findByName(request.getFacilityName().trim());
         if (existFacility.isPresent()) {
             return new ResponseEntity<>(
@@ -72,7 +90,7 @@ public class AFFacilityServiceImpl implements AFFacilityService {
     }
 
     @Override
-    public ResponseEntity<?> updateFacility(String facilityId, @Valid AFCreateUpdateFacilityRequest request) {
+    public ResponseEntity<?> updateFacility(String facilityId, AFCreateUpdateFacilityRequest request) {
 //        if (!facilityRepository.existsByNameAndId(request.getFacilityName(), facilityId)) {
 //            return new ResponseEntity<>(
 //                    new ApiResponse(
@@ -87,7 +105,6 @@ public class AFFacilityServiceImpl implements AFFacilityService {
             facilities.setCode(GenerateNameHelper.generateCodeFromName(request.getFacilityName().trim()));
             facilities.setName(GenerateNameHelper.replaceManySpaceToOneSpace(request.getFacilityName().trim()));
             facilities.setCreatedAt(facilities.getCreatedAt());
-//            facilities.setStatus(EntityStatus.ACTIVE);
             return facilityRepository.save(facilities);
         });
         return existFacility
@@ -114,29 +131,48 @@ public class AFFacilityServiceImpl implements AFFacilityService {
     @Override
     public ResponseEntity<?> changeFacilityStatus(String facilityId) {
         Optional<Facility> facilityOptional = facilityRepository.findById(facilityId);
-        facilityOptional.map(facility -> {
-            facility.setStatus(facility.getStatus() == EntityStatus.ACTIVE ? EntityStatus.INACTIVE : EntityStatus.ACTIVE);
-            return facilityRepository.save(facility);
-        });
-        return facilityOptional
-                .map(
-                        object -> new ResponseEntity<>(
-                                new ApiResponse(
-                                        RestApiStatus.SUCCESS,
-                                        "Cập nhật cơ sở thành công",
-                                        null
-                                ),
-                                HttpStatus.OK)
-                )
-                .orElseGet(
-                        () -> new ResponseEntity<>(
-                                new ApiResponse(
-                                        RestApiStatus.ERROR,
-                                        "Cơ sở không tồn tại",
-                                        null
-                                ),
-                                HttpStatus.NOT_FOUND)
-                );
+
+        if (facilityOptional.isEmpty()) {
+            return RouterHelper.responseError("Không tìm thấy cơ sở");
+        }
+
+        Facility facility = facilityOptional.get();
+
+        long lastUpdatedMillis = facility.getUpdatedAt(); // epoch millis
+        LocalDate lastUpdatedDate = Instant
+                .ofEpochMilli(lastUpdatedMillis)
+                .atZone(ZoneId.of("Asia/Ho_Chi_Minh"))    // dùng timezone phù hợp
+                .toLocalDate();
+        LocalDate today = LocalDate.now(ZoneId.of("Asia/Ho_Chi_Minh"));
+        if (lastUpdatedDate.isEqual(today) && facility.getStatus() == EntityStatus.ACTIVE) {
+            return RouterHelper.responseError("Chỉ được đổi trạng thái cơ sở ngừng hoạt động 1 lần mỗi ngày");
+        }
+        // ---------------------------------------------------------------
+
+
+        facility.setStatus(facility.getStatus() == EntityStatus.ACTIVE ? EntityStatus.INACTIVE : EntityStatus.ACTIVE);
+        Facility entity = facilityRepository.save(facility);
+
+        if (entity.getStatus() == EntityStatus.INACTIVE) {
+            List<String> lstEmails = facilityRepository.getListEmailUserDisableFacility(entity.getId());
+            if (!lstEmails.isEmpty()) {
+                String to = lstEmails.remove(0);
+                MailerDefaultRequest mailerDefaultRequest = new MailerDefaultRequest();
+                mailerDefaultRequest.setTo(to);
+                if (!lstEmails.isEmpty()) {
+                    mailerDefaultRequest.setBcc(lstEmails.toArray(new String[0]));
+                }
+
+                mailerDefaultRequest.setTemplate(null);
+                mailerDefaultRequest.setTitle("Thông báo quan trọng từ " + appName);
+                mailerDefaultRequest.setContent(MailerHelper.loadTemplate(MailerHelper.TEMPLATE_CHANGE_STATUS_FACILITY, Map.of("FACILITY_NAME", entity.getName())));
+                mailerHelper.send(mailerDefaultRequest);
+            }
+        } else {
+            commonUserStudentRepository.disableAllStudentDuplicateShiftByIdFacility(facility.getId());
+        }
+
+        return RouterHelper.responseSuccess("Thay đổi trạng thái cơ sở thành công", entity);
     }
 
     @Override
