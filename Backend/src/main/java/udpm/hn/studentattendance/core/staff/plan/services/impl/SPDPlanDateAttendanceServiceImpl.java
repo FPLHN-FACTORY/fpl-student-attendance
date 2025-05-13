@@ -13,6 +13,7 @@ import udpm.hn.studentattendance.core.staff.plan.repositories.SPDAttendanceRepos
 import udpm.hn.studentattendance.core.staff.plan.repositories.SPDPlanDateRepository;
 import udpm.hn.studentattendance.core.staff.plan.repositories.SPDUserStudentRepository;
 import udpm.hn.studentattendance.core.staff.plan.services.SPDPlanDateAttendanceService;
+import udpm.hn.studentattendance.core.student.schedule.repository.STDScheduleAttendanceRepository;
 import udpm.hn.studentattendance.entities.Attendance;
 import udpm.hn.studentattendance.entities.Plan;
 import udpm.hn.studentattendance.entities.PlanDate;
@@ -38,6 +39,7 @@ public class SPDPlanDateAttendanceServiceImpl implements SPDPlanDateAttendanceSe
     private final SPDPlanDateRepository spdPlanDateRepository;
 
     private final SPDUserStudentRepository spdUserStudentRepository;
+    private final STDScheduleAttendanceRepository sTDScheduleAttendanceRepository;
 
     @Override
     public ResponseEntity<?> getDetail(String idPlanDate) {
@@ -57,12 +59,15 @@ public class SPDPlanDateAttendanceServiceImpl implements SPDPlanDateAttendanceSe
 
     @Override
     public ResponseEntity<?> changeStatus(SPDModifyPlanDateAttendanceRequest request) {
+        if (request.getStatus() == null) {
+            return RouterHelper.responseError("Yêu cầu trạng thái không hợp lệ");
+        }
+
         PlanDate planDate = spdPlanDateRepository.findById(request.getIdPlanDate()).orElse(null);
         if (planDate == null || planDate.getStartDate() > DateTimeUtils.getCurrentTimeMillis()) {
             return RouterHelper.responseError("Không tìm thấy kế hoạch");
         }
 
-        System.out.println(request.getIdUserStudent());
         UserStudent userStudent = spdUserStudentRepository.findById(request.getIdUserStudent()).orElse(null);
         if (userStudent == null || userStudent.getStatus() == EntityStatus.INACTIVE) {
             return RouterHelper.responseError("Không tìm thấy sinh viên");
@@ -79,10 +84,23 @@ public class SPDPlanDateAttendanceServiceImpl implements SPDPlanDateAttendanceSe
             }
         }
 
-        attendance.setAttendanceStatus(AttendanceStatus.PRESENT);
+        AttendanceStatus status = AttendanceStatus.PRESENT;
+        String message = "Thay đổi trạng thái điểm danh thành công";
+
+        if (request.getStatus() == 0) {
+            status = AttendanceStatus.CHECKIN;
+            message = "Thay đổi trạng thái checkin thành công";
+        } else if (request.getStatus() == 1) {
+            if (attendance.getAttendanceStatus() != AttendanceStatus.CHECKIN) {
+                return RouterHelper.responseError("Không thể checkout khi chưa checkin");
+            }
+            message = "Thay đổi trạng thái checkout thành công";
+        }
+
+        attendance.setAttendanceStatus(status);
 
         Attendance newEntity = spdAttendanceRepository.save(attendance);
-        return RouterHelper.responseSuccess("Thay đổi trạng thái điểm danh thành công", newEntity);
+        return RouterHelper.responseSuccess(message + " sinh viên " + userStudent.getName(), newEntity);
     }
 
 }

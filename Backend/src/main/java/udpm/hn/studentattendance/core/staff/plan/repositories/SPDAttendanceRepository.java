@@ -115,7 +115,9 @@ public interface SPDAttendanceRepository extends AttendanceRepository {
                     pl.id AS planId,
                     pl.name AS planName,
                     pf.id AS factoryId,
-                    f.name AS factoryName
+                    f.name AS factoryName,
+                    pd.required_checkin,
+                    pd.required_checkout
                 FROM plan_date pd
                 JOIN plan_factory pf ON pd.id_plan_factory = pf.id
                 JOIN plan pl ON pf.id_plan = pl.id

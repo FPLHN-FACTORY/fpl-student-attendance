@@ -90,4 +90,10 @@ export const ATTENDANCE_STATUS = {
   ABSENT: { id: 1, name: 'Vắng mặt' },
   CHECKIN: { id: 2, name: 'Đã checkin' },
   PRESENT: { id: 3, name: 'Có mặt' },
+  NOTCHECKOUT: { id: 4, name: 'Chưa checkout' },
+}
+
+export const STATUS_REQUIRED_ATTENDANCE = {
+  DISABLE: 0,
+  ENABLE: 1,
 }

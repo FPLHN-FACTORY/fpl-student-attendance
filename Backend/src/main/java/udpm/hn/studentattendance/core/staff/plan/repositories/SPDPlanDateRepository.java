@@ -30,6 +30,8 @@ public interface SPDPlanDateRepository extends PlanDateRepository {
             pd.room,
             pd.required_location,
             pd.required_ip,
+            pd.required_checkin,
+            pd.required_checkout,
             CASE
                 WHEN UNIX_TIMESTAMP(NOW()) * 1000 > pd.start_date
                 THEN 'DA_DIEN_RA'
@@ -102,6 +104,8 @@ public interface SPDPlanDateRepository extends PlanDateRepository {
             pd.room,
             pd.required_location,
             pd.required_ip,
+            pd.required_checkin,
+            pd.required_checkout,
             CASE
                 WHEN UNIX_TIMESTAMP(NOW()) * 1000 > pd.start_date
                 THEN 'DA_DIEN_RA'
