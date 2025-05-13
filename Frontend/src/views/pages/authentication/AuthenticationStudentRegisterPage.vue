@@ -3,7 +3,6 @@ import { useRouter } from 'vue-router'
 import imgLogoFpt from '@/assets/images/logo-fpt.png'
 import imgLogoUdpm from '@/assets/images/logo-udpm.png'
 import { nextTick, onMounted, reactive, ref } from 'vue'
-import { toast } from 'vue3-toastify'
 import requestAPI from '@/services/requestApiService'
 import useAuthStore from '@/stores/useAuthStore'
 import useLoadingStore from '@/stores/useLoadingStore'
@@ -68,7 +67,7 @@ const fetchDataFacility = async () => {
     const response = await requestAPI.get(ROUTE_NAMES_API.FETCH_DATA_FACILITY)
     lstFacility.value = response.data.data
   } catch (error) {
-    toast.error('Không thể tải danh sách cơ sở')
+    message.error('Không thể tải danh sách cơ sở')
   }
 }
 
