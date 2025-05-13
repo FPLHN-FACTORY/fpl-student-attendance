@@ -636,7 +636,7 @@ watch(
                 </template>
               </a-input>
             </div>
-            <div class="col-xxl-2 col-md-4 col-sm-6">
+            <div class="col-xxl-2 col-md-4 col-sm-12">
               <div class="label-title">Trạng thái:</div>
               <a-select
                 v-model:value="dataFilter.status"

@@ -23,7 +23,9 @@ public interface SPDAttendanceRepository extends AttendanceRepository {
             us.id,
             us.code,
             us.name,
-            COALESCE(a.attendance_status, 0) AS status
+            COALESCE(a.attendance_status, 0) AS status,
+            COALESCE(a.created_at, 0) AS createdAt,
+            COALESCE(a.updated_at, 0) AS updatedAt
         FROM user_student_factory usf
         JOIN factory f ON usf.id_factory = f.id
         JOIN plan_factory pf ON f.id = pf.id_factory

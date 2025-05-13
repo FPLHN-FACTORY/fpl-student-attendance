@@ -9,7 +9,7 @@ import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
 import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
 import { ROUTE_NAMES } from '@/router/staffRoute'
 import { useRoute, useRouter } from 'vue-router'
-import { autoAddColumnWidth, debounce } from '@/utils/utils'
+import { autoAddColumnWidth, debounce, formatDate } from '@/utils/utils'
 import useLoadingStore from '@/stores/useLoadingStore'
 
 const route = useRoute()
@@ -28,6 +28,8 @@ const columns = ref(
     { title: '#', dataIndex: 'orderNumber', key: 'orderNumber' },
     { title: 'Mã sinh viên', dataIndex: 'code', key: 'code' },
     { title: 'Họ và tên', dataIndex: 'name', key: 'name' },
+    { title: 'Checkin đầu giờ', dataIndex: 'createdAt', key: 'createdAt' },
+    { title: 'Checkout cuối giờ', dataIndex: 'updatedAt', key: 'updatedAt' },
     { title: 'Trạng thái', dataIndex: 'status', key: 'status' },
   ]),
 )
@@ -233,6 +235,24 @@ watch(
                   <a-tag color="purple">
                     {{ record.studentCode }}
                   </a-tag>
+                </template>
+                <template v-if="column.dataIndex === 'createdAt'">
+                  <span v-if="record.status === ATTENDANCE_STATUS.NOTCHECKIN.id">
+                    <a-badge status="error" /> Chưa checkin
+                  </span>
+                  <span v-else>
+                    <a-badge status="warning" />
+                    {{ formatDate(record.createdAt, 'dd/MM/yyyy HH:mm') }}
+                  </span>
+                </template>
+                <template v-if="column.dataIndex === 'updatedAt'">
+                  <span v-if="record.status !== ATTENDANCE_STATUS.PRESENT.id">
+                    <a-badge status="error" /> Chưa checkout
+                  </span>
+                  <span v-else>
+                    <a-badge status="success" />
+                    {{ formatDate(record.updatedAt, 'dd/MM/yyyy HH:mm') }}
+                  </span>
                 </template>
                 <template v-if="column.dataIndex === 'status'">
                   <a-switch

@@ -12,6 +12,7 @@ import {
   UnorderedListOutlined,
   FilterFilled,
   AlignLeftOutlined,
+  SearchOutlined,
 } from '@ant-design/icons-vue'
 import { ROUTE_NAMES } from '@/router/staffRoute'
 import { DEFAULT_PAGINATION } from '@/constants'
@@ -487,16 +488,20 @@ onMounted(() => {
           <template #title> <FilterFilled /> Bộ lọc </template>
           <div class="row g-2">
             <div class="col-md-6 col-sm-12">
-              <div class="label-title">Tìm kiếm tên xưởng:</div>
+              <div class="label-title">Từ khoá:</div>
               <a-input
                 v-model:value="filter.factoryName"
-                placeholder="Tên xưởng"
+                placeholder="Tìm theo tên nhóm xưởng"
                 allowClear
                 @change="onFilterChange"
                 class="w-100"
-              />
+              >
+                <template #prefix>
+                  <SearchOutlined />
+                </template>
+              </a-input>
             </div>
-            <div class="col-md-3 col-sm-9">
+            <div class="col-md-3 col-sm-6">
               <div class="label-title">Giảng viên:</div>
               <a-select
                 v-model:value="filter.idStaff"
@@ -520,7 +525,7 @@ onMounted(() => {
                 </a-select-option>
               </a-select>
             </div>
-            <div class="col-md-3 col-sm-9">
+            <div class="col-md-3 col-sm-6">
               <div class="label-title">Kỳ học:</div>
               <a-select
                 v-model:value="filter.idSemester"
