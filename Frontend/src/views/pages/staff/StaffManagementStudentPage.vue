@@ -11,6 +11,7 @@ import {
   UnorderedListOutlined,
   FilterFilled,
   UserDeleteOutlined,
+  SearchOutlined,
 } from '@ant-design/icons-vue'
 import { ROUTE_NAMES } from '@/router/staffRoute'
 import { DEFAULT_PAGINATION } from '@/constants'
@@ -61,7 +62,7 @@ const detailStudent = reactive({
 // Cấu hình cột cho bảng
 const columns = ref(
   autoAddColumnWidth([
-    { title: 'STT', dataIndex: 'rowNumber', key: 'rowNumber' },
+    { title: 'STT', dataIndex: 'index', key: 'index' },
     { title: 'Mã sinh viên', dataIndex: 'studentCode', key: 'studentCode' },
     { title: 'Tên sinh viên', dataIndex: 'studentName', key: 'studentName' },
     { title: 'Email', dataIndex: 'studentEmail', key: 'studentEmail' },
@@ -97,11 +98,12 @@ const fetchStudents = async () => {
     ])
 
     const list = stuRes.data.data.data // danh sách sinh viên
-    const flags = faceRes.data.data // mảng Boolean
-    // gán thêm hasFace vào từng object
-    students.value = list.map((s, idx) => ({
-      ...s,
-      hasFace: flags[idx] === 1,
+    const faceMap = faceRes.data.data // map studentId -> hasFace
+
+    // gán thêm hasFace vào từng object dựa trên studentId
+    students.value = list.map(student => ({
+      ...student,
+      hasFace: faceMap[student.studentId] || false
     }))
 
     // cập nhật tổng bản ghi
@@ -314,32 +316,36 @@ onMounted(() => {
       <div class="col-12">
         <a-card :bordered="false" class="cart mb-3">
           <template #title> <FilterFilled /> Bộ lọc </template>
-          <div class="row g-3 filter-container">
+          <div class="row g-3">
             <!-- Input tìm kiếm theo mã, tên, email -->
-            <a-col :span="12" class="col">
-              <div class="label-title">Tìm kiếm mã, tên, email:</div>
+            <div class="col-md-6 col-sm-12">
+              <div class="label-title">Từ khoá:</div>
               <a-input
                 v-model:value="filter.searchQuery"
                 placeholder="Tìm kiếm theo mã, tên, email"
                 allowClear
                 @change="fetchStudents"
-              />
-            </a-col>
+              >
+                <template #prefix>
+                  <SearchOutlined />
+                </template>
+              </a-input>
+            </div>
             <!-- Combobox trạng thái -->
-            <a-col :span="12" class="col">
+            <div class="col-md-6 col-sm-12">
               <div class="label-title">Trạng thái:</div>
               <a-select
                 v-model:value="filter.studentStatus"
                 placeholder="Chọn trạng thái"
                 allowClear
-                style="width: 100%"
+                class="w-100"
                 @change="fetchStudents"
               >
                 <a-select-option :value="''">Tất cả trạng thái</a-select-option>
                 <a-select-option value="ACTIVE">Hoạt động</a-select-option>
                 <a-select-option value="INACTIVE">Không hoạt động</a-select-option>
               </a-select>
-            </a-col>
+            </div>
           </div>
           <div class="row">
             <div class="col-12">
@@ -376,7 +382,10 @@ onMounted(() => {
             @change="handleTableChange"
             class="nowrap"
           >
-            <template #bodyCell="{ column, record }">
+            <template #bodyCell="{ column, record, index }">
+              <template v-if="column.dataIndex === 'index'">
+                {{ index + 1 + (pagination.current - 1) * pagination.pageSize }}
+              </template>
               <!-- Hiển thị trạng thái -->
               <template v-if="column.dataIndex === 'studentStatus'">
                 <span class="nowrap">
@@ -442,7 +451,13 @@ onMounted(() => {
     </div>
 
     <!-- Modal thêm sinh viên -->
-    <a-modal v-model:open="modalAdd" title="Thêm sinh viên" @ok="handleAddStudent">
+    <a-modal
+      v-model:open="modalAdd"
+      title="Thêm sinh viên"
+      @ok="handleAddStudent"
+      @cancel="clearNewStudentForm"
+      @close="clearNewStudentForm"
+    >
       <a-form layout="vertical">
         <a-form-item label="Mã sinh viên" required>
           <a-input v-model:value="newStudent.code" placeholder="--Nhập mã sinh viên--" />

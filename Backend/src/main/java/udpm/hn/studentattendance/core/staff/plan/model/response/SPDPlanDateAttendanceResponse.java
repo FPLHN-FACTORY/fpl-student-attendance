@@ -13,4 +13,8 @@ public interface SPDPlanDateAttendanceResponse extends IsIdentify, HasOrderNumbe
 
     String getFactoryName();
 
+    Integer getRequiredCheckin();
+
+    Integer getRequiredCheckout();
+
 }

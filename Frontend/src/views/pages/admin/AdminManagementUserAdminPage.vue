@@ -7,6 +7,7 @@ import {
   UnorderedListOutlined,
   FilterFilled,
   DeleteFilled,
+  SearchOutlined,
 } from '@ant-design/icons-vue'
 import requestAPI from '@/services/requestApiService'
 import { ROUTE_NAMES } from '@/router/adminRoute'
@@ -296,24 +297,28 @@ onMounted(() => {
     <div class="row g-3">
       <div class="col-12">
         <a-card :bordered="false" class="cart mb-3">
-          <template #title> <FilterFilled /> Bộ lọc tìm kiếm </template>
+          <template #title> <FilterFilled /> Bộ lọc</template>
           <div class="row g-3 filter-container">
-            <div class="col-md-6 col-sm-6">
-              <label class="label-title">Từ khoá:</label>
+            <div class="col-md-8 col-sm-6">
+              <div class="label-title">Từ khoá:</div>
               <a-input
                 v-model:value="filter.searchQuery"
                 placeholder="Nhập mã, tên hoặc email"
                 allowClear
                 @change="fetchUsers"
-              />
+              >
+                <template #prefix>
+                  <SearchOutlined />
+                </template>
+              </a-input>
             </div>
-            <div class="col-md-6 col-sm-6">
-              <label class="label-title">Trạng thái:</label>
+            <div class="col-md-4 col-sm-6">
+              <div class="label-title">Trạng thái:</div>
               <a-select
                 v-model:value="filter.status"
                 placeholder="Chọn trạng thái"
                 allowClear
-                style="width: 100%"
+                class="w-100"
                 @change="fetchUsers"
               >
                 <a-select-option :value="''">Tất cả trạng thái</a-select-option>
@@ -356,6 +361,7 @@ onMounted(() => {
           <template v-if="column.dataIndex === 'userAdminStatus'">
             <a-switch
               :checked="record.userAdminStatus === 1"
+              :disabled="record.isMySelf"
               class="me-2"
               @change="handleChangeStatus(record)"
             />
@@ -365,7 +371,7 @@ onMounted(() => {
           </template>
 
           <template v-else-if="column.key === 'actions'">
-            <a-tooltip title="Sửa ban đào tạo">
+            <a-tooltip title="Chỉnh sửa thông tin">
               <a-button type="text" class="btn-outline-info me-2" @click="handleEditUser(record)"
                 ><EditFilled
               /></a-button>
@@ -400,6 +406,8 @@ onMounted(() => {
       title="Thêm Ban đào tạo"
       @ok="handleAddUser"
       :okButtonProps="{ loading: modalAddLoading }"
+      @cancel="clearNewUser"
+      @close="clearNewUser"
     >
       <a-form layout="vertical">
         <a-form-item label="Mã ban đào tạo" required>

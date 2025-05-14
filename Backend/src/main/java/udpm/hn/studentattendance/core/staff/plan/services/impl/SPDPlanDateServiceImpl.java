@@ -168,7 +168,9 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
 
         StatusType requiredIp = StatusType.fromKey(request.getRequiredIp());
         StatusType requiredLocation = StatusType.fromKey(request.getRequiredLocation());
-        if (requiredIp == null || requiredLocation == null) {
+        StatusType requiredCheckin = StatusType.fromKey(request.getRequiredCheckin());
+        StatusType requiredCheckout = StatusType.fromKey(request.getRequiredCheckout());
+        if (requiredIp == null || requiredLocation == null || requiredCheckin == null || requiredCheckout == null) {
             return RouterHelper.responseError("Điều kiện điểm danh không hợp lệ");
         }
 
@@ -182,6 +184,8 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
         planDate.setRoom(type == ShiftType.ONLINE ? null : request.getRoom());
         planDate.setRequiredIp(requiredIp);
         planDate.setRequiredLocation(requiredLocation);
+        planDate.setRequiredCheckin(requiredCheckin);
+        planDate.setRequiredCheckout(requiredCheckout);
         planDate.setDescription(request.getDescription());
         planDate.setLateArrival(request.getLateArrival());
 
@@ -270,7 +274,9 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
 
         StatusType requiredIp = StatusType.fromKey(request.getRequiredIp());
         StatusType requiredLocation = StatusType.fromKey(request.getRequiredLocation());
-        if (requiredIp == null || requiredLocation == null) {
+        StatusType requiredCheckin = StatusType.fromKey(request.getRequiredCheckin());
+        StatusType requiredCheckout = StatusType.fromKey(request.getRequiredCheckout());
+        if (requiredIp == null || requiredLocation == null || requiredCheckin == null || requiredCheckout == null) {
             return RouterHelper.responseError("Điều kiện điểm danh không hợp lệ");
         }
 
@@ -286,6 +292,8 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
         planDate.setRoom(type == ShiftType.ONLINE ? null : request.getRoom());
         planDate.setRequiredIp(requiredIp);
         planDate.setRequiredLocation(requiredLocation);
+        planDate.setRequiredCheckin(requiredCheckin);
+        planDate.setRequiredCheckout(requiredCheckout);
         planDate.setDescription(request.getDescription());
         planDate.setLateArrival(request.getLateArrival());
 

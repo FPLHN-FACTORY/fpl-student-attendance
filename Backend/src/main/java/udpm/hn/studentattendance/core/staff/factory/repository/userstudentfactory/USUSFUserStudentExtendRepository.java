@@ -79,7 +79,7 @@ public interface USUSFUserStudentExtendRepository extends UserStudentRepository 
 
         @Query(value = """
                         SELECT
-                        CASE WHEN COUNT(*) > 20 THEN 'FALSE' ELSE 'TRUE' END
+                        CASE WHEN COUNT(*) >= 20 THEN 'FALSE' ELSE 'TRUE' END
                         FROM
                         user_student_factory usf
                         WHERE

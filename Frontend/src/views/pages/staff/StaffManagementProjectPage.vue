@@ -233,6 +233,18 @@ const handleEditProject = (record) => {
     })
 }
 
+const handleShowDescription = (text) => {
+  Modal.info({
+    title: 'Mô tả dự án',
+    type: 'info',
+    content: text,
+    okText: 'Đóng',
+    okButtonProps: {
+      class: 'btn-gray',
+    },
+  })
+}
+
 // Cập nhật dự án
 const handleUpdateProject = () => {
   if (!detailProject.name) {
@@ -353,7 +365,7 @@ onMounted(() => {
         <a-card :bordered="false" class="cart">
           <template #title> <FilterFilled /> Bộ lọc </template>
           <div class="row g-2">
-            <div class="col-xxl-6 col-lg-8 col-md-10 col-sm-12">
+            <div class="col-md-12 col-sm-12">
               <div class="label-title">Từ khoá:</div>
               <a-input
                 v-model:value="filter.name"
@@ -367,7 +379,7 @@ onMounted(() => {
                 </template>
               </a-input>
             </div>
-            <div class="col-xxl-6 col-lg-8 col-md-10 col-sm-12">
+            <div class="col-lg-3 col-md-6 col-sm-6">
               <div class="label-title">Cấp dự án:</div>
               <a-select
                 v-model:value="filter.levelProjectId"
@@ -375,7 +387,6 @@ onMounted(() => {
                 allowClear
                 class="filter-select w-100"
                 :dropdownMatchSelectWidth="false"
-                :style="{ minWidth: '200px' }"
                 @change="fetchProjects"
               >
                 <a-select-option :value="null">Tất cả cấp dự án</a-select-option>
@@ -384,9 +395,8 @@ onMounted(() => {
                 </a-select-option>
               </a-select>
             </div>
-          </div>
-          <div class="row g-2 mt-2">
-            <div class="col-xxl-4 col-lg-6 col-md-8 col-sm-8">
+
+            <div class="col-lg-3 col-md-6 col-sm-6">
               <div class="label-title">Học kỳ:</div>
               <a-select
                 v-model:value="filter.semesterId"
@@ -394,7 +404,6 @@ onMounted(() => {
                 allowClear
                 class="filter-select w-100"
                 :dropdownMatchSelectWidth="false"
-                :style="{ minWidth: '200px' }"
                 @change="fetchProjects"
               >
                 <a-select-option :value="null">Tất cả học kỳ</a-select-option>
@@ -407,7 +416,7 @@ onMounted(() => {
                 </a-select-option>
               </a-select>
             </div>
-            <div class="col-xxl-4 col-lg-6 col-md-8 col-sm-8">
+            <div class="col-lg-3 col-md-6 col-sm-6">
               <div class="label-title">Môn học:</div>
               <a-select
                 v-model:value="filter.subjectId"
@@ -415,7 +424,6 @@ onMounted(() => {
                 allowClear
                 class="filter-select w-100"
                 :dropdownMatchSelectWidth="false"
-                :style="{ minWidth: '200px' }"
                 @change="fetchProjects"
               >
                 <a-select-option :value="null">Tất cả môn học</a-select-option>
@@ -424,7 +432,7 @@ onMounted(() => {
                 </a-select-option>
               </a-select>
             </div>
-            <div class="col-xxl-4 col-lg-6 col-md-8 col-sm-8">
+            <div class="col-lg-3 col-md-6 col-sm-6">
               <div class="label-title">Trạng thái:</div>
               <a-select
                 v-model:value="filter.status"
@@ -432,7 +440,6 @@ onMounted(() => {
                 allowClear
                 class="filter-select w-100"
                 :dropdownMatchSelectWidth="false"
-                :style="{ minWidth: '200px' }"
                 @change="fetchProjects"
               >
                 <a-select-option :value="null">Tất cả trạng thái</a-select-option>
@@ -484,6 +491,11 @@ onMounted(() => {
           >
             <template #bodyCell="{ column, record }">
               <!-- Hiển thị trạng thái -->
+              <template v-if="column.dataIndex === 'description' && record.description">
+                <a-typography-link @click="handleShowDescription(record.description)"
+                  >Chi tiết</a-typography-link
+                >
+              </template>
               <template v-if="column.dataIndex === 'status'">
                 <span class="nowrap">
                   <a-switch
@@ -509,9 +521,6 @@ onMounted(() => {
                     </a-button>
                   </a-tooltip>
                 </a-space>
-              </template>
-              <template v-else>
-                {{ record[column.dataIndex] }}
               </template>
             </template>
           </a-table>

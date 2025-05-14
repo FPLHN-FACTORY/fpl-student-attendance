@@ -1,7 +1,7 @@
 <script setup>
-import { FilterFilled, UnorderedListOutlined } from '@ant-design/icons-vue'
+import { FilterFilled, SearchOutlined, UnorderedListOutlined } from '@ant-design/icons-vue'
 import { ref, reactive, onMounted } from 'vue'
-import { message, Modal } from 'ant-design-vue'
+import { message } from 'ant-design-vue'
 import { useRoute } from 'vue-router'
 import requestAPI from '@/services/requestApiService'
 import { API_ROUTES_TEACHER } from '@/constants/teacherConstant'
@@ -25,8 +25,8 @@ const breadcrumb = ref([
     breadcrumbName: 'Giảng viên',
   },
   {
-    name: ROUTE_NAMES.MANAGEMENT_STUDENT,
-    breadcrumbName: 'Nhóm xưởng',
+    name: ROUTE_NAMES.MANAGEMENT_FACTORY,
+    breadcrumbName: 'Nhóm xưởng của tôi',
   },
   {
     name: ROUTE_NAMES.MANAGEMENT_STUDENT_FACTORY,
@@ -63,6 +63,12 @@ const columns = ref(
       key: 'studentName',
     },
     { title: 'Email', dataIndex: 'studentEmail', key: 'studentEmail' },
+    {
+      title: 'Số buổi đã nghỉ',
+      dataIndex: 'totalAbsentShift',
+      key: 'totalAbsentShift',
+      align: 'center',
+    },
     {
       title: 'Trạng thái',
       dataIndex: 'statusStudentFactory',
@@ -109,64 +115,17 @@ const handleTableChange = (pageInfo) => {
   fetchStudentFactory()
 }
 
-// Hàm xoá học sinh khỏi nhóm xưởng
-
-const toggleStatusStudentFactory = (record) => {
-  Modal.confirm({
-    title: 'Xác nhận đổi trạng thái',
-    content: `Bạn có chắc muốn thay đổi trạng thái của học sinh ${record.studentName}?`,
-    onOk() {
-      loadingStore.show()
-      requestAPI
-        .put(API_ROUTES_TEACHER.FETCH_DATA_STUDENT_FACTORY + '/' + record.studentFactoryId)
-        .then((response) => {
-          message.success(response.data.message || 'Trạng thái đã được cập nhật thành công')
-          fetchStudentFactory() // Làm mới danh sách sau khi đổi trạng thái
-        })
-        .catch((error) => {
-          message.error(error.data?.message || 'Lỗi khi đổi trạng thái sinh viên')
-        })
-        .finally(() => {
-          loadingStore.hide()
-        })
-    },
-  })
-}
-
-// <-- Thêm hàm changeFaceStudent
-// const changeFaceStudent = (record) => {
-//   Modal.confirm({
-//     title: 'Xác nhận đổi mặt',
-//     content: `Bạn có chắc muốn đổi mặt của học sinh ${record.studentName}?`,
-//     onOk() {
-//       loadingStore.show()
-//       // Giả sử record chứa studentId, nếu không hãy thay đổi cho phù hợp
-//       requestAPI
-//         .put(API_ROUTES_TEACHER.FETCH_DATA_STUDENT_FACTORY + '/change-face/' + record.studentId)
-//         .then((response) => {
-//           message.success(response.data.message || 'Đổi mặt học sinh thành công')
-//           fetchStudentFactory() // Làm mới danh sách sau khi đổi mặt
-//         })
-//         .catch((error) => {
-//           message.error(error.response?.data?.message || 'Lỗi khi đổi mặt học sinh')
-//         })
-//         .finally(() => {
-//           loadingStore.hide()
-//         })
-//     },
-//   })
-// }
-
 const handleClearFilter = () => {
-  // Clear all filter values
-  Object.keys(filter).forEach((key) => {
-    if (key !== 'factoryId') {
-      // Keep factoryId as it's from route
-      filter[key] = ''
-    }
-  })
-  pagination.current = 1
-  fetchStudentFactory()
+  // Preserve factoryId and reset only search filters
+  filter.searchQuery = '';
+  filter.status = '';
+
+  // Reset pagination
+  pagination.current = 1;
+  filter.page = 1;
+
+  // Refetch with cleared filters but preserved factoryId
+  fetchStudentFactory();
 }
 
 onMounted(() => {
@@ -181,24 +140,28 @@ onMounted(() => {
     <div class="row g-3">
       <div class="col-12">
         <a-card :bordered="false" class="cart mb-3">
-          <template #title> <FilterFilled /> Bộ lọc tìm kiếm </template>
+          <template #title> <FilterFilled /> Bộ lọc</template>
           <div class="row g-3 filter-container">
-            <div class="col-md-6 col-sm-6">
-              <label class="label-title">Từ khoá:</label>
+            <div class="col-md-8 col-sm-6">
+              <div class="label-title">Từ khoá:</div>
               <a-input
                 v-model:value="filter.searchQuery"
                 placeholder="Nhập mã, tên hoặc email học sinh"
                 allowClear
                 @change="fetchStudentFactory"
-              />
+              >
+                <template #prefix>
+                  <SearchOutlined />
+                </template>
+              </a-input>
             </div>
-            <div class="col-md-6 col-sm-6">
-              <label class="label-title">Trạng thái:</label>
+            <div class="col-md-4 col-sm-6">
+              <div class="label-title">Trạng thái:</div>
               <a-select
                 v-model:value="filter.status"
                 placeholder="Chọn trạng thái"
                 allowClear
-                style="width: 100%"
+                class="w-100"
                 @change="fetchStudentFactory"
               >
                 <a-select-option :value="''">Tất cả trạng thái</a-select-option>
@@ -244,15 +207,6 @@ onMounted(() => {
                 </template>
                 <!-- Hiển thị trạng thái -->
                 <template v-else-if="column.dataIndex === 'statusStudentFactory'">
-                  <span class="nowrap">
-                    <a-switch
-                      class="me-2"
-                      :checked="
-                        record.statusStudentFactory === 'ACTIVE' ||
-                        record.statusStudentFactory === 1
-                      "
-                    />
-                  </span>
                   <a-tag
                     :color="
                       record.statusStudentFactory === 'ACTIVE' || record.statusStudentFactory === 1
@@ -267,9 +221,10 @@ onMounted(() => {
                     }}
                   </a-tag>
                 </template>
-                <!-- Các cột khác -->
-                <template v-else>
-                  {{ record[column.dataIndex] }}
+                <template v-if="column.dataIndex === 'totalAbsentShift'">
+                  <a-tag :color="record.totalAbsentShift > 0 ? 'red' : 'green'">{{
+                    record.totalAbsentShift || 0
+                  }}</a-tag>
                 </template>
               </template>
               <!-- Các nút hành động -->

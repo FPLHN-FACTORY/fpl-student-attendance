@@ -8,6 +8,7 @@ import {
   EditFilled,
   DeleteFilled,
   EyeFilled,
+  ExclamationCircleOutlined,
 } from '@ant-design/icons-vue'
 import { message, Modal } from 'ant-design-vue'
 import requestAPI from '@/services/requestApiService'
@@ -77,6 +78,7 @@ const columns = ref(
       title: 'Điểm danh trễ',
       dataIndex: 'lateArrival',
       key: 'lateArrival',
+      align: 'center',
     },
     { title: 'Trạng thái', dataIndex: 'status', key: 'status' },
     { title: '', key: 'actions' },
@@ -116,6 +118,8 @@ const formData = reactive({
   room: null,
   requiredLocation: STATUS_TYPE.ENABLE,
   requiredIp: STATUS_TYPE.ENABLE,
+  requiredCheckin: STATUS_TYPE.ENABLE,
+  requiredCheckout: STATUS_TYPE.ENABLE,
   startDate: null,
   lateArrival: DEFAULT_LATE_ARRIVAL,
 })
@@ -317,6 +321,8 @@ const handleShowAdd = () => {
   formData.room = null
   formData.requiredLocation = STATUS_TYPE.ENABLE
   formData.requiredIp = STATUS_TYPE.ENABLE
+  formData.requiredCheckin = STATUS_TYPE.ENABLE
+  formData.requiredCheckout = STATUS_TYPE.ENABLE
   formData.lateArrival = DEFAULT_LATE_ARRIVAL
   formData.description = null
 }
@@ -340,8 +346,10 @@ const handleShowUpdate = (item) => {
   formData.link = item.link
   formData.room = item.room
   formData.type = String(item.type)
-  formData.requiredLocation = item.requiredLocation
-  formData.requiredIp = item.requiredIp
+  formData.requiredLocation = item.requiredLocation || STATUS_TYPE.DISABLE
+  formData.requiredIp = item.requiredIp || STATUS_TYPE.DISABLE
+  formData.requiredCheckin = item.requiredCheckin || STATUS_TYPE.DISABLE
+  formData.requiredCheckout = item.requiredCheckout || STATUS_TYPE.DISABLE
   formData.lateArrival = item.lateArrival
   formData.description = item.description
 }
@@ -581,35 +589,67 @@ watch(
         />
       </a-form-item>
       <a-form-item class="col-sm-12" label="Điều kiện điểm danh">
-        <div class="mt-2">
-          <a-switch
-            class="me-2"
-            :checked="formData.requiredIp === STATUS_TYPE.ENABLE"
-            @change="
-              formData.requiredIp =
-                formData.requiredIp === STATUS_TYPE.ENABLE
-                  ? STATUS_TYPE.DISABLE
-                  : STATUS_TYPE.ENABLE
-            "
-          />
-          <span :class="{ disabled: formData.requiredIp !== STATUS_TYPE.ENABLE }"
-            >Phải kết nối mạng trường</span
-          >
-        </div>
-        <div class="mt-3">
-          <a-switch
-            class="me-2"
-            :checked="formData.requiredLocation === STATUS_TYPE.ENABLE"
-            @change="
-              formData.requiredLocation =
-                formData.requiredLocation === STATUS_TYPE.ENABLE
-                  ? STATUS_TYPE.DISABLE
-                  : STATUS_TYPE.ENABLE
-            "
-          />
-          <span :class="{ disabled: formData.requiredLocation !== STATUS_TYPE.ENABLE }"
-            >Phải ở trong địa điểm cơ sở</span
-          >
+        <div class="row g-3">
+          <div class="col-sm-6">
+            <a-switch
+              class="me-2"
+              :checked="formData.requiredCheckin === STATUS_TYPE.ENABLE"
+              @change="
+                formData.requiredCheckin =
+                  formData.requiredCheckin === STATUS_TYPE.ENABLE
+                    ? STATUS_TYPE.DISABLE
+                    : STATUS_TYPE.ENABLE
+              "
+            />
+            <span :class="{ disabled: formData.requiredCheckin !== STATUS_TYPE.ENABLE }"
+              >Yêu cầu checkin</span
+            >
+          </div>
+          <div class="col-sm-6">
+            <a-switch
+              class="me-2"
+              :checked="formData.requiredCheckout === STATUS_TYPE.ENABLE"
+              @change="
+                formData.requiredCheckout =
+                  formData.requiredCheckout === STATUS_TYPE.ENABLE
+                    ? STATUS_TYPE.DISABLE
+                    : STATUS_TYPE.ENABLE
+              "
+            />
+            <span :class="{ disabled: formData.requiredCheckout !== STATUS_TYPE.ENABLE }"
+              >Yêu cầu checkout</span
+            >
+          </div>
+          <div class="col-sm-6">
+            <a-switch
+              class="me-2"
+              :checked="formData.requiredIp === STATUS_TYPE.ENABLE"
+              @change="
+                formData.requiredIp =
+                  formData.requiredIp === STATUS_TYPE.ENABLE
+                    ? STATUS_TYPE.DISABLE
+                    : STATUS_TYPE.ENABLE
+              "
+            />
+            <span :class="{ disabled: formData.requiredIp !== STATUS_TYPE.ENABLE }"
+              >Phải kết nối mạng trường</span
+            >
+          </div>
+          <div class="col-sm-6">
+            <a-switch
+              class="me-2"
+              :checked="formData.requiredLocation === STATUS_TYPE.ENABLE"
+              @change="
+                formData.requiredLocation =
+                  formData.requiredLocation === STATUS_TYPE.ENABLE
+                    ? STATUS_TYPE.DISABLE
+                    : STATUS_TYPE.ENABLE
+              "
+            />
+            <span :class="{ disabled: formData.requiredLocation !== STATUS_TYPE.ENABLE }"
+              >Phải ở trong địa điểm cơ sở</span
+            >
+          </div>
         </div>
       </a-form-item>
     </a-form>
@@ -626,7 +666,7 @@ watch(
               <div class="label-title">Từ khoá:</div>
               <a-input
                 v-model:value="dataFilter.keyword"
-                placeholder="Tìm theo mô tả..."
+                placeholder="Tìm theo nội dung..."
                 allowClear
               >
                 <template #prefix>
@@ -743,7 +783,9 @@ watch(
                   <a target="_blank" :href="record.link">Link</a>
                 </template>
                 <template v-if="column.dataIndex === 'lateArrival'">
-                  {{ `${record.lateArrival} phút` }}
+                  <a-tag color="gold">
+                    <ExclamationCircleOutlined /> {{ `${record.lateArrival} phút` }}
+                  </a-tag>
                 </template>
                 <template v-if="column.dataIndex === 'startDate'">
                   {{
@@ -787,7 +829,7 @@ watch(
                         <EditFilled />
                       </a-button>
                     </a-tooltip>
-                    <a-tooltip title="Xoá kế hoạch chi tiết">
+                    <a-tooltip title="Xoá ca học">
                       <a-button
                         class="btn-outline-danger border-0 ms-2"
                         @click="handleShowAlertDelete(record)"

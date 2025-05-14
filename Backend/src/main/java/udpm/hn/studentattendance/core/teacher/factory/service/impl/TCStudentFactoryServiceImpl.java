@@ -25,11 +25,8 @@ import java.util.Optional;
 @RequiredArgsConstructor
 @Validated
 public class TCStudentFactoryServiceImpl implements TCStudentFactoryService {
+
     private final TCStudentFactoryExtendRepository teacherStudentFactoryExtendRepository;
-
-    private final TCUserStudentExtendRepository userStudentRepository;
-
-    private final SessionHelper sessionHelper;
 
     @Override
     public ResponseEntity<?> getAllStudentFactory(TCStudentFactoryRequest studentRequest) {
@@ -67,48 +64,5 @@ public class TCStudentFactoryServiceImpl implements TCStudentFactoryService {
                         null),
                 HttpStatus.BAD_REQUEST);
     }
-
-    @Override
-    public ResponseEntity<?> changeStatusStudentFactory(String studentFactoryId) {
-        Optional<UserStudentFactory> userStudentFactory = teacherStudentFactoryExtendRepository
-                .findById(studentFactoryId);
-
-        boolean isExistsShift = teacherStudentFactoryExtendRepository
-                .isStudentExistsShift(
-                        sessionHelper.getFacilityId(),
-                        userStudentFactory.get().getFactory().getId(),
-                        userStudentFactory.get().getId());
-
-        if (isExistsShift) {
-            return new ResponseEntity<>(
-                    new ApiResponse(
-                            RestApiStatus.ERROR,
-                            "Đổi trạng thái sinh viên thất bại: Sinh viên  tồn tại ở ca khác",
-                            null),
-                    HttpStatus.BAD_REQUEST);
-        }
-
-        if (userStudentFactory.isPresent()) {
-            UserStudentFactory userStudentPresent = userStudentFactory.get();
-            userStudentPresent.setStatus(userStudentPresent.getStatus().equals(EntityStatus.ACTIVE)
-                    ? EntityStatus.INACTIVE
-                    : EntityStatus.ACTIVE);
-            teacherStudentFactoryExtendRepository.save(userStudentPresent);
-            return new ResponseEntity<>(
-                    new ApiResponse(
-                            RestApiStatus.SUCCESS,
-                            "Thay đổi trạng thái thành công",
-                            null),
-                    HttpStatus.OK);
-        }
-        return new ResponseEntity<>(
-                new ApiResponse(
-                        RestApiStatus.ERROR,
-                        "Sinh viên không tồn tại",
-                        null),
-                HttpStatus.BAD_REQUEST);
-    }
-
-
 
 }
