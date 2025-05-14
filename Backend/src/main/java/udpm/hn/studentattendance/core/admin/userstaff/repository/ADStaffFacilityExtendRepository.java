@@ -18,5 +18,5 @@ public interface ADStaffFacilityExtendRepository extends FacilityRepository {
                                         """)
     List<Facility> getFacility(EntityStatus status);
 
-    Facility getFacilityByCode(String code);
+    Facility getFacilityByCodeAndStatus(String code, EntityStatus status);
 }

@@ -339,9 +339,12 @@ const configImportExcel = {
 }
 
 const handleClearFilter = () => {
-  // Clear all filter values
-  Object.keys(filter).forEach((key) => {
-    filter[key] = ''
+  Object.assign(filter, {
+    factoryName: '',
+    status: '',
+    idProject: null,
+    idStaff: null,
+    idSemester: null,
   })
   pagination.current = 1
   fetchFactories()
@@ -357,6 +360,15 @@ const handleShowDescription = (text) => {
       class: 'btn-gray',
     },
   })
+}
+
+const handleShowModalAdd = () => {
+  newFactory.factoryDescription = null
+  newFactory.factoryName = null
+  newFactory.idProject = null
+  newFactory.idUserStaff = null
+
+  modalAdd.value = true
 }
 
 onMounted(() => {
@@ -527,6 +539,7 @@ onMounted(() => {
                     (option.label || '').toLowerCase().includes(input.toLowerCase())
                 "
               >
+                <a-select-option :value="null">Tất cả giảng viên</a-select-option>
                 <a-select-option
                   v-for="staff in staffs"
                   :key="staff.id"
@@ -551,6 +564,7 @@ onMounted(() => {
                     (option.label || '').toLowerCase().includes(input.toLowerCase())
                 "
               >
+                <a-select-option :value="null">Tất cả kỳ học</a-select-option>
                 <a-select-option
                   v-for="semester in semesters"
                   :key="semester.id"
@@ -591,7 +605,9 @@ onMounted(() => {
               </a-button>
             </a-tooltip>
             <a-tooltip title="Thêm nhóm xưởng">
-              <a-button type="primary" @click="modalAdd = true"> <PlusOutlined /> Thêm </a-button>
+              <a-button type="primary" @click="handleShowModalAdd">
+                <PlusOutlined /> Thêm
+              </a-button>
             </a-tooltip>
           </div>
           <a-table

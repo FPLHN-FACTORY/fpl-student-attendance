@@ -434,6 +434,9 @@ hr {
 }
 
 .ant-card {
+  .ant-card-head-title {
+    white-space: normal;
+  }
   &:not(.ant-card-bordered) {
     box-shadow: none;
     box-shadow:

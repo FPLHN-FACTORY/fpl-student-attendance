@@ -116,6 +116,8 @@ const handleTableChange = (pageInfo) => {
 }
 
 const showAddModal = (isOpen) => {
+  newSubject.code = null
+  newSubject.name = null
   modalAdd.value = isOpen
 }
 
@@ -135,8 +137,7 @@ const handleAddSubject = () => {
       message.success(response.data.message || 'Thêm bộ môn thành công')
       modalAdd.value = false
       fetchSubjects()
-      newSubject.name = ''
-      newSubject.code = ''
+      clearFormAdd()
     })
     .catch((error) => {
       message.error(error.response?.data?.message || 'Lỗi khi thêm bộ môn')
@@ -144,6 +145,11 @@ const handleAddSubject = () => {
     .finally(() => {
       loadingStore.hide()
     })
+}
+
+const clearFormAdd = () => {
+  newSubject.name = ''
+  newSubject.code = ''
 }
 
 const handleDetailSubject = (record) => {
@@ -402,6 +408,8 @@ onMounted(() => {
       title="Thêm bộ môn"
       @ok="handleAddSubject"
       :okButtonProps="{ loading: loadingStore.isLoading }"
+      @cancel="clearFormAdd"
+      @close="clearFormAdd"
     >
       <a-form layout="vertical">
         <a-form-item label="Mã bộ môn" required>
