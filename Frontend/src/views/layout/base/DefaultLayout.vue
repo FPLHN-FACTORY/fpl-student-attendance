@@ -1,5 +1,5 @@
 <script setup>
-import { h, onMounted, reactive, ref, watch } from 'vue'
+import { h, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
 import {
   MenuUnfoldOutlined,
   MenuFoldOutlined,
@@ -26,6 +26,9 @@ import { message } from 'ant-design-vue'
 
 const router = useRouter()
 const route = useRoute()
+
+const screenWidth = ref(window.innerWidth)
+const screenHeight = ref(window.innerHeight)
 
 const collapsed = ref(false)
 const authStore = useAuthStore()
@@ -134,11 +137,27 @@ const handleSwitchRole = () => {
   router.push({ name: GLOBAL_ROUTE_NAMES.SWITCH_ROLE })
 }
 
+const handleMenuClick = () => {
+  if (screenWidth.value <= 912) {
+    collapsed.value = false
+  }
+}
+
+const handleResizeScreen = () => {
+  screenWidth.value = window.innerWidth
+  screenHeight.value = window.innerHeight
+}
+
 onMounted(() => {
+  window.addEventListener('resize', handleResizeScreen)
   if (!authStore.user?.facilityID) {
     return router.push({ name: GLOBAL_ROUTE_NAMES.STUDENT_REGISTER_PAGE })
   }
   applicationStore.loadNotification()
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', handleResizeScreen)
 })
 
 watch(
@@ -247,7 +266,12 @@ watch(
       <div class="logo">
         <img :src="imgLogoUdpm" />
       </div>
-      <a-menu v-model:selectedKeys="applicationStore.selectedKeys" theme="light" mode="inline">
+      <a-menu
+        v-model:selectedKeys="applicationStore.selectedKeys"
+        theme="light"
+        mode="inline"
+        @click="handleMenuClick"
+      >
         <slot></slot>
       </a-menu>
     </a-layout-sider>
