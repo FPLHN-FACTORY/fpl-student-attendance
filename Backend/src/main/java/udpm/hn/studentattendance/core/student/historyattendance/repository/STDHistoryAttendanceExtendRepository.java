@@ -34,8 +34,6 @@ public interface STDHistoryAttendanceExtendRepository extends FactoryRepository 
                         FROM attendance at
                         LEFT JOIN plan_date pdt ON at.id_plan_date = pdt.id
                         WHERE at.id_user_student = us.id
-                        AND DATE(FROM_UNIXTIME((pd.start_date + (pd.late_arrival * 60000)) / 1000))
-                        >= DATE(FROM_UNIXTIME(at.updated_at / 1000))
                         AND pdt.shift = pd.shift
                         AND at.id_plan_date = pd.id
                         AND at.attendance_status = 2
@@ -47,8 +45,6 @@ public interface STDHistoryAttendanceExtendRepository extends FactoryRepository 
                         FROM attendance at
                         LEFT JOIN plan_date pdt ON at.id_plan_date = pdt.id
                         WHERE at.id_user_student = us.id
-                        AND DATE(FROM_UNIXTIME((pd.start_date + pd.end_date + ( 2 * pd.late_arrival * 60000)) / 1000))
-                        >= DATE(FROM_UNIXTIME(at.updated_at / 1000)) 
                         AND pdt.shift = pd.shift
                         AND at.id_plan_date = pd.id
                         AND at.attendance_status = 3
@@ -68,7 +64,7 @@ public interface STDHistoryAttendanceExtendRepository extends FactoryRepository 
                 LEFT JOIN plan pl ON pl.id_project = p.id
                 LEFT JOIN plan_factory pf ON pf.id_factory = ft.id
                 LEFT JOIN plan_date pd ON pd.id_plan_factory = pf.id
-                LEFT JOIN attendance ad ON ad.id_plan_date = pd.id
+                JOIN attendance ad ON ad.id_plan_date = pd.id
             WHERE
                 us.id = :userStudentId
                 AND ft.status = 1
@@ -92,7 +88,7 @@ public interface STDHistoryAttendanceExtendRepository extends FactoryRepository 
                 LEFT JOIN plan pl ON pl.id_project = p.id
                 LEFT JOIN plan_factory pf ON pf.id_factory = ft.id
                 LEFT JOIN plan_date pd ON pd.id_plan_factory = pf.id
-                LEFT JOIN attendance ad ON ad.id_plan_date = pd.id
+                JOIN attendance ad ON ad.id_plan_date = pd.id
             WHERE
                 us.id = :userStudentId
                 AND ft.status = 1
@@ -129,8 +125,6 @@ public interface STDHistoryAttendanceExtendRepository extends FactoryRepository 
                         FROM attendance at
                         LEFT JOIN plan_date pdt ON at.id_plan_date = pdt.id
                         WHERE at.id_user_student = us.id
-                        AND DATE(FROM_UNIXTIME((pd.start_date + (pd.late_arrival * 60000)) / 1000))
-                        >= DATE(FROM_UNIXTIME(at.updated_at / 1000))
                         AND pdt.shift = pd.shift
                         AND at.id_plan_date = pd.id
                         AND at.attendance_status = 2
@@ -142,8 +136,6 @@ public interface STDHistoryAttendanceExtendRepository extends FactoryRepository 
                         FROM attendance at
                         LEFT JOIN plan_date pdt ON at.id_plan_date = pdt.id
                         WHERE at.id_user_student = us.id
-                        AND DATE(FROM_UNIXTIME((pd.start_date + pd.end_date ( 2 * pd.late_arrival * 60000)) / 1000))
-                        >= DATE(FROM_UNIXTIME(at.updated_at / 1000)) 
                         AND pdt.shift = pd.shift
                         AND at.id_plan_date = pd.id
                         AND at.attendance_status = 3
@@ -163,7 +155,7 @@ public interface STDHistoryAttendanceExtendRepository extends FactoryRepository 
                 LEFT JOIN plan pl ON pl.id_project = p.id
                 LEFT JOIN plan_factory pf ON pf.id_factory = ft.id
                 LEFT JOIN plan_date pd ON pd.id_plan_factory = pf.id
-                LEFT JOIN attendance ad ON ad.id_plan_date = pd.id
+                JOIN attendance ad ON ad.id_plan_date = pd.id
             WHERE
                 us.id = :userStudentId
                 AND ft.status = 1

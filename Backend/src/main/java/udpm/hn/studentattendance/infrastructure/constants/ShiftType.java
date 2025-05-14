@@ -21,7 +21,7 @@ public enum ShiftType {
         return key;
     }
 
-    public static ShiftType fromKey(int key) {
+    public static ShiftType fromKey(Integer key) {
         return ENUM_MAP.getOrDefault(key, null);
     }
 }

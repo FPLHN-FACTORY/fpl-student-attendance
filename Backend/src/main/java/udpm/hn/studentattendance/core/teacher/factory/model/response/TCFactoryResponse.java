@@ -18,4 +18,8 @@ public interface TCFactoryResponse {
 
     Integer getFactoryStatus();
 
+    Integer getTotalShift();
+
+    Integer getTotalStudent();
+
 }

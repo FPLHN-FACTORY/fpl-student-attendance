@@ -15,14 +15,38 @@ import udpm.hn.studentattendance.repositories.UserStudentFactoryRepository;
 import java.util.Optional;
 
 @Repository
-public interface USStudentFactoryRepository extends UserStudentFactoryRepository {
+public interface USStudentFactoryExtendRepository extends UserStudentFactoryRepository {
 
     @Query(value = """
+            WITH cte_total_shift AS (
+                SELECT COUNT(DISTINCT pd.id) AS total_shift
+                FROM plan_date pd
+                JOIN plan_factory pf ON pd.id_plan_factory = pf.id
+                WHERE
+                    pd.status = 1 AND
+                    pf.status = 1 AND
+                    pd.id_plan_factory = pf.id AND
+                    pf.id_factory = :factoryId AND
+                    pd.end_date <= UNIX_TIMESTAMP(NOW()) * 1000
+            )
             SELECT
                 usf.id AS studentFactoryId,
                 us.id AS studentId,
                 ft.id AS factoryId,
                 us.code AS studentCode,
+                 (cte_ts.total_shift - (
+                        SELECT COUNT(a.id)
+                        FROM attendance a
+                        JOIN plan_date pd ON a.id_plan_date = pd.id
+                        JOIN plan_factory pf ON pd.id_plan_factory = pf.id
+                        WHERE
+                            pd.status = 1 AND
+                            pf.status = 1 AND
+                            a.attendance_status = 3 AND
+                            pf.id_factory = ft.id AND
+                            a.id_user_student = usf.id_user_student
+                    )
+                ) AS totalAbsentShift,
                 us.name AS studentName,
                 us.email AS studentEmail,
                 usf.status AS statusStudentFactory,
@@ -30,6 +54,7 @@ public interface USStudentFactoryRepository extends UserStudentFactoryRepository
             FROM user_student_factory usf
             LEFT JOIN user_student us ON us.id = usf.id_user_student
             LEFT JOIN factory ft ON ft.id = usf.id_factory
+            CROSS JOIN cte_total_shift cte_ts
             WHERE
                 ft.id = :factoryId
                 AND ft.status = 1
@@ -47,6 +72,7 @@ public interface USStudentFactoryRepository extends UserStudentFactoryRepository
             FROM user_student_factory usf
             LEFT JOIN user_student us ON us.id = usf.id_user_student
             LEFT JOIN factory ft ON ft.id = usf.id_factory
+            CROSS JOIN cte_total_shift cte_ts
             WHERE
                 ft.id = :factoryId
                 AND ft.status = 1
@@ -105,6 +131,11 @@ public interface USStudentFactoryRepository extends UserStudentFactoryRepository
                     pd.required_location,
                     pd.required_ip,
                     CASE
+                            WHEN UNIX_TIMESTAMP(NOW()) * 1000 > pd.start_date
+                            THEN COALESCE(a.attendance_status, 0)
+                            ELSE NULL
+                    END AS statusAttendance,
+                    CASE
                         WHEN UNIX_TIMESTAMP(NOW()) * 1000 > pd.start_date
                         THEN 'DA_DIEN_RA'
                         ELSE 'CHUA_DIEN_RA'
@@ -116,6 +147,7 @@ public interface USStudentFactoryRepository extends UserStudentFactoryRepository
                 JOIN subject_facility sf ON sf.id = p.id_subject_facility
                 JOIN user_student_factory usf ON usf.id_factory = f.id
                 JOIN user_student us ON us.id = usf.id_user_student
+                LEFT JOIN attendance a ON pd.id = a.id_plan_date AND a.id_user_student = usf.id_user_student
                 WHERE 
                     (:#{#request.startDate} IS NULL OR (
                         DAY(FROM_UNIXTIME(pd.start_date / 1000)) = DAY(FROM_UNIXTIME(:#{#request.startDate} / 1000)) AND
@@ -141,6 +173,7 @@ public interface USStudentFactoryRepository extends UserStudentFactoryRepository
                 JOIN subject_facility sf ON sf.id = p.id_subject_facility
                 JOIN user_student_factory usf ON usf.id_factory = f.id
                 JOIN user_student us ON us.id = usf.id_user_student
+                LEFT JOIN attendance a ON pd.id = a.id_plan_date AND a.id_user_student = usf.id_user_student
                 WHERE 
                     (:#{#request.startDate} IS NULL OR (
                         DAY(FROM_UNIXTIME(pd.start_date / 1000)) = DAY(FROM_UNIXTIME(:#{#request.startDate} / 1000)) AND

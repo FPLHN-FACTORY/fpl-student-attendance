@@ -11,6 +11,7 @@ import {
   SyncOutlined,
   UnorderedListOutlined,
   FilterFilled,
+  SearchOutlined,
 } from '@ant-design/icons-vue'
 import requestAPI from '@/services/requestApiService'
 import { ROUTE_NAMES } from '@/router/adminRoute'
@@ -339,23 +340,27 @@ onMounted(() => {
           <template #title> <FilterFilled /> Bộ lọc </template>
           <div class="row g-3 filter-container">
             <!-- Input tìm kiếm theo mã, tên, email -->
-            <a-col class="col-md-6 col-sm-6">
-              <div class="label-title">Tìm kiếm theo mã, tên, email :</div>
+            <a-col class="col-lg-12 col-md-12 col-sm-12">
+              <div class="label-title">Từ khoá:</div>
               <a-input
                 v-model:value="filter.searchQuery"
                 placeholder="Tìm kiếm theo mã, tên, email"
                 allowClear
                 @change="fetchStaffs"
-              />
+              >
+                <template #prefix>
+                  <SearchOutlined />
+                </template>
+              </a-input>
             </a-col>
             <!-- Combobox trạng thái -->
-            <a-col class="col-md-6 col-sm-6">
-              <div class="label-title">Trạng thái :</div>
+            <a-col class="col-lg-4 col-md-4 col-sm-12">
+              <div class="label-title">Trạng thái:</div>
               <a-select
                 v-model:value="filter.status"
                 placeholder="Chọn trạng thái"
                 allowClear
-                style="width: 100%"
+                class="w-100"
                 @change="fetchStaffs"
               >
                 <a-select-option :value="''">Tất cả trạng thái</a-select-option>
@@ -365,13 +370,13 @@ onMounted(() => {
             </a-col>
 
             <!-- Combobox vai trò -->
-            <a-col class="col-md-6 col-sm-6">
+            <a-col class="col-lg-4 col-md-4 col-sm-6">
               <div class="label-title">Vai trò:</div>
               <a-select
                 v-model:value="filter.roleCodeFilter"
                 placeholder="Chọn vai trò"
                 allowClear
-                style="width: 100%"
+                class="w-100"
                 @change="fetchStaffs"
               >
                 <a-select-option :value="''">Tất cả vai trò</a-select-option>
@@ -380,13 +385,13 @@ onMounted(() => {
               </a-select>
             </a-col>
             <!-- Combobox cơ sở -->
-            <a-col class="col-md-6 col-sm-6">
-              <div class="label-title">Cơ sở :</div>
+            <a-col class="col-lg-4 col-md-4 col-sm-6">
+              <div class="label-title">Cơ sở:</div>
               <a-select
                 v-model:value="filter.idFacility"
                 placeholder="Chọn cơ sở"
                 allowClear
-                style="width: 100%"
+                class="w-100"
                 @change="fetchStaffs"
               >
                 <a-select-option :value="''">Tất cả cơ sở</a-select-option>
@@ -485,6 +490,8 @@ onMounted(() => {
       title="Thêm nhân viên"
       @ok="handleAddStaff"
       :okButtonProps="{ loading: modalAddLoading }"
+      @cancel="clearNewStaffForm"
+      @close="clearNewStaffForm"
     >
       <a-form layout="vertical">
         <a-form-item label="Mã nhân viên" required>

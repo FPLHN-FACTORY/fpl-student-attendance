@@ -1,19 +1,16 @@
 <script setup>
 import { ref, reactive, onMounted, watch } from 'vue'
 import { message, Modal } from 'ant-design-vue'
-import router from '@/router'
 import requestAPI from '@/services/requestApiService'
 import { API_ROUTES_STAFF } from '@/constants/staffConstant'
 import { API_ROUTES_EXCEL, GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
 import {
   PlusOutlined,
-  DeleteOutlined,
-  SyncOutlined,
   DeleteFilled,
   EyeFilled,
   FilterFilled,
   UnorderedListOutlined,
-  UserDeleteOutlined,
+  SearchOutlined,
 } from '@ant-design/icons-vue'
 import { useRoute } from 'vue-router'
 import {
@@ -71,6 +68,12 @@ const columns = ref(
     { title: 'Mã sinh viên', dataIndex: 'studentCode', key: 'studentCode' },
     { title: 'Tên sinh viên', dataIndex: 'studentName', key: 'studentName' },
     { title: 'Email sinh viên', dataIndex: 'studentEmail', key: 'studentEmail' },
+    {
+      title: 'Số buổi đã nghỉ',
+      dataIndex: 'totalAbsentShift',
+      key: 'totalAbsentShift',
+      align: 'center',
+    },
     { title: 'Trạng thái', dataIndex: 'statusStudentFactory', key: 'statusStudentFactory' },
     { title: 'Chi tiết', key: 'action' },
   ]),
@@ -198,7 +201,6 @@ const fetchAllStudents = () => {
 }
 
 const handleStudentTableChange = (paginationObj) => {
-  console.log('Student Table Change:', paginationObj)
   studentPagination.current = paginationObj.current
   studentPagination.pageSize = paginationObj.pageSize
   studentFilter.page = paginationObj.current
@@ -298,7 +300,6 @@ const handleTableChange = (pageInfo) => {
   // Cập nhật current và pageSize
   pagination.current = pageInfo.current
   pagination.pageSize = pageInfo.pageSize
-  // Nếu muốn đồng bộ với filter, bạn có thể cập nhật:
   filter.page = pageInfo.current
   filter.pageSize = pageInfo.pageSize
   fetchStudentFactories()
@@ -376,6 +377,7 @@ const shiftColumns = ref(
     { title: 'Ngày học', dataIndex: 'startDate', key: 'startDate' },
     { title: 'Thời gian', key: 'time' },
     { title: 'Ca học', dataIndex: 'shift', key: 'shift' },
+    { title: 'Trạng thái điểm danh', dataIndex: 'statusAttendance', key: 'statusAttendance' },
     { title: 'Trạng thái', dataIndex: 'status', key: 'status' },
   ]),
 )
@@ -438,9 +440,11 @@ watch(isAddStudentModalVisible, (newVal) => {
 })
 
 const handleClearFilter = () => {
-  // Clear all filter values
-  Object.keys(filter).forEach((key) => {
-    filter[key] = ''
+  Object.assign(filter, {
+    searchQuery: '',
+    status: '',
+    page: 1,
+    pageSize: 5
   })
   pagination.current = 1
   fetchStudentFactories()
@@ -462,25 +466,29 @@ onMounted(() => {
         <a-card :bordered="false" class="cart mb-3">
           <template #title> <FilterFilled /> Bộ lọc </template>
           <div class="row g-3 filter-container">
-            <div class="col-6">
-              <div class="label-title">Tìm kiếm mã, tên, email:</div>
+            <div class="col-md-6 col-sm-12">
+              <div class="label-title">Từ khoá:</div>
               <a-input
                 v-model:value="filter.searchQuery"
-                placeholder="Mã, tên hoặc email sinh viên"
+                placeholder="Tìm theo mã, tên hoặc email sinh viên"
                 allowClear
                 @change="fetchStudentFactories"
-              />
+              >
+                <template #prefix>
+                  <SearchOutlined />
+                </template>
+              </a-input>
             </div>
-            <div class="col-6">
+            <div class="col-md-6 col-sm-12">
               <div class="label-title">Trạng thái:</div>
               <a-select
                 v-model:value="filter.status"
                 placeholder="Chọn trạng thái"
                 allowClear
-                style="width: 100%"
+                class="w-100"
                 @change="fetchStudentFactories"
               >
-                <a-select-option :value="''">Tất cả trạng thái</a-select-option>
+                <a-select-option :value="null">Tất cả trạng thái</a-select-option>
                 <a-select-option value="1">Đang học</a-select-option>
                 <a-select-option value="0">Ngưng học</a-select-option>
               </a-select>
@@ -526,7 +534,7 @@ onMounted(() => {
             <template #bodyCell="{ column, record, index }">
               <template v-if="column.dataIndex">
                 <template v-if="column.dataIndex === 'rowNumber'">
-                  {{ index + 1 }}
+                  {{ (pagination.current - 1) * pagination.pageSize + index + 1 }}
                 </template>
                 <template v-else-if="column.dataIndex === 'statusStudentFactory'">
                   <span class="nowrap">
@@ -554,6 +562,11 @@ onMounted(() => {
                       }}
                     </a-tag>
                   </span>
+                </template>
+                <template v-if="column.dataIndex === 'totalAbsentShift'">
+                  <a-tag :color="record.totalAbsentShift > 0 ? 'red' : 'green'">{{
+                    record.totalAbsentShift || 0
+                  }}</a-tag>
                 </template>
               </template>
               <template v-else-if="column.key === 'action'">
@@ -618,21 +631,21 @@ onMounted(() => {
       @cancel="closeShiftModal"
     >
       <div class="row g-3 filter-container mb-3">
-        <div class="col-6">
-          <div class="label-title">Ngày học:</div>
+        <div class="col-md-6">
           <a-date-picker
+            class="w-100"
+            placeholder="Ngày học"
             v-model:value="shiftFilter.startDate"
             format="YYYY-MM-DD"
             @change="fetchShiftDetails"
           />
         </div>
-        <div class="col-6">
-          <div class="label-title">Trạng thái:</div>
+        <div class="col-md-6">
           <a-select
             v-model:value="shiftFilter.status"
             placeholder="Chọn trạng thái"
             allowClear
-            style="width: 100%"
+            class="w-100"
             @change="fetchShiftDetails"
           >
             <a-select-option :value="''">Tất cả trạng thái</a-select-option>
@@ -652,8 +665,11 @@ onMounted(() => {
         @change="handleShiftTableChange"
         :scroll="{ x: 'auto' }"
       >
-        <template #bodyCell="{ column, record }">
-          <template v-if="column.dataIndex === 'startDate'">
+        <template #bodyCell="{ column, record, index }">
+          <template v-if="column.dataIndex === 'orderNumber'">
+            {{ (shiftPagination.current - 1) * shiftPagination.pageSize + index + 1 }}
+          </template>
+          <template v-else-if="column.dataIndex === 'startDate'">
             {{
               `${dayOfWeek(record.startDate)}, ${formatDate(record.startDate, DEFAULT_DATE_FORMAT)}`
             }}
@@ -673,6 +689,16 @@ onMounted(() => {
                   .join(', ')
               }}
               - {{ TYPE_SHIFT[record.type] }}
+            </a-tag>
+          </template>
+          <template v-else-if="column.dataIndex === 'statusAttendance'">
+            <a-tag :color="record.statusAttendance === 3 ?  'success'
+              : record.statusAttendance === null
+              ? null : 'error'">
+              {{ record.statusAttendance === 3 ? 'Có mặt'
+              : record.statusAttendance === null
+              ? ''
+              : 'Vắng mặt' }}
             </a-tag>
           </template>
           <template v-else-if="column.dataIndex === 'status'">
@@ -717,7 +743,7 @@ onMounted(() => {
         <template #bodyCell="{ column, record, index }">
           <template v-if="column.dataIndex">
             <template v-if="column.dataIndex === 'rowNumber'">
-              {{ index + 1 }}
+              {{ (studentPagination.current - 1) * studentPagination.pageSize + index + 1 }}
             </template>
             <template v-else>
               {{ record[column.dataIndex] }}

@@ -12,6 +12,7 @@ import {
   UnorderedListOutlined,
   FilterFilled,
   AlignLeftOutlined,
+  SearchOutlined,
 } from '@ant-design/icons-vue'
 import { ROUTE_NAMES } from '@/router/staffRoute'
 import { DEFAULT_PAGINATION } from '@/constants'
@@ -338,12 +339,27 @@ const configImportExcel = {
 }
 
 const handleClearFilter = () => {
-  // Clear all filter values
-  Object.keys(filter).forEach((key) => {
-    filter[key] = ''
+  Object.assign(filter, {
+    factoryName: '',
+    status: '',
+    idProject: null,
+    idStaff: null,
+    idSemester: null,
   })
   pagination.current = 1
   fetchFactories()
+}
+
+const handleShowDescription = (text) => {
+  Modal.info({
+    title: 'Mô tả nhóm xưởng',
+    type: 'info',
+    content: text,
+    okText: 'Đóng',
+    okButtonProps: {
+      class: 'btn-gray',
+    },
+  })
 }
 
 onMounted(() => {
@@ -357,7 +373,13 @@ onMounted(() => {
 
 <template>
   <!-- Modal Thêm nhóm xưởng -->
-  <a-modal v-model:open="modalAdd" title="Thêm nhóm xưởng" @ok="submitAddFactory">
+  <a-modal
+    v-model:open="modalAdd"
+    title="Thêm nhóm xưởng"
+    @ok="submitAddFactory"
+    @cancel="clearData"
+    @close="clearData"
+  >
     <a-form :model="newFactory" layout="vertical">
       <a-form-item label="Tên nhóm xưởng" required>
         <a-input v-model:value="newFactory.factoryName" placeholder="-- Tên nhóm xưởng --" />
@@ -487,16 +509,20 @@ onMounted(() => {
           <template #title> <FilterFilled /> Bộ lọc </template>
           <div class="row g-2">
             <div class="col-md-6 col-sm-12">
-              <div class="label-title">Tìm kiếm tên xưởng:</div>
+              <div class="label-title">Từ khoá:</div>
               <a-input
                 v-model:value="filter.factoryName"
-                placeholder="Tên xưởng"
+                placeholder="Tìm theo tên nhóm xưởng"
                 allowClear
                 @change="onFilterChange"
                 class="w-100"
-              />
+              >
+                <template #prefix>
+                  <SearchOutlined />
+                </template>
+              </a-input>
             </div>
-            <div class="col-md-3 col-sm-9">
+            <div class="col-md-3 col-sm-6">
               <div class="label-title">Giảng viên:</div>
               <a-select
                 v-model:value="filter.idStaff"
@@ -510,6 +536,7 @@ onMounted(() => {
                     (option.label || '').toLowerCase().includes(input.toLowerCase())
                 "
               >
+                <a-select-option :value="null">Tất cả giảng viên</a-select-option>
                 <a-select-option
                   v-for="staff in staffs"
                   :key="staff.id"
@@ -520,7 +547,7 @@ onMounted(() => {
                 </a-select-option>
               </a-select>
             </div>
-            <div class="col-md-3 col-sm-9">
+            <div class="col-md-3 col-sm-6">
               <div class="label-title">Kỳ học:</div>
               <a-select
                 v-model:value="filter.idSemester"
@@ -534,6 +561,7 @@ onMounted(() => {
                     (option.label || '').toLowerCase().includes(input.toLowerCase())
                 "
               >
+                <a-select-option :value="null">Tất cả kỳ học</a-select-option>
                 <a-select-option
                   v-for="semester in semesters"
                   :key="semester.id"
@@ -617,8 +645,12 @@ onMounted(() => {
                     </a-tag>
                   </span>
                 </template>
-                <template v-else>
-                  {{ record[column.dataIndex] }}
+                <template
+                  v-if="column.dataIndex === 'factoryDescription' && record.factoryDescription"
+                >
+                  <a-typography-link @click="handleShowDescription(record.factoryDescription)"
+                    >Chi tiết</a-typography-link
+                  >
                 </template>
               </template>
               <template v-else-if="column.key === 'actions'">

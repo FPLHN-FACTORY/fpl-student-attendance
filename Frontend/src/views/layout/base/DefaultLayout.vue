@@ -16,7 +16,7 @@ import imgLogoUdpm from '@/assets/images/logo-udpm.png'
 import useAuthStore from '@/stores/useAuthStore'
 import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
 import { useRoute, useRouter } from 'vue-router'
-import { API_ROUTES_NOTIFICATION, GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
+import { API_ROUTES_NOTIFICATION, BASE_URL, GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
 import useApplicationStore from '@/stores/useApplicationStore'
 import ExcelUploadList from '@/components/excel/ExcelUploadList.vue'
 import { autoAddColumnWidth, formatDate } from '@/utils/utils'
@@ -64,7 +64,7 @@ const handleToggleNav = () => {
 
 const handleLogout = () => {
   authStore.logout()
-  window.location.reload()
+  window.location.href = BASE_URL
 }
 
 const handleShowAllNotification = () => {

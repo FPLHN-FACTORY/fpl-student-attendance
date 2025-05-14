@@ -13,6 +13,7 @@ import udpm.hn.studentattendance.entities.LevelProject;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
 import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
+import udpm.hn.studentattendance.infrastructure.common.repositories.CommonUserStudentRepository;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.utils.CodeGeneratorUtils;
 
@@ -21,6 +22,8 @@ import udpm.hn.studentattendance.utils.CodeGeneratorUtils;
 public class ADLevelProjectManagementServiceImpl implements ADLevelProjectManagementService {
 
     private final ADLevelProjectRepository repository;
+
+    private final CommonUserStudentRepository commonUserStudentRepository;
 
     @Override
     public ResponseEntity<?> getListLevelProject(ADLevelProjectSearchRequest request) {
@@ -79,7 +82,11 @@ public class ADLevelProjectManagementServiceImpl implements ADLevelProjectManage
             return RouterHelper.responseError("Không tìm thây cấp độ dự án muốn thay đổi trạng thái");
         }
         lv.setStatus(lv.getStatus() == EntityStatus.ACTIVE ? EntityStatus.INACTIVE : EntityStatus.ACTIVE);
-        return RouterHelper.responseSuccess("Chuyển trạng thái cấp độ dự án thành công", repository.save(lv));
+        LevelProject entity = repository.save(lv);
+        if (entity.getStatus() == EntityStatus.ACTIVE) {
+            commonUserStudentRepository.disableAllStudentDuplicateShiftByIdLevelProject(entity.getId());
+        }
+        return RouterHelper.responseSuccess("Chuyển trạng thái cấp độ dự án thành công", entity);
     }
 
 }
