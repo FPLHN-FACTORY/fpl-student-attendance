@@ -442,7 +442,7 @@ watch(
                   </a-tooltip>
                 </span>
                 <span v-else-if="record.status == ATTENDANCE_STATUS.CHECKIN.id">
-                  <span v-if="Date.now() > record.endDate + record.lateArriva * 60 * 1000">
+                  <span v-if="Date.now() > record.endDate + record.lateArrival * 60 * 1000">
                     <a-badge status="error" />
                     Đã quá giờ checkin cuối giờ</span
                   >
@@ -450,7 +450,7 @@ watch(
                     title="Checkin cuối giờ"
                     v-else-if="
                       Date.now() >= record.endDate &&
-                      Date.now() <= record.endDate + record.lateArriva * 60 * 1000
+                      Date.now() <= record.endDate + record.lateArrival * 60 * 1000
                     "
                   >
                     <a-button

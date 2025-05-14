@@ -61,7 +61,7 @@ const detailStudent = reactive({
 // Cấu hình cột cho bảng
 const columns = ref(
   autoAddColumnWidth([
-    { title: 'STT', dataIndex: 'rowNumber', key: 'rowNumber' },
+    { title: 'STT', dataIndex: 'index', key: 'index' },
     { title: 'Mã sinh viên', dataIndex: 'studentCode', key: 'studentCode' },
     { title: 'Tên sinh viên', dataIndex: 'studentName', key: 'studentName' },
     { title: 'Email', dataIndex: 'studentEmail', key: 'studentEmail' },
@@ -97,11 +97,12 @@ const fetchStudents = async () => {
     ])
 
     const list = stuRes.data.data.data // danh sách sinh viên
-    const flags = faceRes.data.data // mảng Boolean
-    // gán thêm hasFace vào từng object
-    students.value = list.map((s, idx) => ({
-      ...s,
-      hasFace: flags[idx] === 1,
+    const faceMap = faceRes.data.data // map studentId -> hasFace
+
+    // gán thêm hasFace vào từng object dựa trên studentId
+    students.value = list.map(student => ({
+      ...student,
+      hasFace: faceMap[student.studentId] || false
     }))
 
     // cập nhật tổng bản ghi
@@ -376,7 +377,10 @@ onMounted(() => {
             @change="handleTableChange"
             class="nowrap"
           >
-            <template #bodyCell="{ column, record }">
+            <template #bodyCell="{ column, record, index }">
+              <template v-if="column.dataIndex === 'index'">
+                {{ index + 1 + (pagination.current - 1) * pagination.pageSize }}
+              </template>
               <!-- Hiển thị trạng thái -->
               <template v-if="column.dataIndex === 'studentStatus'">
                 <span class="nowrap">

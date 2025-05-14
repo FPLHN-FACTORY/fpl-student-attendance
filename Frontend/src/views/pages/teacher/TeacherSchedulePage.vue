@@ -3,8 +3,6 @@ import { ref, onMounted, reactive, computed } from 'vue'
 import {
   FilterFilled,
   UnorderedListOutlined,
-  EyeFilled,
-  EditFilled,
   ExclamationCircleOutlined,
   CheckOutlined,
   DownloadOutlined,
@@ -15,7 +13,7 @@ import { API_ROUTES_TEACHER } from '@/constants/teacherConstant'
 import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
 import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
 import { ROUTE_NAMES } from '@/router/teacherRoute'
-import { DEFAULT_DATE_FORMAT, DEFAULT_PAGINATION, SHIFT, TYPE_SHIFT } from '@/constants'
+import { DEFAULT_DATE_FORMAT, DEFAULT_PAGINATION, TYPE_SHIFT } from '@/constants'
 import { formatDate, dayOfWeek, autoAddColumnWidth } from '@/utils/utils'
 import useLoadingStore from '@/stores/useLoadingStore'
 import dayjs from 'dayjs'
@@ -24,7 +22,7 @@ import router from '@/router'
 // Khởi tạo breadcrumb
 const breadcrumbStore = useBreadcrumbStore()
 const breadcrumb = ref([
-  { name: GLOBAL_ROUTE_NAMES.TEACHER_PAGE, breadcrumbName: 'Giáo viên' },
+  { name: GLOBAL_ROUTE_NAMES.TEACHER_PAGE, breadcrumbName: 'Giảng viên' },
   { name: ROUTE_NAMES.TEACHING_SCHEDULE, breadcrumbName: 'Lịch giảng dạy' },
 ])
 

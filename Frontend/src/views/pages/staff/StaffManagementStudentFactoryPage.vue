@@ -1,19 +1,16 @@
 <script setup>
 import { ref, reactive, onMounted, watch } from 'vue'
 import { message, Modal } from 'ant-design-vue'
-import router from '@/router'
 import requestAPI from '@/services/requestApiService'
 import { API_ROUTES_STAFF } from '@/constants/staffConstant'
 import { API_ROUTES_EXCEL, GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
 import {
   PlusOutlined,
-  DeleteOutlined,
-  SyncOutlined,
+
   DeleteFilled,
   EyeFilled,
   FilterFilled,
   UnorderedListOutlined,
-  UserDeleteOutlined,
 } from '@ant-design/icons-vue'
 import { useRoute } from 'vue-router'
 import {
@@ -198,7 +195,6 @@ const fetchAllStudents = () => {
 }
 
 const handleStudentTableChange = (paginationObj) => {
-  console.log('Student Table Change:', paginationObj)
   studentPagination.current = paginationObj.current
   studentPagination.pageSize = paginationObj.pageSize
   studentFilter.page = paginationObj.current
@@ -298,7 +294,6 @@ const handleTableChange = (pageInfo) => {
   // Cập nhật current và pageSize
   pagination.current = pageInfo.current
   pagination.pageSize = pageInfo.pageSize
-  // Nếu muốn đồng bộ với filter, bạn có thể cập nhật:
   filter.page = pageInfo.current
   filter.pageSize = pageInfo.pageSize
   fetchStudentFactories()
@@ -526,7 +521,7 @@ onMounted(() => {
             <template #bodyCell="{ column, record, index }">
               <template v-if="column.dataIndex">
                 <template v-if="column.dataIndex === 'rowNumber'">
-                  {{ index + 1 }}
+                  {{ (pagination.current - 1) * pagination.pageSize + index + 1 }}
                 </template>
                 <template v-else-if="column.dataIndex === 'statusStudentFactory'">
                   <span class="nowrap">
@@ -652,8 +647,11 @@ onMounted(() => {
         @change="handleShiftTableChange"
         :scroll="{ x: 'auto' }"
       >
-        <template #bodyCell="{ column, record }">
-          <template v-if="column.dataIndex === 'startDate'">
+        <template #bodyCell="{ column, record, index }">
+          <template v-if="column.dataIndex === 'orderNumber'">
+            {{ (shiftPagination.current - 1) * shiftPagination.pageSize + index + 1 }}
+          </template>
+          <template v-else-if="column.dataIndex === 'startDate'">
             {{
               `${dayOfWeek(record.startDate)}, ${formatDate(record.startDate, DEFAULT_DATE_FORMAT)}`
             }}
@@ -717,7 +715,7 @@ onMounted(() => {
         <template #bodyCell="{ column, record, index }">
           <template v-if="column.dataIndex">
             <template v-if="column.dataIndex === 'rowNumber'">
-              {{ index + 1 }}
+              {{ (studentPagination.current - 1) * studentPagination.pageSize + index + 1 }}
             </template>
             <template v-else>
               {{ record[column.dataIndex] }}
