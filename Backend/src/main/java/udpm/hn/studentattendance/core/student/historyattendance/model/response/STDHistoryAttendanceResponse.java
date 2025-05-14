@@ -27,4 +27,8 @@ public interface STDHistoryAttendanceResponse {
 
     Long getPlanDateEndDate();
 
+    String getPlanDateId();
+
+    String getAttendanceId();
+
 }

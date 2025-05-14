@@ -203,14 +203,14 @@ public class USFactoryServiceImpl implements USFactoryService {
 
         boolean teacherJoinThanThreeFactory = factoryRepository.isTeacherJoinThanThreeFactory(
                 factoryCreateUpdateRequest.getIdUserStaff(), project.get().getSemester().getId());
-        if (teacherJoinThanThreeFactory) {
-            return new ResponseEntity<>(
-                    new ApiResponse(
-                            RestApiStatus.ERROR,
-                            "Giảng viên này đã tham gia 3 nhóm xưởng ở kỳ học này",
-                            null),
-                    HttpStatus.BAD_REQUEST);
-        }
+//        if (teacherJoinThanThreeFactory) {
+//            return new ResponseEntity<>(
+//                    new ApiResponse(
+//                            RestApiStatus.ERROR,
+//                            "Giảng viên này đã tham gia 3 nhóm xưởng ở kỳ học này",
+//                            null),
+//                    HttpStatus.BAD_REQUEST);
+//        }
         if (existFactory.isPresent()) {
             Factory factory = existFactory.get();
             UserStaff currentUserStaff = factory.getUserStaff();
