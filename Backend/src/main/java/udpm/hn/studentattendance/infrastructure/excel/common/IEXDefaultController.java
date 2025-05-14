@@ -19,6 +19,9 @@ public interface IEXDefaultController {
     @PostMapping(RouteExcelConstant.DEFAULT_IMPORT)
     ResponseEntity<?> importItem(@RequestBody EXImportRequest request);
 
+    @PostMapping(RouteExcelConstant.DEFAULT_EXPORT)
+    ResponseEntity<?> exportData(@RequestBody EXDataRequest request);
+
     @PostMapping(RouteExcelConstant.DEFAULT_DOWNLOAD_TEMPLATE)
     ResponseEntity<?> downloadTemplate(@RequestBody EXDataRequest request);
 
