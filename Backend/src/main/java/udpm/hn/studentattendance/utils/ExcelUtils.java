@@ -15,12 +15,14 @@ import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.util.CellRangeAddressList;
 import org.apache.poi.ss.util.CellReference;
+import org.apache.poi.xssf.usermodel.XSSFColor;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 public class ExcelUtils {
 
@@ -161,6 +163,90 @@ public class ExcelUtils {
         validation.createErrorBox("Sai dữ liệu", "Hãy chọn dữ liệu cho sẵn");
         validation.createPromptBox("Chọn dữ liệu", "Hãy chọn dữ liệu cho sẵn");
         sheet.addValidationData(validation);
+    }
+
+    public static Row insertRow(Sheet sheet, int rowIndex, List<Object> cellData) {
+        return insertRow(sheet, rowIndex, cellData, null);
+    }
+
+    public static Row insertRow(Sheet sheet, int rowIndex, List<Object> cellData, Map<Object, String> colorMapping) {
+        int lastRowNum = sheet.getLastRowNum();
+
+        if (rowIndex <= lastRowNum) {
+            sheet.shiftRows(rowIndex, lastRowNum, 1, true, false);
+        }
+
+        Row newRow = sheet.createRow(rowIndex);
+
+        for (int i = 0; i < cellData.size(); i++) {
+            Cell cell = newRow.createCell(i);
+            Object value = cellData.get(i);
+            setCellValue(cell, value);
+            if (colorMapping != null) {
+                applyCellStyleByValue(cell, value, colorMapping);
+            }
+        }
+
+        return newRow;
+    }
+
+    private static void setCellValue(Cell cell, Object value) {
+        if (value == null) {
+            cell.setBlank();
+        } else if (value instanceof String) {
+            cell.setCellValue((String) value);
+        } else if (value instanceof Integer) {
+            cell.setCellValue((Integer) value);
+        } else if (value instanceof Double) {
+            cell.setCellValue((Double) value);
+        } else if (value instanceof Boolean) {
+            cell.setCellValue((Boolean) value);
+        } else if (value instanceof java.util.Date) {
+            CellStyle style = cell.getSheet().getWorkbook().createCellStyle();
+            CreationHelper createHelper = cell.getSheet().getWorkbook().getCreationHelper();
+            style.setDataFormat(createHelper.createDataFormat().getFormat("dd-mm-yyyy"));
+            cell.setCellStyle(style);
+            cell.setCellValue((java.util.Date) value);
+        } else {
+            cell.setCellValue(value.toString());
+        }
+    }
+
+    private static void applyCellStyleByValue(Cell cell, Object value, Map<Object, String> colorMapping) {
+        if (colorMapping == null || colorMapping.isEmpty()) return;
+
+        String hexColor = colorMapping.get(value);
+        if (hexColor == null) return;
+
+        applyHexColor(cell, hexColor);
+    }
+
+    public static void applyHexColor(Cell cell, String hex) {
+        XSSFColor color = hexToColor(hex);
+        CellStyle style = cell.getSheet().getWorkbook().createCellStyle();
+        style.setFillForegroundColor(color);
+        style.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        cell.setCellStyle(style);
+    }
+
+    public static XSSFColor hexToColor(String hex) {
+        if (hex == null || hex.isEmpty()) {
+            return null;
+        }
+        if (hex.charAt(0) == '#') {
+            hex = hex.substring(1);
+        }
+
+        int r = Integer.parseInt(hex.substring(0, 2), 16);
+        int g = Integer.parseInt(hex.substring(2, 4), 16);
+        int b = Integer.parseInt(hex.substring(4, 6), 16);
+
+        byte[] rgb = new byte[3];
+        rgb[0] = (byte) r;
+        rgb[1] = (byte) g;
+        rgb[2] = (byte) b;
+
+        return new XSSFColor(rgb);
     }
 
 }
