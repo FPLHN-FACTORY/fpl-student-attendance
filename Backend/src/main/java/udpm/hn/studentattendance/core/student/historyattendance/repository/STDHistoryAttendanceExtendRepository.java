@@ -16,6 +16,8 @@ public interface STDHistoryAttendanceExtendRepository extends FactoryRepository 
     @Query(value = """
             SELECT
                 ROW_NUMBER() OVER (PARTITION BY ft.id ORDER BY pd.start_date ASC) AS rowNumber,
+                pd.id AS planDateId,
+                ad.id AS attendanceId,
                 usf.id_user_student AS userStudentFactoryId,
                 usf.id_factory AS factoryId,
                 ft.name AS factoryName,
@@ -25,7 +27,7 @@ public interface STDHistoryAttendanceExtendRepository extends FactoryRepository 
                 pd.shift AS planDateShift,
                 s.id AS semesterId,
                   CASE
-                    WHEN UNIX_TIMESTAMP(NOW()) * 1000 < pd.end_date THEN 'CHUA_DIEN_RA'
+                    WHEN UNIX_TIMESTAMP(NOW()) * 1000 < pd.start_date THEN 'CHUA_DIEN_RA'
                     WHEN
                     (
                         SELECT COUNT(*) > 0
@@ -120,7 +122,7 @@ public interface STDHistoryAttendanceExtendRepository extends FactoryRepository 
                 pd.shift AS planDateShift,
                 s.id AS semesterId,
                 CASE
-                    WHEN UNIX_TIMESTAMP(NOW()) * 1000 < pd.end_date THEN 'CHUA_DIEN_RA'
+                    WHEN UNIX_TIMESTAMP(NOW()) * 1000 < pd.start_date THEN 'CHUA_DIEN_RA'
                     WHEN
                     (
                         SELECT COUNT(*) > 0
