@@ -9,6 +9,10 @@ public interface TCPlanDateAttendanceResponse extends IsIdentify, HasOrderNumber
 
     String getPlanName();
 
+    Long getStartDate();
+
+    String getShift();
+
     String getFactoryId();
 
     String getFactoryName();

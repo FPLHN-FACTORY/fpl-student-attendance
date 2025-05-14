@@ -151,6 +151,11 @@ public class EXStaffServiceImpl implements EXStaffService {
     }
 
     @Override
+    public ResponseEntity<?> exportData(EXDataRequest request) {
+        return null;
+    }
+
+    @Override
     public ResponseEntity<?> downloadTemplate(EXDataRequest request) {
         String filename = "template-import-staff.xlsx";
         List<String> headers = List.of("Mã Nhân Viên", "Tên Nhân Viên", "Email Fe", "Email Fpt", "Vai Trò", "Cơ Sở");
