@@ -353,5 +353,16 @@ onMounted(() => {
         </a-card>
       </div>
     </div>
+
+    <!-- Display message when no data is available -->
+    <div class="row g-3" v-if="Object.keys(groupedAttendance).length === 0 && !isLoading">
+      <div class="col-12">
+        <a-card :bordered="false" class="card mb-3">
+          <div class="d-flex justify-content-center align-items-center p-4">
+            <a-empty description="Kỳ học này bạn chưa có lớp học nào" />
+          </div>
+        </a-card>
+      </div>
+    </div>
   </div>
 </template>
