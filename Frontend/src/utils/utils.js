@@ -29,10 +29,26 @@ export const autoAddColumnWidth = (columns, ellipsis = false, charWidth = 10, pa
 }
 
 export const dayOfWeek = (timestamp) => {
-  const date = new Date(timestamp)
-  const daysOfWeek = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy']
+  const inputDate = new Date(timestamp)
+  const now = new Date()
 
-  return daysOfWeek[date.getDay()]
+  const inputDateOnly = new Date(inputDate.getFullYear(), inputDate.getMonth(), inputDate.getDate())
+  const nowDateOnly = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+
+  const diffInDays = (inputDateOnly - nowDateOnly) / (1000 * 60 * 60 * 24)
+
+  const daysOfWeek = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy']
+  const dayName = daysOfWeek[inputDate.getDay()]
+
+  if (diffInDays === 0) {
+    return 'Hôm nay'
+  } else if (diffInDays === -1) {
+    return 'Hôm qua'
+  } else if (diffInDays === 1) {
+    return 'Ngày mai'
+  } else {
+    return dayName
+  }
 }
 
 export const formatDate = (timestamp, format) => {

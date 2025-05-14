@@ -20,4 +20,6 @@ public interface TCStudentFactoryResponse {
 
     Integer getTotalAbsentShift();
 
+    Integer getTotalShift();
+
 }
