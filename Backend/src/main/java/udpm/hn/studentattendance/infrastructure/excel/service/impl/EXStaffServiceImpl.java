@@ -18,6 +18,7 @@ import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.helpers.SessionHelper;
 import udpm.hn.studentattendance.infrastructure.common.ApiResponse;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
+import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.ImportLogType;
 import udpm.hn.studentattendance.infrastructure.constants.RestApiStatus;
 import udpm.hn.studentattendance.infrastructure.constants.RoleConstant;
@@ -95,7 +96,7 @@ public class EXStaffServiceImpl implements EXStaffService {
         }
         String facilityCode = facilityValue.substring(start + 1, end);
 
-        Facility facility = facilityRepository.getFacilityByCode(facilityCode);
+        Facility facility = facilityRepository.getFacilityByCodeAndStatus(facilityCode, EntityStatus.ACTIVE);
 
         String code = item.get("MA_NHAN_VIEN");
         if (code == null || code.trim().isEmpty()) {

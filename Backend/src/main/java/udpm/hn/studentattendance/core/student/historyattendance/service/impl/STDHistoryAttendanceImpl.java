@@ -51,6 +51,16 @@ public class STDHistoryAttendanceImpl implements STDHistoryAttendanceService {
     @Override
     public ResponseEntity<?> getAllHistoryAttendanceByStudent(
             STDHistoryAttendanceRequest historyAttendanceRequest) {
+        String semesterId = null;
+        Long now = new Date().getTime();
+        for (Semester semester : historyAttendanceSemesterExtendRepository.findAll()) {
+            if (semester.getFromDate() <= now && now <= semester.getToDate()) {
+                semesterId = semester.getId();
+                break;
+            }
+        }
+        historyAttendanceRequest.setSemesterId(historyAttendanceRequest.getSemesterId() == null ? semesterId : historyAttendanceRequest.getSemesterId());
+
         Pageable pageable = PaginationHelper.createPageable(historyAttendanceRequest, "createdAt");
         PageableObject list = PageableObject.of(historyAttendanceExtendRepository
                 .getAllFactoryAttendance(sessionHelper.getCurrentUser().getId(), pageable, historyAttendanceRequest));
