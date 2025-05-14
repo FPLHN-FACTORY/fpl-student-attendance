@@ -160,6 +160,7 @@ const handleSubmitAttendance = () => {
     })
     .finally(() => {
       loadingPage.hide()
+      isShowCamera.value = false
     })
 }
 
@@ -183,7 +184,7 @@ const handleUpdateInfo = async () => {
   isShowCamera.value = true
   faceIDStore.init(video, canvas, false, (descriptor) => {
     isShowCamera.value = false
-    formData.faceEmbedding = JSON.stringify(Array.from(descriptor))
+    formData.faceEmbedding = JSON.stringify(descriptor)
     Modal.confirm({
       title: 'Xác nhận cập nhật dữ liệu khuôn mặt',
       icon: createVNode(ExclamationCircleOutlined),
@@ -203,8 +204,7 @@ const handleCheckin = async (item) => {
   formData.idPlanDate = item.idPlanDate
   isShowCamera.value = true
   faceIDStore.init(video, canvas, true, (descriptor) => {
-    isShowCamera.value = false
-    formData.faceEmbedding = JSON.stringify(Array.from(descriptor))
+    formData.faceEmbedding = JSON.stringify(descriptor)
     handleSubmitAttendance()
   })
   await nextTick()
@@ -262,6 +262,8 @@ watch(
       <canvas ref="canvas"></canvas>
       <video ref="video" autoplay muted></video>
       <div class="face-id-step" :class="faceIDStore.renderStyle()">
+        <div></div>
+        <div></div>
         <div></div>
         <div></div>
         <div></div>

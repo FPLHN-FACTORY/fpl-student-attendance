@@ -10,4 +10,6 @@ public interface TCFactoryService {
     ResponseEntity<?> getAllProjectByFacility();
 
     ResponseEntity<?> getAllPlanDateByFactory();
+
+    ResponseEntity<?> getAllSemester();
 }

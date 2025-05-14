@@ -35,8 +35,11 @@ import udpm.hn.studentattendance.infrastructure.constants.SessionConstant;
 import udpm.hn.studentattendance.utils.AppUtils;
 import udpm.hn.studentattendance.utils.FaceRecognitionUtils;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -138,15 +141,15 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             return RouterHelper.responseError("Thông tin khuôn mặt không hợp lệ");
         }
 
-        double[] faceEmbedding = FaceRecognitionUtils.parseEmbedding(request.getFaceEmbedding());
-        if (isFaceExists(faceEmbedding)) {
+        List<double[]> faceEmbeddings = FaceRecognitionUtils.parseEmbeddings(request.getFaceEmbedding());
+        if (isFaceExists(faceEmbeddings)) {
             return RouterHelper.responseError("Đã tồn tại khuôn mặt trên hệ thống");
         }
 
         student.setFacility(facility);
         student.setCode(request.getCode());
         student.setName(request.getName());
-        student.setFaceEmbedding(request.getFaceEmbedding());
+        student.setFaceEmbedding(Arrays.toString(faceEmbeddings.get(0)));
         authenticationUserStudentRepository.save(student);
 
         String accessToken = jwtUtil.generateToken(student.getEmail(),
@@ -187,12 +190,12 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             return RouterHelper.responseError("Thông tin khuôn mặt không hợp lệ");
         }
 
-        double[] faceEmbedding = FaceRecognitionUtils.parseEmbedding(request.getFaceEmbedding());
-        if (isFaceExists(faceEmbedding)) {
+        List<double[]> faceEmbeddings = FaceRecognitionUtils.parseEmbeddings(request.getFaceEmbedding());
+        if (isFaceExists(faceEmbeddings)) {
             return RouterHelper.responseError("Đã tồn tại khuôn mặt trên hệ thống");
         }
 
-        student.setFaceEmbedding(request.getFaceEmbedding());
+        student.setFaceEmbedding(Arrays.toString(faceEmbeddings.get(0)));
 
         NotificationAddRequest notificationAddRequest = new NotificationAddRequest();
         notificationAddRequest.setType(NotificationHelper.TYPE_SUCCESS_UPDATE_FACE_ID);
@@ -223,11 +226,26 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         return RouterHelper.responseSuccess("Lấy dữ liệu avatar thành công", AppUtils.imageUrlToBase64(urlImage));
     }
 
-    private boolean isFaceExists(double[] embedding) {
-        StringBuilder queryBuilder = new StringBuilder(
-                "SELECT COUNT(*) > 0 FROM user_student WHERE face_embedding IS NOT NULL AND face_embedding <> '' AND ");
+    private boolean isFaceExists(List<double[]> embeddings) {
+        double[] embedding = embeddings.remove(0);
+        List<String> matchedIds = isFaceExists(embedding);
+        if (matchedIds.isEmpty()) {
+            return false;
+        }
+        for (double[] emb: embeddings) {
+            boolean isExist = !isFaceExists(emb).isEmpty();
+            if(!isExist) {
+                return false;
+            }
+        }
+        return true;
+    }
 
+    private List<String> isFaceExists(double[] embedding) {
+        StringBuilder queryBuilder = new StringBuilder(
+                "SELECT id FROM user_student WHERE face_embedding IS NOT NULL AND face_embedding <> '' AND ");
         queryBuilder.append("SQRT(");
+
         for (int i = 0; i < embedding.length; i++) {
             if (i > 0)
                 queryBuilder.append(" + ");
@@ -243,9 +261,10 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         }
 
         query.setParameter("threshold", FaceRecognitionUtils.THRESHOLD);
-
-        Number count = (Number) query.getSingleResult();
-        return count != null && count.longValue() > 0;
+        return ((List<?>) query.getResultList())
+                .stream()
+                .map(Object::toString)
+                .toList();
     }
 
 }
