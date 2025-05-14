@@ -116,6 +116,8 @@ const handleTableChange = (pageInfo) => {
 }
 
 const showAddModal = (isOpen) => {
+  newSubject.code = null
+  newSubject.name = null
   modalAdd.value = isOpen
 }
 

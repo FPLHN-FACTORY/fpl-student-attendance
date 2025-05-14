@@ -359,6 +359,15 @@ const handleShowDescription = (text) => {
   })
 }
 
+const handleShowModalAdd = () => {
+  newFactory.factoryDescription = null
+  newFactory.factoryName = null
+  newFactory.idProject = null
+  newFactory.idUserStaff = null
+
+  modalAdd.value = true
+}
+
 onMounted(() => {
   breadcrumbStore.setRoutes(breadcrumb.value)
   fetchFactories()
@@ -591,7 +600,9 @@ onMounted(() => {
               </a-button>
             </a-tooltip>
             <a-tooltip title="Thêm nhóm xưởng">
-              <a-button type="primary" @click="modalAdd = true"> <PlusOutlined /> Thêm </a-button>
+              <a-button type="primary" @click="handleShowModalAdd">
+                <PlusOutlined /> Thêm
+              </a-button>
             </a-tooltip>
           </div>
           <a-table

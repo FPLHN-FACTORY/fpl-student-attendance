@@ -101,9 +101,9 @@ const fetchStudents = async () => {
     const faceMap = faceRes.data.data // map studentId -> hasFace
 
     // gán thêm hasFace vào từng object dựa trên studentId
-    students.value = list.map(student => ({
+    students.value = list.map((student) => ({
       ...student,
-      hasFace: faceMap[student.studentId] || false
+      hasFace: faceMap[student.studentId] || false,
     }))
 
     // cập nhật tổng bản ghi
@@ -303,6 +303,14 @@ const handleClearFilter = () => {
   fetchStudents() // or whatever your fetch function is named
 }
 
+const handleShowModalAdd = () => {
+  newStudent.code = null
+  newStudent.email = null
+  newStudent.name = null
+
+  modalAdd.value = true
+}
+
 onMounted(() => {
   breadcrumbStore.setRoutes(breadcrumb.value)
   fetchStudents()
@@ -369,7 +377,9 @@ onMounted(() => {
 
             <a-tooltip title="Thêm mới sinh viên">
               <!-- Sử dụng nút primary kiểu filled -->
-              <a-button type="primary" @click="modalAdd = true"> <PlusOutlined /> Thêm </a-button>
+              <a-button type="primary" @click="handleShowModalAdd">
+                <PlusOutlined /> Thêm
+              </a-button>
             </a-tooltip>
           </div>
           <a-table
