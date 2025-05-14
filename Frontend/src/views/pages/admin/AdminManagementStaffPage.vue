@@ -503,6 +503,8 @@ onMounted(() => {
       title="Thêm nhân viên"
       @ok="handleAddStaff"
       :okButtonProps="{ loading: modalAddLoading }"
+      @cancel="clearNewStaffForm"
+      @close="clearNewStaffForm"
     >
       <a-form layout="vertical">
         <a-form-item label="Mã nhân viên" required>

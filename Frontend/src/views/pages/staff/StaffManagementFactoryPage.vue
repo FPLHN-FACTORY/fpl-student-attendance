@@ -382,7 +382,13 @@ onMounted(() => {
 
 <template>
   <!-- Modal Thêm nhóm xưởng -->
-  <a-modal v-model:open="modalAdd" title="Thêm nhóm xưởng" @ok="submitAddFactory">
+  <a-modal
+    v-model:open="modalAdd"
+    title="Thêm nhóm xưởng"
+    @ok="submitAddFactory"
+    @cancel="clearData"
+    @close="clearData"
+  >
     <a-form :model="newFactory" layout="vertical">
       <a-form-item label="Tên nhóm xưởng" required>
         <a-input v-model:value="newFactory.factoryName" placeholder="-- Tên nhóm xưởng --" />
