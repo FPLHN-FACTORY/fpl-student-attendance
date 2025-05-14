@@ -10,13 +10,20 @@
   cursor: pointer;
   border: 1px dashed #c7c2da;
   overflow: hidden;
-
+  position: relative;
   svg {
     width: 160px;
     path,
     line {
       stroke: rgb(208 205 218) !important;
     }
+  }
+  img {
+    position: absolute;
+    max-width: 100%;
+    object-fit: cover;
+    height: 100%;
+    width: 100%;
   }
 }
 .face-id-text {
@@ -176,7 +183,7 @@
       }
     }
     &.step4 {
-      @for $i from 28 through 36 {
+      @for $i from 28 through 40 {
         & > div:nth-child(#{$i}) {
           animation: step1 0s alternate forwards;
           animation-delay: #{math.div($i - 27, 50)}s;
@@ -184,10 +191,10 @@
       }
     }
     &.fullStep {
-      @for $i from 1 through 36 {
+      @for $i from 1 through 40 {
         & > div:nth-child(#{$i}) {
           animation: step1 0s alternate forwards;
-          animation-delay: #{math.div($i, 50)}s;
+          animation-delay: #{math.div(math.div($i, 50), 2)}s;
         }
       }
     }

@@ -59,7 +59,7 @@ public interface SPDAttendanceRepository extends AttendanceRepository {
                 BINARY us.name LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%')
             )) AND
             (COALESCE(:#{#request.status}, 0) = 0 OR a.status = :#{#request.status}) AND
-            pd.end_date <= UNIX_TIMESTAMP(NOW()) * 1000 AND
+            pd.start_date <= UNIX_TIMESTAMP(NOW()) * 1000 AND
             pd.id = :#{#request.idPlanDate}
         ORDER BY
             us.name ASC 
@@ -101,7 +101,7 @@ public interface SPDAttendanceRepository extends AttendanceRepository {
                 BINARY us.name LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%')
             )) AND
             (COALESCE(:#{#request.status}, 0) = 0 OR a.status = :#{#request.status}) AND
-            pd.end_date <= UNIX_TIMESTAMP(NOW()) * 1000 AND
+            pd.start_date <= UNIX_TIMESTAMP(NOW()) * 1000 AND
             pd.id = :#{#request.idPlanDate}
     """, nativeQuery = true)
     Page<SPDPlanDateStudentResponse> getAllByFilter(Pageable pageable, SPDFilterPlanDateAttendanceRequest request);
