@@ -93,6 +93,11 @@ public class EXStudentServiceImpl implements EXStudentService {
     }
 
     @Override
+    public ResponseEntity<?> exportData(EXDataRequest request) {
+        return null;
+    }
+
+    @Override
     public ResponseEntity<?> downloadTemplate(EXDataRequest request) {
         String filename = "template-import-student.xlsx";
         List<String> headers = List.of("Mã sinh viên", "Tên sinh viên", "Email");
