@@ -152,8 +152,9 @@ const useApplicationStore = defineStore('Application', () => {
           .then(({ data: response }) => {
             if (lstNotification.value.find((o) => o.id !== item.id)) {
               totalNotification.value += 1
-              lstNotification.value.put(item)
+              lstNotification.value.push(item)
             }
+
             message.success(response.message)
             typeof callback == 'function' && callback()
           })
