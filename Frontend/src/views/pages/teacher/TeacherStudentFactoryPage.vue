@@ -1,5 +1,5 @@
 <script setup>
-import { FilterFilled, UnorderedListOutlined } from '@ant-design/icons-vue'
+import { FilterFilled, SearchOutlined, UnorderedListOutlined } from '@ant-design/icons-vue'
 import { ref, reactive, onMounted } from 'vue'
 import { message, Modal } from 'ant-design-vue'
 import { useRoute } from 'vue-router'
@@ -25,8 +25,8 @@ const breadcrumb = ref([
     breadcrumbName: 'Giảng viên',
   },
   {
-    name: ROUTE_NAMES.MANAGEMENT_STUDENT,
-    breadcrumbName: 'Nhóm xưởng',
+    name: ROUTE_NAMES.MANAGEMENT_FACTORY,
+    breadcrumbName: 'Nhóm xưởng của tôi',
   },
   {
     name: ROUTE_NAMES.MANAGEMENT_STUDENT_FACTORY,
@@ -63,6 +63,12 @@ const columns = ref(
       key: 'studentName',
     },
     { title: 'Email', dataIndex: 'studentEmail', key: 'studentEmail' },
+    {
+      title: 'Số buổi đã nghỉ',
+      dataIndex: 'totalAbsentShift',
+      key: 'totalAbsentShift',
+      align: 'center',
+    },
     {
       title: 'Trạng thái',
       dataIndex: 'statusStudentFactory',
@@ -181,24 +187,28 @@ onMounted(() => {
     <div class="row g-3">
       <div class="col-12">
         <a-card :bordered="false" class="cart mb-3">
-          <template #title> <FilterFilled /> Bộ lọc tìm kiếm </template>
+          <template #title> <FilterFilled /> Bộ lọc</template>
           <div class="row g-3 filter-container">
-            <div class="col-md-6 col-sm-6">
-              <label class="label-title">Từ khoá:</label>
+            <div class="col-md-8 col-sm-6">
+              <div class="label-title">Từ khoá:</div>
               <a-input
                 v-model:value="filter.searchQuery"
                 placeholder="Nhập mã, tên hoặc email học sinh"
                 allowClear
                 @change="fetchStudentFactory"
-              />
+              >
+                <template #prefix>
+                  <SearchOutlined />
+                </template>
+              </a-input>
             </div>
-            <div class="col-md-6 col-sm-6">
-              <label class="label-title">Trạng thái:</label>
+            <div class="col-md-4 col-sm-6">
+              <div class="label-title">Trạng thái:</div>
               <a-select
                 v-model:value="filter.status"
                 placeholder="Chọn trạng thái"
                 allowClear
-                style="width: 100%"
+                class="w-100"
                 @change="fetchStudentFactory"
               >
                 <a-select-option :value="''">Tất cả trạng thái</a-select-option>
@@ -244,15 +254,6 @@ onMounted(() => {
                 </template>
                 <!-- Hiển thị trạng thái -->
                 <template v-else-if="column.dataIndex === 'statusStudentFactory'">
-                  <span class="nowrap">
-                    <a-switch
-                      class="me-2"
-                      :checked="
-                        record.statusStudentFactory === 'ACTIVE' ||
-                        record.statusStudentFactory === 1
-                      "
-                    />
-                  </span>
                   <a-tag
                     :color="
                       record.statusStudentFactory === 'ACTIVE' || record.statusStudentFactory === 1
@@ -267,9 +268,10 @@ onMounted(() => {
                     }}
                   </a-tag>
                 </template>
-                <!-- Các cột khác -->
-                <template v-else>
-                  {{ record[column.dataIndex] }}
+                <template v-if="column.dataIndex === 'totalAbsentShift'">
+                  <a-tag :color="record.totalAbsentShift > 0 ? 'red' : 'green'">{{
+                    record.totalAbsentShift || 0
+                  }}</a-tag>
                 </template>
               </template>
               <!-- Các nút hành động -->

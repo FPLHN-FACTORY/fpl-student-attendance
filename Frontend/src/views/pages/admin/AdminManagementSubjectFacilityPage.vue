@@ -8,6 +8,7 @@ import {
   FilterFilled,
   EyeFilled,
   EditFilled,
+  SearchOutlined,
 } from '@ant-design/icons-vue'
 import requestAPI from '@/services/requestApiService'
 import { DEFAULT_PAGINATION } from '@/constants'
@@ -308,24 +309,28 @@ onMounted(() => {
     <div class="row g-3">
       <div class="col-12">
         <a-card :bordered="false" class="cart mb-3">
-          <template #title> <FilterFilled /> Bộ lọc tìm kiếm </template>
+          <template #title> <FilterFilled /> Bộ lọc</template>
           <div class="row g-3 filter-container">
-            <div class="col-md-4 col-sm-6">
-              <label class="label-title">Từ khoá:</label>
+            <div class="col-xl-6 col-md-12 col-sm-12">
+              <div class="label-title">Từ khoá:</div>
               <a-input
                 v-model:value="filter.name"
-                placeholder="Nhập tên hoặc mã cơ sở vật chất"
+                placeholder="Tìm theo tên hoặc mã cơ sở"
                 allowClear
                 @change="fetchSubjectFacility"
-              />
+              >
+                <template #prefix>
+                  <SearchOutlined />
+                </template>
+              </a-input>
             </div>
-            <div class="col-md-4 col-sm-6">
-              <label class="label-title">Bộ môn:</label>
+            <div class="col-xl-3 col-md-6 col-sm-6">
+              <div class="label-title">Bộ môn:</div>
               <a-select
                 v-model:value="filter.idSubject"
                 placeholder="Chọn bộ môn"
                 allowClear
-                style="width: 100%"
+                class="w-100"
                 @change="fetchSubjectFacility"
               >
                 <a-select-option :value="''">Tất cả bộ môn</a-select-option>
@@ -334,13 +339,13 @@ onMounted(() => {
                 </a-select-option>
               </a-select>
             </div>
-            <div class="col-md-4 col-sm-12">
-              <label class="label-title">Trạng thái:</label>
+            <div class="col-xl-3 col-md-6 col-sm-6">
+              <div class="label-title">Trạng thái:</div>
               <a-select
                 v-model:value="filter.status"
                 placeholder="Chọn trạng thái"
                 allowClear
-                style="width: 100%"
+                class="w-100"
                 @change="fetchSubjectFacility"
               >
                 <a-select-option :value="''">Tất cả trạng thái</a-select-option>

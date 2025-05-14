@@ -112,7 +112,7 @@ public class Admin_SubjectFacilityServiceImpl implements Admin_SubjectFacilitySe
         SubjectFacility newEntity = repository.save(subjectFacility);
 
         if (subjectFacility.getStatus() == EntityStatus.ACTIVE) {
-            commonUserStudentRepository.disableAllStudentDuplicateShiftByIdSubject(subjectFacility.getId());
+            commonUserStudentRepository.disableAllStudentDuplicateShiftByIdSubjectFacility(subjectFacility.getId());
         }
         return RouterHelper.responseSuccess("Thay đổi trạng thái thành công", newEntity);
     }

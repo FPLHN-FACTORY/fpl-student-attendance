@@ -23,14 +23,4 @@ public class TCStudentFactoryRestController {
         return teacherStudentService.deleteStudentFactoryById(studentFactoryId);
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<?> changeStatusStudentFactory(@PathVariable("id") String studentFactoryId) {
-        return teacherStudentService.changeStatusStudentFactory(studentFactoryId);
-    }
-
-    // @PutMapping("/change-face/{studentId}")
-    // public ResponseEntity<?> changeFaceStudent(@PathVariable("studentId") String
-    // studentId){
-    // return teacherStudentService.deleteFaceStudentFactory(studentId);
-    // }
 }

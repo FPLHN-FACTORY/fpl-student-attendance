@@ -63,6 +63,12 @@ public class PlanDate extends PrimaryEntity implements Serializable {
     @Column(name = "required_ip")
     private StatusType requiredIp = StatusType.ENABLE;
 
+    @Column(name = "required_checkin")
+    private StatusType requiredCheckin = StatusType.ENABLE;
+
+    @Column(name = "required_checkout")
+    private StatusType requiredCheckout = StatusType.ENABLE;
+
     @ManyToOne
     @JoinColumn(name = "id_plan_factory")
     @OnDelete(action = OnDeleteAction.CASCADE)
