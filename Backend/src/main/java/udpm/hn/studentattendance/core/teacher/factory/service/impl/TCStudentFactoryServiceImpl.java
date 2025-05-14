@@ -6,6 +6,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
+import udpm.hn.studentattendance.core.teacher.factory.model.request.TCPlanDateStudentFactoryRequest;
 import udpm.hn.studentattendance.core.teacher.factory.model.request.TCStudentFactoryRequest;
 import udpm.hn.studentattendance.core.teacher.factory.repository.TCStudentFactoryExtendRepository;
 import udpm.hn.studentattendance.core.teacher.factory.repository.TCUserStudentExtendRepository;
@@ -13,6 +14,7 @@ import udpm.hn.studentattendance.core.teacher.factory.service.TCStudentFactorySe
 import udpm.hn.studentattendance.entities.UserStudent;
 import udpm.hn.studentattendance.entities.UserStudentFactory;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
+import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.helpers.SessionHelper;
 import udpm.hn.studentattendance.infrastructure.common.ApiResponse;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
@@ -41,6 +43,11 @@ public class TCStudentFactoryServiceImpl implements TCStudentFactoryService {
                         "Lấy tất cả học sinh trong nhóm xưởng thành công",
                         pageableObject),
                 HttpStatus.OK);
+    }
+
+    @Override
+    public ResponseEntity<?> getDetailAttendance(TCPlanDateStudentFactoryRequest request) {
+        return RouterHelper.responseSuccess("Lấy danh sách dữ liệu thành công", teacherStudentFactoryExtendRepository.getAllPlanDateAttendanceByIdStudent(request));
     }
 
     @Override
