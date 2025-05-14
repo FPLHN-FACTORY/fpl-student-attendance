@@ -221,9 +221,13 @@ const useImportExcelStore = defineStore('importExcel', () => {
   const downloadTemplate = async () => {
     if (urlFetch.value) {
       await requestAPI
-        .post(`${urlFetch.value}/download-template`, dataFetch.value, {
-          responseType: 'blob',
-        })
+        .post(
+          `${urlFetch.value}/download-template`,
+          { data: dataFetch.value },
+          {
+            responseType: 'blob',
+          },
+        )
         .then((response) => {
           const blob = new Blob([response.data], {
             type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -248,6 +252,44 @@ const useImportExcelStore = defineStore('importExcel', () => {
         })
         .catch((error) => {
           message.error(error?.response?.data?.message || 'Không thể tải xuống template')
+        })
+    }
+  }
+
+  const exportExcel = async () => {
+    if (urlFetch.value) {
+      await requestAPI
+        .post(
+          `${urlFetch.value}/export`,
+          { data: dataFetch.value },
+          {
+            responseType: 'blob',
+          },
+        )
+        .then((response) => {
+          const blob = new Blob([response.data], {
+            type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          })
+          const contentDisposition = response.headers['content-disposition']
+          let filename = 'export-download'
+          if (contentDisposition) {
+            const match = contentDisposition.match(/filename="(.+)"/)
+            if (match) {
+              filename = match[1]
+            }
+          }
+          const url = window.URL.createObjectURL(blob)
+          const a = document.createElement('a')
+          a.href = url
+          a.download = filename
+          document.body.appendChild(a)
+          a.click()
+          document.body.removeChild(a)
+
+          window.URL.revokeObjectURL(url)
+        })
+        .catch((error) => {
+          message.error(error?.response?.data?.message || 'Không thể xuất excel')
         })
     }
   }
@@ -278,6 +320,7 @@ const useImportExcelStore = defineStore('importExcel', () => {
     countProcessing,
     countComplete,
     downloadTemplate,
+    exportExcel,
     getHistoryLogs,
     getHistoryLogsDetail,
     setUrlFetch,
