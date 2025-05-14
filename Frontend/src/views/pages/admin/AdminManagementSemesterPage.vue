@@ -443,6 +443,8 @@ onMounted(() => {
       title="Thêm học kỳ"
       @ok="handleAddSemester"
       :okButtonProps="{ loading: modalAddLoading }"
+      @cancel="clearFormAdd"
+      @close="clearFormAdd"
     >
       <a-form layout="vertical">
         <a-form-item label="Tên học kỳ" required>

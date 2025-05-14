@@ -15,7 +15,7 @@ import udpm.hn.studentattendance.core.staff.factory.model.response.userstudentfa
 import udpm.hn.studentattendance.core.staff.factory.model.response.userstudentfactory.Staff_PDDetailShiftByStudentResponse;
 import udpm.hn.studentattendance.core.staff.factory.model.response.userstudentfactory.Staff_UserStudentResponse;
 import udpm.hn.studentattendance.core.staff.factory.repository.factory.USFactoryExtendRepository;
-import udpm.hn.studentattendance.core.staff.factory.repository.userstudentfactory.USStudentFactoryRepository;
+import udpm.hn.studentattendance.core.staff.factory.repository.userstudentfactory.USStudentFactoryExtendRepository;
 import udpm.hn.studentattendance.core.staff.factory.repository.userstudentfactory.USUSFUserStudentExtendRepository;
 import udpm.hn.studentattendance.core.staff.factory.service.USStudentFactoryService;
 import udpm.hn.studentattendance.entities.Factory;
@@ -40,7 +40,7 @@ import java.util.Optional;
 @Validated
 public class USStudentFactoryServiceImpl implements USStudentFactoryService {
 
-    private final USStudentFactoryRepository studentFactoryRepository;
+    private final USStudentFactoryExtendRepository studentFactoryRepository;
 
     private final USFactoryExtendRepository factoryRepository;
 
