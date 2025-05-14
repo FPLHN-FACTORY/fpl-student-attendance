@@ -451,7 +451,13 @@ onMounted(() => {
     </div>
 
     <!-- Modal thêm sinh viên -->
-    <a-modal v-model:open="modalAdd" title="Thêm sinh viên" @ok="handleAddStudent">
+    <a-modal
+      v-model:open="modalAdd"
+      title="Thêm sinh viên"
+      @ok="handleAddStudent"
+      @cancel="clearNewStudentForm"
+      @close="clearNewStudentForm"
+    >
       <a-form layout="vertical">
         <a-form-item label="Mã sinh viên" required>
           <a-input v-model:value="newStudent.code" placeholder="--Nhập mã sinh viên--" />
