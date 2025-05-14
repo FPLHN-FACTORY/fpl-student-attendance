@@ -115,53 +115,7 @@ const handleTableChange = (pageInfo) => {
   fetchStudentFactory()
 }
 
-// Hàm xoá học sinh khỏi nhóm xưởng
 
-const toggleStatusStudentFactory = (record) => {
-  Modal.confirm({
-    title: 'Xác nhận đổi trạng thái',
-    content: `Bạn có chắc muốn thay đổi trạng thái của học sinh ${record.studentName}?`,
-    onOk() {
-      loadingStore.show()
-      requestAPI
-        .put(API_ROUTES_TEACHER.FETCH_DATA_STUDENT_FACTORY + '/' + record.studentFactoryId)
-        .then((response) => {
-          message.success(response.data.message || 'Trạng thái đã được cập nhật thành công')
-          fetchStudentFactory() // Làm mới danh sách sau khi đổi trạng thái
-        })
-        .catch((error) => {
-          message.error(error.data?.message || 'Lỗi khi đổi trạng thái sinh viên')
-        })
-        .finally(() => {
-          loadingStore.hide()
-        })
-    },
-  })
-}
-
-// <-- Thêm hàm changeFaceStudent
-// const changeFaceStudent = (record) => {
-//   Modal.confirm({
-//     title: 'Xác nhận đổi mặt',
-//     content: `Bạn có chắc muốn đổi mặt của học sinh ${record.studentName}?`,
-//     onOk() {
-//       loadingStore.show()
-//       // Giả sử record chứa studentId, nếu không hãy thay đổi cho phù hợp
-//       requestAPI
-//         .put(API_ROUTES_TEACHER.FETCH_DATA_STUDENT_FACTORY + '/change-face/' + record.studentId)
-//         .then((response) => {
-//           message.success(response.data.message || 'Đổi mặt học sinh thành công')
-//           fetchStudentFactory() // Làm mới danh sách sau khi đổi mặt
-//         })
-//         .catch((error) => {
-//           message.error(error.response?.data?.message || 'Lỗi khi đổi mặt học sinh')
-//         })
-//         .finally(() => {
-//           loadingStore.hide()
-//         })
-//     },
-//   })
-// }
 
 const handleClearFilter = () => {
   // Clear all filter values

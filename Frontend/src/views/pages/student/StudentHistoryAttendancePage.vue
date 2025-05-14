@@ -111,6 +111,17 @@ const fetchSemesters = () => {
     .get(API_ROUTES_STUDENT.FETCH_DATA_HISTORY_ATTENDANCE + '/semesters')
     .then((response) => {
       semesters.value = response.data.data
+
+      // Find current semester and set it as default
+      const now = new Date().getTime()
+      const currentSemester = semesters.value.find(
+        semester => semester.fromDate <= now && now <= semester.toDate
+      )
+      if (currentSemester) {
+        filter.semesterId = currentSemester.id
+      }
+
+      fetchAllAttendanceHistory()
     })
     .catch((error) => {
       message.error(error.response?.data?.message || 'Lỗi khi tải dữ liệu học kỳ')
@@ -178,8 +189,19 @@ const exportPDF = async (factoryId, factoryName) => {
 }
 
 const handleClearFilter = () => {
-  filter.semesterId = ''
   filter.factoryId = ''
+
+  // Find current semester when clearing filter
+  const now = new Date().getTime()
+  const currentSemester = semesters.value.find(
+    semester => semester.fromDate <= now && now <= semester.toDate
+  )
+  if (currentSemester) {
+    filter.semesterId = currentSemester.id
+  } else {
+    filter.semesterId = ''
+  }
+
   fetchAllAttendanceHistory()
 }
 
@@ -207,7 +229,6 @@ onMounted(() => {
                 allowClear
                 @change="fetchAllAttendanceHistory"
               >
-                <a-select-option :value="''">Tất cả học kỳ</a-select-option>
                 <a-select-option
                   v-for="semester in semesters"
                   :key="semester.id"
@@ -329,6 +350,17 @@ onMounted(() => {
               </template>
             </template>
           </a-table>
+        </a-card>
+      </div>
+    </div>
+
+    <!-- Display message when no data is available -->
+    <div class="row g-3" v-if="Object.keys(groupedAttendance).length === 0 && !isLoading">
+      <div class="col-12">
+        <a-card :bordered="false" class="card mb-3">
+          <div class="d-flex justify-content-center align-items-center p-4">
+            <a-empty description="Kỳ học này bạn chưa có lớp học nào" />
+          </div>
         </a-card>
       </div>
     </div>
