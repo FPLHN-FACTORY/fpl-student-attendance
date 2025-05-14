@@ -30,4 +30,9 @@ public class TCShiftFactoryRestController {
         return tcShiftFactoryService.getAllList(request);
     }
 
+    @GetMapping("/list/shift")
+    public ResponseEntity<?> getAllShift() {
+        return tcShiftFactoryService.getListShift();
+    }
+
 }

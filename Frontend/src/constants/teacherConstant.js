@@ -7,7 +7,7 @@ export const API_ROUTES_TEACHER = {
 
   FETCH_DATA_SHIFT_FACTORY: API_URL + '/teacher/factory-management/shift',
 
-  FETCH_DATA_ATTENDANCE_FACTORY: API_URL + '/teacher/factory-management/attendance',
+  FETCH_DATA_PLAN_DATE_ATTENDANCE: API_URL + '/teacher/factory-management/attendance',
 
   FETCH_DATA_SCHEDULE: API_URL + '/teacher/teaching-schedule',
 
