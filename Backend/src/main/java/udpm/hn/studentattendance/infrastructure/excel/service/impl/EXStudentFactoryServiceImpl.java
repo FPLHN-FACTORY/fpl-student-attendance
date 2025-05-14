@@ -68,7 +68,7 @@ public class EXStudentFactoryServiceImpl implements EXStudentFactoryService {
         String code = item.get("MA_SINH_VIEN");
         if (code == null || code.trim().isEmpty()) {
             String msg = "Mã sinh viên không được để trống.";
-            excelHelper.saveLogError(ImportLogType.STUDENT, msg, request);
+            excelHelper.saveLogError(ImportLogType.STUDENT_FACTORY, msg, request);
             return RouterHelper.responseError(msg, HttpStatus.BAD_REQUEST);
         }
 

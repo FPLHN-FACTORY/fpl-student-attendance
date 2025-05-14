@@ -221,30 +221,40 @@ const updateSemester = () => {
     message.error('Vui lòng nhập đầy đủ thông tin')
     return
   }
-  modalUpdateLoading.value = true
-  loadingStore.show()
-  const payload = {
-    ...detailSemester.value,
-    fromDate: detailSemester.value.fromDate.valueOf(),
-    toDate: detailSemester.value.toDate.valueOf(),
-  }
-  requestAPI
-    .put(API_ROUTES_ADMIN.FETCH_DATA_SEMESTER, payload)
-    .then(() => {
-      message.success('Cập nhật học kỳ thành công')
-      modalUpdate.value = false
-      fetchSemesters()
-    })
-    .catch((error) => {
-      message.error(
-        (error.response && error.response.data && error.response.data.message) ||
-          'Lỗi khi cập nhật học kỳ',
-      )
-    })
-    .finally(() => {
-      modalUpdateLoading.value = false
-      loadingStore.hide()
-    })
+
+  // Show confirmation dialog with warning about scheduled classes
+  Modal.confirm({
+    title: 'Xác nhận cập nhật học kỳ',
+    content: 'Lưu ý: Các lịch học mà sinh viên đã được phân công trước ngày bắt đầu hoặc sau ngày kết thúc của học kỳ vẫn sẽ hoạt động bình thường.',
+    okText: 'Cập nhật',
+    cancelText: 'Hủy',
+    onOk: () => {
+      modalUpdateLoading.value = true
+      loadingStore.show()
+      const payload = {
+        ...detailSemester.value,
+        fromDate: detailSemester.value.fromDate.valueOf(),
+        toDate: detailSemester.value.toDate.valueOf(),
+      }
+      requestAPI
+        .put(API_ROUTES_ADMIN.FETCH_DATA_SEMESTER, payload)
+        .then(() => {
+          message.success('Cập nhật học kỳ thành công')
+          modalUpdate.value = false
+          fetchSemesters()
+        })
+        .catch((error) => {
+          message.error(
+            (error.response && error.response.data && error.response.data.message) ||
+              'Lỗi khi cập nhật học kỳ',
+          )
+        })
+        .finally(() => {
+          modalUpdateLoading.value = false
+          loadingStore.hide()
+        })
+    },
+  })
 }
 
 const handleChangeStatusSemester = (record) => {
@@ -441,6 +451,8 @@ onMounted(() => {
       title="Thêm học kỳ"
       @ok="handleAddSemester"
       :okButtonProps="{ loading: modalAddLoading }"
+      @cancel="clearFormAdd"
+      @close="clearFormAdd"
     >
       <a-form layout="vertical">
         <a-form-item label="Tên học kỳ" required>

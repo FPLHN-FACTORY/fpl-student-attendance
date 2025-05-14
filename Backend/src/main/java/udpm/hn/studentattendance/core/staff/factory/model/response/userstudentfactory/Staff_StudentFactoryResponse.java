@@ -17,4 +17,5 @@ public interface Staff_StudentFactoryResponse {
 
     Integer getStatusStudentFactory();
 
+    Integer getTotalAbsentShift();
 }

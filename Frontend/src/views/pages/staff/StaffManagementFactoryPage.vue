@@ -339,9 +339,12 @@ const configImportExcel = {
 }
 
 const handleClearFilter = () => {
-  // Clear all filter values
-  Object.keys(filter).forEach((key) => {
-    filter[key] = ''
+  Object.assign(filter, {
+    factoryName: '',
+    status: '',
+    idProject: null,
+    idStaff: null,
+    idSemester: null,
   })
   pagination.current = 1
   fetchFactories()
@@ -536,6 +539,7 @@ onMounted(() => {
                     (option.label || '').toLowerCase().includes(input.toLowerCase())
                 "
               >
+                <a-select-option :value="null">Tất cả giảng viên</a-select-option>
                 <a-select-option
                   v-for="staff in staffs"
                   :key="staff.id"
@@ -560,6 +564,7 @@ onMounted(() => {
                     (option.label || '').toLowerCase().includes(input.toLowerCase())
                 "
               >
+                <a-select-option :value="null">Tất cả kỳ học</a-select-option>
                 <a-select-option
                   v-for="semester in semesters"
                   :key="semester.id"
