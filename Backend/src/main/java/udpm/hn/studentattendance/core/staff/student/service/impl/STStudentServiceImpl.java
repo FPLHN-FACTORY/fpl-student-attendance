@@ -26,6 +26,7 @@ import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.RestApiStatus;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -42,7 +43,7 @@ public class STStudentServiceImpl implements STStudentService {
 
     @Override
     public ResponseEntity<?> getAllStudentByFacility(USStudentRequest studentRequest) {
-        Pageable pageable = PaginationHelper.createPageable(studentRequest, "createdAt");
+        Pageable pageable = PaginationHelper.createPageable(studentRequest);
         PageableObject pageableObject = PageableObject.of(studentExtendRepository
                 .getAllStudentByFacility(pageable, studentRequest, sessionHelper.getFacilityId()));
 
@@ -232,12 +233,18 @@ public class STStudentServiceImpl implements STStudentService {
 
     @Override
     public ResponseEntity<?> isExistFace() {
-        List<Integer> raw = studentExtendRepository.existFaceForAllStudents(sessionHelper.getFacilityId());
+        List<Map<String, Object>> faceStatus = studentExtendRepository.existFaceForAllStudents(sessionHelper.getFacilityId());
+        Map<String, Boolean> studentFaceMap = faceStatus.stream()
+                .collect(Collectors.toMap(
+                        m -> (String) m.get("studentId"),
+                        m -> ((Number) m.get("hasFace")).intValue() == 1
+                ));
+
         return new ResponseEntity<>(
                 new ApiResponse(
-                        RestApiStatus.ERROR,
-                        "Sinh viên đã đăng ký mặt",
-                        raw),
+                        RestApiStatus.SUCCESS,
+                        "Lấy trạng thái face của sinh viên thành công",
+                        studentFaceMap),
                 HttpStatus.OK);
     }
 
