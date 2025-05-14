@@ -1,7 +1,7 @@
 <script setup>
 import { FilterFilled, SearchOutlined, UnorderedListOutlined } from '@ant-design/icons-vue'
 import { ref, reactive, onMounted } from 'vue'
-import { message, Modal } from 'ant-design-vue'
+import { message } from 'ant-design-vue'
 import { useRoute } from 'vue-router'
 import requestAPI from '@/services/requestApiService'
 import { API_ROUTES_TEACHER } from '@/constants/teacherConstant'
@@ -115,18 +115,17 @@ const handleTableChange = (pageInfo) => {
   fetchStudentFactory()
 }
 
-
-
 const handleClearFilter = () => {
-  // Clear all filter values
-  Object.keys(filter).forEach((key) => {
-    if (key !== 'factoryId') {
-      // Keep factoryId as it's from route
-      filter[key] = ''
-    }
-  })
-  pagination.current = 1
-  fetchStudentFactory()
+  // Preserve factoryId and reset only search filters
+  filter.searchQuery = '';
+  filter.status = '';
+
+  // Reset pagination
+  pagination.current = 1;
+  filter.page = 1;
+
+  // Refetch with cleared filters but preserved factoryId
+  fetchStudentFactory();
 }
 
 onMounted(() => {

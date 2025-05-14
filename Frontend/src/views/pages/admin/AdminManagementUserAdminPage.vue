@@ -406,6 +406,8 @@ onMounted(() => {
       title="Thêm Ban đào tạo"
       @ok="handleAddUser"
       :okButtonProps="{ loading: modalAddLoading }"
+      @cancel="clearNewUser"
+      @close="clearNewUser"
     >
       <a-form layout="vertical">
         <a-form-item label="Mã ban đào tạo" required>
