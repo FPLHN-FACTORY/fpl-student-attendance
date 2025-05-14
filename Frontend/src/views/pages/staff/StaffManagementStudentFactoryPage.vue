@@ -10,6 +10,7 @@ import {
   EyeFilled,
   FilterFilled,
   UnorderedListOutlined,
+  SearchOutlined,
 } from '@ant-design/icons-vue'
 import { useRoute } from 'vue-router'
 import {
@@ -67,6 +68,12 @@ const columns = ref(
     { title: 'Mã sinh viên', dataIndex: 'studentCode', key: 'studentCode' },
     { title: 'Tên sinh viên', dataIndex: 'studentName', key: 'studentName' },
     { title: 'Email sinh viên', dataIndex: 'studentEmail', key: 'studentEmail' },
+    {
+      title: 'Số buổi đã nghỉ',
+      dataIndex: 'totalAbsentShift',
+      key: 'totalAbsentShift',
+      align: 'center',
+    },
     { title: 'Trạng thái', dataIndex: 'statusStudentFactory', key: 'statusStudentFactory' },
     { title: 'Chi tiết', key: 'action' },
   ]),
@@ -370,6 +377,7 @@ const shiftColumns = ref(
     { title: 'Ngày học', dataIndex: 'startDate', key: 'startDate' },
     { title: 'Thời gian', key: 'time' },
     { title: 'Ca học', dataIndex: 'shift', key: 'shift' },
+    { title: 'Trạng thái điểm danh', dataIndex: 'statusAttendance', key: 'statusAttendance' },
     { title: 'Trạng thái', dataIndex: 'status', key: 'status' },
   ]),
 )
@@ -432,9 +440,11 @@ watch(isAddStudentModalVisible, (newVal) => {
 })
 
 const handleClearFilter = () => {
-  // Clear all filter values
-  Object.keys(filter).forEach((key) => {
-    filter[key] = ''
+  Object.assign(filter, {
+    searchQuery: '',
+    status: '',
+    page: 1,
+    pageSize: 5
   })
   pagination.current = 1
   fetchStudentFactories()
@@ -478,7 +488,7 @@ onMounted(() => {
                 class="w-100"
                 @change="fetchStudentFactories"
               >
-                <a-select-option :value="''">Tất cả trạng thái</a-select-option>
+                <a-select-option :value="null">Tất cả trạng thái</a-select-option>
                 <a-select-option value="1">Đang học</a-select-option>
                 <a-select-option value="0">Ngưng học</a-select-option>
               </a-select>
@@ -552,6 +562,11 @@ onMounted(() => {
                       }}
                     </a-tag>
                   </span>
+                </template>
+                <template v-if="column.dataIndex === 'totalAbsentShift'">
+                  <a-tag :color="record.totalAbsentShift > 0 ? 'red' : 'green'">{{
+                    record.totalAbsentShift || 0
+                  }}</a-tag>
                 </template>
               </template>
               <template v-else-if="column.key === 'action'">
@@ -674,6 +689,16 @@ onMounted(() => {
                   .join(', ')
               }}
               - {{ TYPE_SHIFT[record.type] }}
+            </a-tag>
+          </template>
+          <template v-else-if="column.dataIndex === 'statusAttendance'">
+            <a-tag :color="record.statusAttendance === 3 ?  'success'
+              : record.statusAttendance === null
+              ? null : 'error'">
+              {{ record.statusAttendance === 3 ? 'Có mặt'
+              : record.statusAttendance === null
+              ? ''
+              : 'Vắng mặt' }}
             </a-tag>
           </template>
           <template v-else-if="column.dataIndex === 'status'">
