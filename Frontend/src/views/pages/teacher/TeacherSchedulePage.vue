@@ -180,7 +180,6 @@ const fetchTeachingSchedule = () => {
     })
 }
 const handleAttendance = (record) => {
-  console.log('Detail record:', record)
   router.push({
     name: ROUTE_NAMES.MANAGEMENT_STUDENT_ATTENDANCE,
     query: {
@@ -237,7 +236,6 @@ const handleTableChange = (pag) => {
 }
 
 // Modal chi tiết & cập nhật
-const isDetailModalVisible = ref(false)
 const detailModalContent = ref('')
 const detailLateArrival = ref(0)
 const detailLink = ref('')
@@ -261,12 +259,12 @@ const handleShowDescription = (record) => {
     .get(`${API_ROUTES_TEACHER.FETCH_DATA_SCHEDULE}/${record.idPlanDate}`)
     .then((res) => {
       const d = res.data.data
-      detailModalContent.value = d.description || 'Không có mô tả'
+      detailModalContent.value = d.description
       detailLateArrival.value = d.lateArrival
       detailLink.value = d.link
       detailRoom.value = d.room || ''
       currentPlanDateId.value = d.planDateId
-      isDetailModalVisible.value = true
+      handleShowUpdate()
     })
     .catch((error) => {
       message.error(error.response?.data?.message || 'Lỗi khi lấy chi tiết kế hoạch')
@@ -297,7 +295,6 @@ const handleUpdatePlanDate = () => {
         .then(() => {
           message.success('Cập nhật buổi học thành công')
           isUpdateModalVisible.value = false
-          isDetailModalVisible.value = false
           fetchTeachingSchedule()
           fetchTeachingSchedulePresent()
         })
@@ -457,7 +454,7 @@ onMounted(() => {
     <div class="row g-3">
       <div class="col-12">
         <a-card :bordered="false" class="cart mb-3">
-          <template #title> <FilterFilled /> Bộ lọc tìm kiếm </template>
+          <template #title> <FilterFilled /> Bộ lọc</template>
           <div class="row g-3 filter-container">
             <div class="col-md-6 col-sm-6">
               <div class="label-title">Khoảng thời gian:</div>
@@ -480,7 +477,7 @@ onMounted(() => {
                 v-model:value="filter.shiftType"
                 placeholder="Chọn hình thức học"
                 allowClear
-                style="width: 100%"
+                class="w-100"
                 @change="fetchTeachingSchedule"
               >
                 <a-select-option :value="''">Tất cả hình thức học</a-select-option>
@@ -560,7 +557,7 @@ onMounted(() => {
                   </a-tag>
                 </template>
                 <template v-else-if="column.dataIndex === 'description'">
-                  <a-tooltip title="Xem, sửa mô tả">
+                  <a-tooltip title="Xem, sửa chi tiết buổi dạy">
                     <a-typography-link @click="handleShowDescription(record)"
                       >Chi tiết</a-typography-link
                     >
@@ -671,7 +668,7 @@ onMounted(() => {
                   </a-tag>
                 </template>
                 <template v-else-if="column.dataIndex === 'description'">
-                  <a-tooltip title="Xem, sửa mô tả">
+                  <a-tooltip title="Xem, sửa chi tiết buổi dạy">
                     <a-typography-link @click="handleShowDescription(record)"
                       >Chi tiết</a-typography-link
                     >
@@ -687,24 +684,6 @@ onMounted(() => {
       </div>
     </div>
 
-    <!-- Modal chi tiết -->
-    <a-modal
-      v-model:open="isDetailModalVisible"
-      title="Chi tiết mô tả buổi dạy"
-      :footer="null"
-      maskClosable
-    >
-      <div class="mb-3">{{ detailModalContent }}</div>
-      <div v-if="detailRoom">Địa điểm học: {{ detailRoom }}</div>
-      <div v-if="detailLink">
-        Link học: <a :href="detailLink" target="_blank">{{ detailLink }}</a>
-      </div>
-      <div class="d-flex justify-content-end gap-2">
-        <a-button @click="isDetailModalVisible = false" class="btn-gray"> Đóng </a-button>
-        <a-button type="primary" @click="handleShowUpdate"> Sửa </a-button>
-      </div>
-    </a-modal>
-
     <!-- Modal cập nhật -->
     <a-modal
       v-model:open="isUpdateModalVisible"
@@ -715,7 +694,12 @@ onMounted(() => {
     >
       <a-form layout="vertical" :model="formUpdateData" :rules="formUpdateRules">
         <a-form-item label="Nội dung buổi học" name="description">
-          <a-textarea v-model:value="formUpdateData.description" rows="4" class="w-100" />
+          <a-textarea
+            v-model:value="formUpdateData.description"
+            rows="4"
+            class="w-100"
+            placeholder="Không có nội dung nào"
+          />
         </a-form-item>
         <a-form-item label="Điểm danh muộn" name="lateArrival">
           <a-input-number v-model:value="formUpdateData.lateArrival" :min="0" class="w-100" />

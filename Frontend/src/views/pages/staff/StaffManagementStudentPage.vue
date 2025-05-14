@@ -11,6 +11,7 @@ import {
   UnorderedListOutlined,
   FilterFilled,
   UserDeleteOutlined,
+  SearchOutlined,
 } from '@ant-design/icons-vue'
 import { ROUTE_NAMES } from '@/router/staffRoute'
 import { DEFAULT_PAGINATION } from '@/constants'
@@ -315,32 +316,36 @@ onMounted(() => {
       <div class="col-12">
         <a-card :bordered="false" class="cart mb-3">
           <template #title> <FilterFilled /> Bộ lọc </template>
-          <div class="row g-3 filter-container">
+          <div class="row g-3">
             <!-- Input tìm kiếm theo mã, tên, email -->
-            <a-col :span="12" class="col">
-              <div class="label-title">Tìm kiếm mã, tên, email:</div>
+            <div class="col-md-6 col-sm-12">
+              <div class="label-title">Từ khoá:</div>
               <a-input
                 v-model:value="filter.searchQuery"
                 placeholder="Tìm kiếm theo mã, tên, email"
                 allowClear
                 @change="fetchStudents"
-              />
-            </a-col>
+              >
+                <template #prefix>
+                  <SearchOutlined />
+                </template>
+              </a-input>
+            </div>
             <!-- Combobox trạng thái -->
-            <a-col :span="12" class="col">
+            <div class="col-md-6 col-sm-12">
               <div class="label-title">Trạng thái:</div>
               <a-select
                 v-model:value="filter.studentStatus"
                 placeholder="Chọn trạng thái"
                 allowClear
-                style="width: 100%"
+                class="w-100"
                 @change="fetchStudents"
               >
                 <a-select-option :value="''">Tất cả trạng thái</a-select-option>
                 <a-select-option value="ACTIVE">Hoạt động</a-select-option>
                 <a-select-option value="INACTIVE">Không hoạt động</a-select-option>
               </a-select>
-            </a-col>
+            </div>
           </div>
           <div class="row">
             <div class="col-12">

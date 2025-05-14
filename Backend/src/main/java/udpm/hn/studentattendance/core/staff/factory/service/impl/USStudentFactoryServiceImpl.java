@@ -252,11 +252,12 @@ public class USStudentFactoryServiceImpl implements USStudentFactoryService {
 
         boolean isGreaterThanTwenty = userStudentFactoryExtendRepository
                 .isStudentGreaterThanTwenty(addRequest.getFactoryId());
+
         boolean isExistsShift = userStudentFactoryExtendRepository
                 .isStudentExistsShift(
                         sessionHelper.getFacilityId(),
-                        existStudentFactory.get().getFactory().getId(),
-                        existStudentFactory.get().getId());
+                        existFactory.get().getId(),
+                        existUserStudent.get().getId());
 
         if (existUserStudent.isEmpty()) {
             return new ResponseEntity<>(

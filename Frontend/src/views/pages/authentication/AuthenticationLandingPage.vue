@@ -8,7 +8,6 @@ import imgRoleTeacher from '@/assets/images/role-teacher.png'
 import imgRoleStudent from '@/assets/images/role-student.png'
 import { GoogleOutlined } from '@ant-design/icons-vue'
 import { onMounted, ref } from 'vue'
-import { toast } from 'vue3-toastify'
 import requestAPI from '@/services/requestApiService'
 import { REDIRECT_LOGIN_ADMIN } from '@/constants/authenticationConstant'
 import useAuthStore from '@/stores/useAuthStore'
@@ -17,6 +16,7 @@ import { decodeBase64 } from '@/utils/utils'
 import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
 import { ROUTE_NAMES_API } from '@/router/authenticationRoute'
 import { ROLE } from '@/constants'
+import { message } from 'ant-design-vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -72,15 +72,15 @@ const handleSelectFacility = (role) => {
 }
 
 const handleRedirectLogin = (width_out_facility = false) => {
-  toast.clearAll()
+  message.destroy()
   if (!width_out_facility && !facilityID.value) {
-    return toast.error('Vui lòng chọn cơ sở muốn đăng nhập')
+    return message.error('Vui lòng chọn cơ sở muốn đăng nhập')
   }
 
   const currentRole = roles.find((o) => o.role.includes(roleLogin.value))
 
   if (!currentRole) {
-    return toast.error('Role đăng nhập không chính xác')
+    return message.error('Role đăng nhập không chính xác')
   }
 
   const params = new URLSearchParams({
@@ -100,7 +100,7 @@ const fetchDataFacility = async () => {
       facilityID.value = lstFacility.value[0].id
     }
   } catch (error) {
-    toast.error('Không thể tải danh sách cơ sở')
+    message.error('Không thể tải danh sách cơ sở')
   }
 }
 
@@ -126,16 +126,19 @@ const checkLogin = () => {
   roleLogin.value = route.query.role || null
   const authenticationToken = route.query.authencation_token || null
   const authenticationError = route.query.authencation_error || null
+
+  router.replace({ path: route.path, query: {} })
+
   loadingPage.show()
   if (authenticationToken) {
     if (!authStore.login(authenticationToken)) {
       loadingPage.hide()
-      return toast.error('Tài khoản của bạn không thể truy cập vào mục này!')
+      return message.error('Tài khoản của bạn không thể truy cập vào mục này!')
     }
   } else if (authenticationError) {
     const dataError = JSON.parse(decodeBase64(authenticationError))
     loadingPage.hide()
-    return toast.error(dataError.message)
+    return message.error(dataError.message)
   }
   redirectLoginRole()
 }
