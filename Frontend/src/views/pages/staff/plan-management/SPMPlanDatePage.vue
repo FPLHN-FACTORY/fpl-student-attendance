@@ -49,6 +49,9 @@ const configImportExcel = {
   data: { idPlanFactory: route.params?.id },
   showDownloadTemplate: true,
   showHistoryLog: true,
+  showExport: true,
+  btnImport: 'Import ca học',
+  btnExport: 'Export điểm danh',
 }
 
 const modalAddOrUpdate = reactive({

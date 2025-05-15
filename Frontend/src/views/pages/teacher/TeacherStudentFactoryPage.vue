@@ -156,15 +156,15 @@ const handleTableChange = (pageInfo) => {
 
 const handleClearFilter = () => {
   // Preserve factoryId and reset only search filters
-  filter.searchQuery = '';
-  filter.status = '';
+  filter.searchQuery = ''
+  filter.status = ''
 
   // Reset pagination
-  pagination.current = 1;
-  filter.page = 1;
+  pagination.current = 1
+  filter.page = 1
 
   // Refetch with cleared filters but preserved factoryId
-  fetchStudentFactory();
+  fetchStudentFactory()
 }
 
 const handleShowDetailAttendance = (item) => {
@@ -386,8 +386,9 @@ onMounted(() => {
                       record.totalAbsentShift > 0 && record.totalShift > 0 ? 'orange' : 'green'
                     "
                     >{{
-                      (record.totalShift && (record.totalAbsentShift / record.totalShift) * 100) ||
-                      0
+                      (
+                        record.totalShift && (record.totalAbsentShift / record.totalShift) * 100
+                      ).toFixed(1) || 0
                     }}%</a-tag
                   >
                 </template>

@@ -6,11 +6,12 @@ import requestAPI from '@/services/requestApiService'
 import { ATTENDANCE_STATUS, DEFAULT_PAGINATION, STATUS_REQUIRED_ATTENDANCE } from '@/constants'
 import { API_ROUTES_STAFF } from '@/constants/staffConstant'
 import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
-import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
+import { API_ROUTES_EXCEL, GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
 import { ROUTE_NAMES } from '@/router/staffRoute'
 import { useRoute, useRouter } from 'vue-router'
 import { autoAddColumnWidth, debounce, formatDate } from '@/utils/utils'
 import useLoadingStore from '@/stores/useLoadingStore'
+import ExcelUploadButton from '@/components/excel/ExcelUploadButton.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -22,6 +23,28 @@ const isLoading = ref(false)
 
 const _detail = ref(null)
 const lstData = ref([])
+
+const configImportExcel = {
+  fetchUrl: API_ROUTES_EXCEL.FETCH_IMPORT_PLAN_DATE,
+  data: { idPlanDate: route.params?.id },
+  showDownloadTemplate: false,
+  showHistoryLog: false,
+  showExport: true,
+  showExportPDF: true,
+  didParseCellPDF: (data) => {
+    const { row, column, cell } = data
+    if (typeof cell.raw === 'string') {
+      if (cell.raw.includes('Chưa checkout') || cell.raw.includes('Chưa checkin')) {
+        cell.styles.fillColor = [255, 242, 202]
+      } else if (cell.raw.includes('Có mặt')) {
+        cell.styles.fillColor = [169, 208, 142]
+      } else if (cell.raw.includes('Vắng mặt')) {
+        cell.styles.fillColor = [255, 125, 125]
+      }
+    }
+  },
+  showImport: false,
+}
 
 const columns = ref(
   autoAddColumnWidth([
@@ -246,6 +269,9 @@ watch(
       <div class="col-12">
         <a-card :bordered="false" class="cart">
           <template #title> <UnorderedListOutlined /> Chi tiết điểm danh sinh viên </template>
+          <div class="d-flex justify-content-end mb-3 flex-wrap gap-3">
+            <ExcelUploadButton v-bind="configImportExcel" />
+          </div>
           <div>
             <a-table
               rowKey="id"
