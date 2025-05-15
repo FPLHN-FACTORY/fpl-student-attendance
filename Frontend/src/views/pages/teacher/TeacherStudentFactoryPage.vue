@@ -239,7 +239,7 @@ onMounted(() => {
               </a-tag>
             </template>
             <template v-if="column.dataIndex === 'createdAt'">
-              <template v-if="record.endDate <= Date.now()">
+              <template v-if="record.startDate <= Date.now()">
                 <template v-if="record.requiredCheckin === STATUS_REQUIRED_ATTENDANCE.ENABLE">
                   <span v-if="record.status === ATTENDANCE_STATUS.NOTCHECKIN.id">
                     <a-badge status="error" /> Chưa checkin

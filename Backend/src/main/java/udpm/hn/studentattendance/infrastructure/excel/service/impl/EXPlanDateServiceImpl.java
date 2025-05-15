@@ -423,7 +423,7 @@ public class EXPlanDateServiceImpl implements EXPlanDateService {
                 int total_absent = 0;
                 for(String idPlanDate: o.getPlanDates()) {
                     TCPlanDateStudentFactoryResponse planDate = lstStudent.stream().filter(s -> s.getCode().equals(student.getCode()) && s.getId().equals(idPlanDate)).findFirst().orElse(null);
-                    if (planDate == null || planDate.getEndDate() > DateTimeUtils.getCurrentTimeMillis()) {
+                    if (planDate == null || planDate.getStartDate() > DateTimeUtils.getCurrentTimeMillis()) {
                         dataCell.add(" - ");
                         continue;
                     }
