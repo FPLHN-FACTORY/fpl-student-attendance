@@ -100,12 +100,13 @@ public interface STProjectExtendRepository extends ProjectRepository {
             FROM project p 
             LEFT JOIN subject_facility sf ON sf.id = p.id_subject_facility
             WHERE 
-            p.name = :name
+            p.name LIKE :name
             AND p.id_level_project = :idLevelProject
             AND p.id_semester = :idSemester
-            AND sf.id_facility = :idFacility
+            AND sf.id_facility = :idFacility AND
+            (:idProject IS NULL OR p.id != :idProject)
             """, nativeQuery = true)
-    boolean isExistProjectInSameLevel(String name, String idLevelProject, String idSemester, String idFacility);
+    boolean isExistProjectInSameLevel(String name, String idLevelProject, String idSemester, String idFacility, String idProject);
 
     @Query(value = """
                         SELECT

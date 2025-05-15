@@ -52,7 +52,7 @@ public class ADStaffServiceImpl implements ADStaffService {
     private final SessionHelper sessionHelper;
 
     @Value("${app.config.disabled-check-email-fpt}")
-    private String isCheckEmailFpt;
+    private String isDisableCheckEmailFpt;
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -71,13 +71,22 @@ public class ADStaffServiceImpl implements ADStaffService {
 
     @Override
     public ResponseEntity<?> createStaff(ADCreateUpdateStaffRequest adCreateUpdateStaffRequest) {
+
+        if (!ValidateHelper.isValidCode(adCreateUpdateStaffRequest.getStaffCode())) {
+            return RouterHelper.responseError("Mã nhân viên không hợp lệ");
+        }
+
+        if (!ValidateHelper.isValidFullname(adCreateUpdateStaffRequest.getName())) {
+            return RouterHelper.responseError("Tên nhân viên không hợp lệ");
+        }
+
         // Kiểm tra định dạng email
-        if (isCheckEmailFpt.equals("true")) {
+        if (!isDisableCheckEmailFpt.equalsIgnoreCase("true")) {
             if (!ValidateHelper.isValidEmailFE(adCreateUpdateStaffRequest.getEmailFe().trim())) {
-                return RouterHelper.responseError("Không chứa khoảng trắng và kết thúc bằng @fe.edu.vn");
+                return RouterHelper.responseError("Email FE không được chứa khoảng trắng và phải kết thúc bằng @fe.edu.vn");
             }
             if (!ValidateHelper.isValidEmailFPT(adCreateUpdateStaffRequest.getEmailFpt().trim())) {
-                return RouterHelper.responseError("Không chứa khoảng trắng và kết thúc bằng @fpt.edu.vn");
+                return RouterHelper.responseError("Email FPT không được chứa khoảng trắng và phải kết thúc bằng @fpt.edu.vn");
             }
         }
 
@@ -158,6 +167,15 @@ public class ADStaffServiceImpl implements ADStaffService {
 
     @Override
     public ResponseEntity<?> updateStaff(ADCreateUpdateStaffRequest adCreateUpdateStaffRequest, String id) {
+
+        if (!ValidateHelper.isValidCode(adCreateUpdateStaffRequest.getStaffCode())) {
+            return RouterHelper.responseError("Mã nhân viên không hợp lệ");
+        }
+
+        if (!ValidateHelper.isValidFullname(adCreateUpdateStaffRequest.getName())) {
+            return RouterHelper.responseError("Tên nhân viên không hợp lệ");
+        }
+
         // Kiểm tra nhân viên tồn tại
         Optional<UserStaff> opt = adStaffRepository.findById(id);
         if (opt.isEmpty()) {
@@ -187,7 +205,7 @@ public class ADStaffServiceImpl implements ADStaffService {
         }
 
         // Kiểm tra định dạng email
-        if (isCheckEmailFpt.equals("true")) {
+        if (!isDisableCheckEmailFpt.equalsIgnoreCase("true")) {
             if (!ValidateHelper.isValidEmailFE(adCreateUpdateStaffRequest.getEmailFe().trim())) {
                 return RouterHelper.responseError("Không chứa khoảng trắng và kết thúc bằng @fe.edu.vn");
             }
