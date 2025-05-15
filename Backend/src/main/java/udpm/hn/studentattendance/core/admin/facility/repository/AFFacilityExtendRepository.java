@@ -107,4 +107,15 @@ public interface AFFacilityExtendRepository extends FacilityRepository {
     """, nativeQuery = true)
     List<String> getListEmailUserDisableFacility(String idFacility);
 
+    @Query(value = """
+                SELECT
+                    CASE WHEN COUNT(*) > 0 THEN 'TRUE' ELSE 'FALSE' END
+                FROM facility
+                WHERE
+                    status = 1 AND
+                    name LIKE :name AND
+                    id != :idFacility
+            """, nativeQuery = true)
+    boolean isExistsByName(String name, String idFacility);
+
 }

@@ -66,7 +66,7 @@ public class AFFacilityServiceImpl implements AFFacilityService {
             return new ResponseEntity<>(
                     new ApiResponse(
                             RestApiStatus.WARNING,
-                            "Cơ sở đã tồn tại",
+                            "Tên cơ sở đã tồn tại trên hệ thống",
                             null
                     ),
                     HttpStatus.BAD_REQUEST);
@@ -91,41 +91,20 @@ public class AFFacilityServiceImpl implements AFFacilityService {
 
     @Override
     public ResponseEntity<?> updateFacility(String facilityId, AFCreateUpdateFacilityRequest request) {
-//        if (!facilityRepository.existsByNameAndId(request.getFacilityName(), facilityId)) {
-//            return new ResponseEntity<>(
-//                    new ApiResponse(
-//                            RestApiStatus.ERROR,
-//                            "Cơ sở không tồn tại",
-//                            null
-//                    ),
-//                    HttpStatus.NOT_FOUND);
-//        }
         Optional<Facility> existFacility = facilityRepository.findById(facilityId);
-        existFacility.map(facilities -> {
-            facilities.setCode(GenerateNameHelper.generateCodeFromName(request.getFacilityName().trim()));
-            facilities.setName(GenerateNameHelper.replaceManySpaceToOneSpace(request.getFacilityName().trim()));
-            facilities.setCreatedAt(facilities.getCreatedAt());
-            return facilityRepository.save(facilities);
-        });
-        return existFacility
-                .map(
-                        facility -> new ResponseEntity<>(
-                                new ApiResponse(
-                                        RestApiStatus.SUCCESS,
-                                        "Cập nhật cơ sở thành công",
-                                        null
-                                ),
-                                HttpStatus.CREATED)
-                )
-                .orElseGet(
-                        () -> new ResponseEntity<>(
-                                new ApiResponse(
-                                        RestApiStatus.ERROR,
-                                        "Cơ sở không tồn tại",
-                                        null
-                                ),
-                                HttpStatus.NOT_FOUND)
-                );
+        if (existFacility.isEmpty()) {
+             return RouterHelper.responseError("Không tìm thấy cơ sở");
+        }
+
+        if (facilityRepository.isExistsByName(request.getFacilityName(), facilityId)) {
+            return RouterHelper.responseError("Tên cơ sở đã tồn tại trên hệ thống");
+        }
+
+        Facility facility = existFacility.get();
+        facility.setCode(GenerateNameHelper.generateCodeFromName(request.getFacilityName().trim()));
+        facility.setName(GenerateNameHelper.replaceManySpaceToOneSpace(request.getFacilityName().trim()));
+
+        return RouterHelper.responseSuccess("Cập nhật cơ sở thành công", facilityRepository.save(facility));
     }
 
     @Override

@@ -21,4 +21,5 @@ public class TCTeachingScheduleRequest extends PageableRequest {
     private Long endDate;
 
     private Integer shiftType;
+
 }

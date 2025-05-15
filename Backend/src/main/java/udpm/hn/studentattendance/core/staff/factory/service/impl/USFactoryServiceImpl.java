@@ -17,6 +17,7 @@ import udpm.hn.studentattendance.core.staff.factory.service.USFactoryService;
 import udpm.hn.studentattendance.entities.*;
 import udpm.hn.studentattendance.helpers.NotificationHelper;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
+import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.helpers.SessionHelper;
 import udpm.hn.studentattendance.infrastructure.common.ApiResponse;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
@@ -147,7 +148,7 @@ public class USFactoryServiceImpl implements USFactoryService {
                     HttpStatus.BAD_REQUEST);
         }
         boolean exists = factoryRepository.isExistNameAndProject(factoryCreateUpdateRequest.getFactoryName(),
-                factoryCreateUpdateRequest.getIdProject());
+                factoryCreateUpdateRequest.getIdProject(), null);
         if (exists) {
             return new ResponseEntity<>(
                     new ApiResponse(
@@ -156,8 +157,8 @@ public class USFactoryServiceImpl implements USFactoryService {
                             null),
                     HttpStatus.BAD_REQUEST);
         }
-        boolean teacherJoinThanThreeFactory = factoryRepository.isTeacherJoinThanThreeFactory(
-                factoryCreateUpdateRequest.getIdUserStaff(), project.get().getSemester().getId());
+//        boolean teacherJoinThanThreeFactory = factoryRepository.isTeacherJoinThanThreeFactory(
+//                factoryCreateUpdateRequest.getIdUserStaff(), project.get().getSemester().getId());
 //        if (teacherJoinThanThreeFactory == true) {
 //            return new ResponseEntity<>(
 //                    new ApiResponse(
@@ -201,54 +202,65 @@ public class USFactoryServiceImpl implements USFactoryService {
         Optional<Project> project = projectFactoryExtendRepository
                 .findById(factoryCreateUpdateRequest.getIdProject());
 
-        boolean teacherJoinThanThreeFactory = factoryRepository.isTeacherJoinThanThreeFactory(
-                factoryCreateUpdateRequest.getIdUserStaff(), project.get().getSemester().getId());
-        if (teacherJoinThanThreeFactory) {
-            return new ResponseEntity<>(
-                    new ApiResponse(
-                            RestApiStatus.ERROR,
-                            "Giảng viên này đã tham gia 3 nhóm xưởng ở kỳ học này",
-                            null),
-                    HttpStatus.BAD_REQUEST);
+        if (existFactory.isEmpty()) {
+            return RouterHelper.responseError("Không tìm thấy nhóm xưởng");
         }
-        if (existFactory.isPresent()) {
-            Factory factory = existFactory.get();
-            UserStaff currentUserStaff = factory.getUserStaff();
 
-            factory.setName(factoryCreateUpdateRequest.getFactoryName());
-            factory.setDescription(factoryCreateUpdateRequest.getFactoryDescription());
-            factory.setUserStaff(userStaff.get());
-            factory.setProject(project.get());
-            factoryRepository.save(factory);
+        if (userStaff.isEmpty()) {
+            return RouterHelper.responseError("Giảng viên không tồn tại");
+        }
 
-            Map<String, Object> dataNotification = new HashMap<>();
-            NotificationAddRequest notificationAddRequest = new NotificationAddRequest();
-            dataNotification.put(NotificationHelper.KEY_USER_ADMIN,
-                    sessionHelper.getUserCode() + " - " + sessionHelper.getUserName());
-            dataNotification.put(NotificationHelper.KEY_FACTORY, factory.getName());
-            notificationAddRequest.setData(dataNotification);
-            if (!currentUserStaff.getId().equals(userStaff.get().getId())) {
-                notificationAddRequest.setIdUser(currentUserStaff.getId());
-                notificationAddRequest.setType(NotificationHelper.TYPE_REMOVE_TEACHER_TO_FACTORY);
-                notificationService.add(notificationAddRequest);
-            }
-            notificationAddRequest.setIdUser(userStaff.get().getId());
-            notificationAddRequest.setType(NotificationHelper.TYPE_ADD_TEACHER_TO_FACTORY);
+        if (project.isEmpty()) {
+            return RouterHelper.responseError("Dự án không tồn tại");
+        }
+
+//        boolean teacherJoinThanThreeFactory = factoryRepository.isTeacherJoinThanThreeFactory(
+//                factoryCreateUpdateRequest.getIdUserStaff(), project.get().getSemester().getId());
+//        if (teacherJoinThanThreeFactory) {
+//            return new ResponseEntity<>(
+//                    new ApiResponse(
+//                            RestApiStatus.ERROR,
+//                            "Giảng viên này đã tham gia 3 nhóm xưởng ở kỳ học này",
+//                            null),
+//                    HttpStatus.BAD_REQUEST);
+//        }
+
+        Factory factory = existFactory.get();
+        UserStaff currentUserStaff = factory.getUserStaff();
+
+        factory.setName(factoryCreateUpdateRequest.getFactoryName());
+        factory.setDescription(factoryCreateUpdateRequest.getFactoryDescription());
+        factory.setUserStaff(userStaff.get());
+        factory.setProject(project.get());
+
+        if (factoryRepository.isExistNameAndProject(factory.getName(),
+                factory.getProject().getId(), factory.getId())) {
+            return RouterHelper.responseError("Nhóm xưởng đã tồn tại trong dự án này");
+        }
+
+        factoryRepository.save(factory);
+
+        Map<String, Object> dataNotification = new HashMap<>();
+        NotificationAddRequest notificationAddRequest = new NotificationAddRequest();
+        dataNotification.put(NotificationHelper.KEY_USER_ADMIN,
+                sessionHelper.getUserCode() + " - " + sessionHelper.getUserName());
+        dataNotification.put(NotificationHelper.KEY_FACTORY, factory.getName());
+        notificationAddRequest.setData(dataNotification);
+        if (!currentUserStaff.getId().equals(userStaff.get().getId())) {
+            notificationAddRequest.setIdUser(currentUserStaff.getId());
+            notificationAddRequest.setType(NotificationHelper.TYPE_REMOVE_TEACHER_TO_FACTORY);
             notificationService.add(notificationAddRequest);
-
-            return new ResponseEntity<>(
-                    new ApiResponse(
-                            RestApiStatus.SUCCESS,
-                            "Sửa nhóm xưởng thành công",
-                            factory),
-                    HttpStatus.OK);
         }
+        notificationAddRequest.setIdUser(userStaff.get().getId());
+        notificationAddRequest.setType(NotificationHelper.TYPE_ADD_TEACHER_TO_FACTORY);
+        notificationService.add(notificationAddRequest);
+
         return new ResponseEntity<>(
                 new ApiResponse(
-                        RestApiStatus.ERROR,
-                        "Nhóm xưởng không tồn tại",
-                        null),
-                HttpStatus.NOT_FOUND);
+                        RestApiStatus.SUCCESS,
+                        "Cập nhật nhóm xưởng thành công",
+                        factory),
+                HttpStatus.OK);
     }
 
     @Override

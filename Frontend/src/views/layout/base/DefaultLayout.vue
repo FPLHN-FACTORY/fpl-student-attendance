@@ -56,15 +56,6 @@ const dataFilter = reactive({
 
 const pagination = ref({ ...DEFAULT_PAGINATION })
 
-const handleToggleNav = () => {
-  collapsed.value = !collapsed.value
-  if (collapsed.value && screenWidth.value <= 912) {
-    document.body.classList.add('disable-scroll-x')
-  } else {
-    document.body.classList.remove('disable-scroll-x')
-  }
-}
-
 const handleLogout = () => {
   authStore.logout()
   window.location.href = BASE_URL
@@ -140,12 +131,22 @@ const handleSwitchRole = () => {
 const handleMenuClick = () => {
   if (screenWidth.value <= 912) {
     collapsed.value = false
+    document.body.classList.remove('disable-scroll-x')
   }
 }
 
 const handleResizeScreen = () => {
   screenWidth.value = window.innerWidth
   screenHeight.value = window.innerHeight
+}
+
+const handleToggleNav = () => {
+  collapsed.value = !collapsed.value
+  if (collapsed.value && screenWidth.value <= 912) {
+    document.body.classList.add('disable-scroll-x')
+  } else {
+    document.body.classList.remove('disable-scroll-x')
+  }
 }
 
 onMounted(() => {
