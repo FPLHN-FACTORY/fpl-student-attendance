@@ -47,6 +47,8 @@ public class ADUserAdminServiceImpl implements ADUserAdminService {
     @Value("${app.config.app-name}")
     private String appName;
 
+    @Value("${app.config.disabled-check-email-fpt}")
+    private String isDisableCheckEmailFpt;
 
     @Override
     public ResponseEntity<?> getAllUserAdmin(ADUserAdminRequest request) {
@@ -86,7 +88,20 @@ public class ADUserAdminServiceImpl implements ADUserAdminService {
         Optional<UserAdmin> existUserAdmin2 = userAdminExtendRepository
                 .getUserAdminByEmail(createOrUpdateRequest.getEmail());
 
-        boolean isMaxAdmin = userAdminExtendRepository.isMaxAdmin();
+        if (!ValidateHelper.isValidEmail(createOrUpdateRequest.getEmail())) {
+            return RouterHelper.responseError("Định dạng email không hợp lệ");
+        }
+
+        if (!ValidateHelper.isValidFullname(createOrUpdateRequest.getStaffName())) {
+            return RouterHelper.responseError("Tên ban đào tạo không hợp lệ");
+        }
+
+        if(!isDisableCheckEmailFpt.equalsIgnoreCase("true")) {
+            if (!ValidateHelper.isValidEmailFE(createOrUpdateRequest.getEmail().trim()) && !ValidateHelper.isValidEmailFPT(createOrUpdateRequest.getEmail().trim())) {
+                return RouterHelper.responseError("Email không chứa khoảng trắng và phải kết thúc bằng edu.vn");
+            }
+        }
+
         if (existUserAdmin.isPresent()) {
             return new ResponseEntity<>(
                     new ApiResponse(
@@ -103,6 +118,7 @@ public class ADUserAdminServiceImpl implements ADUserAdminService {
                             existUserAdmin),
                     HttpStatus.BAD_REQUEST);
         }
+//        boolean isMaxAdmin = userAdminExtendRepository.isMaxAdmin();
 //        if (isMaxAdmin) {
 //            return new ResponseEntity<>(
 //                    new ApiResponse(
@@ -136,6 +152,15 @@ public class ADUserAdminServiceImpl implements ADUserAdminService {
     @Override
     public ResponseEntity<?> updateUserAdmin(ADUserAdminCreateOrUpdateRequest createOrUpdateRequest,
                                              String id) {
+
+        if (!ValidateHelper.isValidEmail(createOrUpdateRequest.getEmail())) {
+            return RouterHelper.responseError("Định dạng email không hợp lệ");
+        }
+
+        if (!ValidateHelper.isValidFullname(createOrUpdateRequest.getStaffName())) {
+            return RouterHelper.responseError("Tên ban đào tạo không hợp lệ");
+        }
+
         // Kiểm tra nhân viên tồn tại
         Optional<UserAdmin> opt = userAdminExtendRepository.findById(id);
         if (opt.isEmpty()) {

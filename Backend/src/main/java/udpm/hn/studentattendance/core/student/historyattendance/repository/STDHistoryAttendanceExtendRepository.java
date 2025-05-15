@@ -16,6 +16,8 @@ public interface STDHistoryAttendanceExtendRepository extends FactoryRepository 
     @Query(value = """
             SELECT
                 ROW_NUMBER() OVER (PARTITION BY ft.id ORDER BY pd.start_date ASC) AS rowNumber,
+                pd.id AS planDateId,
+                ad.id AS attendanceId,
                 usf.id_user_student AS userStudentFactoryId,
                 usf.id_factory AS factoryId,
                 ft.name AS factoryName,
@@ -62,6 +64,7 @@ public interface STDHistoryAttendanceExtendRepository extends FactoryRepository 
                 LEFT JOIN plan pl ON pl.id_project = p.id
                 LEFT JOIN plan_factory pf ON pf.id_factory = ft.id
                 LEFT JOIN plan_date pd ON pd.id_plan_factory = pf.id
+                JOIN attendance ad ON ad.id_plan_date = pd.id
             WHERE
                 us.id = :userStudentId
                 AND ft.status = 1
@@ -85,6 +88,7 @@ public interface STDHistoryAttendanceExtendRepository extends FactoryRepository 
                 LEFT JOIN plan pl ON pl.id_project = p.id
                 LEFT JOIN plan_factory pf ON pf.id_factory = ft.id
                 LEFT JOIN plan_date pd ON pd.id_plan_factory = pf.id
+                JOIN attendance ad ON ad.id_plan_date = pd.id
             WHERE
                 us.id = :userStudentId
                 AND ft.status = 1
@@ -151,6 +155,7 @@ public interface STDHistoryAttendanceExtendRepository extends FactoryRepository 
                 LEFT JOIN plan pl ON pl.id_project = p.id
                 LEFT JOIN plan_factory pf ON pf.id_factory = ft.id
                 LEFT JOIN plan_date pd ON pd.id_plan_factory = pf.id
+                JOIN attendance ad ON ad.id_plan_date = pd.id
             WHERE
                 us.id = :userStudentId
                 AND ft.status = 1

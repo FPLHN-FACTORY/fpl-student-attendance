@@ -172,15 +172,17 @@ const handleListShift = (record) => {
 }
 
 const handleClearFilter = () => {
-  // Clear all filter values
-  Object.keys(filter).forEach((key) => {
-    if (key !== 'page' && key !== 'pageSize') {
-      // Keep pagination values
-      filter[key] = ''
-    }
-  })
-  pagination.current = 1
-  fetchFactoryByTeacher()
+  // Clear only search filters but keep necessary parameters
+  filter.factoryName = '';
+  filter.projectId = '';
+  filter.semesterId = null;
+
+  // Reset pagination to first page
+  pagination.current = 1;
+  filter.page = 1;
+
+  // Fetch with cleared filters
+  fetchFactoryByTeacher();
 }
 
 const handleShowDescription = (text) => {

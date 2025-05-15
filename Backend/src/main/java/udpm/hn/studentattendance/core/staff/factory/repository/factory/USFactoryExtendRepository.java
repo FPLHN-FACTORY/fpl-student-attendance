@@ -105,9 +105,10 @@ public interface USFactoryExtendRepository extends FactoryRepository {
                         WHERE
                         ft.name = :name
                         AND
-                        ft.id_project = :idProject
+                        ft.id_project = :idProject AND
+                        (:idFactory IS NULL OR ft.id != :idFactory)
                                 """, nativeQuery = true)
-        boolean isExistNameAndProject(String name, String idProject);
+        boolean isExistNameAndProject(String name, String idProject, String idFactory);
 
         @Query(value = """
                         SELECT
