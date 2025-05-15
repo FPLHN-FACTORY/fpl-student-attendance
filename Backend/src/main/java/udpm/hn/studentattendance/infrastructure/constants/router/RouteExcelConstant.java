@@ -10,6 +10,8 @@ public final class RouteExcelConstant {
 
     public static final String DEFAULT_DOWNLOAD_TEMPLATE = "/download-template";
 
+    public static final String DEFAULT_EXPORT = "/export";
+
     public static final String DEFAULT_HISTORY_LOG = "/history-log";
 
     public static final String URL_API_PLAN_DATE = PREFIX_API_EXCEL + "/plan-date";

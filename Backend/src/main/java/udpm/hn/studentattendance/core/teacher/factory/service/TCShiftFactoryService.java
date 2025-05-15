@@ -9,4 +9,6 @@ public interface TCShiftFactoryService {
 
     ResponseEntity<?> getAllList(TCFilterShiftFactoryRequest request);
 
+    ResponseEntity<?> getListShift();
+
 }

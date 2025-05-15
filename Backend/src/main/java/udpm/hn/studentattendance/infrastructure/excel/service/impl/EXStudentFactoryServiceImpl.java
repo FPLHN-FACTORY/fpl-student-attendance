@@ -88,6 +88,11 @@ public class EXStudentFactoryServiceImpl implements EXStudentFactoryService {
     }
 
     @Override
+    public ResponseEntity<?> exportData(EXDataRequest request) {
+        return null;
+    }
+
+    @Override
     public ResponseEntity<?> downloadTemplate(EXDataRequest request) {
         String filename = "template-import-student-factory.xlsx";
 

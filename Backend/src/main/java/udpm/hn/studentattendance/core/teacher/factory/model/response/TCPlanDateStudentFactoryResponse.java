@@ -1,21 +1,18 @@
 package udpm.hn.studentattendance.core.teacher.factory.model.response;
 
+import udpm.hn.studentattendance.infrastructure.common.HasAudit;
 import udpm.hn.studentattendance.infrastructure.common.HasOrderNumber;
 import udpm.hn.studentattendance.infrastructure.common.IsIdentify;
 
-public interface TCPlanDateAttendanceResponse extends IsIdentify, HasOrderNumber {
-
-    String getPlanId();
-
-    String getPlanName();
+public interface TCPlanDateStudentFactoryResponse extends IsIdentify, HasOrderNumber, HasAudit {
 
     Long getStartDate();
 
+    Long getEndDate();
+
     String getShift();
 
-    String getFactoryId();
-
-    String getFactoryName();
+    Integer getStatus();
 
     Integer getRequiredCheckin();
 

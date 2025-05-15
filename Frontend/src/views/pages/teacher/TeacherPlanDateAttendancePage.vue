@@ -1,20 +1,19 @@
 <script setup>
 import { ref, onMounted, watch, reactive } from 'vue'
 import { FilterFilled, SearchOutlined, UnorderedListOutlined } from '@ant-design/icons-vue'
-import { message, Modal } from 'ant-design-vue'
+import { message } from 'ant-design-vue'
 import requestAPI from '@/services/requestApiService'
 import { ATTENDANCE_STATUS, DEFAULT_PAGINATION, STATUS_REQUIRED_ATTENDANCE } from '@/constants'
-import { API_ROUTES_STAFF } from '@/constants/staffConstant'
 import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
-import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
+import { API_ROUTES_EXCEL, GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
 import { ROUTE_NAMES } from '@/router/teacherRoute'
-import { useRoute, useRouter } from 'vue-router'
+import { useRoute } from 'vue-router'
 import { autoAddColumnWidth, debounce, formatDate } from '@/utils/utils'
 import useLoadingStore from '@/stores/useLoadingStore'
 import { API_ROUTES_TEACHER } from '@/constants/teacherConstant'
+import ExcelUploadButton from '@/components/excel/ExcelUploadButton.vue'
 
 const route = useRoute()
-const router = useRouter()
 
 const breadcrumbStore = useBreadcrumbStore()
 const loadingStore = useLoadingStore()
@@ -23,6 +22,15 @@ const isLoading = ref(false)
 
 const _detail = ref(null)
 const lstData = ref([])
+
+const configImportExcel = {
+  fetchUrl: API_ROUTES_EXCEL.FETCH_IMPORT_PLAN_DATE,
+  data: { idPlanDate: route.params?.id },
+  showDownloadTemplate: false,
+  showHistoryLog: false,
+  showExport: true,
+  showImport: false,
+}
 
 const columns = ref(
   autoAddColumnWidth([
@@ -56,7 +64,7 @@ const dataFilter = reactive({
 const fetchDataDetail = () => {
   loadingStore.show()
   requestAPI
-    .get(`${API_ROUTES_TEACHER.FETCH_DATA_ATTENDANCE_FACTORY}/${route.params.id}`)
+    .get(`${API_ROUTES_TEACHER.FETCH_DATA_PLAN_DATE_ATTENDANCE}/${route.params.id}`)
     .then(({ data: response }) => {
       _detail.value = response.data
       breadcrumbStore.push({
@@ -71,7 +79,7 @@ const fetchDataDetail = () => {
     })
     .catch((error) => {
       message.error(error?.response?.data?.message || 'Không thể tải thông tin kế hoạch')
-      //router.push({ name: ROUTE_NAMES.MANAGEMENT_PLAN_FACTORY, params: { id: route.params?.id } })
+      router.push({ name: ROUTE_NAMES.MANAGEMENT_PLAN_FACTORY, params: { id: route.params?.id } })
     })
     .finally(() => {
       loadingStore.hide()
@@ -85,7 +93,7 @@ const fetchDataList = () => {
 
   isLoading.value = true
   requestAPI
-    .get(`${API_ROUTES_STAFF.FETCH_DATA_PLAN_DATE_ATTENDANCE}/${_detail.value.id}/list`, {
+    .get(`${API_ROUTES_TEACHER.FETCH_DATA_PLAN_DATE_ATTENDANCE}/${_detail.value.id}/list`, {
       params: {
         page: pagination.value.current,
         size: pagination.value.pageSize,
@@ -186,7 +194,22 @@ watch(
 
       <div class="col-12">
         <a-card :bordered="false" class="cart">
-          <template #title> <UnorderedListOutlined /> Chi tiết điểm danh sinh viên </template>
+          <template #title>
+            <UnorderedListOutlined /> Chi tiết điểm danh sinh viên ({{
+              formatDate(_detail?.startDate)
+            }}
+            -
+            {{
+              `Ca ${_detail?.shift
+                .split(',')
+                .map((o) => Number(o))
+                .join(', ')}`
+            }})</template
+          >
+          <div class="d-flex justify-content-end mb-3 flex-wrap gap-3">
+            <ExcelUploadButton v-bind="configImportExcel" />
+          </div>
+
           <div>
             <a-table
               rowKey="id"
