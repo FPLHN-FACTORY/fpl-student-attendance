@@ -63,7 +63,7 @@ public class STDHistoryAttendanceImpl implements STDHistoryAttendanceService {
 
         Pageable pageable = PaginationHelper.createPageable(historyAttendanceRequest, "createdAt");
         PageableObject list = PageableObject.of(historyAttendanceExtendRepository
-                .getAllFactoryAttendance(sessionHelper.getCurrentUser().getId(), pageable, historyAttendanceRequest));
+                .getAllFactoryAttendance(sessionHelper.getCurrentUser().getId(), pageable, historyAttendanceRequest, System.currentTimeMillis()));
         return new ResponseEntity<>(
                 new ApiResponse(
                         RestApiStatus.SUCCESS,

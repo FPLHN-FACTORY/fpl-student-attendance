@@ -1,6 +1,7 @@
 package udpm.hn.studentattendance.core.student.historyattendance.model.response;
 
 public interface STDHistoryAttendanceResponse {
+
     Integer getRowNumber();
 
     String getFactoryName();
@@ -21,5 +22,6 @@ public interface STDHistoryAttendanceResponse {
 
     Long getPlanDateEndDate();
 
+    String getFactoryId();
 
 }
