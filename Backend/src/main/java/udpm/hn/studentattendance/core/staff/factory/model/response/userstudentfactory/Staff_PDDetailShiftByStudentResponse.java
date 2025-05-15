@@ -19,7 +19,7 @@ public interface Staff_PDDetailShiftByStudentResponse extends IsIdentify, HasOrd
 
     Integer getRequiredLocation();
 
-    String getStatusAttendance();
+    Long getStatusAttendance();
 
 
 }

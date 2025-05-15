@@ -148,7 +148,7 @@ public interface TCStudentFactoryExtendRepository extends UserStudentFactoryRepo
 
     @Query(value = """
         SELECT
-            ROW_NUMBER() OVER (ORDER BY pd.start_date ASC) AS orderNumber,
+            ROW_NUMBER() OVER (ORDER BY us.name ASC) AS orderNumber,
             pd.id,
             us.name,
             us.code,
@@ -164,7 +164,7 @@ public interface TCStudentFactoryExtendRepository extends UserStudentFactoryRepo
         JOIN plan_factory pf ON pd.id_plan_factory = pf.id
         JOIN user_student_factory usf ON pf.id_factory = usf.id_factory
         JOIN user_student us ON usf.id_user_student = us.id
-        LEFT JOIN attendance a ON pd.id = a.id_plan_date
+        LEFT JOIN attendance a ON pd.id = a.id_plan_date AND a.id_user_student = us.id
         WHERE
             pd.status = 1 AND
             pf.status = 1 AND
@@ -190,7 +190,7 @@ public interface TCStudentFactoryExtendRepository extends UserStudentFactoryRepo
                      f2.status = 1 AND
                      sf.status = 1
             )
-        ORDER BY pd.start_date ASC
+        ORDER BY us.name ASC
     """, nativeQuery = true)
     List<TCPlanDateStudentFactoryResponse> getAllPlanDateAttendanceByIdFactory(String idFactory);
 
