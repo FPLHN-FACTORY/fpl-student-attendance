@@ -10,6 +10,8 @@ public interface TCStudentFactoryService {
 
     ResponseEntity<?> getDetailAttendance(TCPlanDateStudentFactoryRequest request);
 
+    ResponseEntity<?> getAllAttendance(String idFactory);
+
     ResponseEntity<?> deleteStudentFactoryById(String studentFactoryId);
 
 }
