@@ -11,13 +11,14 @@ import { message, Modal } from 'ant-design-vue'
 import requestAPI from '@/services/requestApiService'
 import { DEFAULT_PAGINATION, TYPE_SHIFT } from '@/constants'
 import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
-import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
+import { API_ROUTES_EXCEL, GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
 import { ROUTE_NAMES } from '@/router/teacherRoute'
 import useLoadingStore from '@/stores/useLoadingStore'
 import { useRoute, useRouter } from 'vue-router'
 import { DEFAULT_DATE_FORMAT, SHIFT, STATUS_PLAN_DATE_DETAIL } from '@/constants'
 import { autoAddColumnWidth, dayOfWeek, debounce, formatDate } from '@/utils/utils'
 import { API_ROUTES_TEACHER } from '@/constants/teacherConstant'
+import ExcelUploadButton from '@/components/excel/ExcelUploadButton.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -30,6 +31,16 @@ const isLoading = ref(false)
 const _detail = ref(null)
 const lstData = ref([])
 const lstShift = ref([])
+
+const configImportExcel = {
+  fetchUrl: API_ROUTES_EXCEL.FETCH_IMPORT_PLAN_DATE,
+  data: { idFactory: route.params?.id },
+  showDownloadTemplate: false,
+  showHistoryLog: false,
+  showExport: true,
+  showImport: false,
+  btnExport: 'Export chi tiết điểm danh',
+}
 
 const columns = ref(
   autoAddColumnWidth([
@@ -283,7 +294,9 @@ watch(
             <UnorderedListOutlined /> Danh sách ca học
             {{ `(${formatDate(_detail?.fromDate)} - ${formatDate(_detail?.toDate)})` }}
           </template>
-
+          <div class="d-flex justify-content-end mb-3 flex-wrap gap-3">
+            <ExcelUploadButton v-bind="configImportExcel" />
+          </div>
           <div>
             <a-table
               rowKey="id"
