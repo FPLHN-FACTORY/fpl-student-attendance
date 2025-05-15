@@ -385,14 +385,14 @@ onMounted(() => {
               /></a-button>
             </a-tooltip>
             <!-- Chuyển quyền: chỉ hiện khi là chính mình -->
-            <a-tooltip title="Chuyển quyền" v-if="record.isMySelf">
+            <!-- <a-tooltip title="Chuyển quyền" v-if="record.isMySelf">
               <a-button
                 type="text"
                 class="btn-outline-warning"
                 @click="openChangePowerModal(record)"
                 ><FilterFilled
               /></a-button>
-            </a-tooltip>
+            </a-tooltip> -->
             <template v-if="!record.isMySelf">
               <a-tooltip title="Xóa ban đào tạo">
                 <a-button type="text" class="btn-outline-danger" @click="handleDelete(record)">
