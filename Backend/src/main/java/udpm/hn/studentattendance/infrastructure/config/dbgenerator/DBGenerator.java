@@ -126,7 +126,6 @@ public class DBGenerator {
             dataUser.setEmailFe(userEmail);
             dataUser.setEmailFpt(userEmail);
 
-
             UserStaff saveUser = dbGeneratorUserStaffRepository.save(dataUser);
 
             if (saveUser.getId() != null && facility != null) {

@@ -79,13 +79,62 @@ const handleBeforeUpload = (file) => {
 
 const handleDownloadTemplate = async () => {
   isLoadingDownload.value = true
-  await serviceStore.downloadTemplate()
+  try {
+    const response = await serviceStore.downloadTemplate()
+    const blob = new Blob([response.data], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    })
+    const contentDisposition = response.headers['content-disposition']
+    let filename = 'template-download'
+    if (contentDisposition) {
+      const match = contentDisposition.match(/filename="(.+)"/)
+      if (match) {
+        filename = match[1]
+      }
+    }
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = filename
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+
+    window.URL.revokeObjectURL(url)
+  } catch (error) {
+    message.error(error?.response?.data?.message || 'Không thể tải xuống template')
+  }
+
   isLoadingDownload.value = false
 }
 
 const handleExport = async () => {
   isLoadingExport.value = true
-  await serviceStore.exportExcel()
+  try {
+    const response = await serviceStore.exportExcel()
+    const blob = new Blob([response.data], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    })
+    const contentDisposition = response.headers['content-disposition']
+    let filename = 'export-download'
+    if (contentDisposition) {
+      const match = contentDisposition.match(/filename="(.+)"/)
+      if (match) {
+        filename = match[1]
+      }
+    }
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = filename
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+
+    window.URL.revokeObjectURL(url)
+  } catch (error) {
+    message.error(error?.response?.data?.message || 'Không thể xuất excel')
+  }
   isLoadingExport.value = false
 }
 
