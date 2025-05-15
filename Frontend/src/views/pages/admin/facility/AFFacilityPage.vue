@@ -133,6 +133,11 @@ const handleSubmitFilter = () => {
   fetchFacilities()
 }
 
+const handleShowModalAdd = () => {
+  newFacility.facilityName = null
+  modalAdd.value = true
+}
+
 // Sự kiện thay đổi phân trang (dynamic)
 const handleTableChange = (pageInfo) => {
   pagination.current = pageInfo.current
@@ -354,7 +359,7 @@ onMounted(() => {
           <template #title> <UnorderedListOutlined /> Danh sách cơ sở </template>
           <div class="d-flex justify-content-end mb-3">
             <!-- Nút Thêm sử dụng kiểu primary (filled) -->
-            <a-button type="primary" @click="modalAdd = true">
+            <a-button type="primary" @click="handleShowModalAdd">
               <PlusOutlined /> Thêm cơ sở
             </a-button>
           </div>

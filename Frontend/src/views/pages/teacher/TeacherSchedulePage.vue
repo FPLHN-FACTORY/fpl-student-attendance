@@ -12,14 +12,16 @@ import requestAPI from '@/services/requestApiService'
 import { API_ROUTES_TEACHER } from '@/constants/teacherConstant'
 import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
 import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
-import { ROUTE_NAMES } from '@/router/teacherRoute'
+import { ROUTE_NAMES, TeacherRoutes } from '@/router/teacherRoute'
 import { DEFAULT_DATE_FORMAT, DEFAULT_PAGINATION, TYPE_SHIFT } from '@/constants'
 import { formatDate, dayOfWeek, autoAddColumnWidth } from '@/utils/utils'
 import useLoadingStore from '@/stores/useLoadingStore'
 import dayjs from 'dayjs'
 import router from '@/router'
+import useApplicationStore from '@/stores/useApplicationStore'
 
 // Khởi tạo breadcrumb
+const applicationStore = useApplicationStore()
 const breadcrumbStore = useBreadcrumbStore()
 const breadcrumb = ref([
   { name: GLOBAL_ROUTE_NAMES.TEACHER_PAGE, breadcrumbName: 'Giảng viên' },
@@ -439,6 +441,14 @@ const handleClearFilter = () => {
   fetchTeachingSchedule()
 }
 
+const handleShowFactory = (item) => {
+  applicationStore.setSelectedKeys(
+    TeacherRoutes[0].children.find((o) => o.name == ROUTE_NAMES.MANAGEMENT_FACTORY).meta
+      .selectedKey,
+  )
+  router.push({ name: ROUTE_NAMES.MANAGEMENT_SHIFT_FACTORY, params: { id: item.factoryId } })
+}
+
 onMounted(() => {
   breadcrumbStore.setRoutes(breadcrumb.value)
   fetchSubjects()
@@ -556,6 +566,11 @@ onMounted(() => {
                     <ExclamationCircleOutlined /> {{ record.lateArrival + ' phút' }}
                   </a-tag>
                 </template>
+                <template v-else-if="column.dataIndex === 'factoryName'">
+                  <a-typography-link @click="handleShowFactory(record)">{{
+                    record.factoryName
+                  }}</a-typography-link>
+                </template>
                 <template v-else-if="column.dataIndex === 'description'">
                   <a-tooltip title="Xem, sửa chi tiết buổi dạy">
                     <a-typography-link @click="handleShowDescription(record)"
@@ -564,7 +579,6 @@ onMounted(() => {
                   </a-tooltip>
                 </template>
               </template>
-
               <!-- Cột action -->
               <template v-else-if="column.key === 'action'">
                 <span v-if="Date.now() <= record.startTeaching - 10 * 60 * 1000">
@@ -673,6 +687,11 @@ onMounted(() => {
                       >Chi tiết</a-typography-link
                     >
                   </a-tooltip>
+                </template>
+                <template v-else-if="column.dataIndex === 'factoryName'">
+                  <a-typography-link @click="handleShowFactory(record)">{{
+                    record.factoryName
+                  }}</a-typography-link>
                 </template>
                 <template v-else>
                   {{ record[column.dataIndex] }}

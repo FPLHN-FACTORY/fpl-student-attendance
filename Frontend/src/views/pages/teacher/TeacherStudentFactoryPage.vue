@@ -1,5 +1,10 @@
 <script setup>
-import { FilterFilled, SearchOutlined, UnorderedListOutlined } from '@ant-design/icons-vue'
+import {
+  FilterFilled,
+  InfoCircleOutlined,
+  SearchOutlined,
+  UnorderedListOutlined,
+} from '@ant-design/icons-vue'
 import { ref, reactive, onMounted } from 'vue'
 import { message } from 'ant-design-vue'
 import { useRoute } from 'vue-router'
@@ -9,15 +14,25 @@ import { ROUTE_NAMES } from '@/router/teacherRoute'
 import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
 import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
 import useLoadingStore from '@/stores/useLoadingStore'
-import { DEFAULT_PAGINATION } from '@/constants'
-import { autoAddColumnWidth } from '@/utils/utils'
+import {
+  ATTENDANCE_STATUS,
+  DEFAULT_DATE_FORMAT,
+  DEFAULT_PAGINATION,
+  STATUS_REQUIRED_ATTENDANCE,
+} from '@/constants'
+import { autoAddColumnWidth, dayOfWeek, formatDate } from '@/utils/utils'
 
 const route = useRoute()
 const factoryId = route.query.factoryId
 const factoryName = route.query.factoryName
 
 const breadcrumbStore = useBreadcrumbStore()
+const isShowModalDetail = ref(false)
+const detailAttendance = ref(null)
+const lstAttendance = ref([])
+
 const isLoading = ref(false)
+const isLoadingDetail = ref(false)
 
 const breadcrumb = ref([
   {
@@ -70,10 +85,34 @@ const columns = ref(
       align: 'center',
     },
     {
+      title: 'Tỉ lệ nghỉ',
+      dataIndex: 'percenAbsentShift',
+      key: 'percenAbsentShift',
+      align: 'center',
+    },
+    {
+      title: 'Chi tiết điểm danh',
+      dataIndex: 'detailAttendance',
+      key: 'detailAttendance',
+      align: 'center',
+    },
+    {
       title: 'Trạng thái',
       dataIndex: 'statusStudentFactory',
       key: 'statusStudentFactory',
     },
+  ]),
+)
+
+const columnsDetail = ref(
+  autoAddColumnWidth([
+    { title: '#', dataIndex: 'orderNumber', key: 'orderNumber' },
+    { title: 'Ngày học', dataIndex: 'startDate', key: 'startDate' },
+    { title: 'Thời gian', dataIndex: 'time', key: 'time' },
+    { title: 'Ca học', dataIndex: 'shift', key: 'shift' },
+    { title: 'Checkin đầu giờ', dataIndex: 'createdAt', key: 'createdAt' },
+    { title: 'Checkout cuối giờ', dataIndex: 'updatedAt', key: 'updatedAt' },
+    { title: 'Trạng thái', dataIndex: 'status', key: 'status' },
   ]),
 )
 
@@ -128,6 +167,30 @@ const handleClearFilter = () => {
   fetchStudentFactory();
 }
 
+const handleShowDetailAttendance = (item) => {
+  detailAttendance.value = item
+  isShowModalDetail.value = true
+  fetchDataDetailAttendance(item.studentId)
+}
+
+const fetchDataDetailAttendance = (idUserStudent) => {
+  isLoadingDetail.value = true
+  requestAPI
+    .post(API_ROUTES_TEACHER.FETCH_DATA_STUDENT_FACTORY, {
+      idUserStudent: idUserStudent,
+      idFactory: route.query.factoryId,
+    })
+    .then(({ data: response }) => {
+      lstAttendance.value = response.data
+    })
+    .catch((error) => {
+      message.error(error?.response?.data?.message || 'Không thể tải thông tin chi tiết điểm danh')
+    })
+    .finally(() => {
+      isLoadingDetail.value = false
+    })
+}
+
 onMounted(() => {
   breadcrumbStore.setRoutes(breadcrumb.value)
   fetchStudentFactory()
@@ -135,6 +198,97 @@ onMounted(() => {
 </script>
 
 <template>
+  <a-modal v-model:open="isShowModalDetail" :width="1000" :footer="null">
+    <template #title
+      ><InfoCircleOutlined class="text-primary" /> Chi tiết điểm danh:
+      {{ detailAttendance.studentCode }} - {{ detailAttendance.studentName }}</template
+    >
+    <div class="row g-2">
+      <div class="col-12">
+        <a-table
+          rowKey="id"
+          class="nowrap"
+          :dataSource="lstAttendance"
+          :columns="columnsDetail"
+          :loading="isLoadingDetail"
+          :pagination="false"
+          :scroll="{ x: 'auto' }"
+        >
+          <template #bodyCell="{ column, record }">
+            <template v-if="column.dataIndex === 'startDate'">
+              {{
+                `${dayOfWeek(record.startDate)}, ${formatDate(
+                  record.startDate,
+                  DEFAULT_DATE_FORMAT,
+                )}`
+              }}
+            </template>
+            <template v-if="column.dataIndex === 'time'">
+              {{
+                `${formatDate(record.startDate, 'HH:mm')} - ${formatDate(record.endDate, 'HH:mm')}`
+              }}
+            </template>
+            <template v-if="column.dataIndex === 'shift'">
+              <a-tag color="purple">
+                {{
+                  `Ca ${record.shift
+                    .split(',')
+                    .map((o) => Number(o))
+                    .join(', ')}`
+                }}
+              </a-tag>
+            </template>
+            <template v-if="column.dataIndex === 'createdAt'">
+              <template v-if="record.endDate <= Date.now()">
+                <template v-if="record.requiredCheckin === STATUS_REQUIRED_ATTENDANCE.ENABLE">
+                  <span v-if="record.status === ATTENDANCE_STATUS.NOTCHECKIN.id">
+                    <a-badge status="error" /> Chưa checkin
+                  </span>
+                  <span v-else>
+                    <a-badge status="warning" />
+                    {{ formatDate(record.createdAt, 'dd/MM/yyyy HH:mm') }}
+                  </span>
+                </template>
+                <template v-else>
+                  <a-badge status="default" />
+                  Không yêu cầu
+                </template>
+              </template>
+              <template v-else><a-badge status="default" /> Chưa diễn ra</template>
+            </template>
+            <template v-if="column.dataIndex === 'updatedAt'">
+              <template v-if="record.endDate <= Date.now()">
+                <template v-if="record.requiredCheckout === STATUS_REQUIRED_ATTENDANCE.ENABLE">
+                  <span v-if="record.status !== ATTENDANCE_STATUS.PRESENT.id">
+                    <a-badge status="error" /> Chưa checkout
+                  </span>
+                  <span v-else>
+                    <a-badge status="success" />
+                    {{ formatDate(record.updatedAt, 'dd/MM/yyyy HH:mm') }}
+                  </span>
+                </template>
+                <template v-else>
+                  <a-badge status="default" />
+                  Không yêu cầu
+                </template>
+              </template>
+              <template v-else>{{ null }}</template>
+            </template>
+            <template v-if="column.dataIndex === 'status'">
+              <template v-if="record.endDate <= Date.now()">
+                <a-tag color="green" v-if="record.status === ATTENDANCE_STATUS.PRESENT.id">
+                  Có mặt
+                </a-tag>
+                <a-tag color="red" v-else> Vắng mặt </a-tag>
+              </template>
+              <template v-else>{{ null }}</template>
+            </template>
+          </template>
+        </a-table>
+      </div>
+    </div>
+  </a-modal>
+
   <div class="container-fluid">
     <!-- Bộ lọc tìm kiếm -->
     <div class="row g-3">
@@ -222,9 +376,25 @@ onMounted(() => {
                   </a-tag>
                 </template>
                 <template v-if="column.dataIndex === 'totalAbsentShift'">
-                  <a-tag :color="record.totalAbsentShift > 0 ? 'red' : 'green'">{{
-                    record.totalAbsentShift || 0
-                  }}</a-tag>
+                  <a-tag :color="record.totalAbsentShift > 0 ? 'red' : 'green'"
+                    >{{ record.totalAbsentShift || 0 }} / {{ record.totalShift || 0 }}</a-tag
+                  >
+                </template>
+                <template v-if="column.dataIndex === 'percenAbsentShift'">
+                  <a-tag
+                    :color="
+                      record.totalAbsentShift > 0 && record.totalShift > 0 ? 'orange' : 'green'
+                    "
+                    >{{
+                      (record.totalShift && (record.totalAbsentShift / record.totalShift) * 100) ||
+                      0
+                    }}%</a-tag
+                  >
+                </template>
+                <template v-if="column.dataIndex === 'detailAttendance'">
+                  <a-typography-link @click="handleShowDetailAttendance(record)"
+                    >Chi tiết</a-typography-link
+                  >
                 </template>
               </template>
               <!-- Các nút hành động -->

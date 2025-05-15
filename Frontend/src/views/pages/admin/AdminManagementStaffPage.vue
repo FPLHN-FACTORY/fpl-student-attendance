@@ -324,6 +324,17 @@ const handleClearFilter = () => {
   fetchStaffs()
 }
 
+const handleShowModalAdd = () => {
+  newStaff.emailFe = null
+  newStaff.emailFpt = null
+  newStaff.facilityId = null
+  newStaff.name = null
+  newStaff.roleCodes = []
+  newStaff.staffCode = null
+
+  modalAdd.value = true
+}
+
 onMounted(() => {
   breadcrumbStore.setRoutes(breadcrumb.value)
   fetchStaffs()
@@ -425,7 +436,9 @@ onMounted(() => {
           <div class="d-flex justify-content-end mb-3 flex-wrap gap-3">
             <ExcelUploadButton v-bind="configImportExcel" />
             <a-tooltip title="Thêm mới nhân viên">
-              <a-button type="primary" @click="modalAdd = true"> <PlusOutlined /> Thêm </a-button>
+              <a-button type="primary" @click="handleShowModalAdd">
+                <PlusOutlined /> Thêm
+              </a-button>
             </a-tooltip>
           </div>
           <a-table

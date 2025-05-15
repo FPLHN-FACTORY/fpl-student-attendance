@@ -131,6 +131,11 @@ public class EXFactoryServiceImpl implements EXFactoryService {
     }
 
     @Override
+    public ResponseEntity<?> exportData(EXDataRequest request) {
+        return null;
+    }
+
+    @Override
     public ResponseEntity<?> downloadTemplate(EXDataRequest request) {
         String filename = "template-import-factory.xlsx";
         List<String> headers = List.of("Tên Nhóm Xưởng", "Mô Tả", "Dự Án", "Giảng Viên");

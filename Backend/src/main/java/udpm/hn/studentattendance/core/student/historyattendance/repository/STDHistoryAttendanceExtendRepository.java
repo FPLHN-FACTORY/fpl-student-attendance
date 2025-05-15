@@ -63,8 +63,7 @@ public interface STDHistoryAttendanceExtendRepository extends FactoryRepository 
                 LEFT JOIN semester s ON p.id_semester = s.id
                 LEFT JOIN plan pl ON pl.id_project = p.id
                 LEFT JOIN plan_factory pf ON pf.id_factory = ft.id
-                LEFT JOIN plan_date pd ON pd.id_plan_factory = pf.id
-                JOIN attendance ad ON ad.id_plan_date = pd.id
+
             WHERE
                 us.id = :userStudentId
                 AND ft.status = 1
@@ -88,7 +87,7 @@ public interface STDHistoryAttendanceExtendRepository extends FactoryRepository 
                 LEFT JOIN plan pl ON pl.id_project = p.id
                 LEFT JOIN plan_factory pf ON pf.id_factory = ft.id
                 LEFT JOIN plan_date pd ON pd.id_plan_factory = pf.id
-                JOIN attendance ad ON ad.id_plan_date = pd.id
+
             WHERE
                 us.id = :userStudentId
                 AND ft.status = 1
@@ -154,8 +153,7 @@ public interface STDHistoryAttendanceExtendRepository extends FactoryRepository 
                 LEFT JOIN semester s ON p.id_semester = s.id
                 LEFT JOIN plan pl ON pl.id_project = p.id
                 LEFT JOIN plan_factory pf ON pf.id_factory = ft.id
-                LEFT JOIN plan_date pd ON pd.id_plan_factory = pf.id
-                JOIN attendance ad ON ad.id_plan_date = pd.id
+                LEFT JOIN plan_date pd ON pd.id_plan_factory = pf.idgit
             WHERE
                 us.id = :userStudentId
                 AND ft.status = 1

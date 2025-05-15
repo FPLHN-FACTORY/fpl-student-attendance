@@ -234,9 +234,12 @@ const handleClearFilter = () => {
   fetchLevels()
 }
 
-const clearFormAdd = () => {
-  newLevel.name = ''
-  newLevel.description = ''
+
+const handleShowModalAdd = () => {
+  newLevel.name = null
+  newLevel.description = null
+
+  modalAdd.value = true
 }
 
 onMounted(() => {
@@ -348,7 +351,7 @@ onMounted(() => {
           <template #title> <UnorderedListOutlined /> Danh sách cấp dự án </template>
           <div class="d-flex justify-content-end mb-3">
             <a-tooltip title="Thêm cấp dự án">
-              <a-button type="primary" @click="modalAdd = true">
+              <a-button type="primary" @click="handleShowModalAdd">
                 <PlusOutlined /> Thêm mới
               </a-button>
             </a-tooltip>

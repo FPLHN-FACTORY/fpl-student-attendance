@@ -286,6 +286,14 @@ const handleClearFilter = () => {
   fetchUsers()
 }
 
+const handleShowModalAdd = () => {
+  newUser.email = null
+  newUser.staffCode = null
+  newUser.staffName = null
+
+  modalAdd.value = true
+}
+
 onMounted(() => {
   breadcrumbStore.setRoutes(breadcrumb.value)
   fetchUsers()
@@ -344,7 +352,7 @@ onMounted(() => {
       <template #title><UnorderedListOutlined /> Danh sách Ban đào tạo</template>
       <div class="d-flex justify-content-end mb-3 flex-wrap gap-3">
         <a-tooltip title="Thêm mới ban đào tạo">
-          <a-button type="primary" @click="modalAdd = true"><PlusOutlined /> Thêm mới</a-button>
+          <a-button type="primary" @click="handleShowModalAdd"><PlusOutlined /> Thêm mới</a-button>
         </a-tooltip>
       </div>
       <a-table

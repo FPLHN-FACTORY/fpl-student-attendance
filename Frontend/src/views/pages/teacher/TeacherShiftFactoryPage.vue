@@ -18,7 +18,6 @@ import { useRoute, useRouter } from 'vue-router'
 import { DEFAULT_DATE_FORMAT, SHIFT, STATUS_PLAN_DATE_DETAIL } from '@/constants'
 import { autoAddColumnWidth, dayOfWeek, debounce, formatDate } from '@/utils/utils'
 import { API_ROUTES_TEACHER } from '@/constants/teacherConstant'
-import { API_ROUTES_STAFF } from '@/constants/staffConstant'
 
 const route = useRoute()
 const router = useRouter()
@@ -122,7 +121,7 @@ const fetchDataList = () => {
 
 const fetchDataShift = () => {
   requestAPI
-    .get(`${API_ROUTES_STAFF.FETCH_DATA_PLAN_FACTORY}/list/shift`)
+    .get(`${API_ROUTES_TEACHER.FETCH_DATA_SHIFT_FACTORY}/list/shift`)
     .then(({ data: response }) => {
       lstShift.value = response.data
     })

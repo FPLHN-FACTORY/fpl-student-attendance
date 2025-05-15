@@ -11,6 +11,8 @@ public interface IEXDefaultService {
 
     ResponseEntity<?> importItem(EXImportRequest request);
 
+    ResponseEntity<?> exportData(EXDataRequest request);
+
     ResponseEntity<?> downloadTemplate(EXDataRequest request);
 
     ResponseEntity<?> historyLog(EXDataRequest request);

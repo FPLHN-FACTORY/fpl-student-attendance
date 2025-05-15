@@ -147,6 +147,14 @@ const handleTableChange = (pageInfo) => {
   fetchSemesters()
 }
 
+const handleShowModalAdd = () => {
+  newSemester.semesterName = null
+  newSemester.fromDate = null
+  newSemester.toDate = null
+
+  modalAdd.value = true
+}
+
 const handleAddSemester = () => {
   if (!newSemester.semesterName || !newSemester.fromDate || !newSemester.toDate) {
     message.error('Vui lòng nhập đầy đủ thông tin')
@@ -364,7 +372,7 @@ onMounted(() => {
           <!-- Nút Thêm học kỳ -->
           <div class="d-flex justify-content-end mb-3">
             <a-tooltip title="Thêm học kỳ mới">
-              <a-button type="primary" @click="modalAdd = true">
+              <a-button type="primary" @click="handleShowModalAdd">
                 <PlusOutlined />
                 Thêm
               </a-button>

@@ -72,7 +72,6 @@ public interface USStudentFactoryExtendRepository extends UserStudentFactoryRepo
             FROM user_student_factory usf
             LEFT JOIN user_student us ON us.id = usf.id_user_student
             LEFT JOIN factory ft ON ft.id = usf.id_factory
-            CROSS JOIN cte_total_shift cte_ts
             WHERE
                 ft.id = :factoryId
                 AND ft.status = 1
@@ -131,7 +130,7 @@ public interface USStudentFactoryExtendRepository extends UserStudentFactoryRepo
                     pd.required_location,
                     pd.required_ip,
                     CASE
-                            WHEN UNIX_TIMESTAMP(NOW()) * 1000 > pd.start_date
+                            WHEN UNIX_TIMESTAMP(NOW()) * 1000 > pd.start_date + pd.late_arrival
                             THEN COALESCE(a.attendance_status, 0)
                             ELSE NULL
                     END AS statusAttendance,
