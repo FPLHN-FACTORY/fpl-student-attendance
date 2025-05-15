@@ -51,6 +51,11 @@ public class TCStudentFactoryServiceImpl implements TCStudentFactoryService {
     }
 
     @Override
+    public ResponseEntity<?> getAllAttendance(String idFactory) {
+        return RouterHelper.responseSuccess("Lấy danh sách dữ liệu thành công", teacherStudentFactoryExtendRepository.getAllPlanDateAttendanceByIdFactory(idFactory));
+    }
+
+    @Override
     public ResponseEntity<?> deleteStudentFactoryById(String studentFactoryId) {
         Optional<UserStudentFactory> userStudentFactory = teacherStudentFactoryExtendRepository
                 .findById(studentFactoryId);
