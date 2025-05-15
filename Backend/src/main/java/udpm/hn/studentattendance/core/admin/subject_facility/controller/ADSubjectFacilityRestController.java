@@ -1,5 +1,6 @@
 package udpm.hn.studentattendance.core.admin.subject_facility.controller;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -38,7 +39,7 @@ public class ADSubjectFacilityRestController {
     }
 
     @PostMapping
-    public ResponseEntity<?> addSubjectFacility(@RequestBody ADSubjectFacilityCreateRequest request) {
+    public ResponseEntity<?> addSubjectFacility(@Valid @RequestBody ADSubjectFacilityCreateRequest request) {
         return adminSubjectFacilityService.createSubjectFacility(request);
     }
 
@@ -54,7 +55,7 @@ public class ADSubjectFacilityRestController {
 
     @PutMapping("/{id}")
     public ResponseEntity<?> updateSubjectFacility(@PathVariable String id,
-            @RequestBody ADSubjectFacilityUpdateRequest request) {
+            @Valid @RequestBody ADSubjectFacilityUpdateRequest request) {
         return adminSubjectFacilityService.updateSubjectFacility(id, request);
     }
 

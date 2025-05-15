@@ -13,11 +13,11 @@ public class USStudentCreateUpdateRequest {
 
     private String id;
 
-    @Length(max = EntityProperties.LENGTH_CODE, message = "Mã sinh viên phải ít hơn " + EntityProperties.LENGTH_CODE + " ký tự")
+    @Length(max = EntityProperties.LENGTH_CODE, message = "Mã sinh viên chỉ được tối đa " + EntityProperties.LENGTH_CODE + " ký tự")
     @NotBlank(message = "Mã sinh viên không được bỏ trống")
     private String code;
 
-    @Length(max = EntityProperties.LENGTH_NAME, message = "Tên phải ít hơn " + EntityProperties.LENGTH_NAME + " ký tự")
+    @Length(max = EntityProperties.LENGTH_NAME, message = "Tên sinh viên chỉ được tối đa " + EntityProperties.LENGTH_NAME + " ký tự")
     @NotBlank(message = "Tên sinh viên không đuợc bỏ trống")
     private String name;
 

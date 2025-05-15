@@ -5,7 +5,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.validation.annotation.Validated;
 import udpm.hn.studentattendance.core.staff.project.model.request.USProjectCreateOrUpdateRequest;
 import udpm.hn.studentattendance.core.staff.project.model.request.USProjectSearchRequest;
 import udpm.hn.studentattendance.core.staff.project.repository.STLevelProjectExtendRepository;
@@ -13,8 +12,10 @@ import udpm.hn.studentattendance.core.staff.project.repository.STProjectExtendRe
 import udpm.hn.studentattendance.core.staff.project.repository.STProjectSemesterExtendRepository;
 import udpm.hn.studentattendance.core.staff.project.repository.STProjectSubjectFacilityExtendRepository;
 import udpm.hn.studentattendance.core.staff.project.service.STProjectManagementService;
+import udpm.hn.studentattendance.entities.LevelProject;
 import udpm.hn.studentattendance.entities.Project;
 import udpm.hn.studentattendance.entities.Semester;
+import udpm.hn.studentattendance.entities.SubjectFacility;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
 import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.helpers.SessionHelper;
@@ -29,9 +30,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-@Validated
 public class STProjectManagementImpl implements STProjectManagementService {
-
 
     private final STProjectExtendRepository projectManagementRepository;
 
@@ -55,15 +54,36 @@ public class STProjectManagementImpl implements STProjectManagementService {
 
     @Override
     public ResponseEntity<?> createProject(USProjectCreateOrUpdateRequest request) {
-        Project project = new Project();
 
-        project = convertProjectRequestToProject(request, project);
+        LevelProject levelProject = levelProjectRepository.findById(request.getLevelProjectId()).orElse(null);
+        if (levelProject == null) {
+            return RouterHelper.responseError("Không tìm thấy cấp độ dự án");
+        }
+
+        Semester semester = semesterRepository.findById(request.getSemesterId()).orElse(null);
+        if (semester == null) {
+            return RouterHelper.responseError("Không tìm thấy học kỳ");
+        }
+
+        SubjectFacility subjectFacility = subjectFacilityRepository.findById(request.getSubjectFacilityId()).orElse(null);
+        if (subjectFacility == null) {
+            return RouterHelper.responseError("Không tìm thấy bộ môn");
+        }
+
+        Project project = new Project();
+        project.setName(request.getName());
+        project.setDescription(request.getDescription());
+        project.setLevelProject(levelProject);
+        project.setSemester(semester);
+        project.setSubjectFacility(subjectFacility);
+        project.setStatus(EntityStatus.ACTIVE);
+
         boolean isExistProject =
                 projectManagementRepository
                         .isExistProjectInSameLevel(project.getName(), project.getLevelProject().getId(),
-                                project.getSemester().getId(), sessionHelper.getFacilityId());
+                                project.getSemester().getId(), sessionHelper.getFacilityId(), null);
         if (isExistProject) {
-            return RouterHelper.responseError("Dự án này đã tồn tại ở dự án " + project.getLevelProject().getName());
+            return RouterHelper.responseError("Dự án này đã tồn tại ở " + project.getLevelProject().getName() + " - " + project.getSemester().getSemesterName() + " - " + project.getSemester().getYear() + " - " + project.getSubjectFacility().getSubject().getName());
         }
         projectManagementRepository.save(project);
         return RouterHelper.responseSuccess("Thêm dự án thành công", project);
@@ -71,14 +91,41 @@ public class STProjectManagementImpl implements STProjectManagementService {
 
     @Override
     public ResponseEntity<?> updateProject(String idProject, USProjectCreateOrUpdateRequest request) {
-        Project project = projectManagementRepository.findById(idProject).get();
+        Project project = projectManagementRepository.findById(idProject).orElse(null);
+        if (project == null) {
+            return RouterHelper.responseError("Không tìm thấy dự án");
+        }
+
+        LevelProject levelProject = levelProjectRepository.findById(request.getLevelProjectId()).orElse(null);
+        if (levelProject == null) {
+            return RouterHelper.responseError("Không tìm thấy cấp độ dự án");
+        }
+
+        Semester semester = semesterRepository.findById(request.getSemesterId()).orElse(null);
+        if (semester == null) {
+            return RouterHelper.responseError("Không tìm thấy học kỳ");
+        }
+
+        SubjectFacility subjectFacility = subjectFacilityRepository.findById(request.getSubjectFacilityId()).orElse(null);
+        if (subjectFacility == null) {
+            return RouterHelper.responseError("Không tìm thấy bộ môn");
+        }
+
+        boolean isExistProject =
+                projectManagementRepository
+                        .isExistProjectInSameLevel(request.getName(), request.getLevelProjectId(),
+                                request.getSemesterId(), sessionHelper.getFacilityId(), project.getId());
+        if (isExistProject) {
+            return RouterHelper.responseError("Dự án này đã tồn tại ở " + project.getLevelProject().getName() + " - " + project.getSemester().getSemesterName() + " - " + project.getSemester().getYear() + " - " + project.getSubjectFacility().getSubject().getName());
+        }
+
         project.setName(request.getName());
         project.setDescription(request.getDescription());
-        project.setLevelProject(levelProjectRepository.findById(request.getLevelProjectId()).get());
-        project.setSemester(semesterRepository.findById(request.getSemesterId()).get());
-        project.setSubjectFacility(subjectFacilityRepository.findById(request.getSubjectFacilityId()).get());
+        project.setLevelProject(levelProject);
+        project.setSemester(semester);
+        project.setSubjectFacility(subjectFacility);
         projectManagementRepository.save(project);
-        return RouterHelper.responseSuccess("Chuyển trạng thái thành công", project);
+        return RouterHelper.responseSuccess("Cập nhật dự án thành công", project);
     }
 
     @Override
@@ -148,17 +195,6 @@ public class STProjectManagementImpl implements STProjectManagementService {
                 new ApiResponse(RestApiStatus.SUCCESS, "Đổi trạng thái các dự án kỳ trước thành công",
                         projects),
                 HttpStatus.OK);
-    }
-
-    private Project convertProjectRequestToProject(USProjectCreateOrUpdateRequest request, Project project) {
-
-        project.setName(request.getName());
-        project.setDescription(request.getDescription());
-        project.setLevelProject(levelProjectRepository.findById(request.getLevelProjectId()).get());
-        project.setSemester(semesterRepository.findById(request.getSemesterId()).get());
-        project.setSubjectFacility(subjectFacilityRepository.findById(request.getSubjectFacilityId()).get());
-        project.setStatus(EntityStatus.ACTIVE);
-        return project;
     }
 
 }

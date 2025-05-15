@@ -56,9 +56,10 @@ public interface ADSemesterRepository extends SemesterRepository {
                 FROM Semester s
                 WHERE TRIM(s.semesterName) = TRIM(:semesterName)
                 AND s.year = :semesterYear
-                AND s.status = :status
+                AND s.status = :status AND
+                (:semesterId IS NULL OR s.id != :semesterId)
             """)
-    Optional<Semester> checkSemesterExistNameAndYear(String semesterName, Integer semesterYear, EntityStatus status);
+    Optional<Semester> checkSemesterExistNameAndYear(String semesterName, Integer semesterYear, EntityStatus status, String semesterId);
 
     @Query(value = """
             SELECT
@@ -70,4 +71,6 @@ public interface ADSemesterRepository extends SemesterRepository {
             WHERE TRIM(s.id) = TRIM(:semesterId)
             """)
     Optional<ADSemesterResponse> getDetailSemesterById(String semesterId);
+
+
 }
