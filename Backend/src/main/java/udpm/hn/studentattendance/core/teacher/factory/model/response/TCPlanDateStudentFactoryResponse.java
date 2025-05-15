@@ -6,6 +6,10 @@ import udpm.hn.studentattendance.infrastructure.common.IsIdentify;
 
 public interface TCPlanDateStudentFactoryResponse extends IsIdentify, HasOrderNumber, HasAudit {
 
+    String getName();
+
+    String getCode();
+
     Long getStartDate();
 
     Long getEndDate();
