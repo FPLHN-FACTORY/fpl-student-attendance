@@ -1,6 +1,7 @@
 package udpm.hn.studentattendance.core.staff.project.controller;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import udpm.hn.studentattendance.core.staff.project.model.request.USProjectCreateOrUpdateRequest;
@@ -8,10 +9,10 @@ import udpm.hn.studentattendance.core.staff.project.model.request.USProjectSearc
 import udpm.hn.studentattendance.core.staff.project.model.response.USLevelProjectResponse;
 import udpm.hn.studentattendance.core.staff.project.model.response.USSemesterResponse;
 import udpm.hn.studentattendance.core.staff.project.model.response.USSubjectResponse;
+import udpm.hn.studentattendance.core.staff.project.service.STLevelProjectManagementService;
 import udpm.hn.studentattendance.core.staff.project.service.STProjectManagementService;
-import udpm.hn.studentattendance.core.staff.project.service.ipml.STLevelProjectManagementService;
-import udpm.hn.studentattendance.core.staff.project.service.ipml.STSemesterManagementService;
-import udpm.hn.studentattendance.core.staff.project.service.ipml.STSubjectFacilityManagementService;
+import udpm.hn.studentattendance.core.staff.project.service.STSemesterManagementService;
+import udpm.hn.studentattendance.core.staff.project.service.STSubjectFacilityManagementService;
 import udpm.hn.studentattendance.entities.Semester;
 import udpm.hn.studentattendance.helpers.SessionHelper;
 import udpm.hn.studentattendance.infrastructure.constants.router.RouteStaffConstant;
@@ -19,23 +20,19 @@ import udpm.hn.studentattendance.infrastructure.constants.router.RouteStaffConst
 import java.util.List;
 
 @RestController
+@RequiredArgsConstructor
 @RequestMapping(RouteStaffConstant.URL_API_PROJECT_MANAGEMENT)
 public class USProjectManagementRestController {
 
-    @Autowired
-    private SessionHelper sessionHelper;
+    private final SessionHelper sessionHelper;
 
-    @Autowired
-    private STProjectManagementService service;
+    private final STProjectManagementService service;
 
-    @Autowired
-    private STLevelProjectManagementService serviceLevel;
+    private final STLevelProjectManagementService serviceLevel;
 
-    @Autowired
-    private STSemesterManagementService serviceSemester;
+    private final STSemesterManagementService serviceSemester;
 
-    @Autowired
-    private STSubjectFacilityManagementService serviceSubjectFacility;
+    private final STSubjectFacilityManagementService serviceSubjectFacility;
 
     @PostMapping("/list")
     public ResponseEntity<?> getListProject(@RequestBody USProjectSearchRequest request) {
@@ -49,12 +46,12 @@ public class USProjectManagementRestController {
     }
 
     @PostMapping
-    public ResponseEntity<?> addProject(@RequestBody USProjectCreateOrUpdateRequest request) {
+    public ResponseEntity<?> addProject(@Valid @RequestBody USProjectCreateOrUpdateRequest request) {
         return service.createProject(request);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateProject(@PathVariable String id, @RequestBody USProjectCreateOrUpdateRequest request) {
+    public ResponseEntity<?> updateProject(@PathVariable String id, @Valid @RequestBody USProjectCreateOrUpdateRequest request) {
         return service.updateProject(id, request);
     }
 

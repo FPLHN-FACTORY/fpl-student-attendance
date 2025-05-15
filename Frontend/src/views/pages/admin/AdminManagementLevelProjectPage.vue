@@ -111,8 +111,8 @@ const handleTableChange = (pageInfo) => {
   fetchLevels()
 }
 
-const submitAddLevel = () => {
-  if (!newLevel.name || !newLevel.name.trim()) {
+const handleAddLevelProject = () => {
+  if (!newLevel.name) {
     message.error('Vui lòng nhập tên cấp dự án')
     return
   }
@@ -249,7 +249,12 @@ onMounted(() => {
 
 <template>
   <!-- Modal Thêm cấp dự án -->
-  <a-modal v-model:open="modalAdd" title="Thêm cấp dự án" @ok="submitAddLevel">
+  <a-modal
+    v-model:open="modalAdd"
+    title="Thêm cấp dự án"
+    @ok="handleAddLevelProject"
+    :okButtonProps="{ loading: loadingStore.isLoading }"
+  >
     <a-form :model="newLevel" layout="vertical">
       <a-form-item label="Tên cấp dự án" required>
         <a-input v-model:value="newLevel.name" placeholder="Nhập tên cấp dự án" />

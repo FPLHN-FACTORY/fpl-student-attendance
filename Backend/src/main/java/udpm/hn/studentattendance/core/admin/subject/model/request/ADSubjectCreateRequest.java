@@ -12,7 +12,7 @@ import udpm.hn.studentattendance.infrastructure.constants.EntityProperties;
 @AllArgsConstructor
 public class ADSubjectCreateRequest {
 
-    @NotBlank(message = "Tên bộ môn hông được bỏ trống")
+    @NotBlank(message = "Tên bộ môn không được bỏ trống")
     @Size(max = EntityProperties.LENGTH_NAME, message = "Tên bộ môn không được vượt quá " + EntityProperties.LENGTH_NAME + " ký tự")
     private String name;
 
