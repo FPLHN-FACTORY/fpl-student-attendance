@@ -156,15 +156,15 @@ const handleTableChange = (pageInfo) => {
 
 const handleClearFilter = () => {
   // Preserve factoryId and reset only search filters
-  filter.searchQuery = '';
-  filter.status = '';
+  filter.searchQuery = ''
+  filter.status = ''
 
   // Reset pagination
-  pagination.current = 1;
-  filter.page = 1;
+  pagination.current = 1
+  filter.page = 1
 
   // Refetch with cleared filters but preserved factoryId
-  fetchStudentFactory();
+  fetchStudentFactory()
 }
 
 const handleShowDetailAttendance = (item) => {
@@ -239,7 +239,7 @@ onMounted(() => {
               </a-tag>
             </template>
             <template v-if="column.dataIndex === 'createdAt'">
-              <template v-if="record.endDate <= Date.now()">
+              <template v-if="record.startDate <= Date.now()">
                 <template v-if="record.requiredCheckin === STATUS_REQUIRED_ATTENDANCE.ENABLE">
                   <span v-if="record.status === ATTENDANCE_STATUS.NOTCHECKIN.id">
                     <a-badge status="error" /> Chưa checkin
@@ -386,8 +386,9 @@ onMounted(() => {
                       record.totalAbsentShift > 0 && record.totalShift > 0 ? 'orange' : 'green'
                     "
                     >{{
-                      (record.totalShift && (record.totalAbsentShift / record.totalShift) * 100) ||
-                      0
+                      (
+                        record.totalShift && (record.totalAbsentShift / record.totalShift) * 100
+                      ).toFixed(1) || 0
                     }}%</a-tag
                   >
                 </template>

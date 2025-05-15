@@ -294,8 +294,8 @@ const handleUpdatePlanDate = () => {
           link: formUpdateData.link,
           room: formUpdateData.room,
         })
-        .then(() => {
-          message.success('Cập nhật buổi học thành công')
+        .then(({ data: response }) => {
+          message.success(response.message || 'Cập nhật buổi học thành công')
           isUpdateModalVisible.value = false
           fetchTeachingSchedule()
           fetchTeachingSchedulePresent()
@@ -351,8 +351,8 @@ function handleChangeType(record, room = '') {
   const id = record.idPlanDate
   requestAPI
     .put(`${API_ROUTES_TEACHER.FETCH_DATA_SCHEDULE}/change-type/${id}`, null, { params: { room } })
-    .then(() => {
-      message.success('Đã đổi hình thức ca học')
+    .then(({ data: response }) => {
+      message.success(response.message || 'Đã đổi hình thức ca học')
       fetchTeachingSchedule()
       fetchTeachingSchedulePresent()
     })

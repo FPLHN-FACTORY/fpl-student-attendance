@@ -234,7 +234,6 @@ const handleClearFilter = () => {
   fetchLevels()
 }
 
-
 const handleShowModalAdd = () => {
   newLevel.name = null
   newLevel.description = null
@@ -255,8 +254,6 @@ onMounted(() => {
     title="Thêm cấp dự án"
     @ok="handleAddLevelProject"
     :okButtonProps="{ loading: loadingStore.isLoading }"
-    @cancel="clearFormAdd"
-    @close="clearFormAdd"
   >
     <a-form :model="newLevel" layout="vertical">
       <a-form-item label="Tên cấp dự án" required>

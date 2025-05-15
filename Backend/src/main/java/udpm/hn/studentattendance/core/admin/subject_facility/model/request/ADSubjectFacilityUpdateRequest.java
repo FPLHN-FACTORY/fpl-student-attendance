@@ -12,4 +12,5 @@ public class ADSubjectFacilityUpdateRequest {
     private String subjectId;
 
     private String status;
+
 }

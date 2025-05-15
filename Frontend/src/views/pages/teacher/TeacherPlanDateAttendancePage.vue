@@ -29,6 +29,19 @@ const configImportExcel = {
   showDownloadTemplate: false,
   showHistoryLog: false,
   showExport: true,
+  showExportPDF: true,
+  didParseCellPDF: (data) => {
+    const { row, column, cell } = data
+    if (typeof cell.raw === 'string') {
+      if (cell.raw.includes('Chưa checkout') || cell.raw.includes('Chưa checkin')) {
+        cell.styles.fillColor = [255, 242, 202]
+      } else if (cell.raw.includes('Có mặt')) {
+        cell.styles.fillColor = [169, 208, 142]
+      } else if (cell.raw.includes('Vắng mặt')) {
+        cell.styles.fillColor = [255, 125, 125]
+      }
+    }
+  },
   showImport: false,
 }
 

@@ -4,10 +4,12 @@ import com.lowagie.text.*;
 import com.lowagie.text.Font;
 import com.lowagie.text.pdf.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 import org.springframework.validation.annotation.Validated;
 import udpm.hn.studentattendance.core.teacher.teachingschedule.model.request.TCTSPlanDateUpdateRequest;
 import udpm.hn.studentattendance.core.teacher.teachingschedule.model.request.TCTeachingScheduleRequest;
@@ -20,7 +22,9 @@ import udpm.hn.studentattendance.core.teacher.teachingschedule.repository.TCTeac
 import udpm.hn.studentattendance.core.teacher.teachingschedule.service.TCTeachingScheduleService;
 import udpm.hn.studentattendance.entities.*;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
+import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.helpers.SessionHelper;
+import udpm.hn.studentattendance.helpers.ValidateHelper;
 import udpm.hn.studentattendance.infrastructure.common.ApiResponse;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
@@ -50,6 +54,9 @@ public class TCTeachingScheduleServiceImpl implements TCTeachingScheduleService 
     private final TCTSFactoryExtendRepository teacherTsFactoryExtendRepository;
 
     private final SessionHelper sessionHelper;
+
+    @Value("${app.config.shift.max-late-arrival}")
+    private int MAX_LATE_ARRIVAL;
 
     @Override
     public ResponseEntity<?> getAllTeachingScheduleByStaff(
@@ -261,41 +268,43 @@ public class TCTeachingScheduleServiceImpl implements TCTeachingScheduleService 
     public ResponseEntity<?> updatePlanDate(TCTSPlanDateUpdateRequest planDateUpdateRequest) {
         Optional<PlanDate> existPlanDate = teacherTeachingScheduleExtendRepository
                 .findById(planDateUpdateRequest.getIdPlanDate());
+
+        if (existPlanDate.isEmpty()) {
+            return RouterHelper.responseError("Không tìm thấy lịch dạy");
+        }
+
+        PlanDate planDate = existPlanDate.get();
+        if (!Objects.equals(planDate.getPlanFactory().getFactory().getUserStaff().getId(), sessionHelper.getUserId())) {
+            return RouterHelper.responseError("Lịch dạy không phải của bạn");
+        }
+
         boolean isOutOfTime = teacherTeachingScheduleExtendRepository.isOutOfTime(existPlanDate.get().getId());
         if (isOutOfTime) {
-            return new ResponseEntity<>(
-                    new ApiResponse(
-                            RestApiStatus.ERROR,
-                            "Đã quá giờ cập nhật ngày dạy",
-                            isOutOfTime),
-                    HttpStatus.BAD_REQUEST);
+            return RouterHelper.responseError("Đã quá giờ cập nhật ca dạy");
         }
-        if (existPlanDate.isPresent()) {
-            PlanDate planDate = existPlanDate.get();
-            planDate.setDescription(planDateUpdateRequest.getDescription());
-            planDate.setLateArrival(planDateUpdateRequest.getLateArrival());
-            planDate.setLink(planDateUpdateRequest.getLink());
-            planDate.setRoom(planDateUpdateRequest.getRoom());
-            teacherTeachingScheduleExtendRepository.save(planDate);
-            return new ResponseEntity<>(
-                    new ApiResponse(
-                            RestApiStatus.SUCCESS,
-                            "Cập nhật thông tin buổi học thành công",
-                            planDate),
-                    HttpStatus.OK);
+
+        if (planDateUpdateRequest.getLateArrival() > MAX_LATE_ARRIVAL) {
+            return RouterHelper.responseError("Thời gian điểm danh muộn nhất không quá " + MAX_LATE_ARRIVAL + " phút");
         }
-        return new ResponseEntity<>(
-                new ApiResponse(
-                        RestApiStatus.ERROR,
-                        "Kế hoạch không tồn tại",
-                        null),
-                HttpStatus.BAD_REQUEST);
+
+        if (StringUtils.hasText(planDateUpdateRequest.getLink()) && !ValidateHelper.isValidURL(planDateUpdateRequest.getLink())) {
+            return RouterHelper.responseError("Link học online không hợp lệ");
+        }
+
+        planDate.setDescription(planDateUpdateRequest.getDescription());
+        planDate.setLateArrival(planDateUpdateRequest.getLateArrival());
+        planDate.setLink(planDateUpdateRequest.getLink());
+        planDate.setRoom(planDateUpdateRequest.getRoom());
+        teacherTeachingScheduleExtendRepository.save(planDate);
+
+        return RouterHelper.responseSuccess("Cập nhật thông tin buổi học thành công", planDate);
     }
 
     @Override
     public ResponseEntity<?> getDetailPlanDate(String planDateId) {
         Optional<TCTSDetailPlanDateResponse> getDetailPlanDateResponse = teacherTeachingScheduleExtendRepository
                 .getPlanDateById(planDateId);
+
         if (getDetailPlanDateResponse.isPresent()) {
             return new ResponseEntity<>(
                     new ApiResponse(
@@ -330,28 +339,29 @@ public class TCTeachingScheduleServiceImpl implements TCTeachingScheduleService 
 
     @Override
     public ResponseEntity<?> changeTypePlanDate(String planDateId, String room) {
-        Optional<PlanDate> planDate = teacherTeachingScheduleExtendRepository.findById(planDateId);
-        if (planDate.isPresent()) {
-            PlanDate updatePlanDate = planDate.get();
-            updatePlanDate.setType(updatePlanDate.getType() == ShiftType.ONLINE ? ShiftType.OFFLINE : ShiftType.ONLINE);
-            updatePlanDate.setRequiredIp(updatePlanDate.getRequiredIp() == StatusType.DISABLE ? StatusType.ENABLE : StatusType.DISABLE);
-            updatePlanDate.setRequiredLocation(updatePlanDate.getRequiredLocation() == StatusType.DISABLE ? StatusType.ENABLE : StatusType.DISABLE);
-            updatePlanDate.setRoom(updatePlanDate.getType() == ShiftType.ONLINE ? "" : room);
-            updatePlanDate.setLink(updatePlanDate.getType() == ShiftType.ONLINE ? updatePlanDate.getLink() : "");
-            teacherTeachingScheduleExtendRepository.save(updatePlanDate);
-            return new ResponseEntity<>(
-                    new ApiResponse(
-                            RestApiStatus.SUCCESS,
-                            "Lấy chi tiết kế hoạch thành công",
-                            updatePlanDate),
-                    HttpStatus.OK);
+        Optional<PlanDate> existPlanDate = teacherTeachingScheduleExtendRepository.findById(planDateId);
+        if (existPlanDate.isEmpty()) {
+            return RouterHelper.responseError("Không tìm thấy lịch dạy");
         }
-        return new ResponseEntity<>(
-                new ApiResponse(
-                        RestApiStatus.ERROR,
-                        "Kế hoạch không tồn tại",
-                        null),
-                HttpStatus.BAD_REQUEST);
+
+        PlanDate planDate = existPlanDate.get();
+        if (!Objects.equals(planDate.getPlanFactory().getFactory().getUserStaff().getId(), sessionHelper.getUserId())) {
+            return RouterHelper.responseError("Lịch dạy không phải của bạn");
+        }
+
+        boolean isOutOfTime = teacherTeachingScheduleExtendRepository.isOutOfTime(existPlanDate.get().getId());
+        if (isOutOfTime) {
+            return RouterHelper.responseError("Đã quá giờ cập nhật ca dạy");
+        }
+
+        planDate.setType(planDate.getType() == ShiftType.ONLINE ? ShiftType.OFFLINE : ShiftType.ONLINE);
+        planDate.setRequiredIp(planDate.getRequiredIp() == StatusType.DISABLE ? StatusType.ENABLE : StatusType.DISABLE);
+        planDate.setRequiredLocation(planDate.getRequiredLocation() == StatusType.DISABLE ? StatusType.ENABLE : StatusType.DISABLE);
+        planDate.setRoom(planDate.getType() == ShiftType.ONLINE ? "" : room);
+        planDate.setLink(planDate.getType() == ShiftType.ONLINE ? planDate.getLink() : "");
+        teacherTeachingScheduleExtendRepository.save(planDate);
+
+        return RouterHelper.responseSuccess("Lấy chi tiết kế hoạch thành công", planDate);
     }
 
 

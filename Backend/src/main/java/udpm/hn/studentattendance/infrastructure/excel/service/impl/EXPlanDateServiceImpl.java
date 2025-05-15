@@ -1,7 +1,6 @@
 package udpm.hn.studentattendance.infrastructure.excel.service.impl;
 
 import lombok.RequiredArgsConstructor;
-import org.apache.poi.ss.usermodel.IndexedColors;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -15,15 +14,17 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 import udpm.hn.studentattendance.core.staff.plan.model.request.SPDAddOrUpdatePlanDateRequest;
-import udpm.hn.studentattendance.core.staff.plan.model.response.SPDPlanResponse;
-import udpm.hn.studentattendance.core.staff.plan.model.response.SPDProjectResponse;
 import udpm.hn.studentattendance.core.staff.plan.repositories.SPDFacilityShiftRepository;
 import udpm.hn.studentattendance.core.staff.plan.services.SPDPlanDateService;
 import udpm.hn.studentattendance.core.teacher.factory.model.request.TCFilterPlanDateAttendanceRequest;
+import udpm.hn.studentattendance.core.teacher.factory.model.response.TCPlanDateStudentFactoryResponse;
 import udpm.hn.studentattendance.core.teacher.factory.model.response.TCPlanDateStudentResponse;
 import udpm.hn.studentattendance.core.teacher.factory.repository.TCAttendanceRepository;
+import udpm.hn.studentattendance.core.teacher.factory.repository.TCFactoryExtendRepository;
 import udpm.hn.studentattendance.core.teacher.factory.repository.TCPlanDateRepository;
-import udpm.hn.studentattendance.core.teacher.factory.service.TCPlanDateAttendanceService;
+import udpm.hn.studentattendance.core.teacher.factory.repository.TCPlanFactoryRepository;
+import udpm.hn.studentattendance.core.teacher.factory.repository.TCStudentFactoryExtendRepository;
+import udpm.hn.studentattendance.entities.Factory;
 import udpm.hn.studentattendance.entities.PlanDate;
 import udpm.hn.studentattendance.entities.PlanFactory;
 import udpm.hn.studentattendance.helpers.ExcelHelper;
@@ -35,8 +36,10 @@ import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.constants.AttendanceStatus;
 import udpm.hn.studentattendance.infrastructure.constants.ImportLogType;
 import udpm.hn.studentattendance.infrastructure.constants.RestApiStatus;
+import udpm.hn.studentattendance.infrastructure.constants.RoleConstant;
 import udpm.hn.studentattendance.infrastructure.constants.ShiftType;
 import udpm.hn.studentattendance.infrastructure.constants.StatusType;
+import udpm.hn.studentattendance.infrastructure.excel.model.dto.ExExportPlanDateModel;
 import udpm.hn.studentattendance.infrastructure.excel.model.request.EXDataRequest;
 import udpm.hn.studentattendance.infrastructure.excel.model.request.EXImportRequest;
 import udpm.hn.studentattendance.infrastructure.excel.model.request.EXUploadRequest;
@@ -45,13 +48,11 @@ import udpm.hn.studentattendance.infrastructure.excel.model.response.ExImportLog
 import udpm.hn.studentattendance.infrastructure.excel.repositories.EXImportLogDetailRepository;
 import udpm.hn.studentattendance.infrastructure.excel.repositories.EXImportLogRepository;
 import udpm.hn.studentattendance.infrastructure.excel.service.EXPlanDateService;
+import udpm.hn.studentattendance.utils.CodeGeneratorUtils;
 import udpm.hn.studentattendance.utils.DateTimeUtils;
 import udpm.hn.studentattendance.utils.ExcelUtils;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.text.ParseException;
 import java.util.ArrayList;
@@ -59,6 +60,8 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -77,6 +80,12 @@ public class EXPlanDateServiceImpl implements EXPlanDateService {
     private final TCAttendanceRepository tcAttendanceRepository;
 
     private final TCPlanDateRepository tcPlanDateRepository;
+
+    private final TCFactoryExtendRepository tcFactoryExtendRepository;
+
+    private final TCPlanFactoryRepository tcPlanFactoryRepository;
+
+    private final TCStudentFactoryExtendRepository tcStudentFactoryExtendRepository;
 
     private final ExcelHelper excelHelper;
 
@@ -197,15 +206,92 @@ public class EXPlanDateServiceImpl implements EXPlanDateService {
     @Override
     public ResponseEntity<?> exportData(EXDataRequest request) {
         Map<String, Object> dataRequest = request.getData();
+
         String idPlanDate = (String) dataRequest.get("idPlanDate");
+        String idFactory = (String) dataRequest.get("idFactory");
+        String idPlanFactory = (String) dataRequest.get("idPlanFactory");
+
+        if (idPlanDate != null) {
+            return exportOne(idPlanDate);
+        } else if (idPlanFactory != null) {
+            return exportAllByPlanFactory(idPlanFactory);
+        } else if (idFactory != null) {
+            return exportAllByFactory(idFactory);
+        }
+        return null;
+    }
+
+    @Override
+    public ResponseEntity<byte[]> downloadTemplate(EXDataRequest request) {
+        try (Workbook workbook = new XSSFWorkbook();
+             ByteArrayOutputStream data = new ByteArrayOutputStream()) {
+            String filename = "template-import-plan-date.xlsx";
+            List<String> headers = List.of("Ngày diễn ra", "Hình thức học", "Ca bắt đầu", "Ca kết thúc", "Điểm danh muộn tối đa", "Nội dung buổi học", "Link học online", "Phòng học", "Check IP", "Check địa điểm");
+
+            int firstRow = 1;
+            int lastRow = 500;
+
+            List<String> lstShiftType = Arrays.stream(ShiftType.values())
+                    .map(Enum::name)
+                    .toList();
+
+            List<Integer> lstShift = spdFacilityShiftRepository.getAllShift(sessionHelper.getFacilityId());
+
+            Sheet templateSheet = ExcelUtils.createTemplate(workbook, "Data Import", headers, new ArrayList<>());
+            ExcelUtils.addDateValidation(templateSheet, firstRow, lastRow, 0, "dd/MM/yyyy", "01/01/1900", "31/12/9999");
+            ExcelUtils.addListValidation(templateSheet, firstRow, lastRow, 1, lstShiftType);
+            ExcelUtils.addListValidation(templateSheet, firstRow, lastRow, 2, lstShift);
+            ExcelUtils.addListValidation(templateSheet, firstRow, lastRow, 3, lstShift);
+            ExcelUtils.addListValidation(templateSheet, firstRow, lastRow, 8, List.of(true, false));
+            ExcelUtils.addListValidation(templateSheet, firstRow, lastRow, 9, List.of(true, false));
+            workbook.write(data);
+
+            HttpHeaders headersHttp = new HttpHeaders();
+            headersHttp.setContentDisposition(ContentDisposition.builder("attachment").filename(filename).build());
+            headersHttp.set(HttpHeaders.ACCESS_CONTROL_EXPOSE_HEADERS, HttpHeaders.CONTENT_DISPOSITION);
+            headersHttp.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+            return new ResponseEntity<>(data.toByteArray(), headersHttp, HttpStatus.OK);
+        } catch (IOException | ParseException e) {
+            return null;
+        }
+    }
+
+    @Override
+    public ResponseEntity<?> historyLog(EXDataRequest request) {
+        Pageable pageable = PaginationHelper.createPageable(request);
+        PageableObject<ExImportLogResponse> data = PageableObject.of(importLogRepository.getListHistory(pageable, ImportLogType.PLAN_DATE.ordinal(), sessionHelper.getUserId(), sessionHelper.getFacilityId()));
+        return RouterHelper.responseSuccess("Lấy danh sách dữ liệu thành công", data);
+    }
+
+    @Override
+    public ResponseEntity<?> historyLogDetail(EXDataRequest request, String id) {
+        List<ExImportLogDetailResponse> data = importLogDetailRepository.getAllList(id, sessionHelper.getUserId(), sessionHelper.getFacilityId());
+        return RouterHelper.responseSuccess("Lấy danh sách dữ liệu thành công", data);
+    }
+
+    private ResponseEntity<ApiResponse> error(String message, Object data, EXImportRequest request) {
+        if (data != null) {
+            message += " => " + data;
+        }
+        excelHelper.saveLogError(ImportLogType.PLAN_DATE, message, request);
+        return RouterHelper.responseError(message);
+    }
+
+    private ResponseEntity<?> exportOne(String idPlanDate) {
         PlanDate planDate = tcPlanDateRepository.findById(idPlanDate).orElse(null);
-        if (planDate == null || !planDate.getPlanFactory().getFactory().getUserStaff().getId().equals(sessionHelper.getUserId())) {
-            System.out.println("Không tìm thấy planDate");
+
+        if (planDate == null) {
             return null;
         }
 
+        if (!sessionHelper.getUserRole().contains(RoleConstant.ADMIN) && !sessionHelper.getUserRole().contains(RoleConstant.STAFF)) {
+            if (!Objects.equals(planDate.getPlanFactory().getFactory().getUserStaff().getId(), sessionHelper.getUserId())) {
+                return null;
+            }
+        }
+
         TCFilterPlanDateAttendanceRequest tcFilterPlanDateAttendanceRequest = new TCFilterPlanDateAttendanceRequest();
-        tcFilterPlanDateAttendanceRequest.setIdPlanDate(idPlanDate);
+        tcFilterPlanDateAttendanceRequest.setIdPlanDate(planDate.getId());
         tcFilterPlanDateAttendanceRequest.setIdFacility(sessionHelper.getFacilityId());
         List<TCPlanDateStudentResponse> lstPlanDate = tcAttendanceRepository.getAllByFilter(tcFilterPlanDateAttendanceRequest);
 
@@ -268,29 +354,93 @@ public class EXPlanDateServiceImpl implements EXPlanDateService {
         }
     }
 
-    @Override
-    public ResponseEntity<byte[]> downloadTemplate(EXDataRequest request) {
+    private ResponseEntity<?> exportAllByPlanFactory(String idPlanFactory) {
+        PlanFactory planFactory = tcPlanFactoryRepository.findById(idPlanFactory).orElse(null);
+        if (planFactory == null) {
+            return null;
+        }
+        return exportAllByFactory(planFactory.getFactory().getId());
+    }
+
+    private ResponseEntity<?> exportAllByFactory(String idFactory) {
+        Factory factory = tcFactoryExtendRepository.findById(idFactory).orElse(null);
+
+        if (factory == null) {
+            return null;
+        }
+
+        if (!sessionHelper.getUserRole().contains(RoleConstant.ADMIN) && !sessionHelper.getUserRole().contains(RoleConstant.STAFF)) {
+            if (!Objects.equals(factory.getUserStaff().getId(), sessionHelper.getUserId())) {
+                return null;
+            }
+        }
+
+        List<TCPlanDateStudentFactoryResponse> lstStudent = tcStudentFactoryExtendRepository.getAllPlanDateAttendanceByIdFactory(factory.getId());
+
         try (Workbook workbook = new XSSFWorkbook();
              ByteArrayOutputStream data = new ByteArrayOutputStream()) {
-            String filename = "template-import-plan-date.xlsx";
-            List<String> headers = List.of("Ngày diễn ra", "Hình thức học", "Ca bắt đầu", "Ca kết thúc", "Điểm danh muộn tối đa", "Nội dung buổi học", "Link học online", "Phòng học", "Check IP", "Check địa điểm");
+            String filename =
+                    "PlanDate-attendance-" + CodeGeneratorUtils.generateCodeFromString(factory.getName()).toLowerCase() + ".xlsx";
 
-            int firstRow = 1;
-            int lastRow = 500;
+            List<String> headers = new ArrayList<>(List.of("Mã sinh viên", "Họ tên sinh viên"));
 
-            List<String> lstShiftType = Arrays.stream(ShiftType.values())
-                    .map(Enum::name)
+            Set<String> lstPlanDate = lstStudent.stream()
+                    .map(o -> DateTimeUtils.convertMillisToDate(o.getStartDate(), "dd-MM-yyyy") + " - Ca " + o.getShift())
+                    .collect(Collectors.toSet());
+
+            headers.addAll(lstPlanDate);
+            headers.add("Tổng");
+            headers.add("Vắng(%)");
+
+            Sheet sheet = ExcelUtils.createTemplate(workbook, "Data Export", headers, new ArrayList<>());
+
+            Map<Object, String> colorMap = new HashMap<>();
+            colorMap.put("Có mặt", "#a9d08e");
+            colorMap.put("Vắng mặt", "#ff7d7d");
+
+
+            Map<String, Set<String>> grouped = lstStudent.stream()
+                    .collect(Collectors.groupingBy(
+                            TCPlanDateStudentFactoryResponse::getCode,
+                            Collectors.mapping(TCPlanDateStudentFactoryResponse::getId, Collectors.toSet())
+                    ));
+
+            List<ExExportPlanDateModel> lstData = grouped.entrySet().stream()
+                    .map(entry -> new ExExportPlanDateModel(entry.getKey(), entry.getValue()))
                     .toList();
 
-            List<Integer> lstShift = spdFacilityShiftRepository.getAllShift(sessionHelper.getFacilityId());
+            int row = 1;
+            for (ExExportPlanDateModel o: lstData) {
+                TCPlanDateStudentFactoryResponse student = lstStudent.stream().filter(s -> s.getCode().equals(o.getCode())).findFirst().orElse(null);
+                if (student == null) {
+                    continue;
+                }
 
-            Sheet templateSheet = ExcelUtils.createTemplate(workbook, "Data Import", headers, new ArrayList<>());
-            ExcelUtils.addDateValidation(templateSheet, firstRow, lastRow, 0, "dd/MM/yyyy", "01/01/1900", "31/12/9999");
-            ExcelUtils.addListValidation(templateSheet, firstRow, lastRow, 1, lstShiftType);
-            ExcelUtils.addListValidation(templateSheet, firstRow, lastRow, 2, lstShift);
-            ExcelUtils.addListValidation(templateSheet, firstRow, lastRow, 3, lstShift);
-            ExcelUtils.addListValidation(templateSheet, firstRow, lastRow, 8, List.of(true, false));
-            ExcelUtils.addListValidation(templateSheet, firstRow, lastRow, 9, List.of(true, false));
+                List<Object> dataCell = new ArrayList<>();
+                dataCell.add(student.getCode());
+                dataCell.add(student.getName());
+
+                int total_absent = 0;
+                for(String idPlanDate: o.getPlanDates()) {
+                    TCPlanDateStudentFactoryResponse planDate = lstStudent.stream().filter(s -> s.getCode().equals(student.getCode()) && s.getId().equals(idPlanDate)).findFirst().orElse(null);
+                    if (planDate == null || planDate.getStartDate() > DateTimeUtils.getCurrentTimeMillis()) {
+                        dataCell.add(" - ");
+                        continue;
+                    }
+                    if (planDate.getStatus() == AttendanceStatus.PRESENT.ordinal()) {
+                        dataCell.add("Có mặt");
+                    } else {
+                        total_absent++;
+                        dataCell.add("Vắng mặt");
+                    }
+                }
+
+                dataCell.add(total_absent + "/" + o.getPlanDates().size());
+                dataCell.add(Math.round((double) total_absent / o.getPlanDates().size() * 1000) / 10.0 + "%");
+
+                ExcelUtils.insertRow(sheet, row, dataCell, colorMap);
+                row++;
+            }
             workbook.write(data);
 
             HttpHeaders headersHttp = new HttpHeaders();
@@ -298,30 +448,9 @@ public class EXPlanDateServiceImpl implements EXPlanDateService {
             headersHttp.set(HttpHeaders.ACCESS_CONTROL_EXPOSE_HEADERS, HttpHeaders.CONTENT_DISPOSITION);
             headersHttp.setContentType(MediaType.APPLICATION_OCTET_STREAM);
             return new ResponseEntity<>(data.toByteArray(), headersHttp, HttpStatus.OK);
-        } catch (IOException | ParseException e) {
+        } catch (IOException e) {
             return null;
         }
-    }
-
-    @Override
-    public ResponseEntity<?> historyLog(EXDataRequest request) {
-        Pageable pageable = PaginationHelper.createPageable(request);
-        PageableObject<ExImportLogResponse> data = PageableObject.of(importLogRepository.getListHistory(pageable, ImportLogType.PLAN_DATE.ordinal(), sessionHelper.getUserId(), sessionHelper.getFacilityId()));
-        return RouterHelper.responseSuccess("Lấy danh sách dữ liệu thành công", data);
-    }
-
-    @Override
-    public ResponseEntity<?> historyLogDetail(EXDataRequest request, String id) {
-        List<ExImportLogDetailResponse> data = importLogDetailRepository.getAllList(id, sessionHelper.getUserId(), sessionHelper.getFacilityId());
-        return RouterHelper.responseSuccess("Lấy danh sách dữ liệu thành công", data);
-    }
-
-    private ResponseEntity<ApiResponse> error(String message, Object data, EXImportRequest request) {
-        if (data != null) {
-            message += " => " + data;
-        }
-        excelHelper.saveLogError(ImportLogType.PLAN_DATE, message, request);
-        return RouterHelper.responseError(message);
     }
 
 }
