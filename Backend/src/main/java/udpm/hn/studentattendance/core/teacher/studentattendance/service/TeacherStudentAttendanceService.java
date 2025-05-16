@@ -1,7 +1,7 @@
 package udpm.hn.studentattendance.core.teacher.studentattendance.service;
 
 import org.springframework.http.ResponseEntity;
-import udpm.hn.studentattendance.core.teacher.studentattendance.model.request.TeacherStudentAttendanceRequest;
+import udpm.hn.studentattendance.core.teacher.studentattendance.model.request.TeacherModifyStudentAttendanceRequest;
 
 public interface TeacherStudentAttendanceService {
 
@@ -9,5 +9,6 @@ public interface TeacherStudentAttendanceService {
 
     ResponseEntity<?> getAllByPlanDate(String teacherStudentAttendanceRequest);
 
-    ResponseEntity<?> updateStatusAttendance(TeacherStudentAttendanceRequest req);
+    ResponseEntity<?> updateStatusAttendance(TeacherModifyStudentAttendanceRequest req);
+
 }
