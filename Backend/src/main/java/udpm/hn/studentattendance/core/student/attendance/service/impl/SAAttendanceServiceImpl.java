@@ -191,7 +191,10 @@ public class SAAttendanceServiceImpl implements SAAttendanceService {
         attendance.setUserStudent(userStudent);
         attendance.setPlanDate(planDate);
 
-        return RouterHelper.responseSuccess("Checkin đầu giờ thành công", attendanceRepository.save(attendance));
+        Attendance entity = attendanceRepository.save(attendance);
+        sendMessageWS(planDate, userStudent);
+
+        return RouterHelper.responseSuccess("Checkin đầu giờ thành công", entity);
     }
 
     private Attendance markPresent(Attendance attendance, PlanDate planDate, UserStudent userStudent) {
@@ -201,11 +204,15 @@ public class SAAttendanceServiceImpl implements SAAttendanceService {
             attendance.setPlanDate(planDate);
         }
         attendance.setAttendanceStatus(AttendanceStatus.PRESENT);
+        sendMessageWS(planDate, userStudent);
+        return attendanceRepository.save(attendance);
+    }
+
+    private void sendMessageWS(PlanDate planDate, UserStudent userStudent) {
         AttendanceMessage attendanceMessage = new AttendanceMessage();
         attendanceMessage.setPlanDateId(planDate.getId());
         attendanceMessage.setUserStudentId(userStudent.getId());
         messagingTemplate.convertAndSend(RouteWebsocketConstant.TOPIC_ATTENDANCE, attendanceMessage);
-        return attendanceRepository.save(attendance);
     }
 
 }
