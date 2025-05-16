@@ -10,8 +10,8 @@ import { GLOBAL_ROUTE_NAMES, WS_ROUTES } from '@/constants/routesConstant'
 import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
 import useLoadingStore from '@/stores/useLoadingStore'
 import { Client } from '@stomp/stompjs'
-import { ATTENDANCE_STATUS } from '@/constants'
-import { autoAddColumnWidth } from '@/utils/utils'
+import { ATTENDANCE_STATUS, STATUS_REQUIRED_ATTENDANCE } from '@/constants'
+import { autoAddColumnWidth, formatDate } from '@/utils/utils'
 
 // Lấy planDateId từ query
 const route = useRoute()
@@ -33,21 +33,23 @@ const students = ref([])
 // Cột bảng
 const columns = ref(
   autoAddColumnWidth([
-    { title: '#', dataIndex: 'rowNumber', key: 'rowNumber' },
+    { title: '#', dataIndex: 'orderNumber', key: 'orderNumber' },
     {
       title: 'Mã học sinh',
-      dataIndex: 'userStudentCode',
-      key: 'userStudentCode',
+      dataIndex: 'code',
+      key: 'code',
     },
     {
       title: 'Tên học sinh',
-      dataIndex: 'userStudentName',
-      key: 'userStudentName',
+      dataIndex: 'name',
+      key: 'name',
     },
+    { title: 'Checkin đầu giờ', dataIndex: 'createdAt', key: 'createdAt' },
+    { title: 'Checkout cuối giờ', dataIndex: 'updatedAt', key: 'updatedAt' },
     {
       title: 'Trạng thái',
-      dataIndex: 'attendanceStatus',
-      key: 'attendanceStatus',
+      dataIndex: 'status',
+      key: 'status',
     },
   ]),
 )
@@ -62,10 +64,6 @@ const fetchStudentAttendance = async () => {
     const { data } = response.data
     students.value = data.map((item, idx) => ({
       ...item,
-      rowNumber: idx + 1,
-      // Nếu chưa có, mặc định '1'
-      attendanceStatus: String(item.attendanceStatus ?? '1'),
-      // Thêm flag local để đánh dấu đã thay đổi
       _edited: false,
     }))
   } catch (error) {
@@ -77,38 +75,32 @@ const fetchStudentAttendance = async () => {
 
 // Khi switch thay đổi: chỉ cập nhật client
 const handleChangeStatus = (record, checked) => {
-  record.attendanceStatus = checked ? '3' : '1'
+  record.status = checked ? ATTENDANCE_STATUS.PRESENT.id : ATTENDANCE_STATUS.ABSENT.id
   record._edited = true
 }
 
 // Khi nhấn Lưu: duyệt all, gửi API cho những record đã edit
 const saveAttendance = async () => {
   loadingStore.show()
-  try {
-    const edited = students.value.filter((s) => s._edited)
-    for (const rec of edited) {
-      // payload
-      const payload = {
-        id: rec.attendanceId || null,
-        planDateId: planDateId,
-        userStudentId: rec.userStudentId,
-        status: rec.attendanceStatus,
-      }
-      const res = await requestAPI.put(API_ROUTES_TEACHER.FETCH_DATA_STUDENT_PLAN_DATE, payload)
-      // nếu tạo mới, cập nhật attendanceId về client
-      const updated = res.data.data
-      if (updated && updated.id) rec.attendanceId = updated.id
-      // reset flag
-      rec._edited = false
-    }
-    message.success('Lưu điểm danh thành công')
-    // reload data
-    await fetchStudentAttendance()
-  } catch (error) {
-    message.error(error.response?.data?.message || 'Lỗi khi lưu điểm danh')
-  } finally {
-    loadingStore.hide()
-  }
+  requestAPI
+    .put(API_ROUTES_TEACHER.FETCH_DATA_STUDENT_PLAN_DATE, {
+      students: Array.from(students.value.filter((s) => s._edited)).map((o) => ({
+        idAttendance: o.idAttendance,
+        idPlanDate: planDateId,
+        idUserStudent: o.id,
+        status: o.status,
+      })),
+    })
+    .then(({ data: response }) => {
+      message.success(response.message || 'Lưu điểm danh thành công')
+      fetchStudentAttendance()
+    })
+    .catch((error) => {
+      message.error(error.response?.data?.message || 'Lỗi khi lưu điểm danh')
+    })
+    .finally(() => {
+      loadingStore.hide()
+    })
 }
 
 const connectSocket = () => {
@@ -127,7 +119,7 @@ const connectSocket = () => {
           return
         }
 
-        student.attendanceStatus = ATTENDANCE_STATUS.PRESENT.id
+        student.status = ATTENDANCE_STATUS.PRESENT.id
       })
     },
   })
@@ -172,21 +164,58 @@ onMounted(() => {
         :scroll="{ x: 'auto' }"
       >
         <template #bodyCell="{ column, record, index }">
-          <template v-if="column.key === 'rowNumber'">
-            {{ index + 1 }}
-          </template>
-          <template v-else-if="column.dataIndex === 'attendanceStatus'">
+          <template v-if="column.dataIndex === 'status'">
             <a-switch
-              :checked="record.attendanceStatus == 3"
+              :checked="record.status == ATTENDANCE_STATUS.PRESENT.id"
               class="me-2"
               @change="(checked) => handleChangeStatus(record, checked)"
             />
-            <a-tag :color="record.attendanceStatus == 3 ? 'green' : 'red'">
-              {{ record.attendanceStatus == 3 ? 'Có mặt' : 'Vắng mặt' }}
+            <a-tag :color="record.status === ATTENDANCE_STATUS.PRESENT.id ? 'green' : 'red'">
+              {{ record.status === ATTENDANCE_STATUS.PRESENT.id ? 'Có mặt' : 'Vắng mặt' }}
             </a-tag>
           </template>
-          <template v-else>
-            {{ record[column.dataIndex] }}
+
+          <template v-if="column.dataIndex === 'createdAt'">
+            <template v-if="record.requiredCheckin === STATUS_REQUIRED_ATTENDANCE.ENABLE">
+              <span v-if="record.status === ATTENDANCE_STATUS.ABSENT.id">
+                <a-badge status="default" /> Đã huỷ checkin
+              </span>
+              <span
+                v-else-if="
+                  record.status === ATTENDANCE_STATUS.NOTCHECKIN.id || !record.idAttendance
+                "
+              >
+                <a-badge status="error" /> Chưa checkin
+              </span>
+              <span v-else>
+                <a-badge status="warning" />
+                {{ formatDate(record.createdAt, 'dd/MM/yyyy HH:mm') || ' - ' }}
+              </span>
+            </template>
+            <template v-else>
+              <a-badge status="default" />
+              Không yêu cầu
+            </template>
+          </template>
+          <template v-if="column.dataIndex === 'updatedAt'">
+            <template v-if="record.requiredCheckout === STATUS_REQUIRED_ATTENDANCE.ENABLE">
+              <span v-if="record.status === ATTENDANCE_STATUS.ABSENT.id">
+                <a-badge status="default" /> Đã huỷ checkout
+              </span>
+              <span
+                v-else-if="record.status !== ATTENDANCE_STATUS.PRESENT.id || !record.idAttendance"
+              >
+                <a-badge status="error" /> Chưa checkout
+              </span>
+              <span v-else>
+                <a-badge status="success" />
+                {{ formatDate(record.updatedAt, 'dd/MM/yyyy HH:mm') || ' - ' }}
+              </span>
+            </template>
+            <template v-else>
+              <a-badge status="default" />
+              Không yêu cầu
+            </template>
           </template>
         </template>
       </a-table>

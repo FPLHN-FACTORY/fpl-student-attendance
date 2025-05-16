@@ -1,14 +1,20 @@
-package udpm.hn.studentattendance.core.teacher.studentattendance.service;
+package udpm.hn.studentattendance.core.teacher.studentattendance.service.impl;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import udpm.hn.studentattendance.core.teacher.studentattendance.model.request.TeacherModifyStudentAttendanceRequest;
 import udpm.hn.studentattendance.core.teacher.studentattendance.model.request.TeacherStudentAttendanceRequest;
 import udpm.hn.studentattendance.core.teacher.studentattendance.model.response.TeacherStudentAttendanceResponse;
 import udpm.hn.studentattendance.core.teacher.studentattendance.repository.TeacherStudentAttendanceRepository;
+import udpm.hn.studentattendance.core.teacher.studentattendance.service.TeacherStudentAttendanceService;
 import udpm.hn.studentattendance.entities.Attendance;
+import udpm.hn.studentattendance.entities.PlanDate;
+import udpm.hn.studentattendance.entities.UserStudent;
 import udpm.hn.studentattendance.helpers.RouterHelper;
+import udpm.hn.studentattendance.helpers.SessionHelper;
 import udpm.hn.studentattendance.infrastructure.common.ApiResponse;
 import udpm.hn.studentattendance.infrastructure.constants.AttendanceStatus;
 import udpm.hn.studentattendance.infrastructure.constants.RestApiStatus;
@@ -20,14 +26,16 @@ import java.util.List;
 import java.util.Optional;
 
 @Service
+@RequiredArgsConstructor
 public class TeacherStudentAttendanceServiceImpl implements TeacherStudentAttendanceService {
 
-    @Autowired
-    private TeacherStudentAttendanceRepository repository;
-    @Autowired
-    private UserStudentRepository userStudentRepository;
-    @Autowired
-    private PlanDateRepository planDateRepository;
+    private final TeacherStudentAttendanceRepository repository;
+
+    private final UserStudentRepository userStudentRepository;
+
+    private final PlanDateRepository planDateRepository;
+
+    private final SessionHelper sessionHelper;
 
     @Override
     public ResponseEntity<?> createAttendance(String planDateId) {
@@ -61,41 +69,57 @@ public class TeacherStudentAttendanceServiceImpl implements TeacherStudentAttend
 
     @Override
     public ResponseEntity<?> getAllByPlanDate(String planDateId) {
-        List<TeacherStudentAttendanceResponse> list = repository.getAllByPlanDate(planDateId);
+        List<TeacherStudentAttendanceResponse> list = repository.getAllByPlanDate(planDateId, sessionHelper.getFacilityId());
         return RouterHelper.responseSuccess("Lấy tất cả sinh viên nhóm xưởng", list);
     }
 
     @Override
-    public ResponseEntity<?> updateStatusAttendance(TeacherStudentAttendanceRequest req) {
-        Attendance attendance;
-        // Nếu đã có attendanceId từ client -> chỉ update
-        if (req.getId() != null) {
-            attendance = repository.findById(req.getId())
-                    .orElseThrow(() -> new IllegalArgumentException("Attendance không tồn tại"));
-        } else if ("3".equals(req.getStatus())) {
-            // Nếu chưa có record và user đánh dấu Có mặt -> tạo mới
-            attendance = new Attendance();
-            attendance.setUserStudent(
-                    userStudentRepository.findById(req.getUserStudentId()).orElseThrow());
-            attendance.setPlanDate(
-                    planDateRepository.findById(req.getPlanDateId()).orElseThrow());
-        } else {
-            // Chưa có record và đánh dấu Vắng mặt -> không cần lưu
-            return new ResponseEntity<>(new ApiResponse(
-                    RestApiStatus.SUCCESS,
-                    "Không có thay đổi",
-                    null), HttpStatus.OK);
+    public ResponseEntity<?> updateStatusAttendance(TeacherModifyStudentAttendanceRequest request) {
+
+        List<TeacherStudentAttendanceRequest> students = request.getStudents();
+
+        List<Attendance> lstData = new ArrayList<>();
+
+        for (TeacherStudentAttendanceRequest req: students) {
+
+            if (req.getIdAttendance() == null || req.getIdUserStudent() == null || req.getIdPlanDate() == null) {
+                continue;
+            }
+
+            PlanDate planDate = planDateRepository.findById(req.getIdPlanDate()).orElse(null);
+            UserStudent userStudent = userStudentRepository.findById(req.getIdUserStudent()).orElse(null);
+
+            if (planDate == null
+                    || userStudent == null
+                    || !planDate.getPlanFactory().getFactory().getUserStaff().getId().equals(sessionHelper.getUserId())) {
+                continue;
+            }
+
+            Attendance attendance = repository.findById(req.getIdAttendance()).orElse(null);
+
+            if (req.getStatus() == AttendanceStatus.PRESENT.ordinal()) {
+                if (attendance == null) {
+                    attendance = new Attendance();
+                    attendance.setUserStudent(userStudent);
+                    attendance.setPlanDate(planDate);
+                }
+                attendance.setAttendanceStatus(AttendanceStatus.PRESENT);
+            } else {
+                if (attendance != null) {
+                    attendance.setAttendanceStatus(AttendanceStatus.ABSENT);
+                }
+            }
+
+            if (attendance != null) {
+                lstData.add(attendance);
+            }
         }
-        // Cập nhật trạng thái
-        if ("3".equals(req.getStatus())) {
-            attendance.setAttendanceStatus(AttendanceStatus.PRESENT);
-        } else {
-            attendance.setAttendanceStatus(AttendanceStatus.ABSENT);
+
+        if (lstData.isEmpty()) {
+            return RouterHelper.responseError("Không có thay đổi nào");
         }
-        Attendance saved = repository.save(attendance);
-        return new ResponseEntity<>(new ApiResponse(
-                RestApiStatus.SUCCESS,
-                "Cập nhật trạng thái điểm danh thành công",
-                saved), HttpStatus.OK);
+
+        repository.saveAllAndFlush(lstData);
+        return RouterHelper.responseSuccess("Cập nhật trạng thái điểm danh thành công");
     }
 }
