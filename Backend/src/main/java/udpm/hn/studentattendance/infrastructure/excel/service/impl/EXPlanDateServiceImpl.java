@@ -325,7 +325,9 @@ public class EXPlanDateServiceImpl implements EXPlanDateService {
                 String status = o.getStatus() == AttendanceStatus.PRESENT.ordinal() ? "Có mặt": "Vắng mặt";
 
                 if (planDate.getRequiredCheckin() == StatusType.ENABLE) {
-                    if (o.getStatus() == AttendanceStatus.NOTCHECKIN.ordinal()) {
+                    if (o.getStatus() == AttendanceStatus.ABSENT.ordinal()) {
+                        checkin = "Đã huỷ checkin";
+                    } else if (o.getStatus() == AttendanceStatus.NOTCHECKIN.ordinal()) {
                         checkin = "Chưa checkin";
                     } else {
                         checkin = DateTimeUtils.convertMillisToDate(o.getCreatedAt(), "dd/MM/yyyy HH:mm");
@@ -333,7 +335,9 @@ public class EXPlanDateServiceImpl implements EXPlanDateService {
                 }
 
                 if (planDate.getRequiredCheckout() == StatusType.ENABLE) {
-                    if (o.getStatus() != AttendanceStatus.PRESENT.ordinal()) {
+                    if (o.getStatus() == AttendanceStatus.ABSENT.ordinal()) {
+                        checkout = "Đã huỷ checkout";
+                    } else if (o.getStatus() != AttendanceStatus.PRESENT.ordinal()) {
                         checkout = "Chưa checkout";
                     } else {
                         checkout = DateTimeUtils.convertMillisToDate(o.getUpdatedAt(), "dd/MM/yyyy HH:mm");

@@ -1,16 +1,21 @@
 package udpm.hn.studentattendance.core.teacher.studentattendance.model.response;
 
-public interface TeacherStudentAttendanceResponse {
-    Integer getRowNumber();
+import udpm.hn.studentattendance.infrastructure.common.HasAudit;
+import udpm.hn.studentattendance.infrastructure.common.HasOrderNumber;
+import udpm.hn.studentattendance.infrastructure.common.IsIdentify;
 
-    String getAttendanceId();
+public interface TeacherStudentAttendanceResponse extends IsIdentify, HasOrderNumber, HasAudit {
 
-    String getUserStudentCode();
+    String getCode();
 
-    String getUserStudentName();
+    String getIdAttendance();
 
-    String getUserStudentId();
+    String getName();
 
-    Integer getAttendanceStatus();
+    Integer getRequiredCheckin();
+
+    Integer getRequiredCheckout();
+
+    Integer getStatus();
 
 }
