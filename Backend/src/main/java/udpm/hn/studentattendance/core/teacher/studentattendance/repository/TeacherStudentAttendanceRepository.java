@@ -16,31 +16,54 @@ public interface TeacherStudentAttendanceRepository extends AttendanceRepository
      * Lấy danh sách sinh viên kèm trạng thái điểm danh (mặc định 1 nếu chưa có bản ghi)
      */
     @Query(value = """
-        SELECT
-            at.id                  AS attendanceId,
-            us.code                AS userStudentCode,
-            us.name                AS userStudentName,
-            us.id                  AS userStudentId,
-            CASE
-                WHEN at.id IS NULL THEN 1
-                ELSE at.attendance_status
-            END                   AS attendanceStatus
-        FROM factory ft
-        LEFT JOIN user_student_factory usf
-            ON usf.id_factory = ft.id
-        LEFT JOIN user_student us
-            ON us.id = usf.id_user_student
-        LEFT JOIN plan_factory pf
-            ON pf.id_factory = ft.id
-        LEFT JOIN plan_date pd
-            ON pd.id_plan_factory = pf.id
-        LEFT JOIN attendance at
-            ON at.id_plan_date = pd.id
-           AND at.id_user_student = us.id
-        WHERE pd.id = :planDateId
+        SELECT 
+            ROW_NUMBER() OVER (ORDER BY us.name ASC) as orderNumber,
+            us.id,
+            us.code,
+            us.name,
+            pd.required_checkin,
+            pd.required_checkout,
+            a.id as idAttendance,
+            COALESCE(a.attendance_status, 0) AS status,
+            COALESCE(a.created_at, 0) AS createdAt,
+            COALESCE(a.updated_at, 0) AS updatedAt
+        FROM user_student_factory usf
+        JOIN factory f ON usf.id_factory = f.id
+        JOIN plan_factory pf ON f.id = pf.id_factory
+        JOIN plan_date pd ON pd.id_plan_factory = pf.id
+        JOIN user_student us ON usf.id_user_student = us.id
+        LEFT JOIN attendance a ON pd.id = a.id_plan_date AND a.id_user_student = usf.id_user_student
+        WHERE
+            pd.status = 1 AND
+            pf.status = 1 AND
+            f.status = 1 AND
+            us.status = 1 AND
+            usf.status = 1 AND
+            EXISTS(
+                SELECT 1
+                FROM plan p
+                JOIN project pj ON f.id_project = pj.id
+                JOIN subject_facility sf ON sf.id = pj.id_subject_facility
+                JOIN subject s2 ON s2.id = sf.id_subject
+                JOIN facility f2 ON sf.id_facility = f2.id
+                JOIN semester s ON pj.id_semester = s.id
+                WHERE 
+                     pf.id_plan = p.id AND
+                     p.status = 1 AND
+                     pj.status = 1 AND
+                     s.status = 1 AND
+                     s2.status = 1 AND
+                     f2.status = 1 AND
+                     sf.status = 1 AND
+                     f2.id = :idFacility
+            ) AND
+            pd.start_date <= UNIX_TIMESTAMP(NOW()) * 1000 AND
+            pd.id = :idPlanDate
+        ORDER BY
+            us.name ASC 
     """, nativeQuery = true)
     List<TeacherStudentAttendanceResponse> getAllByPlanDate(
-            String planDateId
+            String idPlanDate, String idFacility
     );
 
     /**

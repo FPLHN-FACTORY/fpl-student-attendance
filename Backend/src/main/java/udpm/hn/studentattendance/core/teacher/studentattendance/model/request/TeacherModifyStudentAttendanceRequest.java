@@ -4,17 +4,13 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
+import java.util.List;
+
 @Getter
 @Setter
 @ToString
-public class TeacherStudentAttendanceRequest {
+public class TeacherModifyStudentAttendanceRequest {
 
-    private String idAttendance;
-
-    private String idUserStudent;
-
-    private String idPlanDate;
-
-    private Integer status;
+    private List<TeacherStudentAttendanceRequest> students;
 
 }
