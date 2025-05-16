@@ -1,6 +1,6 @@
 <script setup>
 import { UnorderedListOutlined } from '@ant-design/icons-vue'
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { message } from 'ant-design-vue'
 import { useRoute } from 'vue-router'
 import requestAPI from '@/services/requestApiService'
@@ -64,7 +64,7 @@ const fetchStudentAttendance = async () => {
     const { data } = response.data
     students.value = data.map((item, idx) => ({
       ...item,
-      _edited: false,
+      _tmpStatus: item.status,
     }))
   } catch (error) {
     message.error(error.response?.data?.message || 'Lỗi khi lấy dữ liệu')
@@ -75,8 +75,23 @@ const fetchStudentAttendance = async () => {
 
 // Khi switch thay đổi: chỉ cập nhật client
 const handleChangeStatus = (record, checked) => {
-  record.status = checked ? ATTENDANCE_STATUS.PRESENT.id : ATTENDANCE_STATUS.ABSENT.id
-  record._edited = true
+  if (!checked) {
+    return (record.status =
+      record._tmpStatus === ATTENDANCE_STATUS.PRESENT.id
+        ? ATTENDANCE_STATUS.ABSENT.id
+        : record._tmpStatus)
+  }
+
+  record.status = ATTENDANCE_STATUS.PRESENT.id
+
+  console.log(record.status)
+}
+
+const handleReset = () => {
+  students.value = students.value.map((o) => ({
+    ...o,
+    status: o._tmpStatus,
+  }))
 }
 
 // Khi nhấn Lưu: duyệt all, gửi API cho những record đã edit
@@ -84,7 +99,7 @@ const saveAttendance = async () => {
   loadingStore.show()
   requestAPI
     .put(API_ROUTES_TEACHER.FETCH_DATA_STUDENT_PLAN_DATE, {
-      students: Array.from(students.value.filter((s) => s._edited)).map((o) => ({
+      students: Array.from(students.value.filter((s) => s._tmpStatus != s.status)).map((o) => ({
         idAttendance: o.idAttendance,
         idPlanDate: planDateId,
         idUserStudent: o.id,
@@ -224,10 +239,13 @@ onMounted(() => {
           type="primary"
           class="w-100"
           @click="saveAttendance"
-          :disabled="students.every((s) => !s._edited)"
+          :disabled="students.every((s) => s._tmpStatus === s.status)"
         >
           Lưu điểm danh
         </a-button>
+      </div>
+      <div class="my-3">
+        <a-button class="w-100" @click="handleReset"> Huỷ thay đổi </a-button>
       </div>
     </a-card>
   </div>
