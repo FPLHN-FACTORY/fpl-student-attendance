@@ -83,8 +83,6 @@ const handleChangeStatus = (record, checked) => {
   }
 
   record.status = ATTENDANCE_STATUS.PRESENT.id
-
-  console.log(record.status)
 }
 
 const handleReset = () => {
