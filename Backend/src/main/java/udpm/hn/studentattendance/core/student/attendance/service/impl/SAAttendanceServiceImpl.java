@@ -121,8 +121,13 @@ public class SAAttendanceServiceImpl implements SAAttendanceService {
 
         Attendance attendance = attendanceRepository.findByUserStudent_IdAndPlanDate_Id(userStudent.getId(), planDate.getId()).orElse(null);
 
-        if (attendance != null && attendance.getAttendanceStatus() == AttendanceStatus.PRESENT) {
-            return RouterHelper.responseError("Ca học đã được điểm danh");
+        if (attendance != null) {
+            if (attendance.getAttendanceStatus() == AttendanceStatus.PRESENT) {
+                return RouterHelper.responseError("Ca học đã được điểm danh");
+            }
+            if (attendance.getAttendanceStatus() == AttendanceStatus.ABSENT) {
+                return RouterHelper.responseError("Bạn đã bị huỷ điểm danh.");
+            }
         }
 
         if (attendance == null || attendance.getAttendanceStatus() == AttendanceStatus.NOTCHECKIN) {

@@ -242,7 +242,10 @@ watch(
                 </template>
                 <template v-if="column.dataIndex === 'createdAt'">
                   <template v-if="_detail.requiredCheckin === STATUS_REQUIRED_ATTENDANCE.ENABLE">
-                    <span v-if="record.status === ATTENDANCE_STATUS.NOTCHECKIN.id">
+                    <span v-if="record.status === ATTENDANCE_STATUS.ABSENT.id">
+                      <a-badge status="default" /> Đã huỷ checkin
+                    </span>
+                    <span v-else-if="record.status === ATTENDANCE_STATUS.NOTCHECKIN.id">
                       <a-badge status="error" /> Chưa checkin
                     </span>
                     <span v-else>
@@ -257,7 +260,10 @@ watch(
                 </template>
                 <template v-if="column.dataIndex === 'updatedAt'">
                   <template v-if="_detail.requiredCheckout === STATUS_REQUIRED_ATTENDANCE.ENABLE">
-                    <span v-if="record.status !== ATTENDANCE_STATUS.PRESENT.id">
+                    <span v-if="record.status === ATTENDANCE_STATUS.ABSENT.id">
+                      <a-badge status="default" /> Đã huỷ checkout
+                    </span>
+                    <span v-else-if="record.status !== ATTENDANCE_STATUS.PRESENT.id">
                       <a-badge status="error" /> Chưa checkout
                     </span>
                     <span v-else>
