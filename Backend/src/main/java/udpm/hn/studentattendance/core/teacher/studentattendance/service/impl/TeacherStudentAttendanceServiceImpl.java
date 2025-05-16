@@ -82,7 +82,7 @@ public class TeacherStudentAttendanceServiceImpl implements TeacherStudentAttend
 
         for (TeacherStudentAttendanceRequest req: students) {
 
-            if (req.getIdAttendance() == null || req.getIdUserStudent() == null || req.getIdPlanDate() == null) {
+            if (req.getIdUserStudent() == null || req.getIdPlanDate() == null) {
                 continue;
             }
 
@@ -95,7 +95,11 @@ public class TeacherStudentAttendanceServiceImpl implements TeacherStudentAttend
                 continue;
             }
 
-            Attendance attendance = repository.findById(req.getIdAttendance()).orElse(null);
+            Attendance attendance = null;
+
+            if (req.getIdAttendance() != null) {
+                attendance = repository.findById(req.getIdAttendance()).orElse(null);
+            }
 
             if (req.getStatus() == AttendanceStatus.PRESENT.ordinal()) {
                 if (attendance == null) {
@@ -106,6 +110,7 @@ public class TeacherStudentAttendanceServiceImpl implements TeacherStudentAttend
                 attendance.setAttendanceStatus(AttendanceStatus.PRESENT);
             } else {
                 if (attendance != null) {
+                    attendance.setUpdatedAt(attendance.getUpdatedAt());
                     attendance.setAttendanceStatus(AttendanceStatus.ABSENT);
                 }
             }
