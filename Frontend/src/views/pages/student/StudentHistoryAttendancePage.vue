@@ -46,6 +46,7 @@ const columns = autoAddColumnWidth([
     key: 'lateArrival',
   },
   { title: 'Nội dung', dataIndex: 'planDateDescription', key: 'planDateDescription' },
+
   { title: 'Trạng thái đi học', dataIndex: 'statusAttendance', key: 'statusAttendance' },
 ])
 
@@ -205,12 +206,11 @@ const handleClearFilter = () => {
   fetchAllAttendanceHistory()
 }
 
-onMounted(() => {
-  breadcrumbStore.setRoutes(breadcrumb.value)
-  fetchAllAttendanceHistory()
-  fetchSemesters()
-  fetchFactories()
-})
+ onMounted(async () => {
+    breadcrumbStore.setRoutes(breadcrumb.value)
+    await fetchSemesters()     
+    await fetchFactories()
+  })
 </script>
 
 <template>
@@ -288,7 +288,7 @@ onMounted(() => {
             class="nowrap"
             :dataSource="records"
             :columns="columns"
-            :rowKey="(record) => record.id"
+            :rowKey="record => record.planDateId"
             :pagination="paginations[factoryId]"
             @change="(pagination, filters, sorter) => handleTableChange(factoryId, pagination)"
             :loading="isLoading"
@@ -322,6 +322,7 @@ onMounted(() => {
                     >Chi tiết</a-typography-link
                   >
                 </template>
+                
                 <template v-else-if="column.dataIndex === 'statusAttendance'">
                   <a-badge
                     :status="
