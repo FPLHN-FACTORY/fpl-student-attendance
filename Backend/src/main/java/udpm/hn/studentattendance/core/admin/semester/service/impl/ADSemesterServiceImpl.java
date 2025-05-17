@@ -3,7 +3,6 @@ package udpm.hn.studentattendance.core.admin.semester.service.impl;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
@@ -14,15 +13,12 @@ import udpm.hn.studentattendance.core.admin.semester.service.ADSemesterService;
 import udpm.hn.studentattendance.entities.Semester;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
 import udpm.hn.studentattendance.helpers.RouterHelper;
-import udpm.hn.studentattendance.infrastructure.common.ApiResponse;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.common.repositories.CommonUserStudentRepository;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
-import udpm.hn.studentattendance.infrastructure.constants.RestApiStatus;
 import udpm.hn.studentattendance.infrastructure.constants.SemesterName;
 
 import java.time.Instant;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
@@ -44,33 +40,20 @@ public class ADSemesterServiceImpl implements ADSemesterService {
                 Pageable pageable = PaginationHelper.createPageable(request, "createdAt");
                 PageableObject pageableObject = PageableObject
                                 .of(adSemesterRepository.getAllSemester(pageable, request));
-                return new ResponseEntity<>(new ApiResponse(
-                                RestApiStatus.SUCCESS,
-                                "Get semester successfully",
-                                pageableObject), HttpStatus.OK);
+                return RouterHelper.responseSuccess("Get semester successfully", pageableObject);
         }
 
         @Override
         public ResponseEntity<?> getSemesterById(String semesterId) {
                 return adSemesterRepository.findById(semesterId)
-                                .map(semester -> new ResponseEntity<>(
-                                                new ApiResponse(
-                                                                RestApiStatus.SUCCESS,
-                                                                "Tìm học kỳ thành công",
-                                                                semester),
-                                                HttpStatus.OK))
-                                .orElseGet(() -> new ResponseEntity<>(
-                                                new ApiResponse(
-                                                                RestApiStatus.ERROR,
-                                                                "Học kỳ không tồn tại",
-                                                                null),
-                                                HttpStatus.NOT_FOUND));
+                                .map(semester -> RouterHelper.responseSuccess("Tìm học kỳ thành công", semester))
+                                .orElseGet(() -> RouterHelper.responseError("Học kỳ không tồn tại"));
         }
 
         @Override
         public ResponseEntity<?> createSemester(@Valid ADCreateUpdateSemesterRequest request) {
                 try {
-                        // Chuyển đổi từ epoch milli giây sang giờ của máy chủ
+
                         LocalDateTime fromDate = Instant
                                         .ofEpochMilli(request.getFromDate())
                                         .atZone(ZoneId.systemDefault())
@@ -79,17 +62,11 @@ public class ADSemesterServiceImpl implements ADSemesterService {
                                         .ofEpochMilli(request.getToDate())
                                         .atZone(ZoneId.systemDefault())
                                         .toLocalDateTime();
-                        // **Thêm validation kiểm tra ngày quá khứ**
                         if (fromDate.isBefore(LocalDateTime.now())) {
-                                return new ResponseEntity<>(
-                                                new ApiResponse(
-                                                                RestApiStatus.ERROR,
-                                                                "Ngày bắt đầu học kỳ không thể là ngày quá khứ hoặc hiện tại",
-                                                                null),
-                                                HttpStatus.BAD_REQUEST);
+                                return RouterHelper.responseError(
+                                                "Ngày bắt đầu học kỳ không thể là ngày quá khứ hoặc hiện tại");
                         }
 
-                        // Các bước còn lại giữ nguyên
                         Long fromTimeSemester = request.getStartTimeCustom();
                         Long toTimeSemester = request.getEndTimeCustom();
                         Integer yearStartTime = fromDate.getYear();
@@ -98,38 +75,19 @@ public class ADSemesterServiceImpl implements ADSemesterService {
 
                         long monthsBetween = ChronoUnit.MONTHS.between(fromDate, toDate);
                         if (monthsBetween < 3) {
-                                return new ResponseEntity<>(
-                                                new ApiResponse(
-                                                                RestApiStatus.ERROR,
-                                                                "Khoảng thời gian học kỳ phải tối thiểu 3 tháng",
-                                                                null),
-                                                HttpStatus.BAD_REQUEST);
+                                return RouterHelper.responseError("Khoảng thời gian học kỳ phải tối thiểu 3 tháng");
                         }
                         if (!yearStartTime.equals(yearEndTime)) {
-                                return new ResponseEntity<>(
-                                                new ApiResponse(
-                                                                RestApiStatus.ERROR,
-                                                                "Thời gian bắt đầu và kết thúc của học kỳ phải cùng 1 năm",
-                                                                null),
-                                                HttpStatus.BAD_REQUEST);
+                                return RouterHelper.responseError(
+                                                "Thời gian bắt đầu và kết thúc của học kỳ phải cùng 1 năm");
                         }
                         if (!adSemesterRepository.checkConflictTime(fromTimeSemester, toTimeSemester).isEmpty()) {
-                                return new ResponseEntity<>(
-                                                new ApiResponse(
-                                                                RestApiStatus.WARNING,
-                                                                "Đã có học kỳ trong khoảng thời gian này!",
-                                                                null),
-                                                HttpStatus.CONFLICT);
+                                return RouterHelper.responseError("Đã có học kỳ trong khoảng thời gian này!");
                         }
                         Optional<Semester> existSemester = adSemesterRepository.checkSemesterExistNameAndYear(name,
                                         yearStartTime, EntityStatus.ACTIVE, null);
                         if (existSemester.isPresent()) {
-                                return new ResponseEntity<>(
-                                                new ApiResponse(
-                                                                RestApiStatus.WARNING,
-                                                                "Học kỳ đã tồn tại",
-                                                                existSemester),
-                                                HttpStatus.CONFLICT);
+                                return RouterHelper.responseError("Học kỳ đã tồn tại");
                         }
                         Semester semester = new Semester();
                         semester.setSemesterName(SemesterName.valueOf(name));
@@ -140,20 +98,10 @@ public class ADSemesterServiceImpl implements ADSemesterService {
                         semester.setStatus(EntityStatus.ACTIVE);
 
                         Semester semesterSave = adSemesterRepository.save(semester);
-                        return new ResponseEntity<>(
-                                        new ApiResponse(
-                                                        RestApiStatus.SUCCESS,
-                                                        "Created semester successfully",
-                                                        semesterSave),
-                                        HttpStatus.CREATED);
+                        return RouterHelper.responseSuccess("Created semester successfully", semesterSave);
                 } catch (Exception e) {
                         e.printStackTrace();
-                        return new ResponseEntity<>(
-                                        new ApiResponse(
-                                                        RestApiStatus.ERROR,
-                                                        "Created semester failed",
-                                                        null),
-                                        HttpStatus.BAD_REQUEST);
+                        return RouterHelper.responseError("Created semester failed");
                 }
         }
 
@@ -166,7 +114,6 @@ public class ADSemesterServiceImpl implements ADSemesterService {
 
                 Semester semester = existSemester.get();
 
-                // Chuyển đổi từ epoch milli giây sang giờ của máy chủ
                 LocalDateTime fromDate = Instant
                                 .ofEpochMilli(request.getFromDate())
                                 .atZone(ZoneId.systemDefault())
@@ -180,30 +127,25 @@ public class ADSemesterServiceImpl implements ADSemesterService {
                 Long toTimeSemester = request.getEndTimeCustom();
 
                 // **Thêm validation kiểm tra ngày quá khứ**
-                if (!Objects.equals(fromTimeSemester, semester.getFromDate()) || !Objects.equals(toTimeSemester, semester.getToDate())) {
+                if (!Objects.equals(fromTimeSemester, semester.getFromDate())
+                                || !Objects.equals(toTimeSemester, semester.getToDate())) {
                         if (fromDate.isBefore(LocalDateTime.now())) {
-                                return RouterHelper.responseError("Ngày bắt đầu học kỳ không thể là ngày trong quá khứ hoặc hiện tại");
+                                return RouterHelper.responseError(
+                                                "Ngày bắt đầu học kỳ không thể là ngày trong quá khứ hoặc hiện tại");
                         }
                 }
 
-                // Các bước còn lại giữ nguyên
                 Integer yearStartTime = fromDate.getYear();
                 Integer yearEndTime = toDate.getYear();
                 String name = SemesterName.valueOf(request.getSemesterName()).toString().trim();
 
-
                 long monthsBetween = ChronoUnit.MONTHS.between(fromDate, toDate);
                 if (monthsBetween < 3) {
-                        return new ResponseEntity<>(
-                                        new ApiResponse(
-                                                        RestApiStatus.ERROR,
-                                                        "Khoảng thời gian học kỳ phải tối thiểu 3 tháng",
-                                                        null),
-                                        HttpStatus.BAD_REQUEST);
+                        return RouterHelper.responseError("Khoảng thời gian học kỳ phải tối thiểu 3 tháng");
                 }
 
                 Optional<Semester> existNameSemester = adSemesterRepository.checkSemesterExistNameAndYear(name,
-                        yearStartTime, EntityStatus.ACTIVE, semester.getId());
+                                yearStartTime, EntityStatus.ACTIVE, semester.getId());
                 if (existNameSemester.isPresent()) {
                         return RouterHelper.responseError("Học kỳ đã tồn tại");
                 }
@@ -213,22 +155,12 @@ public class ADSemesterServiceImpl implements ADSemesterService {
                 if (!semesters.isEmpty()) {
                         for (Semester s : semesters) {
                                 if (!s.getId().equals(semester.getId())) {
-                                        return new ResponseEntity<>(
-                                                        new ApiResponse(
-                                                                        RestApiStatus.WARNING,
-                                                                        "Đã có học kỳ trong khoảng thời gian này",
-                                                                        null),
-                                                        HttpStatus.CONFLICT);
+                                        return RouterHelper.responseError("Đã có học kỳ trong khoảng thời gian này");
                                 }
                         }
                 }
                 if (!yearStartTime.equals(yearEndTime)) {
-                        return new ResponseEntity<>(
-                                        new ApiResponse(
-                                                        RestApiStatus.ERROR,
-                                                        "Thời gian bắt đầu và kết thúc của học kỳ phải cùng 1 năm",
-                                                        null),
-                                        HttpStatus.BAD_REQUEST);
+                        return RouterHelper.responseError("Thời gian bắt đầu và kết thúc của học kỳ phải cùng 1 năm");
                 }
                 semester.setSemesterName(SemesterName.valueOf(name));
                 semester.setYear(yearStartTime);
@@ -236,12 +168,7 @@ public class ADSemesterServiceImpl implements ADSemesterService {
                 semester.setFromDate(fromTimeSemester);
                 semester.setToDate(toTimeSemester);
                 Semester semesterSave = adSemesterRepository.save(semester);
-                return new ResponseEntity<>(
-                                new ApiResponse(
-                                                RestApiStatus.SUCCESS,
-                                                "Cập nhật thành công",
-                                                semesterSave),
-                                HttpStatus.CREATED);
+                return RouterHelper.responseSuccess("Cập nhật thành công", semesterSave);
         }
 
         @Override
@@ -257,21 +184,12 @@ public class ADSemesterServiceImpl implements ADSemesterService {
                         adSemesterRepository.save(semester);
 
                         if (semester.getStatus() == EntityStatus.ACTIVE) {
-                                commonUserStudentRepository.disableAllStudentDuplicateShiftByIdSemester(semester.getId());
+                                commonUserStudentRepository
+                                                .disableAllStudentDuplicateShiftByIdSemester(semester.getId());
                         }
 
-                        return new ResponseEntity<>(
-                                        new ApiResponse(
-                                                        RestApiStatus.SUCCESS,
-                                                        "Thay đổi trạng thái học kỳ thành công",
-                                                        null),
-                                        HttpStatus.OK);
+                        return RouterHelper.responseSuccess("Thay đổi trạng thái học kỳ thành công");
                 }
-                return new ResponseEntity<>(
-                                new ApiResponse(
-                                                RestApiStatus.ERROR,
-                                                "Học kỳ không tồn tại",
-                                                null),
-                                HttpStatus.NOT_FOUND);
+                return RouterHelper.responseError("Học kỳ không tồn tại");
         }
 }

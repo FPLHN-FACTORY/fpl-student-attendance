@@ -4,6 +4,7 @@ import udpm.hn.studentattendance.infrastructure.common.HasOrderNumber;
 import udpm.hn.studentattendance.infrastructure.common.IsIdentify;
 
 public interface STDHistoryPlanDateAttendanceResponse extends IsIdentify, HasOrderNumber {
+
     String getPlanId();
 
     String getPlanName();

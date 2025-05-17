@@ -6,24 +6,28 @@ public interface STDHistoryAttendanceResponse {
 
     String getFactoryName();
 
-
     Long getPlanDateStartDate();
+
+    Long getPlanDateEndDate();
 
     String getPlanDateShift();
 
     String getStatusAttendance();
 
+    String getPlanDateId();
 
     String getPlanDateDescription();
 
     Integer getLateArrival();
-
-    Long getPlanDateEndDate();
 
     String getFactoryId();
 
     Long getCheckIn();
 
     Long getCheckOut();
+
+    Integer getRequiredCheckIn();
+
+    Integer getRequiredCheckOut();
 
 }
