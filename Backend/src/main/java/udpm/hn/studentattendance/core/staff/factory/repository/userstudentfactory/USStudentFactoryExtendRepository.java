@@ -66,7 +66,7 @@ public interface USStudentFactoryExtendRepository extends UserStudentFactoryRepo
                     OR us.name LIKE CONCAT('%', :#{#studentFactoryRequest.searchQuery}, '%')
                     OR us.email LIKE CONCAT('%', :#{#studentFactoryRequest.searchQuery}, '%')
                 )
-            ORDER BY usf.created_at DESC
+            ORDER BY usf.created_at DESC, usf.status DESC 
             """, countQuery = """
             SELECT COUNT(DISTINCT usf.id)
             FROM user_student_factory usf

@@ -164,7 +164,7 @@ public interface STDHistoryAttendanceExtendRepository extends FactoryRepository 
                     WHEN :nowTs < pd.start_date THEN 'CHUA_DIEN_RA'
                     WHEN att.max_status = 2 THEN 'CHECK_IN'
                     WHEN att.max_status = 3 THEN 'CO_MAT'
-                    WHEN a.attendance_status = 4 THEN 'CHUA_CHECK_OUT'
+                    WHEN att.max_status = 4 THEN 'CHUA_CHECK_OUT'
                     ELSE 'VANG_MAT'
                 END AS statusAttendance,
                 pl.name AS planDateName,
@@ -203,7 +203,7 @@ public interface STDHistoryAttendanceExtendRepository extends FactoryRepository 
             WHERE us.id = :userStudentId
             ORDER BY ft.id, pd.start_date ASC
             """, nativeQuery = true)
-    List<STDHistoryAttendanceResponse> getAllHistoryAttendanceByFactory(String userStudentId, String factoryId);
+    List<STDHistoryAttendanceResponse> getAllHistoryAttendanceByFactory(String userStudentId, String factoryId, Long nowTs);
 
 
 }
