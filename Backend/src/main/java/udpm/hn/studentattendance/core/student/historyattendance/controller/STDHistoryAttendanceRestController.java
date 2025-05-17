@@ -49,7 +49,7 @@ public class STDHistoryAttendanceRestController {
     public ResponseEntity<InputStreamResource> exportTeachingSchedule(@RequestParam String factoryName,
                                                                       @RequestParam String factoryId) throws UnsupportedEncodingException, IOException {
         List<STDHistoryAttendanceResponse> list = attendanceExtendRepository
-                .getAllHistoryAttendanceByFactory(sessionHelper.getUserId(), factoryId);
+                .getAllHistoryAttendanceByFactory(sessionHelper.getUserId(), factoryId, System.currentTimeMillis());
         ByteArrayInputStream byteArrayInputStream = historyAttendanceService.exportHistoryAttendance(list, factoryName);
         HttpHeaders headers = new HttpHeaders();
         String fileName = "lịch-sử-điểm-danh.pdf";

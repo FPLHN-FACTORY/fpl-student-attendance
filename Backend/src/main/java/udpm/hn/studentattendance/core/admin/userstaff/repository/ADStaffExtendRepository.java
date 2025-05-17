@@ -48,7 +48,7 @@ public interface ADStaffExtendRepository extends UserStaffRepository {
               (:#{#adStaffRequest.roleCodeFilter} IS NULL
                OR SUM(r.code = :#{#adStaffRequest.roleCodeFilter}) > 0)
             ORDER BY
-              s.created_at DESC
+              s.created_at DESC, s.status DESC
             """,
             countQuery = """
                     SELECT COUNT(1)

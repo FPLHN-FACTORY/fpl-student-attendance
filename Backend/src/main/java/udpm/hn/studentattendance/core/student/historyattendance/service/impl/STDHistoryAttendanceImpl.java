@@ -95,7 +95,6 @@ public class STDHistoryAttendanceImpl implements STDHistoryAttendanceService {
                         PdfWriter.getInstance(document, byteArrayOutputStream);
                         document.open();
 
-                        // Nhúng font hỗ trợ tiếng Việt (Arial Unicode MS)
                         BaseFont unicodeFont = BaseFont.createFont("font/Arial Unicode.ttf", BaseFont.IDENTITY_H,
                                         BaseFont.EMBEDDED);
                         Font fontHeaders = new Font(unicodeFont, 15, Font.BOLD);
@@ -178,6 +177,8 @@ public class STDHistoryAttendanceImpl implements STDHistoryAttendanceService {
                                                                 ? attendanceResponse.getPlanDateDescription()
                                                                 : "",
                                                 cellFont));
+                                styleCell(descriptionCell, backgroundColor);
+                                pdfTable.addCell(descriptionCell);
 
                                 PdfPCell statusAttendanceCell = new PdfPCell(
                                                 new Phrase(String.valueOf(attendanceResponse.getStatusAttendance()),
@@ -185,8 +186,7 @@ public class STDHistoryAttendanceImpl implements STDHistoryAttendanceService {
                                 styleCell(statusAttendanceCell, backgroundColor);
                                 pdfTable.addCell(statusAttendanceCell);
 
-                                styleCell(descriptionCell, backgroundColor);
-                                pdfTable.addCell(descriptionCell);
+
 
                                 rowIndex++;
                         }
