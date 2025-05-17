@@ -15,6 +15,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import org.apache.commons.net.util.SubnetUtils;
 import org.apache.commons.validator.routines.InetAddressValidator;
+import udpm.hn.studentattendance.infrastructure.constants.EntityProperties;
 
 public class ValidateHelper {
 
@@ -30,8 +31,9 @@ public class ValidateHelper {
 
     private static final String FULLNAME_REGEX = "^[\\p{L}]+(\\s[\\p{L}]+)+$";
 
-    private static final String URL_REGEX =
-            "^(https?)://[a-zA-Z0-9-]+(\\.[a-zA-Z0-9-]+)+([/?].*)?$";
+    private static final String URL_REGEX = "^(https?)://[a-zA-Z0-9-]+(\\.[a-zA-Z0-9-]+)+([/?].*)?$";
+
+    private static final String EMAIL_GMAIL_REGEX = "^[a-zA-Z0-9._%+-]+@gmail\\.com$";
 
     private static final InetAddressValidator validator = InetAddressValidator.getInstance();
 
@@ -61,6 +63,11 @@ public class ValidateHelper {
 
     public static boolean isValidEmailFPT(String email) {
         Pattern pattern = Pattern.compile(EMAIL_FPT_REGEX);
+        return email != null && pattern.matcher(email).matches();
+    }
+
+    public static boolean isValidEmailGmail(String email) {
+        Pattern pattern = Pattern.compile(EMAIL_GMAIL_REGEX);
         return email != null && pattern.matcher(email).matches();
     }
 
@@ -118,7 +125,6 @@ public class ValidateHelper {
         }
     }
 
-
     public static boolean isAllowedIP(String ip, Set<String> ALLOWED_IP_OR_CIDR) {
         if (!validator.isValid(ip)) {
             return false;
@@ -160,6 +166,14 @@ public class ValidateHelper {
         } catch (MalformedURLException | URISyntaxException e) {
             return false;
         }
+    }
+
+    public static boolean isValidStudentCode(String code) {
+        return code != null && code.length() <= EntityProperties.LENGTH_CODE;
+    }
+
+    public static boolean isValidStudentName(String name) {
+        return name != null && name.length() <= EntityProperties.LENGTH_NAME;
     }
 
 }

@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed, onMounted, reactive } from 'vue'
 import dayjs from 'dayjs'
-import { autoAddColumnWidth, dayOfWeek } from '@/utils/utils'
+import { autoAddColumnWidth, dayOfWeek, formatDate } from '@/utils/utils'
 import {
   FilterFilled,
   UnorderedListOutlined,
@@ -49,32 +49,27 @@ const columns = autoAddColumnWidth([
   { title: 'Nội dung', dataIndex: 'planDateDescription', key: 'planDateDescription' },
   { title: 'Check in', dataIndex: 'checkIn', key: 'checkIn' },
   { title: 'Check out', dataIndex: 'checkOut', key: 'checkOut' },
-  { title: 'Nội dung', dataIndex: 'planDateDescription', key: 'planDateDescription' },
-  { title: 'Check in', dataIndex: 'checkIn', key: 'checkIn' },
-  { title: 'Check out', dataIndex: 'checkOut', key: 'checkOut' },
-  { title: 'Nội dung', dataIndex: 'planDateDescription', key: 'planDateDescription' },
-
   { title: 'Trạng thái đi học', dataIndex: 'statusAttendance', key: 'statusAttendance' },
 ])
 
 const semesters = ref([])
 const factories = ref([])
-const fetchDataDetail = () => {
-  loadingStore.show()
-  requestAPI
-    .get(`${API_ROUTES_STAFF.FETCH_DATA_HISTORY_ATTENDANCE}/${route.params.id}`)
-    .then(({ data: response }) => {
-      _detail.value = response.data
-      fetchAllAttendanceHistory()
-    })
-    .catch((error) => {
-      message.error(error?.response?.data?.message || 'Không thể tải thông tin kế hoạch')
-      router.push({ name: ROUTE_NAMES.MANAGEMENT_PLAN_FACTORY, params: { id: route.params?.id } })
-    })
-    .finally(() => {
-      loadingStore.hide()
-    })
-}
+
+// const fetchDataDetail = () => {
+//   loadingStore.show()
+//   requestAPI
+//     .get(`${API_ROUTES_STUDENT.FETCH_DATA_HISTORY_ATTENDANCE}/detail`)
+//     .then(({ data: response }) => {
+//       _detail.value = response.data
+//       fetchAllAttendanceHistory()
+//     })
+//     .catch((error) => {
+//       message.error(error?.response?.data?.message || 'Không thể tải thông tin kế hoạch')
+//     })
+//     .finally(() => {
+//       loadingStore.hide()
+//     })
+// }
 
 const fetchAllAttendanceHistory = async () => {
   loadingStore.show()
@@ -321,7 +316,7 @@ const handleClearFilter = () => {
               <template v-if="column.dataIndex">
                 <template v-if="column.dataIndex === 'planDateStartDate'">
                   {{ dayOfWeek(record.planDateStartDate) }} -
-                  {{ dayjs(record.planDateStartDate).format(DEFAULT_DATE_FORMAT + ' HH:mm') }}
+                  {{ formatDate(record.planDateStartDate, 'dd/MM/yyyy HH:mm') }}
                 </template>
                 <template v-else-if="column.dataIndex === 'planDateShift'">
                   <a-tag color="purple">
@@ -341,17 +336,17 @@ const handleClearFilter = () => {
                   </a-tag>
                 </template>
                 <template v-else-if="column.dataIndex === 'planDateDescription'">
-                  <a-typography-link @click="handleShowDescription(record.planDateDescription)"
-                    >Chi tiết</a-typography-link
-                  >
+                  <a-typography-link @click="handleShowDescription(record.planDateDescription)">
+                    Chi tiết
+                  </a-typography-link>
                 </template>
                 <template v-else-if="column.dataIndex === 'checkIn'">
-                  <template v-if="_detail.requiredCheckin === STATUS_REQUIRED_ATTENDANCE.ENABLE">
-                    <span v-if="record.statusAttendance === 'CHUA_CHECK_IN'">
+                  <template v-if="record.requiredCheckIn == STATUS_REQUIRED_ATTENDANCE.ENABLE">
+                    <span v-if="!record.checkIn">
                       <a-badge status="error" /> Chưa checkin
                     </span>
                     <span v-else>
-                      <a-badge status="warning" />
+                      <a-badge status="success" />
                       {{ formatDate(record.checkIn, 'dd/MM/yyyy HH:mm') }}
                     </span>
                   </template>
@@ -360,9 +355,9 @@ const handleClearFilter = () => {
                     Không yêu cầu
                   </template>
                 </template>
-                <template v-if="column.dataIndex === 'checkOut'">
-                  <template v-if="_detail.requiredCheckout === STATUS_REQUIRED_ATTENDANCE.ENABLE">
-                    <span v-if="record.statusAttendance === 'CHUA_CHECK_OUT'">
+                <template v-else-if="column.dataIndex === 'checkOut'">
+                  <template v-if="record.requiredCheckOut == STATUS_REQUIRED_ATTENDANCE.ENABLE">
+                    <span v-if="record.statusAttendance !== 'CHUA_DIEN_RA' || record.statusAttendance !== 'CO_MAT' || record.statusAttendance !== 'CHECK_IN'">
                       <a-badge status="error" /> Chưa checkout
                     </span>
                     <span v-else>

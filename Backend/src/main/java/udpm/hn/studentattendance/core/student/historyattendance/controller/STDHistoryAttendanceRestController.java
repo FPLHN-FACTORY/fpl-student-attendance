@@ -5,10 +5,7 @@ import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import udpm.hn.studentattendance.core.student.historyattendance.model.request.STDHistoryAttendanceRequest;
 import udpm.hn.studentattendance.core.student.historyattendance.model.response.STDHistoryAttendanceResponse;
 import udpm.hn.studentattendance.core.student.historyattendance.repository.STDHistoryAttendanceExtendRepository;
@@ -50,7 +47,7 @@ public class STDHistoryAttendanceRestController {
 
     @GetMapping(value = "/export-pdf", produces = MediaType.APPLICATION_PDF_VALUE)
     public ResponseEntity<InputStreamResource> exportTeachingSchedule(@RequestParam String factoryName,
-            @RequestParam String factoryId) throws UnsupportedEncodingException, IOException {
+                                                                      @RequestParam String factoryId) throws UnsupportedEncodingException, IOException {
         List<STDHistoryAttendanceResponse> list = attendanceExtendRepository
                 .getAllHistoryAttendanceByFactory(sessionHelper.getUserId(), factoryId);
         ByteArrayInputStream byteArrayInputStream = historyAttendanceService.exportHistoryAttendance(list, factoryName);
@@ -60,6 +57,11 @@ public class STDHistoryAttendanceRestController {
                 "inline; filename*=UTF-8''" + URLEncoder.encode(fileName, StandardCharsets.UTF_8.toString()));
         return ResponseEntity.ok().headers(headers).contentType(MediaType.APPLICATION_PDF)
                 .body(new InputStreamResource(byteArrayInputStream));
+    }
+
+    @GetMapping("/detail")
+    public ResponseEntity<?> getDetailPlanDate() {
+        return historyAttendanceService.getDetailPlanDate();
     }
 
 }

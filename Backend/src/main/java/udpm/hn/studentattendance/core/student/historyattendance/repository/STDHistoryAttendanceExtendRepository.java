@@ -26,9 +26,12 @@ public interface STDHistoryAttendanceExtendRepository extends FactoryRepository 
                 pd.start_date           AS planDateStartDate,
                 pd.end_date             AS planDateEndDate,
                 pd.shift                AS planDateShift,
-                ft.id                    AS factoryId,
+                ft.id                   AS factoryId,
+                pd.id                   AS planDateId,
                 a.created_at            AS checkIn,
                 a.updated_at            AS checkOut,
+                pd.required_checkin    AS requiredCheckIn,
+                pd.required_checkout   AS requiredCheckOut,
                 CASE
                   WHEN :nowTs < pd.start_date THEN 'CHUA_DIEN_RA'
                   WHEN a.attendance_status = 0 THEN 'CHUA_CHECK_IN'
@@ -101,8 +104,10 @@ public interface STDHistoryAttendanceExtendRepository extends FactoryRepository 
     );
 
     @Query(value = """
-                SELECT
-                    1 as orderNumber,
+               SELECT
+                ROW_NUMBER() OVER (
+                  PARTITION BY f.id 
+                ) AS rowNumber,
                     pd.id,
                     pl.id AS planId,
                     pl.name AS planName,
@@ -114,6 +119,8 @@ public interface STDHistoryAttendanceExtendRepository extends FactoryRepository 
                 JOIN plan_factory pf ON pd.id_plan_factory = pf.id
                 JOIN plan pl ON pf.id_plan = pl.id
                 JOIN factory f ON pf.id_factory = f.id
+                JOIN user_student_factory usf ON usf.id_factory = f.id
+                JOIN user_student us ON usf.id_user_student = us.id
                 WHERE
                     pf.status = 1 AND
                     pl.status = 1 AND
@@ -136,9 +143,10 @@ public interface STDHistoryAttendanceExtendRepository extends FactoryRepository 
                             f2.status = 1 AND
                             f2.id = :idFacility
                     ) AND
-                    pd.id = :idPlanDate
+                    us.id = :idUserStudent
+                    ORDER BY pd.start_date
             """, nativeQuery = true)
-    Optional<STDHistoryPlanDateAttendanceResponse> getDetailPlanDate(String idPlanDate, String idFacility);
+    List<STDHistoryPlanDateAttendanceResponse> getDetailPlanDate(String idUserStudent, String idFacility);
     @Query(value = """
             SELECT
                 ROW_NUMBER() OVER (
@@ -151,10 +159,12 @@ public interface STDHistoryAttendanceExtendRepository extends FactoryRepository 
                 pd.end_date AS planDateEndDate,
                 pd.shift AS planDateShift,
                 ft.id AS factoryId,
+                
                 CASE
                     WHEN :nowTs < pd.start_date THEN 'CHUA_DIEN_RA'
                     WHEN att.max_status = 2 THEN 'CHECK_IN'
                     WHEN att.max_status = 3 THEN 'CO_MAT'
+                    WHEN a.attendance_status = 4 THEN 'CHUA_CHECK_OUT'
                     ELSE 'VANG_MAT'
                 END AS statusAttendance,
                 pl.name AS planDateName,

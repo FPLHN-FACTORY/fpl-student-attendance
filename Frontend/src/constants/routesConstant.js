@@ -18,7 +18,9 @@ export const GLOBAL_ROUTE_NAMES = {
 }
 
 export const WS_ROUTES = {
-  SERVER_HOST: BASE_API_URL.replace(/^https?:\/\//, 'ws://') + '/ws',
+  SERVER_HOST: BASE_API_URL.startsWith('https://')
+    ? BASE_API_URL.replace(/^https:\/\//, 'wss://')
+    : BASE_API_URL.replace(/^http:\/\//, 'ws://') + '/ws',
   TOPIC_ATTENDANCE: '/topic/attendance',
 }
 
