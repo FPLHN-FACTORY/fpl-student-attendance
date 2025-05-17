@@ -7,15 +7,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import udpm.hn.studentattendance.core.staff.project.model.request.USProjectCreateOrUpdateRequest;
 import udpm.hn.studentattendance.core.staff.project.model.request.USProjectSearchRequest;
-import udpm.hn.studentattendance.core.staff.project.repository.STLevelProjectExtendRepository;
-import udpm.hn.studentattendance.core.staff.project.repository.STProjectExtendRepository;
-import udpm.hn.studentattendance.core.staff.project.repository.STProjectSemesterExtendRepository;
-import udpm.hn.studentattendance.core.staff.project.repository.STProjectSubjectFacilityExtendRepository;
+import udpm.hn.studentattendance.core.staff.project.repository.*;
 import udpm.hn.studentattendance.core.staff.project.service.STProjectManagementService;
-import udpm.hn.studentattendance.entities.LevelProject;
-import udpm.hn.studentattendance.entities.Project;
-import udpm.hn.studentattendance.entities.Semester;
-import udpm.hn.studentattendance.entities.SubjectFacility;
+import udpm.hn.studentattendance.entities.*;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
 import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.helpers.SessionHelper;
@@ -25,8 +19,10 @@ import udpm.hn.studentattendance.infrastructure.common.repositories.CommonUserSt
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.RestApiStatus;
 
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -43,6 +39,9 @@ public class STProjectManagementImpl implements STProjectManagementService {
     private final CommonUserStudentRepository commonUserStudentRepository;
 
     private final SessionHelper sessionHelper;
+
+    private final STProjectChangeSemesterExtendRepository deleteBulkByProject;
+
 
     @Override
     public ResponseEntity<?> getListProject(USProjectSearchRequest request) {
@@ -118,13 +117,17 @@ public class STProjectManagementImpl implements STProjectManagementService {
         if (isExistProject) {
             return RouterHelper.responseError("Dự án này đã tồn tại ở " + project.getLevelProject().getName() + " - " + project.getSemester().getSemesterName() + " - " + project.getSemester().getYear() + " - " + project.getSubjectFacility().getSubject().getName());
         }
-
+        if (!project.getSemester().getId().equals(request.getSemesterId())) {
+            deleteBulkByProject.deleteAllByProjectId(project.getId());
+        }
         project.setName(request.getName());
         project.setDescription(request.getDescription());
         project.setLevelProject(levelProject);
         project.setSemester(semester);
         project.setSubjectFacility(subjectFacility);
         projectManagementRepository.save(project);
+
+
         return RouterHelper.responseSuccess("Cập nhật dự án thành công", project);
     }
 
