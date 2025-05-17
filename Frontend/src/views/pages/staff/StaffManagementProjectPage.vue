@@ -56,6 +56,7 @@ const newProject = reactive({
 })
 
 const detailProject = reactive({})
+const oldSemesterId = ref(null)
 
 // Bộ lọc và phân trang
 const filter = reactive({
@@ -84,7 +85,7 @@ const columns = ref(
     { title: 'Mô tả', dataIndex: 'description', key: 'description' },
     { title: 'Trạng thái', dataIndex: 'status', key: 'status' },
     { title: 'Chức năng', key: 'actions' },
-  ]),
+  ])
 )
 
 /* ----------------- Methods ----------------- */
@@ -220,17 +221,15 @@ const handleAddProject = () => {
     })
 }
 
-// Mở modal sửa dự án
-const handleEditProject = (record) => {
-  requestAPI
-    .get(`${API_ROUTES_STAFF.FETCH_DATA_PROJECT}/${record.id}`)
-    .then((response) => {
-      Object.assign(detailProject, response.data.data)
-      modalEdit.value = true
-    })
-    .catch((error) => {
-      message.error(error.response?.data?.message || 'Lỗi khi lấy thông tin')
-    })
+async function handleEditProject(record) {
+  try {
+    const { data } = await requestAPI.get(`${API_ROUTES_STAFF.FETCH_DATA_PROJECT}/${record.id}`)
+    Object.assign(detailProject, data.data)
+    oldSemesterId.value = data.data.semesterId
+    modalEdit.value = true
+  } catch (e) {
+    message.error(e.response?.data?.message || 'Lỗi khi tải chi tiết')
+  }
 }
 
 const handleShowDescription = (text) => {
@@ -245,25 +244,7 @@ const handleShowDescription = (text) => {
   })
 }
 
-// Cập nhật dự án
-const handleUpdateProject = () => {
-  if (!detailProject.name) {
-    message.error('Tên dự án không được bỏ trống')
-    return
-  }
-  if (!detailProject.levelProjectId) {
-    message.error('Phải chọn cấp dự án')
-    return
-  }
-  if (!detailProject.semesterId) {
-    message.error('Phải chọn học kỳ')
-    return
-  }
-  if (!detailProject.subjectFacilityId) {
-    message.error('Phải chọn môn học')
-    return
-  }
-
+async function actuallyUpdate() {
   const req = {
     name: detailProject.name,
     description: detailProject.description,
@@ -271,17 +252,41 @@ const handleUpdateProject = () => {
     semesterId: detailProject.semesterId,
     subjectFacilityId: detailProject.subjectFacilityId,
   }
+  try {
+    await requestAPI.put(`${API_ROUTES_STAFF.FETCH_DATA_PROJECT}/${detailProject.id}`, req)
+    message.success('Cập nhật dự án thành công')
+    modalEdit.value = false
+    fetchProjects()
+  } catch (e) {
+    message.error(e.response?.data?.message || 'Lỗi khi cập nhật')
+  }
+}
+function handleUpdateProject() {
+  // validate
+  if (
+    !detailProject.name ||
+    !detailProject.levelProjectId ||
+    !detailProject.semesterId ||
+    !detailProject.subjectFacilityId
+  ) {
+    return message.error('Vui lòng điền đầy đủ thông tin')
+  }
 
-  requestAPI
-    .put(`${API_ROUTES_STAFF.FETCH_DATA_PROJECT}/${detailProject.id}`, req)
-    .then(() => {
-      message.success('Cập nhật dự án thành công')
-      modalEdit.value = false
-      fetchProjects()
+  // nếu thay đổi học kỳ → confirm
+  if (detailProject.semesterId !== oldSemesterId.value) {
+    Modal.confirm({
+      title: 'Xác nhận cập nhật dự án',
+      content:
+        'Bạn đang chuyển dự án sang học kỳ khác, toàn bộ lịch nhóm xưởng và điểm danh cũ sẽ bị xóa. Tiếp tục?',
+      onOk: actuallyUpdate,
     })
-    .catch((error) => {
-      message.error(error.response?.data?.message || 'Lỗi khi cập nhật dự án')
+  } else {
+    Modal.confirm({
+      title: 'Xác nhận cập nhật dự án',
+      content: 'Bạn có muốn cập nhật thông tin dự án không',
+      onOk: actuallyUpdate,
     })
+  }
 }
 
 // Xóa dự án
