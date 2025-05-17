@@ -39,7 +39,7 @@ import udpm.hn.studentattendance.infrastructure.constants.RestApiStatus;
 import udpm.hn.studentattendance.infrastructure.constants.RoleConstant;
 import udpm.hn.studentattendance.infrastructure.constants.ShiftType;
 import udpm.hn.studentattendance.infrastructure.constants.StatusType;
-import udpm.hn.studentattendance.infrastructure.excel.model.dto.ExExportPlanDateModel;
+import udpm.hn.studentattendance.infrastructure.excel.model.dto.ExStudentModel;
 import udpm.hn.studentattendance.infrastructure.excel.model.request.EXDataRequest;
 import udpm.hn.studentattendance.infrastructure.excel.model.request.EXImportRequest;
 import udpm.hn.studentattendance.infrastructure.excel.model.request.EXUploadRequest;
@@ -58,6 +58,7 @@ import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -375,7 +376,7 @@ public class EXPlanDateServiceImpl implements EXPlanDateService {
             }
         }
 
-        List<TCPlanDateStudentFactoryResponse> lstStudent = tcStudentFactoryExtendRepository.getAllPlanDateAttendanceByIdFactory(factory.getId());
+        List<TCPlanDateStudentFactoryResponse> lstData = tcStudentFactoryExtendRepository.getAllPlanDateAttendanceByIdFactory(factory.getId());
 
         try (Workbook workbook = new XSSFWorkbook();
              ByteArrayOutputStream data = new ByteArrayOutputStream()) {
@@ -384,9 +385,18 @@ public class EXPlanDateServiceImpl implements EXPlanDateService {
 
             List<String> headers = new ArrayList<>(List.of("Mã sinh viên", "Họ tên sinh viên"));
 
-            Set<String> lstPlanDate = lstStudent.stream()
-                    .map(o -> DateTimeUtils.convertMillisToDate(o.getStartDate(), "dd-MM-yyyy") + " - Ca " + o.getShift())
+            Set<String> stPlanDate = lstData.stream()
+                    .map(this::buildCellPlanDate)
                     .collect(Collectors.toSet());
+            List<String> lstPlanDate = stPlanDate.stream()
+                    .sorted()
+                    .toList();
+
+            Set<ExStudentModel> stPStudent = lstData.stream()
+                    .map(o -> new ExStudentModel(o.getCode(), o.getName()))
+                    .collect(Collectors.toCollection(LinkedHashSet::new));
+            List<ExStudentModel> lstStudent = stPStudent.stream()
+                    .toList();
 
             headers.addAll(lstPlanDate);
             headers.add("Tổng");
@@ -399,30 +409,18 @@ public class EXPlanDateServiceImpl implements EXPlanDateService {
             colorMap.put("Vắng mặt", "#ff7d7d");
 
 
-            Map<String, Set<String>> grouped = lstStudent.stream()
-                    .collect(Collectors.groupingBy(
-                            TCPlanDateStudentFactoryResponse::getCode,
-                            Collectors.mapping(TCPlanDateStudentFactoryResponse::getId, Collectors.toSet())
-                    ));
-
-            List<ExExportPlanDateModel> lstData = grouped.entrySet().stream()
-                    .map(entry -> new ExExportPlanDateModel(entry.getKey(), entry.getValue()))
-                    .toList();
-
             int row = 1;
-            for (ExExportPlanDateModel o: lstData) {
-                TCPlanDateStudentFactoryResponse student = lstStudent.stream().filter(s -> s.getCode().equals(o.getCode())).findFirst().orElse(null);
-                if (student == null) {
-                    continue;
-                }
+            for (ExStudentModel student: lstStudent) {
+                String studentCode = student.getCode();
+                String studentName = student.getName();
 
                 List<Object> dataCell = new ArrayList<>();
-                dataCell.add(student.getCode());
-                dataCell.add(student.getName());
+                dataCell.add(studentCode);
+                dataCell.add(studentName);
 
                 int total_absent = 0;
-                for(String idPlanDate: o.getPlanDates()) {
-                    TCPlanDateStudentFactoryResponse planDate = lstStudent.stream().filter(s -> s.getCode().equals(student.getCode()) && s.getId().equals(idPlanDate)).findFirst().orElse(null);
+                for(String namePlanDate: lstPlanDate) {
+                    TCPlanDateStudentFactoryResponse planDate = lstData.stream().filter(s -> s.getCode().equals(studentCode) && buildCellPlanDate(s).equals(namePlanDate)).findFirst().orElse(null);
                     if (planDate == null || planDate.getStartDate() > DateTimeUtils.getCurrentTimeMillis()) {
                         dataCell.add(" - ");
                         continue;
@@ -435,8 +433,8 @@ public class EXPlanDateServiceImpl implements EXPlanDateService {
                     }
                 }
 
-                dataCell.add(total_absent + "/" + o.getPlanDates().size());
-                dataCell.add(Math.round((double) total_absent / o.getPlanDates().size() * 1000) / 10.0 + "%");
+                dataCell.add(total_absent + "/" + lstPlanDate.size());
+                dataCell.add(Math.round((double) total_absent / lstPlanDate.size() * 1000) / 10.0 + "%");
 
                 ExcelUtils.insertRow(sheet, row, dataCell, colorMap);
                 row++;
@@ -451,6 +449,10 @@ public class EXPlanDateServiceImpl implements EXPlanDateService {
         } catch (IOException e) {
             return null;
         }
+    }
+
+    private String buildCellPlanDate(TCPlanDateStudentFactoryResponse o) {
+        return DateTimeUtils.convertMillisToDate(o.getStartDate(), "dd-MM-yyyy") + " - Ca " + o.getShift();
     }
 
 }
