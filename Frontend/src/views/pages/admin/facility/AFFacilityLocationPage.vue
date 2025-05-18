@@ -78,7 +78,7 @@ const columns = ref(
 const breadcrumb = ref([
   {
     name: GLOBAL_ROUTE_NAMES.STAFF_PAGE,
-    breadcrumbName: 'Ban đào tạo',
+    breadcrumbName: 'Admin',
   },
   {
     name: ROUTE_NAMES.MANAGEMENT_FACILITY,

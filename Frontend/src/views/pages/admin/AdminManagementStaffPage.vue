@@ -37,19 +37,16 @@ const breadcrumb = ref([
   },
 ])
 
-// Danh sách nhân viên
 const staffs = ref([])
 
-// Danh sách cơ sở (để hiển thị trong select option)
 const facilitiesListCombobox = ref([])
 
-// Danh sách vai trò (cố định dựa trên backend, xoá vai trò 'Ban đào tạo')
+
 const rolesList = ref([
   { code: '1', name: 'Phụ trách xưởng' },
   { code: '3', name: 'Giảng viên' },
 ])
 
-// Hàm mapping để chuyển đổi mã vai trò thành tên hiển thị, xoá vai trò 'Ban đào tạo'
 const roleMapping = {
   1: 'Phụ trách xưởng',
   3: 'Giảng viên',
@@ -67,7 +64,6 @@ const convertRole = (roleCodes) => {
   return roleCodes
 }
 
-// Biến lọc và phân trang gửi lên API
 const filter = reactive({
   searchQuery: '',
   roleCodeFilter: '',
