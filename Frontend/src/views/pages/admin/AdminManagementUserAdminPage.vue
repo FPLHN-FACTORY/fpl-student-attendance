@@ -22,7 +22,7 @@ import { autoAddColumnWidth } from '@/utils/utils'
 const breadcrumbStore = useBreadcrumbStore()
 const breadcrumb = ref([
   { name: ROUTE_NAMES.ADMIN_PAGE, breadcrumbName: 'Quản lý' },
-  { name: ROUTE_NAMES.ADMIN_USER, breadcrumbName: 'Quản lý ban đào tạo' },
+  { name: ROUTE_NAMES.ADMIN_USER, breadcrumbName: 'Quản lý Admin' },
 ])
 
 // --- Data & State ---
@@ -54,8 +54,8 @@ const editUser = reactive({ id: '', staffCode: '', staffName: '', email: '' })
 const columns = ref(
   autoAddColumnWidth([
     { title: '#', dataIndex: 'rowNumber', key: 'rowNumber' },
-    { title: 'Mã ban đào tạo', dataIndex: 'userAdminCode', key: 'userAdminCode' },
-    { title: 'Tên ban đào tạo', dataIndex: 'userAdminName', key: 'userAdminName' },
+    { title: 'Mã Admin', dataIndex: 'userAdminCode', key: 'userAdminCode' },
+    { title: 'Tên Admin', dataIndex: 'userAdminName', key: 'userAdminName' },
     { title: 'Email', dataIndex: 'userAdminEmail', key: 'userAdminEmail' },
     { title: 'Trạng thái', dataIndex: 'userAdminStatus', key: 'userAdminStatus' },
     { title: 'Chức năng', key: 'actions' },
@@ -126,7 +126,7 @@ const handleAddUser = () => {
   requestAPI
     .post(API_ROUTES_ADMIN.FETCH_DATA_ADMIN, newUser)
     .then(() => {
-      message.success('Thêm ban đào tạo thành công')
+      message.success('Thêm Admin thành công')
       modalAdd.value = false
       applicationStore.loadNotification()
       clearNewUser()
@@ -210,7 +210,7 @@ const handleChangePowerShift = () => {
   const staffName = selectedStaff ? selectedStaff.name : 'nhân viên này'
   Modal.confirm({
     title: 'Xác nhận chuyển quyền',
-    content: `Bạn có chắc chắn muốn chuyển quyền ban đào tạo cho ${staffName}?
+    content: `Bạn có chắc chắn muốn chuyển quyền Admin cho ${staffName}?
     , nếu đông ý bạn sẽ đăng xuất ngay bây giờ`,
     onOk() {
       modalChangePowerLoading.value = true
@@ -254,7 +254,7 @@ const handleChangeStatus = (record) => {
 const handleDelete = (record) => {
   Modal.confirm({
     title: 'Xác nhận xóa',
-    content: `Bạn có chắc chắn muốn xóa ban đào tạo ${record.userAdminName}?`,
+    content: `Bạn có chắc chắn muốn xóa Admin ${record.userAdminName}?`,
     onOk() {
       handleDeleteUser(record.userAdminId)
     },
@@ -266,11 +266,11 @@ const handleDeleteUser = (id) => {
   requestAPI
     .delete(`${API_ROUTES_ADMIN.FETCH_DATA_ADMIN}/${id}`)
     .then(() => {
-      message.success('Xóa ban đào tạo thành công')
+      message.success('Xóa Admin thành công')
       fetchUsers()
     })
     .catch((err) => {
-      message.error(err?.response?.data?.message || 'Lỗi khi xóa ban đào tạo')
+      message.error(err?.response?.data?.message || 'Lỗi khi xóa Admin')
     })
     .finally(() => {
       loadingStore.hide()
@@ -349,9 +349,9 @@ onMounted(() => {
 
     <!-- Table -->
     <a-card>
-      <template #title><UnorderedListOutlined /> Danh sách Ban đào tạo</template>
+      <template #title><UnorderedListOutlined /> Danh sách Admin</template>
       <div class="d-flex justify-content-end mb-3 flex-wrap gap-3">
-        <a-tooltip title="Thêm mới ban đào tạo">
+        <a-tooltip title="Thêm mới Admin">
           <a-button type="primary" @click="handleShowModalAdd"><PlusOutlined /> Thêm mới</a-button>
         </a-tooltip>
       </div>
@@ -394,7 +394,7 @@ onMounted(() => {
               /></a-button>
             </a-tooltip> -->
             <template v-if="!record.isMySelf">
-              <a-tooltip title="Xóa ban đào tạo">
+              <a-tooltip title="Xóa Admin">
                 <a-button type="text" class="btn-outline-danger" @click="handleDelete(record)">
                   <DeleteFilled />
                 </a-button>
@@ -411,18 +411,18 @@ onMounted(() => {
     <!-- Modal Thêm -->
     <a-modal
       v-model:open="modalAdd"
-      title="Thêm Ban đào tạo"
+      title="Thêm Admin"
       @ok="handleAddUser"
       :okButtonProps="{ loading: modalAddLoading }"
       @cancel="clearNewUser"
       @close="clearNewUser"
     >
       <a-form layout="vertical">
-        <a-form-item label="Mã ban đào tạo" required>
-          <a-input v-model:value="newUser.staffCode" placeholder="Nhập mã ban đào tạo" />
+        <a-form-item label="Mã Admin" required>
+          <a-input v-model:value="newUser.staffCode" placeholder="Nhập mã Admin" />
         </a-form-item>
-        <a-form-item label="Tên ban đào tạo" required>
-          <a-input v-model:value="newUser.staffName" placeholder="Nhập tên ban đào tạo" />
+        <a-form-item label="Tên Admin" required>
+          <a-input v-model:value="newUser.staffName" placeholder="Nhập tên Admin" />
         </a-form-item>
         <a-form-item label="Email" required>
           <a-input v-model:value="newUser.email" placeholder="Nhập email" />
@@ -433,16 +433,16 @@ onMounted(() => {
     <!-- Modal Sửa -->
     <a-modal
       v-model:open="modalEdit"
-      title="Cập nhật Ban đào tạo"
+      title="Cập nhật Admin"
       @ok="handleUpdateUser"
       :okButtonProps="{ loading: modalEditLoading }"
     >
       <a-form layout="vertical">
-        <a-form-item label="Mã ban đào tạo" required>
-          <a-input v-model:value="editUser.staffCode" placeholder="Nhập mã ban đào tạo" />
+        <a-form-item label="Mã Admin" required>
+          <a-input v-model:value="editUser.staffCode" placeholder="Nhập mã Admin" />
         </a-form-item>
-        <a-form-item label="Tên ban đào tạo" required>
-          <a-input v-model:value="editUser.staffName" placeholder="Nhập tên ban đào tạo" />
+        <a-form-item label="Tên Admin" required>
+          <a-input v-model:value="editUser.staffName" placeholder="Nhập tên Admin" />
         </a-form-item>
         <a-form-item label="Email" required>
           <a-input v-model:value="editUser.email" placeholder="Nhập email" />
@@ -453,7 +453,7 @@ onMounted(() => {
     <!-- Modal chuyển quyền -->
     <a-modal
       v-model:open="modalChangePower"
-      title="Chuyển quyền Ban đào tạo"
+      title="Chuyển quyền Admin"
       @ok="handleChangePowerShift"
       :okButtonProps="{ loading: modalChangePowerLoading, disabled: !selectedStaffId }"
       @cancel="
