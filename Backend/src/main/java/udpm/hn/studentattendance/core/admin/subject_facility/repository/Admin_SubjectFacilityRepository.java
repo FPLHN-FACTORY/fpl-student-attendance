@@ -36,7 +36,7 @@ public interface Admin_SubjectFacilityRepository extends SubjectFacilityReposito
                     )
                     AND (:#{#request.facilityId} IS NULL OR sf.id_facility = :#{#request.facilityId})
                     AND (:#{#request.status} IS NULL OR sf.status = :#{#request.status})
-                    ORDER BY sf.created_at DESC
+                    ORDER BY sf.created_at DESC, sf.status DESC
             """, countQuery = """
                     SELECT COUNT(*)
                     FROM subject_facility sf

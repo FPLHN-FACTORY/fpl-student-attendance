@@ -46,7 +46,7 @@ public interface STProjectExtendRepository extends ProjectRepository {
                         AND (:#{#request.facilityId} IS NULL OR f.id = :#{#request.facilityId})
                         AND (:#{#request.status} IS NULL OR p.status = :#{#request.status})
                     )
-                    ORDER BY p.created_at DESC
+                    ORDER BY p.created_at DESC, p.status DESC
             """, countQuery = """
                     SELECT
                        COUNT(*)
