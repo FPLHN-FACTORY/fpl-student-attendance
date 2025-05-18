@@ -34,7 +34,7 @@ public interface USStudentExtendRepository extends UserStudentRepository {
                  )
                  AND f.id = :facilityId
                  AND (:#{#studentRequest.studentStatus} IS NULL OR us.status = :#{#studentRequest.studentStatus})
-            ORDER BY us.created_at DESC 
+            ORDER BY us.created_at DESC, us.status DESC
             """, countQuery = """
             SELECT COUNT(*)
             FROM user_student us

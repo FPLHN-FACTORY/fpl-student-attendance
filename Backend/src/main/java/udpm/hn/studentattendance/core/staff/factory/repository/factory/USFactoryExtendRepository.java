@@ -47,7 +47,7 @@ public interface USFactoryExtendRepository extends FactoryRepository {
                             AND (:#{#staffFactoryRequest.status} IS NULL OR ft.status = :#{#staffFactoryRequest.status})
                             AND (:#{#staffFactoryRequest.factoryName} IS NULL OR
                                 CONCAT(ft.name, ' (', s.code, ')') LIKE CONCAT('%', :#{#staffFactoryRequest.factoryName}, '%'))
-                        ORDER BY ft.created_at DESC
+                        ORDER BY ft.created_at DESC, ft.status DESC 
                         """, countQuery = """
                             SELECT COUNT(*)
                             FROM factory ft

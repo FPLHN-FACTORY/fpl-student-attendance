@@ -1,10 +1,9 @@
 package udpm.hn.studentattendance.core.teacher.studentattendance.service.impl;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.validation.annotation.Validated;
 import udpm.hn.studentattendance.core.teacher.studentattendance.model.request.TeacherModifyStudentAttendanceRequest;
 import udpm.hn.studentattendance.core.teacher.studentattendance.model.request.TeacherStudentAttendanceRequest;
 import udpm.hn.studentattendance.core.teacher.studentattendance.model.response.TeacherStudentAttendanceResponse;
@@ -15,9 +14,7 @@ import udpm.hn.studentattendance.entities.PlanDate;
 import udpm.hn.studentattendance.entities.UserStudent;
 import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.helpers.SessionHelper;
-import udpm.hn.studentattendance.infrastructure.common.ApiResponse;
 import udpm.hn.studentattendance.infrastructure.constants.AttendanceStatus;
-import udpm.hn.studentattendance.infrastructure.constants.RestApiStatus;
 import udpm.hn.studentattendance.repositories.PlanDateRepository;
 import udpm.hn.studentattendance.repositories.UserStudentRepository;
 
@@ -27,6 +24,7 @@ import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
+@Validated
 public class TeacherStudentAttendanceServiceImpl implements TeacherStudentAttendanceService {
 
     private final TeacherStudentAttendanceRepository repository;
@@ -42,10 +40,7 @@ public class TeacherStudentAttendanceServiceImpl implements TeacherStudentAttend
         // Lấy danh sách học sinh cho planDate (nếu cần bulk tạo)
         List<String> studentIds = repository.getUserStudentIdsByPlanDate(planDateId);
         if (studentIds.isEmpty()) {
-            return new ResponseEntity<>(new ApiResponse(
-                    RestApiStatus.ERROR,
-                    "Không tìm thấy sinh viên cho ngày điểm danh",
-                    null), HttpStatus.BAD_REQUEST);
+            return RouterHelper.responseError("Không tìm thấy sinh viên cho ngày điểm danh");
         }
         List<Attendance> results = new ArrayList<>();
         for (String studentId : studentIds) {
@@ -61,15 +56,13 @@ public class TeacherStudentAttendanceServiceImpl implements TeacherStudentAttend
             attendance.setAttendanceStatus(AttendanceStatus.PRESENT);
             results.add(repository.save(attendance));
         }
-        return new ResponseEntity<>(new ApiResponse(
-                RestApiStatus.SUCCESS,
-                "Tạo điểm danh sinh viên thành công",
-                results), HttpStatus.CREATED);
+        return RouterHelper.responseSuccess("Tạo điểm danh sinh viên thành công", results);
     }
 
     @Override
     public ResponseEntity<?> getAllByPlanDate(String planDateId) {
-        List<TeacherStudentAttendanceResponse> list = repository.getAllByPlanDate(planDateId, sessionHelper.getFacilityId());
+        List<TeacherStudentAttendanceResponse> list = repository.getAllByPlanDate(planDateId,
+                sessionHelper.getFacilityId());
         return RouterHelper.responseSuccess("Lấy tất cả sinh viên nhóm xưởng", list);
     }
 
@@ -80,7 +73,7 @@ public class TeacherStudentAttendanceServiceImpl implements TeacherStudentAttend
 
         List<Attendance> lstData = new ArrayList<>();
 
-        for (TeacherStudentAttendanceRequest req: students) {
+        for (TeacherStudentAttendanceRequest req : students) {
 
             if (req.getIdUserStudent() == null || req.getIdPlanDate() == null) {
                 continue;
@@ -91,7 +84,8 @@ public class TeacherStudentAttendanceServiceImpl implements TeacherStudentAttend
 
             if (planDate == null
                     || userStudent == null
-                    || !planDate.getPlanFactory().getFactory().getUserStaff().getId().equals(sessionHelper.getUserId())) {
+                    || !planDate.getPlanFactory().getFactory().getUserStaff().getId()
+                            .equals(sessionHelper.getUserId())) {
                 continue;
             }
 

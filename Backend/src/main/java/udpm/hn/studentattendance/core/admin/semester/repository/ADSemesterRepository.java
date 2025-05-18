@@ -31,6 +31,7 @@ public interface ADSemesterRepository extends SemesterRepository {
               AND ((:#{#request.fromDateSemester} IS NULL OR :#{#request.toDateSemester} IS NULL)
                    OR (s.fromDate >= :#{#request.fromDateSemester} AND s.toDate <= :#{#request.toDateSemester})
                    OR (s.toDate >= :#{#request.fromDateSemester} AND s.fromDate <= :#{#request.toDateSemester}))
+            ORDER BY s.status desc 
             """, countQuery = """
             SELECT COUNT(s.id)
             FROM Semester s

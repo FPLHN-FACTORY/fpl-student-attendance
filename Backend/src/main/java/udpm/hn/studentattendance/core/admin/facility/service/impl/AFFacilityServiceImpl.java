@@ -17,12 +17,10 @@ import udpm.hn.studentattendance.helpers.GenerateNameHelper;
 import udpm.hn.studentattendance.helpers.MailerHelper;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
 import udpm.hn.studentattendance.helpers.RouterHelper;
-import udpm.hn.studentattendance.infrastructure.common.ApiResponse;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.common.repositories.CommonUserStudentRepository;
 import udpm.hn.studentattendance.infrastructure.config.mailer.model.MailerDefaultRequest;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
-import udpm.hn.studentattendance.infrastructure.constants.RestApiStatus;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -31,7 +29,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-
 
 @Service
 @RequiredArgsConstructor
@@ -51,25 +48,14 @@ public class AFFacilityServiceImpl implements AFFacilityService {
     public ResponseEntity<?> getAllFacility(AFFacilitySearchRequest request) {
         Pageable pageable = PaginationHelper.createPageable(request, "createdAt");
         PageableObject facilities = PageableObject.of(facilityRepository.getAllFacility(pageable, request));
-        return new ResponseEntity<>(
-                new ApiResponse(
-                        RestApiStatus.SUCCESS,
-                        "Lấy tất cả cơ sở thành công",
-                        facilities
-                ), HttpStatus.OK);
+        return RouterHelper.responseSuccess("Lấy tất cả cơ sở thành công", facilities);
     }
 
     @Override
     public ResponseEntity<?> createFacility(AFCreateUpdateFacilityRequest request) {
         Optional<Facility> existFacility = facilityRepository.findByName(request.getFacilityName().trim());
         if (existFacility.isPresent()) {
-            return new ResponseEntity<>(
-                    new ApiResponse(
-                            RestApiStatus.WARNING,
-                            "Tên cơ sở đã tồn tại trên hệ thống",
-                            null
-                    ),
-                    HttpStatus.BAD_REQUEST);
+            return RouterHelper.responseError("Tên cơ sở đã tồn tại trên hệ thống");
         }
         String code = GenerateNameHelper.generateCodeFromName(request.getFacilityName());
         int position = facilityRepository.getLastPosition() + 1;
@@ -80,20 +66,14 @@ public class AFFacilityServiceImpl implements AFFacilityService {
         facility.setPosition(position);
         facility.setStatus(EntityStatus.ACTIVE);
         facilityRepository.save(facility);
-        return new ResponseEntity<>(
-                new ApiResponse(
-                        RestApiStatus.SUCCESS,
-                        "Thêm cơ sở mới thành công",
-                        null
-                ),
-                HttpStatus.CREATED);
+        return RouterHelper.responseSuccess("Thêm cơ sở mới thành công", null);
     }
 
     @Override
     public ResponseEntity<?> updateFacility(String facilityId, AFCreateUpdateFacilityRequest request) {
         Optional<Facility> existFacility = facilityRepository.findById(facilityId);
         if (existFacility.isEmpty()) {
-             return RouterHelper.responseError("Không tìm thấy cơ sở");
+            return RouterHelper.responseError("Không tìm thấy cơ sở");
         }
 
         if (facilityRepository.isExistsByName(request.getFacilityName(), facilityId)) {
@@ -120,14 +100,13 @@ public class AFFacilityServiceImpl implements AFFacilityService {
         long lastUpdatedMillis = facility.getUpdatedAt(); // epoch millis
         LocalDate lastUpdatedDate = Instant
                 .ofEpochMilli(lastUpdatedMillis)
-                .atZone(ZoneId.of("Asia/Ho_Chi_Minh"))    // dùng timezone phù hợp
+                .atZone(ZoneId.of("Asia/Ho_Chi_Minh")) // dùng timezone phù hợp
                 .toLocalDate();
         LocalDate today = LocalDate.now(ZoneId.of("Asia/Ho_Chi_Minh"));
         if (lastUpdatedDate.isEqual(today) && facility.getStatus() == EntityStatus.ACTIVE) {
             return RouterHelper.responseError("Chỉ được đổi trạng thái cơ sở ngừng hoạt động 1 lần mỗi ngày");
         }
         // ---------------------------------------------------------------
-
 
         facility.setStatus(facility.getStatus() == EntityStatus.ACTIVE ? EntityStatus.INACTIVE : EntityStatus.ACTIVE);
         Facility entity = facilityRepository.save(facility);
@@ -144,7 +123,8 @@ public class AFFacilityServiceImpl implements AFFacilityService {
 
                 mailerDefaultRequest.setTemplate(null);
                 mailerDefaultRequest.setTitle("Thông báo quan trọng từ " + appName);
-                mailerDefaultRequest.setContent(MailerHelper.loadTemplate(MailerHelper.TEMPLATE_CHANGE_STATUS_FACILITY, Map.of("FACILITY_NAME", entity.getName())));
+                mailerDefaultRequest.setContent(MailerHelper.loadTemplate(MailerHelper.TEMPLATE_CHANGE_STATUS_FACILITY,
+                        Map.of("FACILITY_NAME", entity.getName())));
                 mailerHelper.send(mailerDefaultRequest);
             }
         } else {
@@ -157,25 +137,9 @@ public class AFFacilityServiceImpl implements AFFacilityService {
     @Override
     public ResponseEntity<?> getFacilityById(String facilityId) {
         return facilityRepository.getDetailFacilityById(facilityId)
-                .map(
-                        facility -> new ResponseEntity<>(
-                                new ApiResponse(
-                                        RestApiStatus.SUCCESS,
-                                        "Hiển thị chi tiết cơ sở thành công",
-                                        facilityRepository.getDetailFacilityById(facilityId)
-                                ),
-                                HttpStatus.OK)
-                )
-                .orElseGet(
-                        () -> new ResponseEntity<>(
-                                new ApiResponse(
-                                        RestApiStatus.WARNING,
-                                        "Cơ sở không tồn tại",
-                                        null
-                                ),
-                                HttpStatus.NOT_FOUND)
-                );
-
+                .map(facility -> RouterHelper.responseSuccess("Hiển thị chi tiết cơ sở thành công",
+                        facilityRepository.getDetailFacilityById(facilityId)))
+                .orElseGet(() -> RouterHelper.responseError("Cơ sở không tồn tại"));
     }
 
     @Override
