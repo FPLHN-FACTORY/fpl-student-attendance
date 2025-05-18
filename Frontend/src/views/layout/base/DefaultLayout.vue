@@ -16,11 +16,16 @@ import imgLogoUdpm from '@/assets/images/logo-udpm.png'
 import useAuthStore from '@/stores/useAuthStore'
 import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
 import { useRoute, useRouter } from 'vue-router'
-import { API_ROUTES_NOTIFICATION, BASE_URL, GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
+import {
+  API_ROUTES_NOTIFICATION,
+  BASE_URL,
+  GLOBAL_ROUTE_NAMES,
+  URL_ADMIN_PANEL,
+} from '@/constants/routesConstant'
 import useApplicationStore from '@/stores/useApplicationStore'
 import ExcelUploadList from '@/components/excel/ExcelUploadList.vue'
 import { autoAddColumnWidth, formatDate } from '@/utils/utils'
-import { DEFAULT_DATE_FORMAT, DEFAULT_PAGINATION } from '@/constants'
+import { DEFAULT_DATE_FORMAT, DEFAULT_PAGINATION, ROLE } from '@/constants'
 import requestAPI from '@/services/requestApiService'
 import { message } from 'ant-design-vue'
 
@@ -57,8 +62,12 @@ const dataFilter = reactive({
 const pagination = ref({ ...DEFAULT_PAGINATION })
 
 const handleLogout = () => {
+  const isAdm =
+    authStore?.user?.role.includes(ROLE.ADMIN) ||
+    authStore?.user?.role.includes(ROLE.STAFF) ||
+    authStore?.user?.role.includes(ROLE.TEACHER)
   authStore.logout()
-  window.location.href = BASE_URL
+  window.location.href = isAdm ? URL_ADMIN_PANEL : BASE_URL
 }
 
 const handleShowAllNotification = () => {
