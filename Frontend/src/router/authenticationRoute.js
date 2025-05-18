@@ -1,5 +1,5 @@
 import { ROLE } from '@/constants'
-import { API_URL, GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
+import { API_URL, GLOBAL_ROUTE_NAMES, PREFIX_ADMIN_PANEL } from '@/constants/routesConstant'
 
 export const ROUTE_NAMES_API = {
   FETCH_DATA_REFRESH_TOKEN: API_URL + '/refresh-token',
@@ -23,6 +23,14 @@ export const AuthenticationRoutes = [
     component: () => import('@/views/pages/authentication/AuthenticationLandingPage.vue'),
     meta: {
       title: 'Đăng nhập hệ thống',
+    },
+  },
+  {
+    path: PREFIX_ADMIN_PANEL,
+    name: ROUTE_NAMES.LOGIN_PAGE,
+    component: () => import('@/views/pages/authentication/AuthenticationLandingPage.vue'),
+    meta: {
+      title: 'Đăng nhập quản trị',
     },
   },
   {
