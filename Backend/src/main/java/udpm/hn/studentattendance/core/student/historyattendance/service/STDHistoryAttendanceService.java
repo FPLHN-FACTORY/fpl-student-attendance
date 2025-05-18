@@ -18,4 +18,6 @@ public interface STDHistoryAttendanceService {
     ByteArrayInputStream exportHistoryAttendance(List<STDHistoryAttendanceResponse> attendanceResponses,
             String factoryName);
 
+    ResponseEntity<?> getDetailPlanDate();
+
 }

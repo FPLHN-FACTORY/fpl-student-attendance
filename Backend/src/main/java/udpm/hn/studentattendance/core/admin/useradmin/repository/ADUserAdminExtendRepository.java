@@ -31,7 +31,7 @@ public interface ADUserAdminExtendRepository extends UserAdminRepository {
             	OR ua.email LIKE concat('%', trim(:#{#request.searchQuery}), '%')
             	)
             	AND (:#{#request.status} IS NULL OR ua.status = :#{#request.status})
-            ORDER BY ua.created_at DESC
+            ORDER BY ua.created_at DESC, ua.status DESC 
             """, countQuery = """
                                 SELECT COUNT(*)
                                 FROM user_admin ua

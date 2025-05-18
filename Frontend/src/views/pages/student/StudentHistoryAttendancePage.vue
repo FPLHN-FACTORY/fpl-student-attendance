@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed, onMounted, reactive } from 'vue'
 import dayjs from 'dayjs'
-import { autoAddColumnWidth, dayOfWeek } from '@/utils/utils'
+import { autoAddColumnWidth, dayOfWeek, formatDate } from '@/utils/utils'
 import {
   FilterFilled,
   UnorderedListOutlined,
@@ -13,7 +13,7 @@ import { API_ROUTES_STUDENT } from '@/constants/studentConstant'
 import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
 import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
 import { ROUTE_NAMES } from '@/router/studentRoute'
-import { DEFAULT_DATE_FORMAT } from '@/constants'
+import { DEFAULT_DATE_FORMAT, STATUS_REQUIRED_ATTENDANCE, ATTENDANCE_STATUS } from '@/constants'
 import { DEFAULT_PAGINATION } from '@/constants'
 import useLoadingStore from '@/stores/useLoadingStore'
 
@@ -30,6 +30,7 @@ const filter = reactive({
   page: 1,
   pageSize: 5,
 })
+const _detail = ref(null)
 
 const attendanceRecords = ref([])
 const isLoading = ref(false)
@@ -46,11 +47,29 @@ const columns = autoAddColumnWidth([
     key: 'lateArrival',
   },
   { title: 'Nội dung', dataIndex: 'planDateDescription', key: 'planDateDescription' },
+  { title: 'Check in', dataIndex: 'checkIn', key: 'checkIn' },
+  { title: 'Check out', dataIndex: 'checkOut', key: 'checkOut' },
   { title: 'Trạng thái đi học', dataIndex: 'statusAttendance', key: 'statusAttendance' },
 ])
 
 const semesters = ref([])
 const factories = ref([])
+
+// const fetchDataDetail = () => {
+//   loadingStore.show()
+//   requestAPI
+//     .get(`${API_ROUTES_STUDENT.FETCH_DATA_HISTORY_ATTENDANCE}/detail`)
+//     .then(({ data: response }) => {
+//       _detail.value = response.data
+//       fetchAllAttendanceHistory()
+//     })
+//     .catch((error) => {
+//       message.error(error?.response?.data?.message || 'Không thể tải thông tin kế hoạch')
+//     })
+//     .finally(() => {
+//       loadingStore.hide()
+//     })
+// }
 
 const fetchAllAttendanceHistory = async () => {
   loadingStore.show()
@@ -69,7 +88,7 @@ const fetchAllAttendanceHistory = async () => {
         promises.push(
           requestAPI.get(API_ROUTES_STUDENT.FETCH_DATA_HISTORY_ATTENDANCE, {
             params: { ...filter, page },
-          }),
+          })
         )
       }
       const responses = await Promise.all(promises)
@@ -115,7 +134,7 @@ const fetchSemesters = () => {
       // Find current semester and set it as default
       const now = new Date().getTime()
       const currentSemester = semesters.value.find(
-        semester => semester.fromDate <= now && now <= semester.toDate
+        (semester) => semester.fromDate <= now && now <= semester.toDate
       )
       if (currentSemester) {
         filter.semesterId = currentSemester.id
@@ -172,7 +191,7 @@ const exportPDF = async (factoryId, factoryName) => {
       {
         params: { factoryName, factoryId },
         responseType: 'blob',
-      },
+      }
     )
     const url = window.URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }))
     const link = document.createElement('a')
@@ -194,7 +213,7 @@ const handleClearFilter = () => {
   // Find current semester when clearing filter
   const now = new Date().getTime()
   const currentSemester = semesters.value.find(
-    semester => semester.fromDate <= now && now <= semester.toDate
+    (semester) => semester.fromDate <= now && now <= semester.toDate
   )
   if (currentSemester) {
     filter.semesterId = currentSemester.id
@@ -205,12 +224,11 @@ const handleClearFilter = () => {
   fetchAllAttendanceHistory()
 }
 
-onMounted(() => {
-  breadcrumbStore.setRoutes(breadcrumb.value)
-  fetchAllAttendanceHistory()
-  fetchSemesters()
-  fetchFactories()
-})
+ onMounted(async () => {
+    breadcrumbStore.setRoutes(breadcrumb.value)
+    await fetchSemesters()     
+    await fetchFactories()
+  })
 </script>
 
 <template>
@@ -288,7 +306,7 @@ onMounted(() => {
             class="nowrap"
             :dataSource="records"
             :columns="columns"
-            :rowKey="(record) => record.id"
+            :rowKey="record => record.planDateId"
             :pagination="paginations[factoryId]"
             @change="(pagination, filters, sorter) => handleTableChange(factoryId, pagination)"
             :loading="isLoading"
@@ -298,7 +316,7 @@ onMounted(() => {
               <template v-if="column.dataIndex">
                 <template v-if="column.dataIndex === 'planDateStartDate'">
                   {{ dayOfWeek(record.planDateStartDate) }} -
-                  {{ dayjs(record.planDateStartDate).format(DEFAULT_DATE_FORMAT + ' HH:mm') }}
+                  {{ formatDate(record.planDateStartDate, 'dd/MM/yyyy HH:mm') }}
                 </template>
                 <template v-else-if="column.dataIndex === 'planDateShift'">
                   <a-tag color="purple">
@@ -318,9 +336,39 @@ onMounted(() => {
                   </a-tag>
                 </template>
                 <template v-else-if="column.dataIndex === 'planDateDescription'">
-                  <a-typography-link @click="handleShowDescription(record.planDateDescription)"
-                    >Chi tiết</a-typography-link
-                  >
+                  <a-typography-link @click="handleShowDescription(record.planDateDescription)">
+                    Chi tiết
+                  </a-typography-link>
+                </template>
+                <template v-else-if="column.dataIndex === 'checkIn'">
+                  <template v-if="record.requiredCheckIn == STATUS_REQUIRED_ATTENDANCE.ENABLE">
+                    <span v-if="!record.checkIn">
+                      <a-badge status="error" /> Chưa checkin
+                    </span>
+                    <span v-else>
+                      <a-badge status="success" />
+                      {{ formatDate(record.checkIn, 'dd/MM/yyyy HH:mm') }}
+                    </span>
+                  </template>
+                  <template v-else>
+                    <a-badge status="default" />
+                    Không yêu cầu
+                  </template>
+                </template>
+                <template v-else-if="column.dataIndex === 'checkOut'">
+                  <template v-if="record.requiredCheckOut == STATUS_REQUIRED_ATTENDANCE.ENABLE">
+                    <span v-if="record.statusAttendance !== 'CHUA_DIEN_RA' || record.statusAttendance !== 'CO_MAT' || record.statusAttendance !== 'CHECK_IN'">
+                      <a-badge status="error" /> Chưa checkout
+                    </span>
+                    <span v-else>
+                      <a-badge status="success" />
+                      {{ formatDate(record.checkOut, 'dd/MM/yyyy HH:mm') }}
+                    </span>
+                  </template>
+                  <template v-else>
+                    <a-badge status="default" />
+                    Không yêu cầu
+                  </template>
                 </template>
                 <template v-else-if="column.dataIndex === 'statusAttendance'">
                   <a-badge
@@ -328,19 +376,19 @@ onMounted(() => {
                       record.statusAttendance === 'CHUA_DIEN_RA'
                         ? 'warning'
                         : record.statusAttendance === 'CO_MAT'
-                          ? 'success'
-                          : record.statusAttendance === 'CHECK_IN'
-                            ? 'processing'
-                            : 'error'
+                        ? 'success'
+                        : record.statusAttendance === 'CHECK_IN'
+                        ? 'processing'
+                        : 'error'
                     "
                     :text="
                       record.statusAttendance === 'CHUA_DIEN_RA'
                         ? 'Chưa diễn ra'
                         : record.statusAttendance === 'CO_MAT'
-                          ? 'Có mặt'
-                          : record.statusAttendance === 'CHECK_IN'
-                            ? 'Đã check-in'
-                            : 'Vắng mặt'
+                        ? 'Có mặt'
+                        : record.statusAttendance === 'CHECK_IN'
+                        ? 'Đã check-in'
+                        : 'Vắng mặt'
                     "
                   />
                 </template>
