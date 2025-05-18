@@ -26,7 +26,7 @@ const breadcrumbStore = useBreadcrumbStore()
 const breadcrumb = ref([
   {
     name: GLOBAL_ROUTE_NAMES.ADMIN_PAGE,
-    breadcrumbName: 'Ban đào tạo',
+    breadcrumbName: 'Admin',
   },
   {
     name: ROUTE_NAMES.MANAGEMENT_SUBJECT,
@@ -44,7 +44,7 @@ const facility = ref([])
 const facilitySubject = ref([])
 
 const filter = reactive({
-  name: '',
+  name: null,
   status: null,
   facilityId: null,
   subjectId: route.query.subjectId,
@@ -137,7 +137,7 @@ const fetchFacilityCombobox = () => {
   requestAPI
     .get(`${API_ROUTES_ADMIN.FETCH_DATA_SUBJECT_FACILITY}/facility-combobox`)
     .then((response) => {
-      facility.value = response.data
+      facility.value = response.data.data
     })
     .catch((error) => {
       message.error(error.response?.data?.message || 'Lỗi khi lấy danh sách cơ sở')
@@ -325,16 +325,16 @@ onMounted(() => {
               </a-input>
             </div>
             <div class="col-xl-3 col-md-6 col-sm-6">
-              <div class="label-title">Bộ môn:</div>
+              <div class="label-title">Cơ sở:</div>
               <a-select
-                v-model:value="filter.idSubject"
-                placeholder="Chọn bộ môn"
+                v-model:value="filter.facilityId"
+                placeholder="Chọn cơ sở"
                 allowClear
                 class="w-100"
                 @change="fetchSubjectFacility"
               >
-                <a-select-option :value="''">Tất cả bộ môn</a-select-option>
-                <a-select-option v-for="item in subject" :key="item.id" :value="item.id">
+                <a-select-option :value="null">Tất cả cơ sở</a-select-option>
+                <a-select-option v-for="item in facility" :key="item.id" :value="item.id">
                   {{ item.name }}
                 </a-select-option>
               </a-select>
@@ -348,7 +348,7 @@ onMounted(() => {
                 class="w-100"
                 @change="fetchSubjectFacility"
               >
-                <a-select-option :value="''">Tất cả trạng thái</a-select-option>
+                <a-select-option :value="null">Tất cả trạng thái</a-select-option>
                 <a-select-option value="1">Hoạt động</a-select-option>
                 <a-select-option value="0">Không hoạt động</a-select-option>
               </a-select>
