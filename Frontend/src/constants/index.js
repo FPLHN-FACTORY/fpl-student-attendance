@@ -39,6 +39,7 @@ export const STATUS_FACILITY_IP = {
 export const TYPE_FACILITY_IP = {
   0: 'IPv4',
   1: 'IPv6',
+  2: 'DNS Suffix',
 }
 
 export const STATUS_TYPE = {
@@ -88,7 +89,7 @@ export const ROLE = {
 export const ATTENDANCE_STATUS = {
   NOTCHECKIN: { id: 0, name: 'Chưa checkin' },
   ABSENT: { id: 1, name: 'Vắng mặt' },
-  CHECKIN: { id: 2, name: 'Đã checkin' },
+  CHECKIN: { id: 2, name: 'Đang diễn ra' },
   PRESENT: { id: 3, name: 'Có mặt' },
   NOTCHECKOUT: { id: 4, name: 'Chưa checkout' },
 }

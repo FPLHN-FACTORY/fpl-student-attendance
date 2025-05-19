@@ -1,6 +1,6 @@
 package udpm.hn.studentattendance.core.staff.factory.model.response.userstudentfactory;
 
-public interface Staff_DetailUserStudentFactory {
+public interface STDetailUserStudentFactory {
     String getId();
 
     String getUserStudentCode();

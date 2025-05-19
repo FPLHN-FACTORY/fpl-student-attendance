@@ -18,7 +18,7 @@ public class AFAddOrUpdateFacilityIPRequest {
 
     private String idFacility;
 
-    @NotBlank(message = "Vui lòng nhập IP/Dải IP")
+    @NotBlank(message = "Vui lòng điền đầy đủ mục yêu cầu")
     @Size(max = EntityProperties.LENGTH_NAME, message = "IP không được vượt quá " + EntityProperties.LENGTH_NAME
             + " ký tự")
     private String ip;
