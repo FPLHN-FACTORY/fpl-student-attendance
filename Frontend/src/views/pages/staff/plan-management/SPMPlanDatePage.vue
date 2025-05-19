@@ -311,7 +311,7 @@ const handleShowAdd = () => {
   modalAddOrUpdate.isLoading = false
   modalAddOrUpdate.title = h('span', [
     h(PlusOutlined, { class: 'me-2 text-primary' }),
-    'Thêm kế hoạch mới',
+    'Thêm ca học mới',
   ])
   modalAddOrUpdate.okText = 'Thêm ngay'
   modalAddOrUpdate.onOk = () => handleSubmitAdd()
