@@ -248,7 +248,7 @@ onMounted(() => {
                     <a-badge status="error" /> Chưa checkin
                   </span>
                   <span v-else>
-                    <a-badge status="warning" />
+                    <a-badge status="success" />
                     {{ formatDate(record.createdAt, 'dd/MM/yyyy HH:mm') }}
                   </span>
                 </template>
