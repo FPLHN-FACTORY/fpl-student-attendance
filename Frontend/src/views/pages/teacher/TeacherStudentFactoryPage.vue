@@ -260,7 +260,7 @@ onMounted(() => {
               <template v-else><a-badge status="default" /> Chưa diễn ra</template>
             </template>
             <template v-if="column.dataIndex === 'updatedAt'">
-              <template v-if="record.endDate <= Date.now()">
+              <template v-if="record.startDate <= Date.now()">
                 <template v-if="record.requiredCheckout === STATUS_REQUIRED_ATTENDANCE.ENABLE">
                   <span v-if="record.status === ATTENDANCE_STATUS.ABSENT.id">
                     <a-badge status="default" /> Đã huỷ checkout
@@ -281,7 +281,7 @@ onMounted(() => {
               <template v-else>{{ null }}</template>
             </template>
             <template v-if="column.dataIndex === 'status'">
-              <template v-if="record.endDate <= Date.now()">
+              <template v-if="record.startDate <= Date.now()">
                 <a-tag color="green" v-if="record.status === ATTENDANCE_STATUS.PRESENT.id">
                   Có mặt
                 </a-tag>
