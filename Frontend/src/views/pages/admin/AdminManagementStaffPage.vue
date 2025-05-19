@@ -308,7 +308,10 @@ const configImportExcel = {
     message.error('Không thể xử lý file excel')
   },
   showDownloadTemplate: true,
+  showExport: true,
   showHistoryLog: true,
+  btnImport: 'Import giảng viên/ phụ trách xưởng',
+  btnExport: 'Export giảng viên/ phụ trách xưởng',
 }
 
 const handleClearFilter = () => {
