@@ -24,7 +24,7 @@ public interface TCStudentFactoryExtendRepository extends UserStudentFactoryRepo
                     pf.status = 1 AND
                     pd.id_plan_factory = pf.id AND
                     pf.id_factory = :factoryId AND
-                    pd.end_date <= UNIX_TIMESTAMP(NOW()) * 1000
+                    pd.start_date <= UNIX_TIMESTAMP(NOW()) * 1000
             ),
             cte_total_shift AS (
                 SELECT COUNT(DISTINCT pd.id) AS total_shift
@@ -76,7 +76,7 @@ public interface TCStudentFactoryExtendRepository extends UserStudentFactoryRepo
                     OR us.name LIKE CONCAT('%', :#{#studentRequest.searchQuery}, '%')
                     OR us.email LIKE CONCAT('%', :#{#studentRequest.searchQuery}, '%')
                 )
-            ORDER BY usf.created_at DESC
+            ORDER BY usf.created_at DESC, usf.status
             """, countQuery = """
             SELECT COUNT(DISTINCT usf.id)
             FROM user_student_factory usf

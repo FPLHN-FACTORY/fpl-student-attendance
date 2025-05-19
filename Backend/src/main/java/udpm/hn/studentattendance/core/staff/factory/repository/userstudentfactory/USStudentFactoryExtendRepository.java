@@ -6,9 +6,9 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 import udpm.hn.studentattendance.core.staff.factory.model.request.userstudentfactory.USPDDetailShiftByStudentRequest;
 import udpm.hn.studentattendance.core.staff.factory.model.request.userstudentfactory.USStudentFactoryRequest;
-import udpm.hn.studentattendance.core.staff.factory.model.response.userstudentfactory.Staff_DetailUserStudentFactory;
-import udpm.hn.studentattendance.core.staff.factory.model.response.userstudentfactory.Staff_PDDetailShiftByStudentResponse;
-import udpm.hn.studentattendance.core.staff.factory.model.response.userstudentfactory.Staff_StudentFactoryResponse;
+import udpm.hn.studentattendance.core.staff.factory.model.response.userstudentfactory.STDetailUserStudentFactory;
+import udpm.hn.studentattendance.core.staff.factory.model.response.userstudentfactory.STPDDetailShiftByStudentResponse;
+import udpm.hn.studentattendance.core.staff.factory.model.response.userstudentfactory.STStudentFactoryResponse;
 import udpm.hn.studentattendance.entities.UserStudentFactory;
 import udpm.hn.studentattendance.repositories.UserStudentFactoryRepository;
 
@@ -18,7 +18,7 @@ import java.util.Optional;
 public interface USStudentFactoryExtendRepository extends UserStudentFactoryRepository {
 
     @Query(value = """
-            WITH cte_total_shift AS (
+            WITH cte_total_current_shift AS (
                 SELECT COUNT(DISTINCT pd.id) AS total_shift
                 FROM plan_date pd
                 JOIN plan_factory pf ON pd.id_plan_factory = pf.id
@@ -27,14 +27,26 @@ public interface USStudentFactoryExtendRepository extends UserStudentFactoryRepo
                     pf.status = 1 AND
                     pd.id_plan_factory = pf.id AND
                     pf.id_factory = :factoryId AND
-                    pd.end_date <= UNIX_TIMESTAMP(NOW()) * 1000
+                    pd.start_date <= UNIX_TIMESTAMP(NOW()) * 1000
+            ),
+            
+            cte_total_shift AS (
+                SELECT COUNT(DISTINCT pd.id) AS total_shift
+                FROM plan_date pd
+                JOIN plan_factory pf ON pd.id_plan_factory = pf.id
+                WHERE
+                    pd.status = 1 AND
+                    pf.status = 1 AND
+                    pd.id_plan_factory = pf.id AND
+                    pf.id_factory = :factoryId
             )
             SELECT
                 usf.id AS studentFactoryId,
                 us.id AS studentId,
                 ft.id AS factoryId,
                 us.code AS studentCode,
-                 (cte_ts.total_shift - (
+                cte_ts.total_shift AS totalShift,
+                 (cte_tcs.total_shift - (
                         SELECT COUNT(a.id)
                         FROM attendance a
                         JOIN plan_date pd ON a.id_plan_date = pd.id
@@ -54,6 +66,7 @@ public interface USStudentFactoryExtendRepository extends UserStudentFactoryRepo
             FROM user_student_factory usf
             LEFT JOIN user_student us ON us.id = usf.id_user_student
             LEFT JOIN factory ft ON ft.id = usf.id_factory
+            CROSS JOIN cte_total_current_shift cte_tcs
             CROSS JOIN cte_total_shift cte_ts
             WHERE
                 ft.id = :factoryId
@@ -85,8 +98,8 @@ public interface USStudentFactoryExtendRepository extends UserStudentFactoryRepo
                 )
 
             """, nativeQuery = true)
-    Page<Staff_StudentFactoryResponse> getUserStudentInFactory(Pageable pageable, String factoryId,
-                                                               USStudentFactoryRequest studentFactoryRequest);
+    Page<STStudentFactoryResponse> getUserStudentInFactory(Pageable pageable, String factoryId,
+                                                           USStudentFactoryRequest studentFactoryRequest);
 
     Optional<UserStudentFactory> getUserStudentFactoriesByUserStudentIdAndFactoryId(String userStudentId,
                                                                                     String factoryId);
@@ -114,7 +127,7 @@ public interface USStudentFactoryExtendRepository extends UserStudentFactoryRepo
             """
             , nativeQuery = true
     )
-    Optional<Staff_DetailUserStudentFactory> getDetailUserStudent(String userStudentId);
+    Optional<STDetailUserStudentFactory> getDetailUserStudent(String userStudentId);
 
     @Query(value = """
                 SELECT 
@@ -188,5 +201,5 @@ public interface USStudentFactoryExtendRepository extends UserStudentFactoryRepo
                     ) = :#{#request.status})
                     AND us.id = :userStudentId
             """, nativeQuery = true)
-    Page<Staff_PDDetailShiftByStudentResponse> getAllPlanDateByStudent(Pageable pageable, USPDDetailShiftByStudentRequest request, String userStudentId);
+    Page<STPDDetailShiftByStudentResponse> getAllPlanDateByStudent(Pageable pageable, USPDDetailShiftByStudentRequest request, String userStudentId);
 }
