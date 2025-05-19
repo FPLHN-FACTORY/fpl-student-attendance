@@ -4,6 +4,10 @@ export const BASE_API_URL = import.meta.env.VITE_BASE_API_URL
 
 export const API_PREFIX = import.meta.env.VITE_PREFIX_API
 
+export const PREFIX_ADMIN_PANEL = import.meta.env.VITE_PREFIX_ADMIN_PANEL
+
+export const URL_ADMIN_PANEL = BASE_URL + PREFIX_ADMIN_PANEL
+
 export const API_URL = BASE_API_URL + API_PREFIX
 
 export const GLOBAL_ROUTE_NAMES = {
@@ -18,9 +22,10 @@ export const GLOBAL_ROUTE_NAMES = {
 }
 
 export const WS_ROUTES = {
-  SERVER_HOST: BASE_API_URL.startsWith('https://')
-    ? BASE_API_URL.replace(/^https:\/\//, 'wss://')
-    : BASE_API_URL.replace(/^http:\/\//, 'ws://') + '/ws',
+  SERVER_HOST:
+    (BASE_API_URL.startsWith('https://')
+      ? BASE_API_URL.replace(/^https:\/\//, 'wss://')
+      : BASE_API_URL.replace(/^http:\/\//, 'ws://')) + '/ws',
   TOPIC_ATTENDANCE: '/topic/attendance',
 }
 

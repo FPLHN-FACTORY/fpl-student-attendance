@@ -13,7 +13,7 @@ import { REDIRECT_LOGIN_ADMIN } from '@/constants/authenticationConstant'
 import useAuthStore from '@/stores/useAuthStore'
 import useLoadingStore from '@/stores/useLoadingStore'
 import { decodeBase64 } from '@/utils/utils'
-import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
+import { GLOBAL_ROUTE_NAMES, PREFIX_ADMIN_PANEL, URL_ADMIN_PANEL } from '@/constants/routesConstant'
 import { ROUTE_NAMES_API } from '@/router/authenticationRoute'
 import { ROLE } from '@/constants'
 import { message } from 'ant-design-vue'
@@ -29,25 +29,7 @@ const facilityID = ref(null)
 const isShowModalSelectFacility = ref(false)
 const lstFacility = ref([])
 
-const roles = [
-  {
-    role: ROLE.ADMIN,
-    label: 'Admin',
-    img: imgRoleAdmin,
-    route: GLOBAL_ROUTE_NAMES.ADMIN_PAGE,
-  },
-  {
-    role: ROLE.STAFF,
-    label: 'Phụ trách xưởng',
-    img: imgRoleStaff,
-    route: GLOBAL_ROUTE_NAMES.STAFF_PAGE,
-  },
-  {
-    role: ROLE.TEACHER,
-    label: 'Giảng viên',
-    img: imgRoleTeacher,
-    route: GLOBAL_ROUTE_NAMES.TEACHER_PAGE,
-  },
+let roles = [
   {
     role: ROLE.STUDENT,
     label: 'Sinh viên',
@@ -55,6 +37,35 @@ const roles = [
     route: GLOBAL_ROUTE_NAMES.STUDENT_PAGE,
   },
 ]
+
+const isRouteAdm = route.path === PREFIX_ADMIN_PANEL
+const isRoleAdm =
+  authStore?.user?.role.includes(ROLE.ADMIN) ||
+  authStore?.user?.role.includes(ROLE.STAFF) ||
+  authStore?.user?.role.includes(ROLE.TEACHER)
+
+if (isRouteAdm || isRoleAdm) {
+  roles = [
+    {
+      role: ROLE.ADMIN,
+      label: 'Admin',
+      img: imgRoleAdmin,
+      route: GLOBAL_ROUTE_NAMES.ADMIN_PAGE,
+    },
+    {
+      role: ROLE.STAFF,
+      label: 'Phụ trách xưởng',
+      img: imgRoleStaff,
+      route: GLOBAL_ROUTE_NAMES.STAFF_PAGE,
+    },
+    {
+      role: ROLE.TEACHER,
+      label: 'Giảng viên',
+      img: imgRoleTeacher,
+      route: GLOBAL_ROUTE_NAMES.TEACHER_PAGE,
+    },
+  ]
+}
 
 const showModalSelectFacility = () => (isShowModalSelectFacility.value = true)
 
@@ -85,7 +96,7 @@ const handleRedirectLogin = (width_out_facility = false) => {
 
   const params = new URLSearchParams({
     role: currentRole.role,
-    redirect_uri: window.location.origin,
+    redirect_uri: isRouteAdm ? URL_ADMIN_PANEL : window.location.origin,
     facility_id: facilityID.value,
   })
 
