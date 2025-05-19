@@ -88,7 +88,7 @@ export const ROLE = {
 export const ATTENDANCE_STATUS = {
   NOTCHECKIN: { id: 0, name: 'Chưa checkin' },
   ABSENT: { id: 1, name: 'Vắng mặt' },
-  CHECKIN: { id: 2, name: 'Đã checkin' },
+  CHECKIN: { id: 2, name: 'Đang diễn ra' },
   PRESENT: { id: 3, name: 'Có mặt' },
   NOTCHECKOUT: { id: 4, name: 'Chưa checkout' },
 }
