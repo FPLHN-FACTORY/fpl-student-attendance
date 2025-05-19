@@ -43,7 +43,7 @@ const columns = ref(
   autoAddColumnWidth([
     { title: '#', dataIndex: 'orderNumber', key: 'orderNumber' },
     { title: 'Kiểu IP', dataIndex: 'type', key: 'type' },
-    { title: 'IP/Dải IP', dataIndex: 'ip', key: 'ip' },
+    { title: 'Giá trị', dataIndex: 'ip', key: 'ip' },
     { title: 'Trạng thái', dataIndex: 'status', key: 'status' },
     { title: '', key: 'actions' },
   ]),
@@ -360,7 +360,12 @@ watch(
         </a-select>
       </a-form-item>
 
-      <a-form-item class="col-sm-8" label="IP/Dải IP" name="ip" :rules="formRules.ip">
+      <a-form-item
+        class="col-sm-8"
+        :label="formData.type === Object.keys(TYPE_FACILITY_IP)[2] ? 'Giá trị' : 'IP/Dải IP'"
+        name="ip"
+        :rules="formRules.ip"
+      >
         <a-input
           class="w-100"
           v-model:value="formData.ip"
