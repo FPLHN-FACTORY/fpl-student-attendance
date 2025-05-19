@@ -39,6 +39,7 @@ export const STATUS_FACILITY_IP = {
 export const TYPE_FACILITY_IP = {
   0: 'IPv4',
   1: 'IPv6',
+  2: 'DNS Suffix',
 }
 
 export const STATUS_TYPE = {
