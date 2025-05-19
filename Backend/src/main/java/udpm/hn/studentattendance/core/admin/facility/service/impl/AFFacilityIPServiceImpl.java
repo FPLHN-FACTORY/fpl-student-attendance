@@ -29,7 +29,12 @@ public class AFFacilityIPServiceImpl implements AFFacilityIPService {
     private final AFFacilityIPRepository afFacilityIPRepository;
 
     private ResponseEntity<ApiResponse> checkIP(IPType type, String ip) {
-        if (type == IPType.IPV4) {
+        if (type == IPType.DNSSUFFIX) {
+            if (!ValidateHelper.isValidDnsSuffix(ip)) {
+                return RouterHelper.responseError("DNS Suffix không hợp lệ");
+            }
+        }
+        else if (type == IPType.IPV4) {
             if (!ip.contains("/")) {
                 if (!ValidateHelper.isValidIPv4(ip)) {
                     return RouterHelper.responseError("IPv4 không hợp lệ");
@@ -70,9 +75,11 @@ public class AFFacilityIPServiceImpl implements AFFacilityIPService {
             return RouterHelper.responseError("Không tìm cơ sở");
         }
 
+        boolean isDnsSuffix = request.getType() == IPType.DNSSUFFIX.getKey();
+
         if (afFacilityIPRepository.isExistsIP(request.getIp(), request.getType(), request.getIdFacility(), null)) {
             return RouterHelper
-                    .responseError("IP " + request.getIp() + " đã tồn tại trong cơ sở " + facility.getName());
+                    .responseError((isDnsSuffix ? "DNS Suffix " : "IP ") + request.getIp() + " đã tồn tại trong cơ sở " + facility.getName());
         }
 
         IPType type = IPType.fromKey(request.getType());
@@ -88,14 +95,14 @@ public class AFFacilityIPServiceImpl implements AFFacilityIPService {
         facilityIP.setIp(request.getIp());
         facilityIP.setType(type);
 
-        return RouterHelper.responseSuccess("Tạo mới IP thành công", afFacilityIPRepository.save(facilityIP));
+        return RouterHelper.responseSuccess("Thêm mới " + (isDnsSuffix ? "DNS Suffix " : "IP ") + request.getIp() + " thành công", afFacilityIPRepository.save(facilityIP));
     }
 
     @Override
     public ResponseEntity<?> updateIP(AFAddOrUpdateFacilityIPRequest request) {
         FacilityIP facilityIP = afFacilityIPRepository.findById(request.getId()).orElse(null);
         if (facilityIP == null) {
-            return RouterHelper.responseError("Không tìm thấy IP muốn cập nhật");
+            return RouterHelper.responseError("Không tìm thấy IP/DNS Suffix muốn cập nhật");
         }
 
         Facility facility = afFacilityExtendRepository.findById(request.getIdFacility()).orElse(null);
@@ -104,10 +111,12 @@ public class AFFacilityIPServiceImpl implements AFFacilityIPService {
             return RouterHelper.responseError("Không tìm cơ sở");
         }
 
+        boolean isDnsSuffix = request.getType() == IPType.DNSSUFFIX.getKey();
+
         if (afFacilityIPRepository.isExistsIP(request.getIp(), request.getType(), request.getIdFacility(),
                 facilityIP.getId())) {
             return RouterHelper
-                    .responseError("IP " + request.getIp() + " đã tồn tại trong cơ sở " + facility.getName());
+                    .responseError((isDnsSuffix ? "DNS Suffix " : "IP ") + request.getIp() + " đã tồn tại trong cơ sở " + facility.getName());
         }
 
         IPType type = IPType.fromKey(request.getType());
@@ -121,35 +130,36 @@ public class AFFacilityIPServiceImpl implements AFFacilityIPService {
         facilityIP.setIp(request.getIp());
         facilityIP.setType(type);
 
-        return RouterHelper.responseSuccess("Cập nhật IP thành công", afFacilityIPRepository.save(facilityIP));
+        return RouterHelper.responseSuccess("Cập nhật " + (isDnsSuffix ? "DNS Suffix" : "IP") + " thành công", afFacilityIPRepository.save(facilityIP));
     }
 
     @Override
     public ResponseEntity<?> deleteIP(String id) {
         FacilityIP facilityIP = afFacilityIPRepository.findById(id).orElse(null);
         if (facilityIP == null) {
-            return RouterHelper.responseError("Không tìm thấy IP");
+            return RouterHelper.responseError("Không tìm thấy IP/DNS Suffix");
         }
 
         afFacilityIPRepository.delete(facilityIP);
-        return RouterHelper.responseSuccess("Xoá thành công IP: " + facilityIP.getIp());
+        return RouterHelper.responseSuccess("Xoá thành công IP/DNS Suffix: " + facilityIP.getIp());
     }
 
     @Override
     public ResponseEntity<?> changeStatus(String id) {
         FacilityIP facilityIP = afFacilityIPRepository.findById(id).orElse(null);
         if (facilityIP == null) {
-            return RouterHelper.responseError("Không tìm thấy IP");
+            return RouterHelper.responseError("Không tìm thấy IP/DNS Suffix");
         }
 
+        boolean isDnsSuffix = facilityIP.getType() == IPType.DNSSUFFIX;
         if (facilityIP.getStatus() == EntityStatus.INACTIVE && afFacilityIPRepository.isExistsIP(facilityIP.getIp(),
                 facilityIP.getType().getKey(), facilityIP.getFacility().getId(), facilityIP.getId())) {
-            return RouterHelper.responseError("IP " + facilityIP.getIp() + " đã được áp dụng trong cơ sở");
+            return RouterHelper.responseError((isDnsSuffix ? "DNS Suffix " : "IP ") + facilityIP.getIp() + " đã được áp dụng trong cơ sở");
         }
 
         facilityIP
                 .setStatus(facilityIP.getStatus() == EntityStatus.ACTIVE ? EntityStatus.INACTIVE : EntityStatus.ACTIVE);
-        return RouterHelper.responseSuccess("Thay đổi trạng thái IP thành công",
+        return RouterHelper.responseSuccess("Thay đổi trạng thái " + (isDnsSuffix ? "DNS Suffix" : "IP") + " thành công",
                 afFacilityIPRepository.save(facilityIP));
     }
 
