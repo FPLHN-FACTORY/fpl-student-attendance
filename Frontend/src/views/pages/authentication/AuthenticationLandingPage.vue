@@ -32,7 +32,7 @@ const lstFacility = ref([])
 const roles = [
   {
     role: ROLE.ADMIN,
-    label: 'Cán bộ đào tạo',
+    label: 'Admin',
     img: imgRoleAdmin,
     route: GLOBAL_ROUTE_NAMES.ADMIN_PAGE,
   },
