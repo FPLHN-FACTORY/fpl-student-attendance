@@ -21,7 +21,7 @@ import { autoAddColumnWidth } from '@/utils/utils'
 // --- Breadcrumb ---
 const breadcrumbStore = useBreadcrumbStore()
 const breadcrumb = ref([
-  { name: ROUTE_NAMES.ADMIN_PAGE, breadcrumbName: 'Quản lý' },
+  { name: ROUTE_NAMES.ADMIN_PAGE, breadcrumbName: 'Admin' },
   { name: ROUTE_NAMES.ADMIN_USER, breadcrumbName: 'Quản lý Admin' },
 ])
 
