@@ -51,6 +51,20 @@ public interface USStudentExtendRepository extends UserStudentRepository {
             """, nativeQuery = true)
     Page<USStudentResponse> getAllStudentByFacility(Pageable pageable, USStudentRequest studentRequest,
                                                     String facilityId);
+    @Query(value = """
+            SELECT
+                 us.id as studentId,
+                 us.name as studentName,
+                 us.code as studentCode,
+                 us.email as studentEmail,
+                 us.status as studentStatus
+            FROM user_student us
+            LEFT JOIN facility f ON f.id = us.id_facility
+            WHERE
+                 f.id = :facilityId
+            ORDER BY us.created_at DESC, us.status DESC
+            """, nativeQuery = true)
+    List<USStudentResponse> exportAllStudent(String facilityId);
 
     @Query(value = """
             SELECT

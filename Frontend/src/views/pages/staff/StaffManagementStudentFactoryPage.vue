@@ -74,9 +74,15 @@ const columns = ref(
       key: 'totalAbsentShift',
       align: 'center',
     },
+    {
+      title: 'Tỉ lệ nghỉ',
+      dataIndex: 'percenAbsentShift',
+      key: 'percenAbsentShift',
+      align: 'center',
+    },
     { title: 'Trạng thái', dataIndex: 'statusStudentFactory', key: 'statusStudentFactory' },
     { title: 'Chi tiết', key: 'action' },
-  ]),
+  ])
 )
 
 /* -------------------- Phân trang cho danh sách sinh viên trong nhóm xưởng -------------------- */
@@ -154,7 +160,7 @@ const studentColumns = ref(
     { title: 'Tên sinh viên', dataIndex: 'name', key: 'name' },
     { title: 'Email', dataIndex: 'email', key: 'email' },
     { title: 'Chọn', key: 'select' },
-  ]),
+  ])
 )
 const selectedStudents = reactive({})
 
@@ -379,7 +385,7 @@ const shiftColumns = ref(
     { title: 'Ca học', dataIndex: 'shift', key: 'shift' },
     { title: 'Trạng thái điểm danh', dataIndex: 'statusAttendance', key: 'statusAttendance' },
     { title: 'Trạng thái', dataIndex: 'status', key: 'status' },
-  ]),
+  ])
 )
 
 let currentStudentForShift = null
@@ -444,7 +450,7 @@ const handleClearFilter = () => {
     searchQuery: '',
     status: '',
     page: 1,
-    pageSize: 5
+    pageSize: 5,
   })
   pagination.current = 1
   fetchStudentFactories()
@@ -563,10 +569,22 @@ onMounted(() => {
                     </a-tag>
                   </span>
                 </template>
-                <template v-if="column.dataIndex === 'totalAbsentShift'">
-                  <a-tag :color="record.totalAbsentShift > 0 ? 'red' : 'green'">{{
-                    record.totalAbsentShift || 0
-                  }}</a-tag>
+                <template v-else-if="column.dataIndex === 'totalAbsentShift'">
+                  <a-tag :color="record.totalAbsentShift > 0 ? 'red' : 'green'"
+                    >{{ record.totalAbsentShift || 0 }} / {{ record.totalShift || 0 }}</a-tag
+                  >
+                </template>
+                <template v-else-if="column.dataIndex === 'percenAbsentShift'">
+                  <a-tag
+                    :color="
+                      record.totalAbsentShift > 0 && record.totalShift > 0 ? 'orange' : 'green'
+                    "
+                    >{{
+                      (
+                        record.totalShift && (record.totalAbsentShift / record.totalShift) * 100
+                      ).toFixed(1) || 0
+                    }}%</a-tag
+                  >
                 </template>
               </template>
               <template v-else-if="column.key === 'action'">
@@ -692,13 +710,22 @@ onMounted(() => {
             </a-tag>
           </template>
           <template v-else-if="column.dataIndex === 'statusAttendance'">
-            <a-tag :color="record.statusAttendance === 3 ?  'success'
-              : record.statusAttendance === null
-              ? null : 'error'">
-              {{ record.statusAttendance === 3 ? 'Có mặt'
-              : record.statusAttendance === null
-              ? ''
-              : 'Vắng mặt' }}
+            <a-tag
+              :color="
+                record.statusAttendance === 3
+                  ? 'success'
+                  : record.statusAttendance === null
+                  ? null
+                  : 'error'
+              "
+            >
+              {{
+                record.statusAttendance === 3
+                  ? 'Có mặt'
+                  : record.statusAttendance === null
+                  ? ''
+                  : 'Vắng mặt'
+              }}
             </a-tag>
           </template>
           <template v-else-if="column.dataIndex === 'status'">
