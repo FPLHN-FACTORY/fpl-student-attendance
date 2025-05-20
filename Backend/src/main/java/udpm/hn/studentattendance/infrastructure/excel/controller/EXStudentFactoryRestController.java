@@ -30,7 +30,7 @@ public class EXStudentFactoryRestController implements IEXDefaultController {
 
     @Override
     public ResponseEntity<?> exportData(EXDataRequest request) {
-        return null;
+        return exStudentFactoryService.exportData(request);
     }
 
     @Override
