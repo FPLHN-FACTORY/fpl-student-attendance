@@ -33,6 +33,7 @@ import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.ShiftType;
 import udpm.hn.studentattendance.infrastructure.constants.StatusType;
 import udpm.hn.studentattendance.infrastructure.constants.router.RouteWebsocketConstant;
+import udpm.hn.studentattendance.utils.AppUtils;
 import udpm.hn.studentattendance.utils.DateTimeUtils;
 import udpm.hn.studentattendance.utils.FaceRecognitionUtils;
 import udpm.hn.studentattendance.utils.GeoUtils;
@@ -88,7 +89,7 @@ public class SAAttendanceServiceImpl implements SAAttendanceService {
 
         if (planDate.getType() != ShiftType.ONLINE) {
             if (planDate.getRequiredIp() == StatusType.ENABLE) {
-                String clientIP = ValidateHelper.getClientIP(httpServletRequest);
+                String clientIP = AppUtils.getClientIP(httpServletRequest);
                 if (clientIP == null) {
                     return RouterHelper.responseError("IP đăng nhập không hợp lệ");
                 }
