@@ -771,7 +771,7 @@ watch(
                 }}</a-tag>
               </template>
               <template v-if="column.key === 'actions'">
-                <a-tooltip title="Chi tiết kế hoạch">
+                <a-tooltip title="Phân công nhóm xưởng">
                   <a-button
                     class="btn-outline-primary border-0 me-2"
                     @click="handleShowDetail(record.id)"
