@@ -7,6 +7,7 @@ import org.springframework.stereotype.Repository;
 import udpm.hn.studentattendance.core.staff.factory.model.request.USFactoryRequest;
 import udpm.hn.studentattendance.core.staff.factory.model.response.USDetailFactoryResponse;
 import udpm.hn.studentattendance.core.staff.factory.model.response.USFactoryResponse;
+import udpm.hn.studentattendance.core.staff.factory.model.response.USPlanDateStudentFactoryResponse;
 import udpm.hn.studentattendance.entities.Factory;
 import udpm.hn.studentattendance.repositories.FactoryRepository;
 
@@ -170,4 +171,52 @@ public interface USFactoryExtendRepository extends FactoryRepository {
             p.status = 1
                 """, nativeQuery = true)
     boolean isTeacherJoinThanThreeFactory(String userStaffId, String semesterId);
+
+    @Query(value = """
+        SELECT
+            ROW_NUMBER() OVER (ORDER BY us.name ASC) AS orderNumber,
+            pd.id,
+            us.name,
+            us.code,
+            pd.start_date,
+            pd.end_date,
+            pd.shift,
+            pd.required_checkin,
+            pd.required_checkout,
+            COALESCE(a.attendance_status, 0) AS status,
+            COALESCE(a.created_at, 0) AS createdAt,
+            COALESCE(a.updated_at, 0) AS updatedAt
+        FROM plan_date pd
+        JOIN plan_factory pf ON pd.id_plan_factory = pf.id
+        JOIN user_student_factory usf ON pf.id_factory = usf.id_factory
+        JOIN user_student us ON usf.id_user_student = us.id
+        LEFT JOIN attendance a ON pd.id = a.id_plan_date AND a.id_user_student = us.id
+        WHERE
+            pd.status = 1 AND
+            pf.status = 1 AND
+            us.status = 1 AND
+            usf.status = 1 AND
+            pf.id_factory = :idFactory AND
+            EXISTS(
+                SELECT 1
+                FROM plan p
+                JOIN factory f ON f.id = pf.id_factory
+                JOIN project pj ON f.id_project = pj.id
+                JOIN subject_facility sf ON sf.id = pj.id_subject_facility
+                JOIN subject s2 ON s2.id = sf.id_subject
+                JOIN facility f2 ON sf.id_facility = f2.id
+                JOIN semester s ON pj.id_semester = s.id
+                WHERE
+                     pf.id_plan = p.id AND
+                     f.status = 1 AND
+                     p.status = 1 AND
+                     pj.status = 1 AND
+                     s.status = 1 AND
+                     s2.status = 1 AND
+                     f2.status = 1 AND
+                     sf.status = 1
+            )
+        ORDER BY us.name ASC
+    """, nativeQuery = true)
+    List<USPlanDateStudentFactoryResponse> getAllPlanDateAttendanceByIdFactory(String idFactory);
 }

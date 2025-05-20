@@ -74,7 +74,7 @@ const columns = ref(
     { title: 'Mô tả', dataIndex: 'factoryDescription', key: 'factoryDescription' },
     { title: 'Trạng thái', dataIndex: 'factoryStatus', key: 'factoryStatus' },
     { title: 'Chức năng', key: 'actions' },
-  ]),
+  ])
 )
 
 const breadcrumb = ref([
@@ -336,6 +336,9 @@ const configImportExcel = {
   },
   showDownloadTemplate: true,
   showHistoryLog: true,
+  showExport: true,
+  btnImport: 'Import nhóm xưởng',
+  btnExport: 'Export nhóm xưởng',
 }
 
 const handleClearFilter = () => {
