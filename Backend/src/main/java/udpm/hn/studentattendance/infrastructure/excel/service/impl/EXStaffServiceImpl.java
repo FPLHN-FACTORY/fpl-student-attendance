@@ -9,8 +9,11 @@ import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import udpm.hn.studentattendance.core.admin.userstaff.model.request.ADCreateUpdateStaffRequest;
+import udpm.hn.studentattendance.core.admin.userstaff.model.response.ADStaffResponse;
+import udpm.hn.studentattendance.core.admin.userstaff.repository.ADStaffExtendRepository;
 import udpm.hn.studentattendance.core.admin.userstaff.repository.ADStaffFacilityExtendRepository;
 import udpm.hn.studentattendance.core.admin.userstaff.service.ADStaffService;
+import udpm.hn.studentattendance.core.teacher.factory.model.response.TCPlanDateStudentResponse;
 import udpm.hn.studentattendance.entities.Facility;
 import udpm.hn.studentattendance.helpers.ExcelHelper;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
@@ -18,10 +21,7 @@ import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.helpers.SessionHelper;
 import udpm.hn.studentattendance.infrastructure.common.ApiResponse;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
-import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
-import udpm.hn.studentattendance.infrastructure.constants.ImportLogType;
-import udpm.hn.studentattendance.infrastructure.constants.RestApiStatus;
-import udpm.hn.studentattendance.infrastructure.constants.RoleConstant;
+import udpm.hn.studentattendance.infrastructure.constants.*;
 import udpm.hn.studentattendance.infrastructure.excel.model.request.EXDataRequest;
 import udpm.hn.studentattendance.infrastructure.excel.model.request.EXImportRequest;
 import udpm.hn.studentattendance.infrastructure.excel.model.request.EXUploadRequest;
@@ -30,10 +30,13 @@ import udpm.hn.studentattendance.infrastructure.excel.model.response.ExImportLog
 import udpm.hn.studentattendance.infrastructure.excel.repositories.EXImportLogDetailRepository;
 import udpm.hn.studentattendance.infrastructure.excel.repositories.EXImportLogRepository;
 import udpm.hn.studentattendance.infrastructure.excel.service.EXStaffService;
+import udpm.hn.studentattendance.utils.DateTimeUtils;
+import udpm.hn.studentattendance.utils.ExcelUtils;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -45,6 +48,7 @@ public class EXStaffServiceImpl implements EXStaffService {
     private final SessionHelper sessionHelper;
     private final ADStaffFacilityExtendRepository facilityRepository;
     private final ExcelHelper excelHelper;
+    private final ADStaffExtendRepository staffExtendRepository;
 
     private static final Map<RoleConstant, String> ENUM_TO_FRIENDLY_MAPPING = Map.of(
             RoleConstant.STAFF, "phụ trách xưởng",
@@ -152,7 +156,55 @@ public class EXStaffServiceImpl implements EXStaffService {
 
     @Override
     public ResponseEntity<?> exportData(EXDataRequest request) {
-        return null;
+        List<ADStaffResponse> list = staffExtendRepository.exportAllStaff();
+
+        try (Workbook workbook = new XSSFWorkbook();
+             ByteArrayOutputStream data = new ByteArrayOutputStream()) {
+            String filename =
+                    "Staff" + ".xlsx";
+            List<String> headers = List.of("STT", "Mã giảng viên / phụ trách", "Họ và tên", "Email Fe", "Email Fpt", "Cơ sở", "Vai trò");
+
+            Sheet sheet = ExcelUtils.createTemplate(workbook, "Data Export", headers, new ArrayList<>());
+
+            for (int i = 0; i < list.size(); i++) {
+                int row = i + 1;
+                ADStaffResponse staffResponse = list.get(i);
+                String index = String.valueOf(row);
+                String code = staffResponse.getStaffCode();
+                String name = staffResponse.getStaffName();
+                String emailFe = staffResponse.getStaffEmailFe();
+                String emailFpt = staffResponse.getStaffEmailFpt();
+                String facility = staffResponse.getFacilityName();
+
+                String rawRoles = staffResponse.getRoleCode(); // e.g. "1,3"
+                String friendlyRoles = Arrays.stream(rawRoles.split(","))
+                        .map(String::trim)
+                        .map(codeStr -> {
+                            int ord = Integer.parseInt(codeStr);
+                            return ENUM_TO_FRIENDLY_MAPPING.getOrDefault(
+                                    RoleConstant.values()[ord], codeStr
+                            );
+                        })
+                        .collect(Collectors.joining(", "));
+
+                List<Object> dataCell = List.of(index, code, name, emailFe, emailFpt, facility, friendlyRoles);
+                ExcelUtils.insertRow(sheet, row, dataCell);
+            }
+            sheet.setColumnWidth(2, 30 * 256);  // Họ và tên
+            sheet.setColumnWidth(3, 40 * 256);  // Email Fe
+            sheet.setColumnWidth(4, 40 * 256);  // Email Fpt
+            sheet.setColumnWidth(5, 30 * 256);  // Cơ sở
+            sheet.setColumnWidth(6, 30 * 256);  // Vai trò
+            workbook.write(data);
+
+            HttpHeaders headersHttp = new HttpHeaders();
+            headersHttp.setContentDisposition(ContentDisposition.builder("attachment").filename(filename).build());
+            headersHttp.set(HttpHeaders.ACCESS_CONTROL_EXPOSE_HEADERS, HttpHeaders.CONTENT_DISPOSITION);
+            headersHttp.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+            return new ResponseEntity<>(data.toByteArray(), headersHttp, HttpStatus.OK);
+        } catch (IOException e) {
+            return null;
+        }
     }
 
     @Override
