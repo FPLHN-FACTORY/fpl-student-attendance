@@ -3,7 +3,6 @@ package udpm.hn.studentattendance.core.staff.factory.service.impl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Modifying;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -11,9 +10,9 @@ import org.springframework.validation.annotation.Validated;
 import udpm.hn.studentattendance.core.notification.model.request.NotificationAddRequest;
 import udpm.hn.studentattendance.core.notification.service.NotificationService;
 import udpm.hn.studentattendance.core.staff.factory.model.request.userstudentfactory.*;
-import udpm.hn.studentattendance.core.staff.factory.model.response.userstudentfactory.Staff_DetailUserStudentFactory;
-import udpm.hn.studentattendance.core.staff.factory.model.response.userstudentfactory.Staff_PDDetailShiftByStudentResponse;
-import udpm.hn.studentattendance.core.staff.factory.model.response.userstudentfactory.Staff_UserStudentResponse;
+import udpm.hn.studentattendance.core.staff.factory.model.response.userstudentfactory.STDetailUserStudentFactory;
+import udpm.hn.studentattendance.core.staff.factory.model.response.userstudentfactory.STPDDetailShiftByStudentResponse;
+import udpm.hn.studentattendance.core.staff.factory.model.response.userstudentfactory.STUserStudentResponse;
 import udpm.hn.studentattendance.core.staff.factory.repository.factory.USFactoryExtendRepository;
 import udpm.hn.studentattendance.core.staff.factory.repository.userstudentfactory.USStudentFactoryExtendRepository;
 import udpm.hn.studentattendance.core.staff.factory.repository.userstudentfactory.USUSFUserStudentExtendRepository;
@@ -161,7 +160,7 @@ public class USStudentFactoryServiceImpl implements USStudentFactoryService {
 
         @Override
         public ResponseEntity<?> getStudentFactoryExist(String factoryId) {
-                List<Staff_UserStudentResponse> listStudentInFactory = userStudentFactoryExtendRepository
+                List<STUserStudentResponse> listStudentInFactory = userStudentFactoryExtendRepository
                                 .getAllUserStudentExistFactory(sessionHelper.getFacilityId(), factoryId);
                 return RouterHelper.responseSuccess("Lấy danh sách sinh viên đã tham gia xưởng thành công",
                                 listStudentInFactory);
@@ -236,7 +235,7 @@ public class USStudentFactoryServiceImpl implements USStudentFactoryService {
 
         @Override
         public ResponseEntity<?> detailStudentFactory(String userStudentId) {
-                Optional<Staff_DetailUserStudentFactory> detailUserStudentFactory = studentFactoryRepository
+                Optional<STDetailUserStudentFactory> detailUserStudentFactory = studentFactoryRepository
                                 .getDetailUserStudent(userStudentId);
                 return RouterHelper.responseSuccess("Lấy thành công sinh viên", detailUserStudentFactory);
         }
@@ -245,7 +244,7 @@ public class USStudentFactoryServiceImpl implements USStudentFactoryService {
         public ResponseEntity<?> getAllPlanDateByStudent(USPDDetailShiftByStudentRequest request,
                         String userStudentId) {
                 Pageable pageable = PaginationHelper.createPageable(request);
-                PageableObject<Staff_PDDetailShiftByStudentResponse> data = PageableObject
+                PageableObject<STPDDetailShiftByStudentResponse> data = PageableObject
                                 .of(studentFactoryRepository.getAllPlanDateByStudent(pageable, request, userStudentId));
                 return RouterHelper.responseSuccess("Lấy danh sách dữ liệu thành công", data);
         }

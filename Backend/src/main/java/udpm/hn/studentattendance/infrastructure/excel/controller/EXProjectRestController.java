@@ -30,7 +30,8 @@ public class EXProjectRestController implements IEXDefaultController {
 
     @Override
     public ResponseEntity<?> exportData(EXDataRequest request) {
-        return null;
+
+        return service.exportData(request);
     }
 
     @Override
