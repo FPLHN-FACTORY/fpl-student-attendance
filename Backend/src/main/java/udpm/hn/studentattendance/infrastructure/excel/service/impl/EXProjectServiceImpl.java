@@ -8,8 +8,11 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import udpm.hn.studentattendance.core.staff.factory.model.response.USFactoryResponse;
 import udpm.hn.studentattendance.core.staff.project.model.request.USProjectCreateOrUpdateRequest;
+import udpm.hn.studentattendance.core.staff.project.model.response.USProjectResponse;
 import udpm.hn.studentattendance.core.staff.project.repository.STLevelProjectExtendRepository;
+import udpm.hn.studentattendance.core.staff.project.repository.STProjectExtendRepository;
 import udpm.hn.studentattendance.core.staff.project.repository.STProjectSemesterExtendRepository;
 import udpm.hn.studentattendance.core.staff.project.repository.STProjectSubjectFacilityExtendRepository;
 import udpm.hn.studentattendance.core.staff.project.service.STProjectManagementService;
@@ -33,6 +36,7 @@ import udpm.hn.studentattendance.infrastructure.excel.model.response.ExImportLog
 import udpm.hn.studentattendance.infrastructure.excel.repositories.EXImportLogDetailRepository;
 import udpm.hn.studentattendance.infrastructure.excel.repositories.EXImportLogRepository;
 import udpm.hn.studentattendance.infrastructure.excel.service.EXProjectService;
+import udpm.hn.studentattendance.utils.ExcelUtils;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -52,6 +56,8 @@ public class EXProjectServiceImpl implements EXProjectService {
     private final STProjectSemesterExtendRepository semesterExtendRepository;
     private final STProjectSubjectFacilityExtendRepository subjectFacilityExtendRepository;
     private final STLevelProjectExtendRepository levelProjectExtendRepository;
+
+    private final STProjectExtendRepository projectExtendRepository;
 
     @Override
     public ResponseEntity<?> getDataFromFile(EXUploadRequest request) {
@@ -166,7 +172,44 @@ public class EXProjectServiceImpl implements EXProjectService {
 
     @Override
     public ResponseEntity<?> exportData(EXDataRequest request) {
-        return null;
+        List<USProjectResponse> list = projectExtendRepository.exportAllProject(sessionHelper.getFacilityId());
+
+        try (Workbook workbook = new XSSFWorkbook();
+             ByteArrayOutputStream data = new ByteArrayOutputStream()) {
+            String filename =
+                    "Project" + ".xlsx";
+            List<String> headers = List.of("STT", "Tên", "Cấp dự án", "Học kỳ", "Môn học", "Mô tả");
+
+            Sheet sheet = ExcelUtils.createTemplate(workbook, "Data Export", headers, new ArrayList<>());
+
+            for (int i = 0; i < list.size(); i++) {
+                int row = i + 1;
+                USProjectResponse projectResponse = list.get(i);
+                String index = String.valueOf(row);
+                String name = projectResponse.getName();
+                String levelProjectName = projectResponse.getNameLevelProject();
+                String semester = projectResponse.getNameSemester();
+                String subjectCode = projectResponse.getNameSubject();
+                String projectDescription = projectResponse.getDescription();
+
+                List<Object> dataCell = List.of(index, name, levelProjectName, semester, subjectCode, projectDescription);
+                ExcelUtils.insertRow(sheet, row, dataCell);
+            }
+            sheet.setColumnWidth(2, 30 * 256);
+            sheet.setColumnWidth(3, 40 * 256);
+            sheet.setColumnWidth(4, 40 * 256);
+            sheet.setColumnWidth(5, 30 * 256);
+            sheet.setColumnWidth(6, 30 * 256);
+            workbook.write(data);
+
+            HttpHeaders headersHttp = new HttpHeaders();
+            headersHttp.setContentDisposition(ContentDisposition.builder("attachment").filename(filename).build());
+            headersHttp.set(HttpHeaders.ACCESS_CONTROL_EXPOSE_HEADERS, HttpHeaders.CONTENT_DISPOSITION);
+            headersHttp.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+            return new ResponseEntity<>(data.toByteArray(), headersHttp, HttpStatus.OK);
+        } catch (IOException e) {
+            return null;
+        }
     }
 
     @Override

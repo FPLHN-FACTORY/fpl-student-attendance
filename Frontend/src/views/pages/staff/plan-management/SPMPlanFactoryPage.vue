@@ -570,7 +570,7 @@ watch(
 
       <div class="col-12">
         <a-card :bordered="false" class="cart">
-          <template #title> <UnorderedListOutlined /> Danh sách kế hoạch - nhóm xưởng </template>
+          <template #title> <UnorderedListOutlined /> Danh sách phân công nhóm xưởng </template>
           <div class="d-flex justify-content-end mb-3 gap-3">
             <a-button type="primary" @click="handleShowModalAdd">
               <PlusOutlined /> Phân công nhóm xưởng
@@ -618,7 +618,7 @@ watch(
                 }}</a-tag>
               </template>
               <template v-if="column.key === 'actions'">
-                <a-tooltip title="Chi tiết phân công">
+                <a-tooltip title="Chi tiết ca học">
                   <a-button
                     class="btn-outline-primary border-0 me-2"
                     @click="handleShowDetail(record.id)"

@@ -101,37 +101,8 @@ public class ValidateHelper {
         return cidr.matches("^([0-9a-fA-F:]+:+)+[0-9a-fA-F]+/\\d{1,3}$");
     }
 
-    public static String getClientIP(HttpServletRequest request) {
-        String ip = request.getHeader("X-Forwarded-For");
-        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
-            ip = request.getRemoteAddr();
-        }
-        if (isLocalhost(ip)) {
-            ip = getPublicIP();
-        }
-        return ip;
-    }
-
-    private static boolean isLocalhost(String ip) {
+    public static boolean isLocalhost(String ip) {
         return ip.equals("127.0.0.1") || ip.equals("::1") || ip.equals("0:0:0:0:0:0:0:1");
-    }
-
-    public static String getPublicIP() {
-        try {
-            HttpClient client = HttpClient.newHttpClient();
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create("https://api64.ipify.org?format=json"))
-                    .GET()
-                    .build();
-
-            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-
-            ObjectMapper objectMapper = new ObjectMapper();
-            JsonNode jsonNode = objectMapper.readTree(response.body());
-            return jsonNode.get("ip").asText();
-        } catch (Exception e) {
-            return null;
-        }
     }
 
     public static boolean isAllowedIP(String ip, Set<String> ALLOWED_IP_OR_CIDR) {

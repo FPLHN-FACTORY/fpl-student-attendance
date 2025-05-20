@@ -827,7 +827,7 @@ watch(
                 </template>
                 <template v-if="column.key === 'actions'">
                   <template v-if="record.status !== 'DA_DIEN_RA'">
-                    <a-tooltip title="Chỉnh sửa phân công">
+                    <a-tooltip title="Chỉnh sửa ca học">
                       <a-button class="btn-outline-info border-0" @click="handleShowUpdate(record)">
                         <EditFilled />
                       </a-button>
