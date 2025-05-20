@@ -286,6 +286,9 @@ const configImportExcel = {
   },
   showDownloadTemplate: true,
   showHistoryLog: true,
+  showExport: true,
+  btnImport: 'Import sinh viên',
+  btnExport: 'Export sinh viên',
 }
 
 const clearNewStudentForm = () => {

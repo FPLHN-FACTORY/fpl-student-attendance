@@ -5,7 +5,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 import udpm.hn.studentattendance.core.staff.factory.model.request.userstudentfactory.USUserStudentRequest;
-import udpm.hn.studentattendance.core.staff.factory.model.response.userstudentfactory.Staff_UserStudentResponse;
+import udpm.hn.studentattendance.core.staff.factory.model.response.userstudentfactory.STUserStudentResponse;
 import udpm.hn.studentattendance.entities.UserStudent;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.repositories.UserStudentRepository;
@@ -38,7 +38,7 @@ public interface USUSFUserStudentExtendRepository extends UserStudentRepository 
                             AND us.status = 1
                         ORDER BY us.created_at DESC
                         """, nativeQuery = true)
-        List<Staff_UserStudentResponse> getAllUserStudentExistFactory(
+        List<STUserStudentResponse> getAllUserStudentExistFactory(
                         String facilityId,
                         String factoryId);
 
