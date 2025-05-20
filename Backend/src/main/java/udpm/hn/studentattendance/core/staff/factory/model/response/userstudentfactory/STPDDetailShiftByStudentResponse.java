@@ -3,7 +3,7 @@ package udpm.hn.studentattendance.core.staff.factory.model.response.userstudentf
 import udpm.hn.studentattendance.infrastructure.common.HasOrderNumber;
 import udpm.hn.studentattendance.infrastructure.common.IsIdentify;
 
-public interface Staff_PDDetailShiftByStudentResponse extends IsIdentify, HasOrderNumber {
+public interface STPDDetailShiftByStudentResponse extends IsIdentify, HasOrderNumber {
 
     Long getStartDate();
 

@@ -8,7 +8,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import udpm.hn.studentattendance.core.admin.userstaff.model.response.ADStaffResponse;
 import udpm.hn.studentattendance.core.staff.factory.model.request.USFactoryCreateUpdateRequest;
+import udpm.hn.studentattendance.core.staff.factory.model.response.USFactoryResponse;
+import udpm.hn.studentattendance.core.staff.factory.repository.factory.USFactoryExtendRepository;
 import udpm.hn.studentattendance.core.staff.factory.repository.factory.USProjectFactoryExtendRepository;
 import udpm.hn.studentattendance.core.staff.factory.repository.factory.USStaffFactoryExtendRepository;
 import udpm.hn.studentattendance.core.staff.factory.service.USFactoryService;
@@ -31,6 +34,7 @@ import udpm.hn.studentattendance.infrastructure.excel.model.response.ExImportLog
 import udpm.hn.studentattendance.infrastructure.excel.repositories.EXImportLogDetailRepository;
 import udpm.hn.studentattendance.infrastructure.excel.repositories.EXImportLogRepository;
 import udpm.hn.studentattendance.infrastructure.excel.service.EXFactoryService;
+import udpm.hn.studentattendance.utils.ExcelUtils;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -48,6 +52,8 @@ public class EXFactoryServiceImpl implements EXFactoryService {
     private final EXImportLogDetailRepository importLogDetailRepository;
     private final SessionHelper sessionHelper;
     private final ExcelHelper excelHelper;
+
+    private final USFactoryExtendRepository factoryExtendRepository;
 
     @Override
     public ResponseEntity<?> getDataFromFile(EXUploadRequest request) {
@@ -132,7 +138,44 @@ public class EXFactoryServiceImpl implements EXFactoryService {
 
     @Override
     public ResponseEntity<?> exportData(EXDataRequest request) {
-        return null;
+        List<USFactoryResponse> list = factoryExtendRepository.exportAllFactory(sessionHelper.getFacilityId());
+
+        try (Workbook workbook = new XSSFWorkbook();
+             ByteArrayOutputStream data = new ByteArrayOutputStream()) {
+            String filename =
+                    "Factory" + ".xlsx";
+            List<String> headers = List.of("STT", "Tên nhóm xưởng ", "Dự án", "Bộ môn", "Giảng viên", "Mô tả");
+
+            Sheet sheet = ExcelUtils.createTemplate(workbook, "Data Export", headers, new ArrayList<>());
+
+            for (int i = 0; i < list.size(); i++) {
+                int row = i + 1;
+                USFactoryResponse factoryResponse = list.get(i);
+                String index = String.valueOf(row);
+                String name = factoryResponse.getName();
+                String projectName = factoryResponse.getProjectName();
+                String subjectCode = factoryResponse.getSubjectCode();
+                String staffName = factoryResponse.getStaffName();
+                String factoryDescription = factoryResponse.getFactoryDescription();
+
+                List<Object> dataCell = List.of(index, name, projectName, subjectCode, staffName, factoryDescription);
+                ExcelUtils.insertRow(sheet, row, dataCell);
+            }
+            sheet.setColumnWidth(2, 30 * 256);
+            sheet.setColumnWidth(3, 40 * 256);
+            sheet.setColumnWidth(4, 40 * 256);
+            sheet.setColumnWidth(5, 30 * 256);
+            sheet.setColumnWidth(6, 30 * 256);
+            workbook.write(data);
+
+            HttpHeaders headersHttp = new HttpHeaders();
+            headersHttp.setContentDisposition(ContentDisposition.builder("attachment").filename(filename).build());
+            headersHttp.set(HttpHeaders.ACCESS_CONTROL_EXPOSE_HEADERS, HttpHeaders.CONTENT_DISPOSITION);
+            headersHttp.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+            return new ResponseEntity<>(data.toByteArray(), headersHttp, HttpStatus.OK);
+        } catch (IOException e) {
+            return null;
+        }
     }
 
     @Override
