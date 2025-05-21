@@ -335,6 +335,9 @@ const configImportExcel = {
   },
   showDownloadTemplate: true,
   showHistoryLog: true,
+  showExport: true,
+  btnImport: 'Import dự án',
+  btnExport: 'Export dự án',
 }
 // Reset form
 const resetForm = () => {
