@@ -106,7 +106,7 @@ public class EXStudentFactoryServiceImpl implements EXStudentFactoryService {
 
     @Override
     public ResponseEntity<?> exportData(EXDataRequest request) {
-        String factoryId = (String) request.getData().get("factoryId");
+        String factoryId = (String) request.getData().get("idFactory");
         Factory factory = factoryExtendRepository.findById(factoryId).orElse(null);
         if (factory == null) {
             return RouterHelper.responseError("Không tìm thấy xưởng", HttpStatus.BAD_REQUEST);
@@ -119,47 +119,40 @@ public class EXStudentFactoryServiceImpl implements EXStudentFactoryService {
         List<USPlanDateStudentFactoryResponse> lstData = factoryExtendRepository
                 .getAllPlanDateAttendanceByIdFactory(factory.getId());
 
-        int totalAbsent = (int) lstData.stream()
-                .filter(d -> d.getStatus() != AttendanceStatus.PRESENT.ordinal()
-                        && d.getStartDate() <= System.currentTimeMillis())
-                .count();
-        int totalRecords = (int) lstData.stream()
-                .filter(d -> d.getStartDate() <= System.currentTimeMillis())
-                .count();
+        // Lấy danh sách sinh viên duy nhất
+        Map<String, List<USPlanDateStudentFactoryResponse>> grouped = lstData.stream()
+                .collect(Collectors.groupingBy(USPlanDateStudentFactoryResponse::getCode));
 
         try (Workbook workbook = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             String filename = "student-factory-" + CodeGeneratorUtils
                     .generateCodeFromString(factory.getName()).toLowerCase() + ".xlsx";
-            List<String> headers = new ArrayList<>(List.of("Mã sinh viên", "Họ tên sinh viên"));
-
-            Set<ExStudentModel> stPStudent = lstData.stream()
-                    .map(o -> new ExStudentModel(o.getCode(), o.getName()))
-                    .collect(Collectors.toCollection(LinkedHashSet::new));
-            List<ExStudentModel> lstStudent = stPStudent.stream()
-                    .toList();
-
-            headers.add("Tổng");
-            headers.add("Vắng(%)");
-
+            List<String> headers = new ArrayList<>(List.of("Mã sinh viên", "Họ tên sinh viên", "Tổng buổi", "Tổng vắng(%)"));
 
             Sheet sheet = ExcelUtils.createTemplate(workbook, "Summary", headers, List.of());
             int row = 1;
 
-            for (ExStudentModel student : lstStudent) {
-                String studentCode = student.getCode();
-                String studentName = student.getName();
+            // Xử lý cho từng sinh viên
+            for (Map.Entry<String, List<USPlanDateStudentFactoryResponse>> entry : grouped.entrySet()) {
+                String studentCode = entry.getKey();
+                List<USPlanDateStudentFactoryResponse> records = entry.getValue();
+                List<USPlanDateStudentFactoryResponse> occurred = records.stream()
+                        .toList();
+                int totalSessions = occurred.size();
+                int totalAbsent = (int) occurred.stream()
+                        .filter(d -> d.getStatus() != AttendanceStatus.PRESENT.ordinal() && d.getStartDate() <= System.currentTimeMillis())
+                        .count();
+                String percent = totalSessions > 0
+                        ? Math.round((double) totalAbsent / totalSessions * 1000) / 10.0 + "%"
+                        : "0%";
+                String studentName = records.get(0).getName();
 
-                List<Object> dataCell = new ArrayList<>();
-                dataCell.add(studentCode);
-                dataCell.add(studentName);
-
-
-                dataCell.add(totalAbsent + "/" + lstStudent.size());
-                dataCell.add(Math.round((double) totalAbsent / lstStudent.size() * 1000) / 10.0 + "%");
-
-                ExcelUtils.insertRow(sheet, row, dataCell);
-                row++;
+                ExcelUtils.insertRow(sheet, row++, List.of(studentCode, studentName, totalAbsent + "/" + totalSessions, percent));
             }
+
+            sheet.setColumnWidth(0, 20 * 256);
+            sheet.setColumnWidth(1, 30 * 256);
+            sheet.setColumnWidth(2, 15 * 256);
+            sheet.setColumnWidth(3, 20 * 256);
 
             workbook.write(out);
             HttpHeaders headersHttp = new HttpHeaders();
@@ -172,6 +165,7 @@ public class EXStudentFactoryServiceImpl implements EXStudentFactoryService {
             return RouterHelper.responseError("Lỗi khi xuất Excel", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
 
 
     @Override
