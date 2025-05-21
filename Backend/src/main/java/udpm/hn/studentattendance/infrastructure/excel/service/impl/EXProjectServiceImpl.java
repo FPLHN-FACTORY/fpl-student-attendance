@@ -195,7 +195,7 @@ public class EXProjectServiceImpl implements EXProjectService {
                 List<Object> dataCell = List.of(index, name, levelProjectName, semester, subjectCode, projectDescription);
                 ExcelUtils.insertRow(sheet, row, dataCell);
             }
-            sheet.setColumnWidth(2, 30 * 256);
+            sheet.setColumnWidth(2, 40 * 256);
             sheet.setColumnWidth(3, 40 * 256);
             sheet.setColumnWidth(4, 40 * 256);
             sheet.setColumnWidth(5, 30 * 256);

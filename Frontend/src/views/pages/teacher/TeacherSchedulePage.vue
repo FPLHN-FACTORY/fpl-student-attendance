@@ -182,12 +182,18 @@ const fetchTeachingSchedule = () => {
     })
 }
 const handleAttendance = (record) => {
-  router.push({
-    name: ROUTE_NAMES.MANAGEMENT_STUDENT_ATTENDANCE,
-    query: {
-      idPlanDate: record.idPlanDate || record.id,
-    },
-  })
+  if (Date.now() <= record.startTeaching - 10 * 60 * 1000) {
+    message.error('Chưa đến giờ điểm danh cho buổi học này')
+  } else if (Date.now > record.endTeaching) {
+    message.error('Đã quá giờ điểm danh cho buổi học này')
+  } else {
+    router.push({
+      name: ROUTE_NAMES.MANAGEMENT_STUDENT_ATTENDANCE,
+      query: {
+        idPlanDate: record.idPlanDate || record.id,
+      },
+    })
+  }
 }
 // Lấy danh sách phụ trợ
 const fetchSubjects = () => {
@@ -443,8 +449,7 @@ const handleClearFilter = () => {
 
 const handleShowFactory = (item) => {
   applicationStore.setSelectedKeys(
-    TeacherRoutes[0].children.find((o) => o.name == ROUTE_NAMES.MANAGEMENT_FACTORY).meta
-      .selectedKey,
+    TeacherRoutes[0].children.find((o) => o.name == ROUTE_NAMES.MANAGEMENT_FACTORY).meta.selectedKey
   )
   router.push({ name: ROUTE_NAMES.MANAGEMENT_SHIFT_FACTORY, params: { id: item.factoryId } })
 }
@@ -530,7 +535,7 @@ onMounted(() => {
                 {{
                   `${formatDate(record.startTeaching, 'HH:mm')} - ${formatDate(
                     record.endTeaching,
-                    'HH:mm',
+                    'HH:mm'
                   )}`
                 }}
               </template>
@@ -544,7 +549,7 @@ onMounted(() => {
                   {{
                     `${dayOfWeek(record.startTeaching)}, ${formatDate(
                       record.startTeaching,
-                      DEFAULT_DATE_FORMAT,
+                      DEFAULT_DATE_FORMAT
                     )}`
                   }}
                 </template>
@@ -641,7 +646,7 @@ onMounted(() => {
                 {{
                   `${formatDate(record.startTeaching, 'HH:mm')} - ${formatDate(
                     record.endTeaching,
-                    'HH:mm',
+                    'HH:mm'
                   )}`
                 }}
               </template>
@@ -655,7 +660,7 @@ onMounted(() => {
                   {{
                     `${dayOfWeek(record.startTeaching)}, ${formatDate(
                       record.startTeaching,
-                      DEFAULT_DATE_FORMAT,
+                      DEFAULT_DATE_FORMAT
                     )}`
                   }}
                 </template>

@@ -9,6 +9,9 @@ import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import udpm.hn.studentattendance.core.staff.factory.model.request.userstudentfactory.USStudentFactoryAddRequest;
+import udpm.hn.studentattendance.core.staff.factory.model.response.USPlanDateStudentFactoryResponse;
+import udpm.hn.studentattendance.core.staff.factory.repository.factory.USFactoryExtendRepository;
+import udpm.hn.studentattendance.core.staff.factory.repository.userstudentfactory.USStudentFactoryExtendRepository;
 import udpm.hn.studentattendance.core.staff.factory.service.USStudentFactoryService;
 import udpm.hn.studentattendance.core.teacher.factory.model.response.TCPlanDateStudentFactoryResponse;
 import udpm.hn.studentattendance.entities.Factory;
@@ -31,6 +34,7 @@ import udpm.hn.studentattendance.infrastructure.excel.model.response.ExImportLog
 import udpm.hn.studentattendance.infrastructure.excel.repositories.EXImportLogDetailRepository;
 import udpm.hn.studentattendance.infrastructure.excel.repositories.EXImportLogRepository;
 import udpm.hn.studentattendance.infrastructure.excel.service.EXStudentFactoryService;
+import udpm.hn.studentattendance.repositories.UserStudentFactoryRepository;
 import udpm.hn.studentattendance.utils.CodeGeneratorUtils;
 import udpm.hn.studentattendance.utils.DateTimeUtils;
 import udpm.hn.studentattendance.utils.ExcelUtils;
@@ -53,6 +57,8 @@ public class EXStudentFactoryServiceImpl implements EXStudentFactoryService {
     private final ExcelHelper excelHelper;
 
     private final SessionHelper sessionHelper;
+
+    private final USFactoryExtendRepository factoryExtendRepository;
 
     @Override
     public ResponseEntity<?> getDataFromFile(EXUploadRequest request) {
@@ -100,103 +106,67 @@ public class EXStudentFactoryServiceImpl implements EXStudentFactoryService {
 
     @Override
     public ResponseEntity<?> exportData(EXDataRequest request) {
-//        Map<String, Object> dataRequest = request.getData();
-//        String factoryId = (String) dataRequest.get("factoryId");
-//        if (factoryId != null){
-//            return null;
-//        } else {
-//            Factory factory = tcFactoryExtendRepository.findById(idFactory).orElse(null);
-//
-//            if (factory == null) {
-//                return null;
-//            }
-//
-//            if (!sessionHelper.getUserRole().contains(RoleConstant.ADMIN) && !sessionHelper.getUserRole().contains(RoleConstant.STAFF)) {
-//                if (!Objects.equals(factory.getUserStaff().getId(), sessionHelper.getUserId())) {
-//                    return null;
-//                }
-//            }
-//
-//            List<TCPlanDateStudentFactoryResponse> lstData = tcStudentFactoryExtendRepository.getAllPlanDateAttendanceByIdFactory(factory.getId());
-//
-//            try (Workbook workbook = new XSSFWorkbook();
-//                 ByteArrayOutputStream data = new ByteArrayOutputStream()) {
-//                String filename =
-//                        "PlanDate-attendance-" + CodeGeneratorUtils.generateCodeFromString(factory.getName()).toLowerCase() + ".xlsx";
-//
-//                List<String> headers = new ArrayList<>(List.of("Mã sinh viên", "Họ tên sinh viên"));
-//
-//                Set<String> stPlanDate = lstData.stream()
-//                        .map(this::buildCellPlanDate)
-//                        .collect(Collectors.toSet());
-//                List<String> lstPlanDate = stPlanDate.stream()
-//                        .sorted()
-//                        .toList();
-//
-//                Set<ExStudentModel> stPStudent = lstData.stream()
-//                        .map(o -> new ExStudentModel(o.getCode(), o.getName()))
-//                        .collect(Collectors.toCollection(LinkedHashSet::new));
-//                List<ExStudentModel> lstStudent = stPStudent.stream()
-//                        .toList();
-//
-//                headers.addAll(lstPlanDate);
-//                headers.add("Tổng");
-//                headers.add("Vắng(%)");
-//
-//                Sheet sheet = ExcelUtils.createTemplate(workbook, "Data Export", headers, new ArrayList<>());
-//
-//                Map<Object, String> colorMap = new HashMap<>();
-//                colorMap.put("Có mặt", "#a9d08e");
-//                colorMap.put("Vắng mặt", "#ff7d7d");
-//
-//
-//                int row = 1;
-//                for (ExStudentModel student: lstStudent) {
-//                    String studentCode = student.getCode();
-//                    String studentName = student.getName();
-//
-//                    List<Object> dataCell = new ArrayList<>();
-//                    dataCell.add(studentCode);
-//                    dataCell.add(studentName);
-//
-//                    int total_absent = 0;
-//                    for(String namePlanDate: lstPlanDate) {
-//                        TCPlanDateStudentFactoryResponse planDate = lstData.stream().filter(s -> s.getCode().equals(studentCode) && buildCellPlanDate(s).equals(namePlanDate)).findFirst().orElse(null);
-//                        if (planDate == null || planDate.getStartDate() > DateTimeUtils.getCurrentTimeMillis()) {
-//                            dataCell.add(" - ");
-//                            continue;
-//                        }
-//                        if (planDate.getStatus() == AttendanceStatus.PRESENT.ordinal()) {
-//                            dataCell.add("Có mặt");
-//                        } else {
-//                            total_absent++;
-//                            dataCell.add("Vắng mặt");
-//                        }
-//                    }
-//
-//                    dataCell.add(total_absent + "/" + lstPlanDate.size());
-//                    dataCell.add(Math.round((double) total_absent / lstPlanDate.size() * 1000) / 10.0 + "%");
-//
-//                    ExcelUtils.insertRow(sheet, row, dataCell, colorMap);
-//                    row++;
-//                }
-//                workbook.write(data);
-//
-//                HttpHeaders headersHttp = new HttpHeaders();
-//                headersHttp.setContentDisposition(ContentDisposition.builder("attachment").filename(filename).build());
-//                headersHttp.set(HttpHeaders.ACCESS_CONTROL_EXPOSE_HEADERS, HttpHeaders.CONTENT_DISPOSITION);
-//                headersHttp.setContentType(MediaType.APPLICATION_OCTET_STREAM);
-//                return new ResponseEntity<>(data.toByteArray(), headersHttp, HttpStatus.OK);
-//            } catch (IOException e) {
-//                return null;
-//            }
-//        }
-        return null;
+        String factoryId = (String) request.getData().get("idFactory");
+        Factory factory = factoryExtendRepository.findById(factoryId).orElse(null);
+        if (factory == null) {
+            return RouterHelper.responseError("Không tìm thấy xưởng", HttpStatus.BAD_REQUEST);
+        }
+        if (!sessionHelper.getUserRole().contains(RoleConstant.ADMIN)
+                && !Objects.equals(factory.getUserStaff().getId(), sessionHelper.getUserId())) {
+            return RouterHelper.responseError("Không có quyền truy cập", HttpStatus.UNAUTHORIZED);
+        }
+
+        List<USPlanDateStudentFactoryResponse> lstData = factoryExtendRepository
+                .getAllPlanDateAttendanceByIdFactory(factory.getId());
+
+        // Lấy danh sách sinh viên duy nhất
+        Map<String, List<USPlanDateStudentFactoryResponse>> grouped = lstData.stream()
+                .collect(Collectors.groupingBy(USPlanDateStudentFactoryResponse::getCode));
+
+        try (Workbook workbook = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            String filename = "student-factory-" + CodeGeneratorUtils
+                    .generateCodeFromString(factory.getName()).toLowerCase() + ".xlsx";
+            List<String> headers = new ArrayList<>(List.of("Mã sinh viên", "Họ tên sinh viên", "Tổng buổi", "Tổng vắng(%)"));
+
+            Sheet sheet = ExcelUtils.createTemplate(workbook, "Summary", headers, List.of());
+            int row = 1;
+
+            // Xử lý cho từng sinh viên
+            for (Map.Entry<String, List<USPlanDateStudentFactoryResponse>> entry : grouped.entrySet()) {
+                String studentCode = entry.getKey();
+                List<USPlanDateStudentFactoryResponse> records = entry.getValue();
+                List<USPlanDateStudentFactoryResponse> occurred = records.stream()
+                        .toList();
+                int totalSessions = occurred.size();
+                int totalAbsent = (int) occurred.stream()
+                        .filter(d -> d.getStatus() != AttendanceStatus.PRESENT.ordinal() && d.getStartDate() <= System.currentTimeMillis())
+                        .count();
+                String percent = totalSessions > 0
+                        ? Math.round((double) totalAbsent / totalSessions * 1000) / 10.0 + "%"
+                        : "0%";
+                String studentName = records.get(0).getName();
+
+                ExcelUtils.insertRow(sheet, row++, List.of(studentCode, studentName, totalAbsent + "/" + totalSessions, percent));
+            }
+
+            sheet.setColumnWidth(0, 20 * 256);
+            sheet.setColumnWidth(1, 30 * 256);
+            sheet.setColumnWidth(2, 15 * 256);
+            sheet.setColumnWidth(3, 20 * 256);
+
+            workbook.write(out);
+            HttpHeaders headersHttp = new HttpHeaders();
+            headersHttp.setContentDisposition(
+                    ContentDisposition.builder("attachment").filename(filename).build());
+            headersHttp.set(HttpHeaders.ACCESS_CONTROL_EXPOSE_HEADERS, HttpHeaders.CONTENT_DISPOSITION);
+            headersHttp.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+            return new ResponseEntity<>(out.toByteArray(), headersHttp, HttpStatus.OK);
+        } catch (IOException e) {
+            return RouterHelper.responseError("Lỗi khi xuất Excel", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
-//    private String buildCellPlanDate(TCPlanDateStudentFactoryResponse o) {
-//        return DateTimeUtils.convertMillisToDate(o.getStartDate(), "dd-MM-yyyy") + " - Ca " + o.getShift();
-//    }
+
 
     @Override
     public ResponseEntity<?> downloadTemplate(EXDataRequest request) {
