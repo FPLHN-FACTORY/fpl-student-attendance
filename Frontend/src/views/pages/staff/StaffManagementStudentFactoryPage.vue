@@ -349,6 +349,9 @@ const configImportExcel = {
   data: { idFactory: factoryId },
   showDownloadTemplate: true,
   showHistoryLog: true,
+  showExport: true,
+  btnImport: 'Import sinh viên nhóm xưởng',
+  btnExport: 'Export sinh viên nhóm xưởng',
 }
 // state mới cho detail-student modal
 const detailModalVisible = ref(false)
