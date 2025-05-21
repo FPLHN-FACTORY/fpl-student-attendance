@@ -97,14 +97,14 @@ const fetchUsers = async () => {
   }
 }
 
-const fetchStaffList = async () => {
-  try {
-    const res = await requestAPI.get(API_ROUTES_ADMIN.FETCH_DATA_ADMIN + '/staff')
-    staffList.value = res.data.data
-  } catch (err) {
-    message.error(err?.response?.data?.message || 'Lỗi khi tải danh sách nhân viên')
-  }
-}
+// const fetchStaffList = async () => {
+//   try {
+//     const res = await requestAPI.get(API_ROUTES_ADMIN.FETCH_DATA_ADMIN + '/staff')
+//     staffList.value = res.data.data
+//   } catch (err) {
+//     message.error(err?.response?.data?.message || 'Lỗi khi tải danh sách nhân viên')
+//   }
+// }
 
 const handleTableChange = (pageInfo) => {
   pagination.value.current = pageInfo.current
@@ -198,12 +198,12 @@ const performUpdate = () => {
     })
 }
 
-const openChangePowerModal = async (record) => {
-  currentAdminId = record.userAdminId
-  await fetchStaffList()
-  selectedStaffId.value = null
-  modalChangePower.value = true
-}
+// const openChangePowerModal = async (record) => {
+//   currentAdminId = record.userAdminId
+//   await fetchStaffList()
+//   selectedStaffId.value = null
+//   modalChangePower.value = true
+// }
 
 const handleChangePowerShift = () => {
   const selectedStaff = staffList.value.find((staff) => staff.id === selectedStaffId.value)

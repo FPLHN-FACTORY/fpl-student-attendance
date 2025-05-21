@@ -3,12 +3,7 @@ import { ref, reactive, onMounted } from 'vue'
 import { message, Modal } from 'ant-design-vue'
 import {
   PlusOutlined,
-  EditOutlined,
-  SwapOutlined,
-  EyeOutlined,
   EditFilled,
-  EyeFilled,
-  SyncOutlined,
   UnorderedListOutlined,
   FilterFilled,
   SearchOutlined,
