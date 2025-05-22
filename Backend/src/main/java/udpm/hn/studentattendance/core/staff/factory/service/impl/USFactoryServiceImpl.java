@@ -1,12 +1,6 @@
 package udpm.hn.studentattendance.core.staff.factory.service.impl;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Convert;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
 import lombok.RequiredArgsConstructor;
-import org.hibernate.annotations.OnDelete;
-import org.hibernate.annotations.OnDeleteAction;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -27,7 +21,6 @@ import udpm.hn.studentattendance.helpers.SessionHelper;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.common.repositories.CommonUserStudentRepository;
 import udpm.hn.studentattendance.infrastructure.constants.*;
-import udpm.hn.studentattendance.infrastructure.converter.ListIntegerConverter;
 
 import java.util.Date;
 import java.util.HashMap;
@@ -60,9 +53,9 @@ public class USFactoryServiceImpl implements USFactoryService {
 
     private final USFactoryProjectPlanExtendRepository projectPlanExtendRepository;
 
-    private final USFactoryPlanDateExtendRepository planDateExtendRepository;
-
-    private final USFactoryAttendanceExtendRepository attendanceExtendRepository;
+//    private final USFactoryPlanDateExtendRepository planDateExtendRepository;
+//
+//    private final USFactoryAttendanceExtendRepository attendanceExtendRepository;
 
     @Override
     public ResponseEntity<?> getAllFactory(USFactoryRequest staffFactoryRequest) {
