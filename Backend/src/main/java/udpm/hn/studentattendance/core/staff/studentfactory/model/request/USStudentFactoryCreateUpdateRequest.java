@@ -1,4 +1,4 @@
-package udpm.hn.studentattendance.core.staff.factory.model.request.userstudentfactory;
+package udpm.hn.studentattendance.core.staff.studentfactory.model.request;
 
 import lombok.Getter;
 import lombok.Setter;

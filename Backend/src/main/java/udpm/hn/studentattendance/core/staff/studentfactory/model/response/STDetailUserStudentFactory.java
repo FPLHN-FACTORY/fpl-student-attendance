@@ -1,4 +1,4 @@
-package udpm.hn.studentattendance.core.staff.factory.model.response.userstudentfactory;
+package udpm.hn.studentattendance.core.staff.studentfactory.model.response;
 
 public interface STDetailUserStudentFactory {
     String getId();

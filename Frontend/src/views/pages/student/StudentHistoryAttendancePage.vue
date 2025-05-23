@@ -12,7 +12,7 @@ import { API_ROUTES_STUDENT } from '@/constants/studentConstant'
 import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
 import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
 import { ROUTE_NAMES } from '@/router/studentRoute'
-import { STATUS_REQUIRED_ATTENDANCE,  } from '@/constants'
+import { STATUS_REQUIRED_ATTENDANCE } from '@/constants'
 import { DEFAULT_PAGINATION } from '@/constants'
 import useLoadingStore from '@/stores/useLoadingStore'
 
@@ -53,7 +53,6 @@ const columns = autoAddColumnWidth([
 const semesters = ref([])
 const factories = ref([])
 
-
 const fetchAllAttendanceHistory = async () => {
   loadingStore.show()
   try {
@@ -71,7 +70,7 @@ const fetchAllAttendanceHistory = async () => {
         promises.push(
           requestAPI.get(API_ROUTES_STUDENT.FETCH_DATA_HISTORY_ATTENDANCE, {
             params: { ...filter, page },
-          }),
+          })
         )
       }
       const responses = await Promise.all(promises)
@@ -117,7 +116,7 @@ const fetchSemesters = () => {
       // Find current semester and set it as default
       const now = new Date().getTime()
       const currentSemester = semesters.value.find(
-        (semester) => semester.fromDate <= now && now <= semester.toDate,
+        (semester) => semester.fromDate <= now && now <= semester.toDate
       )
       if (currentSemester) {
         filter.semesterId = currentSemester.id
@@ -174,7 +173,7 @@ const exportPDF = async (factoryId, factoryName) => {
       {
         params: { factoryName, factoryId },
         responseType: 'blob',
-      },
+      }
     )
     const url = window.URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }))
     const link = document.createElement('a')
@@ -196,7 +195,7 @@ const handleClearFilter = () => {
   // Find current semester when clearing filter
   const now = new Date().getTime()
   const currentSemester = semesters.value.find(
-    (semester) => semester.fromDate <= now && now <= semester.toDate,
+    (semester) => semester.fromDate <= now && now <= semester.toDate
   )
   if (currentSemester) {
     filter.semesterId = currentSemester.id
@@ -340,8 +339,8 @@ onMounted(async () => {
                   <template v-if="record.requiredCheckOut == STATUS_REQUIRED_ATTENDANCE.ENABLE">
                     <span
                       v-if="
-                        record.statusAttendance !== 'CHUA_DIEN_RA' &&
-                        record.statusAttendance !== 'CO_MAT' &&
+                        record.statusAttendance !== 'CHUA_DIEN_RA' ||
+                        record.statusAttendance !== 'CO_MAT' ||
                         record.statusAttendance !== 'CHECK_IN'
                       "
                     >
@@ -363,19 +362,19 @@ onMounted(async () => {
                       record.statusAttendance === 'CHUA_DIEN_RA'
                         ? 'warning'
                         : record.statusAttendance === 'CO_MAT'
-                          ? 'success'
-                          : record.statusAttendance === 'CHECK_IN'
-                            ? 'processing'
-                            : 'error'
+                        ? 'success'
+                        : record.statusAttendance === 'CHECK_IN'
+                        ? 'processing'
+                        : 'error'
                     "
                     :text="
                       record.statusAttendance === 'CHUA_DIEN_RA'
                         ? 'Chưa diễn ra'
                         : record.statusAttendance === 'CO_MAT'
-                          ? 'Có mặt'
-                          : record.statusAttendance === 'CHECK_IN'
-                            ? 'Đã check-in'
-                            : 'Vắng mặt'
+                        ? 'Có mặt'
+                        : record.statusAttendance === 'CHECK_IN'
+                        ? 'Đã check-in'
+                        : 'Vắng mặt'
                     "
                   />
                 </template>
