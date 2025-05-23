@@ -5,12 +5,9 @@ import { useRouter } from 'vue-router'
 import requestAPI from '@/services/requestApiService'
 import {
   PlusOutlined,
-  EyeOutlined,
-  EditOutlined,
   ClusterOutlined,
   UnorderedListOutlined,
   FilterFilled,
-  SyncOutlined,
   EditFilled,
   EyeFilled,
   SearchOutlined,
@@ -340,7 +337,7 @@ onMounted(() => {
             :loading="loadingStore.isLoading"
             :scroll="{ x: 'auto' }"
           >
-            <template #bodyCell="{ column, record, index }">
+            <template #bodyCell="{ column, record }">
               <template v-if="column.dataIndex === 'name'">
                 <a @click="handleAddSubjectFacility(record)">{{ record.name }}</a>
               </template>
