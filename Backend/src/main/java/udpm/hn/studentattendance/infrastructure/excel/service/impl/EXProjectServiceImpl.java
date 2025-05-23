@@ -195,7 +195,7 @@ public class EXProjectServiceImpl implements EXProjectService {
                 List<Object> dataCell = List.of(index, name, levelProjectName, semester, subjectCode, projectDescription);
                 ExcelUtils.insertRow(sheet, row, dataCell);
             }
-            sheet.setColumnWidth(2, 30 * 256);
+            sheet.setColumnWidth(2, 40 * 256);
             sheet.setColumnWidth(3, 40 * 256);
             sheet.setColumnWidth(4, 40 * 256);
             sheet.setColumnWidth(5, 30 * 256);
@@ -361,29 +361,46 @@ public class EXProjectServiceImpl implements EXProjectService {
         nmSemester.setNameName("SemesterList");
         nmSemester.setRefersToFormula("DropdownData!$C$1:$C$" + semesterList.size());
 
-        // Data validation
+        // Data validation (mandatory list selections)
         DataValidationHelper dvh = sheet.getDataValidationHelper();
-        // Cấp dự án (col idx=2)
-        DataValidationConstraint cv1 = dvh.createFormulaListConstraint("LevelProjectList");
-        CellRangeAddressList addr1 = new CellRangeAddressList(1, 100, 2, 2);
-        DataValidation dv1 = dvh.createValidation(cv1, addr1);
+
+        DataValidationConstraint c1 = dvh.createFormulaListConstraint("LevelProjectList");
+        CellRangeAddressList a1 = new CellRangeAddressList(1, 100, 2, 2);
+        DataValidation dv1 = dvh.createValidation(c1, a1);
         dv1.setSuppressDropDownArrow(true);
+        dv1.setShowErrorBox(true);
+        dv1.createErrorBox(
+                "Lỗi Cấp dự án",
+                "Giá trị không hợp lệ. Vui lòng chọn Cấp dự án từ danh sách, nhấn cancel và xóa giá trị sai"
+        );
+        dv1.createPromptBox("Chọn dữ liệu", "Hãy chọn dữ liệu cho sẵn");
         sheet.addValidationData(dv1);
 
-        // Học kỳ (col idx=3)
-        DataValidationConstraint cv2 = dvh.createFormulaListConstraint("SemesterList");
-        CellRangeAddressList addr2 = new CellRangeAddressList(1, 100, 3, 3);
-        DataValidation dv2 = dvh.createValidation(cv2, addr2);
+        DataValidationConstraint c2 = dvh.createFormulaListConstraint("SemesterList");
+        CellRangeAddressList a2 = new CellRangeAddressList(1, 100, 3, 3);
+        DataValidation dv2 = dvh.createValidation(c2, a2);
+        dv2.setSuppressDropDownArrow(true);
+        dv2.setErrorStyle(DataValidation.ErrorStyle.STOP);
+        dv2.setShowErrorBox(true);
+        dv2.createErrorBox(
+                "Lỗi Học kỳ",
+                "Giá trị không hợp lệ. Vui lòng chọn Học kỳ từ danh sách, nhấn cancel và xóa giá trị sai"
+        );
         dv2.setSuppressDropDownArrow(true);
         sheet.addValidationData(dv2);
 
-        // Môn học (col idx=4)
-        DataValidationConstraint cv3 = dvh.createFormulaListConstraint("SubjectFacilityList");
-        CellRangeAddressList addr3 = new CellRangeAddressList(1, 100, 4, 4);
-        DataValidation dv3 = dvh.createValidation(cv3, addr3);
+        DataValidationConstraint c3 = dvh.createFormulaListConstraint("SubjectFacilityList");
+        CellRangeAddressList a3 = new CellRangeAddressList(1, 100, 4, 4);
+        DataValidation dv3 = dvh.createValidation(c3, a3);
+        dv3.setSuppressDropDownArrow(true);
+        dv3.setErrorStyle(DataValidation.ErrorStyle.STOP);
+        dv3.setShowErrorBox(true);
+        dv3.createErrorBox(
+                "Lỗi Môn học",
+                "Giá trị không hợp lệ. Vui lòng chọn Môn học từ danh sách, nhấn cancel và xóa giá trị sai"
+        );
         dv3.setSuppressDropDownArrow(true);
         sheet.addValidationData(dv3);
-
         // Ẩn sheet DropdownData
         workbook.setSheetHidden(workbook.getSheetIndex(dd), true);
 

@@ -1,14 +1,14 @@
-package udpm.hn.studentattendance.core.staff.factory.repository.userstudentfactory;
+package udpm.hn.studentattendance.core.staff.studentfactory.repository;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
-import udpm.hn.studentattendance.core.staff.factory.model.request.userstudentfactory.USPDDetailShiftByStudentRequest;
-import udpm.hn.studentattendance.core.staff.factory.model.request.userstudentfactory.USStudentFactoryRequest;
-import udpm.hn.studentattendance.core.staff.factory.model.response.userstudentfactory.STDetailUserStudentFactory;
-import udpm.hn.studentattendance.core.staff.factory.model.response.userstudentfactory.STPDDetailShiftByStudentResponse;
-import udpm.hn.studentattendance.core.staff.factory.model.response.userstudentfactory.STStudentFactoryResponse;
+import udpm.hn.studentattendance.core.staff.studentfactory.model.request.USPDDetailShiftByStudentRequest;
+import udpm.hn.studentattendance.core.staff.studentfactory.model.request.USStudentFactoryRequest;
+import udpm.hn.studentattendance.core.staff.studentfactory.model.response.STDetailUserStudentFactory;
+import udpm.hn.studentattendance.core.staff.studentfactory.model.response.STPDDetailShiftByStudentResponse;
+import udpm.hn.studentattendance.core.staff.studentfactory.model.response.STStudentFactoryResponse;
 import udpm.hn.studentattendance.entities.UserStudentFactory;
 import udpm.hn.studentattendance.repositories.UserStudentFactoryRepository;
 

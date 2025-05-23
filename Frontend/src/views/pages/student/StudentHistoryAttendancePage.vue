@@ -1,6 +1,5 @@
 <script setup>
 import { ref, computed, onMounted, reactive } from 'vue'
-import dayjs from 'dayjs'
 import { autoAddColumnWidth, dayOfWeek, formatDate } from '@/utils/utils'
 import {
   FilterFilled,
@@ -13,7 +12,7 @@ import { API_ROUTES_STUDENT } from '@/constants/studentConstant'
 import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
 import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
 import { ROUTE_NAMES } from '@/router/studentRoute'
-import { DEFAULT_DATE_FORMAT, STATUS_REQUIRED_ATTENDANCE, ATTENDANCE_STATUS } from '@/constants'
+import { STATUS_REQUIRED_ATTENDANCE } from '@/constants'
 import { DEFAULT_PAGINATION } from '@/constants'
 import useLoadingStore from '@/stores/useLoadingStore'
 
@@ -30,7 +29,6 @@ const filter = reactive({
   page: 1,
   pageSize: 5,
 })
-const _detail = ref(null)
 
 const attendanceRecords = ref([])
 const isLoading = ref(false)
@@ -38,11 +36,11 @@ const paginations = ref({})
 const loadingExport = reactive({})
 
 const columns = autoAddColumnWidth([
-  { title: 'Bài học', dataIndex: 'rowNumber', key: 'rowNumber' },
+  { title: '#', dataIndex: 'rowNumber', key: 'rowNumber' },
   { title: 'Ngày học', dataIndex: 'planDateStartDate', key: 'planDateStartDate' },
   { title: 'Ca học', dataIndex: 'planDateShift', key: 'planDateShift' },
   {
-    title: 'Điểm danh muộn tối đa (phút)',
+    title: 'Điểm danh muộn',
     dataIndex: 'lateArrival',
     key: 'lateArrival',
   },
@@ -54,22 +52,6 @@ const columns = autoAddColumnWidth([
 
 const semesters = ref([])
 const factories = ref([])
-
-// const fetchDataDetail = () => {
-//   loadingStore.show()
-//   requestAPI
-//     .get(`${API_ROUTES_STUDENT.FETCH_DATA_HISTORY_ATTENDANCE}/detail`)
-//     .then(({ data: response }) => {
-//       _detail.value = response.data
-//       fetchAllAttendanceHistory()
-//     })
-//     .catch((error) => {
-//       message.error(error?.response?.data?.message || 'Không thể tải thông tin kế hoạch')
-//     })
-//     .finally(() => {
-//       loadingStore.hide()
-//     })
-// }
 
 const fetchAllAttendanceHistory = async () => {
   loadingStore.show()
@@ -88,7 +70,7 @@ const fetchAllAttendanceHistory = async () => {
         promises.push(
           requestAPI.get(API_ROUTES_STUDENT.FETCH_DATA_HISTORY_ATTENDANCE, {
             params: { ...filter, page },
-          }),
+          })
         )
       }
       const responses = await Promise.all(promises)
@@ -134,7 +116,7 @@ const fetchSemesters = () => {
       // Find current semester and set it as default
       const now = new Date().getTime()
       const currentSemester = semesters.value.find(
-        (semester) => semester.fromDate <= now && now <= semester.toDate,
+        (semester) => semester.fromDate <= now && now <= semester.toDate
       )
       if (currentSemester) {
         filter.semesterId = currentSemester.id
@@ -191,7 +173,7 @@ const exportPDF = async (factoryId, factoryName) => {
       {
         params: { factoryName, factoryId },
         responseType: 'blob',
-      },
+      }
     )
     const url = window.URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }))
     const link = document.createElement('a')
@@ -213,7 +195,7 @@ const handleClearFilter = () => {
   // Find current semester when clearing filter
   const now = new Date().getTime()
   const currentSemester = semesters.value.find(
-    (semester) => semester.fromDate <= now && now <= semester.toDate,
+    (semester) => semester.fromDate <= now && now <= semester.toDate
   )
   if (currentSemester) {
     filter.semesterId = currentSemester.id
@@ -380,19 +362,19 @@ onMounted(async () => {
                       record.statusAttendance === 'CHUA_DIEN_RA'
                         ? 'warning'
                         : record.statusAttendance === 'CO_MAT'
-                          ? 'success'
-                          : record.statusAttendance === 'CHECK_IN'
-                            ? 'processing'
-                            : 'error'
+                        ? 'success'
+                        : record.statusAttendance === 'CHECK_IN'
+                        ? 'processing'
+                        : 'error'
                     "
                     :text="
                       record.statusAttendance === 'CHUA_DIEN_RA'
                         ? 'Chưa diễn ra'
                         : record.statusAttendance === 'CO_MAT'
-                          ? 'Có mặt'
-                          : record.statusAttendance === 'CHECK_IN'
-                            ? 'Đã check-in'
-                            : 'Vắng mặt'
+                        ? 'Có mặt'
+                        : record.statusAttendance === 'CHECK_IN'
+                        ? 'Đã check-in'
+                        : 'Vắng mặt'
                     "
                   />
                 </template>

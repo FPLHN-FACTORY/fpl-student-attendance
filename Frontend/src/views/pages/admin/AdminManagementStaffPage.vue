@@ -3,12 +3,7 @@ import { ref, reactive, onMounted } from 'vue'
 import { message, Modal } from 'ant-design-vue'
 import {
   PlusOutlined,
-  EditOutlined,
-  SwapOutlined,
-  EyeOutlined,
   EditFilled,
-  EyeFilled,
-  SyncOutlined,
   UnorderedListOutlined,
   FilterFilled,
   SearchOutlined,
@@ -41,7 +36,6 @@ const staffs = ref([])
 
 const facilitiesListCombobox = ref([])
 
-
 const rolesList = ref([
   { code: '1', name: 'Phụ trách xưởng' },
   { code: '3', name: 'Giảng viên' },
@@ -71,7 +65,6 @@ const filter = reactive({
   status: '',
 })
 
-// Sử dụng pagination dưới dạng ref giống mẫu plandate
 const pagination = ref({ ...DEFAULT_PAGINATION })
 
 // Biến loading cho bảng và modal
@@ -116,10 +109,9 @@ const columns = ref(
     { title: 'Vai trò', dataIndex: 'roleCode', key: 'roleCode' },
     { title: 'Trạng thái', dataIndex: 'staffStatus', key: 'staffStatus' },
     { title: 'Chức năng', key: 'actions' },
-  ]),
+  ])
 )
 
-// Hàm lấy danh sách nhân viên, dùng pagination.value.current và pagination.value.pageSize
 const fetchStaffs = () => {
   if (isLoading.value) return
   loadingStore.show()
@@ -139,7 +131,7 @@ const fetchStaffs = () => {
     .catch((error) => {
       message.error(
         (error.response && error.response.data && error.response.data.message) ||
-          'Lỗi khi lấy danh sách nhân viên',
+          'Lỗi khi lấy danh sách nhân viên'
       )
     })
     .finally(() => {
@@ -157,7 +149,7 @@ const fetchFacilitiesListCombobox = () => {
     .catch((error) => {
       message.error(
         (error.response && error.response.data && error.response.data.message) ||
-          'Lỗi khi lấy danh sách cơ sở',
+          'Lỗi khi lấy danh sách cơ sở'
       )
     })
 }
@@ -195,7 +187,7 @@ const handleAddStaff = () => {
     .catch((error) => {
       message.error(
         (error.response && error.response.data && error.response.data.message) ||
-          'Lỗi khi thêm nhân viên',
+          'Lỗi khi thêm nhân viên'
       )
     })
     .finally(() => {
@@ -223,7 +215,7 @@ const handleUpdateStaff = (record) => {
     .catch((error) => {
       message.error(
         (error.response && error.response.data && error.response.data.message) ||
-          'Lỗi khi lấy chi tiết nhân viên',
+          'Lỗi khi lấy chi tiết nhân viên'
       )
     })
     .finally(() => {
@@ -256,7 +248,7 @@ const updateStaff = () => {
     .catch((error) => {
       message.error(
         (error.response && error.response.data && error.response.data.message) ||
-          'Lỗi khi cập nhật nhân viên',
+          'Lỗi khi cập nhật nhân viên'
       )
     })
     .finally(() => {
@@ -281,7 +273,7 @@ const handleChangeStatusStaff = (record) => {
         .catch((error) => {
           message.error(
             (error.response && error.response.data && error.response.data.message) ||
-              'Lỗi khi đổi trạng thái nhân viên',
+              'Lỗi khi đổi trạng thái nhân viên'
           )
         })
         .finally(() => {

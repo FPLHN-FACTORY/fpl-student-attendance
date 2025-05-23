@@ -127,8 +127,8 @@ public class EXStudentServiceImpl implements EXStudentService {
                 List<Object> dataCell = List.of(index, code, name, email);
                 ExcelUtils.insertRow(sheet, row, dataCell);
             }
-            sheet.setColumnWidth(3, 30 * 256);
-            sheet.setColumnWidth(4, 40 * 256);
+            sheet.setColumnWidth(2, 30 * 256);
+            sheet.setColumnWidth(3, 40 * 256);
             workbook.write(data);
 
             HttpHeaders headersHttp = new HttpHeaders();
