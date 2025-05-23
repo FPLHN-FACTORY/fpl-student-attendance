@@ -59,10 +59,9 @@ const columns = ref(
     { title: 'Email', dataIndex: 'userAdminEmail', key: 'userAdminEmail' },
     { title: 'Trạng thái', dataIndex: 'userAdminStatus', key: 'userAdminStatus' },
     { title: 'Chức năng', key: 'actions' },
-  ]),
+  ])
 )
 
-// --- API Calls ---
 const fetchUsers = async () => {
   loadingStore.show()
   isLoading.value = true
@@ -82,10 +81,10 @@ const fetchUsers = async () => {
     const usersWithFlag = await Promise.all(
       data.data.map(async (user) => {
         const flagRes = await requestAPI.get(
-          `${API_ROUTES_ADMIN.FETCH_DATA_ADMIN}/is-myself/${user.userAdminId}`,
+          `${API_ROUTES_ADMIN.FETCH_DATA_ADMIN}/is-myself/${user.userAdminId}`
         )
         return { ...user, isMySelf: flagRes.data.data }
-      }),
+      })
     )
 
     users.value = usersWithFlag
@@ -205,30 +204,30 @@ const performUpdate = () => {
 //   modalChangePower.value = true
 // }
 
-const handleChangePowerShift = () => {
-  const selectedStaff = staffList.value.find((staff) => staff.id === selectedStaffId.value)
-  const staffName = selectedStaff ? selectedStaff.name : 'nhân viên này'
-  Modal.confirm({
-    title: 'Xác nhận chuyển quyền',
-    content: `Bạn có chắc chắn muốn chuyển quyền Admin cho ${staffName}?
-    , nếu đông ý bạn sẽ đăng xuất ngay bây giờ`,
-    onOk() {
-      modalChangePowerLoading.value = true
-      const payload = { userAdminId: currentAdminId, userStaffId: selectedStaffId.value }
-      requestAPI
-        .post(API_ROUTES_ADMIN.FETCH_DATA_ADMIN + '/change-power', payload)
-        .then(() => {
-          message.success('Chuyển quyền thành công')
-          modalChangePower.value = false
-          fetchUsers()
-        })
-        .catch((err) => message.error(err?.response?.data?.message || 'Lỗi khi chuyển quyền'))
-        .finally(() => {
-          modalChangePowerLoading.value = false
-        })
-    },
-  })
-}
+// const handleChangePowerShift = () => {
+//   const selectedStaff = staffList.value.find((staff) => staff.id === selectedStaffId.value)
+//   const staffName = selectedStaff ? selectedStaff.name : 'nhân viên này'
+//   Modal.confirm({
+//     title: 'Xác nhận chuyển quyền',
+//     content: `Bạn có chắc chắn muốn chuyển quyền Admin cho ${staffName}?
+//     , nếu đông ý bạn sẽ đăng xuất ngay bây giờ`,
+//     onOk() {
+//       modalChangePowerLoading.value = true
+//       const payload = { userAdminId: currentAdminId, userStaffId: selectedStaffId.value }
+//       requestAPI
+//         .post(API_ROUTES_ADMIN.FETCH_DATA_ADMIN + '/change-power', payload)
+//         .then(() => {
+//           message.success('Chuyển quyền thành công')
+//           modalChangePower.value = false
+//           fetchUsers()
+//         })
+//         .catch((err) => message.error(err?.response?.data?.message || 'Lỗi khi chuyển quyền'))
+//         .finally(() => {
+//           modalChangePowerLoading.value = false
+//         })
+//     },
+//   })
+// }
 
 const handleChangeStatus = (record) => {
   if (record.isMySelf) {
@@ -451,7 +450,7 @@ onMounted(() => {
     </a-modal>
 
     <!-- Modal chuyển quyền -->
-    <a-modal
+    <!-- <a-modal
       v-model:open="modalChangePower"
       title="Chuyển quyền Admin"
       @ok="handleChangePowerShift"
@@ -471,6 +470,6 @@ onMounted(() => {
           </a-select>
         </a-form-item>
       </a-form>
-    </a-modal>
+    </a-modal> -->
   </div>
 </template>

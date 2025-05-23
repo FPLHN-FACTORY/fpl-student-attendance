@@ -24,24 +24,29 @@ public interface ADUserAdminExtendRepository extends UserAdminRepository {
             	ua.status AS userAdminStatus
             FROM user_admin ua
             WHERE
-                (trim(:#{#request.searchQuery}) IS NULL
-            	OR trim(:#{#request.searchQuery}) = ''
-            	OR ua.name LIKE concat('%', trim(:#{#request.searchQuery}), '%')
-            	OR ua.code LIKE concat('%', trim(:#{#request.searchQuery}), '%')
-            	OR ua.email LIKE concat('%', trim(:#{#request.searchQuery}), '%')
-            	)
-            	AND (:#{#request.status} IS NULL OR ua.status = :#{#request.status})
+                (
+                   TRIM(:#{#request.searchQuery})      IS NULL
+                 OR TRIM(:#{#request.searchQuery})      = ''
+                 OR ua.name      LIKE CONCAT('%', TRIM(:#{#request.searchQuery}), '%')
+                 OR ua.code      LIKE CONCAT('%', TRIM(:#{#request.searchQuery}), '%')
+                 OR ua.email     LIKE CONCAT('%', TRIM(:#{#request.searchQuery}), '%')
+                )
+                AND
+                ( :#{#request.status} IS NULL OR ua.status = :#{#request.status} )
             ORDER BY ua.created_at DESC, ua.status DESC 
             """, countQuery = """
-                                SELECT COUNT(*)
-                                FROM user_admin ua
-                                WHERE
-                                    (trim(:#{#request.searchQuery}) IS NULL
-                                	OR trim(:#{#request.searchQuery}) = ''
-                                	OR ua.name LIKE concat('%', trim(:#{#request.searchQuery}), '%')
-                                	OR ua.code LIKE concat('%', trim(:#{#request.searchQuery}), '%')
-                                	OR ua.email LIKE concat('%', trim(:#{#request.searchQuery}), '%')
-                                	AND (:#{#request.status} IS NULL OR ua.status = :#{#request.status})
+                               SELECT COUNT(*)
+                               FROM user_admin ua
+                               WHERE
+                                 (
+                                    TRIM(:#{#request.searchQuery})      IS NULL
+                                  OR TRIM(:#{#request.searchQuery})      = ''
+                                  OR ua.name      LIKE CONCAT('%', TRIM(:#{#request.searchQuery}), '%')
+                                  OR ua.code      LIKE CONCAT('%', TRIM(:#{#request.searchQuery}), '%')
+                                  OR ua.email     LIKE CONCAT('%', TRIM(:#{#request.searchQuery}), '%')
+                                 )
+                                 AND
+                                 ( :#{#request.status} IS NULL OR ua.status = :#{#request.status} )
             """, nativeQuery = true)
     Page<ADUserAdminResponse> getAllUserAdmin(Pageable pageable, ADUserAdminRequest request);
 

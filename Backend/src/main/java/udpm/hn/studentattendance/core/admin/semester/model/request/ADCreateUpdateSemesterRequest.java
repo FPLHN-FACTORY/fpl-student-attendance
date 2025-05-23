@@ -2,8 +2,10 @@ package udpm.hn.studentattendance.core.admin.semester.model.request;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
+import udpm.hn.studentattendance.infrastructure.constants.EntityProperties;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -18,6 +20,7 @@ public class ADCreateUpdateSemesterRequest {
         private String facilityId;
 
         @NotBlank(message = "Tên học kỳ không được để trống")
+        @Size(max = EntityProperties.LENGTH_NAME, message = "Tên học kỳ không được quá:" + EntityProperties.LENGTH_NAME)
         private String semesterName;
 
         @NotNull(message = "Thời gian không được để trống")
@@ -67,7 +70,6 @@ public class ADCreateUpdateSemesterRequest {
                                 .toInstant()
                                 .toEpochMilli();
         }
-        // ví dụ chọn ngày 1/4/2024 -> 1/8/2024
-        // thì sẽ bắt đầu 0:00 ngày 1/4 đến ngày 23:59 ngày 1/8
+
 
 }

@@ -1,4 +1,4 @@
-package udpm.hn.studentattendance.core.staff.factory.model.request.userstudentfactory;
+package udpm.hn.studentattendance.core.staff.studentfactory.model.request;
 
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import udpm.hn.studentattendance.infrastructure.common.PageableRequest;
+import udpm.hn.studentattendance.infrastructure.constants.EntityProperties;
 
 @Getter
 @Setter
@@ -13,7 +14,7 @@ import udpm.hn.studentattendance.infrastructure.common.PageableRequest;
 @AllArgsConstructor
 public class USPDDetailShiftByStudentRequest extends PageableRequest {
 
-    @Size(max = 255, message = "Keyword không được vượt quá 255 ký tự")
+    @Size(max = EntityProperties.LENGTH_NAME, message = "Keyword không được vượt quá 255 ký tự")
     private String keyword;
 
     private Integer shift;

@@ -216,6 +216,15 @@ public class USFactoryServiceImpl implements USFactoryService {
         if (factoryRepository.isExistNameAndProject(req.getFactoryName(), newProject.getId(), factory.getId())) {
             return RouterHelper.responseError("Nhóm xưởng đã tồn tại trong dự án này");
         }
+        if (newStaff == null) {
+            return RouterHelper.responseError("Giảng viên không tồn tại");
+        }
+        if (newProject == null) {
+            return RouterHelper.responseError("Dự án không tồn tại");
+        }
+        if (factory == null){
+            return RouterHelper.responseError("Nhóm xưởng không tồn tại");
+        }
 
         // 3. Nếu project thay đổi thì xử lý plan chỉ bằng 2 query:
         String oldProjectId = factory.getProject().getId();
@@ -227,11 +236,10 @@ public class USFactoryServiceImpl implements USFactoryService {
 
             if (oldPlan != null && newPlan != null) {
                 // Kiểm tra xem association đã tồn tại chưa, nếu chưa thì tạo mới
-                boolean associationExists = projectPlanExtendRepository
+                boolean associationExists = factoryPlanExtendRepository
                         .existsByFactoryIdAndPlanId(factory.getId(), newPlan.getId());
                 if (!associationExists) {
-                    PlanFactory pf = new PlanFactory();
-                    pf.setFactory(factory);
+                    PlanFactory pf = factoryPlanExtendRepository.getPlanFactoryByFactoryId(factory.getId());
                     pf.setPlan(newPlan);
                     factoryPlanExtendRepository.save(pf);
                 }
