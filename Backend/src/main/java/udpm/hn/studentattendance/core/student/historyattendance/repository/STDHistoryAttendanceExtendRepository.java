@@ -34,11 +34,11 @@ public interface STDHistoryAttendanceExtendRepository extends FactoryRepository 
                 pd.required_checkout   AS requiredCheckOut,
                 CASE
                   WHEN :nowTs < pd.start_date THEN 'CHUA_DIEN_RA'
-                  WHEN a.attendance_status = 0 THEN 'CHUA_CHECK_IN'
+                  WHEN a.attendance_status = 0 AND :nowTs > pd.startDate AND :nowTs < pd.endDate THEN 'DANG_DIEN_RA'
                   WHEN a.attendance_status = 2 THEN 'CHECK_IN'
                   WHEN a.attendance_status = 3 THEN 'CO_MAT'
-                  WHEN a.attendance_status = 4 THEN 'CHUA_CHECK_OUT'
-                  ELSE 'VANG_MAT'
+                  WHEN a.attendance_status = 1 THEN 'VANG_MAT'
+                  ELSE 'CHUA_CHECK_OUT'
                 END                      AS statusAttendance,
                 pd.description          AS planDateDescription,
                 pd.late_arrival         AS lateArrival
@@ -164,8 +164,8 @@ public interface STDHistoryAttendanceExtendRepository extends FactoryRepository 
                     WHEN :nowTs < pd.start_date THEN 'CHUA_DIEN_RA'
                     WHEN att.max_status = 2 THEN 'CHECK_IN'
                     WHEN att.max_status = 3 THEN 'CO_MAT'
-                    WHEN att.max_status = 4 THEN 'CHUA_CHECK_OUT'
-                    ELSE 'VANG_MAT'
+                    WHEN att.max_status = 1 THEN 'VANG_MAT'
+                    ELSE 'CHUA_CHECK_OUT'
                 END AS statusAttendance,
                 pl.name AS planDateName,
                 pd.description AS planDateDescription,

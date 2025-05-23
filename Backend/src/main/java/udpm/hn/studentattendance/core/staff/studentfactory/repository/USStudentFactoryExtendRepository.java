@@ -148,7 +148,9 @@ public interface USStudentFactoryExtendRepository extends UserStudentFactoryRepo
                             ELSE NULL
                     END AS statusAttendance,
                     CASE
-                        WHEN UNIX_TIMESTAMP(NOW()) * 1000 > pd.start_date
+                        WHEN UNIX_TIMESTAMP(NOW()) * 1000 > pd.start_date AND UNIX_TIMESTAMP(NOW()) * 1000 < pd.end_date
+                        THEN 'DANG_DIEN_RA'
+                        WHEN UNIX_TIMESTAMP(NOW()) * 1000 > pd.end_date 
                         THEN 'DA_DIEN_RA'
                         ELSE 'CHUA_DIEN_RA'
                     END AS status
@@ -194,7 +196,7 @@ public interface USStudentFactoryExtendRepository extends UserStudentFactoryRepo
                     )) AND
                     (:#{#request.status} IS NULL OR (
                         CASE
-                            WHEN UNIX_TIMESTAMP(NOW()) * 1000 > pd.start_date
+                            WHEN UNIX_TIMESTAMP(NOW()) * 1000 > pd.start_date 
                             THEN 'DA_DIEN_RA'
                             ELSE 'CHUA_DIEN_RA'
                         END
