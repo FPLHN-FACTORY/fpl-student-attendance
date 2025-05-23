@@ -1,14 +1,14 @@
-package udpm.hn.studentattendance.core.staff.factory.controller;
+package udpm.hn.studentattendance.core.staff.studentfactory.controller;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import udpm.hn.studentattendance.core.staff.factory.model.request.userstudentfactory.USPDDetailShiftByStudentRequest;
-import udpm.hn.studentattendance.core.staff.factory.model.request.userstudentfactory.USStudentFactoryCreateUpdateRequest;
-import udpm.hn.studentattendance.core.staff.factory.model.request.userstudentfactory.USStudentFactoryRequest;
-import udpm.hn.studentattendance.core.staff.factory.model.request.userstudentfactory.USUserStudentRequest;
-import udpm.hn.studentattendance.core.staff.factory.service.USStudentFactoryService;
+import udpm.hn.studentattendance.core.staff.studentfactory.model.request.USPDDetailShiftByStudentRequest;
+import udpm.hn.studentattendance.core.staff.studentfactory.model.request.USStudentFactoryCreateUpdateRequest;
+import udpm.hn.studentattendance.core.staff.studentfactory.model.request.USStudentFactoryRequest;
+import udpm.hn.studentattendance.core.staff.studentfactory.model.request.USUserStudentRequest;
+import udpm.hn.studentattendance.core.staff.studentfactory.service.USStudentFactoryService;
 import udpm.hn.studentattendance.infrastructure.constants.router.RouteStaffConstant;
 
 @RestController

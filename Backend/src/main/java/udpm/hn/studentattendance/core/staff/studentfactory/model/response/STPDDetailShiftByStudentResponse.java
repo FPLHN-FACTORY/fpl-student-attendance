@@ -1,4 +1,4 @@
-package udpm.hn.studentattendance.core.staff.factory.model.response.userstudentfactory;
+package udpm.hn.studentattendance.core.staff.studentfactory.model.response;
 
 import udpm.hn.studentattendance.infrastructure.common.HasOrderNumber;
 import udpm.hn.studentattendance.infrastructure.common.IsIdentify;
