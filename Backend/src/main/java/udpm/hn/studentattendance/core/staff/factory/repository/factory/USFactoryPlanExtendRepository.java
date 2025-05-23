@@ -22,4 +22,15 @@ public interface USFactoryPlanExtendRepository extends PlanFactoryRepository {
 
         PlanFactory getPlanFactoryByFactoryId(String factoryId);
 
+        @Query(value = """
+                         SELECT 
+                         CASE WHEN COUNT(*) > 0 THEN 'TRUE' ELSE 'FALSE'
+                         FROM 
+                         plan_factory pf
+                         WHERE 
+                         pf.id_factory = :factoryId
+                         AND pf.id_plan = :planId
+                """, nativeQuery = true)
+        boolean existsByFactoryIdAndPlanId(String factoryId, String planId);
+
 }

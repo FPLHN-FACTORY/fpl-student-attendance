@@ -7,6 +7,5 @@ import udpm.hn.studentattendance.repositories.PlanRepository;
 public interface USFactoryProjectPlanExtendRepository extends PlanRepository {
 
     Plan getPlanByProjectId(String projectId);
-    boolean existsByFactoryIdAndPlanId(String factoryId, String planId);
 
 }
