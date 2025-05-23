@@ -27,9 +27,9 @@ public interface ADUserAdminExtendRepository extends UserAdminRepository {
                 (
                    TRIM(:#{#request.searchQuery})      IS NULL
                  OR TRIM(:#{#request.searchQuery})      = ''
-                 OR ua.name      LIKE CONCAT('%', TRIM(?), '%')
-                 OR ua.code      LIKE CONCAT('%', TRIM(?), '%')
-                 OR ua.email     LIKE CONCAT('%', TRIM(?), '%')
+                 OR ua.name      LIKE CONCAT('%', TRIM(:#{#request.searchQuery}), '%')
+                 OR ua.code      LIKE CONCAT('%', TRIM(:#{#request.searchQuery}), '%')
+                 OR ua.email     LIKE CONCAT('%', TRIM(:#{#request.searchQuery}), '%')
                 )
                 AND
                 ( :#{#request.status} IS NULL OR ua.status = :#{#request.status} )
@@ -41,9 +41,9 @@ public interface ADUserAdminExtendRepository extends UserAdminRepository {
                                  (
                                     TRIM(:#{#request.searchQuery})      IS NULL
                                   OR TRIM(:#{#request.searchQuery})      = ''
-                                  OR ua.name      LIKE CONCAT('%', TRIM(?), '%')
-                                  OR ua.code      LIKE CONCAT('%', TRIM(?), '%')
-                                  OR ua.email     LIKE CONCAT('%', TRIM(?), '%')
+                                  OR ua.name      LIKE CONCAT('%', TRIM(:#{#request.searchQuery}), '%')
+                                  OR ua.code      LIKE CONCAT('%', TRIM(:#{#request.searchQuery}), '%')
+                                  OR ua.email     LIKE CONCAT('%', TRIM(:#{#request.searchQuery}), '%')
                                  )
                                  AND
                                  ( :#{#request.status} IS NULL OR ua.status = :#{#request.status} )
