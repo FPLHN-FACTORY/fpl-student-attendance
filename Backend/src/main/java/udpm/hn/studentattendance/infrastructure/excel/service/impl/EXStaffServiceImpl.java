@@ -250,18 +250,7 @@ public class EXStaffServiceImpl implements EXStaffService {
         return RouterHelper.responseSuccess("Lấy danh sách dữ liệu thành công", data);
     }
 
-    /**
-     * Tạo file Excel mẫu với dropdown cho cột "Vai Trò" và "Cơ Sở",
-     * đồng thời tô màu nền cho hàng tiêu đề.
-     *
-     * @param sheetName    tên sheet chính
-     * @param headers      danh sách header của sheet chính
-     * @param data         dữ liệu (nếu có) của sheet chính
-     * @param roleList     danh sách tên vai trò (tên hiển thị thân thiện)
-     * @param facilityList danh sách cơ sở với định dạng "Tên cơ sở (ID)"
-     * @return mảng byte của file Excel
-     * @throws IOException nếu có lỗi khi tạo file Excel
-     */
+
     public static byte[] createExcelStream(
             String sheetName,
             List<String> headers,
@@ -272,7 +261,6 @@ public class EXStaffServiceImpl implements EXStaffService {
         Workbook workbook = new XSSFWorkbook();
         Sheet sheet = workbook.createSheet(sheetName);
 
-        // 1. Style cho header: màu xanh, đậm, wrap text
         CellStyle headerStyle = workbook.createCellStyle();
         headerStyle.setFillForegroundColor(IndexedColors.LIGHT_GREEN.getIndex());
         headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
@@ -282,13 +270,12 @@ public class EXStaffServiceImpl implements EXStaffService {
         headerStyle.setWrapText(true);
         headerStyle.setVerticalAlignment(VerticalAlignment.CENTER);
 
-        // 2. Style chung cho wrap text
         CellStyle wrapStyle = workbook.createCellStyle();
         wrapStyle.setWrapText(true);
         wrapStyle.setVerticalAlignment(VerticalAlignment.CENTER);
-        // 3. Tạo header và gán styles
+
         Row headerRow = sheet.createRow(0);
-        headerRow.setHeightInPoints(sheet.getDefaultRowHeightInPoints() * 1.5f); // tăng chiều cao header
+        headerRow.setHeightInPoints(sheet.getDefaultRowHeightInPoints() * 1.5f);
         for (int i = 0; i < headers.size(); i++) {
             Cell cell = headerRow.createCell(i);
             cell.setCellValue(headers.get(i));
@@ -296,7 +283,6 @@ public class EXStaffServiceImpl implements EXStaffService {
             sheet.setDefaultColumnStyle(i, wrapStyle);
         }
 
-        // 4. Viết dữ liệu nếu có
         int rowIndex = 1;
         for (Map<String, String> rowData : data) {
             Row row = sheet.createRow(rowIndex++);
@@ -307,18 +293,12 @@ public class EXStaffServiceImpl implements EXStaffService {
             }
         }
 
-        // 5. Auto-size các cột chung
-        for (int i = 0; i < headers.size(); i++) {
-            sheet.autoSizeColumn(i);
-        }
-
-        // 6. Đặt width riêng cho 2 cột Email (index 2 và 3): rộng hơn
+        for (int i = 0; i < headers.size(); i++) sheet.autoSizeColumn(i);
         sheet.setColumnWidth(2, 40 * 256);
         sheet.setColumnWidth(3, 40 * 256);
         sheet.setColumnWidth(4, 30 * 256);
         sheet.setColumnWidth(5, 20 * 256);
 
-        // 7. Tạo sheet DropdownData: vai trò và cơ sở
         Sheet dropdownSheet = workbook.createSheet("DropdownData");
         for (int i = 0; i < roleList.size(); i++) {
             Row row = dropdownSheet.createRow(i);
@@ -330,7 +310,6 @@ public class EXStaffServiceImpl implements EXStaffService {
             row.createCell(1).setCellValue(facilityList.get(i));
         }
 
-        // 8. Named ranges
         Name roleName = workbook.createName();
         roleName.setNameName("RoleList");
         roleName.setRefersToFormula("DropdownData!$A$1:$A$" + roleList.size());
@@ -338,25 +317,34 @@ public class EXStaffServiceImpl implements EXStaffService {
         facilityName.setNameName("FacilityList");
         facilityName.setRefersToFormula("DropdownData!$B$1:$B$" + facilityList.size());
 
-        // 9. Data validation cho cột Vai Trò (index 4) và Cơ Sở (index 5)
         DataValidationHelper dvHelper = sheet.getDataValidationHelper();
-        // Vai Trò
+
         DataValidationConstraint roleConstraint = dvHelper.createFormulaListConstraint("RoleList");
         CellRangeAddressList roleAddr = new CellRangeAddressList(1, 100, 4, 4);
         DataValidation roleValid = dvHelper.createValidation(roleConstraint, roleAddr);
         roleValid.setSuppressDropDownArrow(true);
+        roleValid.setShowErrorBox(true);
+        roleValid.createErrorBox(
+                "Lỗi Vai Trò",
+                "Giá trị không hợp lệ. Vui lòng chọn Vai Trò từ danh sách."
+        );
+        roleValid.createPromptBox("Chọn Vai Trò", "Hãy chọn Vai Trò từ dropdown");
         sheet.addValidationData(roleValid);
-        // Cơ Sở
-        DataValidationConstraint facilityConstraint = dvHelper.createFormulaListConstraint("FacilityList");
+
+        DataValidationConstraint facConstraint = dvHelper.createFormulaListConstraint("FacilityList");
         CellRangeAddressList facAddr = new CellRangeAddressList(1, 100, 5, 5);
-        DataValidation facValid = dvHelper.createValidation(facilityConstraint, facAddr);
+        DataValidation facValid = dvHelper.createValidation(facConstraint, facAddr);
         facValid.setSuppressDropDownArrow(true);
+        facValid.setShowErrorBox(true);
+        facValid.createErrorBox(
+                "Lỗi Cơ Sở",
+                "Giá trị không hợp lệ. Vui lòng chọn Cơ Sở từ danh sách."
+        );
+        facValid.createPromptBox("Chọn Cơ Sở", "Hãy chọn Cơ Sở từ dropdown");
         sheet.addValidationData(facValid);
 
-        // 10. Ẩn sheet DropdownData
         workbook.setSheetHidden(workbook.getSheetIndex(dropdownSheet), true);
 
-        // 11. Xuất file
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
             workbook.write(baos);
             workbook.close();

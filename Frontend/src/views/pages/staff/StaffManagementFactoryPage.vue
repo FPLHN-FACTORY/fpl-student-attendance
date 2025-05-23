@@ -74,7 +74,7 @@ const columns = ref(
     { title: 'Mô tả', dataIndex: 'factoryDescription', key: 'factoryDescription' },
     { title: 'Trạng thái', dataIndex: 'factoryStatus', key: 'factoryStatus' },
     { title: 'Chức năng', key: 'actions' },
-  ]),
+  ])
 )
 
 const breadcrumb = ref([
@@ -336,6 +336,9 @@ const configImportExcel = {
   },
   showDownloadTemplate: true,
   showHistoryLog: true,
+  showExport: true,
+  btnImport: 'Import nhóm xưởng',
+  btnExport: 'Export nhóm xưởng',
 }
 
 const handleClearFilter = () => {
@@ -393,7 +396,7 @@ onMounted(() => {
       <a-form-item label="Tên nhóm xưởng" required>
         <a-input v-model:value="newFactory.factoryName" placeholder="-- Tên nhóm xưởng --" />
       </a-form-item>
-      <a-form-item label="Mô tả nhóm xưởng" required>
+      <a-form-item label="Mô tả nhóm xưởng" >
         <a-textarea
           v-model:value="newFactory.factoryDescription"
           placeholder="-- Mô tả nhóm xưởng --"
@@ -456,7 +459,7 @@ onMounted(() => {
       <a-form-item label="Tên nhóm xưởng" required>
         <a-input v-model:value="detailFactory.factoryName" />
       </a-form-item>
-      <a-form-item label="Mô tả" required>
+      <a-form-item label="Mô tả nhóm xưởng" >
         <a-textarea v-model:value="detailFactory.factoryDescription" />
       </a-form-item>
       <a-form-item label="Giảng viên giảng dạy" required>

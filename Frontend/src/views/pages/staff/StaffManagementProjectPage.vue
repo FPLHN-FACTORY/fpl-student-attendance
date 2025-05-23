@@ -335,6 +335,9 @@ const configImportExcel = {
   },
   showDownloadTemplate: true,
   showHistoryLog: true,
+  showExport: true,
+  btnImport: 'Import dự án',
+  btnExport: 'Export dự án',
 }
 // Reset form
 const resetForm = () => {
@@ -539,7 +542,7 @@ onMounted(() => {
         <a-form-item label="Tên dự án" required>
           <a-input v-model:value="newProject.name" placeholder="Nhập tên dự án" />
         </a-form-item>
-        <a-form-item label="Mô tả" required>
+        <a-form-item label="Mô tả">
           <a-textarea v-model:value="newProject.description" placeholder="Nhập mô tả" />
         </a-form-item>
         <a-form-item label="Cấp dự án" required>
@@ -603,7 +606,7 @@ onMounted(() => {
         <a-form-item label="Tên dự án" required>
           <a-input v-model:value="detailProject.name" placeholder="Nhập tên dự án" />
         </a-form-item>
-        <a-form-item label="Mô tả" required>
+        <a-form-item label="Mô tả" >
           <a-textarea v-model:value="detailProject.description" placeholder="Nhập mô tả" />
         </a-form-item>
         <a-form-item label="Cấp dự án" required>
