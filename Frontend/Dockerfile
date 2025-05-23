@@ -10,8 +10,8 @@ WORKDIR /app
 # COPY .env .env
 
 # Embed biến Vite (nếu cần)
-ENV VITE_BASE_URL="https://fptudpm.site"
-ENV VITE_BASE_API_URL="https://server.fptudpm.site"
+ENV VITE_BASE_URL="https://fplstudentattendance.site/"
+ENV VITE_BASE_API_URL="https://fplstudentattendance.site/"
 ENV VITE_PREFIX_API="/api/v1"
 
 # Copy package và cài dependencies
