@@ -188,8 +188,8 @@ public class EXFactoryServiceImpl implements EXFactoryService {
         List<String> projectIds = projects.stream().map(p -> p.getId()).collect(Collectors.toList());
 
         List<String> staffList = staffFactoryExtendRepository.getListUserStaff(
-                EntityStatus.ACTIVE, EntityStatus.ACTIVE,
-                sessionHelper.getFacilityId(), RoleConstant.TEACHER)
+                        EntityStatus.ACTIVE, EntityStatus.ACTIVE,
+                        sessionHelper.getFacilityId(), RoleConstant.TEACHER)
                 .stream().map(s -> s.getName() + " (" + s.getCode() + ")")
                 .collect(Collectors.toList());
 
@@ -239,11 +239,11 @@ public class EXFactoryServiceImpl implements EXFactoryService {
 
         final int MAX_ROWS = 100;
         Workbook workbook = new XSSFWorkbook();
-        // ngay sau khi tạo workbook, trước khi write ra ByteArrayOutputStream
+        // Bắt buộc Excel tính lại công thức khi mở
         workbook.setForceFormulaRecalculation(true);
         Sheet sheet = workbook.createSheet(sheetName);
 
-        // Style header
+        // --- Styles ---
         CellStyle headerStyle = workbook.createCellStyle();
         headerStyle.setFillForegroundColor(IndexedColors.LIGHT_GREEN.getIndex());
         headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
@@ -257,7 +257,7 @@ public class EXFactoryServiceImpl implements EXFactoryService {
         wrapStyle.setWrapText(true);
         wrapStyle.setVerticalAlignment(VerticalAlignment.CENTER);
 
-        // Header chính
+        // --- Header chính ---
         Row headerRow = sheet.createRow(0);
         headerRow.setHeightInPoints(sheet.getDefaultRowHeightInPoints() * 1.5f);
         for (int i = 0; i < headers.size(); i++) {
@@ -266,15 +266,14 @@ public class EXFactoryServiceImpl implements EXFactoryService {
             cell.setCellStyle(headerStyle);
             sheet.setDefaultColumnStyle(i, wrapStyle);
         }
-
-        // Thêm cột ẩn ProjectID
+        // Cột ẩn lưu Project ID
         int projectIdColIdx = headers.size();
         Cell projIdHeader = headerRow.createCell(projectIdColIdx);
         projIdHeader.setCellValue("DAY_LA_DU_AN");
         projIdHeader.setCellStyle(headerStyle);
         sheet.setDefaultColumnStyle(projectIdColIdx, wrapStyle);
 
-        // Dữ liệu mẫu (nếu có)
+        // --- Dữ liệu mẫu (nếu có) ---
         int rowIndex = 1;
         for (Map<String, String> rowData : data) {
             Row row = sheet.createRow(rowIndex++);
@@ -285,13 +284,13 @@ public class EXFactoryServiceImpl implements EXFactoryService {
             }
         }
 
-        // Kích thước cột
+        // --- Auto-size và width cố định ---
         for (int i = 0; i < headers.size(); i++) sheet.autoSizeColumn(i);
         sheet.setColumnWidth(1, 30 * 256);
         sheet.setColumnWidth(2, 30 * 256);
         sheet.setColumnWidth(3, 20 * 256);
 
-        // Sheet DropdownData
+        // --- Sheet chứa dữ liệu dropdown ---
         Sheet dropdownSheet = workbook.createSheet("DropdownData");
         for (int i = 0; i < projectNames.size(); i++) {
             Row row = dropdownSheet.createRow(i);
@@ -304,7 +303,7 @@ public class EXFactoryServiceImpl implements EXFactoryService {
             row.createCell(2).setCellValue(staffList.get(i));
         }
 
-        // Named ranges
+        // --- Named ranges ---
         Name projectNameList = workbook.createName();
         projectNameList.setNameName("ProjectNameList");
         projectNameList.setRefersToFormula("DropdownData!$A$1:$A$" + projectNames.size());
@@ -315,22 +314,42 @@ public class EXFactoryServiceImpl implements EXFactoryService {
         staffNameList.setNameName("StaffList");
         staffNameList.setRefersToFormula("DropdownData!$C$1:$C$" + staffList.size());
 
+        // --- Thiết lập validation cho các cột ---
         DataValidationHelper dvHelper = sheet.getDataValidationHelper();
-        // Project dropdown chỉ tên
+
+        // 1) Project dropdown (cột C, index=2)
         DataValidationConstraint projCons = dvHelper.createFormulaListConstraint("ProjectNameList");
         CellRangeAddressList projAddr = new CellRangeAddressList(1, MAX_ROWS, 2, 2);
         DataValidation projValid = dvHelper.createValidation(projCons, projAddr);
         projValid.setSuppressDropDownArrow(true);
+        projValid.setShowErrorBox(true);
+        projValid.createErrorBox(
+                "Lỗi Dự án",
+                "Giá trị không hợp lệ. Vui lòng chọn dự án từ danh sách."
+        );
+        projValid.createPromptBox(
+                "Chọn dự án",
+                "Nhấn mũi tên để chọn dự án có sẵn"
+        );
         sheet.addValidationData(projValid);
 
-        // Staff dropdown giữ nguyên
+        // 2) Staff dropdown (cột D, index=3)
         DataValidationConstraint staffCons = dvHelper.createFormulaListConstraint("StaffList");
         CellRangeAddressList staffAddr = new CellRangeAddressList(1, MAX_ROWS, 3, 3);
         DataValidation staffValid = dvHelper.createValidation(staffCons, staffAddr);
         staffValid.setSuppressDropDownArrow(true);
+        staffValid.setShowErrorBox(true);
+        staffValid.createErrorBox(
+                "Lỗi Giảng viên",
+                "Giá trị không hợp lệ. Vui lòng chọn giảng viên từ danh sách."
+        );
+        staffValid.createPromptBox(
+                "Chọn giảng viên",
+                "Nhấn mũi tên để chọn giảng viên có sẵn"
+        );
         sheet.addValidationData(staffValid);
 
-        // Công thức lookup ProjectID
+        // --- Công thức lookup ProjectID ---
         for (int r = 1; r <= MAX_ROWS; r++) {
             Row row = sheet.getRow(r);
             if (row == null) row = sheet.createRow(r);
@@ -342,14 +361,16 @@ public class EXFactoryServiceImpl implements EXFactoryService {
             pidCell.setCellStyle(wrapStyle);
         }
 
-        // Ẩn cột ẩn và sheet phụ
+        // Ẩn cột ID và sheet phụ
         sheet.setColumnHidden(projectIdColIdx, true);
         workbook.setSheetHidden(workbook.getSheetIndex(dropdownSheet), true);
 
+        // Xuất ra mảng byte
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
             workbook.write(baos);
             workbook.close();
             return baos.toByteArray();
         }
     }
+
 }

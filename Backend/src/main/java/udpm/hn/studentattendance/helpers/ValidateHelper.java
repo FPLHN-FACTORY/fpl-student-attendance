@@ -178,12 +178,6 @@ public class ValidateHelper {
         }
     }
 
-    public static boolean isValidStudentCode(String code) {
-        return code != null && code.length() <= EntityProperties.LENGTH_CODE;
-    }
 
-    public static boolean isValidStudentName(String name) {
-        return name != null && name.length() <= EntityProperties.LENGTH_NAME;
-    }
 
 }
