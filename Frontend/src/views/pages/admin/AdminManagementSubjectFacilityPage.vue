@@ -386,7 +386,7 @@ onMounted(() => {
             :loading="loadingStore.isLoading"
             :scroll="{ x: 'auto' }"
           >
-            <template #bodyCell="{ column, record, index }">
+            <template #bodyCell="{ column, record }">
               <template v-if="column.dataIndex === 'status'">
                 <span class="nowrap">
                   <a-switch
