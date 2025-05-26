@@ -106,23 +106,29 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             for (Role r : lstRole) {
                 roles.add(r.getCode());
             }
+            sessionHelper.setLoginRole(RoleConstant.STAFF);
             return sessionHelper.buildAuthUser(userStaff.get(), roles, facilityID);
         }
         return null;
     }
 
     private AuthUser getAccountAdmin(String email) {
-        Optional<UserAdmin> userAdmin = authenticationUserAdminRepository.findByEmail(email);
-        return userAdmin.map(admin -> sessionHelper.buildAuthUser(admin, Set.of(RoleConstant.ADMIN), null))
-                .orElse(null);
+        UserAdmin userAdmin = authenticationUserAdminRepository.findByEmail(email).orElse(null);
+        if (userAdmin == null) {
+            return null;
+        }
+        sessionHelper.setLoginRole(RoleConstant.ADMIN);
+        return sessionHelper.buildAuthUser(userAdmin, Set.of(RoleConstant.ADMIN), null);
     }
 
     private AuthUser getAccountStudent(String email, String facilityID) {
-        Optional<UserStudent> userStudent = authenticationUserStudentRepository.findByEmailAndFacility_Id(email,
-                facilityID);
-        return userStudent
-                .map(student -> sessionHelper.buildAuthUser(student, Set.of(RoleConstant.STUDENT), facilityID))
-                .orElse(null);
+        UserStudent userStudent = authenticationUserStudentRepository.findByEmailAndFacility_Id(email,
+                facilityID).orElse(null);
+        if (userStudent == null) {
+            return null;
+        }
+        sessionHelper.setLoginRole(RoleConstant.STUDENT);
+        return sessionHelper.buildAuthUser(userStudent, Set.of(RoleConstant.STUDENT), facilityID);
     }
 
 }
