@@ -23,6 +23,7 @@ import udpm.hn.studentattendance.entities.Semester;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
 import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.helpers.SessionHelper;
+import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.common.repositories.CommonUserStudentRepository;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
@@ -52,6 +53,8 @@ public class SPDPlanServiceImpl implements SPDPlanService {
     private final CommonUserStudentRepository commonUserStudentRepository;
 
     private final SessionHelper sessionHelper;
+
+    private final UserActivityLogHelper userActivityLogHelper;
 
     @Override
     public ResponseEntity<?> getAllSubject() {
@@ -146,7 +149,9 @@ public class SPDPlanServiceImpl implements SPDPlanService {
         plan.setToDate(DateTimeUtils.toEndOfDay(endDate));
         plan.setProject(project);
 
-        return RouterHelper.responseSuccess("Tạo mới kế hoạch thành công", spdPlanRepository.save(plan));
+        Plan o = spdPlanRepository.save(plan);
+        userActivityLogHelper.saveLog("vừa thêm 1 kế hoạch mới: " + o.getName());
+        return RouterHelper.responseSuccess("Tạo mới kế hoạch thành công", o);
     }
 
     @Override

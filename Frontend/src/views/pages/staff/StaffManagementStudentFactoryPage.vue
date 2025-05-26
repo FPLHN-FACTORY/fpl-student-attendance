@@ -732,7 +732,15 @@ onMounted(() => {
             </a-tag>
           </template>
           <template v-else-if="column.dataIndex === 'status'">
-            <a-badge :status="record.status === 'DA_DIEN_RA' ? 'error' : 'success'" />
+            <a-badge
+              :status="
+                record.status === 'DA_DIEN_RA'
+                  ? 'error'
+                  : record.status === 'DANG_DIEN_RA'
+                  ? 'processing'
+                  : 'success'
+              "
+            />
             {{ STATUS_PLAN_DATE_DETAIL[record.status] }}
           </template>
         </template>

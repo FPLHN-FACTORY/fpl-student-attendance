@@ -82,14 +82,12 @@ public class EXProjectServiceImpl implements EXProjectService {
     public ResponseEntity<?> importItem(EXImportRequest request) {
         Map<String, String> item = request.getItem();
 
-        // 1. Lấy dữ liệu từ cột
         String nameProject = item.get("TEN_DU_AN");
         String description = item.get("MO_TA");
         String levelRaw = item.get("CAP_DU_AN");     // "LevelName - LEVEL_CODE"
         String semesterRaw = item.get("HOC_KY");        // "SEMESTER_CODE"
         String subjectRaw = item.get("MON_HOC");       // "SubjectName - SUBJECT_ID"
 
-        // 2. Validate bắt buộc
         if (nameProject == null || nameProject.isBlank()) {
             String msg = "Không được để trống tên dự án";
             excelHelper.saveLogError(ImportLogType.PROJECT, msg, request);
@@ -111,7 +109,6 @@ public class EXProjectServiceImpl implements EXProjectService {
             return RouterHelper.responseError(msg, HttpStatus.BAD_REQUEST);
         }
 
-        // 3. Parse cấp dự án và môn học
         String[] levelParts = levelRaw.split(" - ");
         if (levelParts.length < 2) {
             String msg = "Định dạng cấp dự án không hợp lệ. Vui lòng chọn từ dropdown.";
@@ -130,7 +127,6 @@ public class EXProjectServiceImpl implements EXProjectService {
         }
         String subjectId = subjectParts[1].trim(); // ID là string
 
-        // 4. Lookup entities
         Semester semester = semesterExtendRepository.getSemesterByCode(semesterCode);
         if (semester == null) {
             String msg = String.format("Học kỳ '%s' không tồn tại.", semesterCode);
@@ -152,7 +148,6 @@ public class EXProjectServiceImpl implements EXProjectService {
             return RouterHelper.responseError(msg, HttpStatus.BAD_REQUEST);
         }
 
-        // 5. Build DTO và gọi service
         USProjectCreateOrUpdateRequest dto = new USProjectCreateOrUpdateRequest();
         dto.setName(nameProject.trim());
         dto.setDescription(description == null ? null : description.trim());
