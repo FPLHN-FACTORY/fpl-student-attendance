@@ -35,6 +35,10 @@ public class SPDAddPlanFactoryRequest {
 
     private Integer requiredLocation = StatusType.ENABLE.getKey();
 
+    private Integer requiredCheckin = StatusType.ENABLE.getKey();
+
+    private Integer requiredCheckout = StatusType.ENABLE.getKey();
+
     private List<Integer> shift;
 
     @Min(value = 0, message = "Thời gian điểm danh muộn nhất phải lớn hơn 0")

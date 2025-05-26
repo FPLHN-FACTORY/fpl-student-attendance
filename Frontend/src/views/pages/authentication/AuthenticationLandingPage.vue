@@ -8,15 +8,15 @@ import imgRoleTeacher from '@/assets/images/role-teacher.png'
 import imgRoleStudent from '@/assets/images/role-student.png'
 import { GoogleOutlined } from '@ant-design/icons-vue'
 import { onMounted, ref } from 'vue'
-import { toast } from 'vue3-toastify'
 import requestAPI from '@/services/requestApiService'
 import { REDIRECT_LOGIN_ADMIN } from '@/constants/authenticationConstant'
 import useAuthStore from '@/stores/useAuthStore'
 import useLoadingStore from '@/stores/useLoadingStore'
 import { decodeBase64 } from '@/utils/utils'
-import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
+import { GLOBAL_ROUTE_NAMES, PREFIX_ADMIN_PANEL, URL_ADMIN_PANEL } from '@/constants/routesConstant'
 import { ROUTE_NAMES_API } from '@/router/authenticationRoute'
 import { ROLE } from '@/constants'
+import { message } from 'ant-design-vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -29,32 +29,49 @@ const facilityID = ref(null)
 const isShowModalSelectFacility = ref(false)
 const lstFacility = ref([])
 
-const roles = [
-  {
-    role: ROLE.ADMIN,
-    label: 'Cán bộ đào tạo',
-    img: imgRoleAdmin,
-    route: GLOBAL_ROUTE_NAMES.ADMIN_PAGE,
-  },
-  {
-    role: ROLE.STAFF,
-    label: 'Phụ trách xưởng',
-    img: imgRoleStaff,
-    route: GLOBAL_ROUTE_NAMES.STAFF_PAGE,
-  },
-  {
-    role: ROLE.TEACHER,
-    label: 'Giảng viên',
-    img: imgRoleTeacher,
-    route: GLOBAL_ROUTE_NAMES.TEACHER_PAGE,
-  },
-  {
-    role: ROLE.STUDENT,
-    label: 'Sinh viên',
-    img: imgRoleStudent,
-    route: GLOBAL_ROUTE_NAMES.STUDENT_PAGE,
-  },
-]
+let roles = []
+
+const isRouteAdm = route.path === PREFIX_ADMIN_PANEL
+const isRoleAdm =
+  authStore?.user?.role.includes(ROLE.ADMIN) ||
+  authStore?.user?.role.includes(ROLE.STAFF) ||
+  authStore?.user?.role.includes(ROLE.TEACHER)
+
+if (isRouteAdm || isRoleAdm) {
+  roles = [
+    {
+      role: ROLE.ADMIN,
+      label: 'Admin',
+      img: imgRoleAdmin,
+      route: GLOBAL_ROUTE_NAMES.ADMIN_PAGE,
+    },
+    {
+      role: ROLE.STAFF,
+      label: 'Phụ trách xưởng',
+      img: imgRoleStaff,
+      route: GLOBAL_ROUTE_NAMES.STAFF_PAGE,
+    },
+    {
+      role: ROLE.TEACHER,
+      label: 'Giảng viên',
+      img: imgRoleTeacher,
+      route: GLOBAL_ROUTE_NAMES.TEACHER_PAGE,
+    },
+  ]
+}
+
+const isRoleStudent = authStore?.user?.role.includes(ROLE.STUDENT)
+
+if (!roles.length || isRoleStudent) {
+  roles = [
+    {
+      role: ROLE.STUDENT,
+      label: 'Sinh viên',
+      img: imgRoleStudent,
+      route: GLOBAL_ROUTE_NAMES.STUDENT_PAGE,
+    },
+  ]
+}
 
 const showModalSelectFacility = () => (isShowModalSelectFacility.value = true)
 
@@ -72,20 +89,20 @@ const handleSelectFacility = (role) => {
 }
 
 const handleRedirectLogin = (width_out_facility = false) => {
-  toast.clearAll()
+  message.destroy()
   if (!width_out_facility && !facilityID.value) {
-    return toast.error('Vui lòng chọn cơ sở muốn đăng nhập')
+    return message.error('Vui lòng chọn cơ sở muốn đăng nhập')
   }
 
   const currentRole = roles.find((o) => o.role.includes(roleLogin.value))
 
   if (!currentRole) {
-    return toast.error('Role đăng nhập không chính xác')
+    return message.error('Role đăng nhập không chính xác')
   }
 
   const params = new URLSearchParams({
     role: currentRole.role,
-    redirect_uri: window.location.origin,
+    redirect_uri: isRouteAdm ? URL_ADMIN_PANEL : window.location.origin,
     facility_id: facilityID.value,
   })
 
@@ -100,7 +117,7 @@ const fetchDataFacility = async () => {
       facilityID.value = lstFacility.value[0].id
     }
   } catch (error) {
-    toast.error('Không thể tải danh sách cơ sở')
+    message.error('Không thể tải danh sách cơ sở')
   }
 }
 
@@ -126,16 +143,19 @@ const checkLogin = () => {
   roleLogin.value = route.query.role || null
   const authenticationToken = route.query.authencation_token || null
   const authenticationError = route.query.authencation_error || null
+
+  router.replace({ path: route.path, query: {} })
+
   loadingPage.show()
   if (authenticationToken) {
     if (!authStore.login(authenticationToken)) {
       loadingPage.hide()
-      return toast.error('Tài khoản của bạn không thể truy cập vào mục này!')
+      return message.error('Tài khoản của bạn không thể truy cập vào mục này!')
     }
   } else if (authenticationError) {
     const dataError = JSON.parse(decodeBase64(authenticationError))
     loadingPage.hide()
-    return toast.error(dataError.message)
+    return message.error(dataError.message)
   }
   redirectLoginRole()
 }

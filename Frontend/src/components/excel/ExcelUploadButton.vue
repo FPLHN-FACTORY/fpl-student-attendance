@@ -7,6 +7,8 @@ import {
   UploadOutlined,
   HistoryOutlined,
   InfoCircleFilled,
+  CloudDownloadOutlined,
+  FilePdfOutlined,
 } from '@ant-design/icons-vue'
 import { message } from 'ant-design-vue'
 import { defineProps, onMounted, ref } from 'vue'
@@ -20,6 +22,8 @@ const isShowHistoryLogDetail = ref(false)
 const isLoadingTable = ref(false)
 const isLoadingDownload = ref(false)
 const isLoadingShowLog = ref(false)
+const isLoadingExport = ref(false)
+const isLoadingExportPDF = ref(false)
 
 const lstData = ref([])
 const lstDataDetail = ref([])
@@ -30,9 +34,18 @@ const props = defineProps({
   fetchUrl: { type: String, default: null },
   onSuccess: { type: Function, default: null },
   onError: { type: Function, default: null },
+  didParseCellPDF: { type: Function, default: null },
   data: { type: Object, default: {} },
   showDownloadTemplate: { type: Boolean, default: false },
   showHistoryLog: { type: Boolean, default: false },
+  showImport: { type: Boolean, default: true },
+  showExport: { type: Boolean, default: false },
+  showExportPDF: { type: Boolean, default: false },
+  btnImport: { type: String, default: 'Import Excel' },
+  btnDownloadTemplate: { type: String, default: 'Tải xuống template' },
+  btnHistoryLog: { type: String, default: 'Lịch sử import' },
+  btnExport: { type: String, default: 'Export Excel' },
+  btnExportPDF: { type: String, default: 'Export PDF' },
 })
 
 const columns = ref(
@@ -77,6 +90,18 @@ const handleDownloadTemplate = async () => {
   isLoadingDownload.value = true
   await serviceStore.downloadTemplate()
   isLoadingDownload.value = false
+}
+
+const handleExport = async () => {
+  isLoadingExport.value = true
+  await serviceStore.exportExcel()
+  isLoadingExport.value = false
+}
+
+const handleExportPDF = async () => {
+  isLoadingExportPDF.value = true
+  await serviceStore.exportPDF(props.didParseCellPDF)
+  isLoadingExportPDF.value = false
 }
 
 const handleShowHistoryLog = async () => {
@@ -189,15 +214,16 @@ onMounted(() => {
   </a-modal>
 
   <a-button @click="handleShowHistoryLog" v-if="props.showHistoryLog" :loading="isLoadingShowLog"
-    ><HistoryOutlined />Lịch sử import</a-button
+    ><HistoryOutlined />{{ props.btnHistoryLog }}</a-button
   >
   <a-button
     @click="handleDownloadTemplate"
     v-if="props.showDownloadTemplate"
     :loading="isLoadingDownload"
-    ><FileExcelOutlined />Tải xuống template</a-button
+    ><FileExcelOutlined />{{ props.btnDownloadTemplate }}</a-button
   >
   <a-upload
+    v-if="props.showImport"
     :showUploadList="false"
     :multiple="true"
     :beforeUpload="handleBeforeUpload"
@@ -205,7 +231,13 @@ onMounted(() => {
   >
     <a-button>
       <UploadOutlined />
-      Import Excel
+      {{ props.btnImport }}
     </a-button>
   </a-upload>
+  <a-button @click="handleExport" v-if="props.showExport" :loading="isLoadingExport"
+    ><CloudDownloadOutlined />{{ props.btnExport }}</a-button
+  >
+  <a-button @click="handleExportPDF" v-if="props.showExportPDF" :loading="isLoadingExportPDF"
+    ><FilePdfOutlined />{{ props.btnExportPDF }}</a-button
+  >
 </template>

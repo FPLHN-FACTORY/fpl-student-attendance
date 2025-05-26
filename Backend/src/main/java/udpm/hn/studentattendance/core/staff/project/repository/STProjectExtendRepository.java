@@ -46,7 +46,7 @@ public interface STProjectExtendRepository extends ProjectRepository {
                         AND (:#{#request.facilityId} IS NULL OR f.id = :#{#request.facilityId})
                         AND (:#{#request.status} IS NULL OR p.status = :#{#request.status})
                     )
-                    ORDER BY p.created_at DESC
+                    ORDER BY p.created_at DESC, p.status DESC
             """, countQuery = """
                     SELECT
                        COUNT(*)
@@ -72,7 +72,32 @@ public interface STProjectExtendRepository extends ProjectRepository {
                     )
             """, nativeQuery = true)
     Page<USProjectResponse> getListProject(Pageable pageable, USProjectSearchRequest request);
-
+    @Query(value = """
+                    SELECT
+                        ROW_NUMBER() OVER (ORDER BY p.created_at DESC) AS indexs,
+                        p.id AS id,
+                        p.name AS name,
+                        lp.name AS nameLevelProject,
+                        s.name AS nameSubject,
+                        sem.code AS nameSemester,
+                        p.description AS description,
+                        p.status AS status
+                    FROM project p
+                    JOIN level_project lp ON p.id_level_project = lp.id
+                    JOIN subject_facility sf ON p.id_subject_facility = sf.id
+                    JOIN subject s ON sf.id_subject = s.id
+                    JOIN semester sem ON p.id_semester = sem.id
+                    JOIN facility f ON sf.id_facility = f.id
+                    WHERE
+                        lp.status = 1 AND
+                        sf.status = 1 AND
+                        s.status = 1 AND
+                        sem.status = 1 AND
+                        f.status = 1 AND
+                        f.id = :facilityId
+                    ORDER BY p.created_at DESC, p.status DESC
+            """,  nativeQuery = true)
+    List<USProjectResponse> exportAllProject(String facilityId);
     @Query(value = """
                 SELECT
                                      p.id as id,
@@ -100,12 +125,13 @@ public interface STProjectExtendRepository extends ProjectRepository {
             FROM project p 
             LEFT JOIN subject_facility sf ON sf.id = p.id_subject_facility
             WHERE 
-            p.name = :name
+            p.name LIKE :name
             AND p.id_level_project = :idLevelProject
             AND p.id_semester = :idSemester
-            AND sf.id_facility = :idFacility
+            AND sf.id_facility = :idFacility AND
+            (:idProject IS NULL OR p.id != :idProject)
             """, nativeQuery = true)
-    boolean isExistProjectInSameLevel(String name, String idLevelProject, String idSemester, String idFacility);
+    boolean isExistProjectInSameLevel(String name, String idLevelProject, String idSemester, String idFacility, String idProject);
 
     @Query(value = """
                         SELECT

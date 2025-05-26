@@ -12,6 +12,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import udpm.hn.studentattendance.infrastructure.constants.RoutesConstant;
 import udpm.hn.studentattendance.infrastructure.constants.router.RouteWebsocketConstant;
 import udpm.hn.studentattendance.infrastructure.security.router.AdminSecurityConfig;
 import udpm.hn.studentattendance.infrastructure.security.router.AuthenticationSecurityConfig;
@@ -66,7 +67,7 @@ public class SecurityConfig {
         http.csrf(AbstractHttpConfigurer::disable);
         http.formLogin(AbstractHttpConfigurer::disable);
         http.httpBasic(AbstractHttpConfigurer::disable);
-        http.sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.ALWAYS));
+        http.sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
         http.exceptionHandling(e -> {
             e.accessDeniedHandler(new CustomAccessDeniedHandler());
             e.authenticationEntryPoint(new CustomAuthenticationEntryPoint());
@@ -81,20 +82,8 @@ public class SecurityConfig {
         excelSecurityConfig.configure(http);
 
         http.authorizeHttpRequests(auth -> auth
-                .requestMatchers(
-                        "/",
-                        "/index.html",
-                        "/favicon.ico",
-                        "/logo.png",
-                        "/*.js",
-                        "/*.css",
-                        "/assets/**",
-                        "/static/**",
-                        RouteWebsocketConstant.END_POINT + "/**",
-                        RouteWebsocketConstant.PREFIX_SIMPLE_BROKER + "/**",
-                        RouteWebsocketConstant.PREFIX_AD + "/**"
-                ).permitAll()
-                .anyRequest().authenticated()
+                .requestMatchers(RoutesConstant.API_PREFIX + "/**").authenticated()
+                .anyRequest().permitAll()
         );
         return http.build();
     }

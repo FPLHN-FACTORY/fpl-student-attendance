@@ -8,6 +8,7 @@ import {
   FilterFilled,
   EyeFilled,
   EditFilled,
+  SearchOutlined,
 } from '@ant-design/icons-vue'
 import requestAPI from '@/services/requestApiService'
 import { DEFAULT_PAGINATION } from '@/constants'
@@ -25,7 +26,7 @@ const breadcrumbStore = useBreadcrumbStore()
 const breadcrumb = ref([
   {
     name: GLOBAL_ROUTE_NAMES.ADMIN_PAGE,
-    breadcrumbName: 'Ban đào tạo',
+    breadcrumbName: 'Admin',
   },
   {
     name: ROUTE_NAMES.MANAGEMENT_SUBJECT,
@@ -43,7 +44,7 @@ const facility = ref([])
 const facilitySubject = ref([])
 
 const filter = reactive({
-  name: '',
+  name: null,
   status: null,
   facilityId: null,
   subjectId: route.query.subjectId,
@@ -136,7 +137,7 @@ const fetchFacilityCombobox = () => {
   requestAPI
     .get(`${API_ROUTES_ADMIN.FETCH_DATA_SUBJECT_FACILITY}/facility-combobox`)
     .then((response) => {
-      facility.value = response.data
+      facility.value = response.data.data
     })
     .catch((error) => {
       message.error(error.response?.data?.message || 'Lỗi khi lấy danh sách cơ sở')
@@ -308,42 +309,46 @@ onMounted(() => {
     <div class="row g-3">
       <div class="col-12">
         <a-card :bordered="false" class="cart mb-3">
-          <template #title> <FilterFilled /> Bộ lọc tìm kiếm </template>
+          <template #title> <FilterFilled /> Bộ lọc</template>
           <div class="row g-3 filter-container">
-            <div class="col-md-4 col-sm-6">
-              <label class="label-title">Từ khoá:</label>
+            <div class="col-xl-6 col-md-12 col-sm-12">
+              <div class="label-title">Từ khoá:</div>
               <a-input
                 v-model:value="filter.name"
-                placeholder="Nhập tên hoặc mã cơ sở vật chất"
+                placeholder="Tìm theo tên hoặc mã cơ sở"
                 allowClear
-                @change="fetchSubjectFacility"
-              />
-            </div>
-            <div class="col-md-4 col-sm-6">
-              <label class="label-title">Bộ môn:</label>
-              <a-select
-                v-model:value="filter.idSubject"
-                placeholder="Chọn bộ môn"
-                allowClear
-                style="width: 100%"
                 @change="fetchSubjectFacility"
               >
-                <a-select-option :value="''">Tất cả bộ môn</a-select-option>
-                <a-select-option v-for="item in subject" :key="item.id" :value="item.id">
+                <template #prefix>
+                  <SearchOutlined />
+                </template>
+              </a-input>
+            </div>
+            <div class="col-xl-3 col-md-6 col-sm-6">
+              <div class="label-title">Cơ sở:</div>
+              <a-select
+                v-model:value="filter.facilityId"
+                placeholder="Chọn cơ sở"
+                allowClear
+                class="w-100"
+                @change="fetchSubjectFacility"
+              >
+                <a-select-option :value="null">Tất cả cơ sở</a-select-option>
+                <a-select-option v-for="item in facility" :key="item.id" :value="item.id">
                   {{ item.name }}
                 </a-select-option>
               </a-select>
             </div>
-            <div class="col-md-4 col-sm-12">
-              <label class="label-title">Trạng thái:</label>
+            <div class="col-xl-3 col-md-6 col-sm-6">
+              <div class="label-title">Trạng thái:</div>
               <a-select
                 v-model:value="filter.status"
                 placeholder="Chọn trạng thái"
                 allowClear
-                style="width: 100%"
+                class="w-100"
                 @change="fetchSubjectFacility"
               >
-                <a-select-option :value="''">Tất cả trạng thái</a-select-option>
+                <a-select-option :value="null">Tất cả trạng thái</a-select-option>
                 <a-select-option value="1">Hoạt động</a-select-option>
                 <a-select-option value="0">Không hoạt động</a-select-option>
               </a-select>
@@ -381,7 +386,7 @@ onMounted(() => {
             :loading="loadingStore.isLoading"
             :scroll="{ x: 'auto' }"
           >
-            <template #bodyCell="{ column, record, index }">
+            <template #bodyCell="{ column, record }">
               <template v-if="column.dataIndex === 'status'">
                 <span class="nowrap">
                   <a-switch

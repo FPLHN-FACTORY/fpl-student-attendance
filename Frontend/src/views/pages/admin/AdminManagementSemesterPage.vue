@@ -5,6 +5,7 @@ import {
   EditFilled,
   UnorderedListOutlined,
   FilterFilled,
+  SearchOutlined,
 } from '@ant-design/icons-vue'
 import { message, Modal } from 'ant-design-vue'
 import requestAPI from '@/services/requestApiService'
@@ -24,7 +25,7 @@ const loadingStore = useLoadingStore()
 const breadcrumb = ref([
   {
     name: GLOBAL_ROUTE_NAMES.ADMIN_PAGE,
-    breadcrumbName: 'Ban đào tạo',
+    breadcrumbName: 'Admin',
   },
   {
     name: ROUTE_NAMES.MANAGEMENT_SEMESTER,
@@ -146,6 +147,14 @@ const handleTableChange = (pageInfo) => {
   fetchSemesters()
 }
 
+const handleShowModalAdd = () => {
+  newSemester.semesterName = null
+  newSemester.fromDate = null
+  newSemester.toDate = null
+
+  modalAdd.value = true
+}
+
 const handleAddSemester = () => {
   if (!newSemester.semesterName || !newSemester.fromDate || !newSemester.toDate) {
     message.error('Vui lòng nhập đầy đủ thông tin')
@@ -212,30 +221,40 @@ const updateSemester = () => {
     message.error('Vui lòng nhập đầy đủ thông tin')
     return
   }
-  modalUpdateLoading.value = true
-  loadingStore.show()
-  const payload = {
-    ...detailSemester.value,
-    fromDate: detailSemester.value.fromDate.valueOf(),
-    toDate: detailSemester.value.toDate.valueOf(),
-  }
-  requestAPI
-    .put(API_ROUTES_ADMIN.FETCH_DATA_SEMESTER, payload)
-    .then(() => {
-      message.success('Cập nhật học kỳ thành công')
-      modalUpdate.value = false
-      fetchSemesters()
-    })
-    .catch((error) => {
-      message.error(
-        (error.response && error.response.data && error.response.data.message) ||
-          'Lỗi khi cập nhật học kỳ',
-      )
-    })
-    .finally(() => {
-      modalUpdateLoading.value = false
-      loadingStore.hide()
-    })
+
+  // Show confirmation dialog with warning about scheduled classes
+  Modal.confirm({
+    title: 'Xác nhận cập nhật học kỳ',
+    content: 'Lưu ý: Các lịch học mà sinh viên đã được phân công trước ngày bắt đầu hoặc sau ngày kết thúc của học kỳ vẫn sẽ hoạt động bình thường.',
+    okText: 'Cập nhật',
+    cancelText: 'Hủy',
+    onOk: () => {
+      modalUpdateLoading.value = true
+      loadingStore.show()
+      const payload = {
+        ...detailSemester.value,
+        fromDate: detailSemester.value.fromDate.valueOf(),
+        toDate: detailSemester.value.toDate.valueOf(),
+      }
+      requestAPI
+        .put(API_ROUTES_ADMIN.FETCH_DATA_SEMESTER, payload)
+        .then(() => {
+          message.success('Cập nhật học kỳ thành công')
+          modalUpdate.value = false
+          fetchSemesters()
+        })
+        .catch((error) => {
+          message.error(
+            (error.response && error.response.data && error.response.data.message) ||
+              'Lỗi khi cập nhật học kỳ',
+          )
+        })
+        .finally(() => {
+          modalUpdateLoading.value = false
+          loadingStore.hide()
+        })
+    },
+  })
 }
 
 const handleChangeStatusSemester = (record) => {
@@ -293,22 +312,26 @@ onMounted(() => {
           <template #title> <FilterFilled /> Bộ lọc </template>
           <!-- Hàng 1: Input tìm kiếm & Select trạng thái -->
           <div class="row g-3 filter-container">
-            <div class="col-md-6 col-sm-6">
-              <div class="label-title">Tìm kiếm mã học kỳ :</div>
+            <div class="col-xl-6 col-md-12 col-sm-12">
+              <div class="label-title">Từ khoá:</div>
               <a-input
                 v-model:value="filter.semesterCode"
                 placeholder="Tìm kiếm theo mã học kỳ"
                 allowClear
                 @change="fetchSemesters"
-              />
+              >
+                <template #prefix>
+                  <SearchOutlined />
+                </template>
+              </a-input>
             </div>
-            <div class="col-md-6 col-sm-6">
-              <div class="label-title">Trạng thái :</div>
+            <div class="col-xl-3 col-md-6 col-sm-6">
+              <div class="label-title">Trạng thái:</div>
               <a-select
                 v-model:value="filter.status"
                 placeholder="Chọn trạng thái"
                 allowClear
-                style="width: 100%"
+                class="w-100"
                 @change="fetchSemesters"
               >
                 <a-select-option :value="''">Tất cả trạng thái</a-select-option>
@@ -316,14 +339,12 @@ onMounted(() => {
                 <a-select-option value="INACTIVE">Đã kết thúc</a-select-option>
               </a-select>
             </div>
-          </div>
-          <!-- Hàng 2: RangePicker để chọn khoảng ngày -->
-          <div class="row g-3 filter-container second-row mt-3">
-            <div class="col-12 col">
-              <div class="label-title">Tìm kiếm theo khoảng ngày :</div>
+
+            <div class="col-xl-3 col-md-6 col-sm-6">
+              <div class="label-title">Khoảng ngày:</div>
               <a-range-picker
                 v-model:value="filter.dateRange"
-                style="width: 100%"
+                class="w-100"
                 format="DD/MM/YYYY"
                 @change="handleDateRangeChange"
               />
@@ -351,7 +372,7 @@ onMounted(() => {
           <!-- Nút Thêm học kỳ -->
           <div class="d-flex justify-content-end mb-3">
             <a-tooltip title="Thêm học kỳ mới">
-              <a-button type="primary" @click="modalAdd = true">
+              <a-button type="primary" @click="handleShowModalAdd">
                 <PlusOutlined />
                 Thêm
               </a-button>
@@ -430,13 +451,15 @@ onMounted(() => {
       title="Thêm học kỳ"
       @ok="handleAddSemester"
       :okButtonProps="{ loading: modalAddLoading }"
+      @cancel="clearFormAdd"
+      @close="clearFormAdd"
     >
       <a-form layout="vertical">
         <a-form-item label="Tên học kỳ" required>
           <a-select
             v-model:value="newSemester.semesterName"
             placeholder="Chọn kỳ học"
-            style="width: 100%"
+            class="w-100"
           >
             <a-select-option value="SPRING">SPRING</a-select-option>
             <a-select-option value="SUMMER">SUMMER</a-select-option>
@@ -447,7 +470,7 @@ onMounted(() => {
           <a-date-picker
             v-model:value="newSemester.fromDate"
             placeholder="Chọn ngày bắt đầu"
-            style="width: 100%"
+            class="w-100"
             format="DD/MM/YYYY"
           />
         </a-form-item>
@@ -455,7 +478,7 @@ onMounted(() => {
           <a-date-picker
             v-model:value="newSemester.toDate"
             placeholder="Chọn ngày kết thúc"
-            style="width: 100%"
+            class="w-100"
             format="DD/MM/YYYY"
           />
         </a-form-item>
@@ -474,7 +497,7 @@ onMounted(() => {
           <a-select
             v-model:value="detailSemester.semesterName"
             placeholder="Chọn kỳ học"
-            style="width: 100%"
+            class="w-100"
           >
             <a-select-option value="SPRING">SPRING</a-select-option>
             <a-select-option value="SUMMER">SUMMER</a-select-option>
@@ -485,7 +508,7 @@ onMounted(() => {
           <a-date-picker
             v-model:value="detailSemester.fromDate"
             placeholder="Chọn ngày bắt đầu"
-            style="width: 100%"
+            class="w-100"
             format="DD/MM/YYYY"
           />
         </a-form-item>
@@ -493,7 +516,7 @@ onMounted(() => {
           <a-date-picker
             v-model:value="detailSemester.toDate"
             placeholder="Chọn ngày kết thúc"
-            style="width: 100%"
+            class="w-100"
             format="DD/MM/YYYY"
           />
         </a-form-item>

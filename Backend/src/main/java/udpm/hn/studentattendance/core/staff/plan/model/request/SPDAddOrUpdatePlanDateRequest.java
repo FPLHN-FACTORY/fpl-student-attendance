@@ -38,6 +38,10 @@ public class SPDAddOrUpdatePlanDateRequest {
 
     private Integer requiredLocation = StatusType.ENABLE.getKey();
 
+    private Integer requiredCheckin = StatusType.ENABLE.getKey();
+
+    private Integer requiredCheckout = StatusType.ENABLE.getKey();
+
     private List<Integer> shift;
 
     private Integer type;

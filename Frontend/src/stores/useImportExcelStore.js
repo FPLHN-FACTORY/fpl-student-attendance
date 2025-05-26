@@ -3,6 +3,11 @@ import { message } from 'ant-design-vue'
 import { defineStore } from 'pinia'
 import { reactive, ref } from 'vue'
 import { toast } from 'vue3-toastify'
+import * as XLSX from 'xlsx'
+import jsPDF from 'jspdf'
+import autoTable from 'jspdf-autotable'
+import Roboto from '@/assets/js/fonts/Roboto-Regular-normal.js'
+import RobotoBold from '@/assets/js/fonts/Roboto-Bold-normal'
 
 const useImportExcelStore = defineStore('importExcel', () => {
   const STATUS_PROCESS = {
@@ -221,9 +226,13 @@ const useImportExcelStore = defineStore('importExcel', () => {
   const downloadTemplate = async () => {
     if (urlFetch.value) {
       await requestAPI
-        .post(`${urlFetch.value}/download-template`, dataFetch.value, {
-          responseType: 'blob',
-        })
+        .post(
+          `${urlFetch.value}/download-template`,
+          { data: dataFetch.value },
+          {
+            responseType: 'blob',
+          },
+        )
         .then((response) => {
           const blob = new Blob([response.data], {
             type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -248,6 +257,105 @@ const useImportExcelStore = defineStore('importExcel', () => {
         })
         .catch((error) => {
           message.error(error?.response?.data?.message || 'Không thể tải xuống template')
+        })
+    }
+  }
+
+  const exportExcel = async () => {
+    if (urlFetch.value) {
+      await requestAPI
+        .post(
+          `${urlFetch.value}/export`,
+          { data: dataFetch.value },
+          {
+            responseType: 'blob',
+          },
+        )
+        .then((response) => {
+          const blob = new Blob([response.data], {
+            type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          })
+          const contentDisposition = response.headers['content-disposition']
+          let filename = 'export-download'
+          if (contentDisposition) {
+            const match = contentDisposition.match(/filename="(.+)"/)
+            if (match) {
+              filename = match[1]
+            }
+          }
+          const url = window.URL.createObjectURL(blob)
+          const a = document.createElement('a')
+          a.href = url
+          a.download = filename
+          document.body.appendChild(a)
+          a.click()
+          document.body.removeChild(a)
+
+          window.URL.revokeObjectURL(url)
+        })
+        .catch((error) => {
+          message.error(error?.response?.data?.message || 'Không thể xuất excel')
+        })
+    }
+  }
+
+  const exportPDF = async (didParseCell) => {
+    if (urlFetch.value) {
+      await requestAPI
+        .post(
+          `${urlFetch.value}/export`,
+          { data: dataFetch.value },
+          {
+            responseType: 'blob',
+          },
+        )
+        .then(async (response) => {
+          const blob = new Blob([response.data], {
+            type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          })
+
+          const contentDisposition = response.headers['content-disposition']
+          let filename = 'export-download'
+          if (contentDisposition) {
+            const match = contentDisposition.match(/filename="(.+)"/)
+            if (match) {
+              filename = match[1].replace('.xlsx', '.pdf')
+            }
+          }
+
+          const arrayBuffer = await blob.arrayBuffer()
+          const workbook = XLSX.read(arrayBuffer, { type: 'array' })
+
+          const sheetName = workbook.SheetNames[0]
+          const worksheet = workbook.Sheets[sheetName]
+          const data = XLSX.utils.sheet_to_json(worksheet, { header: 1 })
+
+          const doc = new jsPDF()
+          doc.addFileToVFS('Roboto-Regular.ttf', Roboto)
+          doc.addFileToVFS('Roboto-Bold.ttf', RobotoBold)
+          doc.addFont('Roboto-Regular.ttf', 'Roboto', 'normal')
+          doc.addFont('Roboto-Bold.ttf', 'Roboto', 'bold')
+          doc.setFont('Roboto')
+
+          if (data.length > 0) {
+            autoTable(doc, {
+              head: [data[0]],
+              body: data.slice(1),
+              styles: {
+                font: 'Roboto',
+                cellWidth: 'wrap',
+                fontSize: 10,
+              },
+              didParseCell,
+            })
+            doc.save(filename)
+          } else {
+            message.warning('Không có dữ liệu cần export')
+          }
+        })
+        .catch((error) => {
+          console.error(error)
+          message.error(error?.response?.data?.message || 'Không thể xuất excel')
         })
     }
   }
@@ -278,6 +386,8 @@ const useImportExcelStore = defineStore('importExcel', () => {
     countProcessing,
     countComplete,
     downloadTemplate,
+    exportExcel,
+    exportPDF,
     getHistoryLogs,
     getHistoryLogsDetail,
     setUrlFetch,

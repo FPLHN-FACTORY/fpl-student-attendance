@@ -1,5 +1,5 @@
 <script setup>
-import { h, onMounted, reactive, ref, watch } from 'vue'
+import { h, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
 import {
   MenuUnfoldOutlined,
   MenuFoldOutlined,
@@ -16,16 +16,24 @@ import imgLogoUdpm from '@/assets/images/logo-udpm.png'
 import useAuthStore from '@/stores/useAuthStore'
 import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
 import { useRoute, useRouter } from 'vue-router'
-import { API_ROUTES_NOTIFICATION, GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
+import {
+  API_ROUTES_NOTIFICATION,
+  BASE_URL,
+  GLOBAL_ROUTE_NAMES,
+  URL_ADMIN_PANEL,
+} from '@/constants/routesConstant'
 import useApplicationStore from '@/stores/useApplicationStore'
 import ExcelUploadList from '@/components/excel/ExcelUploadList.vue'
 import { autoAddColumnWidth, formatDate } from '@/utils/utils'
-import { DEFAULT_DATE_FORMAT, DEFAULT_PAGINATION } from '@/constants'
+import { DEFAULT_DATE_FORMAT, DEFAULT_PAGINATION, ROLE } from '@/constants'
 import requestAPI from '@/services/requestApiService'
 import { message } from 'ant-design-vue'
 
 const router = useRouter()
 const route = useRoute()
+
+const screenWidth = ref(window.innerWidth)
+const screenHeight = ref(window.innerHeight)
 
 const collapsed = ref(false)
 const authStore = useAuthStore()
@@ -53,18 +61,13 @@ const dataFilter = reactive({
 
 const pagination = ref({ ...DEFAULT_PAGINATION })
 
-const handleToggleNav = () => {
-  collapsed.value = !collapsed.value
-  if (collapsed.value) {
-    document.body.classList.add('disable-scroll-x')
-  } else {
-    document.body.classList.remove('disable-scroll-x')
-  }
-}
-
 const handleLogout = () => {
+  const isAdm =
+    authStore?.user?.role.includes(ROLE.ADMIN) ||
+    authStore?.user?.role.includes(ROLE.STAFF) ||
+    authStore?.user?.role.includes(ROLE.TEACHER)
   authStore.logout()
-  window.location.reload()
+  window.location.href = isAdm ? URL_ADMIN_PANEL : BASE_URL
 }
 
 const handleShowAllNotification = () => {
@@ -134,11 +137,37 @@ const handleSwitchRole = () => {
   router.push({ name: GLOBAL_ROUTE_NAMES.SWITCH_ROLE })
 }
 
+const handleMenuClick = () => {
+  if (screenWidth.value <= 912) {
+    collapsed.value = false
+    document.body.classList.remove('disable-scroll-x')
+  }
+}
+
+const handleResizeScreen = () => {
+  screenWidth.value = window.innerWidth
+  screenHeight.value = window.innerHeight
+}
+
+const handleToggleNav = () => {
+  collapsed.value = !collapsed.value
+  if (collapsed.value && screenWidth.value <= 912) {
+    document.body.classList.add('disable-scroll-x')
+  } else {
+    document.body.classList.remove('disable-scroll-x')
+  }
+}
+
 onMounted(() => {
+  window.addEventListener('resize', handleResizeScreen)
   if (!authStore.user?.facilityID) {
     return router.push({ name: GLOBAL_ROUTE_NAMES.STUDENT_REGISTER_PAGE })
   }
   applicationStore.loadNotification()
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', handleResizeScreen)
 })
 
 watch(
@@ -247,7 +276,12 @@ watch(
       <div class="logo">
         <img :src="imgLogoUdpm" />
       </div>
-      <a-menu v-model:selectedKeys="applicationStore.selectedKeys" theme="light" mode="inline">
+      <a-menu
+        v-model:selectedKeys="applicationStore.selectedKeys"
+        theme="light"
+        mode="inline"
+        @click="handleMenuClick"
+      >
         <slot></slot>
       </a-menu>
     </a-layout-sider>

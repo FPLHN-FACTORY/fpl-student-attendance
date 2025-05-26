@@ -30,7 +30,7 @@ const loadingStore = useLoadingStore()
 const breadcrumb = ref([
   {
     name: GLOBAL_ROUTE_NAMES.ADMIN_PAGE,
-    breadcrumbName: 'Ban đào tạo',
+    breadcrumbName: 'Admin',
   },
   {
     name: ROUTE_NAMES.MANAGEMENT_FACILITY,
@@ -131,6 +131,11 @@ const handleClearFilter = () => {
 const handleSubmitFilter = () => {
   pagination.value.current = 1
   fetchFacilities()
+}
+
+const handleShowModalAdd = () => {
+  newFacility.facilityName = null
+  modalAdd.value = true
 }
 
 // Sự kiện thay đổi phân trang (dynamic)
@@ -309,7 +314,7 @@ onMounted(() => {
         <a-card :bordered="false" class="cart">
           <template #title> <FilterFilled /> Bộ lọc </template>
           <div class="row g-3">
-            <div class="col-xxl-6 col-md-8 col-sm-8">
+            <div class="col-xxl-8 col-md-8 col-sm-6">
               <div class="label-title">Từ khoá:</div>
               <a-input
                 v-model:value="filter.name"
@@ -322,13 +327,13 @@ onMounted(() => {
                 </template>
               </a-input>
             </div>
-            <div class="col-xxl-6 col-md-8 col-sm-8">
+            <div class="col-xxl-4 col-md-4 col-sm-6">
               <div class="label-title">Trạng thái:</div>
               <a-select
                 v-model:value="filter.status"
                 placeholder="Chọn trạng thái"
                 allowClear
-                style="width: 100%"
+                class="w-100"
                 @change="fetchFacilities"
               >
                 <a-select-option :value="null">Tất cả trạng thái</a-select-option>
@@ -354,7 +359,7 @@ onMounted(() => {
           <template #title> <UnorderedListOutlined /> Danh sách cơ sở </template>
           <div class="d-flex justify-content-end mb-3">
             <!-- Nút Thêm sử dụng kiểu primary (filled) -->
-            <a-button type="primary" @click="modalAdd = true">
+            <a-button type="primary" @click="handleShowModalAdd">
               <PlusOutlined /> Thêm cơ sở
             </a-button>
           </div>

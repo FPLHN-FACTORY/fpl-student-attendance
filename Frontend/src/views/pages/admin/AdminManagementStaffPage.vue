@@ -3,14 +3,10 @@ import { ref, reactive, onMounted } from 'vue'
 import { message, Modal } from 'ant-design-vue'
 import {
   PlusOutlined,
-  EditOutlined,
-  SwapOutlined,
-  EyeOutlined,
   EditFilled,
-  EyeFilled,
-  SyncOutlined,
   UnorderedListOutlined,
   FilterFilled,
+  SearchOutlined,
 } from '@ant-design/icons-vue'
 import requestAPI from '@/services/requestApiService'
 import { ROUTE_NAMES } from '@/router/adminRoute'
@@ -28,7 +24,7 @@ const loadingStore = useLoadingStore()
 const breadcrumb = ref([
   {
     name: GLOBAL_ROUTE_NAMES.ADMIN_PAGE,
-    breadcrumbName: 'Quản lý',
+    breadcrumbName: 'Admin',
   },
   {
     name: ROUTE_NAMES.MANAGEMENT_STAFF,
@@ -36,19 +32,15 @@ const breadcrumb = ref([
   },
 ])
 
-// Danh sách nhân viên
 const staffs = ref([])
 
-// Danh sách cơ sở (để hiển thị trong select option)
 const facilitiesListCombobox = ref([])
 
-// Danh sách vai trò (cố định dựa trên backend, xoá vai trò 'Ban đào tạo')
 const rolesList = ref([
   { code: '1', name: 'Phụ trách xưởng' },
   { code: '3', name: 'Giảng viên' },
 ])
 
-// Hàm mapping để chuyển đổi mã vai trò thành tên hiển thị, xoá vai trò 'Ban đào tạo'
 const roleMapping = {
   1: 'Phụ trách xưởng',
   3: 'Giảng viên',
@@ -66,7 +58,6 @@ const convertRole = (roleCodes) => {
   return roleCodes
 }
 
-// Biến lọc và phân trang gửi lên API
 const filter = reactive({
   searchQuery: '',
   roleCodeFilter: '',
@@ -74,7 +65,6 @@ const filter = reactive({
   status: '',
 })
 
-// Sử dụng pagination dưới dạng ref giống mẫu plandate
 const pagination = ref({ ...DEFAULT_PAGINATION })
 
 // Biến loading cho bảng và modal
@@ -119,10 +109,9 @@ const columns = ref(
     { title: 'Vai trò', dataIndex: 'roleCode', key: 'roleCode' },
     { title: 'Trạng thái', dataIndex: 'staffStatus', key: 'staffStatus' },
     { title: 'Chức năng', key: 'actions' },
-  ]),
+  ])
 )
 
-// Hàm lấy danh sách nhân viên, dùng pagination.value.current và pagination.value.pageSize
 const fetchStaffs = () => {
   if (isLoading.value) return
   loadingStore.show()
@@ -142,7 +131,7 @@ const fetchStaffs = () => {
     .catch((error) => {
       message.error(
         (error.response && error.response.data && error.response.data.message) ||
-          'Lỗi khi lấy danh sách nhân viên',
+          'Lỗi khi lấy danh sách nhân viên'
       )
     })
     .finally(() => {
@@ -160,7 +149,7 @@ const fetchFacilitiesListCombobox = () => {
     .catch((error) => {
       message.error(
         (error.response && error.response.data && error.response.data.message) ||
-          'Lỗi khi lấy danh sách cơ sở',
+          'Lỗi khi lấy danh sách cơ sở'
       )
     })
 }
@@ -198,7 +187,7 @@ const handleAddStaff = () => {
     .catch((error) => {
       message.error(
         (error.response && error.response.data && error.response.data.message) ||
-          'Lỗi khi thêm nhân viên',
+          'Lỗi khi thêm nhân viên'
       )
     })
     .finally(() => {
@@ -226,7 +215,7 @@ const handleUpdateStaff = (record) => {
     .catch((error) => {
       message.error(
         (error.response && error.response.data && error.response.data.message) ||
-          'Lỗi khi lấy chi tiết nhân viên',
+          'Lỗi khi lấy chi tiết nhân viên'
       )
     })
     .finally(() => {
@@ -259,7 +248,7 @@ const updateStaff = () => {
     .catch((error) => {
       message.error(
         (error.response && error.response.data && error.response.data.message) ||
-          'Lỗi khi cập nhật nhân viên',
+          'Lỗi khi cập nhật nhân viên'
       )
     })
     .finally(() => {
@@ -284,7 +273,7 @@ const handleChangeStatusStaff = (record) => {
         .catch((error) => {
           message.error(
             (error.response && error.response.data && error.response.data.message) ||
-              'Lỗi khi đổi trạng thái nhân viên',
+              'Lỗi khi đổi trạng thái nhân viên'
           )
         })
         .finally(() => {
@@ -311,7 +300,10 @@ const configImportExcel = {
     message.error('Không thể xử lý file excel')
   },
   showDownloadTemplate: true,
+  showExport: true,
   showHistoryLog: true,
+  btnImport: 'Import giảng viên/ phụ trách xưởng',
+  btnExport: 'Export giảng viên/ phụ trách xưởng',
 }
 
 const handleClearFilter = () => {
@@ -321,6 +313,17 @@ const handleClearFilter = () => {
   })
   pagination.value.current = 1
   fetchStaffs()
+}
+
+const handleShowModalAdd = () => {
+  newStaff.emailFe = null
+  newStaff.emailFpt = null
+  newStaff.facilityId = null
+  newStaff.name = null
+  newStaff.roleCodes = []
+  newStaff.staffCode = null
+
+  modalAdd.value = true
 }
 
 onMounted(() => {
@@ -339,23 +342,27 @@ onMounted(() => {
           <template #title> <FilterFilled /> Bộ lọc </template>
           <div class="row g-3 filter-container">
             <!-- Input tìm kiếm theo mã, tên, email -->
-            <a-col class="col-md-6 col-sm-6">
-              <div class="label-title">Tìm kiếm theo mã, tên, email :</div>
+            <a-col class="col-lg-12 col-md-12 col-sm-12">
+              <div class="label-title">Từ khoá:</div>
               <a-input
                 v-model:value="filter.searchQuery"
                 placeholder="Tìm kiếm theo mã, tên, email"
                 allowClear
                 @change="fetchStaffs"
-              />
+              >
+                <template #prefix>
+                  <SearchOutlined />
+                </template>
+              </a-input>
             </a-col>
             <!-- Combobox trạng thái -->
-            <a-col class="col-md-6 col-sm-6">
-              <div class="label-title">Trạng thái :</div>
+            <a-col class="col-lg-4 col-md-4 col-sm-12">
+              <div class="label-title">Trạng thái:</div>
               <a-select
                 v-model:value="filter.status"
                 placeholder="Chọn trạng thái"
                 allowClear
-                style="width: 100%"
+                class="w-100"
                 @change="fetchStaffs"
               >
                 <a-select-option :value="''">Tất cả trạng thái</a-select-option>
@@ -365,13 +372,13 @@ onMounted(() => {
             </a-col>
 
             <!-- Combobox vai trò -->
-            <a-col class="col-md-6 col-sm-6">
+            <a-col class="col-lg-4 col-md-4 col-sm-6">
               <div class="label-title">Vai trò:</div>
               <a-select
                 v-model:value="filter.roleCodeFilter"
                 placeholder="Chọn vai trò"
                 allowClear
-                style="width: 100%"
+                class="w-100"
                 @change="fetchStaffs"
               >
                 <a-select-option :value="''">Tất cả vai trò</a-select-option>
@@ -380,13 +387,13 @@ onMounted(() => {
               </a-select>
             </a-col>
             <!-- Combobox cơ sở -->
-            <a-col class="col-md-6 col-sm-6">
-              <div class="label-title">Cơ sở :</div>
+            <a-col class="col-lg-4 col-md-4 col-sm-6">
+              <div class="label-title">Cơ sở:</div>
               <a-select
                 v-model:value="filter.idFacility"
                 placeholder="Chọn cơ sở"
                 allowClear
-                style="width: 100%"
+                class="w-100"
                 @change="fetchStaffs"
               >
                 <a-select-option :value="''">Tất cả cơ sở</a-select-option>
@@ -420,7 +427,9 @@ onMounted(() => {
           <div class="d-flex justify-content-end mb-3 flex-wrap gap-3">
             <ExcelUploadButton v-bind="configImportExcel" />
             <a-tooltip title="Thêm mới nhân viên">
-              <a-button type="primary" @click="modalAdd = true"> <PlusOutlined /> Thêm </a-button>
+              <a-button type="primary" @click="handleShowModalAdd">
+                <PlusOutlined /> Thêm
+              </a-button>
             </a-tooltip>
           </div>
           <a-table
@@ -485,6 +494,8 @@ onMounted(() => {
       title="Thêm nhân viên"
       @ok="handleAddStaff"
       :okButtonProps="{ loading: modalAddLoading }"
+      @cancel="clearNewStaffForm"
+      @close="clearNewStaffForm"
     >
       <a-form layout="vertical">
         <a-form-item label="Mã nhân viên" required>

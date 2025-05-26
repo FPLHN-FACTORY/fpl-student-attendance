@@ -1,6 +1,7 @@
 package udpm.hn.studentattendance.core.teacher.factory.model.response;
 
 public interface TCStudentFactoryResponse {
+
     Integer getRowNumber();
 
     String getStudentFactoryId();
@@ -16,4 +17,9 @@ public interface TCStudentFactoryResponse {
     String getStudentEmail();
 
     Integer getStatusStudentFactory();
+
+    Integer getTotalAbsentShift();
+
+    Integer getTotalShift();
+
 }

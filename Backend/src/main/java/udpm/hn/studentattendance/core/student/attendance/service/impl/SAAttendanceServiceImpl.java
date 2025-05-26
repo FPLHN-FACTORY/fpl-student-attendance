@@ -33,6 +33,7 @@ import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.ShiftType;
 import udpm.hn.studentattendance.infrastructure.constants.StatusType;
 import udpm.hn.studentattendance.infrastructure.constants.router.RouteWebsocketConstant;
+import udpm.hn.studentattendance.utils.AppUtils;
 import udpm.hn.studentattendance.utils.DateTimeUtils;
 import udpm.hn.studentattendance.utils.FaceRecognitionUtils;
 import udpm.hn.studentattendance.utils.GeoUtils;
@@ -88,14 +89,14 @@ public class SAAttendanceServiceImpl implements SAAttendanceService {
 
         if (planDate.getType() != ShiftType.ONLINE) {
             if (planDate.getRequiredIp() == StatusType.ENABLE) {
-                String clientIP = ValidateHelper.getClientIP(httpServletRequest);
+                String clientIP = AppUtils.getClientIP(httpServletRequest);
                 if (clientIP == null) {
                     return RouterHelper.responseError("IP đăng nhập không hợp lệ");
                 }
 
                 Set<String> allowIPs = facilityIPRepository.getAllIP(sessionHelper.getFacilityId());
                 if (!allowIPs.isEmpty() && !ValidateHelper.isAllowedIP(clientIP, allowIPs)) {
-                    return RouterHelper.responseError("Vui lòng kết nối bằng mạng trường để có thể Checkin");
+                    return RouterHelper.responseError("Vui lòng kết nối bằng mạng trường để tiếp tục checkin/checkout");
                 }
             }
 
@@ -105,12 +106,15 @@ public class SAAttendanceServiceImpl implements SAAttendanceService {
                 }
                 List<FacilityLocation> lstLocation = facilityLocationRepository.getAllList(sessionHelper.getFacilityId());
                 if (!GeoUtils.isAllowedLocation(lstLocation, request.getLatitude(), request.getLongitude())) {
-                    return RouterHelper.responseError("Địa điểm checkin nằm ngoài vùng cho phép");
+                    return RouterHelper.responseError("Địa điểm checkin/checkout nằm ngoài vùng cho phép");
                 }
             }
         }
 
         UserStudent userStudent = userStudentFactory.getUserStudent();
+
+        boolean isEnableCheckin = planDate.getRequiredCheckin() == StatusType.ENABLE;
+        boolean isEnableCheckout = planDate.getRequiredCheckout() == StatusType.ENABLE;
 
         if (!StringUtils.hasText(userStudent.getFaceEmbedding())) {
             return RouterHelper.responseError("Tài khoản chưa đăng ký thông tin khuôn mặt");
@@ -118,22 +122,50 @@ public class SAAttendanceServiceImpl implements SAAttendanceService {
 
         Attendance attendance = attendanceRepository.findByUserStudent_IdAndPlanDate_Id(userStudent.getId(), planDate.getId()).orElse(null);
 
-        if (attendance == null) {
-            if (DateTimeUtils.getCurrentTimeMillis() <= planDate.getStartDate() - (long) EARLY_CHECKIN * 60 * 1000) {
-                return RouterHelper.responseError("Chưa đến giờ checkin đầu giờ");
+        if (attendance != null) {
+            if (attendance.getAttendanceStatus() == AttendanceStatus.PRESENT) {
+                return RouterHelper.responseError("Ca học đã được điểm danh");
+            }
+            if (attendance.getAttendanceStatus() == AttendanceStatus.ABSENT) {
+                return RouterHelper.responseError("Bạn đã bị huỷ điểm danh.");
+            }
+        }
+
+        if (attendance == null || attendance.getAttendanceStatus() == AttendanceStatus.NOTCHECKIN) {
+            if (isEnableCheckin || !isEnableCheckout) {
+                if (DateTimeUtils.getCurrentTimeMillis() <= planDate.getStartDate() - (long) EARLY_CHECKIN * 60 * 1000) {
+                    return RouterHelper.responseError("Chưa đến giờ " + (isEnableCheckin ? "checkin đầu giờ" : "điểm danh"));
+                }
+
+                if (DateTimeUtils.getCurrentTimeMillis() > planDate.getStartDate() + planDate.getLateArrival() * 60 * 1000) {
+                    return RouterHelper.responseError("Đã quá giờ " + (isEnableCheckin ? "checkin đầu giờ" : "điểm danh"));
+                }
             }
 
-            if (DateTimeUtils.getCurrentTimeMillis() > planDate.getStartDate() + planDate.getLateArrival() * 60 * 1000) {
-                return RouterHelper.responseError("Đã quá giờ checkin đầu giờ");
+            if (!isEnableCheckin && isEnableCheckout) {
+                if (DateTimeUtils.getCurrentTimeMillis() < planDate.getEndDate()) {
+                    return RouterHelper.responseError("Chưa đến giờ checkout cuối giờ");
+                }
+
+                if (DateTimeUtils.getCurrentTimeMillis() > planDate.getEndDate() + planDate.getLateArrival() * 60 * 1000) {
+                    return RouterHelper.responseError("Đã quá giờ checkout cuối giờ");
+                }
             }
+
         } else {
+
+            if (isEnableCheckin && attendance.getAttendanceStatus() != AttendanceStatus.CHECKIN) {
+                return RouterHelper.responseError("Không thể checkout khi chưa checkin");
+            }
+
             if (DateTimeUtils.getCurrentTimeMillis() < planDate.getEndDate()) {
-                return RouterHelper.responseError("Chưa đến giờ checkin cuối giờ");
+                return RouterHelper.responseError("Chưa đến giờ checkout cuối giờ");
             }
 
             if (DateTimeUtils.getCurrentTimeMillis() > planDate.getEndDate() + planDate.getLateArrival() * 60 * 1000) {
-                return RouterHelper.responseError("Đã quá giờ checkin cuối giờ");
+                return RouterHelper.responseError("Đã quá giờ checkout cuối giờ");
             }
+
         }
 
         List<double[]> inputEmbedding = FaceRecognitionUtils.parseEmbeddings(request.getFaceEmbedding());
@@ -144,16 +176,15 @@ public class SAAttendanceServiceImpl implements SAAttendanceService {
         }
 
         if (attendance != null) {
-            if (attendance.getAttendanceStatus() == AttendanceStatus.CHECKIN) {
-                attendance.setAttendanceStatus(AttendanceStatus.PRESENT);
-                AttendanceMessage attendanceMessage = new AttendanceMessage();
-                attendanceMessage.setPlanDateId(planDate.getId());
-                attendanceMessage.setUserStudentId(userStudent.getId());
-                messagingTemplate.convertAndSend(RouteWebsocketConstant.TOPIC_ATTENDANCE, attendanceMessage);
-                return RouterHelper.responseSuccess("Điểm danh thành công", attendanceRepository.save(attendance));
+            if (attendance.getAttendanceStatus() == AttendanceStatus.CHECKIN || !isEnableCheckin || !isEnableCheckout) {
+                return RouterHelper.responseSuccess("Điểm danh thành công", markPresent(attendance, planDate, userStudent));
             } else {
-                return RouterHelper.responseError("Không thể checkin ca học này");
+                return RouterHelper.responseError("Không thể checkin/checkout ca học này");
             }
+        }
+
+        if (!isEnableCheckin || !isEnableCheckout) {
+            return RouterHelper.responseSuccess("Điểm danh thành công", markPresent(attendance, planDate, userStudent));
         }
 
         attendance = new Attendance();
@@ -161,7 +192,28 @@ public class SAAttendanceServiceImpl implements SAAttendanceService {
         attendance.setUserStudent(userStudent);
         attendance.setPlanDate(planDate);
 
-        return RouterHelper.responseSuccess("Checkin đầu giờ thành công", attendanceRepository.save(attendance));
+        Attendance entity = attendanceRepository.save(attendance);
+        sendMessageWS(planDate, userStudent);
+
+        return RouterHelper.responseSuccess("Checkin đầu giờ thành công", entity);
+    }
+
+    private Attendance markPresent(Attendance attendance, PlanDate planDate, UserStudent userStudent) {
+        if (attendance == null) {
+            attendance = new Attendance();
+            attendance.setUserStudent(userStudent);
+            attendance.setPlanDate(planDate);
+        }
+        attendance.setAttendanceStatus(AttendanceStatus.PRESENT);
+        sendMessageWS(planDate, userStudent);
+        return attendanceRepository.save(attendance);
+    }
+
+    private void sendMessageWS(PlanDate planDate, UserStudent userStudent) {
+        AttendanceMessage attendanceMessage = new AttendanceMessage();
+        attendanceMessage.setPlanDateId(planDate.getId());
+        attendanceMessage.setUserStudentId(userStudent.getId());
+        messagingTemplate.convertAndSend(RouteWebsocketConstant.TOPIC_ATTENDANCE, attendanceMessage);
     }
 
 }

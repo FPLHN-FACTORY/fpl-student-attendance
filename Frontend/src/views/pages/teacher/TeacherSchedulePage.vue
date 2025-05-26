@@ -3,8 +3,6 @@ import { ref, onMounted, reactive, computed } from 'vue'
 import {
   FilterFilled,
   UnorderedListOutlined,
-  EyeFilled,
-  EditFilled,
   ExclamationCircleOutlined,
   CheckOutlined,
   DownloadOutlined,
@@ -14,17 +12,19 @@ import requestAPI from '@/services/requestApiService'
 import { API_ROUTES_TEACHER } from '@/constants/teacherConstant'
 import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
 import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
-import { ROUTE_NAMES } from '@/router/teacherRoute'
-import { DEFAULT_DATE_FORMAT, DEFAULT_PAGINATION, SHIFT, TYPE_SHIFT } from '@/constants'
+import { ROUTE_NAMES, TeacherRoutes } from '@/router/teacherRoute'
+import { DEFAULT_DATE_FORMAT, DEFAULT_PAGINATION, TYPE_SHIFT } from '@/constants'
 import { formatDate, dayOfWeek, autoAddColumnWidth } from '@/utils/utils'
 import useLoadingStore from '@/stores/useLoadingStore'
 import dayjs from 'dayjs'
 import router from '@/router'
+import useApplicationStore from '@/stores/useApplicationStore'
 
 // Khởi tạo breadcrumb
+const applicationStore = useApplicationStore()
 const breadcrumbStore = useBreadcrumbStore()
 const breadcrumb = ref([
-  { name: GLOBAL_ROUTE_NAMES.TEACHER_PAGE, breadcrumbName: 'Giáo viên' },
+  { name: GLOBAL_ROUTE_NAMES.TEACHER_PAGE, breadcrumbName: 'Giảng viên' },
   { name: ROUTE_NAMES.TEACHING_SCHEDULE, breadcrumbName: 'Lịch giảng dạy' },
 ])
 
@@ -182,13 +182,18 @@ const fetchTeachingSchedule = () => {
     })
 }
 const handleAttendance = (record) => {
-  console.log('Detail record:', record)
-  router.push({
-    name: ROUTE_NAMES.MANAGEMENT_STUDENT_ATTENDANCE,
-    query: {
-      idPlanDate: record.idPlanDate || record.id,
-    },
-  })
+  if (Date.now() <= record.startTeaching - 10 * 60 * 1000) {
+    message.error('Chưa đến giờ điểm danh cho buổi học này')
+  } else if (Date.now > record.endTeaching) {
+    message.error('Đã quá giờ điểm danh cho buổi học này')
+  } else {
+    router.push({
+      name: ROUTE_NAMES.MANAGEMENT_STUDENT_ATTENDANCE,
+      query: {
+        idPlanDate: record.idPlanDate || record.id,
+      },
+    })
+  }
 }
 // Lấy danh sách phụ trợ
 const fetchSubjects = () => {
@@ -239,7 +244,6 @@ const handleTableChange = (pag) => {
 }
 
 // Modal chi tiết & cập nhật
-const isDetailModalVisible = ref(false)
 const detailModalContent = ref('')
 const detailLateArrival = ref(0)
 const detailLink = ref('')
@@ -263,12 +267,12 @@ const handleShowDescription = (record) => {
     .get(`${API_ROUTES_TEACHER.FETCH_DATA_SCHEDULE}/${record.idPlanDate}`)
     .then((res) => {
       const d = res.data.data
-      detailModalContent.value = d.description || 'Không có mô tả'
+      detailModalContent.value = d.description
       detailLateArrival.value = d.lateArrival
       detailLink.value = d.link
       detailRoom.value = d.room || ''
       currentPlanDateId.value = d.planDateId
-      isDetailModalVisible.value = true
+      handleShowUpdate()
     })
     .catch((error) => {
       message.error(error.response?.data?.message || 'Lỗi khi lấy chi tiết kế hoạch')
@@ -296,10 +300,9 @@ const handleUpdatePlanDate = () => {
           link: formUpdateData.link,
           room: formUpdateData.room,
         })
-        .then(() => {
-          message.success('Cập nhật buổi học thành công')
+        .then(({ data: response }) => {
+          message.success(response.message || 'Cập nhật buổi học thành công')
           isUpdateModalVisible.value = false
-          isDetailModalVisible.value = false
           fetchTeachingSchedule()
           fetchTeachingSchedulePresent()
         })
@@ -354,8 +357,8 @@ function handleChangeType(record, room = '') {
   const id = record.idPlanDate
   requestAPI
     .put(`${API_ROUTES_TEACHER.FETCH_DATA_SCHEDULE}/change-type/${id}`, null, { params: { room } })
-    .then(() => {
-      message.success('Đã đổi hình thức ca học')
+    .then(({ data: response }) => {
+      message.success(response.message || 'Đã đổi hình thức ca học')
       fetchTeachingSchedule()
       fetchTeachingSchedulePresent()
     })
@@ -444,6 +447,13 @@ const handleClearFilter = () => {
   fetchTeachingSchedule()
 }
 
+const handleShowFactory = (item) => {
+  applicationStore.setSelectedKeys(
+    TeacherRoutes[0].children.find((o) => o.name == ROUTE_NAMES.MANAGEMENT_FACTORY).meta.selectedKey
+  )
+  router.push({ name: ROUTE_NAMES.MANAGEMENT_SHIFT_FACTORY, params: { id: item.factoryId } })
+}
+
 onMounted(() => {
   breadcrumbStore.setRoutes(breadcrumb.value)
   fetchSubjects()
@@ -459,7 +469,7 @@ onMounted(() => {
     <div class="row g-3">
       <div class="col-12">
         <a-card :bordered="false" class="cart mb-3">
-          <template #title> <FilterFilled /> Bộ lọc tìm kiếm </template>
+          <template #title> <FilterFilled /> Bộ lọc</template>
           <div class="row g-3 filter-container">
             <div class="col-md-6 col-sm-6">
               <div class="label-title">Khoảng thời gian:</div>
@@ -482,7 +492,7 @@ onMounted(() => {
                 v-model:value="filter.shiftType"
                 placeholder="Chọn hình thức học"
                 allowClear
-                style="width: 100%"
+                class="w-100"
                 @change="fetchTeachingSchedule"
               >
                 <a-select-option :value="''">Tất cả hình thức học</a-select-option>
@@ -525,7 +535,7 @@ onMounted(() => {
                 {{
                   `${formatDate(record.startTeaching, 'HH:mm')} - ${formatDate(
                     record.endTeaching,
-                    'HH:mm',
+                    'HH:mm'
                   )}`
                 }}
               </template>
@@ -539,7 +549,7 @@ onMounted(() => {
                   {{
                     `${dayOfWeek(record.startTeaching)}, ${formatDate(
                       record.startTeaching,
-                      DEFAULT_DATE_FORMAT,
+                      DEFAULT_DATE_FORMAT
                     )}`
                   }}
                 </template>
@@ -561,15 +571,19 @@ onMounted(() => {
                     <ExclamationCircleOutlined /> {{ record.lateArrival + ' phút' }}
                   </a-tag>
                 </template>
+                <template v-else-if="column.dataIndex === 'factoryName'">
+                  <a-typography-link @click="handleShowFactory(record)">{{
+                    record.factoryName
+                  }}</a-typography-link>
+                </template>
                 <template v-else-if="column.dataIndex === 'description'">
-                  <a-tooltip title="Xem, sửa mô tả">
+                  <a-tooltip title="Xem, sửa chi tiết buổi dạy">
                     <a-typography-link @click="handleShowDescription(record)"
                       >Chi tiết</a-typography-link
                     >
                   </a-tooltip>
                 </template>
               </template>
-
               <!-- Cột action -->
               <template v-else-if="column.key === 'action'">
                 <span v-if="Date.now() <= record.startTeaching - 10 * 60 * 1000">
@@ -632,7 +646,7 @@ onMounted(() => {
                 {{
                   `${formatDate(record.startTeaching, 'HH:mm')} - ${formatDate(
                     record.endTeaching,
-                    'HH:mm',
+                    'HH:mm'
                   )}`
                 }}
               </template>
@@ -646,7 +660,7 @@ onMounted(() => {
                   {{
                     `${dayOfWeek(record.startTeaching)}, ${formatDate(
                       record.startTeaching,
-                      DEFAULT_DATE_FORMAT,
+                      DEFAULT_DATE_FORMAT
                     )}`
                   }}
                 </template>
@@ -673,11 +687,16 @@ onMounted(() => {
                   </a-tag>
                 </template>
                 <template v-else-if="column.dataIndex === 'description'">
-                  <a-tooltip title="Xem, sửa mô tả">
+                  <a-tooltip title="Xem, sửa chi tiết buổi dạy">
                     <a-typography-link @click="handleShowDescription(record)"
                       >Chi tiết</a-typography-link
                     >
                   </a-tooltip>
+                </template>
+                <template v-else-if="column.dataIndex === 'factoryName'">
+                  <a-typography-link @click="handleShowFactory(record)">{{
+                    record.factoryName
+                  }}</a-typography-link>
                 </template>
                 <template v-else>
                   {{ record[column.dataIndex] }}
@@ -689,24 +708,6 @@ onMounted(() => {
       </div>
     </div>
 
-    <!-- Modal chi tiết -->
-    <a-modal
-      v-model:open="isDetailModalVisible"
-      title="Chi tiết mô tả buổi dạy"
-      :footer="null"
-      maskClosable
-    >
-      <div class="mb-3">{{ detailModalContent }}</div>
-      <div v-if="detailRoom">Địa điểm học: {{ detailRoom }}</div>
-      <div v-if="detailLink">
-        Link học: <a :href="detailLink" target="_blank">{{ detailLink }}</a>
-      </div>
-      <div class="d-flex justify-content-end gap-2">
-        <a-button @click="isDetailModalVisible = false" class="btn-gray"> Đóng </a-button>
-        <a-button type="primary" @click="handleShowUpdate"> Sửa </a-button>
-      </div>
-    </a-modal>
-
     <!-- Modal cập nhật -->
     <a-modal
       v-model:open="isUpdateModalVisible"
@@ -717,7 +718,12 @@ onMounted(() => {
     >
       <a-form layout="vertical" :model="formUpdateData" :rules="formUpdateRules">
         <a-form-item label="Nội dung buổi học" name="description">
-          <a-textarea v-model:value="formUpdateData.description" rows="4" class="w-100" />
+          <a-textarea
+            v-model:value="formUpdateData.description"
+            rows="4"
+            class="w-100"
+            placeholder="Không có nội dung nào"
+          />
         </a-form-item>
         <a-form-item label="Điểm danh muộn" name="lateArrival">
           <a-input-number v-model:value="formUpdateData.lateArrival" :min="0" class="w-100" />

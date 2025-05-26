@@ -5,7 +5,6 @@ import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
@@ -26,10 +25,10 @@ import udpm.hn.studentattendance.helpers.PaginationHelper;
 import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.helpers.SessionHelper;
 import udpm.hn.studentattendance.helpers.ValidateHelper;
-import udpm.hn.studentattendance.infrastructure.common.ApiResponse;
+
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
-import udpm.hn.studentattendance.infrastructure.constants.RestApiStatus;
+
 import udpm.hn.studentattendance.infrastructure.constants.RoleConstant;
 
 import java.util.HashMap;
@@ -52,7 +51,7 @@ public class ADStaffServiceImpl implements ADStaffService {
     private final SessionHelper sessionHelper;
 
     @Value("${app.config.disabled-check-email-fpt}")
-    private String isCheckEmailFpt;
+    private String isDisableCheckEmailFpt;
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -61,23 +60,28 @@ public class ADStaffServiceImpl implements ADStaffService {
     public ResponseEntity<?> getAllStaffByFilter(ADStaffRequest adStaffRequest) {
         Pageable pageable = PaginationHelper.createPageable(adStaffRequest, "createdAt");
         PageableObject staffs = PageableObject.of(adStaffRepository.getAllStaff(pageable, adStaffRequest));
-        return new ResponseEntity<>(
-                new ApiResponse(
-                        RestApiStatus.SUCCESS,
-                        "Lấy tất cả giảng viên thành công",
-                        staffs),
-                HttpStatus.OK);
+        return RouterHelper.responseSuccess("Lấy tất cả giảng viên thành công", staffs);
     }
 
     @Override
     public ResponseEntity<?> createStaff(ADCreateUpdateStaffRequest adCreateUpdateStaffRequest) {
-        // Kiểm tra định dạng email
-        if (isCheckEmailFpt.equals("true")) {
+
+        if (!ValidateHelper.isValidCode(adCreateUpdateStaffRequest.getStaffCode())) {
+            return RouterHelper.responseError("Mã nhân viên không hợp lệ: Không có khoảng trắng, không có ký tự đặc biệt ngoài dấu chấm . và dấu gạch dưới _.");
+        }
+
+        if (!ValidateHelper.isValidFullname(adCreateUpdateStaffRequest.getName())) {
+            return RouterHelper.responseError("Tên nhân viên không hợp lệ: Tối thiểu 2 từ, cách nhau bởi khoảng trắng và Chỉ gồm ký tự chữ không chứa số hay ký tự đặc biệt.");
+        }
+
+        if (!isDisableCheckEmailFpt.equalsIgnoreCase("true")) {
             if (!ValidateHelper.isValidEmailFE(adCreateUpdateStaffRequest.getEmailFe().trim())) {
-                return RouterHelper.responseError("Không chứa khoảng trắng và kết thúc bằng @fe.edu.vn");
+                return RouterHelper
+                        .responseError("Email FE không được chứa khoảng trắng và phải kết thúc bằng @fe.edu.vn");
             }
             if (!ValidateHelper.isValidEmailFPT(adCreateUpdateStaffRequest.getEmailFpt().trim())) {
-                return RouterHelper.responseError("Không chứa khoảng trắng và kết thúc bằng @fpt.edu.vn");
+                return RouterHelper
+                        .responseError("Email FPT không được chứa khoảng trắng và phải kết thúc bằng @fpt.edu.vn");
             }
         }
 
@@ -87,9 +91,7 @@ public class ADStaffServiceImpl implements ADStaffService {
                 adCreateUpdateStaffRequest.getEmailFe(),
                 adCreateUpdateStaffRequest.getEmailFpt());
         if (staffExist != null) {
-            return new ResponseEntity<>(
-                    new ApiResponse(RestApiStatus.WARNING, "Nhân viên đã tồn tại", null),
-                    HttpStatus.BAD_REQUEST);
+            return RouterHelper.responseError("Nhân viên đã tồn tại");
         }
 
         // Tạo mới UserStaff
@@ -104,17 +106,13 @@ public class ADStaffServiceImpl implements ADStaffService {
         // Kiểm tra cơ sở
         Facility facility = entityManager.find(Facility.class, adCreateUpdateStaffRequest.getFacilityId());
         if (facility == null) {
-            return new ResponseEntity<>(
-                    new ApiResponse(RestApiStatus.ERROR, "Cơ sở không tồn tại", null),
-                    HttpStatus.BAD_REQUEST);
+            return RouterHelper.responseError("Cơ sở không tồn tại");
         }
 
         // Tạo các vai trò
         List<String> roleCodes = adCreateUpdateStaffRequest.getRoleCodes();
         if (roleCodes == null || roleCodes.isEmpty()) {
-            return new ResponseEntity<>(
-                    new ApiResponse(RestApiStatus.ERROR, "Phải chọn ít nhất một vai trò", null),
-                    HttpStatus.BAD_REQUEST);
+            return RouterHelper.responseError("Phải chọn ít nhất một vai trò");
         }
 
         RoleConstant[] roleConstants = RoleConstant.values(); // Mảng các giá trị enum
@@ -127,9 +125,7 @@ public class ADStaffServiceImpl implements ADStaffService {
                 }
                 roleConstant = roleConstants[ordinal];
             } catch (IllegalArgumentException e) {
-                return new ResponseEntity<>(
-                        new ApiResponse(RestApiStatus.ERROR, "Vai trò không hợp lệ: " + roleCode, null),
-                        HttpStatus.BAD_REQUEST);
+                return RouterHelper.responseError("Vai trò không hợp lệ: " + roleCode);
             }
 
             Role role = new Role();
@@ -151,43 +147,42 @@ public class ADStaffServiceImpl implements ADStaffService {
             notificationService.add(notificationAddRequest);
         }
 
-        return new ResponseEntity<>(
-                new ApiResponse(RestApiStatus.SUCCESS, "Thêm nhân viên mới thành công", null),
-                HttpStatus.CREATED);
+        return RouterHelper.responseSuccess("Thêm nhân viên mới thành công");
     }
 
     @Override
     public ResponseEntity<?> updateStaff(ADCreateUpdateStaffRequest adCreateUpdateStaffRequest, String id) {
+
+        if (!ValidateHelper.isValidCode(adCreateUpdateStaffRequest.getStaffCode())) {
+            return RouterHelper.responseError("Mã nhân viên không hợp lệ: Không có khoảng trắng, không có ký tự đặc biệt ngoài dấu chấm . và dấu gạch dưới _.");
+        }
+
+        if (!ValidateHelper.isValidFullname(adCreateUpdateStaffRequest.getName())) {
+            return RouterHelper.responseError("Tên nhân viên không hợp lệ: Tối thiểu 2 từ, cách nhau bởi khoảng trắng và Chỉ gồm ký tự chữ không chứa số hay ký tự đặc biệt.");
+        }
+
         // Kiểm tra nhân viên tồn tại
         Optional<UserStaff> opt = adStaffRepository.findById(id);
         if (opt.isEmpty()) {
-            return new ResponseEntity<>(
-                    new ApiResponse(RestApiStatus.ERROR, "Không tìm thấy nhân viên", null),
-                    HttpStatus.BAD_REQUEST);
+            return RouterHelper.responseError("Không tìm thấy nhân viên");
         }
         UserStaff current = opt.get();
 
         // 2. Check trùng code
         if (adStaffRepository.isExistCodeUpdate(adCreateUpdateStaffRequest.getStaffCode(), current.getCode())) {
-            return new ResponseEntity<>(
-                    new ApiResponse(RestApiStatus.ERROR, "Mã nhân viên đã tồn tại", null),
-                    HttpStatus.BAD_REQUEST);
+            return RouterHelper.responseError("Mã nhân viên đã tồn tại");
         }
         // 3. Check trùng email FE
         if (adStaffRepository.isExistEmailFeUpdate(adCreateUpdateStaffRequest.getEmailFe(), current.getEmailFe())) {
-            return new ResponseEntity<>(
-                    new ApiResponse(RestApiStatus.ERROR, "Đã có nhân viên khác dùng email fe này", null),
-                    HttpStatus.BAD_REQUEST);
+            return RouterHelper.responseError("Đã có nhân viên khác dùng email fe này");
         }
         // 4. Check trùng email FPT
         if (adStaffRepository.isExistEmailFptUpdate(adCreateUpdateStaffRequest.getEmailFpt(), current.getEmailFpt())) {
-            return new ResponseEntity<>(
-                    new ApiResponse(RestApiStatus.ERROR, "Đã có nhân viên khác dùng email fpt này", null),
-                    HttpStatus.BAD_REQUEST);
+            return RouterHelper.responseError("Đã có nhân viên khác dùng email fpt này");
         }
 
         // Kiểm tra định dạng email
-        if (isCheckEmailFpt.equals("false")) {
+        if (!isDisableCheckEmailFpt.equalsIgnoreCase("true")) {
             if (!ValidateHelper.isValidEmailFE(adCreateUpdateStaffRequest.getEmailFe().trim())) {
                 return RouterHelper.responseError("Không chứa khoảng trắng và kết thúc bằng @fe.edu.vn");
             }
@@ -208,9 +203,7 @@ public class ADStaffServiceImpl implements ADStaffService {
         Optional<Facility> existFacility = adminStaffFacilityRepository
                 .findById(adCreateUpdateStaffRequest.getFacilityId().trim());
         if (existFacility.isEmpty()) {
-            return new ResponseEntity<>(
-                    new ApiResponse(RestApiStatus.ERROR, "Cơ sở không tồn tại", null),
-                    HttpStatus.BAD_REQUEST);
+            return RouterHelper.responseError("Cơ sở không tồn tại");
         }
         Facility facility = existFacility.get();
 
@@ -248,9 +241,7 @@ public class ADStaffServiceImpl implements ADStaffService {
                 }
                 roleConstant = roleConstants[ordinal];
             } catch (IllegalArgumentException e) {
-                return new ResponseEntity<>(
-                        new ApiResponse(RestApiStatus.ERROR, "Vai trò không hợp lệ: " + roleCode, null),
-                        HttpStatus.BAD_REQUEST);
+                return RouterHelper.responseError("Vai trò không hợp lệ: " + roleCode);
             }
 
             Optional<Role> existingRole = currentRoles.stream()
@@ -281,21 +272,14 @@ public class ADStaffServiceImpl implements ADStaffService {
             notificationService.add(notificationAddRequest);
         }
 
-        return new ResponseEntity<>(
-                new ApiResponse(RestApiStatus.SUCCESS, "Cập nhật nhân viên thành công", null),
-                HttpStatus.OK);
+        return RouterHelper.responseSuccess("Cập nhật nhân viên thành công");
     }
 
     @Override
     public ResponseEntity<?> changeStaffStatus(String staffId) {
         Optional<UserStaff> existStaff = adStaffRepository.findById(staffId);
         if (existStaff.isEmpty()) {
-            return new ResponseEntity<>(
-                    new ApiResponse(
-                            RestApiStatus.ERROR,
-                            "Nhân viên không tồn tại",
-                            null),
-                    HttpStatus.NOT_FOUND);
+            return RouterHelper.responseError("Nhân viên không tồn tại");
         }
         UserStaff staff = existStaff.get();
         staff.setStatus(staff.getStatus() == EntityStatus.ACTIVE ? EntityStatus.INACTIVE : EntityStatus.ACTIVE);
@@ -306,53 +290,28 @@ public class ADStaffServiceImpl implements ADStaffService {
         adStaffRoleRepository.saveAll(staffRoles);
 
         adStaffRepository.save(staff);
-        return new ResponseEntity<>(
-                new ApiResponse(
-                        RestApiStatus.SUCCESS,
-                        "Thay đổi trạng thái giảng viên thành công",
-                        null),
-                HttpStatus.OK);
+        return RouterHelper.responseSuccess("Thay đổi trạng thái giảng viên thành công");
     }
 
     @Override
     public ResponseEntity<?> getStaffById(String staffId) {
         Optional<ADStaffDetailResponse> existStaff = adStaffRepository.getDetailStaff(staffId);
         if (existStaff.isPresent()) {
-            return new ResponseEntity<>(
-                    new ApiResponse(
-                            RestApiStatus.SUCCESS,
-                            "Xem chi tiết giảng viên thành công",
-                            existStaff),
-                    HttpStatus.OK);
+            return RouterHelper.responseSuccess("Xem chi tiết giảng viên thành công", existStaff);
         }
-        return new ResponseEntity<>(
-                new ApiResponse(
-                        RestApiStatus.WARNING,
-                        "Giảng viên không tồn tại",
-                        existStaff),
-                HttpStatus.NOT_FOUND);
+        return RouterHelper.responseError("Giảng viên không tồn tại");
     }
 
     @Override
     public ResponseEntity<?> getAllRole() {
         List<Role> getAllRole = adStaffRoleRepository.getAllRole();
-        return new ResponseEntity<>(
-                new ApiResponse(
-                        RestApiStatus.SUCCESS,
-                        "Lấy tất cả vai trò thành công",
-                        getAllRole),
-                HttpStatus.OK);
+        return RouterHelper.responseSuccess("Lấy tất cả vai trò thành công", getAllRole);
     }
 
     @Override
     public ResponseEntity<?> getAllFacility() {
         List<Facility> getAllFacility = adminStaffFacilityRepository.getFacility(EntityStatus.ACTIVE);
-        return new ResponseEntity<>(
-                new ApiResponse(
-                        RestApiStatus.SUCCESS,
-                        "Lấy tất cả cơ sở thành công",
-                        getAllFacility),
-                HttpStatus.OK);
+        return RouterHelper.responseSuccess("Lấy tất cả cơ sở thành công", getAllFacility);
     }
 
     private UserStaff isStaffExist(

@@ -8,8 +8,11 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import udpm.hn.studentattendance.core.staff.factory.model.response.USFactoryResponse;
 import udpm.hn.studentattendance.core.staff.project.model.request.USProjectCreateOrUpdateRequest;
+import udpm.hn.studentattendance.core.staff.project.model.response.USProjectResponse;
 import udpm.hn.studentattendance.core.staff.project.repository.STLevelProjectExtendRepository;
+import udpm.hn.studentattendance.core.staff.project.repository.STProjectExtendRepository;
 import udpm.hn.studentattendance.core.staff.project.repository.STProjectSemesterExtendRepository;
 import udpm.hn.studentattendance.core.staff.project.repository.STProjectSubjectFacilityExtendRepository;
 import udpm.hn.studentattendance.core.staff.project.service.STProjectManagementService;
@@ -33,6 +36,7 @@ import udpm.hn.studentattendance.infrastructure.excel.model.response.ExImportLog
 import udpm.hn.studentattendance.infrastructure.excel.repositories.EXImportLogDetailRepository;
 import udpm.hn.studentattendance.infrastructure.excel.repositories.EXImportLogRepository;
 import udpm.hn.studentattendance.infrastructure.excel.service.EXProjectService;
+import udpm.hn.studentattendance.utils.ExcelUtils;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -52,6 +56,8 @@ public class EXProjectServiceImpl implements EXProjectService {
     private final STProjectSemesterExtendRepository semesterExtendRepository;
     private final STProjectSubjectFacilityExtendRepository subjectFacilityExtendRepository;
     private final STLevelProjectExtendRepository levelProjectExtendRepository;
+
+    private final STProjectExtendRepository projectExtendRepository;
 
     @Override
     public ResponseEntity<?> getDataFromFile(EXUploadRequest request) {
@@ -76,14 +82,12 @@ public class EXProjectServiceImpl implements EXProjectService {
     public ResponseEntity<?> importItem(EXImportRequest request) {
         Map<String, String> item = request.getItem();
 
-        // 1. Lấy dữ liệu từ cột
         String nameProject = item.get("TEN_DU_AN");
         String description = item.get("MO_TA");
         String levelRaw = item.get("CAP_DU_AN");     // "LevelName - LEVEL_CODE"
         String semesterRaw = item.get("HOC_KY");        // "SEMESTER_CODE"
         String subjectRaw = item.get("MON_HOC");       // "SubjectName - SUBJECT_ID"
 
-        // 2. Validate bắt buộc
         if (nameProject == null || nameProject.isBlank()) {
             String msg = "Không được để trống tên dự án";
             excelHelper.saveLogError(ImportLogType.PROJECT, msg, request);
@@ -105,7 +109,6 @@ public class EXProjectServiceImpl implements EXProjectService {
             return RouterHelper.responseError(msg, HttpStatus.BAD_REQUEST);
         }
 
-        // 3. Parse cấp dự án và môn học
         String[] levelParts = levelRaw.split(" - ");
         if (levelParts.length < 2) {
             String msg = "Định dạng cấp dự án không hợp lệ. Vui lòng chọn từ dropdown.";
@@ -124,7 +127,6 @@ public class EXProjectServiceImpl implements EXProjectService {
         }
         String subjectId = subjectParts[1].trim(); // ID là string
 
-        // 4. Lookup entities
         Semester semester = semesterExtendRepository.getSemesterByCode(semesterCode);
         if (semester == null) {
             String msg = String.format("Học kỳ '%s' không tồn tại.", semesterCode);
@@ -146,7 +148,6 @@ public class EXProjectServiceImpl implements EXProjectService {
             return RouterHelper.responseError(msg, HttpStatus.BAD_REQUEST);
         }
 
-        // 5. Build DTO và gọi service
         USProjectCreateOrUpdateRequest dto = new USProjectCreateOrUpdateRequest();
         dto.setName(nameProject.trim());
         dto.setDescription(description == null ? null : description.trim());
@@ -162,6 +163,48 @@ public class EXProjectServiceImpl implements EXProjectService {
             excelHelper.saveLogError(ImportLogType.PROJECT, apiRes.getMessage(), request);
         }
         return result;
+    }
+
+    @Override
+    public ResponseEntity<?> exportData(EXDataRequest request) {
+        List<USProjectResponse> list = projectExtendRepository.exportAllProject(sessionHelper.getFacilityId());
+
+        try (Workbook workbook = new XSSFWorkbook();
+             ByteArrayOutputStream data = new ByteArrayOutputStream()) {
+            String filename =
+                    "Project" + ".xlsx";
+            List<String> headers = List.of("STT", "Tên", "Cấp dự án", "Học kỳ", "Môn học", "Mô tả");
+
+            Sheet sheet = ExcelUtils.createTemplate(workbook, "Data Export", headers, new ArrayList<>());
+
+            for (int i = 0; i < list.size(); i++) {
+                int row = i + 1;
+                USProjectResponse projectResponse = list.get(i);
+                String index = String.valueOf(row);
+                String name = projectResponse.getName();
+                String levelProjectName = projectResponse.getNameLevelProject();
+                String semester = projectResponse.getNameSemester();
+                String subjectCode = projectResponse.getNameSubject();
+                String projectDescription = projectResponse.getDescription();
+
+                List<Object> dataCell = List.of(index, name, levelProjectName, semester, subjectCode, projectDescription);
+                ExcelUtils.insertRow(sheet, row, dataCell);
+            }
+            sheet.setColumnWidth(2, 40 * 256);
+            sheet.setColumnWidth(3, 40 * 256);
+            sheet.setColumnWidth(4, 40 * 256);
+            sheet.setColumnWidth(5, 30 * 256);
+            sheet.setColumnWidth(6, 30 * 256);
+            workbook.write(data);
+
+            HttpHeaders headersHttp = new HttpHeaders();
+            headersHttp.setContentDisposition(ContentDisposition.builder("attachment").filename(filename).build());
+            headersHttp.set(HttpHeaders.ACCESS_CONTROL_EXPOSE_HEADERS, HttpHeaders.CONTENT_DISPOSITION);
+            headersHttp.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+            return new ResponseEntity<>(data.toByteArray(), headersHttp, HttpStatus.OK);
+        } catch (IOException e) {
+            return null;
+        }
     }
 
     @Override
@@ -313,29 +356,46 @@ public class EXProjectServiceImpl implements EXProjectService {
         nmSemester.setNameName("SemesterList");
         nmSemester.setRefersToFormula("DropdownData!$C$1:$C$" + semesterList.size());
 
-        // Data validation
+        // Data validation (mandatory list selections)
         DataValidationHelper dvh = sheet.getDataValidationHelper();
-        // Cấp dự án (col idx=2)
-        DataValidationConstraint cv1 = dvh.createFormulaListConstraint("LevelProjectList");
-        CellRangeAddressList addr1 = new CellRangeAddressList(1, 100, 2, 2);
-        DataValidation dv1 = dvh.createValidation(cv1, addr1);
+
+        DataValidationConstraint c1 = dvh.createFormulaListConstraint("LevelProjectList");
+        CellRangeAddressList a1 = new CellRangeAddressList(1, 100, 2, 2);
+        DataValidation dv1 = dvh.createValidation(c1, a1);
         dv1.setSuppressDropDownArrow(true);
+        dv1.setShowErrorBox(true);
+        dv1.createErrorBox(
+                "Lỗi Cấp dự án",
+                "Giá trị không hợp lệ. Vui lòng chọn Cấp dự án từ danh sách, nhấn cancel và xóa giá trị sai"
+        );
+        dv1.createPromptBox("Chọn dữ liệu", "Hãy chọn dữ liệu cho sẵn");
         sheet.addValidationData(dv1);
 
-        // Học kỳ (col idx=3)
-        DataValidationConstraint cv2 = dvh.createFormulaListConstraint("SemesterList");
-        CellRangeAddressList addr2 = new CellRangeAddressList(1, 100, 3, 3);
-        DataValidation dv2 = dvh.createValidation(cv2, addr2);
+        DataValidationConstraint c2 = dvh.createFormulaListConstraint("SemesterList");
+        CellRangeAddressList a2 = new CellRangeAddressList(1, 100, 3, 3);
+        DataValidation dv2 = dvh.createValidation(c2, a2);
+        dv2.setSuppressDropDownArrow(true);
+        dv2.setErrorStyle(DataValidation.ErrorStyle.STOP);
+        dv2.setShowErrorBox(true);
+        dv2.createErrorBox(
+                "Lỗi Học kỳ",
+                "Giá trị không hợp lệ. Vui lòng chọn Học kỳ từ danh sách, nhấn cancel và xóa giá trị sai"
+        );
         dv2.setSuppressDropDownArrow(true);
         sheet.addValidationData(dv2);
 
-        // Môn học (col idx=4)
-        DataValidationConstraint cv3 = dvh.createFormulaListConstraint("SubjectFacilityList");
-        CellRangeAddressList addr3 = new CellRangeAddressList(1, 100, 4, 4);
-        DataValidation dv3 = dvh.createValidation(cv3, addr3);
+        DataValidationConstraint c3 = dvh.createFormulaListConstraint("SubjectFacilityList");
+        CellRangeAddressList a3 = new CellRangeAddressList(1, 100, 4, 4);
+        DataValidation dv3 = dvh.createValidation(c3, a3);
+        dv3.setSuppressDropDownArrow(true);
+        dv3.setErrorStyle(DataValidation.ErrorStyle.STOP);
+        dv3.setShowErrorBox(true);
+        dv3.createErrorBox(
+                "Lỗi Môn học",
+                "Giá trị không hợp lệ. Vui lòng chọn Môn học từ danh sách, nhấn cancel và xóa giá trị sai"
+        );
         dv3.setSuppressDropDownArrow(true);
         sheet.addValidationData(dv3);
-
         // Ẩn sheet DropdownData
         workbook.setSheetHidden(workbook.getSheetIndex(dd), true);
 

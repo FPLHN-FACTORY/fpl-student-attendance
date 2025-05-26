@@ -1,7 +1,6 @@
 <script setup>
 import { ref, computed, onMounted, reactive } from 'vue'
-import dayjs from 'dayjs'
-import { autoAddColumnWidth, dayOfWeek } from '@/utils/utils'
+import { autoAddColumnWidth, dayOfWeek, formatDate } from '@/utils/utils'
 import {
   FilterFilled,
   UnorderedListOutlined,
@@ -13,7 +12,7 @@ import { API_ROUTES_STUDENT } from '@/constants/studentConstant'
 import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
 import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
 import { ROUTE_NAMES } from '@/router/studentRoute'
-import { DEFAULT_DATE_FORMAT } from '@/constants'
+import { STATUS_REQUIRED_ATTENDANCE } from '@/constants'
 import { DEFAULT_PAGINATION } from '@/constants'
 import useLoadingStore from '@/stores/useLoadingStore'
 
@@ -37,15 +36,17 @@ const paginations = ref({})
 const loadingExport = reactive({})
 
 const columns = autoAddColumnWidth([
-  { title: 'Bài học', dataIndex: 'rowNumber', key: 'rowNumber' },
+  { title: '#', dataIndex: 'rowNumber', key: 'rowNumber' },
   { title: 'Ngày học', dataIndex: 'planDateStartDate', key: 'planDateStartDate' },
   { title: 'Ca học', dataIndex: 'planDateShift', key: 'planDateShift' },
   {
-    title: 'Điểm danh muộn tối đa (phút)',
+    title: 'Điểm danh muộn',
     dataIndex: 'lateArrival',
     key: 'lateArrival',
   },
   { title: 'Nội dung', dataIndex: 'planDateDescription', key: 'planDateDescription' },
+  { title: 'Check in', dataIndex: 'checkIn', key: 'checkIn' },
+  { title: 'Check out', dataIndex: 'checkOut', key: 'checkOut' },
   { title: 'Trạng thái đi học', dataIndex: 'statusAttendance', key: 'statusAttendance' },
 ])
 
@@ -111,6 +112,17 @@ const fetchSemesters = () => {
     .get(API_ROUTES_STUDENT.FETCH_DATA_HISTORY_ATTENDANCE + '/semesters')
     .then((response) => {
       semesters.value = response.data.data
+
+      // Find current semester and set it as default
+      const now = new Date().getTime()
+      const currentSemester = semesters.value.find(
+        (semester) => semester.fromDate <= now && now <= semester.toDate
+      )
+      if (currentSemester) {
+        filter.semesterId = currentSemester.id
+      }
+
+      fetchAllAttendanceHistory()
     })
     .catch((error) => {
       message.error(error.response?.data?.message || 'Lỗi khi tải dữ liệu học kỳ')
@@ -178,16 +190,26 @@ const exportPDF = async (factoryId, factoryName) => {
 }
 
 const handleClearFilter = () => {
-  filter.semesterId = ''
   filter.factoryId = ''
+
+  // Find current semester when clearing filter
+  const now = new Date().getTime()
+  const currentSemester = semesters.value.find(
+    (semester) => semester.fromDate <= now && now <= semester.toDate
+  )
+  if (currentSemester) {
+    filter.semesterId = currentSemester.id
+  } else {
+    filter.semesterId = ''
+  }
+
   fetchAllAttendanceHistory()
 }
 
-onMounted(() => {
+onMounted(async () => {
   breadcrumbStore.setRoutes(breadcrumb.value)
-  fetchAllAttendanceHistory()
-  fetchSemesters()
-  fetchFactories()
+  await fetchSemesters()
+  await fetchFactories()
 })
 </script>
 
@@ -203,11 +225,10 @@ onMounted(() => {
               <a-select
                 v-model:value="filter.semesterId"
                 placeholder="Chọn học kỳ"
-                style="width: 100%"
+                class="w-100"
                 allowClear
                 @change="fetchAllAttendanceHistory"
               >
-                <a-select-option :value="''">Tất cả học kỳ</a-select-option>
                 <a-select-option
                   v-for="semester in semesters"
                   :key="semester.id"
@@ -222,7 +243,7 @@ onMounted(() => {
               <a-select
                 v-model:value="filter.factoryId"
                 placeholder="Chọn xưởng"
-                style="width: 100%"
+                class="w-100"
                 allowClear
                 @change="fetchAllAttendanceHistory"
               >
@@ -267,7 +288,7 @@ onMounted(() => {
             class="nowrap"
             :dataSource="records"
             :columns="columns"
-            :rowKey="(record) => record.id"
+            :rowKey="(record) => record.planDateId"
             :pagination="paginations[factoryId]"
             @change="(pagination, filters, sorter) => handleTableChange(factoryId, pagination)"
             :loading="isLoading"
@@ -277,7 +298,7 @@ onMounted(() => {
               <template v-if="column.dataIndex">
                 <template v-if="column.dataIndex === 'planDateStartDate'">
                   {{ dayOfWeek(record.planDateStartDate) }} -
-                  {{ dayjs(record.planDateStartDate).format(DEFAULT_DATE_FORMAT + ' HH:mm') }}
+                  {{ formatDate(record.planDateStartDate, 'dd/MM/yyyy HH:mm') }}
                 </template>
                 <template v-else-if="column.dataIndex === 'planDateShift'">
                   <a-tag color="purple">
@@ -297,15 +318,51 @@ onMounted(() => {
                   </a-tag>
                 </template>
                 <template v-else-if="column.dataIndex === 'planDateDescription'">
-                  <a-typography-link @click="handleShowDescription(record.planDateDescription)"
-                    >Chi tiết</a-typography-link
-                  >
+                  <a-typography-link @click="handleShowDescription(record.planDateDescription)">
+                    Chi tiết
+                  </a-typography-link>
+                </template>
+                <template v-else-if="column.dataIndex === 'checkIn'">
+                  <template v-if="record.requiredCheckIn == STATUS_REQUIRED_ATTENDANCE.ENABLE">
+                    <span v-if="!record.checkIn"> <a-badge status="error" /> Chưa checkin </span>
+                    <span v-else>
+                      <a-badge status="success" />
+                      {{ formatDate(record.checkIn, 'dd/MM/yyyy HH:mm') }}
+                    </span>
+                  </template>
+                  <template v-else>
+                    <a-badge status="default" />
+                    Không yêu cầu
+                  </template>
+                </template>
+                <template v-else-if="column.dataIndex === 'checkOut'">
+                  <template v-if="record.requiredCheckOut == STATUS_REQUIRED_ATTENDANCE.ENABLE">
+                    <span
+                      v-if="
+                        record.statusAttendance !== 'CHUA_DIEN_RA' ||
+                        record.statusAttendance !== 'CO_MAT' ||
+                        record.statusAttendance !== 'CHECK_IN'
+                      "
+                    >
+                      <a-badge status="error" /> Chưa checkout
+                    </span>
+                    <span v-else>
+                      <a-badge status="success" />
+                      {{ formatDate(record.checkOut, 'dd/MM/yyyy HH:mm') }}
+                    </span>
+                  </template>
+                  <template v-else>
+                    <a-badge status="default" />
+                    Không yêu cầu
+                  </template>
                 </template>
                 <template v-else-if="column.dataIndex === 'statusAttendance'">
                   <a-badge
                     :status="
                       record.statusAttendance === 'CHUA_DIEN_RA'
                         ? 'warning'
+                        : record.statusAttendance === 'DANG_DIEN_RA'
+                        ? 'processing'
                         : record.statusAttendance === 'CO_MAT'
                         ? 'success'
                         : record.statusAttendance === 'CHECK_IN'
@@ -315,6 +372,8 @@ onMounted(() => {
                     :text="
                       record.statusAttendance === 'CHUA_DIEN_RA'
                         ? 'Chưa diễn ra'
+                        : record.statusAttendance === 'DANG_DIEN_RA'
+                        ? 'Đang diễn ra'
                         : record.statusAttendance === 'CO_MAT'
                         ? 'Có mặt'
                         : record.statusAttendance === 'CHECK_IN'
@@ -329,6 +388,17 @@ onMounted(() => {
               </template>
             </template>
           </a-table>
+        </a-card>
+      </div>
+    </div>
+
+    <!-- Display message when no data is available -->
+    <div class="row g-3" v-if="Object.keys(groupedAttendance).length === 0 && !isLoading">
+      <div class="col-12">
+        <a-card :bordered="false" class="card mb-3">
+          <div class="d-flex justify-content-center align-items-center p-4">
+            <a-empty description="Kỳ học này bạn chưa có lớp học nào" />
+          </div>
         </a-card>
       </div>
     </div>

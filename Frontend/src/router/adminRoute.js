@@ -30,7 +30,7 @@ export const AdminRoutes = [
     component: () => import('@/views/layout/AdminLayout.vue'),
     redirect: { name: ROUTE_NAMES.MANAGEMENT_FACILITY },
     meta: {
-      title: 'Ban đào tạo',
+      title: 'Admin',
       requireRole: ROLE.ADMIN,
     },
     children: [
@@ -114,7 +114,7 @@ export const AdminRoutes = [
         component: () => import('@/views/pages/admin/AdminManagementUserAdminPage.vue'),
         meta: {
           selectedKey: selectedKey++,
-          name: 'Quản lý ban đào tạo',
+          name: 'Quản lý Admin',
           icon: UserOutlined,
         },
       },

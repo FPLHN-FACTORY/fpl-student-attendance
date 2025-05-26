@@ -3,14 +3,15 @@ import { ref, onMounted, watch, reactive } from 'vue'
 import { FilterFilled, SearchOutlined, UnorderedListOutlined } from '@ant-design/icons-vue'
 import { message, Modal } from 'ant-design-vue'
 import requestAPI from '@/services/requestApiService'
-import { ATTENDANCE_STATUS, DEFAULT_PAGINATION } from '@/constants'
+import { ATTENDANCE_STATUS, DEFAULT_PAGINATION, STATUS_REQUIRED_ATTENDANCE } from '@/constants'
 import { API_ROUTES_STAFF } from '@/constants/staffConstant'
 import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
-import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
+import { API_ROUTES_EXCEL, GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
 import { ROUTE_NAMES } from '@/router/staffRoute'
 import { useRoute, useRouter } from 'vue-router'
-import { autoAddColumnWidth, debounce } from '@/utils/utils'
+import { autoAddColumnWidth, debounce, formatDate } from '@/utils/utils'
 import useLoadingStore from '@/stores/useLoadingStore'
+import ExcelUploadButton from '@/components/excel/ExcelUploadButton.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -23,11 +24,35 @@ const isLoading = ref(false)
 const _detail = ref(null)
 const lstData = ref([])
 
+const configImportExcel = {
+  fetchUrl: API_ROUTES_EXCEL.FETCH_IMPORT_PLAN_DATE,
+  data: { idPlanDate: route.params?.id },
+  showDownloadTemplate: false,
+  showHistoryLog: false,
+  showExport: true,
+  showExportPDF: true,
+  didParseCellPDF: (data) => {
+    const { row, column, cell } = data
+    if (typeof cell.raw === 'string') {
+      if (cell.raw.includes('Chưa checkout') || cell.raw.includes('Chưa checkin')) {
+        cell.styles.fillColor = [255, 242, 202]
+      } else if (cell.raw.includes('Có mặt')) {
+        cell.styles.fillColor = [169, 208, 142]
+      } else if (cell.raw.includes('Vắng mặt')) {
+        cell.styles.fillColor = [255, 125, 125]
+      }
+    }
+  },
+  showImport: false,
+}
+
 const columns = ref(
   autoAddColumnWidth([
     { title: '#', dataIndex: 'orderNumber', key: 'orderNumber' },
     { title: 'Mã sinh viên', dataIndex: 'code', key: 'code' },
     { title: 'Họ và tên', dataIndex: 'name', key: 'name' },
+    { title: 'Checkin đầu giờ', dataIndex: 'createdAt', key: 'createdAt' },
+    { title: 'Checkout cuối giờ', dataIndex: 'updatedAt', key: 'updatedAt' },
     { title: 'Trạng thái', dataIndex: 'status', key: 'status' },
   ]),
 )
@@ -106,11 +131,12 @@ const fetchDataList = () => {
     })
 }
 
-const fetchAttendance = (id) => {
+const fetchChangeStatus = (id, status) => {
   requestAPI
     .put(`${API_ROUTES_STAFF.FETCH_DATA_PLAN_DATE_ATTENDANCE}/change-status`, {
       idUserStudent: id,
       idPlanDate: _detail.value.id,
+      status,
     })
     .then(({ data: response }) => {
       message.success(response.message)
@@ -140,6 +166,32 @@ const handleTableChange = (page) => {
   fetchDataList()
 }
 
+const handleSubmitCheckin = async (item) => {
+  Modal.confirm({
+    title: `${item.code} - ${item.name}`,
+    type: 'info',
+    content: `Không thể hoàn tác. Bạn thực sự muốn đánh dấu đã checkin sinh viên này?`,
+    okText: 'Tiếp tục',
+    cancelText: 'Hủy bỏ',
+    onOk() {
+      fetchChangeStatus(item.id, 0)
+    },
+  })
+}
+
+const handleSubmitCheckout = async (item) => {
+  Modal.confirm({
+    title: `${item.code} - ${item.name}`,
+    type: 'info',
+    content: `Không thể hoàn tác. Bạn thực sự muốn đánh dấu đã checkout sinh viên này?`,
+    okText: 'Tiếp tục',
+    cancelText: 'Hủy bỏ',
+    onOk() {
+      fetchChangeStatus(item.id, 1)
+    },
+  })
+}
+
 const handleSubmitAttendance = async (item) => {
   Modal.confirm({
     title: `${item.code} - ${item.name}`,
@@ -148,7 +200,7 @@ const handleSubmitAttendance = async (item) => {
     okText: 'Tiếp tục',
     cancelText: 'Hủy bỏ',
     onOk() {
-      fetchAttendance(item.id)
+      fetchChangeStatus(item.id, 2)
     },
   })
 }
@@ -217,6 +269,9 @@ watch(
       <div class="col-12">
         <a-card :bordered="false" class="cart">
           <template #title> <UnorderedListOutlined /> Chi tiết điểm danh sinh viên </template>
+          <div class="d-flex justify-content-end mb-3 flex-wrap gap-3">
+            <ExcelUploadButton v-bind="configImportExcel" />
+          </div>
           <div>
             <a-table
               rowKey="id"
@@ -233,6 +288,55 @@ watch(
                   <a-tag color="purple">
                     {{ record.studentCode }}
                   </a-tag>
+                </template>
+                <template v-if="column.dataIndex === 'createdAt'">
+                  <template v-if="_detail.requiredCheckin === STATUS_REQUIRED_ATTENDANCE.ENABLE">
+                    <span v-if="record.status === ATTENDANCE_STATUS.ABSENT.id">
+                      <a-badge status="default" /> Đã huỷ checkin
+                    </span>
+                    <span v-else-if="record.status === ATTENDANCE_STATUS.NOTCHECKIN.id">
+                      <a-switch
+                        class="me-2"
+                        checked="false"
+                        @change="handleSubmitCheckin(record)"
+                      />
+                      <a-badge status="error" /> Chưa checkin
+                    </span>
+                    <span v-else>
+                      <a-badge status="success" />
+                      {{ formatDate(record.createdAt, 'dd/MM/yyyy HH:mm') }}
+                    </span>
+                  </template>
+                  <template v-else>
+                    <a-badge status="default" />
+                    Không yêu cầu
+                  </template>
+                </template>
+                <template v-if="column.dataIndex === 'updatedAt'">
+                  <template v-if="_detail.requiredCheckout === STATUS_REQUIRED_ATTENDANCE.ENABLE">
+                    <span v-if="record.status === ATTENDANCE_STATUS.ABSENT.id">
+                      <a-badge status="default" /> Đã huỷ checkout
+                    </span>
+                    <span v-else-if="record.status !== ATTENDANCE_STATUS.PRESENT.id">
+                      <a-switch
+                        class="me-2"
+                        checked="false"
+                        :disabled="
+                          record.status !== ATTENDANCE_STATUS.CHECKIN.id && _detail.requiredCheckin
+                        "
+                        @change="handleSubmitCheckout(record)"
+                      />
+                      <a-badge status="error" /> Chưa checkout
+                    </span>
+                    <span v-else>
+                      <a-badge status="success" />
+                      {{ formatDate(record.updatedAt, 'dd/MM/yyyy HH:mm') }}
+                    </span>
+                  </template>
+                  <template v-else>
+                    <a-badge status="default" />
+                    Không yêu cầu
+                  </template>
                 </template>
                 <template v-if="column.dataIndex === 'status'">
                   <a-switch

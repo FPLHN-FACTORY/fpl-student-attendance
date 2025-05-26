@@ -22,6 +22,15 @@ hr {
   padding: 0;
 }
 
+.ant-btn {
+  &-primary:disabled {
+    cursor: not-allowed;
+    color: #fff;
+    background-color: #41395b;
+    opacity: 0.5;
+    box-shadow: none;
+  }
+}
 .container,
 .container-fluid,
 .container-xxl,
@@ -434,6 +443,9 @@ hr {
 }
 
 .ant-card {
+  .ant-card-head-title {
+    white-space: normal;
+  }
   &:not(.ant-card-bordered) {
     box-shadow: none;
     box-shadow:

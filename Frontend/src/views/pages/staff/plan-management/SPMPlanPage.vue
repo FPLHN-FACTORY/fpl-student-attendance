@@ -636,7 +636,7 @@ watch(
                 </template>
               </a-input>
             </div>
-            <div class="col-xxl-2 col-md-4 col-sm-6">
+            <div class="col-xxl-2 col-md-4 col-sm-12">
               <div class="label-title">Trạng thái:</div>
               <a-select
                 v-model:value="dataFilter.status"
@@ -771,7 +771,7 @@ watch(
                 }}</a-tag>
               </template>
               <template v-if="column.key === 'actions'">
-                <a-tooltip title="Chi tiết kế hoạch">
+                <a-tooltip title="Phân công nhóm xưởng">
                   <a-button
                     class="btn-outline-primary border-0 me-2"
                     @click="handleShowDetail(record.id)"

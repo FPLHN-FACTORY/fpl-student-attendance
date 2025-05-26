@@ -1,9 +1,10 @@
 package udpm.hn.studentattendance.core.admin.userstaff.model.request;
 
-import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.validator.constraints.Length;
+import udpm.hn.studentattendance.infrastructure.constants.EntityProperties;
 
 import java.util.List;
 
@@ -11,28 +12,24 @@ import java.util.List;
 @Setter
 public class ADCreateUpdateStaffRequest {
 
-    // @NotEmpty(message = "Tên không được để trống")
-    @Length(max = 255, message = "Tên phải ít hơn 255 ký tự")
+    @NotBlank(message = "Tên không được để trống")
+    @Length(max = EntityProperties.LENGTH_NAME, message = "Tên chỉ được tối đa " + EntityProperties.LENGTH_NAME + " ký tự")
     private String name;
 
-    // @NotEmpty(message = "Mã nhân viên không được để trống")
-    @Length(max = 50, message = "Mã nhân viên phải ít hơn 50 ký tự")
-    @Pattern(regexp = "^[^\\s]+$", message = "Mã nhân viên không được chứa khoảng trắng")
+    @NotBlank(message = "Mã nhân viên không được để trống")
+    @Length(max = EntityProperties.LENGTH_CODE, message = "Mã nhân viên chỉ được tối đa " + EntityProperties.LENGTH_CODE + " ký tự")
     private String staffCode;
 
-    // @NotEmpty(message = "Tài khoản FE không được để trống")
-    @Length(max = 100, message = "Tài khoản FE phải ít hơn 100 ký tự")
-    // @Pattern(regexp = "^[A-Za-z0-9._%+-]+@fe\\.edu\\.vn$", message = "Không chứa
-    // khoảng trắng và kết thúc bằng @fe.edu.vn")
+    @NotBlank(message = "Tài khoản FE không được để trống")
+    @Length(max = EntityProperties.LENGTH_NAME, message = "Tài khoản FE chỉ được tối đa " + EntityProperties.LENGTH_NAME + " ký tự")
     private String emailFe;
 
-    // @NotBlank(message = "Tài khoản FPT không được để trống")
-    @Length(max = 100, message = "Tài khoản FPT phải ít hơn 100 ký tự")
-    // @Pattern(regexp = "^[A-Za-z0-9._%+-]+@fpt\\.edu\\.vn$", message = "Không chứa
-    // khoảng trắng và kết thúc bằng @fpt.edu.vn")
+    @NotBlank(message = "Tài khoản FPT không được để trống")
+    @Length(max = EntityProperties.LENGTH_NAME, message = "Tài khoản FPT chỉ được tối đa " + EntityProperties.LENGTH_NAME + " ký tự")
     private String emailFpt;
 
     private String facilityId;
 
     private List<String> roleCodes;
+
 }

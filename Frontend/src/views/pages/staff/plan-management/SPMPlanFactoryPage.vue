@@ -97,6 +97,8 @@ const formDataAdd = reactive({
   shift: [],
   link: null,
   room: null,
+  requiredCheckin: STATUS_TYPE.ENABLE,
+  requiredCheckout: STATUS_TYPE.ENABLE,
   requiredLocation: STATUS_TYPE.ENABLE,
   requiredIp: STATUS_TYPE.ENABLE,
   lateArrival: DEFAULT_LATE_ARRIVAL,
@@ -290,6 +292,8 @@ const handleShowModalAdd = () => {
   formDataAdd.room = null
   formDataAdd.requiredLocation = STATUS_TYPE.ENABLE
   formDataAdd.requiredIp = STATUS_TYPE.ENABLE
+  formDataAdd.requiredCheckin = STATUS_TYPE.ENABLE
+  formDataAdd.requiredCheckout = STATUS_TYPE.ENABLE
 }
 
 const handleChangeStatus = (id) => {
@@ -444,35 +448,67 @@ watch(
         />
       </a-form-item>
       <a-form-item class="col-sm-12" label="Điều kiện điểm danh">
-        <div class="mt-2">
-          <a-switch
-            class="me-2"
-            :checked="formDataAdd.requiredIp === STATUS_TYPE.ENABLE"
-            @change="
-              formDataAdd.requiredIp =
-                formDataAdd.requiredIp === STATUS_TYPE.ENABLE
-                  ? STATUS_TYPE.DISABLE
-                  : STATUS_TYPE.ENABLE
-            "
-          />
-          <span :class="{ disabled: formDataAdd.requiredIp !== STATUS_TYPE.ENABLE }"
-            >Phải kết nối mạng trường</span
-          >
-        </div>
-        <div class="mt-3">
-          <a-switch
-            class="me-2"
-            :checked="formDataAdd.requiredLocation === STATUS_TYPE.ENABLE"
-            @change="
-              formDataAdd.requiredLocation =
-                formDataAdd.requiredLocation === STATUS_TYPE.ENABLE
-                  ? STATUS_TYPE.DISABLE
-                  : STATUS_TYPE.ENABLE
-            "
-          />
-          <span :class="{ disabled: formDataAdd.requiredLocation !== STATUS_TYPE.ENABLE }"
-            >Phải ở trong địa điểm cơ sở</span
-          >
+        <div class="row g-3">
+          <div class="col-sm-6">
+            <a-switch
+              class="me-2"
+              :checked="formDataAdd.requiredCheckin === STATUS_TYPE.ENABLE"
+              @change="
+                formDataAdd.requiredCheckin =
+                  formDataAdd.requiredCheckin === STATUS_TYPE.ENABLE
+                    ? STATUS_TYPE.DISABLE
+                    : STATUS_TYPE.ENABLE
+              "
+            />
+            <span :class="{ disabled: formDataAdd.requiredCheckin !== STATUS_TYPE.ENABLE }"
+              >Yêu cầu checkin</span
+            >
+          </div>
+          <div class="col-sm-6">
+            <a-switch
+              class="me-2"
+              :checked="formDataAdd.requiredCheckout === STATUS_TYPE.ENABLE"
+              @change="
+                formDataAdd.requiredCheckout =
+                  formDataAdd.requiredCheckout === STATUS_TYPE.ENABLE
+                    ? STATUS_TYPE.DISABLE
+                    : STATUS_TYPE.ENABLE
+              "
+            />
+            <span :class="{ disabled: formDataAdd.requiredCheckout !== STATUS_TYPE.ENABLE }"
+              >Yêu cầu checkout</span
+            >
+          </div>
+          <div class="col-sm-6">
+            <a-switch
+              class="me-2"
+              :checked="formDataAdd.requiredIp === STATUS_TYPE.ENABLE"
+              @change="
+                formDataAdd.requiredIp =
+                  formDataAdd.requiredIp === STATUS_TYPE.ENABLE
+                    ? STATUS_TYPE.DISABLE
+                    : STATUS_TYPE.ENABLE
+              "
+            />
+            <span :class="{ disabled: formDataAdd.requiredIp !== STATUS_TYPE.ENABLE }"
+              >Phải kết nối mạng trường</span
+            >
+          </div>
+          <div class="col-sm-6">
+            <a-switch
+              class="me-2"
+              :checked="formDataAdd.requiredLocation === STATUS_TYPE.ENABLE"
+              @change="
+                formDataAdd.requiredLocation =
+                  formDataAdd.requiredLocation === STATUS_TYPE.ENABLE
+                    ? STATUS_TYPE.DISABLE
+                    : STATUS_TYPE.ENABLE
+              "
+            />
+            <span :class="{ disabled: formDataAdd.requiredLocation !== STATUS_TYPE.ENABLE }"
+              >Phải ở trong địa điểm cơ sở</span
+            >
+          </div>
         </div>
       </a-form-item>
     </a-form>
@@ -534,7 +570,7 @@ watch(
 
       <div class="col-12">
         <a-card :bordered="false" class="cart">
-          <template #title> <UnorderedListOutlined /> Danh sách kế hoạch - nhóm xưởng </template>
+          <template #title> <UnorderedListOutlined /> Danh sách phân công nhóm xưởng </template>
           <div class="d-flex justify-content-end mb-3 gap-3">
             <a-button type="primary" @click="handleShowModalAdd">
               <PlusOutlined /> Phân công nhóm xưởng
@@ -582,7 +618,7 @@ watch(
                 }}</a-tag>
               </template>
               <template v-if="column.key === 'actions'">
-                <a-tooltip title="Chi tiết phân công">
+                <a-tooltip title="Chi tiết ca học">
                   <a-button
                     class="btn-outline-primary border-0 me-2"
                     @click="handleShowDetail(record.id)"

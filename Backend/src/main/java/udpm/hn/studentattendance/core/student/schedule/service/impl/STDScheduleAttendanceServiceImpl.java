@@ -81,7 +81,7 @@ public class STDScheduleAttendanceServiceImpl implements STDScheduleAttendanceSe
             pdfTable.setWidthPercentage(110);
             pdfTable.setSpacingBefore(10f);
             pdfTable.setSpacingAfter(10f);
-            pdfTable.setWidths(new float[]{20, 40, 20, 20, 30, 30, 20, 20});
+            pdfTable.setWidths(new float[]{20, 40, 20, 20, 30, 30, 40, 20});
 
             // Header: sử dụng màu cam đậm từ ảnh mẫu (ví dụ: RGB 237,125,49)
             Color headerColor = new Color(2, 3, 51);

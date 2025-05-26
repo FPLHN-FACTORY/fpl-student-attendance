@@ -1,10 +1,9 @@
 package udpm.hn.studentattendance.core.staff.student.model.request;
 
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
-import org.hibernate.validator.constraints.Length;
 import udpm.hn.studentattendance.infrastructure.constants.EntityProperties;
 
 @Getter
@@ -13,17 +12,15 @@ public class USStudentCreateUpdateRequest {
 
     private String id;
 
-    @Length(max = EntityProperties.LENGTH_CODE, message = "Mã sinh viên phải ít hơn " + EntityProperties.LENGTH_CODE + " ký tự")
-    @NotBlank(message = "Mã sinh viên không được bỏ trống")
+    @NotBlank(message = "Không được để trống mã sinh viên")
+    @Size(max = EntityProperties.LENGTH_CODE, message = "Mã sinh viên không được vượt quá " + EntityProperties.LENGTH_CODE + " ký tự")
     private String code;
 
-    @Length(max = EntityProperties.LENGTH_NAME, message = "Tên phải ít hơn " + EntityProperties.LENGTH_NAME + " ký tự")
-    @NotBlank(message = "Tên sinh viên không đuợc bỏ trống")
+    @NotBlank(message = "Không được để trống mã sinh viên")
+    @Size(max = EntityProperties.LENGTH_NAME, message = "Tên sinh viên không được vượt quá " + EntityProperties.LENGTH_NAME + " ký tự")
     private String name;
-
-    @Length(max = EntityProperties.LENGTH_NAME, message = "Tài khoản email phải ít hơn " + EntityProperties.LENGTH_NAME + " ký tự")
-    @Pattern(regexp = "^[a-zA-Z0-9._%+-]+@gmail\\.com$", message = "Email phải có định dạng @gmail.com")
-    @NotBlank(message = "Email không được bỏ trống")
+    @NotBlank
+    @Size(max = EntityProperties.LENGTH_NAME, message = "Email sinh viên không được vượt quá " + EntityProperties.LENGTH_NAME + " ký tự")
     private String email;
 
 }

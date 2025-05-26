@@ -14,7 +14,7 @@ services:
       - attendance_data:/var/lib/mysql
 
   attendance-fe:
-    image: inuha98/fpt-attendance-fe:latest
+    image: quocanhh86/fpl-student-attendance-fe:multi-arch
     container_name: attendance-fe
     restart: always
     ports:
@@ -28,7 +28,7 @@ services:
       - attendance-be
 
   attendance-be:
-    image: inuha98/fpt-attendance-be:latest
+    image: quocanhh86/fpl-student-attendance-be:multi-arch
     container_name: attendance-be
     restart: always
     ports:
@@ -42,6 +42,13 @@ services:
       JPA_SHOW_SQL: "false"
       JPA_DDL_AUTO: update
 
+      APP_CONFIG_APP_NAME: Student Attendance Fpoly
+      APP_CONFIG_DISABLED_CHECK_EMAIL_FPT: "true"
+      APP_CONFIG_SHIFT_MIN_DIFF: 30
+      APP_CONFIG_SHIFT_MAX_LATE_ARRIVAL: 90
+      APP_CONFIG_ATTENDANCE_EARLY_CHECKIN: 10
+      APP_CONFIG_EXPIRATION_MINUTE_LOGIN: 1440
+
       DB_GENERATOR: "true"
       DB_USER_NAME: Nguyễn Quốc Anh
       DB_USER_CODE: TH01267
@@ -54,14 +61,13 @@ services:
 
       AUTHENTICATION_SECRET_KEY: 0805h66ooagrpa4mon9e34kdigetu4cs0805h66ooagrpa4mon9e34kdigetu4cs
 
-      MAILER_USERNAME: examdistribution@gmail.com
-      MAILER_PASSWORD: wycvtgbsnnpdofzj
+      MAILER_USERNAME: attendancestudent86@gmail.com
+      MAILER_PASSWORD: cvmfghyxeujepcah
       MAILER_HOST: smtp.gmail.com
       MAILER_PORT: 587
 
       SERVER_PORT: 8765
-      SERVER_ALLOWED_ORIGIN: http://fptudpm.site,http://server.fptudpm.site,https://fptudpm.site,https://server.fptudpm.site
-      APP_CONFIG_DISABLED_CHECK_EMAIL_FPT: "true"
+      SERVER_ALLOWED_ORIGIN: https://fplstudentattendance.site/
       TZ: Asia/Ho_Chi_Minh
     depends_on:
       - attendance-db

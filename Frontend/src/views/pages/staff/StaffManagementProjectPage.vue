@@ -56,6 +56,7 @@ const newProject = reactive({
 })
 
 const detailProject = reactive({})
+const oldSemesterId = ref(null)
 
 // Bộ lọc và phân trang
 const filter = reactive({
@@ -84,7 +85,7 @@ const columns = ref(
     { title: 'Mô tả', dataIndex: 'description', key: 'description' },
     { title: 'Trạng thái', dataIndex: 'status', key: 'status' },
     { title: 'Chức năng', key: 'actions' },
-  ]),
+  ])
 )
 
 /* ----------------- Methods ----------------- */
@@ -220,38 +221,30 @@ const handleAddProject = () => {
     })
 }
 
-// Mở modal sửa dự án
-const handleEditProject = (record) => {
-  requestAPI
-    .get(`${API_ROUTES_STAFF.FETCH_DATA_PROJECT}/${record.id}`)
-    .then((response) => {
-      Object.assign(detailProject, response.data.data)
-      modalEdit.value = true
-    })
-    .catch((error) => {
-      message.error(error.response?.data?.message || 'Lỗi khi lấy thông tin')
-    })
+async function handleEditProject(record) {
+  try {
+    const { data } = await requestAPI.get(`${API_ROUTES_STAFF.FETCH_DATA_PROJECT}/${record.id}`)
+    Object.assign(detailProject, data.data)
+    oldSemesterId.value = data.data.semesterId
+    modalEdit.value = true
+  } catch (e) {
+    message.error(e.response?.data?.message || 'Lỗi khi tải chi tiết')
+  }
 }
 
-// Cập nhật dự án
-const handleUpdateProject = () => {
-  if (!detailProject.name) {
-    message.error('Tên dự án không được bỏ trống')
-    return
-  }
-  if (!detailProject.levelProjectId) {
-    message.error('Phải chọn cấp dự án')
-    return
-  }
-  if (!detailProject.semesterId) {
-    message.error('Phải chọn học kỳ')
-    return
-  }
-  if (!detailProject.subjectFacilityId) {
-    message.error('Phải chọn môn học')
-    return
-  }
+const handleShowDescription = (text) => {
+  Modal.info({
+    title: 'Mô tả dự án',
+    type: 'info',
+    content: text,
+    okText: 'Đóng',
+    okButtonProps: {
+      class: 'btn-gray',
+    },
+  })
+}
 
+async function actuallyUpdate() {
   const req = {
     name: detailProject.name,
     description: detailProject.description,
@@ -259,17 +252,41 @@ const handleUpdateProject = () => {
     semesterId: detailProject.semesterId,
     subjectFacilityId: detailProject.subjectFacilityId,
   }
+  try {
+    await requestAPI.put(`${API_ROUTES_STAFF.FETCH_DATA_PROJECT}/${detailProject.id}`, req)
+    message.success('Cập nhật dự án thành công')
+    modalEdit.value = false
+    fetchProjects()
+  } catch (e) {
+    message.error(e.response?.data?.message || 'Lỗi khi cập nhật')
+  }
+}
+function handleUpdateProject() {
+  // validate
+  if (
+    !detailProject.name ||
+    !detailProject.levelProjectId ||
+    !detailProject.semesterId ||
+    !detailProject.subjectFacilityId
+  ) {
+    return message.error('Vui lòng điền đầy đủ thông tin')
+  }
 
-  requestAPI
-    .put(`${API_ROUTES_STAFF.FETCH_DATA_PROJECT}/${detailProject.id}`, req)
-    .then(() => {
-      message.success('Cập nhật dự án thành công')
-      modalEdit.value = false
-      fetchProjects()
+  // nếu thay đổi học kỳ → confirm
+  if (detailProject.semesterId !== oldSemesterId.value) {
+    Modal.confirm({
+      title: 'Xác nhận cập nhật dự án',
+      content:
+        'Bạn đang chuyển dự án sang học kỳ khác, toàn bộ lịch nhóm xưởng và điểm danh cũ sẽ bị xóa. Tiếp tục?',
+      onOk: actuallyUpdate,
     })
-    .catch((error) => {
-      message.error(error.response?.data?.message || 'Lỗi khi cập nhật dự án')
+  } else {
+    Modal.confirm({
+      title: 'Xác nhận cập nhật dự án',
+      content: 'Bạn có muốn cập nhật thông tin dự án không',
+      onOk: actuallyUpdate,
     })
+  }
 }
 
 // Xóa dự án
@@ -318,6 +335,9 @@ const configImportExcel = {
   },
   showDownloadTemplate: true,
   showHistoryLog: true,
+  showExport: true,
+  btnImport: 'Import dự án',
+  btnExport: 'Export dự án',
 }
 // Reset form
 const resetForm = () => {
@@ -353,7 +373,7 @@ onMounted(() => {
         <a-card :bordered="false" class="cart">
           <template #title> <FilterFilled /> Bộ lọc </template>
           <div class="row g-2">
-            <div class="col-xxl-6 col-lg-8 col-md-10 col-sm-12">
+            <div class="col-md-12 col-sm-12">
               <div class="label-title">Từ khoá:</div>
               <a-input
                 v-model:value="filter.name"
@@ -367,7 +387,7 @@ onMounted(() => {
                 </template>
               </a-input>
             </div>
-            <div class="col-xxl-6 col-lg-8 col-md-10 col-sm-12">
+            <div class="col-lg-3 col-md-6 col-sm-6">
               <div class="label-title">Cấp dự án:</div>
               <a-select
                 v-model:value="filter.levelProjectId"
@@ -375,7 +395,6 @@ onMounted(() => {
                 allowClear
                 class="filter-select w-100"
                 :dropdownMatchSelectWidth="false"
-                :style="{ minWidth: '200px' }"
                 @change="fetchProjects"
               >
                 <a-select-option :value="null">Tất cả cấp dự án</a-select-option>
@@ -384,9 +403,8 @@ onMounted(() => {
                 </a-select-option>
               </a-select>
             </div>
-          </div>
-          <div class="row g-2 mt-2">
-            <div class="col-xxl-4 col-lg-6 col-md-8 col-sm-8">
+
+            <div class="col-lg-3 col-md-6 col-sm-6">
               <div class="label-title">Học kỳ:</div>
               <a-select
                 v-model:value="filter.semesterId"
@@ -394,7 +412,6 @@ onMounted(() => {
                 allowClear
                 class="filter-select w-100"
                 :dropdownMatchSelectWidth="false"
-                :style="{ minWidth: '200px' }"
                 @change="fetchProjects"
               >
                 <a-select-option :value="null">Tất cả học kỳ</a-select-option>
@@ -407,7 +424,7 @@ onMounted(() => {
                 </a-select-option>
               </a-select>
             </div>
-            <div class="col-xxl-4 col-lg-6 col-md-8 col-sm-8">
+            <div class="col-lg-3 col-md-6 col-sm-6">
               <div class="label-title">Môn học:</div>
               <a-select
                 v-model:value="filter.subjectId"
@@ -415,7 +432,6 @@ onMounted(() => {
                 allowClear
                 class="filter-select w-100"
                 :dropdownMatchSelectWidth="false"
-                :style="{ minWidth: '200px' }"
                 @change="fetchProjects"
               >
                 <a-select-option :value="null">Tất cả môn học</a-select-option>
@@ -424,7 +440,7 @@ onMounted(() => {
                 </a-select-option>
               </a-select>
             </div>
-            <div class="col-xxl-4 col-lg-6 col-md-8 col-sm-8">
+            <div class="col-lg-3 col-md-6 col-sm-6">
               <div class="label-title">Trạng thái:</div>
               <a-select
                 v-model:value="filter.status"
@@ -432,7 +448,6 @@ onMounted(() => {
                 allowClear
                 class="filter-select w-100"
                 :dropdownMatchSelectWidth="false"
-                :style="{ minWidth: '200px' }"
                 @change="fetchProjects"
               >
                 <a-select-option :value="null">Tất cả trạng thái</a-select-option>
@@ -484,6 +499,11 @@ onMounted(() => {
           >
             <template #bodyCell="{ column, record }">
               <!-- Hiển thị trạng thái -->
+              <template v-if="column.dataIndex === 'description' && record.description">
+                <a-typography-link @click="handleShowDescription(record.description)"
+                  >Chi tiết</a-typography-link
+                >
+              </template>
               <template v-if="column.dataIndex === 'status'">
                 <span class="nowrap">
                   <a-switch
@@ -510,9 +530,6 @@ onMounted(() => {
                   </a-tooltip>
                 </a-space>
               </template>
-              <template v-else>
-                {{ record[column.dataIndex] }}
-              </template>
             </template>
           </a-table>
         </a-card>
@@ -525,7 +542,7 @@ onMounted(() => {
         <a-form-item label="Tên dự án" required>
           <a-input v-model:value="newProject.name" placeholder="Nhập tên dự án" />
         </a-form-item>
-        <a-form-item label="Mô tả" required>
+        <a-form-item label="Mô tả">
           <a-textarea v-model:value="newProject.description" placeholder="Nhập mô tả" />
         </a-form-item>
         <a-form-item label="Cấp dự án" required>
@@ -589,7 +606,7 @@ onMounted(() => {
         <a-form-item label="Tên dự án" required>
           <a-input v-model:value="detailProject.name" placeholder="Nhập tên dự án" />
         </a-form-item>
-        <a-form-item label="Mô tả" required>
+        <a-form-item label="Mô tả" >
           <a-textarea v-model:value="detailProject.description" placeholder="Nhập mô tả" />
         </a-form-item>
         <a-form-item label="Cấp dự án" required>
