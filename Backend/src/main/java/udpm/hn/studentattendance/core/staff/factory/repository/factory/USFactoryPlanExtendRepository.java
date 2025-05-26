@@ -25,6 +25,7 @@ public interface USFactoryPlanExtendRepository extends PlanFactoryRepository {
         @Query(value = """
                          SELECT 
                          CASE WHEN COUNT(*) > 0 THEN 'TRUE' ELSE 'FALSE'
+                         END AS existsFlag
                          FROM 
                          plan_factory pf
                          WHERE 

@@ -34,17 +34,17 @@ const loadingStore = useLoadingStore()
 const isLoading = ref(false)
 
 // Staff list for change-power modal
-const staffList = ref([])
-const selectedStaffId = ref(null)
-let currentAdminId = null
+// const staffList = ref([])
+// const selectedStaffId = ref(null)
+// let currentAdminId = null
 
 // Modals
 const modalAdd = ref(false)
 const modalAddLoading = ref(false)
 const modalEdit = ref(false)
 const modalEditLoading = ref(false)
-const modalChangePower = ref(false)
-const modalChangePowerLoading = ref(false)
+// const modalChangePower = ref(false)
+// const modalChangePowerLoading = ref(false)
 
 // Form models
 const newUser = reactive({ staffCode: '', staffName: '', email: '' })

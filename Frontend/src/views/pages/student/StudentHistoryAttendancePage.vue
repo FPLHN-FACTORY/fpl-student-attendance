@@ -361,6 +361,8 @@ onMounted(async () => {
                     :status="
                       record.statusAttendance === 'CHUA_DIEN_RA'
                         ? 'warning'
+                        : record.statusAttendance === 'DANG_DIEN_RA'
+                        ? 'processing'
                         : record.statusAttendance === 'CO_MAT'
                         ? 'success'
                         : record.statusAttendance === 'CHECK_IN'
@@ -370,6 +372,8 @@ onMounted(async () => {
                     :text="
                       record.statusAttendance === 'CHUA_DIEN_RA'
                         ? 'Chưa diễn ra'
+                        : record.statusAttendance === 'DANG_DIEN_RA'
+                        ? 'Đang diễn ra'
                         : record.statusAttendance === 'CO_MAT'
                         ? 'Có mặt'
                         : record.statusAttendance === 'CHECK_IN'
