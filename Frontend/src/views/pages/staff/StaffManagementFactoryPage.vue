@@ -632,7 +632,7 @@ onMounted(() => {
             <template #bodyCell="{ column, record, index }">
               <template v-if="column.dataIndex">
                 <template v-if="column.dataIndex === 'rowNumber'">
-                  {{ index + 1 }}
+                  {{ (pagination.current - 1) * pagination.pageSize + index + 1 }}
                 </template>
                 <template v-else-if="column.dataIndex === 'name'">
                   <a @click="handleDetailFactory(record)">{{ record.name }}</a>
