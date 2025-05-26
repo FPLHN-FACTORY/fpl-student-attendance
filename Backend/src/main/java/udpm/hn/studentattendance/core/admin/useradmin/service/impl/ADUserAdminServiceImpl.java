@@ -75,7 +75,7 @@ public class ADUserAdminServiceImpl implements ADUserAdminService {
                 }
 
                 if (!ValidateHelper.isValidFullname(createOrUpdateRequest.getStaffName())) {
-                        return RouterHelper.responseError("Tên ban đào tạo không hợp lệ");
+                        return RouterHelper.responseError("Tên admin không hợp lệ: Tối thiểu 2 từ, cách nhau bởi khoảng trắng và Chỉ gồm ký tự chữ không chứa số hay ký tự đặc biệt.");
                 }
 
                 if (!isDisableCheckEmailFpt.equalsIgnoreCase("true")) {
@@ -116,7 +116,7 @@ public class ADUserAdminServiceImpl implements ADUserAdminService {
                 }
 
                 if (!ValidateHelper.isValidFullname(createOrUpdateRequest.getStaffName())) {
-                        return RouterHelper.responseError("Tên ban đào tạo không hợp lệ");
+                        return RouterHelper.responseError("Tên admin không hợp lệ: Tối thiểu 2 từ, cách nhau bởi khoảng trắng và Chỉ gồm ký tự chữ không chứa số hay ký tự đặc biệt.");
                 }
 
                 Optional<UserAdmin> opt = userAdminExtendRepository.findById(id);
@@ -242,6 +242,6 @@ public class ADUserAdminServiceImpl implements ADUserAdminService {
                 mailerDefaultRequest
                                 .setContent(MailerHelper.loadTemplate(MailerHelper.TEMPLATE_CHANGE_STATUS_ADMIN, vars));
                 mailerHelper.send(mailerDefaultRequest);
-                return RouterHelper.responseSuccess("Xóa tài khoản ban đào tạo thành công", userAdminId);
+                return RouterHelper.responseSuccess("Xóa tài khoản admin thành công", userAdminId);
         }
 }

@@ -71,7 +71,7 @@ const columns = ref(
     { title: 'Kinh độ', dataIndex: 'longitude', key: 'longitude' },
     { title: 'Bán kính', dataIndex: 'radius', key: 'radius' },
     { title: 'Trạng thái', dataIndex: 'status', key: 'status' },
-    { title: '', key: 'actions' },
+    { title: 'Chức năng', key: 'actions' },
   ]),
 )
 

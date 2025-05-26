@@ -56,7 +56,7 @@ const columns = ref(
       align: 'center',
     },
     { title: 'Trạng thái', dataIndex: 'status', key: 'status' },
-    { title: '', key: 'actions' },
+    { title: 'Chức năng', key: 'actions' },
   ]),
 )
 

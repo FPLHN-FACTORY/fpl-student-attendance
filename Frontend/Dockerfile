@@ -3,7 +3,7 @@
 # ----------------------
 # Stage 1: Build with Node
 # ----------------------
-FROM node:20-alpine AS builder
+FROM node:22-alpine AS builder
 WORKDIR /app
 
 # Nếu bạn có .env, copy vào nếu cần (tuỳ bạn có embed env ở build time)

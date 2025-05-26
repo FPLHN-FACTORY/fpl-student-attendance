@@ -67,11 +67,11 @@ public class ADStaffServiceImpl implements ADStaffService {
     public ResponseEntity<?> createStaff(ADCreateUpdateStaffRequest adCreateUpdateStaffRequest) {
 
         if (!ValidateHelper.isValidCode(adCreateUpdateStaffRequest.getStaffCode())) {
-            return RouterHelper.responseError("Mã nhân viên không hợp lệ");
+            return RouterHelper.responseError("Mã nhân viên không hợp lệ: Không có khoảng trắng, không có ký tự đặc biệt ngoài dấu chấm . và dấu gạch dưới _.");
         }
 
         if (!ValidateHelper.isValidFullname(adCreateUpdateStaffRequest.getName())) {
-            return RouterHelper.responseError("Tên nhân viên không hợp lệ");
+            return RouterHelper.responseError("Tên nhân viên không hợp lệ: Tối thiểu 2 từ, cách nhau bởi khoảng trắng và Chỉ gồm ký tự chữ không chứa số hay ký tự đặc biệt.");
         }
 
         if (!isDisableCheckEmailFpt.equalsIgnoreCase("true")) {
@@ -154,11 +154,11 @@ public class ADStaffServiceImpl implements ADStaffService {
     public ResponseEntity<?> updateStaff(ADCreateUpdateStaffRequest adCreateUpdateStaffRequest, String id) {
 
         if (!ValidateHelper.isValidCode(adCreateUpdateStaffRequest.getStaffCode())) {
-            return RouterHelper.responseError("Mã nhân viên không hợp lệ");
+            return RouterHelper.responseError("Mã nhân viên không hợp lệ: Không có khoảng trắng, không có ký tự đặc biệt ngoài dấu chấm . và dấu gạch dưới _.");
         }
 
         if (!ValidateHelper.isValidFullname(adCreateUpdateStaffRequest.getName())) {
-            return RouterHelper.responseError("Tên nhân viên không hợp lệ");
+            return RouterHelper.responseError("Tên nhân viên không hợp lệ: Tối thiểu 2 từ, cách nhau bởi khoảng trắng và Chỉ gồm ký tự chữ không chứa số hay ký tự đặc biệt.");
         }
 
         // Kiểm tra nhân viên tồn tại

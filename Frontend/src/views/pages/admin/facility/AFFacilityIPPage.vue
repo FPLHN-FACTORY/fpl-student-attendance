@@ -45,7 +45,7 @@ const columns = ref(
     { title: 'Kiểu IP', dataIndex: 'type', key: 'type' },
     { title: 'Giá trị', dataIndex: 'ip', key: 'ip' },
     { title: 'Trạng thái', dataIndex: 'status', key: 'status' },
-    { title: '', key: 'actions' },
+    { title: 'Chức năng', key: 'actions' },
   ]),
 )
 
