@@ -61,8 +61,8 @@ services:
 
       AUTHENTICATION_SECRET_KEY: 0805h66ooagrpa4mon9e34kdigetu4cs0805h66ooagrpa4mon9e34kdigetu4cs
 
-      MAILER_USERNAME: examdistribution@gmail.com
-      MAILER_PASSWORD: wycvtgbsnnpdofzj
+      MAILER_USERNAME: attendancestudent86@gmail.com
+      MAILER_PASSWORD: cvmfghyxeujepcah
       MAILER_HOST: smtp.gmail.com
       MAILER_PORT: 587
 
