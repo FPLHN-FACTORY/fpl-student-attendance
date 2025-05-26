@@ -27,7 +27,6 @@ public class SPDAddOrUpdatePlanRequest {
             + EntityProperties.LENGTH_NAME + " ký tự")
     private String name;
 
-    @NotBlank(message = "Vui lòng nhập nội dung kế hoạch")
     private String description;
 
 }

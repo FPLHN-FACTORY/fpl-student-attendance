@@ -28,6 +28,7 @@ export const DAY_OF_WEEK = {
 
 export const STATUS_PLAN_DATE_DETAIL = {
   DA_DIEN_RA: 'Đã diễn ra',
+  DANG_DIEN_RA: 'Đang diễn ra',
   CHUA_DIEN_RA: 'Chưa diễn ra',
 }
 

@@ -37,7 +37,7 @@ public class ADSubjectManagementServiceImpl implements ADSubjectManagementServic
     @Override
     public ResponseEntity<?> createSubject(ADSubjectCreateRequest request) {
         if (!ValidateHelper.isValidCode(request.getCode())) {
-            return RouterHelper.responseError("Mã bộ môn không hợp lệ");
+            return RouterHelper.responseError("Mã bộ môn không hợp lệ: không có khoảng trắng, không có ký tự đặc biệt ngoài dấu chấm . và dấu gạch dưới _.");
         }
 
         Subject s = new Subject();
@@ -64,7 +64,7 @@ public class ADSubjectManagementServiceImpl implements ADSubjectManagementServic
         }
 
         if (!ValidateHelper.isValidCode(request.getCode())) {
-            return RouterHelper.responseError("Mã bộ môn không hợp lệ");
+            return RouterHelper.responseError("Mã bộ môn không hợp lệ:  không có khoảng trắng, không có ký tự đặc biệt ngoài dấu chấm . và dấu gạch dưới _.");
         }
 
         s.setName(request.getName().trim());
