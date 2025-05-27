@@ -31,7 +31,7 @@ public interface ADSubjectFacilityRepository extends SubjectFacilityRepository {
                     WHERE
                         f.status = 1 AND
                     (
-                        (:#{#request.name} IS NULL OR s.name LIKE CONCAT('%', :#{#request.name}, '%'))
+                        (:#{#request.name} IS NULL OR TRIM(s.name) LIKE CONCAT('%', TRIM(:#{#request.name}), '%'))
                         AND s.id = :#{#request.subjectId}
                     )
                     AND (:#{#request.facilityId} IS NULL OR sf.id_facility = :#{#request.facilityId})
@@ -45,7 +45,7 @@ public interface ADSubjectFacilityRepository extends SubjectFacilityRepository {
                     WHERE
                         f.status = 1 AND
                     (
-                        (:#{#request.name} IS NULL OR s.name LIKE CONCAT('%', :#{#request.name}, '%'))
+                        (:#{#request.name} IS NULL OR TRIM(s.name) LIKE CONCAT('%', TRIM(:#{#request.name}), '%'))
                         AND s.id = :#{#request.subjectId}
                     )
                     AND (:#{#request.facilityId} IS NULL OR sf.id_facility = :#{#request.facilityId})

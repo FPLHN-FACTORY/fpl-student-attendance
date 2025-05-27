@@ -39,7 +39,7 @@ public interface STProjectExtendRepository extends ProjectRepository {
                         sem.status = 1 AND
                         f.status = 1 AND
                     (
-                        (:#{#request.name} IS NULL OR p.name LIKE CONCAT('%', :#{#request.name}, '%'))
+                        (:#{#request.name} IS NULL OR p.name LIKE CONCAT('%', TRIM(:#{#request.name}), '%'))
                         AND (:#{#request.levelProjectId} IS NULL OR lp.id = :#{#request.levelProjectId})
                         AND (:#{#request.semesterId} IS NULL OR sem.id = :#{#request.semesterId})
                         AND (:#{#request.subjectId} IS NULL OR sf.id = :#{#request.subjectId})
@@ -63,7 +63,7 @@ public interface STProjectExtendRepository extends ProjectRepository {
                         sem.status = 1 AND
                         f.status = 1 AND
                     (
-                        (:#{#request.name} IS NULL OR p.name LIKE CONCAT('%', :#{#request.name}, '%'))
+                        (:#{#request.name} IS NULL OR p.name LIKE CONCAT('%', TRIM(:#{#request.name}), '%'))
                         AND (:#{#request.levelProjectId} IS NULL OR lp.id = :#{#request.levelProjectId})
                         AND (:#{#request.semesterId} IS NULL OR sem.id = :#{#request.semesterId})
                         AND (:#{#request.subjectId} IS NULL OR sf.id = :#{#request.subjectId})
@@ -72,6 +72,7 @@ public interface STProjectExtendRepository extends ProjectRepository {
                     )
             """, nativeQuery = true)
     Page<USProjectResponse> getListProject(Pageable pageable, USProjectSearchRequest request);
+
     @Query(value = """
                     SELECT
                         ROW_NUMBER() OVER (ORDER BY p.created_at DESC) AS indexs,
@@ -96,8 +97,9 @@ public interface STProjectExtendRepository extends ProjectRepository {
                         f.status = 1 AND
                         f.id = :facilityId
                     ORDER BY p.created_at DESC, p.status DESC
-            """,  nativeQuery = true)
+            """, nativeQuery = true)
     List<USProjectResponse> exportAllProject(String facilityId);
+
     @Query(value = """
                 SELECT
                                      p.id as id,
@@ -122,26 +124,27 @@ public interface STProjectExtendRepository extends ProjectRepository {
 
     @Query(value = """
             SELECT CASE WHEN COUNT(*) > 0 THEN 'TRUE' ELSE 'FALSE' END
-            FROM project p 
+            FROM project p
             LEFT JOIN subject_facility sf ON sf.id = p.id_subject_facility
-            WHERE 
+            WHERE
             p.name LIKE :name
             AND p.id_level_project = :idLevelProject
             AND p.id_semester = :idSemester
             AND sf.id_facility = :idFacility AND
             (:idProject IS NULL OR p.id != :idProject)
             """, nativeQuery = true)
-    boolean isExistProjectInSameLevel(String name, String idLevelProject, String idSemester, String idFacility, String idProject);
+    boolean isExistProjectInSameLevel(String name, String idLevelProject, String idSemester, String idFacility,
+            String idProject);
 
     @Query(value = """
-                        SELECT
-                        p
-                        FROM
-                        Project p
-                        JOIN Semester s ON p.semester.id = s.id
-                        JOIN SubjectFacility sf ON p.subjectFacility.id = sf.id
-                        AND sf.facility.id = :facilityId
-                        AND s.id = :semesterId
-""")
+                                    SELECT
+                                    p
+                                    FROM
+                                    Project p
+                                    JOIN Semester s ON p.semester.id = s.id
+                                    JOIN SubjectFacility sf ON p.subjectFacility.id = sf.id
+                                    AND sf.facility.id = :facilityId
+                                    AND s.id = :semesterId
+            """)
     List<Project> getAllProjectBySemester(String facilityId, String semesterId);
 }

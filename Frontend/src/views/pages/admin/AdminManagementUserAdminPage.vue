@@ -121,22 +121,30 @@ const handleAddUser = () => {
   if (!newUser.staffCode || !newUser.staffName || !newUser.email) {
     return message.error('Vui lòng điền đầy đủ thông tin')
   }
-  modalAddLoading.value = true
-  requestAPI
-    .post(API_ROUTES_ADMIN.FETCH_DATA_ADMIN, newUser)
-    .then(() => {
-      message.success('Thêm Admin thành công')
-      modalAdd.value = false
-      applicationStore.loadNotification()
-      clearNewUser()
-      fetchUsers()
-    })
-    .catch((err) => {
-      message.error(err?.response?.data?.message || 'Lỗi khi thêm')
-    })
-    .finally(() => {
-      modalAddLoading.value = false
-    })
+  Modal.confirm({
+    title: 'Xác nhận thêm mới',
+    content: 'Bạn có chắc chắn muốn thêm admin mới này?',
+    okText: 'Tiếp tục',
+    cancelText: 'Hủy bỏ',
+    onOk() {
+      modalAddLoading.value = true
+      requestAPI
+        .post(API_ROUTES_ADMIN.FETCH_DATA_ADMIN, newUser)
+        .then(() => {
+          message.success('Thêm Admin thành công')
+          modalAdd.value = false
+          applicationStore.loadNotification()
+          clearNewUser()
+          fetchUsers()
+        })
+        .catch((err) => {
+          message.error(err?.response?.data?.message || 'Lỗi khi thêm')
+        })
+        .finally(() => {
+          modalAddLoading.value = false
+        })
+    },
+  })
 }
 
 const handleEditUser = (record) => {
