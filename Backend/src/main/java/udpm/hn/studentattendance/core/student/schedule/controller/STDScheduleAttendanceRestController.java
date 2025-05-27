@@ -37,7 +37,7 @@ public class STDScheduleAttendanceRestController {
     @GetMapping("/list")
     public ResponseEntity<?> getListProject(STDScheduleAttendanceSearchRequest request) {
         request.setIdStudent(sessionHelper.getUserId());
-        return PaginationHelper.createResponseEntity(service.getList(request));
+        return service.getList(request);
     }
 
     @GetMapping(value = "/export-pdf", produces = MediaType.APPLICATION_PDF_VALUE)
