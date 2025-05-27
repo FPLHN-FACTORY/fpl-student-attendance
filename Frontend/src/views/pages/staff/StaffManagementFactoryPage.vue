@@ -183,21 +183,29 @@ const submitAddFactory = () => {
     message.error('Vui lòng điền đầy đủ thông tin bắt buộc')
     return
   }
-  loadingStore.show()
-  requestAPI
-    .post(API_ROUTES_STAFF.FETCH_DATA_FACTORY, newFactory)
-    .then((response) => {
-      message.success(response.data.message || 'Thêm nhóm xưởng thành công')
-      modalAdd.value = false
-      fetchFactories()
-      clearData()
-    })
-    .catch((error) => {
-      message.error(error.response?.data?.message || 'Lỗi khi tạo nhóm xưởng')
-    })
-    .finally(() => {
-      loadingStore.hide()
-    })
+  Modal.confirm({
+    title: 'Xác nhận thêm mới',
+    content: 'Bạn có chắc chắn muốn thêm nhóm xưởng mới này?',
+    okText: 'Tiếp tục',
+    cancelText: 'Hủy bỏ',
+    onOk() {
+      loadingStore.show()
+      requestAPI
+        .post(API_ROUTES_STAFF.FETCH_DATA_FACTORY, newFactory)
+        .then((response) => {
+          message.success(response.data.message || 'Thêm nhóm xưởng thành công')
+          modalAdd.value = false
+          fetchFactories()
+          clearData()
+        })
+        .catch((error) => {
+          message.error(error.response?.data?.message || 'Lỗi khi tạo nhóm xưởng')
+        })
+        .finally(() => {
+          loadingStore.hide()
+        })
+    },
+  })
 }
 
 const handleUpdateFactory = (record) => {
@@ -229,20 +237,28 @@ const submitUpdateFactory = () => {
     message.error('Vui lòng điền đầy đủ thông tin bắt buộc')
     return
   }
-  loadingStore.show()
-  requestAPI
-    .put(API_ROUTES_STAFF.FETCH_DATA_FACTORY, detailFactory)
-    .then((response) => {
-      message.success(response.data.message || 'Cập nhật nhóm xưởng thành công')
-      modalUpdate.value = false
-      fetchFactories()
-    })
-    .catch((error) => {
-      message.error(error.response?.data?.message || 'Lỗi khi cập nhật nhóm xưởng')
-    })
-    .finally(() => {
-      loadingStore.hide()
-    })
+  Modal.confirm({
+    title: 'Xác nhận cập nhật',
+    content: 'Bạn có chắc chắn muốn cập nhật thông tin nhóm xưởng này?',
+    okText: 'Tiếp tục',
+    cancelText: 'Hủy bỏ',
+    onOk() {
+      loadingStore.show()
+      requestAPI
+        .put(API_ROUTES_STAFF.FETCH_DATA_FACTORY, detailFactory)
+        .then((response) => {
+          message.success(response.data.message || 'Cập nhật nhóm xưởng thành công')
+          modalUpdate.value = false
+          fetchFactories()
+        })
+        .catch((error) => {
+          message.error(error.response?.data?.message || 'Lỗi khi cập nhật nhóm xưởng')
+        })
+        .finally(() => {
+          loadingStore.hide()
+        })
+    },
+  })
 }
 
 const handleDetailFactory = (record) => {
