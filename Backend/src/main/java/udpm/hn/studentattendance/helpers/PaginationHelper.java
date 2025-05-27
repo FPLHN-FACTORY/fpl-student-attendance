@@ -5,7 +5,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import udpm.hn.studentattendance.infrastructure.common.PageableRequest;
-import udpm.hn.studentattendance.infrastructure.common.ResponseObject;
 import udpm.hn.studentattendance.infrastructure.constants.PaginationConstant;
 
 public class PaginationHelper {
@@ -43,8 +42,6 @@ public class PaginationHelper {
         return PageRequest.of(page, size, Sort.by(direction, sortBy));
     }
 
-    public static ResponseEntity<?> createResponseEntity(ResponseObject<?> responseObject) {
-        return new ResponseEntity<>(responseObject, responseObject.getStatus());
-    }
+
 
 }
