@@ -203,17 +203,26 @@ const handleAddProject = () => {
     return
   }
 
-  requestAPI
-    .post(API_ROUTES_STAFF.FETCH_DATA_PROJECT, newProject)
-    .then(() => {
-      message.success('Thêm dự án thành công')
-      fetchProjects()
-      resetForm()
-      modalAdd.value = false
-    })
-    .catch((error) => {
-      message.error(error.response?.data?.message || 'Lỗi khi thêm dự án')
-    })
+  Modal.confirm({
+    title: `Xác nhận thêm mới`,
+    type: 'info',
+    content: `Bạn có chắc muốn thêm mới dự án này?`,
+    okText: 'Tiếp tục',
+    cancelText: 'Hủy bỏ',
+    onOk() {
+      requestAPI
+        .post(API_ROUTES_STAFF.FETCH_DATA_PROJECT, newProject)
+        .then(() => {
+          message.success('Thêm dự án thành công')
+          fetchProjects()
+          resetForm()
+          modalAdd.value = false
+        })
+        .catch((error) => {
+          message.error(error.response?.data?.message || 'Lỗi khi thêm dự án')
+        })
+    },
+  })
 }
 
 async function handleEditProject(record) {
@@ -535,7 +544,11 @@ onMounted(() => {
     <a-modal v-model:open="modalAdd" title="Thêm dự án" @ok="handleAddProject" @cancel="resetForm">
       <a-form layout="vertical">
         <a-form-item label="Tên dự án" required>
-          <a-input v-model:value="newProject.name" placeholder="Nhập tên dự án" />
+          <a-input
+            v-model:value="newProject.name"
+            placeholder="Nhập tên dự án"
+            @keyup.enter="handleAddProject"
+          />
         </a-form-item>
         <a-form-item label="Mô tả">
           <a-textarea v-model:value="newProject.description" placeholder="Nhập mô tả" />
@@ -599,7 +612,11 @@ onMounted(() => {
     <a-modal v-model:open="modalEdit" title="Sửa dự án" @ok="handleUpdateProject">
       <a-form layout="vertical">
         <a-form-item label="Tên dự án" required>
-          <a-input v-model:value="detailProject.name" placeholder="Nhập tên dự án" />
+          <a-input
+            v-model:value="detailProject.name"
+            placeholder="Nhập tên dự án"
+            @keyup.enter="handleUpdateProject"
+          />
         </a-form-item>
         <a-form-item label="Mô tả">
           <a-textarea v-model:value="detailProject.description" placeholder="Nhập mô tả" />

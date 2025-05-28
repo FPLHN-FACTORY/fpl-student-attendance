@@ -428,6 +428,7 @@ watch(
           :step="1"
           :disabled="modalAdd.isLoading"
           allowClear
+          @keyup.enter="modalAdd.onOk"
         />
       </a-form-item>
       <a-form-item class="col-sm-4" label="Phòng học">
@@ -437,6 +438,7 @@ watch(
           placeholder="Địa điểm học chi tiết"
           :disabled="modalAdd.isLoading || formDataAdd.type == '1'"
           allowClear
+          @keyup.enter="modalAdd.onOk"
         />
       </a-form-item>
       <a-form-item class="col-sm-12" label="Link học online" name="link">
@@ -446,6 +448,7 @@ watch(
           placeholder="https://"
           :disabled="modalAdd.isLoading"
           allowClear
+          @keyup.enter="modalAdd.onOk"
         />
       </a-form-item>
       <a-form-item class="col-sm-12" label="Điều kiện điểm danh">
@@ -558,7 +561,7 @@ watch(
               />
             </div>
             <div class="col-12">
-              <div class="d-flex justify-content-center flex-wrap gap-2 mt-3">
+              <div class="d-flex justify-content-center flex-wrap gap-2 mt-2">
                 <a-button class="btn-light" @click="handleSubmitFilter">
                   <FilterFilled /> Lọc
                 </a-button>

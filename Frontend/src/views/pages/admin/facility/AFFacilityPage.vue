@@ -151,26 +151,36 @@ const handleAddFacility = () => {
     message.error('Tên cơ sở không được bỏ trống')
     return
   }
-  modalAddLoading.value = true
-  loadingStore.show()
-  requestAPI
-    .post(API_ROUTES_ADMIN.FETCH_DATA_FACILITY, newFacility)
-    .then(() => {
-      message.success('Thêm cơ sở thành công')
-      modalAdd.value = false
-      fetchFacilities()
-      clearFormAdd()
-    })
-    .catch((error) => {
-      message.error(
-        (error.response && error.response.data && error.response.data.message) ||
-          'Lỗi khi thêm cơ sở',
-      )
-    })
-    .finally(() => {
-      modalAddLoading.value = false
-      loadingStore.hide()
-    })
+
+  Modal.confirm({
+    title: `Xác nhận thêm mới`,
+    type: 'info',
+    content: `Bạn có chắc muốn thêm mới cơ sở này?`,
+    okText: 'Tiếp tục',
+    cancelText: 'Hủy bỏ',
+    onOk() {
+      modalAddLoading.value = true
+      loadingStore.show()
+      requestAPI
+        .post(API_ROUTES_ADMIN.FETCH_DATA_FACILITY, newFacility)
+        .then(() => {
+          message.success('Thêm cơ sở thành công')
+          modalAdd.value = false
+          fetchFacilities()
+          clearFormAdd()
+        })
+        .catch((error) => {
+          message.error(
+            (error.response && error.response.data && error.response.data.message) ||
+              'Lỗi khi thêm cơ sở',
+          )
+        })
+        .finally(() => {
+          modalAddLoading.value = false
+          loadingStore.hide()
+        })
+    },
+  })
 }
 
 // Hàm lấy chi tiết cơ sở để cập nhật
@@ -199,25 +209,38 @@ const updateFacility = () => {
     message.error('Tên cơ sở không được bỏ trống')
     return
   }
-  modalUpdateLoading.value = true
-  loadingStore.show()
-  requestAPI
-    .put(`${API_ROUTES_ADMIN.FETCH_DATA_FACILITY}/${detailFacility.value.id}`, detailFacility.value)
-    .then(() => {
-      message.success('Cập nhật cơ sở thành công')
-      modalUpdate.value = false
-      fetchFacilities()
-    })
-    .catch((error) => {
-      message.error(
-        (error.response && error.response.data && error.response.data.message) ||
-          'Lỗi khi cập nhật cơ sở',
-      )
-    })
-    .finally(() => {
-      modalUpdateLoading.value = false
-      loadingStore.hide()
-    })
+
+  Modal.confirm({
+    title: `Xác nhận cập nhật`,
+    type: 'info',
+    content: `Bạn có chắc muốn lưu lại thay đổi?`,
+    okText: 'Tiếp tục',
+    cancelText: 'Hủy bỏ',
+    onOk() {
+      modalUpdateLoading.value = true
+      loadingStore.show()
+      requestAPI
+        .put(
+          `${API_ROUTES_ADMIN.FETCH_DATA_FACILITY}/${detailFacility.value.id}`,
+          detailFacility.value,
+        )
+        .then(() => {
+          message.success('Cập nhật cơ sở thành công')
+          modalUpdate.value = false
+          fetchFacilities()
+        })
+        .catch((error) => {
+          message.error(
+            (error.response && error.response.data && error.response.data.message) ||
+              'Lỗi khi cập nhật cơ sở',
+          )
+        })
+        .finally(() => {
+          modalUpdateLoading.value = false
+          loadingStore.hide()
+        })
+    },
+  })
 }
 
 const handleShowIP = (id) => {
@@ -342,7 +365,7 @@ onMounted(() => {
               </a-select>
             </div>
             <div class="col-12">
-              <div class="d-flex justify-content-center flex-wrap gap-2 mt-3">
+              <div class="d-flex justify-content-center flex-wrap gap-2">
                 <a-button class="btn-light" @click="handleSubmitFilter">
                   <FilterFilled /> Lọc
                 </a-button>
@@ -460,7 +483,7 @@ onMounted(() => {
       @ok="handleAddFacility"
       :okButtonProps="{ loading: modalAddLoading }"
     >
-      <a-form layout="vertical">
+      <a-form layout="vertical" @submit.prevent="handleAddFacility">
         <a-form-item label="Tên cơ sở" required>
           <a-input v-model:value="newFacility.facilityName" placeholder="--Tên cơ sở--" />
         </a-form-item>
@@ -474,7 +497,7 @@ onMounted(() => {
       @ok="updateFacility"
       :okButtonProps="{ loading: modalUpdateLoading }"
     >
-      <a-form layout="vertical">
+      <a-form layout="vertical" @submit.prevent="updateFacility">
         <a-form-item label="Tên cơ sở" required>
           <a-input v-model:value="detailFacility.facilityName" placeholder="--Tên cơ sở--" />
         </a-form-item>

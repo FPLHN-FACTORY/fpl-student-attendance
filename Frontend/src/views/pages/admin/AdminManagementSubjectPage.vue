@@ -127,21 +127,31 @@ const handleAddSubject = () => {
     message.error('Vui lòng nhập mã bộ môn')
     return
   }
-  loadingStore.show()
-  requestAPI
-    .post(API_ROUTES_ADMIN.FETCH_DATA_SUBJECT, newSubject)
-    .then((response) => {
-      message.success(response.data.message || 'Thêm bộ môn thành công')
-      modalAdd.value = false
-      fetchSubjects()
-      clearFormAdd()
-    })
-    .catch((error) => {
-      message.error(error.response?.data?.message || 'Lỗi khi thêm bộ môn')
-    })
-    .finally(() => {
-      loadingStore.hide()
-    })
+
+  Modal.confirm({
+    title: `Xác nhận thêm mới`,
+    type: 'info',
+    content: `Bạn có chắc muốn thêm mới bộ môn này?`,
+    okText: 'Tiếp tục',
+    cancelText: 'Hủy bỏ',
+    onOk() {
+      loadingStore.show()
+      requestAPI
+        .post(API_ROUTES_ADMIN.FETCH_DATA_SUBJECT, newSubject)
+        .then((response) => {
+          message.success(response.data.message || 'Thêm bộ môn thành công')
+          modalAdd.value = false
+          fetchSubjects()
+          clearFormAdd()
+        })
+        .catch((error) => {
+          message.error(error.response?.data?.message || 'Lỗi khi thêm bộ môn')
+        })
+        .finally(() => {
+          loadingStore.hide()
+        })
+    },
+  })
 }
 
 const clearFormAdd = () => {
@@ -191,26 +201,36 @@ const updateSubject = () => {
     message.error('Vui lòng nhập mã bộ môn')
     return
   }
-  loadingStore.show()
-  const requestData = {
-    id: detailSubject.id,
-    name: detailSubject.name,
-    code: detailSubject.code,
-  }
 
-  requestAPI
-    .put(`${API_ROUTES_ADMIN.FETCH_DATA_SUBJECT}/${detailSubject.id}`, requestData)
-    .then((response) => {
-      message.success(response.data.message || 'Cập nhật bộ môn thành công')
-      modalUpdate.value = false
-      fetchSubjects()
-    })
-    .catch((error) => {
-      message.error(error.response?.data?.message || 'Lỗi khi cập nhật bộ môn')
-    })
-    .finally(() => {
-      loadingStore.hide()
-    })
+  Modal.confirm({
+    title: `Xác nhận cập nhật`,
+    type: 'info',
+    content: `Bạn có chắc muốn lưu lại thay đổi?`,
+    okText: 'Tiếp tục',
+    cancelText: 'Hủy bỏ',
+    onOk() {
+      loadingStore.show()
+      const requestData = {
+        id: detailSubject.id,
+        name: detailSubject.name,
+        code: detailSubject.code,
+      }
+
+      requestAPI
+        .put(`${API_ROUTES_ADMIN.FETCH_DATA_SUBJECT}/${detailSubject.id}`, requestData)
+        .then((response) => {
+          message.success(response.data.message || 'Cập nhật bộ môn thành công')
+          modalUpdate.value = false
+          fetchSubjects()
+        })
+        .catch((error) => {
+          message.error(error.response?.data?.message || 'Lỗi khi cập nhật bộ môn')
+        })
+        .finally(() => {
+          loadingStore.hide()
+        })
+    },
+  })
 }
 
 const confirmChangeStatus = (record) => {
@@ -410,10 +430,18 @@ onMounted(() => {
     >
       <a-form layout="vertical">
         <a-form-item label="Mã bộ môn" required>
-          <a-input v-model:value="newSubject.code" placeholder="Nhập mã bộ môn" />
+          <a-input
+            v-model:value="newSubject.code"
+            placeholder="Nhập mã bộ môn"
+            @keyup.enter="handleAddSubject"
+          />
         </a-form-item>
         <a-form-item label="Tên bộ môn" required>
-          <a-input v-model:value="newSubject.name" placeholder="Nhập tên bộ môn" />
+          <a-input
+            v-model:value="newSubject.name"
+            placeholder="Nhập tên bộ môn"
+            @keyup.enter="handleAddSubject"
+          />
         </a-form-item>
       </a-form>
     </a-modal>
@@ -449,10 +477,18 @@ onMounted(() => {
     >
       <a-form layout="vertical">
         <a-form-item label="Mã bộ môn" required>
-          <a-input v-model:value="detailSubject.code" placeholder="Nhập mã bộ môn" />
+          <a-input
+            v-model:value="detailSubject.code"
+            placeholder="Nhập mã bộ môn"
+            @keyup.enter="updateSubject"
+          />
         </a-form-item>
         <a-form-item label="Tên bộ môn" required>
-          <a-input v-model:value="detailSubject.name" placeholder="Nhập tên bộ môn" />
+          <a-input
+            v-model:value="detailSubject.name"
+            placeholder="Nhập tên bộ môn"
+            @keyup.enter="updateSubject"
+          />
         </a-form-item>
       </a-form>
     </a-modal>
