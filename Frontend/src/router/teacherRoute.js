@@ -1,8 +1,9 @@
 import { ROLE } from '@/constants'
 import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
-import { CalendarOutlined, UsergroupAddOutlined } from '@ant-design/icons-vue'
+import { CalendarOutlined, PieChartOutlined, UsergroupAddOutlined } from '@ant-design/icons-vue'
 
 export const ROUTE_NAMES = {
+  MANAGEMENT_STATISTICS: 'route_teacher_management_statistics',
   MANAGEMENT_FACTORY: 'route_teacher_management_factory',
   MANAGEMENT_SCHEDULE: 'route_teacher_management_schedule',
   MANAGEMENT_STUDENT_FACTORY: 'route_teacher_management_student_factory',
@@ -18,12 +19,22 @@ export const TeacherRoutes = [
     path: '/Teacher',
     name: GLOBAL_ROUTE_NAMES.TEACHER_PAGE,
     component: () => import('@/views/layout/TeacherLayout.vue'),
-    redirect: { name: ROUTE_NAMES.MANAGEMENT_SCHEDULE },
+    redirect: { name: ROUTE_NAMES.MANAGEMENT_STATISTICS },
     meta: {
       title: 'Giảng viên',
       requireRole: ROLE.TEACHER,
     },
     children: [
+      {
+        path: 'management-statistics',
+        name: ROUTE_NAMES.MANAGEMENT_STATISTICS,
+        component: () => import('@/views/pages/teacher/TeacherStatisticsPage.vue'),
+        meta: {
+          selectedKey: selectedKey++,
+          name: 'Thống kê',
+          icon: PieChartOutlined,
+        },
+      },
       {
         path: 'schedule',
         name: ROUTE_NAMES.MANAGEMENT_SCHEDULE,

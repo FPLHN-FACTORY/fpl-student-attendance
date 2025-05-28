@@ -23,6 +23,15 @@
   background-color: #dbdfe2 !important;
 }
 
+.bg {
+  &-white {
+    background-color: #fff;
+    & > * {
+      background-color: #fff !important;
+    }
+  }
+}
+
 .ant-input-affix-wrapper:focus,
 .ant-input-affix-wrapper-focused,
 .ant-select-focused .ant-select-selector,

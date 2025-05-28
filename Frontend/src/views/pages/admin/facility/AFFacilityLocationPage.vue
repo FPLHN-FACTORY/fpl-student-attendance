@@ -456,6 +456,7 @@ watch(mapCenter, (newCenter) => {
           v-model:value="formData.name"
           :disabled="modalAddOrUpdate.isLoading"
           allowClear
+          @keyup.enter="modalAddOrUpdate.onOk"
         />
       </a-form-item>
       <a-form-item class="col-sm-4" label="Vĩ độ" name="latitude" :rules="formRules.latitude">
@@ -466,6 +467,7 @@ watch(mapCenter, (newCenter) => {
           :max="90"
           :disabled="modalAddOrUpdate.isLoading"
           allowClear
+          @keyup.enter="modalAddOrUpdate.onOk"
         />
       </a-form-item>
 
@@ -477,6 +479,7 @@ watch(mapCenter, (newCenter) => {
           :max="180"
           :disabled="modalAddOrUpdate.isLoading"
           allowClear
+          @keyup.enter="modalAddOrUpdate.onOk"
         />
       </a-form-item>
       <a-form-item class="col-sm-2" label="Bán kính (m)" name="radius" :rules="formRules.radius">
@@ -486,6 +489,7 @@ watch(mapCenter, (newCenter) => {
           :min="1"
           :disabled="modalAddOrUpdate.isLoading"
           allowClear
+          @keyup.enter="modalAddOrUpdate.onOk"
         />
       </a-form-item>
       <a-form-item class="col-sm-2">
@@ -552,7 +556,7 @@ watch(mapCenter, (newCenter) => {
               </a-select>
             </div>
             <div class="col-12">
-              <div class="d-flex justify-content-center flex-wrap gap-2 mt-3">
+              <div class="d-flex justify-content-center flex-wrap gap-2 mt-2">
                 <a-button class="btn-light" @click="handleSubmitFilter">
                   <FilterFilled /> Lọc
                 </a-button>

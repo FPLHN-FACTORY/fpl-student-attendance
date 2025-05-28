@@ -66,6 +66,7 @@ const columns = ref(
       dataIndex: 'totalStudent',
       key: 'totalStudent',
     },
+    { title: 'Tiến độ', dataIndex: 'process' },
     { title: 'Trạng thái', dataIndex: 'status', key: 'status' },
     { title: '', key: 'actions' },
   ]),
@@ -427,6 +428,7 @@ watch(
           :step="1"
           :disabled="modalAdd.isLoading"
           allowClear
+          @keyup.enter="modalAdd.onOk"
         />
       </a-form-item>
       <a-form-item class="col-sm-4" label="Phòng học">
@@ -436,6 +438,7 @@ watch(
           placeholder="Địa điểm học chi tiết"
           :disabled="modalAdd.isLoading || formDataAdd.type == '1'"
           allowClear
+          @keyup.enter="modalAdd.onOk"
         />
       </a-form-item>
       <a-form-item class="col-sm-12" label="Link học online" name="link">
@@ -445,6 +448,7 @@ watch(
           placeholder="https://"
           :disabled="modalAdd.isLoading"
           allowClear
+          @keyup.enter="modalAdd.onOk"
         />
       </a-form-item>
       <a-form-item class="col-sm-12" label="Điều kiện điểm danh">
@@ -557,7 +561,7 @@ watch(
               />
             </div>
             <div class="col-12">
-              <div class="d-flex justify-content-center flex-wrap gap-2 mt-3">
+              <div class="d-flex justify-content-center flex-wrap gap-2 mt-2">
                 <a-button class="btn-light" @click="handleSubmitFilter">
                   <FilterFilled /> Lọc
                 </a-button>
@@ -598,13 +602,20 @@ watch(
               <template v-if="column.key === 'time'">
                 <a-tag color="blue">{{ formatDate(record.fromDate) }}</a-tag
                 >->
-                <a-tag color="red">{{ formatDate(record.toDate) }}</a-tag>
+                <a-tag color="purple">{{ formatDate(record.toDate) }}</a-tag>
               </template>
               <template v-if="column.dataIndex === 'totalShift'">
-                <a-tag> {{ record.totalShift }} buổi </a-tag>
+                <a-tag color="orange"> {{ record.totalShift }} buổi </a-tag>
               </template>
               <template v-if="column.dataIndex === 'totalStudent'">
                 <a-tag> {{ record.totalStudent }} sinh viên </a-tag>
+              </template>
+              <template v-if="column.dataIndex === 'process'">
+                <a-progress
+                  :percent="Math.round((record.totalCurrentShift / record.totalShift) * 100)"
+                  :steps="5"
+                  :stroke-color="['#FDD835', '#FFCA28', '#CDDC39', '#7CB342', '#4CAF50']"
+                />
               </template>
               <template v-if="column.dataIndex === 'status'">
                 <a-switch

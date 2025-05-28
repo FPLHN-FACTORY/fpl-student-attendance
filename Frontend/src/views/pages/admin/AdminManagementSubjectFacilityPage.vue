@@ -180,24 +180,32 @@ const handleAddSubjectFacility = () => {
     return message.error('Vui lòng chọn 1 cơ sở')
   }
 
-  loadingStore.show()
-
-  requestAPI
-    .post(API_ROUTES_ADMIN.FETCH_DATA_SUBJECT_FACILITY, {
-      facilityId: newSubjectFacility.facilityId,
-      subjectId: newSubjectFacility.subjectId,
-    })
-    .then(({ data: response }) => {
-      message.success(response.message)
-      modalAdd.value = false
-      fetchSubjectFacility()
-    })
-    .catch((error) => {
-      message.error(error.response?.data?.message || 'Không thể thêm bộ môn cơ sở')
-    })
-    .finally(() => {
-      loadingStore.hide()
-    })
+  Modal.confirm({
+    title: `Xác nhận thêm mới`,
+    type: 'info',
+    content: `Bạn có chắc muốn thêm mới cơ sở vào bộ môn này?`,
+    okText: 'Tiếp tục',
+    cancelText: 'Hủy bỏ',
+    onOk() {
+      loadingStore.show()
+      requestAPI
+        .post(API_ROUTES_ADMIN.FETCH_DATA_SUBJECT_FACILITY, {
+          facilityId: newSubjectFacility.facilityId,
+          subjectId: newSubjectFacility.subjectId,
+        })
+        .then(({ data: response }) => {
+          message.success(response.message)
+          modalAdd.value = false
+          fetchSubjectFacility()
+        })
+        .catch((error) => {
+          message.error(error.response?.data?.message || 'Không thể thêm bộ môn cơ sở')
+        })
+        .finally(() => {
+          loadingStore.hide()
+        })
+    },
+  })
 }
 
 const handleUpdateSubjectFacility = () => {
@@ -205,24 +213,32 @@ const handleUpdateSubjectFacility = () => {
     return message.error('Vui lòng chọn 1 cơ sở')
   }
 
-  loadingStore.show()
-
-  requestAPI
-    .put(
-      API_ROUTES_ADMIN.FETCH_DATA_SUBJECT_FACILITY + '/' + updateSubjectFacility.id,
-      updateSubjectFacility,
-    )
-    .then(({ data: response }) => {
-      message.success(response.message)
-      modalUpdate.value = false
-      fetchSubjectFacility()
-    })
-    .catch((error) => {
-      message.error(error.response?.data?.message || 'Không thể cập nhật bộ môn cơ sở')
-    })
-    .finally(() => {
-      loadingStore.hide()
-    })
+  Modal.confirm({
+    title: `Xác nhận cập nhật`,
+    type: 'info',
+    content: `Bạn có chắc muốn lưu lại thay đổi?`,
+    okText: 'Tiếp tục',
+    cancelText: 'Hủy bỏ',
+    onOk() {
+      loadingStore.show()
+      requestAPI
+        .put(
+          API_ROUTES_ADMIN.FETCH_DATA_SUBJECT_FACILITY + '/' + updateSubjectFacility.id,
+          updateSubjectFacility,
+        )
+        .then(({ data: response }) => {
+          message.success(response.message)
+          modalUpdate.value = false
+          fetchSubjectFacility()
+        })
+        .catch((error) => {
+          message.error(error.response?.data?.message || 'Không thể cập nhật bộ môn cơ sở')
+        })
+        .finally(() => {
+          loadingStore.hide()
+        })
+    },
+  })
 }
 
 const handleUpdateProject = (record) => {

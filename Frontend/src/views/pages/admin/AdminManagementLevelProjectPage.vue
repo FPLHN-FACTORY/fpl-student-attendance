@@ -116,21 +116,31 @@ const handleAddLevelProject = () => {
     message.error('Vui lòng nhập tên cấp dự án')
     return
   }
-  loadingStore.show()
-  requestAPI
-    .post(API_ROUTES_ADMIN.FETCH_DATA_LEVEL_PROJECT, newLevel)
-    .then((response) => {
-      message.success(response.data.message || 'Thêm cấp dự án thành công')
-      modalAdd.value = false
-      fetchLevels()
-      clearNewLevelForm()
-    })
-    .catch((error) => {
-      message.error(error.response?.data?.message || 'Lỗi khi thêm cấp dự án')
-    })
-    .finally(() => {
-      loadingStore.hide()
-    })
+
+  Modal.confirm({
+    title: `Xác nhận thêm mới`,
+    type: 'info',
+    content: `Bạn có chắc muốn thêm mới cấp độ dự án này?`,
+    okText: 'Tiếp tục',
+    cancelText: 'Hủy bỏ',
+    onOk() {
+      loadingStore.show()
+      requestAPI
+        .post(API_ROUTES_ADMIN.FETCH_DATA_LEVEL_PROJECT, newLevel)
+        .then((response) => {
+          message.success(response.data.message || 'Thêm cấp dự án thành công')
+          modalAdd.value = false
+          fetchLevels()
+          clearNewLevelForm()
+        })
+        .catch((error) => {
+          message.error(error.response?.data?.message || 'Lỗi khi thêm cấp dự án')
+        })
+        .finally(() => {
+          loadingStore.hide()
+        })
+    },
+  })
 }
 
 const handleDetailLevel = (record) => {
@@ -170,20 +180,30 @@ const submitUpdateLevel = () => {
     message.error('Vui lòng nhập tên cấp dự án')
     return
   }
-  loadingStore.show()
-  requestAPI
-    .put(`${API_ROUTES_ADMIN.FETCH_DATA_LEVEL_PROJECT}/${detailLevel.id}`, detailLevel)
-    .then((response) => {
-      message.success(response.data.message || 'Cập nhật cấp dự án thành công')
-      modalUpdate.value = false
-      fetchLevels()
-    })
-    .catch((error) => {
-      message.error(error.response?.data?.message || 'Lỗi khi cập nhật cấp dự án')
-    })
-    .finally(() => {
-      loadingStore.hide()
-    })
+
+  Modal.confirm({
+    title: `Xác nhận cập nhật`,
+    type: 'info',
+    content: `Bạn có chắc muốn lưu lại thay đổi?`,
+    okText: 'Tiếp tục',
+    cancelText: 'Hủy bỏ',
+    onOk() {
+      loadingStore.show()
+      requestAPI
+        .put(`${API_ROUTES_ADMIN.FETCH_DATA_LEVEL_PROJECT}/${detailLevel.id}`, detailLevel)
+        .then((response) => {
+          message.success(response.data.message || 'Cập nhật cấp dự án thành công')
+          modalUpdate.value = false
+          fetchLevels()
+        })
+        .catch((error) => {
+          message.error(error.response?.data?.message || 'Lỗi khi cập nhật cấp dự án')
+        })
+        .finally(() => {
+          loadingStore.hide()
+        })
+    },
+  })
 }
 
 const confirmChangeStatus = (record) => {
@@ -257,7 +277,11 @@ onMounted(() => {
   >
     <a-form :model="newLevel" layout="vertical">
       <a-form-item label="Tên cấp dự án" required>
-        <a-input v-model:value="newLevel.name" placeholder="Nhập tên cấp dự án" />
+        <a-input
+          v-model:value="newLevel.name"
+          placeholder="Nhập tên cấp dự án"
+          @keyup.enter="handleAddLevelProject"
+        />
       </a-form-item>
       <a-form-item label="Mô tả">
         <a-textarea v-model:value="newLevel.description" placeholder="Nhập mô tả" :rows="4" />
@@ -269,7 +293,11 @@ onMounted(() => {
   <a-modal v-model:open="modalUpdate" title="Cập nhật cấp dự án" @ok="submitUpdateLevel">
     <a-form :model="detailLevel" layout="vertical">
       <a-form-item label="Tên cấp dự án" required>
-        <a-input v-model:value="detailLevel.name" placeholder="Nhập tên cấp dự án" />
+        <a-input
+          v-model:value="detailLevel.name"
+          placeholder="Nhập tên cấp dự án"
+          @keyup.enter="submitUpdateLevel"
+        />
       </a-form-item>
       <a-form-item label="Mô tả">
         <a-textarea v-model:value="detailLevel.description" placeholder="Nhập mô tả" :rows="4" />
