@@ -1,0 +1,210 @@
+package udpm.hn.studentattendance.core.student.historyattendance.repository;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.stereotype.Repository;
+import udpm.hn.studentattendance.core.staff.plan.model.response.SPDPlanDateAttendanceResponse;
+import udpm.hn.studentattendance.core.student.historyattendance.model.request.STDHistoryAttendanceRequest;
+import udpm.hn.studentattendance.core.student.historyattendance.model.response.STDHistoryAttendanceResponse;
+import udpm.hn.studentattendance.core.student.historyattendance.model.response.STDHistoryPlanDateAttendanceResponse;
+import udpm.hn.studentattendance.repositories.FactoryRepository;
+
+import java.util.List;
+import java.util.Optional;
+
+@Repository
+public interface STDHistoryAttendanceExtendRepository extends FactoryRepository {
+
+    @Query(value = """
+             SELECT
+                ROW_NUMBER() OVER (
+                  PARTITION BY ft.id 
+                  ORDER BY pd.start_date
+                ) AS rowNumber,
+                ft.name                 AS factoryName,
+                pd.start_date           AS planDateStartDate,
+                pd.end_date             AS planDateEndDate,
+                pd.shift                AS planDateShift,
+                ft.id                   AS factoryId,
+                pd.id                   AS planDateId,
+                a.created_at            AS checkIn,
+                a.updated_at            AS checkOut,
+                pd.required_checkin    AS requiredCheckIn,
+                pd.required_checkout   AS requiredCheckOut,
+                CASE
+                  WHEN :nowTs < pd.start_date THEN 'CHUA_DIEN_RA'
+                  WHEN a.attendance_status = 0 AND :nowTs > pd.start_date AND :nowTs < pd.end_date THEN 'DANG_DIEN_RA'
+                  WHEN a.attendance_status = 2 THEN 'CHECK_IN'
+                  WHEN a.attendance_status = 3 THEN 'CO_MAT'
+                  WHEN a.attendance_status = 1 THEN 'VANG_MAT'
+                  ELSE 'CHUA_CHECK_OUT'
+                END                      AS statusAttendance,
+                pd.description          AS planDateDescription,
+                pd.late_arrival         AS lateArrival
+            FROM plan_date pd
+            JOIN plan_factory pf    ON pd.id_plan_factory = pf.id
+                                   AND pf.status = 1
+            JOIN plan pl            ON pf.id_plan        = pl.id
+                                   AND pl.status = 1
+            JOIN project p          ON pl.id_project     = p.id
+                                   AND p.status = 1
+            JOIN semester s         ON p.id_semester     = s.id
+                                   AND s.status = 1
+            JOIN factory ft         ON pf.id_factory     = ft.id
+                                   AND ft.status = 1
+            JOIN user_student_factory usf
+                                   ON usf.id_factory    = ft.id
+            JOIN user_student us    ON usf.id_user_student = us.id
+            LEFT JOIN attendance a  ON a.id_plan_date     = pd.id
+                                   AND a.id_user_student = us.id
+                                   AND a.status = 1
+            WHERE us.id = :userStudentId
+              AND (usf.status = 1
+                   OR (usf.status = 0
+                       AND pd.start_date <= usf.updated_at))
+              AND (:#{#attendanceRequest.semesterId} IS NULL
+                   OR s.id = :#{#attendanceRequest.semesterId})
+              AND (:#{#attendanceRequest.factoryId}  IS NULL
+                   OR ft.id = :#{#attendanceRequest.factoryId})
+            ORDER  BY ft.id, pd.start_date
+            """,
+            countQuery = """
+                    SELECT COUNT(*)
+                    FROM plan_date pd
+                    JOIN plan_factory pf    ON pd.id_plan_factory = pf.id
+                                           AND pf.status = 1
+                    JOIN plan pl            ON pf.id_plan        = pl.id
+                                           AND pl.status = 1
+                    JOIN project p          ON pl.id_project     = p.id
+                                           AND p.status = 1
+                    JOIN semester s         ON p.id_semester     = s.id
+                                           AND s.status = 1
+                    JOIN factory ft         ON pf.id_factory     = ft.id
+                                           AND ft.status = 1
+                    JOIN user_student_factory usf
+                                           ON usf.id_factory    = ft.id
+                    JOIN user_student us    ON usf.id_user_student = us.id
+                    WHERE us.id = :userStudentId
+                      AND (usf.status = 1
+                           OR (usf.status = 0
+                               AND pd.start_date <= usf.updated_at))
+                      AND (:#{#attendanceRequest.semesterId} IS NULL
+                           OR s.id = :#{#attendanceRequest.semesterId})
+                      AND (:#{#attendanceRequest.factoryId}  IS NULL
+                           OR ft.id = :#{#attendanceRequest.factoryId})
+                    """,
+            nativeQuery = true
+    )
+    Page<STDHistoryAttendanceResponse> getAllFactoryAttendance(
+            String userStudentId,
+            Pageable pageable,
+            STDHistoryAttendanceRequest attendanceRequest,
+            Long nowTs
+    );
+
+    @Query(value = """
+               SELECT
+                ROW_NUMBER() OVER (
+                  PARTITION BY f.id 
+                ) AS rowNumber,
+                    pd.id,
+                    pl.id AS planId,
+                    pl.name AS planName,
+                    pf.id AS factoryId,
+                    f.name AS factoryName,
+                    pd.required_checkin,
+                    pd.required_checkout
+                FROM plan_date pd
+                JOIN plan_factory pf ON pd.id_plan_factory = pf.id
+                JOIN plan pl ON pf.id_plan = pl.id
+                JOIN factory f ON pf.id_factory = f.id
+                JOIN user_student_factory usf ON usf.id_factory = f.id
+                JOIN user_student us ON usf.id_user_student = us.id
+                WHERE
+                    pf.status = 1 AND
+                    pl.status = 1 AND
+                    f.status = 1 AND
+                    EXISTS(
+                        SELECT 1
+                        FROM project p
+                        JOIN level_project lp ON lp.id = p.id_level_project
+                        JOIN semester s ON s.id = p.id_semester
+                        JOIN subject_facility sf ON sf.id = p.id_subject_facility
+                        JOIN subject s2 ON s2.id = sf.id_subject
+                        JOIN facility f2 ON sf.id_facility = f2.id
+                        WHERE
+                            p.id = pl.id_project AND
+                            p.status = 1 AND
+                            lp.status = 1 AND
+                            s.status = 1 AND
+                            sf.status = 1 AND
+                            s2.status = 1 AND
+                            f2.status = 1 AND
+                            f2.id = :idFacility
+                    ) AND
+                    us.id = :idUserStudent
+                    ORDER BY pd.start_date
+            """, nativeQuery = true)
+    List<STDHistoryPlanDateAttendanceResponse> getDetailPlanDate(String idUserStudent, String idFacility);
+    @Query(value = """
+            SELECT
+                ROW_NUMBER() OVER (
+                    PARTITION BY ft.id 
+                    ORDER BY pd.start_date
+                ) AS rowNumber,
+                ft.name AS factoryName,
+                p.name  AS projectName,
+                pd.start_date AS planDateStartDate,
+                pd.end_date AS planDateEndDate,
+                pd.shift AS planDateShift,
+                ft.id AS factoryId,
+                
+                CASE
+                    WHEN :nowTs < pd.start_date THEN 'CHUA_DIEN_RA'
+                     WHEN att.max_status = 0 AND :nowTs > pd.start_date AND :nowTs < pd.end_date THEN 'DANG_DIEN_RA'
+                    WHEN att.max_status = 2 THEN 'CHECK_IN'
+                    WHEN att.max_status = 3 THEN 'CO_MAT'
+                    WHEN att.max_status = 1 THEN 'VANG_MAT'
+                    ELSE 'CHUA_CHECK_OUT'
+                END AS statusAttendance,
+                pl.name AS planDateName,
+                pd.description AS planDateDescription,
+                pd.late_arrival AS lateArrival
+            FROM user_student us
+            JOIN user_student_factory usf 
+              ON usf.id_user_student = us.id
+            JOIN factory ft 
+              ON ft.id = usf.id_factory 
+             AND ft.status = 1
+            JOIN project p 
+              ON p.id = ft.id_project 
+             AND p.status = 1
+            JOIN semester s 
+              ON s.id = p.id_semester 
+             AND s.status = 1
+            JOIN plan pl 
+              ON pl.id_project = p.id 
+             AND pl.status = 1
+            JOIN plan_factory pf 
+              ON pf.id_factory = ft.id 
+             AND pf.status = 1
+            JOIN plan_date pd 
+              ON pd.id_plan_factory = pf.id 
+             AND pd.status = 1
+            LEFT JOIN (
+                SELECT
+                    at.id_plan_date,
+                    MAX(at.attendance_status) AS max_status
+                FROM attendance at
+                WHERE at.id_user_student = :userStudentId
+                GROUP BY at.id_plan_date
+            ) att 
+              ON att.id_plan_date = pd.id
+            WHERE us.id = :userStudentId
+            ORDER BY ft.id, pd.start_date ASC
+            """, nativeQuery = true)
+    List<STDHistoryAttendanceResponse> getAllHistoryAttendanceByFactory(String userStudentId, String factoryId, Long nowTs);
+
+
+}

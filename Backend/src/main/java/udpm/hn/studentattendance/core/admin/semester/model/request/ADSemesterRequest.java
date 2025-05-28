@@ -1,0 +1,22 @@
+package udpm.hn.studentattendance.core.admin.semester.model.request;
+
+import jakarta.validation.constraints.Size;
+import lombok.Getter;
+import lombok.Setter;
+import udpm.hn.studentattendance.infrastructure.common.PageableRequest;
+import udpm.hn.studentattendance.infrastructure.constants.EntityProperties;
+import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
+
+@Getter
+@Setter
+public class ADSemesterRequest extends PageableRequest {
+    @Size(max = EntityProperties.LENGTH_NAME, message = "Tên học kỳ không được quá:" + EntityProperties.LENGTH_NAME)
+    private String semesterCode;
+
+    private Long fromDateSemester;
+
+    private Long toDateSemester;
+
+    private EntityStatus status;
+
+}
