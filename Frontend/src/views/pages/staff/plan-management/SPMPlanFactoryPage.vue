@@ -66,6 +66,7 @@ const columns = ref(
       dataIndex: 'totalStudent',
       key: 'totalStudent',
     },
+    { title: 'Tiến độ', dataIndex: 'process' },
     { title: 'Trạng thái', dataIndex: 'status', key: 'status' },
     { title: '', key: 'actions' },
   ]),
@@ -598,13 +599,20 @@ watch(
               <template v-if="column.key === 'time'">
                 <a-tag color="blue">{{ formatDate(record.fromDate) }}</a-tag
                 >->
-                <a-tag color="red">{{ formatDate(record.toDate) }}</a-tag>
+                <a-tag color="purple">{{ formatDate(record.toDate) }}</a-tag>
               </template>
               <template v-if="column.dataIndex === 'totalShift'">
-                <a-tag> {{ record.totalShift }} buổi </a-tag>
+                <a-tag color="orange"> {{ record.totalShift }} buổi </a-tag>
               </template>
               <template v-if="column.dataIndex === 'totalStudent'">
                 <a-tag> {{ record.totalStudent }} sinh viên </a-tag>
+              </template>
+              <template v-if="column.dataIndex === 'process'">
+                <a-progress
+                  :percent="Math.round((record.totalCurrentShift / record.totalShift) * 100)"
+                  :steps="5"
+                  :stroke-color="['#FDD835', '#FFCA28', '#CDDC39', '#7CB342', '#4CAF50']"
+                />
               </template>
               <template v-if="column.dataIndex === 'status'">
                 <a-switch

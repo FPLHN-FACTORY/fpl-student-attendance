@@ -24,7 +24,7 @@ public interface AFFacilityLocationRepository extends FacilityLocationRepository
                 JOIN facility f ON fl.id_facility = f.id
                 WHERE
                     f.id = :#{#request.idFacility} AND
-                    (NULLIF(TRIM(:#{#request.keyword}), '') IS NULL OR BINARY fl.name LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%')) AND
+                    (NULLIF(TRIM(:#{#request.keyword}), '') IS NULL OR fl.name LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%')) AND
                     (:#{#request.status} IS NULL OR fl.status = :#{#request.status})
                 ORDER BY fl.status DESC, fl.created_at DESC
             """, countQuery = """
@@ -34,7 +34,7 @@ public interface AFFacilityLocationRepository extends FacilityLocationRepository
                 JOIN facility f ON fl.id_facility = f.id
                 WHERE
                     f.id = :#{#request.idFacility} AND
-                    (NULLIF(TRIM(:#{#request.keyword}), '') IS NULL OR BINARY fl.name LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%')) AND
+                    (NULLIF(TRIM(:#{#request.keyword}), '') IS NULL OR fl.name LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%')) AND
                     (:#{#request.status} IS NULL OR fl.status = :#{#request.status})
             """, nativeQuery = true)
     Page<AFFacilityLocationResponse> getAllByFilter(Pageable pageable, AFFilterFacilityLocationRequest request);

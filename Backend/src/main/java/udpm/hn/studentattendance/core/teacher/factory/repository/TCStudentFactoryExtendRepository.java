@@ -15,25 +15,15 @@ import java.util.List;
 @Repository
 public interface TCStudentFactoryExtendRepository extends UserStudentFactoryRepository {
     @Query(value = """
-            WITH cte_total_current_shift AS (
-                SELECT COUNT(DISTINCT pd.id) AS total_shift
+            WITH cte_shift AS (
+                SELECT
+                    COUNT(DISTINCT CASE WHEN pd.start_date <= UNIX_TIMESTAMP(NOW()) * 1000 THEN pd.id END) AS total_current_shift,
+                    COUNT(DISTINCT pd.id) AS total_shift
                 FROM plan_date pd
                 JOIN plan_factory pf ON pd.id_plan_factory = pf.id
                 WHERE
                     pd.status = 1 AND
                     pf.status = 1 AND
-                    pd.id_plan_factory = pf.id AND
-                    pf.id_factory = :factoryId AND
-                    pd.start_date <= UNIX_TIMESTAMP(NOW()) * 1000
-            ),
-            cte_total_shift AS (
-                SELECT COUNT(DISTINCT pd.id) AS total_shift
-                FROM plan_date pd
-                JOIN plan_factory pf ON pd.id_plan_factory = pf.id
-                WHERE
-                    pd.status = 1 AND
-                    pf.status = 1 AND
-                    pd.id_plan_factory = pf.id AND
                     pf.id_factory = :factoryId
             )
             SELECT
@@ -44,8 +34,8 @@ public interface TCStudentFactoryExtendRepository extends UserStudentFactoryRepo
                 us.name AS studentName,
                 us.email AS studentEmail,
                 usf.status AS statusStudentFactory,
-                cte_ts.total_shift AS totalShift,
-                (cte_tcs.total_shift - (
+                cte_s.total_shift,
+                (cte_s.total_current_shift - (
                         SELECT COUNT(a.id)
                         FROM attendance a
                         JOIN plan_date pd ON a.id_plan_date = pd.id
@@ -60,8 +50,7 @@ public interface TCStudentFactoryExtendRepository extends UserStudentFactoryRepo
                 ) AS totalAbsentShift,
                 ROW_NUMBER() OVER (ORDER BY usf.created_at DESC) AS rowNumber
             FROM user_student_factory usf
-            CROSS JOIN cte_total_current_shift cte_tcs
-            CROSS JOIN cte_total_shift cte_ts
+            CROSS JOIN cte_shift cte_s
             LEFT JOIN user_student us ON us.id = usf.id_user_student
             LEFT JOIN factory ft ON ft.id = usf.id_factory
             WHERE

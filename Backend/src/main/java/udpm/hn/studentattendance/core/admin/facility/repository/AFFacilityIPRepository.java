@@ -22,7 +22,7 @@ public interface AFFacilityIPRepository extends FacilityIPRepository {
                 JOIN facility f ON fi.id_facility = f.id
                 WHERE
                     f.id = :#{#request.idFacility} AND
-                    (NULLIF(TRIM(:#{#request.keyword}), '') IS NULL OR BINARY fi.ip LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%')) AND
+                    (NULLIF(TRIM(:#{#request.keyword}), '') IS NULL OR fi.ip LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%')) AND
                     (:#{#request.status} IS NULL OR fi.status = :#{#request.status}) AND
                     (:#{#request.type} IS NULL OR fi.type = :#{#request.type})
                 ORDER BY fi.status DESC, fi.created_at DESC
@@ -33,7 +33,7 @@ public interface AFFacilityIPRepository extends FacilityIPRepository {
                 JOIN facility f ON fi.id_facility = f.id
                 WHERE
                     f.id = :#{#request.idFacility} AND
-                    (NULLIF(TRIM(:#{#request.keyword}), '') IS NULL OR BINARY fi.ip LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%')) AND
+                    (NULLIF(TRIM(:#{#request.keyword}), '') IS NULL OR fi.ip LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%')) AND
                     (:#{#request.status} IS NULL OR fi.status = :#{#request.status}) AND
                     (:#{#request.type} IS NULL OR fi.type = :#{#request.type})
             """, nativeQuery = true)
