@@ -20,6 +20,8 @@ public class SessionHelper {
 
     private static AuthUser authUser;
 
+    private static RoleConstant loginRole;
+
     public AuthUser getCurrentUser() {
         return (AuthUser) httpSession.getAttribute(SessionConstant.AUTH_USER);
     }
@@ -101,6 +103,14 @@ public class SessionHelper {
 
     public String getUserCode() {
         return authUser.getCode();
+    }
+
+    public RoleConstant getLoginRole() {
+        return loginRole;
+    }
+
+    public void setLoginRole(RoleConstant role) {
+        loginRole = role;
     }
 
 }

@@ -222,7 +222,7 @@ public class USFactoryServiceImpl implements USFactoryService {
         if (newProject == null) {
             return RouterHelper.responseError("Dự án không tồn tại");
         }
-        if (factory == null){
+        if (factory == null) {
             return RouterHelper.responseError("Nhóm xưởng không tồn tại");
         }
 
@@ -243,6 +243,8 @@ public class USFactoryServiceImpl implements USFactoryService {
                     pf.setPlan(newPlan);
                     factoryPlanExtendRepository.save(pf);
                 }
+            } else {
+                projectPlanExtendRepository.deleteAllAttendanceAndPlanDateAndPlanFactoryByPlan(oldPlan.getId());
             }
         }
 

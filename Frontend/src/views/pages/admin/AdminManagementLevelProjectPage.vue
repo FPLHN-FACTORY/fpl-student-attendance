@@ -100,10 +100,7 @@ const fetchLevels = () => {
     })
 }
 
-const clearNewLevelForm = () => {
-  newLevel.name = ''
-  newLevel.description = ''
-}
+
 
 const handleTableChange = (pageInfo) => {
   pagination.current = pageInfo.current
@@ -116,21 +113,28 @@ const handleAddLevelProject = () => {
     message.error('Vui lòng nhập tên cấp dự án')
     return
   }
-  loadingStore.show()
-  requestAPI
-    .post(API_ROUTES_ADMIN.FETCH_DATA_LEVEL_PROJECT, newLevel)
-    .then((response) => {
-      message.success(response.data.message || 'Thêm cấp dự án thành công')
-      modalAdd.value = false
-      fetchLevels()
-      clearNewLevelForm()
-    })
-    .catch((error) => {
-      message.error(error.response?.data?.message || 'Lỗi khi thêm cấp dự án')
-    })
-    .finally(() => {
-      loadingStore.hide()
-    })
+  Modal.confirm({
+    title: 'Xác nhận thêm mới',
+    content: 'Bạn có chắc chắn muốn thêm cấp dự án mới này?',
+    okText: 'Tiếp tục',
+    cancelText: 'Hủy bỏ',
+    onOk() {
+      loadingStore.show()
+      requestAPI
+        .post(API_ROUTES_ADMIN.FETCH_DATA_LEVEL_PROJECT, newLevel)
+        .then((response) => {
+          message.success(response.data.message || 'Thêm cấp dự án thành công')
+          modalAdd.value = false
+          fetchLevels()
+        })
+        .catch((error) => {
+          message.error(error.response?.data?.message || 'Lỗi khi thêm cấp dự án')
+        })
+        .finally(() => {
+          loadingStore.hide()
+        })
+    },
+  })
 }
 
 const handleDetailLevel = (record) => {
@@ -170,20 +174,28 @@ const submitUpdateLevel = () => {
     message.error('Vui lòng nhập tên cấp dự án')
     return
   }
-  loadingStore.show()
-  requestAPI
-    .put(`${API_ROUTES_ADMIN.FETCH_DATA_LEVEL_PROJECT}/${detailLevel.id}`, detailLevel)
-    .then((response) => {
-      message.success(response.data.message || 'Cập nhật cấp dự án thành công')
-      modalUpdate.value = false
-      fetchLevels()
-    })
-    .catch((error) => {
-      message.error(error.response?.data?.message || 'Lỗi khi cập nhật cấp dự án')
-    })
-    .finally(() => {
-      loadingStore.hide()
-    })
+  Modal.confirm({
+    title: 'Xác nhận cập nhật',
+    content: 'Bạn có chắc chắn muốn cập nhật thông tin cấp dự án này?',
+    okText: 'Tiếp tục',
+    cancelText: 'Hủy bỏ',
+    onOk() {
+      loadingStore.show()
+      requestAPI
+        .put(`${API_ROUTES_ADMIN.FETCH_DATA_LEVEL_PROJECT}/${detailLevel.id}`, detailLevel)
+        .then((response) => {
+          message.success(response.data.message || 'Cập nhật cấp dự án thành công')
+          modalUpdate.value = false
+          fetchLevels()
+        })
+        .catch((error) => {
+          message.error(error.response?.data?.message || 'Lỗi khi cập nhật cấp dự án')
+        })
+        .finally(() => {
+          loadingStore.hide()
+        })
+    },
+  })
 }
 
 const confirmChangeStatus = (record) => {

@@ -49,7 +49,6 @@ public class MailerHelper {
         String content = request.getTemplate() != null ? loadTemplate(request.getTemplate()) : request.getContent();
 
         if (Objects.isNull(content)) {
-            LogHelper.error("Gửi mail thất bại!");
             return CompletableFuture.completedFuture(false);
         }
 
@@ -84,7 +83,6 @@ public class MailerHelper {
 
             mailSender.send(mimeMessage);
         } catch (MessagingException e) {
-            LogHelper.error("Không thể gửi mail", e);
             return CompletableFuture.completedFuture(false);
         }
         return CompletableFuture.completedFuture(true);
@@ -95,7 +93,6 @@ public class MailerHelper {
         try {
             return Files.readString(new ClassPathResource(buildPathTemplate(template_name)).getFile().toPath());
         } catch (IOException e) {
-            LogHelper.error("Không thể tải template mailer: ", e);
             return "";
         }
     }

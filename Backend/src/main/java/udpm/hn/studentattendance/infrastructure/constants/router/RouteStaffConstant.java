@@ -21,4 +21,6 @@ public final class RouteStaffConstant {
 
     public static final String URL_API_PLAN_FACTORY_MANAGEMENT = PREFIX_API_STAFF_MANAGEMENT + "/plan-factory-management";
 
+    public static final String URL_API_ATTENDANCE_RECOVERY_MANAGEMENT = PREFIX_API_STAFF_MANAGEMENT + "/attendance-recovery-management";
+
 }

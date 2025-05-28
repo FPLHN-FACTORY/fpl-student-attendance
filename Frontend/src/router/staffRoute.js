@@ -5,6 +5,7 @@ import {
   GoldOutlined,
   ProjectOutlined,
   UsergroupAddOutlined,
+  ContainerOutlined,
 } from '@ant-design/icons-vue'
 
 export const ROUTE_NAMES = {
@@ -16,6 +17,7 @@ export const ROUTE_NAMES = {
   MANAGEMENT_PLAN_DATE_ATTENDANCE: 'route_staff_management_plan_date_attendance',
   MANAGEMENT_PLAN_FACTORY: 'route_staff_management_plan_factory',
   MANAGEMENT_STUDENT: 'route_staff_management_student',
+  MANAGEMENT_ATTENDANCE_RECOVERY: 'route_staff_management_attendance_recovery',
 }
 
 let selectedKey = 1
@@ -94,6 +96,16 @@ export const StaffRoutes = [
           selectedKey: selectedKey++,
           name: 'Quản lý sinh viên',
           icon: UsergroupAddOutlined,
+        },
+      },
+      {
+        path: 'management-attendance-recovery',
+        name: ROUTE_NAMES.MANAGEMENT_ATTENDANCE_RECOVERY,
+        component: () => import('@/views/pages/staff/StaffManagementAttendanceRecovery.vue'),
+        meta: {
+          selectedKey: selectedKey++,
+          name: 'Khôi phục điểm danh',
+          icon: ContainerOutlined,
         },
       },
       {
