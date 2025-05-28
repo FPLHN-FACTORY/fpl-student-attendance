@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, onBeforeUnmount, ref } from 'vue'
+import { onMounted, onBeforeUnmount, ref, watch, nextTick } from 'vue'
 import { Chart, registerables } from 'chart.js'
 
 Chart.register(...registerables)
@@ -12,31 +12,26 @@ const props = defineProps({
 const chart = ref(null)
 const canvasRef = ref(null)
 
-onMounted(() => {
+const renderChart = () => {
+  if (!canvasRef.value) {
+    return
+  }
+
   const ctx = canvasRef.value.getContext('2d')
+
+  if (chart.value) {
+    chart.value.destroy()
+  }
+
   chart.value = new Chart(ctx, {
     type: 'bar',
     data: props.data,
     options: {
-      layout: {
-        padding: {
-          top: 30,
-          right: 15,
-          left: 10,
-          bottom: 5,
-        },
-      },
+      layout: { padding: { top: 30, right: 15, left: 10, bottom: 5 } },
       responsive: true,
       maintainAspectRatio: false,
-      plugins: {
-        legend: {
-          display: false,
-        },
-      },
-      interaction: {
-        mode: 'index',
-        intersect: false,
-      },
+      plugins: { legend: { display: false } },
+      interaction: { mode: 'index', intersect: false },
       scales: {
         y: {
           grid: {
@@ -50,38 +45,43 @@ onMounted(() => {
             suggestedMax: 1000,
             display: true,
             color: '#fff',
-            font: (context) => {
-              const labelCount = context.chart.data.labels.length
-              return {
-                size: labelCount > 4 ? 10 : 14,
-                weight: '600',
-                family: 'Open Sans',
-              }
+            font: (ctx) => {
+              const labelCount = ctx.chart.data.labels.length
+              return { size: labelCount > 4 ? 10 : 14, weight: '600', family: 'Open Sans' }
             },
           },
         },
         x: {
-          grid: {
-            display: false,
-          },
+          grid: { display: false },
           ticks: {
             display: true,
             color: '#fff',
-            font: {
-              size: 14,
-              lineHeight: 1.5,
-              weight: '600',
-              family: 'Open Sans',
-            },
+            font: { size: 14, lineHeight: 1.5, weight: '600', family: 'Open Sans' },
           },
         },
       },
     },
   })
+}
+
+onMounted(async () => {
+  await nextTick()
+  renderChart()
 })
 
+watch(
+  () => props.data,
+  async () => {
+    await nextTick()
+    renderChart()
+  },
+  { deep: true },
+)
+
 onBeforeUnmount(() => {
-  if (chart.value) chart.value.destroy()
+  if (chart.value) {
+    chart.value.destroy()
+  }
 })
 </script>
 
