@@ -30,7 +30,7 @@ services:
           memory: 512M
 
   attendance-fe:
-    image: quocanhh86/fpl-student-attendance-fe:multi-arch
+    image: quocanhh86/fpl-student-attendance-fe:latest
     container_name: attendance-fe
     restart: unless-stopped
     ports:
@@ -56,7 +56,7 @@ services:
         condition: service_healthy
 
   attendance-be:
-    image: quocanhh86/fpl-student-attendance-be:multi-arch
+    image: quocanhh86/fpl-student-attendance-be:latest
     container_name: attendance-be
     restart: unless-stopped
     ports:
