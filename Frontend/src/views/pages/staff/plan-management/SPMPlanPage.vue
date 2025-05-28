@@ -597,6 +597,7 @@ watch(
           v-model:value="formData.name"
           :disabled="modalAddOrUpdate.isLoading"
           allowClear
+          @keyup.enter="modalAddOrUpdate.onOk"
         />
       </a-form-item>
 
@@ -711,7 +712,7 @@ watch(
               </a-select>
             </div>
             <div class="col-12">
-              <div class="d-flex justify-content-center flex-wrap gap-2 mt-3">
+              <div class="d-flex justify-content-center flex-wrap gap-2 mt-2">
                 <a-button class="btn-light" @click="handleSubmitFilter">
                   <FilterFilled /> Lọc
                 </a-button>
@@ -758,7 +759,7 @@ watch(
               <template v-if="column.dataIndex === 'semesterName'">
                 <span>{{ formatDate(record.fromDate) }}</span> -
                 <span>{{ formatDate(record.toDate) }}</span>
-                <a-tag class="ms-2">{{ record.semesterName }}</a-tag>
+                <a-tag class="ms-2" color="orange">{{ record.semesterName }}</a-tag>
               </template>
               <template v-if="column.dataIndex === 'status'">
                 <a-switch

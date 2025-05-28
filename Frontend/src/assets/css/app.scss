@@ -251,7 +251,7 @@ hr {
 }
 
 .ant-layout {
-  background: #f8f9fa;
+  background: #fafafa;
   .ant-layout-sider-children {
     position: fixed;
     width: 300px;
@@ -447,26 +447,56 @@ hr {
     white-space: normal;
   }
   &:not(.ant-card-bordered) {
-    box-shadow: none;
     box-shadow:
       1px 2px 2px 0px rgba(209, 217, 224, 0.7),
       0px 1px 2px 0px rgba(209, 217, 224, 0.7);
   }
 
   & > &-head {
-    background: #eaecf0;
+    background: #f3f3f5;
+    font-weight: 700;
+    margin-bottom: 0;
+    font-size: 1rem;
+  }
+  &.card-white > &-head {
+    background: #fff;
+  }
+  & > &-body {
+    padding-top: 10px;
   }
 }
 
-.ant-table-wrapper {
-  .ant-table-tbody {
-    & > tr.ant-table-row-selected {
-      & > td {
-        background: #e3dcec;
+.ant-table {
+  border-radius: 12px !important;
+  overflow: hidden;
+  &-wrapper {
+    .ant-table-tbody {
+      & > tr.ant-table-row-selected {
+        & > td {
+          background: #e3dcec;
+        }
+        &:hover > td {
+          background: #dbcfec;
+        }
       }
-      &:hover > td {
-        background: #dbcfec;
+    }
+  }
+
+  &-container {
+    .ant-table-thead {
+      position: sticky;
+      top: 0;
+      left: 0;
+      right: 0;
+      width: 100%;
+      z-index: 1;
+      & > tr > th {
+        background: #f8f9fa;
       }
+    }
+    .ant-table-content {
+      overflow: auto !important;
+      max-height: 500px;
     }
   }
 }
@@ -474,23 +504,12 @@ hr {
 span.disabled {
   opacity: 0.6;
 }
-.ant-table-container {
-  .ant-table-thead {
-    position: sticky;
-    top: 0;
-    left: 0;
-    right: 0;
-    width: 100%;
-    z-index: 1;
-  }
-  .ant-table-content {
-    overflow: auto !important;
-    max-height: 500px;
-  }
-}
 
 @import url(color.scss);
 @import url(face-id.scss);
 @import url(button.scss);
 @import url(flex-box.scss);
+@import url(widget.scss);
+@import url(widget.scss);
+@import url(chart.scss);
 @import url(responsive.scss);

@@ -47,7 +47,7 @@ public interface SPDPlanRepository extends PlanRepository {
                     sf.status = 1 AND
                     s2.status = 1 AND
                     sf.id_facility = :#{#request.idFacility} AND
-                    (NULLIF(TRIM(:#{#request.keyword}), '') IS NULL OR BINARY pl.name LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%')) AND
+                    (NULLIF(TRIM(:#{#request.keyword}), '') IS NULL OR pl.name LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%')) AND
                     (:#{#request.level} IS NULL OR lp.id = :#{#request.level}) AND
                     (:#{#request.semester} IS NULL OR s.name = :#{#request.semester}) AND
                     (:#{#request.year} IS NULL OR s.year = :#{#request.year}) AND
@@ -69,7 +69,7 @@ public interface SPDPlanRepository extends PlanRepository {
                     sf.status = 1 AND
                     s2.status = 1 AND
                     sf.id_facility = :#{#request.idFacility} AND
-                    (NULLIF(TRIM(:#{#request.keyword}), '') IS NULL OR BINARY pl.name LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%')) AND
+                    (NULLIF(TRIM(:#{#request.keyword}), '') IS NULL OR pl.name LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%')) AND
                     (:#{#request.level} IS NULL OR lp.id = :#{#request.level}) AND
                     (:#{#request.semester} IS NULL OR s.name = :#{#request.semester}) AND
                     (:#{#request.year} IS NULL OR s.year = :#{#request.year}) AND

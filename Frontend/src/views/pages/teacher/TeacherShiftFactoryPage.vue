@@ -277,7 +277,7 @@ watch(
               />
             </div>
             <div class="col-12">
-              <div class="d-flex justify-content-center flex-wrap gap-2 mt-3">
+              <div class="d-flex justify-content-center flex-wrap gap-2 mt-2">
                 <a-button class="btn-light" @click="handleSubmitFilter">
                   <FilterFilled /> Lọc
                 </a-button>
