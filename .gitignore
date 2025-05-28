@@ -38,3 +38,11 @@ out/
 
 ### .env ###
 .env
+
+### Docker Compose ###
+docker-compose*.yml
+docker-compose*.yaml
+
+### Makefile ###
+Makefile
+makefile
