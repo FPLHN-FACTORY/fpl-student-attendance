@@ -1,0 +1,127 @@
+version: "3.8"
+
+services:
+  attendance-db:
+    image: mysql:8.0
+    container_name: attendance-db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: student_attendance
+      MYSQL_ROOT_PASSWORD: 12345678@QuocAnh
+      MYSQL_INNODB_BUFFER_POOL_SIZE: 256M
+      MYSQL_INNODB_LOG_FILE_SIZE: 64M
+    ports:
+      - "3868:3306"
+    volumes:
+      - attendance_data:/var/lib/mysql
+      - ./backup:/backup
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p$$MYSQL_ROOT_PASSWORD" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
+  attendance-fe:
+    image: quocanhh86/fpl-student-attendance-fe:multi-arch
+    container_name: attendance-fe
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./nginx/conf.d:/etc/nginx/conf.d
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+    depends_on:
+      attendance-be:
+        condition: service_healthy
+
+  attendance-be:
+    image: quocanhh86/fpl-student-attendance-be:multi-arch
+    container_name: attendance-be
+    restart: unless-stopped
+    ports:
+      - "8765:8765"
+    environment:
+      MYSQL_HOST: attendance-db
+      MYSQL_PORT: 3306
+      MYSQL_DATABASE: student_attendance
+      MYSQL_USER: root
+      MYSQL_PASSWORD: 12345678@QuocAnh
+      JPA_SHOW_SQL: "false"
+      JPA_DDL_AUTO: update
+
+      APP_CONFIG_APP_NAME: Student Attendance Fpoly
+      APP_CONFIG_DISABLED_CHECK_EMAIL_FPT: "true"
+      APP_CONFIG_SHIFT_MIN_DIFF: 30
+      APP_CONFIG_SHIFT_MAX_LATE_ARRIVAL: 90
+      APP_CONFIG_ATTENDANCE_EARLY_CHECKIN: 10
+      APP_CONFIG_EXPIRATION_MINUTE_LOGIN: 1440
+
+      DB_GENERATOR: "true"
+      DB_USER_NAME: Nguyễn Quốc Anh
+      DB_USER_CODE: TH01267
+      DB_USER_EMAIL: quocanhn352@gmail.com
+      DB_FACILITY_NAME: Hà nội, Hồ chí minh
+
+      GOOGLE_CLIENT_ID: 297963940212-0805h66ooagrpa4mon9e34kdigetu4cs.apps.googleusercontent.com
+      GOOGLE_CLIENT_SECRET: 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
+      GOOGLE_SCOPE: email,profile
+
+      AUTHENTICATION_SECRET_KEY: 0805h66ooagrpa4mon9e34kdigetu4cs0805h66ooagrpa4mon9e34kdigetu4cs
+
+      MAILER_USERNAME: attendancestudent86@gmail.com
+      MAILER_PASSWORD: cvmfghyxeujepcah
+      MAILER_HOST: smtp.gmail.com
+      MAILER_PORT: 587
+
+      SERVER_PORT: 8765
+      SERVER_ALLOWED_ORIGIN: https://fplstudentattendance.site/
+      TZ: Asia/Ho_Chi_Minh
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8765/actuator/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    depends_on:
+      attendance-db:
+        condition: service_healthy
+
+volumes:
+  attendance_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /data/mysql
+
+networks:
+  xth-dev-udpm-networks:
+    external: true
