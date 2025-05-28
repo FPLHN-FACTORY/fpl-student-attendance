@@ -74,7 +74,7 @@ const columns = ref(
     { title: 'Mô tả', dataIndex: 'factoryDescription', key: 'factoryDescription' },
     { title: 'Trạng thái', dataIndex: 'factoryStatus', key: 'factoryStatus' },
     { title: 'Chức năng', key: 'actions' },
-  ])
+  ]),
 )
 
 const breadcrumb = ref([
@@ -183,21 +183,31 @@ const submitAddFactory = () => {
     message.error('Vui lòng điền đầy đủ thông tin bắt buộc')
     return
   }
-  loadingStore.show()
-  requestAPI
-    .post(API_ROUTES_STAFF.FETCH_DATA_FACTORY, newFactory)
-    .then((response) => {
-      message.success(response.data.message || 'Thêm nhóm xưởng thành công')
-      modalAdd.value = false
-      fetchFactories()
-      clearData()
-    })
-    .catch((error) => {
-      message.error(error.response?.data?.message || 'Lỗi khi tạo nhóm xưởng')
-    })
-    .finally(() => {
-      loadingStore.hide()
-    })
+
+  Modal.confirm({
+    title: `Xác nhận thêm mới`,
+    type: 'info',
+    content: `Bạn có chắc muốn thêm mới nhóm xưởng này?`,
+    okText: 'Tiếp tục',
+    cancelText: 'Hủy bỏ',
+    onOk() {
+      loadingStore.show()
+      requestAPI
+        .post(API_ROUTES_STAFF.FETCH_DATA_FACTORY, newFactory)
+        .then((response) => {
+          message.success(response.data.message || 'Thêm nhóm xưởng thành công')
+          modalAdd.value = false
+          fetchFactories()
+          clearData()
+        })
+        .catch((error) => {
+          message.error(error.response?.data?.message || 'Lỗi khi tạo nhóm xưởng')
+        })
+        .finally(() => {
+          loadingStore.hide()
+        })
+    },
+  })
 }
 
 const handleUpdateFactory = (record) => {
@@ -229,20 +239,30 @@ const submitUpdateFactory = () => {
     message.error('Vui lòng điền đầy đủ thông tin bắt buộc')
     return
   }
-  loadingStore.show()
-  requestAPI
-    .put(API_ROUTES_STAFF.FETCH_DATA_FACTORY, detailFactory)
-    .then((response) => {
-      message.success(response.data.message || 'Cập nhật nhóm xưởng thành công')
-      modalUpdate.value = false
-      fetchFactories()
-    })
-    .catch((error) => {
-      message.error(error.response?.data?.message || 'Lỗi khi cập nhật nhóm xưởng')
-    })
-    .finally(() => {
-      loadingStore.hide()
-    })
+
+  Modal.confirm({
+    title: `Xác nhận cập nhật`,
+    type: 'info',
+    content: `Bạn có chắc muốn lưu lại thay đổi?`,
+    okText: 'Tiếp tục',
+    cancelText: 'Hủy bỏ',
+    onOk() {
+      loadingStore.show()
+      requestAPI
+        .put(API_ROUTES_STAFF.FETCH_DATA_FACTORY, detailFactory)
+        .then((response) => {
+          message.success(response.data.message || 'Cập nhật nhóm xưởng thành công')
+          modalUpdate.value = false
+          fetchFactories()
+        })
+        .catch((error) => {
+          message.error(error.response?.data?.message || 'Lỗi khi cập nhật nhóm xưởng')
+        })
+        .finally(() => {
+          loadingStore.hide()
+        })
+    },
+  })
 }
 
 const handleDetailFactory = (record) => {
@@ -394,9 +414,13 @@ onMounted(() => {
   >
     <a-form :model="newFactory" layout="vertical">
       <a-form-item label="Tên nhóm xưởng" required>
-        <a-input v-model:value="newFactory.factoryName" placeholder="-- Tên nhóm xưởng --" />
+        <a-input
+          v-model:value="newFactory.factoryName"
+          placeholder="-- Tên nhóm xưởng --"
+          @keyup.enter="submitAddFactory"
+        />
       </a-form-item>
-      <a-form-item label="Mô tả nhóm xưởng" >
+      <a-form-item label="Mô tả nhóm xưởng">
         <a-textarea
           v-model:value="newFactory.factoryDescription"
           placeholder="-- Mô tả nhóm xưởng --"
@@ -457,9 +481,9 @@ onMounted(() => {
   <a-modal v-model:open="modalUpdate" title="Cập nhật nhóm xưởng" @ok="submitUpdateFactory">
     <a-form :model="detailFactory" layout="vertical">
       <a-form-item label="Tên nhóm xưởng" required>
-        <a-input v-model:value="detailFactory.factoryName" />
+        <a-input v-model:value="detailFactory.factoryName" @keyup.enter="submitUpdateFactory" />
       </a-form-item>
-      <a-form-item label="Mô tả nhóm xưởng" >
+      <a-form-item label="Mô tả nhóm xưởng">
         <a-textarea v-model:value="detailFactory.factoryDescription" />
       </a-form-item>
       <a-form-item label="Giảng viên giảng dạy" required>
@@ -615,7 +639,7 @@ onMounted(() => {
             </a-tooltip>
             <a-tooltip title="Thêm nhóm xưởng">
               <a-button type="primary" @click="handleShowModalAdd">
-                <PlusOutlined /> Thêm
+                <PlusOutlined /> Thêm nhóm xưởng
               </a-button>
             </a-tooltip>
           </div>

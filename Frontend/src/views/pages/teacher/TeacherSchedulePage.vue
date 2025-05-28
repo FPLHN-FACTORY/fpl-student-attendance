@@ -721,7 +721,12 @@ onMounted(() => {
           />
         </a-form-item>
         <a-form-item label="Điểm danh muộn" name="lateArrival">
-          <a-input-number v-model:value="formUpdateData.lateArrival" :min="0" class="w-100" />
+          <a-input-number
+            v-model:value="formUpdateData.lateArrival"
+            :min="0"
+            class="w-100"
+            @keyup.enter="handleUpdatePlanDate"
+          />
         </a-form-item>
         <a-form-item label="Link học" name="link">
           <a-input
@@ -729,10 +734,16 @@ onMounted(() => {
             placeholder="https://"
             class="w-100"
             allowClear
+            @keyup.enter="handleUpdatePlanDate"
           />
         </a-form-item>
         <a-form-item label="Địa điểm học" name="room">
-          <a-input v-model:value="formUpdateData.room" placeholder="Nhập phòng học" class="w-100" />
+          <a-input
+            v-model:value="formUpdateData.room"
+            placeholder="Nhập phòng học"
+            class="w-100"
+            @keyup.enter="handleUpdatePlanDate"
+          />
         </a-form-item>
       </a-form>
     </a-modal>

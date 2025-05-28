@@ -160,31 +160,41 @@ const handleAddSemester = () => {
     message.error('Vui lòng nhập đầy đủ thông tin')
     return
   }
-  modalAddLoading.value = true
-  loadingStore.show()
-  const payload = {
-    ...newSemester,
-    fromDate: newSemester.fromDate.valueOf(),
-    toDate: newSemester.toDate.valueOf(),
-  }
-  requestAPI
-    .post(API_ROUTES_ADMIN.FETCH_DATA_SEMESTER, payload)
-    .then(() => {
-      message.success('Thêm học kỳ thành công')
-      modalAdd.value = false
-      fetchSemesters()
-      clearFormAdd()
-    })
-    .catch((error) => {
-      message.error(
-        (error.response && error.response.data && error.response.data.message) ||
-          'Lỗi khi thêm học kỳ',
-      )
-    })
-    .finally(() => {
-      modalAddLoading.value = false
-      loadingStore.hide()
-    })
+
+  Modal.confirm({
+    title: `Xác nhận thêm mới`,
+    type: 'info',
+    content: `Bạn có chắc muốn thêm mới học kỳ này?`,
+    okText: 'Tiếp tục',
+    cancelText: 'Hủy bỏ',
+    onOk() {
+      modalAddLoading.value = true
+      loadingStore.show()
+      const payload = {
+        ...newSemester,
+        fromDate: newSemester.fromDate.valueOf(),
+        toDate: newSemester.toDate.valueOf(),
+      }
+      requestAPI
+        .post(API_ROUTES_ADMIN.FETCH_DATA_SEMESTER, payload)
+        .then(() => {
+          message.success('Thêm học kỳ thành công')
+          modalAdd.value = false
+          fetchSemesters()
+          clearFormAdd()
+        })
+        .catch((error) => {
+          message.error(
+            (error.response && error.response.data && error.response.data.message) ||
+              'Lỗi khi thêm học kỳ',
+          )
+        })
+        .finally(() => {
+          modalAddLoading.value = false
+          loadingStore.hide()
+        })
+    },
+  })
 }
 
 const handleUpdateSemester = (record) => {
@@ -225,7 +235,8 @@ const updateSemester = () => {
   // Show confirmation dialog with warning about scheduled classes
   Modal.confirm({
     title: 'Xác nhận cập nhật học kỳ',
-    content: 'Lưu ý: Các lịch học mà sinh viên đã được phân công trước ngày bắt đầu hoặc sau ngày kết thúc của học kỳ vẫn sẽ hoạt động bình thường.',
+    content:
+      'Lưu ý: Các lịch học mà sinh viên đã được phân công trước ngày bắt đầu hoặc sau ngày kết thúc của học kỳ vẫn sẽ hoạt động bình thường.',
     okText: 'Cập nhật',
     cancelText: 'Hủy',
     onOk: () => {
@@ -374,7 +385,7 @@ onMounted(() => {
             <a-tooltip title="Thêm học kỳ mới">
               <a-button type="primary" @click="handleShowModalAdd">
                 <PlusOutlined />
-                Thêm
+                Thêm mới
               </a-button>
             </a-tooltip>
           </div>
@@ -472,6 +483,7 @@ onMounted(() => {
             placeholder="Chọn ngày bắt đầu"
             class="w-100"
             format="DD/MM/YYYY"
+            @keyup.enter="handleAddSemester"
           />
         </a-form-item>
         <a-form-item label="Ngày kết thúc" required>
@@ -480,6 +492,7 @@ onMounted(() => {
             placeholder="Chọn ngày kết thúc"
             class="w-100"
             format="DD/MM/YYYY"
+            @keyup.enter="handleAddSemester"
           />
         </a-form-item>
       </a-form>
@@ -510,6 +523,7 @@ onMounted(() => {
             placeholder="Chọn ngày bắt đầu"
             class="w-100"
             format="DD/MM/YYYY"
+            @keyup.enter="updateSemester"
           />
         </a-form-item>
         <a-form-item label="Ngày kết thúc" required>
@@ -518,6 +532,7 @@ onMounted(() => {
             placeholder="Chọn ngày kết thúc"
             class="w-100"
             format="DD/MM/YYYY"
+            @keyup.enter="updateSemester"
           />
         </a-form-item>
       </a-form>
