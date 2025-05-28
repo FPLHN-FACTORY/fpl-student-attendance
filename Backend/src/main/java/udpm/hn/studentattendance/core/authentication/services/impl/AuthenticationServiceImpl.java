@@ -14,6 +14,7 @@ import udpm.hn.studentattendance.core.authentication.model.request.Authenticatio
 import udpm.hn.studentattendance.core.authentication.model.request.AuthenticationStudentUpdateFaceIDRequest;
 import udpm.hn.studentattendance.core.authentication.oauth2.AuthUser;
 import udpm.hn.studentattendance.core.authentication.repositories.AuthenticationFacilityRepository;
+import udpm.hn.studentattendance.core.authentication.repositories.AuthenticationSemesterRepository;
 import udpm.hn.studentattendance.core.authentication.repositories.AuthenticationUserAdminRepository;
 import udpm.hn.studentattendance.core.authentication.repositories.AuthenticationUserStaffRepository;
 import udpm.hn.studentattendance.core.authentication.repositories.AuthenticationUserStudentRepository;
@@ -58,6 +59,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
     private final AuthenticationFacilityRepository authenticationFacilityRepository;
 
+    private final AuthenticationSemesterRepository authenticationSemesterRepository;
+
     private final AuthenticationUserAdminRepository authenticationUserAdminRepository;
 
     private final AuthenticationUserStaffRepository authenticationUserStaffRepository;
@@ -76,6 +79,11 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     @Override
     public ResponseEntity<?> getAllFacility() {
         return RouterHelper.responseSuccess("Tải dữ liệu danh sách cơ sở thành công", authenticationFacilityRepository.findAllByStatusOrderByPositionAsc(EntityStatus.ACTIVE));
+    }
+
+    @Override
+    public ResponseEntity<?> getAllSemester() {
+        return RouterHelper.responseSuccess("Tải dữ liệu danh sách học kỳ thành công", authenticationSemesterRepository.findAllByStatusOrderByFromDateDesc(EntityStatus.ACTIVE));
     }
 
     @Override

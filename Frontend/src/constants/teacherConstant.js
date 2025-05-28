@@ -1,6 +1,8 @@
 import { API_URL } from '@/constants/routesConstant'
 
 export const API_ROUTES_TEACHER = {
+  FETCH_DATA_STATISTICS: API_URL + '/teacher/statistics-management',
+
   FETCH_DATA_FACTORY: API_URL + '/teacher/factory-management',
 
   FETCH_DATA_STUDENT_FACTORY: API_URL + '/teacher/factory-management/student',

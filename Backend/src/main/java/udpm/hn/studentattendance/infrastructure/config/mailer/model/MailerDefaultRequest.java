@@ -7,6 +7,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import udpm.hn.studentattendance.helpers.MailerHelper;
 
+import java.util.Map;
+
 @Setter
 @Getter
 @AllArgsConstructor
@@ -23,6 +25,8 @@ public class MailerDefaultRequest {
     private String title;
 
     private String content;
+
+    private Map<String, byte[]> attachments;
 
     private String template = MailerHelper.TEMPLATE_DEFAULT;
 
