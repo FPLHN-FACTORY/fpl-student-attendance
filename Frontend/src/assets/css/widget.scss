@@ -1,0 +1,53 @@
+.widget-1 {
+  border-radius: 12px;
+  box-shadow: 0px 20px 27px rgba(0, 0, 0, 0.05);
+
+  .ant-card-body {
+    padding: 16px;
+    position: relative;
+  }
+  .ant-statistic {
+    margin-right: 50px;
+  }
+  .ant-statistic-title {
+    font-weight: 600;
+    color: #8c8c8c;
+    font-size: 14px;
+  }
+  .ant-statistic-content {
+    font-weight: 700;
+    color: inherit;
+    font-size: 30px;
+    line-height: 30px;
+  }
+  .ant-statistic-content-prefix,
+  .ant-statistic-content-value {
+    color: #141414;
+  }
+  .ant-statistic-content-prefix {
+    margin-right: 0;
+  }
+  .ant-statistic-content-suffix {
+    font-weight: 700;
+    font-size: 14px;
+    margin-left: 10px;
+  }
+  .icon {
+    width: 48px;
+    height: 48px;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    right: 16px;
+    margin: auto;
+    background-color: var(--primary-color);
+    border-radius: 8px;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.12);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  .icon svg path {
+    fill: #ffffff;
+  }
+}

@@ -758,7 +758,7 @@ watch(
               <template v-if="column.dataIndex === 'semesterName'">
                 <span>{{ formatDate(record.fromDate) }}</span> -
                 <span>{{ formatDate(record.toDate) }}</span>
-                <a-tag class="ms-2">{{ record.semesterName }}</a-tag>
+                <a-tag class="ms-2" color="orange">{{ record.semesterName }}</a-tag>
               </template>
               <template v-if="column.dataIndex === 'status'">
                 <a-switch

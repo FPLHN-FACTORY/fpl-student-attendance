@@ -58,20 +58,18 @@ const newProject = reactive({
 const detailProject = reactive({})
 const oldSemesterId = ref(null)
 
+const pagination = reactive({
+  ...DEFAULT_PAGINATION,
+})
+
 // Bộ lọc và phân trang
 const filter = reactive({
   name: null,
   status: null,
-  page: 1,
-  pageSize: 5,
   semesterId: null,
   subjectId: null,
   levelProjectId: null,
   facilityId: null,
-})
-
-const pagination = reactive({
-  ...DEFAULT_PAGINATION,
 })
 
 // Cấu hình cột bảng
@@ -85,7 +83,7 @@ const columns = ref(
     { title: 'Mô tả', dataIndex: 'description', key: 'description' },
     { title: 'Trạng thái', dataIndex: 'status', key: 'status' },
     { title: 'Chức năng', key: 'actions' },
-  ])
+  ]),
 )
 
 /* ----------------- Methods ----------------- */
@@ -111,8 +109,7 @@ const fetchProjects = () => {
     })
     .then((response) => {
       projects.value = response.data.data.data
-      pagination.total = response.data.data.totalPages * filter.pageSize
-      pagination.current = response.data.data.currentPage + 1
+      pagination.total = response.data.data.totalPages * pagination.pageSize
     })
     .catch((error) => {
       message.error(error.response?.data?.message || 'Lỗi khi lấy dữ liệu')
@@ -178,8 +175,6 @@ const handleClearFilter = () => {
   Object.assign(filter, {
     name: null,
     status: null,
-    page: 1,
-    pageSize: 5,
     semesterId: null,
     subjectId: null,
     levelProjectId: null,
@@ -606,7 +601,7 @@ onMounted(() => {
         <a-form-item label="Tên dự án" required>
           <a-input v-model:value="detailProject.name" placeholder="Nhập tên dự án" />
         </a-form-item>
-        <a-form-item label="Mô tả" >
+        <a-form-item label="Mô tả">
           <a-textarea v-model:value="detailProject.description" placeholder="Nhập mô tả" />
         </a-form-item>
         <a-form-item label="Cấp dự án" required>

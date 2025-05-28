@@ -817,7 +817,7 @@ watch(
                   </a-tag>
                 </template>
                 <template v-if="column.dataIndex === 'status'">
-                  <a-badge :status="record.status === 'DA_DIEN_RA' ? 'error' : 'success'" />
+                  <a-badge :status="record.status === 'DA_DIEN_RA' ? 'success' : 'default'" />
                   {{ STATUS_PLAN_DATE_DETAIL[record.status] }}
                 </template>
                 <template v-if="column.dataIndex === 'totalShift'">

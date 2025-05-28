@@ -129,7 +129,7 @@ const handleClearFilter = () => {
 }
 
 const handleSubmitFilter = () => {
-  pagination.value.current = 1
+  pagination.current = 1
   fetchFacilities()
 }
 

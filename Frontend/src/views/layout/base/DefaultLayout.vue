@@ -288,7 +288,7 @@ watch(
 
     <a-layout class="sider-content">
       <!-- HEADER -->
-      <a-layout-header class="d-flex justify-content-between bg-white ps-0">
+      <a-layout-header class="d-flex justify-content-between ps-0">
         <component
           :is="collapsed ? MenuUnfoldOutlined : MenuFoldOutlined"
           class="trigger"
