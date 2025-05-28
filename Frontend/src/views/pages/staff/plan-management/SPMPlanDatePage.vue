@@ -525,6 +525,7 @@ watch(
           placeholder="Địa điểm học chi tiết"
           :disabled="modalAddOrUpdate.isLoading || formData.type == '1'"
           allowClear
+          @keyup.enter="modalAddOrUpdate.onOk"
         />
       </a-form-item>
       <a-form-item class="col-sm-12" label="Ca học" name="shift" :rules="formRules.shift">
@@ -570,6 +571,7 @@ watch(
           :step="1"
           :disabled="modalAddOrUpdate.isLoading"
           allowClear
+          @keyup.enter="modalAddOrUpdate.onOk"
         />
       </a-form-item>
 
@@ -589,6 +591,7 @@ watch(
           placeholder="https://"
           :disabled="modalAddOrUpdate.isLoading"
           allowClear
+          @keyup.enter="modalAddOrUpdate.onOk"
         />
       </a-form-item>
       <a-form-item class="col-sm-12" label="Điều kiện điểm danh">
@@ -736,7 +739,7 @@ watch(
               />
             </div>
             <div class="col-12">
-              <div class="d-flex justify-content-center flex-wrap gap-2 mt-3">
+              <div class="d-flex justify-content-center flex-wrap gap-2 mt-2">
                 <a-button class="btn-light" @click="handleSubmitFilter">
                   <FilterFilled /> Lọc
                 </a-button>
@@ -817,7 +820,7 @@ watch(
                   </a-tag>
                 </template>
                 <template v-if="column.dataIndex === 'status'">
-                  <a-badge :status="record.status === 'DA_DIEN_RA' ? 'error' : 'success'" />
+                  <a-badge :status="record.status === 'DA_DIEN_RA' ? 'success' : 'default'" />
                   {{ STATUS_PLAN_DATE_DETAIL[record.status] }}
                 </template>
                 <template v-if="column.dataIndex === 'totalShift'">

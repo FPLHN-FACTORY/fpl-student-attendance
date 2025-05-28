@@ -136,24 +136,33 @@ const handleAddStudent = () => {
     message.error('Vui lòng nhập đầy đủ thông tin')
     return
   }
-  loadingStore.show()
-  requestAPI
-    .post(API_ROUTES_STAFF.FETCH_DATA_STUDENT, newStudent)
-    .then(() => {
-      message.success('Thêm sinh viên thành công')
-      modalAdd.value = false
-      fetchStudents()
-      clearNewStudentForm()
-    })
-    .catch((error) => {
-      message.error(
-        (error.response && error.response.data && error.response.data.message) ||
-          'Lỗi khi thêm sinh viên',
-      )
-    })
-    .finally(() => {
-      loadingStore.hide()
-    })
+  Modal.confirm({
+    title: `Xác nhận thêm mới`,
+    type: 'info',
+    content: `Bạn có chắc muốn thêm mới sinh viên này?`,
+    okText: 'Tiếp tục',
+    cancelText: 'Hủy bỏ',
+    onOk() {
+      loadingStore.show()
+      requestAPI
+        .post(API_ROUTES_STAFF.FETCH_DATA_STUDENT, newStudent)
+        .then(() => {
+          message.success('Thêm sinh viên thành công')
+          modalAdd.value = false
+          fetchStudents()
+          clearNewStudentForm()
+        })
+        .catch((error) => {
+          message.error(
+            (error.response && error.response.data && error.response.data.message) ||
+              'Lỗi khi thêm sinh viên',
+          )
+        })
+        .finally(() => {
+          loadingStore.hide()
+        })
+    },
+  })
 }
 
 // Hàm mở modal cập nhật và load chi tiết sinh viên
@@ -210,23 +219,32 @@ const updateStudent = () => {
     message.error('Vui lòng nhập đầy đủ thông tin')
     return
   }
-  loadingStore.show()
-  requestAPI
-    .put(API_ROUTES_STAFF.FETCH_DATA_STUDENT, detailStudent)
-    .then(() => {
-      message.success('Cập nhật sinh viên thành công')
-      modalUpdate.value = false
-      fetchStudents()
-    })
-    .catch((error) => {
-      message.error(
-        (error.response && error.response.data && error.response.data.message) ||
-          'Lỗi khi cập nhật sinh viên',
-      )
-    })
-    .finally(() => {
-      loadingStore.hide()
-    })
+  Modal.confirm({
+    title: `Xác nhận cập nhật`,
+    type: 'info',
+    content: `Bạn có chắc muốn lưu lại thay đổi?`,
+    okText: 'Tiếp tục',
+    cancelText: 'Hủy bỏ',
+    onOk() {
+      loadingStore.show()
+      requestAPI
+        .put(API_ROUTES_STAFF.FETCH_DATA_STUDENT, detailStudent)
+        .then(() => {
+          message.success('Cập nhật sinh viên thành công')
+          modalUpdate.value = false
+          fetchStudents()
+        })
+        .catch((error) => {
+          message.error(
+            (error.response && error.response.data && error.response.data.message) ||
+              'Lỗi khi cập nhật sinh viên',
+          )
+        })
+        .finally(() => {
+          loadingStore.hide()
+        })
+    },
+  })
 }
 
 // Hàm đổi trạng thái sinh viên
@@ -381,7 +399,7 @@ onMounted(() => {
             <a-tooltip title="Thêm mới sinh viên">
               <!-- Sử dụng nút primary kiểu filled -->
               <a-button type="primary" @click="handleShowModalAdd">
-                <PlusOutlined /> Thêm
+                <PlusOutlined /> Thêm sinh viên
               </a-button>
             </a-tooltip>
           </div>
@@ -473,13 +491,25 @@ onMounted(() => {
     >
       <a-form layout="vertical">
         <a-form-item label="Mã sinh viên" required>
-          <a-input v-model:value="newStudent.code" placeholder="--Nhập mã sinh viên--" />
+          <a-input
+            v-model:value="newStudent.code"
+            placeholder="--Nhập mã sinh viên--"
+            @keyup.enter="handleAddStudent"
+          />
         </a-form-item>
         <a-form-item label="Tên sinh viên" required>
-          <a-input v-model:value="newStudent.name" placeholder="--Nhập tên sinh viên--" />
+          <a-input
+            v-model:value="newStudent.name"
+            placeholder="--Nhập tên sinh viên--"
+            @keyup.enter="handleAddStudent"
+          />
         </a-form-item>
         <a-form-item label="Email" required>
-          <a-input v-model:value="newStudent.email" placeholder="--Nhập email sinh viên--" />
+          <a-input
+            v-model:value="newStudent.email"
+            placeholder="--Nhập email sinh viên--"
+            @keyup.enter="handleAddStudent"
+          />
         </a-form-item>
       </a-form>
     </a-modal>
@@ -488,13 +518,25 @@ onMounted(() => {
     <a-modal v-model:open="modalUpdate" title="Cập nhật sinh viên" @ok="updateStudent">
       <a-form layout="vertical">
         <a-form-item label="Mã sinh viên" required>
-          <a-input v-model:value="detailStudent.code" placeholder="--Nhập mã sinh viên--" />
+          <a-input
+            v-model:value="detailStudent.code"
+            placeholder="--Nhập mã sinh viên--"
+            @keyup.enter="updateStudent"
+          />
         </a-form-item>
         <a-form-item label="Tên sinh viên" required>
-          <a-input v-model:value="detailStudent.name" placeholder="--Nhập tên sinh viên--" />
+          <a-input
+            v-model:value="detailStudent.name"
+            placeholder="--Nhập tên sinh viên--"
+            @keyup.enter="updateStudent"
+          />
         </a-form-item>
         <a-form-item label="Email" required>
-          <a-input v-model:value="detailStudent.email" placeholder="--Nhập email sinh viên--" />
+          <a-input
+            v-model:value="detailStudent.email"
+            placeholder="--Nhập email sinh viên--"
+            @keyup.enter="updateStudent"
+          />
         </a-form-item>
       </a-form>
     </a-modal>

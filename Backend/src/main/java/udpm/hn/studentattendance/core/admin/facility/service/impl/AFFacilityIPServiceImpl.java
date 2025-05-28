@@ -83,7 +83,7 @@ public class AFFacilityIPServiceImpl implements AFFacilityIPService {
         }
 
         IPType type = IPType.fromKey(request.getType());
-        String ip = request.getIp();
+        String ip = request.getIp().trim();
 
         ResponseEntity<ApiResponse> checkIP = checkIP(type, ip);
         if (checkIP != null) {
@@ -120,7 +120,7 @@ public class AFFacilityIPServiceImpl implements AFFacilityIPService {
         }
 
         IPType type = IPType.fromKey(request.getType());
-        String ip = request.getIp();
+        String ip = request.getIp().trim();
 
         ResponseEntity<ApiResponse> checkIP = checkIP(type, ip);
         if (checkIP != null) {

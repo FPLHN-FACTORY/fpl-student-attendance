@@ -224,7 +224,7 @@ onMounted(() => {
   <div class="container-fluid">
     <div class="row g-3">
       <div class="col-12">
-        <a-card class="mb-3">
+        <a-card :bordered="false" class="card mb-3">
           <template #title><FilterFilled /> Bộ lọc</template>
           <div class="row g-3 filter-container">
             <div class="col-md-12">

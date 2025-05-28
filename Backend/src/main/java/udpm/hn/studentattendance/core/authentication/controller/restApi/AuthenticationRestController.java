@@ -39,6 +39,11 @@ public class AuthenticationRestController {
         return authenticationService.getAllFacility();
     }
 
+    @GetMapping(RouteAuthenticationConstant.API_GET_ALL_SEMESTER)
+    public ResponseEntity<?> getAllSemester() {
+        return authenticationService.getAllSemester();
+    }
+
     @PostMapping(RouteAuthenticationConstant.API_GET_INFO_USER)
     public ResponseEntity<?> getInfoUser(@RequestBody Map<String, String> requestBody) {
         return authenticationService.getInfoUser(requestBody.get("role"));

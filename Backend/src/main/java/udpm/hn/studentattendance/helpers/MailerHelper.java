@@ -4,6 +4,7 @@ import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
@@ -35,6 +36,11 @@ public class MailerHelper {
     public final static String TEMPLATE_CHANGE_STATUS_FACILITY = "change-status-facility.html";
 
     public final static String TEMPLATE_CHANGE_STATUS_ADMIN = "change-status-admin.html";
+
+    public final static String TEMPLATE_STATISTICS_STAFF = "statistics-staff.html";
+
+    public final static String TEMPLATE_STATISTICS_TEACHER = "statistics-teacher.html";
+
     public final static String HEADER_DEFAULT = "";
 
     public final static String FOOTER_DEFAULT = """
@@ -73,9 +79,19 @@ public class MailerHelper {
             mimeMessageHelper = new MimeMessageHelper(mimeMessage, true, StandardCharsets.UTF_8.toString());
             mimeMessageHelper.setFrom(from);
             mimeMessageHelper.setTo(request.getTo());
+            mimeMessageHelper.setReplyTo(from);
 
             if (request.getBcc() != null && request.getBcc().length > 0) {
                 mimeMessageHelper.setBcc(request.getBcc());
+            }
+
+            if (request.getAttachments() != null) {
+                for (Map.Entry<String, byte[]> entry : request.getAttachments().entrySet()) {
+                    String filename = entry.getKey();
+                    byte[] fileData = entry.getValue();
+                    ByteArrayResource resource = new ByteArrayResource(fileData);
+                    mimeMessageHelper.addAttachment(filename, resource);
+                }
             }
 
             mimeMessageHelper.setText(content, true);
