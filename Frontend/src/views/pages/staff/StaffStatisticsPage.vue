@@ -223,8 +223,8 @@ const fetchDataAllStats = () => {
       Object.assign(dataStats, response.data.stats)
 
       const levelStats = response.data.levelStats
-      barChartData.value.labels = levelStats.map((o) => o.label)
-      barChartData.value.datasets[0].data = levelStats.map((o) => o.totalProject)
+      barChartData.value.labels = [...levelStats.map((o) => o.label)]
+      barChartData.value.datasets[0].data = [...levelStats.map((o) => o.totalProject)]
 
       const subjectFacilityStats = response.data.subjectFacilityStats
       lineChartData.value.labels = ['-', ...subjectFacilityStats.map((o) => o.label), '-']

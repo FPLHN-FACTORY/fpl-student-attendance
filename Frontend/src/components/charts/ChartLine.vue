@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { ref, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
 import { Chart, registerables } from 'chart.js'
 
 Chart.register(...registerables)
@@ -15,9 +15,10 @@ const props = defineProps({
 const chart = ref(null)
 const canvas = ref(null)
 
-onMounted(() => {
+const renderChart = () => {
+  if (!canvas.value) return
   const ctx = canvas.value.getContext('2d')
-
+  if (chart.value) chart.value.destroy()
   chart.value = new Chart(ctx, {
     type: 'line',
     data: props.data,
@@ -50,7 +51,7 @@ onMounted(() => {
             display: true,
             color: 'rgba(0, 0, 0, .2)',
             borderDash: [6],
-            borderDashOffset: [6],
+            borderDashOffset: 6,
           },
           ticks: {
             suggestedMin: 0,
@@ -85,7 +86,21 @@ onMounted(() => {
       },
     },
   })
+}
+
+onMounted(async () => {
+  await nextTick()
+  renderChart()
 })
+
+watch(
+  () => props.data,
+  async () => {
+    await nextTick()
+    renderChart()
+  },
+  { deep: true },
+)
 
 onBeforeUnmount(() => {
   if (chart.value) chart.value.destroy()
