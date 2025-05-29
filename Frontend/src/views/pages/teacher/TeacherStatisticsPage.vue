@@ -17,7 +17,7 @@ import { ROUTE_NAMES_API } from '@/router/authenticationRoute'
 import { ROUTE_NAMES } from '@/router/teacherRoute'
 import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
 import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
-import { autoAddColumnWidth, debounce } from '@/utils/utils'
+import { autoAddColumnWidth, debounce, getCurrentSemester } from '@/utils/utils'
 import useLoadingStore from '@/stores/useLoadingStore'
 import WidgetCounter from '@/components/widgets/WidgetCounter.vue'
 import ChartBar from '@/components/charts/ChartBar.vue'
@@ -261,11 +261,11 @@ const fetchDataSemester = () => {
     .get(ROUTE_NAMES_API.FETCH_DATA_SEMESTER)
     .then(({ data: response }) => {
       lstSemester.value = response.data
-      const semester = lstSemester.value?.[0]
+      const semester = getCurrentSemester(lstSemester.value)
       if (semester) {
-        dataFilter.semester = lstSemester.value?.[0]?.id || null
-        minRangeDate.value = lstSemester.value?.[0]?.fromDate || null
-        maxRangeDate.value = lstSemester.value?.[0]?.toDate || null
+        dataFilter.semester = semester.id
+        minRangeDate.value = semester.fromDate
+        maxRangeDate.value = semester.toDate
       }
     })
     .catch((error) => {
