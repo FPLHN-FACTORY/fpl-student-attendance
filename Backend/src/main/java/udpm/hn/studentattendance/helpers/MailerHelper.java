@@ -14,6 +14,7 @@ import udpm.hn.studentattendance.infrastructure.config.mailer.model.MailerDefaul
 import udpm.hn.studentattendance.infrastructure.constants.ExecutorConstants;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.Map;
@@ -107,7 +108,10 @@ public class MailerHelper {
 
     public static String loadTemplate(String template_name) {
         try {
-            return Files.readString(new ClassPathResource(buildPathTemplate(template_name)).getFile().toPath());
+            ClassPathResource resource = new ClassPathResource(buildPathTemplate(template_name));
+            try (InputStream inputStream = resource.getInputStream()) {
+                return new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
+            }
         } catch (IOException e) {
             return "";
         }
