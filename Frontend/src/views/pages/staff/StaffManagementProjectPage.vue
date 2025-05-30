@@ -46,7 +46,6 @@ const modalAdd = ref(false)
 const modalDetail = ref(false)
 const modalEdit = ref(false)
 
-// Dữ liệu form
 const newProject = reactive({
   name: '',
   description: '',
@@ -58,7 +57,6 @@ const newProject = reactive({
 const detailProject = reactive({})
 const oldSemesterId = ref(null)
 
-// Bộ lọc và phân trang
 const filter = reactive({
   name: null,
   status: null,
@@ -74,7 +72,6 @@ const pagination = reactive({
   ...DEFAULT_PAGINATION,
 })
 
-// Cấu hình cột bảng
 const columns = ref(
   autoAddColumnWidth([
     { title: '#', dataIndex: 'indexs', key: 'indexs' },
@@ -95,7 +92,6 @@ const formatDate = (timestamp) => {
   return new Date(timestamp).toLocaleString()
 }
 
-// Lấy danh sách dự án
 const fetchProjects = () => {
   loadingStore.show()
   requestAPI
@@ -111,7 +107,7 @@ const fetchProjects = () => {
     })
     .then((response) => {
       projects.value = response.data.data.data
-      pagination.total = response.data.data.totalPages * filter.pageSize
+      pagination.total = response.data.data.totalPages * pagination.pageSize
       pagination.current = response.data.data.currentPage + 1
     })
     .catch((error) => {
@@ -122,7 +118,6 @@ const fetchProjects = () => {
     })
 }
 
-// Lấy danh sách combobox
 const fetchLevelCombobox = () => {
   requestAPI
     .get(`${API_ROUTES_STAFF.FETCH_DATA_PROJECT}/level-combobox`)
@@ -144,6 +139,7 @@ const fetchSemesters = () => {
       message.error(error.response?.data?.message || 'Lỗi khi lấy dữ liệu combobox học kỳ')
     })
 }
+
 const allSemesters = ref([])
 const getAllSemesters = () => {
   requestAPI
@@ -166,10 +162,11 @@ const fetchSubjects = () => {
     })
 }
 
-// Xử lý phân trang
 const handleTableChange = (pageInfo) => {
   pagination.current = pageInfo.current
   pagination.pageSize = pageInfo.pageSize
+  filter.page = pageInfo.current
+  filter.pageSize = pageInfo.pageSize
   fetchProjects()
 }
 
@@ -187,6 +184,26 @@ const handleClearFilter = () => {
   })
   pagination.current = 1
   fetchProjects()
+}
+
+// Thêm hàm để lấy học kỳ gần nhất
+const getNearestActiveSemester = (semesters) => {
+  const now = new Date().getTime()
+  return semesters
+    .filter(semester => semester.toDate > now) // Lọc các học kỳ có ngày kết thúc > hiện tại
+    .sort((a, b) => a.toDate - b.toDate) // Sắp xếp theo ngày kết thúc tăng dần
+    .shift() // Lấy học kỳ đầu tiên (gần nhất)
+}
+
+// Sửa lại hàm handleShowModalAdd để set học kỳ gần nhất
+const handleShowModalAdd = () => {
+  resetForm()
+  // Tìm học kỳ gần nhất và set vào newProject
+  const nearestSemester = getNearestActiveSemester(allSemesters.value)
+  if (nearestSemester) {
+    newProject.semesterId = nearestSemester.id
+  }
+  modalAdd.value = true
 }
 
 // Thêm dự án mới
@@ -208,17 +225,25 @@ const handleAddProject = () => {
     return
   }
 
-  requestAPI
-    .post(API_ROUTES_STAFF.FETCH_DATA_PROJECT, newProject)
-    .then(() => {
-      message.success('Thêm dự án thành công')
-      fetchProjects()
-      resetForm()
-      modalAdd.value = false
-    })
-    .catch((error) => {
-      message.error(error.response?.data?.message || 'Lỗi khi thêm dự án')
-    })
+  Modal.confirm({
+    title: 'Xác nhận thêm mới',
+    content: 'Bạn có chắc chắn muốn thêm dự án mới này?',
+    okText: 'Tiếp tục',
+    cancelText: 'Hủy bỏ',
+    onOk() {
+      requestAPI
+        .post(API_ROUTES_STAFF.FETCH_DATA_PROJECT, newProject)
+        .then(() => {
+          message.success('Thêm dự án thành công')
+          fetchProjects()
+          resetForm()
+          modalAdd.value = false
+        })
+        .catch((error) => {
+          message.error(error.response?.data?.message || 'Lỗi khi thêm dự án')
+        })
+    },
+  })
 }
 
 async function handleEditProject(record) {
@@ -244,49 +269,42 @@ const handleShowDescription = (text) => {
   })
 }
 
-async function actuallyUpdate() {
-  const req = {
-    name: detailProject.name,
-    description: detailProject.description,
-    levelProjectId: detailProject.levelProjectId,
-    semesterId: detailProject.semesterId,
-    subjectFacilityId: detailProject.subjectFacilityId,
+const handleUpdateProject = () => {
+  if (!detailProject.name) {
+    message.error('Tên dự án không được bỏ trống')
+    return
   }
-  try {
-    await requestAPI.put(`${API_ROUTES_STAFF.FETCH_DATA_PROJECT}/${detailProject.id}`, req)
-    message.success('Cập nhật dự án thành công')
-    modalEdit.value = false
-    fetchProjects()
-  } catch (e) {
-    message.error(e.response?.data?.message || 'Lỗi khi cập nhật')
+  if (!detailProject.levelProjectId) {
+    message.error('Phải chọn cấp dự án')
+    return
   }
-}
-function handleUpdateProject() {
-  // validate
-  if (
-    !detailProject.name ||
-    !detailProject.levelProjectId ||
-    !detailProject.semesterId ||
-    !detailProject.subjectFacilityId
-  ) {
-    return message.error('Vui lòng điền đầy đủ thông tin')
+  if (!detailProject.semesterId) {
+    message.error('Phải chọn học kỳ')
+    return
+  }
+  if (!detailProject.subjectFacilityId) {
+    message.error('Phải chọn môn học')
+    return
   }
 
-  // nếu thay đổi học kỳ → confirm
-  if (detailProject.semesterId !== oldSemesterId.value) {
-    Modal.confirm({
-      title: 'Xác nhận cập nhật dự án',
-      content:
-        'Bạn đang chuyển dự án sang học kỳ khác, toàn bộ lịch nhóm xưởng và điểm danh cũ sẽ bị xóa. Tiếp tục?',
-      onOk: actuallyUpdate,
-    })
-  } else {
-    Modal.confirm({
-      title: 'Xác nhận cập nhật dự án',
-      content: 'Bạn có muốn cập nhật thông tin dự án không',
-      onOk: actuallyUpdate,
-    })
-  }
+  Modal.confirm({
+    title: 'Xác nhận cập nhật',
+    content: 'Bạn có chắc chắn muốn cập nhật thông tin dự án này?',
+    okText: 'Tiếp tục',
+    cancelText: 'Hủy bỏ',
+    onOk() {
+      requestAPI
+        .put(API_ROUTES_STAFF.FETCH_DATA_PROJECT, detailProject)
+        .then(() => {
+          message.success('Cập nhật dự án thành công')
+          fetchProjects()
+          modalEdit.value = false
+        })
+        .catch((error) => {
+          message.error(error.response?.data?.message || 'Lỗi khi cập nhật dự án')
+        })
+    },
+  })
 }
 
 // Xóa dự án
@@ -335,7 +353,7 @@ const configImportExcel = {
   },
   showDownloadTemplate: true,
   showHistoryLog: true,
-  showExport: true,
+  // showExport: true,
   btnImport: 'Import dự án',
   btnExport: 'Export dự án',
 }
@@ -482,7 +500,7 @@ onMounted(() => {
               </a-button>
             </a-tooltip>
 
-            <a-button type="primary" @click="modalAdd = true">
+            <a-button type="primary" @click="handleShowModalAdd">
               <PlusOutlined /> Thêm dự án
             </a-button>
           </div>
@@ -564,8 +582,16 @@ onMounted(() => {
           </a-select>
         </a-form-item>
         <a-form-item label="Học kỳ" required>
-          <a-select v-model:value="newProject.semesterId" placeholder="Chọn học kỳ" allowClear>
-            <a-select-option v-for="semester in semesters" :key="semester.id" :value="semester.id">
+          <a-select
+            v-model:value="newProject.semesterId"
+            placeholder="Chọn học kỳ"
+            allowClear
+          >
+            <a-select-option
+              v-for="semester in semesters"
+              :key="semester.id"
+              :value="semester.id"
+            >
               {{ semester.code }}
             </a-select-option>
           </a-select>

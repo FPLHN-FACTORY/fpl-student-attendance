@@ -136,24 +136,32 @@ const handleAddStudent = () => {
     message.error('Vui lòng nhập đầy đủ thông tin')
     return
   }
-  loadingStore.show()
-  requestAPI
-    .post(API_ROUTES_STAFF.FETCH_DATA_STUDENT, newStudent)
-    .then(() => {
-      message.success('Thêm sinh viên thành công')
-      modalAdd.value = false
-      fetchStudents()
-      clearNewStudentForm()
-    })
-    .catch((error) => {
-      message.error(
-        (error.response && error.response.data && error.response.data.message) ||
-          'Lỗi khi thêm sinh viên',
-      )
-    })
-    .finally(() => {
-      loadingStore.hide()
-    })
+  Modal.confirm({
+    title: 'Xác nhận thêm mới',
+    content: 'Bạn có chắc chắn muốn thêm sinh viên mới này?',
+    okText: 'Tiếp tục',
+    cancelText: 'Hủy bỏ',
+    onOk() {
+      loadingStore.show()
+      requestAPI
+        .post(API_ROUTES_STAFF.FETCH_DATA_STUDENT, newStudent)
+        .then(() => {
+          message.success('Thêm sinh viên thành công')
+          modalAdd.value = false
+          fetchStudents()
+          clearNewStudentForm()
+        })
+        .catch((error) => {
+          message.error(
+            (error.response && error.response.data && error.response.data.message) ||
+              'Lỗi khi thêm sinh viên',
+          )
+        })
+        .finally(() => {
+          loadingStore.hide()
+        })
+    },
+  })
 }
 
 // Hàm mở modal cập nhật và load chi tiết sinh viên
@@ -210,23 +218,31 @@ const updateStudent = () => {
     message.error('Vui lòng nhập đầy đủ thông tin')
     return
   }
-  loadingStore.show()
-  requestAPI
-    .put(API_ROUTES_STAFF.FETCH_DATA_STUDENT, detailStudent)
-    .then(() => {
-      message.success('Cập nhật sinh viên thành công')
-      modalUpdate.value = false
-      fetchStudents()
-    })
-    .catch((error) => {
-      message.error(
-        (error.response && error.response.data && error.response.data.message) ||
-          'Lỗi khi cập nhật sinh viên',
-      )
-    })
-    .finally(() => {
-      loadingStore.hide()
-    })
+  Modal.confirm({
+    title: 'Xác nhận cập nhật',
+    content: 'Bạn có chắc chắn muốn cập nhật thông tin sinh viên này?',
+    okText: 'Tiếp tục',
+    cancelText: 'Hủy bỏ',
+    onOk() {
+      loadingStore.show()
+      requestAPI
+        .put(API_ROUTES_STAFF.FETCH_DATA_STUDENT, detailStudent)
+        .then(() => {
+          message.success('Cập nhật sinh viên thành công')
+          modalUpdate.value = false
+          fetchStudents()
+        })
+        .catch((error) => {
+          message.error(
+            (error.response && error.response.data && error.response.data.message) ||
+              'Lỗi khi cập nhật sinh viên',
+          )
+        })
+        .finally(() => {
+          loadingStore.hide()
+        })
+    },
+  })
 }
 
 // Hàm đổi trạng thái sinh viên
@@ -304,6 +320,14 @@ const handleClearFilter = () => {
   })
   pagination.current = 1
   fetchStudents() // or whatever your fetch function is named
+}
+
+const clearUpdateStudentForm = () => {
+  detailStudent.id = ''
+  detailStudent.code = ''
+  detailStudent.name = ''
+  detailStudent.email = ''
+  modalUpdate.value = false
 }
 
 const handleShowModalAdd = () => {

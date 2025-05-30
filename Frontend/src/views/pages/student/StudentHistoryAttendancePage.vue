@@ -47,7 +47,7 @@ const columns = autoAddColumnWidth([
   { title: 'Nội dung', dataIndex: 'planDateDescription', key: 'planDateDescription' },
   { title: 'Check in', dataIndex: 'checkIn', key: 'checkIn' },
   { title: 'Check out', dataIndex: 'checkOut', key: 'checkOut' },
-  { title: 'Trạng thái đi học', dataIndex: 'statusAttendance', key: 'statusAttendance' },
+  { title: 'Trạng thái', dataIndex: 'statusAttendance', key: 'statusAttendance' },
 ])
 
 const semesters = ref([])
@@ -339,16 +339,14 @@ onMounted(async () => {
                   <template v-if="record.requiredCheckOut == STATUS_REQUIRED_ATTENDANCE.ENABLE">
                     <span
                       v-if="
-                        record.statusAttendance !== 'CHUA_DIEN_RA' ||
-                        record.statusAttendance !== 'CO_MAT' ||
-                        record.statusAttendance !== 'CHECK_IN'
+                        record.statusAttendance === 'CO_MAT'
                       "
                     >
-                      <a-badge status="error" /> Chưa checkout
+                    <a-badge status="success" />
+                      {{ formatDate(record.checkOut, 'dd/MM/yyyy HH:mm') }}
                     </span>
                     <span v-else>
-                      <a-badge status="success" />
-                      {{ formatDate(record.checkOut, 'dd/MM/yyyy HH:mm') }}
+                      <a-badge status="error" /> Chưa checkout
                     </span>
                   </template>
                   <template v-else>

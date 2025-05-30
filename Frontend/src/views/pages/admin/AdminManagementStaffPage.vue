@@ -1,5 +1,5 @@
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
 import { message, Modal } from 'ant-design-vue'
 import {
   PlusOutlined,
@@ -76,7 +76,13 @@ const modalUpdateLoading = ref(false)
 const modalAdd = ref(false)
 const modalUpdate = ref(false)
 
-// Dữ liệu thêm mới nhân viên
+// Thêm các hằng số cho domain email
+const EMAIL_DOMAINS = {
+  FE: '@fe.edu.vn',
+  FPT: '@fpt.edu.vn'
+}
+
+// Sửa lại newStaff để thêm computed properties cho email
 const newStaff = reactive({
   staffCode: '',
   name: '',
@@ -84,6 +90,23 @@ const newStaff = reactive({
   emailFpt: '',
   facilityId: null,
   roleCodes: [],
+})
+
+// Thêm computed properties cho email
+const emailFeWithDomain = computed({
+  get: () => newStaff.emailFe,
+  set: (value) => {
+    // Loại bỏ domain nếu có
+    newStaff.emailFe = value.replace(EMAIL_DOMAINS.FE, '')
+  }
+})
+
+const emailFptWithDomain = computed({
+  get: () => newStaff.emailFpt,
+  set: (value) => {
+    // Loại bỏ domain nếu có
+    newStaff.emailFpt = value.replace(EMAIL_DOMAINS.FPT, '')
+  }
 })
 
 // Dữ liệu cập nhật nhân viên
@@ -161,7 +184,7 @@ const handleTableChange = (pageInfo) => {
   fetchStaffs()
 }
 
-// Hàm thêm nhân viên
+// Sửa lại hàm handleAddStaff để thêm domain vào email
 const handleAddStaff = () => {
   if (
     !newStaff.staffCode ||
@@ -174,26 +197,39 @@ const handleAddStaff = () => {
     message.error('Vui lòng nhập đầy đủ thông tin, bao gồm cơ sở và ít nhất một vai trò')
     return
   }
-  modalAddLoading.value = true
-  loadingStore.show()
-  requestAPI
-    .post(API_ROUTES_ADMIN.FETCH_DATA_STAFF, newStaff)
-    .then(() => {
-      message.success('Thêm nhân viên thành công')
-      modalAdd.value = false
-      fetchStaffs()
-      clearNewStaffForm()
-    })
-    .catch((error) => {
-      message.error(
-        (error.response && error.response.data && error.response.data.message) ||
-          'Lỗi khi thêm nhân viên'
-      )
-    })
-    .finally(() => {
-      modalAddLoading.value = false
-      loadingStore.hide()
-    })
+  Modal.confirm({
+    title: 'Xác nhận thêm mới',
+    content: 'Bạn có chắc chắn muốn thêm nhân viên mới này?',
+    okText: 'Tiếp tục',
+    cancelText: 'Hủy bỏ',
+    onOk() {
+      modalAddLoading.value = true
+      loadingStore.show()
+      const payload = {
+        ...newStaff,
+        emailFe: newStaff.emailFe + EMAIL_DOMAINS.FE,
+        emailFpt: newStaff.emailFpt + EMAIL_DOMAINS.FPT,
+      }
+      requestAPI
+        .post(API_ROUTES_ADMIN.FETCH_DATA_STAFF, payload)
+        .then(() => {
+          message.success('Thêm nhân viên thành công')
+          modalAdd.value = false
+          fetchStaffs()
+          clearNewStaffForm()
+        })
+        .catch((error) => {
+          message.error(
+            (error.response && error.response.data && error.response.data.message) ||
+              'Lỗi khi thêm nhân viên'
+          )
+        })
+        .finally(() => {
+          modalAddLoading.value = false
+          loadingStore.hide()
+        })
+    },
+  })
 }
 
 // Hàm lấy chi tiết nhân viên để cập nhật
@@ -236,25 +272,33 @@ const updateStaff = () => {
     message.error('Vui lòng nhập đầy đủ thông tin, bao gồm cơ sở và vai trò')
     return
   }
-  modalUpdateLoading.value = true
-  loadingStore.show()
-  requestAPI
-    .put(`${API_ROUTES_ADMIN.FETCH_DATA_STAFF}/${detailStaff.id}`, detailStaff)
-    .then(() => {
-      message.success('Cập nhật nhân viên thành công')
-      modalUpdate.value = false
-      fetchStaffs()
-    })
-    .catch((error) => {
-      message.error(
-        (error.response && error.response.data && error.response.data.message) ||
-          'Lỗi khi cập nhật nhân viên'
-      )
-    })
-    .finally(() => {
-      modalUpdateLoading.value = false
-      loadingStore.hide()
-    })
+  Modal.confirm({
+    title: 'Xác nhận cập nhật',
+    content: 'Bạn có chắc chắn muốn cập nhật thông tin nhân viên này?',
+    okText: 'Tiếp tục',
+    cancelText: 'Hủy bỏ',
+    onOk() {
+      modalUpdateLoading.value = true
+      loadingStore.show()
+      requestAPI
+        .put(`${API_ROUTES_ADMIN.FETCH_DATA_STAFF}/${detailStaff.id}`, detailStaff)
+        .then(() => {
+          message.success('Cập nhật nhân viên thành công')
+          modalUpdate.value = false
+          fetchStaffs()
+        })
+        .catch((error) => {
+          message.error(
+            (error.response && error.response.data && error.response.data.message) ||
+              'Lỗi khi cập nhật nhân viên'
+          )
+        })
+        .finally(() => {
+          modalUpdateLoading.value = false
+          loadingStore.hide()
+        })
+    },
+  })
 }
 
 // Hàm đổi trạng thái nhân viên
@@ -505,10 +549,32 @@ onMounted(() => {
           <a-input v-model:value="newStaff.name" placeholder="Nhập tên nhân viên" />
         </a-form-item>
         <a-form-item label="Email FE" required>
-          <a-input v-model:value="newStaff.emailFe" placeholder="Nhập email FE" />
+          <a-input-group compact>
+            <a-input
+              v-model:value="emailFeWithDomain"
+              placeholder="Nhập email FE"
+              style="width: calc(100% - 100px)"
+            />
+            <a-input
+              :value="EMAIL_DOMAINS.FE"
+              style="width: 100px; background-color: #f5f5f5"
+              disabled
+            />
+          </a-input-group>
         </a-form-item>
         <a-form-item label="Email FPT" required>
-          <a-input v-model:value="newStaff.emailFpt" placeholder="Nhập email FPT" />
+          <a-input-group compact>
+            <a-input
+              v-model:value="emailFptWithDomain"
+              placeholder="Nhập email FPT"
+              style="width: calc(100% - 100px)"
+            />
+            <a-input
+              :value="EMAIL_DOMAINS.FPT"
+              style="width: 100px; background-color: #f5f5f5"
+              disabled
+            />
+          </a-input-group>
         </a-form-item>
         <a-form-item label="Cơ sở" required>
           <a-select v-model:value="newStaff.facilityId" placeholder="Chọn cơ sở">

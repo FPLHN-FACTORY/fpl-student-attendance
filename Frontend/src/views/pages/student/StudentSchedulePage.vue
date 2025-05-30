@@ -320,9 +320,6 @@ onMounted(() => {
               <template v-else-if="column.dataIndex === 'link'">
                 <a v-if="record.link" :href="record.link" target="_blank">{{ record.link }}</a>
               </template>
-              <template v-if="column.dataIndex === 'staffName'">
-                <a-tag color="green">{{ record.staffName }}</a-tag>
-              </template>
               <template v-if="column.dataIndex === 'factoryName'">
                 <a-badge status="processing" :text="record.factoryName" />
               </template>

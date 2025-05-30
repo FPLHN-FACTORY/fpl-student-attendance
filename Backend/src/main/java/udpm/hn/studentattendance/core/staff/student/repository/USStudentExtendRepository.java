@@ -34,7 +34,7 @@ public interface USStudentExtendRepository extends UserStudentRepository {
                  )
                  AND f.id = :facilityId
                  AND (:#{#studentRequest.studentStatus} IS NULL OR us.status = :#{#studentRequest.studentStatus})
-            ORDER BY us.created_at DESC, us.status DESC
+            ORDER BY  us.status DESC, us.created_at DESC
             """, countQuery = """
             SELECT COUNT(*)
             FROM user_student us
@@ -62,7 +62,7 @@ public interface USStudentExtendRepository extends UserStudentRepository {
             LEFT JOIN facility f ON f.id = us.id_facility
             WHERE
                  f.id = :facilityId
-            ORDER BY us.created_at DESC, us.status DESC
+            ORDER BY us.status DESC, us.created_at DESC
             """, nativeQuery = true)
     List<USStudentResponse> exportAllStudent(String facilityId);
 
