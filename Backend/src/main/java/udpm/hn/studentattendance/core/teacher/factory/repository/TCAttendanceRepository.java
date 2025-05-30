@@ -59,8 +59,8 @@ public interface TCAttendanceRepository extends AttendanceRepository {
                      f2.id = :#{#request.idFacility}
             ) AND
             (NULLIF(TRIM(:#{#request.keyword}), '') IS NULL OR (
-                BINARY us.code LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%') OR
-                BINARY us.name LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%')
+                us.code LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%') OR
+                us.name LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%')
             )) AND
             (COALESCE(:#{#request.status}, 0) = 0 OR a.status = :#{#request.status}) AND
             pd.start_date <= UNIX_TIMESTAMP(NOW()) * 1000 AND
@@ -101,8 +101,8 @@ public interface TCAttendanceRepository extends AttendanceRepository {
                      f2.id = :#{#request.idFacility}
             ) AND
             (NULLIF(TRIM(:#{#request.keyword}), '') IS NULL OR (
-                BINARY us.code LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%') OR
-                BINARY us.name LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%')
+                us.code LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%') OR
+                us.name LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%')
             )) AND
             (COALESCE(:#{#request.status}, 0) = 0 OR a.status = :#{#request.status}) AND
             pd.start_date <= UNIX_TIMESTAMP(NOW()) * 1000 AND
@@ -150,8 +150,8 @@ public interface TCAttendanceRepository extends AttendanceRepository {
                      f2.id = :#{#request.idFacility}
             ) AND
             (NULLIF(TRIM(:#{#request.keyword}), '') IS NULL OR (
-                BINARY us.code LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%') OR
-                BINARY us.name LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%')
+                us.code LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%') OR
+                us.name LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%')
             )) AND
             (COALESCE(:#{#request.status}, 0) = 0 OR a.status = :#{#request.status}) AND
             pd.start_date <= UNIX_TIMESTAMP(NOW()) * 1000 AND

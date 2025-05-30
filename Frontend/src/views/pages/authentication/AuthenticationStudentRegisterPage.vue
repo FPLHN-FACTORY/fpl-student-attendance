@@ -209,10 +209,20 @@ onMounted(async () => {
             </a-form-item>
 
             <a-form-item class="col-md-4" label="MSSV:" name="code" :rules="formRules.code">
-              <a-input class="w-100" v-model:value="formData.code" allowClear />
+              <a-input
+                class="w-100"
+                v-model:value="formData.code"
+                allowClear
+                @keyup.enter="handleSubmitRegister"
+              />
             </a-form-item>
             <a-form-item class="col-md-8" label="Họ và tên:" name="name" :rules="formRules.name">
-              <a-input class="w-100" v-model:value="formData.name" allowClear />
+              <a-input
+                class="w-100"
+                v-model:value="formData.name"
+                allowClear
+                @keyup.enter="handleSubmitRegister"
+              />
             </a-form-item>
             <a-form-item
               class="col-md-12"

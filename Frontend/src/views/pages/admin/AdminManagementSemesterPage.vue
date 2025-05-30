@@ -251,7 +251,8 @@ const updateSemester = () => {
   // Show confirmation dialog with warning about scheduled classes
   Modal.confirm({
     title: 'Xác nhận cập nhật học kỳ',
-    content: 'Lưu ý: Các lịch học mà sinh viên đã được phân công trước ngày bắt đầu hoặc sau ngày kết thúc của học kỳ vẫn sẽ hoạt động bình thường.',
+    content:
+      'Lưu ý: Các lịch học mà sinh viên đã được phân công trước ngày bắt đầu hoặc sau ngày kết thúc của học kỳ vẫn sẽ hoạt động bình thường.',
     okText: 'Cập nhật',
     cancelText: 'Hủy',
     onOk: () => {
@@ -400,7 +401,7 @@ onMounted(() => {
             <a-tooltip title="Thêm học kỳ mới">
               <a-button type="primary" @click="handleShowModalAdd">
                 <PlusOutlined />
-                Thêm
+                Thêm mới
               </a-button>
             </a-tooltip>
           </div>
@@ -498,6 +499,7 @@ onMounted(() => {
             placeholder="Chọn ngày bắt đầu"
             class="w-100"
             format="DD/MM/YYYY"
+            @keyup.enter="handleAddSemester"
             :disabledDate="(current) => current && current < dayjs().startOf('day')"
           />
         </a-form-item>
@@ -507,6 +509,7 @@ onMounted(() => {
             placeholder="Chọn ngày kết thúc"
             class="w-100"
             format="DD/MM/YYYY"
+            @keyup.enter="handleAddSemester"
             :disabledDate="(current) => current && current < newSemester.fromDate"
           />
         </a-form-item>
@@ -538,6 +541,7 @@ onMounted(() => {
             placeholder="Chọn ngày bắt đầu"
             class="w-100"
             format="DD/MM/YYYY"
+            @keyup.enter="updateSemester"
           />
         </a-form-item>
         <a-form-item label="Ngày kết thúc" required>
@@ -546,6 +550,7 @@ onMounted(() => {
             placeholder="Chọn ngày kết thúc"
             class="w-100"
             format="DD/MM/YYYY"
+            @keyup.enter="updateSemester"
           />
         </a-form-item>
       </a-form>

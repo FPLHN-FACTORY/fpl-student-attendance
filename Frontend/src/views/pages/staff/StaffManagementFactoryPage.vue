@@ -74,7 +74,7 @@ const columns = ref(
     { title: 'Mô tả', dataIndex: 'factoryDescription', key: 'factoryDescription' },
     { title: 'Trạng thái', dataIndex: 'factoryStatus', key: 'factoryStatus' },
     { title: 'Chức năng', key: 'actions' },
-  ])
+  ]),
 )
 
 const breadcrumb = ref([
@@ -256,7 +256,16 @@ const submitUpdateFactory = () => {
       }
     })
   } else {
-    performUpdate()
+    Modal.confirm({
+      title: `Xác nhận cập nhật`,
+      type: 'info',
+      content: `Bạn có chắc muốn lưu lại thay đổi?`,
+      okText: 'Tiếp tục',
+      cancelText: 'Hủy bỏ',
+      onOk() {
+        performUpdate()
+      },
+    })
   }
 }
 
@@ -423,9 +432,13 @@ onMounted(() => {
   >
     <a-form :model="newFactory" layout="vertical">
       <a-form-item label="Tên nhóm xưởng" required>
-        <a-input v-model:value="newFactory.factoryName" placeholder="-- Tên nhóm xưởng --" />
+        <a-input
+          v-model:value="newFactory.factoryName"
+          placeholder="-- Tên nhóm xưởng --"
+          @keyup.enter="submitAddFactory"
+        />
       </a-form-item>
-      <a-form-item label="Mô tả nhóm xưởng" >
+      <a-form-item label="Mô tả nhóm xưởng">
         <a-textarea
           v-model:value="newFactory.factoryDescription"
           placeholder="-- Mô tả nhóm xưởng --"
@@ -493,9 +506,9 @@ onMounted(() => {
   >
     <a-form :model="detailFactory" layout="vertical">
       <a-form-item label="Tên nhóm xưởng" required>
-        <a-input v-model:value="detailFactory.factoryName" />
+        <a-input v-model:value="detailFactory.factoryName" @keyup.enter="submitUpdateFactory" />
       </a-form-item>
-      <a-form-item label="Mô tả nhóm xưởng" >
+      <a-form-item label="Mô tả nhóm xưởng">
         <a-textarea v-model:value="detailFactory.factoryDescription" />
       </a-form-item>
       <a-form-item label="Giảng viên giảng dạy" required>
@@ -651,7 +664,7 @@ onMounted(() => {
             </a-tooltip>
             <a-tooltip title="Thêm nhóm xưởng">
               <a-button type="primary" @click="handleShowModalAdd">
-                <PlusOutlined /> Thêm
+                <PlusOutlined /> Thêm nhóm xưởng
               </a-button>
             </a-tooltip>
           </div>

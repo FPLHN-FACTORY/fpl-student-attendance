@@ -405,7 +405,7 @@ onMounted(() => {
             <a-tooltip title="Thêm mới sinh viên">
               <!-- Sử dụng nút primary kiểu filled -->
               <a-button type="primary" @click="handleShowModalAdd">
-                <PlusOutlined /> Thêm
+                <PlusOutlined /> Thêm sinh viên
               </a-button>
             </a-tooltip>
           </div>
@@ -498,13 +498,25 @@ onMounted(() => {
     >
       <a-form layout="vertical">
         <a-form-item label="Mã sinh viên" required>
-          <a-input v-model:value="newStudent.code" placeholder="--Nhập mã sinh viên--" />
+          <a-input
+            v-model:value="newStudent.code"
+            placeholder="--Nhập mã sinh viên--"
+            @keyup.enter="handleAddStudent"
+          />
         </a-form-item>
         <a-form-item label="Tên sinh viên" required>
-          <a-input v-model:value="newStudent.name" placeholder="--Nhập tên sinh viên--" />
+          <a-input
+            v-model:value="newStudent.name"
+            placeholder="--Nhập tên sinh viên--"
+            @keyup.enter="handleAddStudent"
+          />
         </a-form-item>
         <a-form-item label="Email" required>
-          <a-input v-model:value="newStudent.email" placeholder="--Nhập email sinh viên--" />
+          <a-input
+            v-model:value="newStudent.email"
+            placeholder="--Nhập email sinh viên--"
+            @keyup.enter="handleAddStudent"
+          />
         </a-form-item>
       </a-form>
     </a-modal>
@@ -520,13 +532,25 @@ onMounted(() => {
     >
       <a-form layout="vertical">
         <a-form-item label="Mã sinh viên" required>
-          <a-input v-model:value="detailStudent.code" placeholder="--Nhập mã sinh viên--" />
+          <a-input
+            v-model:value="detailStudent.code"
+            placeholder="--Nhập mã sinh viên--"
+            @keyup.enter="updateStudent"
+          />
         </a-form-item>
         <a-form-item label="Tên sinh viên" required>
-          <a-input v-model:value="detailStudent.name" placeholder="--Nhập tên sinh viên--" />
+          <a-input
+            v-model:value="detailStudent.name"
+            placeholder="--Nhập tên sinh viên--"
+            @keyup.enter="updateStudent"
+          />
         </a-form-item>
         <a-form-item label="Email" required>
-          <a-input v-model:value="detailStudent.email" placeholder="--Nhập email sinh viên--" />
+          <a-input
+            v-model:value="detailStudent.email"
+            placeholder="--Nhập email sinh viên--"
+            @keyup.enter="updateStudent"
+          />
         </a-form-item>
       </a-form>
     </a-modal>

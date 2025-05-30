@@ -28,6 +28,21 @@ export const autoAddColumnWidth = (columns, ellipsis = false, charWidth = 10, pa
   })
 }
 
+export const getCurrentSemester = (semesters) => {
+  const now = Date.now()
+
+  let currentSemester = semesters.find((item) => now >= item.fromDate && now <= item.toDate)
+
+  if (!currentSemester) {
+    currentSemester = semesters.reduce((closest, item) => {
+      const diffCurrent = Math.abs(item.fromDate - now)
+      const diffClosest = Math.abs(closest.fromDate - now)
+      return diffCurrent < diffClosest ? item : closest
+    })
+  }
+  return currentSemester
+}
+
 export const dayOfWeek = (timestamp) => {
   const inputDate = new Date(timestamp)
   const now = new Date()

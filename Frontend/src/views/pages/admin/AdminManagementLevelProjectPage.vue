@@ -269,7 +269,11 @@ onMounted(() => {
   >
     <a-form :model="newLevel" layout="vertical">
       <a-form-item label="Tên cấp dự án" required>
-        <a-input v-model:value="newLevel.name" placeholder="Nhập tên cấp dự án" />
+        <a-input
+          v-model:value="newLevel.name"
+          placeholder="Nhập tên cấp dự án"
+          @keyup.enter="handleAddLevelProject"
+        />
       </a-form-item>
       <a-form-item label="Mô tả">
         <a-textarea v-model:value="newLevel.description" placeholder="Nhập mô tả" :rows="4" />
@@ -283,7 +287,11 @@ onMounted(() => {
   @ok="submitUpdateLevel">
     <a-form :model="detailLevel" layout="vertical">
       <a-form-item label="Tên cấp dự án" required>
-        <a-input v-model:value="detailLevel.name" placeholder="Nhập tên cấp dự án" />
+        <a-input
+          v-model:value="detailLevel.name"
+          placeholder="Nhập tên cấp dự án"
+          @keyup.enter="submitUpdateLevel"
+        />
       </a-form-item>
       <a-form-item label="Mô tả">
         <a-textarea v-model:value="detailLevel.description" placeholder="Nhập mô tả" :rows="4" />

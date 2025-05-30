@@ -132,7 +132,7 @@ const columns = ref(
     { title: 'Vai trò', dataIndex: 'roleCode', key: 'roleCode' },
     { title: 'Trạng thái', dataIndex: 'staffStatus', key: 'staffStatus' },
     { title: 'Chức năng', key: 'actions' },
-  ])
+  ]),
 )
 
 const fetchStaffs = () => {
@@ -154,7 +154,7 @@ const fetchStaffs = () => {
     .catch((error) => {
       message.error(
         (error.response && error.response.data && error.response.data.message) ||
-          'Lỗi khi lấy danh sách nhân viên'
+          'Lỗi khi lấy danh sách nhân viên',
       )
     })
     .finally(() => {
@@ -172,7 +172,7 @@ const fetchFacilitiesListCombobox = () => {
     .catch((error) => {
       message.error(
         (error.response && error.response.data && error.response.data.message) ||
-          'Lỗi khi lấy danh sách cơ sở'
+          'Lỗi khi lấy danh sách cơ sở',
       )
     })
 }
@@ -251,7 +251,7 @@ const handleUpdateStaff = (record) => {
     .catch((error) => {
       message.error(
         (error.response && error.response.data && error.response.data.message) ||
-          'Lỗi khi lấy chi tiết nhân viên'
+          'Lỗi khi lấy chi tiết nhân viên',
       )
     })
     .finally(() => {
@@ -317,7 +317,7 @@ const handleChangeStatusStaff = (record) => {
         .catch((error) => {
           message.error(
             (error.response && error.response.data && error.response.data.message) ||
-              'Lỗi khi đổi trạng thái nhân viên'
+              'Lỗi khi đổi trạng thái nhân viên',
           )
         })
         .finally(() => {
@@ -472,7 +472,7 @@ onMounted(() => {
             <ExcelUploadButton v-bind="configImportExcel" />
             <a-tooltip title="Thêm mới nhân viên">
               <a-button type="primary" @click="handleShowModalAdd">
-                <PlusOutlined /> Thêm
+                <PlusOutlined /> Thêm nhân viên
               </a-button>
             </a-tooltip>
           </div>
@@ -543,10 +543,18 @@ onMounted(() => {
     >
       <a-form layout="vertical">
         <a-form-item label="Mã nhân viên" required>
-          <a-input v-model:value="newStaff.staffCode" placeholder="Nhập mã nhân viên" />
+          <a-input
+            v-model:value="newStaff.staffCode"
+            placeholder="Nhập mã nhân viên"
+            @keyup.enter="handleAddStaff"
+          />
         </a-form-item>
         <a-form-item label="Tên nhân viên" required>
-          <a-input v-model:value="newStaff.name" placeholder="Nhập tên nhân viên" />
+          <a-input
+            v-model:value="newStaff.name"
+            placeholder="Nhập tên nhân viên"
+            @keyup.enter="handleAddStaff"
+          />
         </a-form-item>
         <a-form-item label="Email FE" required>
           <a-input-group compact>
@@ -554,11 +562,13 @@ onMounted(() => {
               v-model:value="emailFeWithDomain"
               placeholder="Nhập email FE"
               style="width: calc(100% - 100px)"
+              @keyup.enter="handleAddStaff"
             />
             <a-input
               :value="EMAIL_DOMAINS.FE"
               style="width: 100px; background-color: #f5f5f5"
               disabled
+              @keyup.enter="handleAddStaff"
             />
           </a-input-group>
         </a-form-item>
@@ -568,11 +578,13 @@ onMounted(() => {
               v-model:value="emailFptWithDomain"
               placeholder="Nhập email FPT"
               style="width: calc(100% - 100px)"
+              @keyup.enter="handleAddStaff"
             />
             <a-input
               :value="EMAIL_DOMAINS.FPT"
               style="width: 100px; background-color: #f5f5f5"
               disabled
+              @keyup.enter="handleAddStaff"
             />
           </a-input-group>
         </a-form-item>
@@ -606,16 +618,32 @@ onMounted(() => {
     >
       <a-form layout="vertical">
         <a-form-item label="Mã nhân viên" required>
-          <a-input v-model:value="detailStaff.staffCode" placeholder="Nhập mã nhân viên" />
+          <a-input
+            v-model:value="detailStaff.staffCode"
+            placeholder="Nhập mã nhân viên"
+            @keyup.enter="updateStaff"
+          />
         </a-form-item>
         <a-form-item label="Tên nhân viên" required>
-          <a-input v-model:value="detailStaff.name" placeholder="Nhập tên nhân viên" />
+          <a-input
+            v-model:value="detailStaff.name"
+            placeholder="Nhập tên nhân viên"
+            @keyup.enter="updateStaff"
+          />
         </a-form-item>
         <a-form-item label="Email FE" required>
-          <a-input v-model:value="detailStaff.emailFe" placeholder="Nhập email FE" />
+          <a-input
+            v-model:value="detailStaff.emailFe"
+            placeholder="Nhập email FE"
+            @keyup.enter="updateStaff"
+          />
         </a-form-item>
         <a-form-item label="Email FPT" required>
-          <a-input v-model:value="detailStaff.emailFpt" placeholder="Nhập email FPT" />
+          <a-input
+            v-model:value="detailStaff.emailFpt"
+            placeholder="Nhập email FPT"
+            @keyup.enter="updateStaff"
+          />
         </a-form-item>
         <a-form-item label="Cơ sở" required>
           <a-select v-model:value="detailStaff.facilityId" placeholder="Chọn cơ sở">

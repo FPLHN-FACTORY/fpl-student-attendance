@@ -127,9 +127,11 @@ const handleAddSubject = () => {
     message.error('Vui lòng nhập mã bộ môn')
     return
   }
+
   Modal.confirm({
-    title: 'Xác nhận thêm mới',
-    content: 'Bạn có chắc chắn muốn thêm bộ môn mới này?',
+    title: `Xác nhận thêm mới`,
+    type: 'info',
+    content: `Bạn có chắc muốn thêm mới bộ môn này?`,
     okText: 'Tiếp tục',
     cancelText: 'Hủy bỏ',
     onOk() {
@@ -199,18 +201,12 @@ const updateSubject = () => {
     message.error('Vui lòng nhập mã bộ môn')
     return
   }
-  Modal.confirm({
-    title: 'Xác nhận cập nhật',
-    content: 'Bạn có chắc chắn muốn cập nhật thông tin bộ môn này?',
-    okText: 'Tiếp tục',
-    cancelText: 'Hủy bỏ',
-    onOk() {
-      loadingStore.show()
-      const requestData = {
-        id: detailSubject.id,
-        name: detailSubject.name,
-        code: detailSubject.code,
-      }
+  loadingStore.show()
+  const requestData = {
+    id: detailSubject.id,
+    name: detailSubject.name,
+    code: detailSubject.code,
+  }
 
       requestAPI
         .put(`${API_ROUTES_ADMIN.FETCH_DATA_SUBJECT}/${detailSubject.id}`, requestData)
@@ -426,10 +422,18 @@ onMounted(() => {
     >
       <a-form layout="vertical">
         <a-form-item label="Mã bộ môn" required>
-          <a-input v-model:value="newSubject.code" placeholder="Nhập mã bộ môn" />
+          <a-input
+            v-model:value="newSubject.code"
+            placeholder="Nhập mã bộ môn"
+            @keyup.enter="handleAddSubject"
+          />
         </a-form-item>
         <a-form-item label="Tên bộ môn" required>
-          <a-input v-model:value="newSubject.name" placeholder="Nhập tên bộ môn" />
+          <a-input
+            v-model:value="newSubject.name"
+            placeholder="Nhập tên bộ môn"
+            @keyup.enter="handleAddSubject"
+          />
         </a-form-item>
       </a-form>
     </a-modal>
@@ -465,10 +469,18 @@ onMounted(() => {
     >
       <a-form layout="vertical">
         <a-form-item label="Mã bộ môn" required>
-          <a-input v-model:value="detailSubject.code" placeholder="Nhập mã bộ môn" />
+          <a-input
+            v-model:value="detailSubject.code"
+            placeholder="Nhập mã bộ môn"
+            @keyup.enter="updateSubject"
+          />
         </a-form-item>
         <a-form-item label="Tên bộ môn" required>
-          <a-input v-model:value="detailSubject.name" placeholder="Nhập tên bộ môn" />
+          <a-input
+            v-model:value="detailSubject.name"
+            placeholder="Nhập tên bộ môn"
+            @keyup.enter="updateSubject"
+          />
         </a-form-item>
       </a-form>
     </a-modal>
