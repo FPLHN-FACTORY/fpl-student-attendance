@@ -118,30 +118,38 @@ const clearNewUser = () => {
 }
 
 const handleAddUser = () => {
-  if (!newUser.staffCode || !newUser.staffName || !newUser.email) {
-    return message.error('Vui lòng điền đầy đủ thông tin')
+  if (!newUser.username || !newUser.username.trim()) {
+    message.error('Vui lòng nhập tên đăng nhập')
+    return
+  }
+  if (!newUser.password || !newUser.password.trim()) {
+    message.error('Vui lòng nhập mật khẩu')
+    return
+  }
+  if (!newUser.email || !newUser.email.trim()) {
+    message.error('Vui lòng nhập email')
+    return
   }
   Modal.confirm({
     title: 'Xác nhận thêm mới',
-    content: 'Bạn có chắc chắn muốn thêm admin mới này?',
+    content: 'Bạn có chắc chắn muốn thêm mới tài khoản admin này?',
     okText: 'Tiếp tục',
     cancelText: 'Hủy bỏ',
     onOk() {
-      modalAddLoading.value = true
+      loadingStore.show()
       requestAPI
-        .post(API_ROUTES_ADMIN.FETCH_DATA_ADMIN, newUser)
-        .then(() => {
-          message.success('Thêm Admin thành công')
+        .post(API_ROUTES_ADMIN.FETCH_DATA_USER_ADMIN, newUser)
+        .then((response) => {
+          message.success(response.data.message || 'Thêm tài khoản admin thành công')
           modalAdd.value = false
-          applicationStore.loadNotification()
-          clearNewUser()
           fetchUsers()
+          clearNewUser()
         })
-        .catch((err) => {
-          message.error(err?.response?.data?.message || 'Lỗi khi thêm')
+        .catch((error) => {
+          message.error(error.response?.data?.message || 'Lỗi khi thêm tài khoản admin')
         })
         .finally(() => {
-          modalAddLoading.value = false
+          loadingStore.hide()
         })
     },
   })

@@ -127,21 +127,29 @@ const handleAddSubject = () => {
     message.error('Vui lòng nhập mã bộ môn')
     return
   }
-  loadingStore.show()
-  requestAPI
-    .post(API_ROUTES_ADMIN.FETCH_DATA_SUBJECT, newSubject)
-    .then((response) => {
-      message.success(response.data.message || 'Thêm bộ môn thành công')
-      modalAdd.value = false
-      fetchSubjects()
-      clearFormAdd()
-    })
-    .catch((error) => {
-      message.error(error.response?.data?.message || 'Lỗi khi thêm bộ môn')
-    })
-    .finally(() => {
-      loadingStore.hide()
-    })
+  Modal.confirm({
+    title: 'Xác nhận thêm mới',
+    content: 'Bạn có chắc chắn muốn thêm bộ môn mới này?',
+    okText: 'Tiếp tục',
+    cancelText: 'Hủy bỏ',
+    onOk() {
+      loadingStore.show()
+      requestAPI
+        .post(API_ROUTES_ADMIN.FETCH_DATA_SUBJECT, newSubject)
+        .then((response) => {
+          message.success(response.data.message || 'Thêm bộ môn thành công')
+          modalAdd.value = false
+          fetchSubjects()
+          clearFormAdd()
+        })
+        .catch((error) => {
+          message.error(error.response?.data?.message || 'Lỗi khi thêm bộ môn')
+        })
+        .finally(() => {
+          loadingStore.hide()
+        })
+    },
+  })
 }
 
 const clearFormAdd = () => {
@@ -191,26 +199,34 @@ const updateSubject = () => {
     message.error('Vui lòng nhập mã bộ môn')
     return
   }
-  loadingStore.show()
-  const requestData = {
-    id: detailSubject.id,
-    name: detailSubject.name,
-    code: detailSubject.code,
-  }
+  Modal.confirm({
+    title: 'Xác nhận cập nhật',
+    content: 'Bạn có chắc chắn muốn cập nhật thông tin bộ môn này?',
+    okText: 'Tiếp tục',
+    cancelText: 'Hủy bỏ',
+    onOk() {
+      loadingStore.show()
+      const requestData = {
+        id: detailSubject.id,
+        name: detailSubject.name,
+        code: detailSubject.code,
+      }
 
-  requestAPI
-    .put(`${API_ROUTES_ADMIN.FETCH_DATA_SUBJECT}/${detailSubject.id}`, requestData)
-    .then((response) => {
-      message.success(response.data.message || 'Cập nhật bộ môn thành công')
-      modalUpdate.value = false
-      fetchSubjects()
-    })
-    .catch((error) => {
-      message.error(error.response?.data?.message || 'Lỗi khi cập nhật bộ môn')
-    })
-    .finally(() => {
-      loadingStore.hide()
-    })
+      requestAPI
+        .put(`${API_ROUTES_ADMIN.FETCH_DATA_SUBJECT}/${detailSubject.id}`, requestData)
+        .then((response) => {
+          message.success(response.data.message || 'Cập nhật bộ môn thành công')
+          modalUpdate.value = false
+          fetchSubjects()
+        })
+        .catch((error) => {
+          message.error(error.response?.data?.message || 'Lỗi khi cập nhật bộ môn')
+        })
+        .finally(() => {
+          loadingStore.hide()
+        })
+    },
+  })
 }
 
 const confirmChangeStatus = (record) => {
