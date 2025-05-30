@@ -120,6 +120,11 @@ const clearData = () => {
   newFactory.factoryDescription = ''
   newFactory.idProject = null
   newFactory.idUserStaff = null
+
+  Object.keys(detailFactory).forEach((key) => delete detailFactory[key])
+
+  modalAdd.value = false
+  modalUpdate.value = false
 }
 
 const fetchProjects = () => {
@@ -183,11 +188,9 @@ const submitAddFactory = () => {
     message.error('Vui lòng điền đầy đủ thông tin bắt buộc')
     return
   }
-
   Modal.confirm({
-    title: `Xác nhận thêm mới`,
-    type: 'info',
-    content: `Bạn có chắc muốn thêm mới nhóm xưởng này?`,
+    title: 'Xác nhận thêm mới',
+    content: 'Bạn có chắc chắn muốn thêm nhóm xưởng mới này?',
     okText: 'Tiếp tục',
     cancelText: 'Hủy bỏ',
     onOk() {
@@ -240,29 +243,47 @@ const submitUpdateFactory = () => {
     return
   }
 
-  Modal.confirm({
-    title: `Xác nhận cập nhật`,
-    type: 'info',
-    content: `Bạn có chắc muốn lưu lại thay đổi?`,
-    okText: 'Tiếp tục',
-    cancelText: 'Hủy bỏ',
-    onOk() {
-      loadingStore.show()
-      requestAPI
-        .put(API_ROUTES_STAFF.FETCH_DATA_FACTORY, detailFactory)
-        .then((response) => {
-          message.success(response.data.message || 'Cập nhật nhóm xưởng thành công')
-          modalUpdate.value = false
-          fetchFactories()
-        })
-        .catch((error) => {
-          message.error(error.response?.data?.message || 'Lỗi khi cập nhật nhóm xưởng')
-        })
-        .finally(() => {
-          loadingStore.hide()
-        })
-    },
-  })
+  // Check if project is changed
+  const originalFactory = factories.value.find(f => f.id === detailFactory.id)
+  if (originalFactory && originalFactory.projectId !== detailFactory.idProject) {
+    Modal.confirm({
+      title: 'Xác nhận thay đổi dự án',
+      content: 'Bạn đang cập nhật dự án mới. Tất cả lịch kế hoạch nhóm xưởng của dự án cũ sẽ chuyển sang kế hoạch dự án mới. Bạn có chắc chắn muốn tiếp tục?',
+      okText: 'Tiếp tục',
+      cancelText: 'Hủy bỏ',
+      onOk() {
+        performUpdate()
+      }
+    })
+  } else {
+    Modal.confirm({
+      title: `Xác nhận cập nhật`,
+      type: 'info',
+      content: `Bạn có chắc muốn lưu lại thay đổi?`,
+      okText: 'Tiếp tục',
+      cancelText: 'Hủy bỏ',
+      onOk() {
+        performUpdate()
+      },
+    })
+  }
+}
+
+const performUpdate = () => {
+  loadingStore.show()
+  requestAPI
+    .put(API_ROUTES_STAFF.FETCH_DATA_FACTORY, detailFactory)
+    .then((response) => {
+      message.success(response.data.message || 'Cập nhật nhóm xưởng thành công')
+      modalUpdate.value = false
+      fetchFactories()
+    })
+    .catch((error) => {
+      message.error(error.response?.data?.message || 'Lỗi khi cập nhật nhóm xưởng')
+    })
+    .finally(() => {
+      loadingStore.hide()
+    })
 }
 
 const handleDetailFactory = (record) => {
@@ -386,11 +407,7 @@ const handleShowDescription = (text) => {
 }
 
 const handleShowModalAdd = () => {
-  newFactory.factoryDescription = null
-  newFactory.factoryName = null
-  newFactory.idProject = null
-  newFactory.idUserStaff = null
-
+  clearData()
   modalAdd.value = true
 }
 
@@ -409,6 +426,7 @@ onMounted(() => {
     v-model:open="modalAdd"
     title="Thêm nhóm xưởng"
     @ok="submitAddFactory"
+    :okButtonProps="{ loading: isLoading }"
     @cancel="clearData"
     @close="clearData"
   >
@@ -478,7 +496,14 @@ onMounted(() => {
   </a-modal>
 
   <!-- Modal Cập nhật nhóm xưởng -->
-  <a-modal v-model:open="modalUpdate" title="Cập nhật nhóm xưởng" @ok="submitUpdateFactory">
+  <a-modal
+    v-model:open="modalUpdate"
+    title="Cập nhật nhóm xưởng"
+    @ok="submitUpdateFactory"
+    :okButtonProps="{ loading: isLoading }"
+    @cancel="clearData"
+    @close="clearData"
+  >
     <a-form :model="detailFactory" layout="vertical">
       <a-form-item label="Tên nhóm xưởng" required>
         <a-input v-model:value="detailFactory.factoryName" @keyup.enter="submitUpdateFactory" />
@@ -656,7 +681,7 @@ onMounted(() => {
             <template #bodyCell="{ column, record, index }">
               <template v-if="column.dataIndex">
                 <template v-if="column.dataIndex === 'rowNumber'">
-                  {{ index + 1 }}
+                  {{ (pagination.current - 1) * pagination.pageSize + index + 1 }}
                 </template>
                 <template v-else-if="column.dataIndex === 'name'">
                   <a @click="handleDetailFactory(record)">{{ record.name }}</a>

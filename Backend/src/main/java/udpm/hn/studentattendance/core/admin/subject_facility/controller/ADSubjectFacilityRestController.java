@@ -7,21 +7,18 @@ import org.springframework.web.bind.annotation.*;
 import udpm.hn.studentattendance.core.admin.subject_facility.model.request.ADSubjectFacilityCreateRequest;
 import udpm.hn.studentattendance.core.admin.subject_facility.model.request.ADSubjectFacilitySearchRequest;
 import udpm.hn.studentattendance.core.admin.subject_facility.model.request.ADSubjectFacilityUpdateRequest;
-import udpm.hn.studentattendance.core.admin.subject_facility.model.response.ADFacilityResponse;
-import udpm.hn.studentattendance.core.admin.subject_facility.service.Admin_SubjectFacilityService;
-import udpm.hn.studentattendance.core.admin.subject_facility.service.Admin_FacilityManagementService;
+import udpm.hn.studentattendance.core.admin.subject_facility.service.ADSubjectFacilityService;
+import udpm.hn.studentattendance.core.admin.subject_facility.service.ADFacilityManagementService;
 import udpm.hn.studentattendance.infrastructure.constants.router.RouteAdminConstant;
-
-import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
 @RequestMapping(RouteAdminConstant.URL_API_SUBJECT_FACILITY_MANAGEMENT)
 public class ADSubjectFacilityRestController {
 
-    private final Admin_SubjectFacilityService adminSubjectFacilityService;
+    private final ADSubjectFacilityService adminSubjectFacilityService;
 
-    private final Admin_FacilityManagementService adminFacilityManagementService;
+    private final ADFacilityManagementService adminFacilityManagementService;
 
     @GetMapping("/facility-combobox")
     public ResponseEntity<?> getFacility() {

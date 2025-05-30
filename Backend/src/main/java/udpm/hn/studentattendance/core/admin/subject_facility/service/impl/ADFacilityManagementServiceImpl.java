@@ -4,15 +4,15 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import udpm.hn.studentattendance.core.admin.subject_facility.model.request.ADSubjectFacilitySearchRequest;
-import udpm.hn.studentattendance.core.admin.subject_facility.repository.Admin_FacilityRepository;
-import udpm.hn.studentattendance.core.admin.subject_facility.service.Admin_FacilityManagementService;
+import udpm.hn.studentattendance.core.admin.subject_facility.repository.ADFacilityRepository;
+import udpm.hn.studentattendance.core.admin.subject_facility.service.ADFacilityManagementService;
 import udpm.hn.studentattendance.helpers.RouterHelper;
 
 @Service
 @RequiredArgsConstructor
-public class Admin_FacilityManagementServiceImpl implements Admin_FacilityManagementService {
+public class ADFacilityManagementServiceImpl implements ADFacilityManagementService {
 
-    private final Admin_FacilityRepository repository;
+    private final ADFacilityRepository repository;
 
     public ResponseEntity<?> getComboboxFacility() {
         return RouterHelper.responseSuccess("Lấy danh sách cơ sở thành công", repository.getFacility());
