@@ -121,11 +121,9 @@ const handleAddUser = () => {
   if (!newUser.staffCode || !newUser.staffName || !newUser.email) {
     return message.error('Vui lòng điền đầy đủ thông tin')
   }
-
   Modal.confirm({
-    title: `Xác nhận thêm mới`,
-    type: 'info',
-    content: `Bạn có chắc muốn thêm mới tài khoản Admin này?`,
+    title: 'Xác nhận thêm mới',
+    content: 'Bạn có chắc chắn muốn thêm admin mới này?',
     okText: 'Tiếp tục',
     cancelText: 'Hủy bỏ',
     onOk() {

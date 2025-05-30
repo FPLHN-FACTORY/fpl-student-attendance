@@ -57,11 +57,30 @@ const modalUpdateLoading = ref(false)
 const modalAdd = ref(false)
 const modalUpdate = ref(false)
 
+// Thêm hàm để xác định học kỳ dựa trên tháng
+const getSemesterByMonth = () => {
+  const currentMonth = dayjs().month() + 1 // +1 vì month() trả về 0-11
+  if (currentMonth >= 1 && currentMonth <= 4) {
+    return 'SPRING'
+  } else if (currentMonth >= 5 && currentMonth <= 8) {
+    return 'SUMMER'
+  } else {
+    return 'FALL'
+  }
+}
+
+// Thêm hàm để lưu khoảng thời gian mặc định
+const defaultDateRange = reactive({
+  fromDate: dayjs().add(1, 'day'), // Ngày mai
+  toDate: dayjs().add(4, 'month'), // 4 tháng sau
+  semesterName: getSemesterByMonth() // Tự động chọn học kỳ dựa trên tháng
+})
+
 // Dữ liệu cho modal Thêm/Cập Nhật (DatePicker trả về đối tượng dayjs)
 const newSemester = reactive({
-  semesterName: null,
-  fromDate: null,
-  toDate: null,
+  semesterName: defaultDateRange.semesterName, // Set mặc định là học kỳ hiện tại
+  fromDate: defaultDateRange.fromDate,
+  toDate: defaultDateRange.toDate,
 })
 const detailSemester = ref({})
 
@@ -148,10 +167,9 @@ const handleTableChange = (pageInfo) => {
 }
 
 const handleShowModalAdd = () => {
-  newSemester.semesterName = null
-  newSemester.fromDate = null
-  newSemester.toDate = null
-
+  newSemester.semesterName = defaultDateRange.semesterName // Set lại là học kỳ hiện tại
+  newSemester.fromDate = defaultDateRange.fromDate
+  newSemester.toDate = defaultDateRange.toDate
   modalAdd.value = true
 }
 
@@ -160,11 +178,9 @@ const handleAddSemester = () => {
     message.error('Vui lòng nhập đầy đủ thông tin')
     return
   }
-
   Modal.confirm({
-    title: `Xác nhận thêm mới`,
-    type: 'info',
-    content: `Bạn có chắc muốn thêm mới học kỳ này?`,
+    title: 'Xác nhận thêm mới',
+    content: 'Bạn có chắc chắn muốn thêm học kỳ mới này?',
     okText: 'Tiếp tục',
     cancelText: 'Hủy bỏ',
     onOk() {
@@ -294,9 +310,9 @@ const handleChangeStatusSemester = (record) => {
 }
 
 const clearFormAdd = () => {
-  newSemester.semesterName = ''
-  newSemester.fromDate = null
-  newSemester.toDate = null
+  newSemester.semesterName = defaultDateRange.semesterName
+  newSemester.fromDate = defaultDateRange.fromDate
+  newSemester.toDate = defaultDateRange.toDate
 }
 
 const handleClearFilter = () => {
@@ -484,6 +500,7 @@ onMounted(() => {
             class="w-100"
             format="DD/MM/YYYY"
             @keyup.enter="handleAddSemester"
+            :disabledDate="(current) => current && current < dayjs().startOf('day')"
           />
         </a-form-item>
         <a-form-item label="Ngày kết thúc" required>
@@ -493,6 +510,7 @@ onMounted(() => {
             class="w-100"
             format="DD/MM/YYYY"
             @keyup.enter="handleAddSemester"
+            :disabledDate="(current) => current && current < newSemester.fromDate"
           />
         </a-form-item>
       </a-form>

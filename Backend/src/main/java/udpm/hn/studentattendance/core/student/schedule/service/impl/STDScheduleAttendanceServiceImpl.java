@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
 import udpm.hn.studentattendance.core.student.historyattendance.model.response.STDHistoryAttendanceResponse;
@@ -18,9 +19,9 @@ import udpm.hn.studentattendance.core.student.schedule.model.response.STDSchedul
 import udpm.hn.studentattendance.core.student.schedule.repository.STDScheduleAttendanceRepository;
 import udpm.hn.studentattendance.core.student.schedule.service.STDScheduleAttendanceService;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
+import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.helpers.SessionHelper;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
-import udpm.hn.studentattendance.infrastructure.common.ResponseObject;
 
 import java.awt.*;
 import java.io.ByteArrayInputStream;
@@ -42,12 +43,9 @@ public class STDScheduleAttendanceServiceImpl implements STDScheduleAttendanceSe
     private final SessionHelper sessionHelper;
 
     @Override
-    public ResponseObject<?> getList(STDScheduleAttendanceSearchRequest request) {
+    public ResponseEntity<?> getList(STDScheduleAttendanceSearchRequest request) {
         Pageable pageable = PaginationHelper.createPageable(request, "id");
-        return new ResponseObject<>(
-                PageableObject.of(repository.getAllListAttendanceByUser(pageable, request)),
-                HttpStatus.OK,
-                "Lây danh sách điểm danh thành công");
+        return RouterHelper.responseSuccess("Lấy danh sách điểm danh thành công", PageableObject.of(repository.getAllListAttendanceByUser(pageable, request)));
     }
 
     @Override
@@ -132,14 +130,14 @@ public class STDScheduleAttendanceServiceImpl implements STDScheduleAttendanceSe
 
                 PdfPCell linkNameCell = new PdfPCell(
                         new Phrase(String.valueOf(scheduleAttendanceResponse.getLink() != null
-                ? scheduleAttendanceResponse.getLink() : ""
-                ), cellFont));
+                                ? scheduleAttendanceResponse.getLink() : ""
+                        ), cellFont));
                 styleCell(linkNameCell, backgroundColor);
                 pdfTable.addCell(linkNameCell);
 
                 PdfPCell roomNameCell = new PdfPCell(
                         new Phrase(String.valueOf(scheduleAttendanceResponse.getLocation() != null
-                        ? scheduleAttendanceResponse.getLocation() : ""
+                                ? scheduleAttendanceResponse.getLocation() : ""
                         ), cellFont));
                 styleCell(roomNameCell, backgroundColor);
                 pdfTable.addCell(roomNameCell);
