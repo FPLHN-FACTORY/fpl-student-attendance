@@ -58,6 +58,11 @@ public class STProjectManagementImpl implements STProjectManagementService {
             return RouterHelper.responseError("Không tìm thấy học kỳ");
         }
 
+        Long now = new Date().getTime();
+        if (semester.getToDate() < now){
+            return RouterHelper.responseError("Vui lòng chọn học kỳ đang hoặc chưa diễn ra cho dự án mới");
+        }
+
         SubjectFacility subjectFacility = subjectFacilityRepository.findById(request.getSubjectFacilityId())
                 .orElse(null);
         if (subjectFacility == null) {

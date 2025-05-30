@@ -27,24 +27,24 @@ public interface USStudentExtendRepository extends UserStudentRepository {
             LEFT JOIN facility f ON f.id = us.id_facility
             WHERE
                  (
-                   (:#{#studentRequest.searchQuery} IS NULL OR trim(:#{#studentRequest.searchQuery}) = '')
-                   OR us.name LIKE concat('%', trim(:#{#studentRequest.searchQuery}), '%')
-                   OR us.code LIKE concat('%', trim(:#{#studentRequest.searchQuery}), '%')
-                   OR us.email LIKE concat('%', trim(:#{#studentRequest.searchQuery}), '%')
+                   (:#{#studentRequest.searchQuery} IS NULL OR TRIM(:#{#studentRequest.searchQuery}) = '')
+                   OR us.name LIKE concat('%', TRIM(:#{#studentRequest.searchQuery}), '%')
+                   OR us.code LIKE concat('%', TRIM(:#{#studentRequest.searchQuery}), '%')
+                   OR us.email LIKE concat('%', TRIM(:#{#studentRequest.searchQuery}), '%')
                  )
                  AND f.id = :facilityId
                  AND (:#{#studentRequest.studentStatus} IS NULL OR us.status = :#{#studentRequest.studentStatus})
-            ORDER BY us.created_at DESC, us.status DESC
+            ORDER BY  us.status DESC, us.created_at DESC
             """, countQuery = """
             SELECT COUNT(*)
             FROM user_student us
             LEFT JOIN facility f ON f.id = us.id_facility
             WHERE
                  (
-                   (:#{#studentRequest.searchQuery} IS NULL OR trim(:#{#studentRequest.searchQuery}) = '')
-                   OR us.name LIKE concat('%', trim(:#{#studentRequest.searchQuery}), '%')
-                   OR us.code LIKE concat('%', trim(:#{#studentRequest.searchQuery}), '%')
-                   OR us.email LIKE concat('%', trim(:#{#studentRequest.searchQuery}), '%')
+                   (:#{#studentRequest.searchQuery} IS NULL OR TRIM(:#{#studentRequest.searchQuery}) = '')
+                   OR us.name LIKE concat('%', TRIM(:#{#studentRequest.searchQuery}), '%')
+                   OR us.code LIKE concat('%', TRIM(:#{#studentRequest.searchQuery}), '%')
+                   OR us.email LIKE concat('%', TRIM(:#{#studentRequest.searchQuery}), '%')
                  )
                  AND f.id = :facilityId
                  AND (:#{#studentRequest.studentStatus} IS NULL OR us.status = :#{#studentRequest.studentStatus})
@@ -62,7 +62,7 @@ public interface USStudentExtendRepository extends UserStudentRepository {
             LEFT JOIN facility f ON f.id = us.id_facility
             WHERE
                  f.id = :facilityId
-            ORDER BY us.created_at DESC, us.status DESC
+            ORDER BY us.status DESC, us.created_at DESC
             """, nativeQuery = true)
     List<USStudentResponse> exportAllStudent(String facilityId);
 
