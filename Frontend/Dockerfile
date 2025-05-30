@@ -3,7 +3,7 @@
 # ----------------------
 # Stage 1: Build with Node
 # ----------------------
-FROM node:slim-alpine AS builder
+FROM node:23-alpine AS builder
 WORKDIR /app
 
 # Embed biến Vite
@@ -14,7 +14,8 @@ ENV VITE_PREFIX_ADMIN_PANEL="/admin-panel"
 
 # Copy package và cài dependencies
 COPY package.json package-lock.json ./
-RUN npm ci --production=false
+RUN npm ci --production=false && \
+    npm audit fix --force
 
 # Copy toàn bộ source và build
 COPY . .
@@ -23,7 +24,13 @@ RUN npm run build
 # -------------------------
 # Stage 2: Serve với Nginx
 # -------------------------
-FROM nginx:stable-alpine
+FROM nginx:1.28.0-alpine
+
+# Update và cài đặt security patches
+RUN apk update && \
+    apk upgrade && \
+    apk add --no-cache curl && \
+    rm -rf /var/cache/apk/*
 
 # Tạo non-root user
 RUN adduser -D -H -u 101 -s /sbin/nologin nginx || true

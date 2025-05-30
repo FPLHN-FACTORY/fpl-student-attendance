@@ -46,7 +46,7 @@ public interface STProjectExtendRepository extends ProjectRepository {
                         AND (:#{#request.facilityId} IS NULL OR f.id = :#{#request.facilityId})
                         AND (:#{#request.status} IS NULL OR p.status = :#{#request.status})
                     )
-                    ORDER BY p.created_at DESC, p.status DESC
+                    ORDER BY  p.status DESC, p.created_at DESC
             """, countQuery = """
                     SELECT
                        COUNT(*)
@@ -96,7 +96,7 @@ public interface STProjectExtendRepository extends ProjectRepository {
                         sem.status = 1 AND
                         f.status = 1 AND
                         f.id = :facilityId
-                    ORDER BY p.created_at DESC, p.status DESC
+                    ORDER BY  p.status DESC, p.created_at DESC
             """, nativeQuery = true)
     List<USProjectResponse> exportAllProject(String facilityId);
 

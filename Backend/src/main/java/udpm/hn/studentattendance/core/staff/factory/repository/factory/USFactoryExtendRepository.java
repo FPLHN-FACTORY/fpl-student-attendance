@@ -48,7 +48,7 @@ public interface USFactoryExtendRepository extends FactoryRepository {
                 AND (:#{#staffFactoryRequest.status} IS NULL OR ft.status = :#{#staffFactoryRequest.status})
                 AND (:#{#staffFactoryRequest.factoryName} IS NULL OR
                     CONCAT(ft.name, ' (', s.code, ')') LIKE CONCAT('%', TRIM(:#{#staffFactoryRequest.factoryName}), '%'))
-            ORDER BY ft.created_at DESC, ft.status DESC
+            ORDER BY ft.status DESC, ft.created_at DESC
             """, countQuery = """
                 SELECT COUNT(*)
                 FROM factory ft
@@ -103,7 +103,7 @@ public interface USFactoryExtendRepository extends FactoryRepository {
                 AND sub.status = 1
                 AND f.status = 1
                 AND lp.status = 1
-            ORDER BY ft.created_at DESC, ft.status DESC
+            ORDER BY ft.status DESC, ft.created_at DESC
             """, nativeQuery = true)
     List<USFactoryResponse> exportAllFactory(String facilityId);
 
