@@ -8,8 +8,9 @@ import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
 import { ROUTE_NAMES } from '@/router/staffRoute';
 import requestAPI from '@/services/requestApiService';
 import { API_ROUTES_STAFF } from '@/constants/staffConstant';
-import { message } from 'ant-design-vue';
+import { message, Modal } from 'ant-design-vue';
 import { EditFilled, FilterFilled, PlusOutlined, SearchOutlined, UnorderedListOutlined } from '@ant-design/icons-vue';
+import dayjs from 'dayjs'
 
 const breadcrumbStore = useBreadcrumbStore();
 const loadingStore = useLoadingStore();
@@ -44,7 +45,12 @@ const columns = ref(
     { title: 'Tên hoạt động', dataIndex: 'name', key: 'name' },
     { title: 'Mô tả', dataIndex: 'description', key: 'description' },
     { title: 'Ngày', dataIndex: 'dayHappen', key: 'dayHappen' },
-    { title: 'Chức năng', key: 'action' },
+    {
+      title: 'Chức năng',
+      key: 'action',
+      fixed: 'right',
+      width: 100
+    }
   ])
 )
 
@@ -125,53 +131,52 @@ const handleClearFilter = () => {
 
 const modalAddEvent = ref(false);
 const modalAddLoading = ref(false)
-
 const newEvent = reactive({
   name: '',
   description: '',
-  dayHappen: null,
+  dayHappen: dayjs(),
   semesterId: null,
 })
-const clearData = () => {
-  newEvent.name = ''
-  newEvent.description = ''
-  newEvent.dayHappen = null
-  newEvent.semesterId = null
-  modalAddEvent.value = false
-}
 const handleShowModalAdd = () => {
   newEvent.name = ''
   newEvent.description = ''
-  newEvent.dayHappen = null
+  newEvent.dayHappen = dayjs()
   newEvent.semesterId = null
   modalAddEvent.value = true
 }
-
 const handleAddEvent = () => {
   if(!newEvent.name || !newEvent.dayHappen) {
     message.error('Vui lòng nhập đầy đủ thông tin')
     return
   }
-  modalAddLoading.value = true
-  loadingStore.show()
-  const payload = {
-    name: newEvent.name,
-    description: newEvent.description,
-    day: newEvent.dayHappen.valueOf(),
-  }
-  requestAPI.post(API_ROUTES_STAFF.FETCH_DATA_ATTENDANCE_RECOVERY, payload)
-    .then(() => {
-      message.success('Thêm sự kiện khôi phục điểm danh thành công')
-      clearData()
-      fetchAttendanceRecovery()
-    })
-    .catch((error) => {
-      message.error(error.response?.data?.message || 'Lỗi khi thêm sự kiện khôi phục điểm danh')
-    })
-    .finally(() => {
-      modalAddLoading.value = false
-      loadingStore.hide()
-    })
+  Modal.confirm({
+    title: 'Xác nhận thêm mới',
+    content: 'Bạn có chắc chắn muốn thêm sự kiện khôi phục điểm danh mới này?',
+    okText: 'Tiếp tục',
+    cancelText: 'Hủy bỏ',
+    onOk() {
+      modalAddLoading.value = true
+      loadingStore.show()
+      const payload = {
+        name: newEvent.name,
+        description: newEvent.description,
+        day: newEvent.dayHappen.valueOf(),
+      }
+      requestAPI.post(API_ROUTES_STAFF.FETCH_DATA_ATTENDANCE_RECOVERY, payload)
+        .then(() => {
+          message.success('Thêm sự kiện khôi phục điểm danh thành công')
+          clearData()
+          fetchAttendanceRecovery()
+        })
+        .catch((error) => {
+          message.error(error.response?.data?.message || 'Lỗi khi thêm sự kiện khôi phục điểm danh')
+        })
+        .finally(() => {
+          modalAddLoading.value = false
+          loadingStore.hide()
+        })
+    },
+  })
 }
 
 const modalEditEvent = ref(false)
@@ -180,13 +185,77 @@ const editEvent = reactive({
   id: null,
   name: '',
   description: '',
-  dayHappen: null,
+  day: null,
 })
-const handleShowModalEdit = (record) => {
 
+const handleShowModalEdit = (record) => {
+  loadingStore.show()
+  requestAPI
+    .get(API_ROUTES_STAFF.FETCH_DATA_ATTENDANCE_RECOVERY + '/detail/' + record.id)
+    .then((response) => {
+      const data = response.data.data
+      editEvent.id = data.id
+      editEvent.name = data.name
+      editEvent.description = data.description
+      editEvent.day = dayjs(data.day)
+      modalEditEvent.value = true
+    })
+    .catch((error) => {
+      message.error(error.response?.data?.message || 'Lỗi khi lấy chi tiết sự kiện khôi phục điểm danh')
+    })
+    .finally(() => {
+      loadingStore.hide()
+    })
 }
+
 const handleEditEvent = () => {
-  console.log('handleEditEvent')
+  if(!editEvent.name || !editEvent.day) {
+    message.error('Vui lòng nhập đầy đủ thông tin')
+    return
+  }
+  Modal.confirm({
+    title: 'Xác nhận cập nhật',
+    content: 'Bạn có chắc chắn muốn cập nhật thông tin sự kiện khôi phục điểm danh này?',
+    okText: 'Tiếp tục',
+    cancelText: 'Hủy bỏ',
+    onOk() {
+      modalUpdateLoading.value = true
+      loadingStore.show()
+      const payload = {
+        id: editEvent.id,
+        name: editEvent.name,
+        description: editEvent.description,
+        day: editEvent.day.valueOf(),
+      }
+      requestAPI.put(API_ROUTES_STAFF.FETCH_DATA_ATTENDANCE_RECOVERY + '/' + editEvent.id, payload)
+        .then(() => {
+          message.success('Cập nhật sự kiện khôi phục điểm danh thành công')
+          clearData()
+          fetchAttendanceRecovery()
+        })
+        .catch((error) => {
+          message.error(error.response?.data?.message || 'Lỗi khi cập nhật sự kiện khôi phục điểm danh')
+        })
+        .finally(() => {
+          modalUpdateLoading.value = false
+          loadingStore.hide()
+        })
+    },
+  })
+}
+
+const clearData = () => {
+  newEvent.name = ''
+  newEvent.description = ''
+  newEvent.dayHappen = null
+  newEvent.semesterId = null
+  modalAddEvent.value = false
+
+  editEvent.id = null
+  editEvent.name = ''
+  editEvent.description = ''
+  editEvent.day = null
+  modalEditEvent.value = false
 }
 
 onMounted(() => {
@@ -216,21 +285,6 @@ onMounted(() => {
                 <template #suffix> <SearchOutlined /> </template>
               </a-input>
             </div>
-            <!-- <div class="col-md-6 col-sm-12">
-              <div class="label-title">Kỳ học:</div>
-              <a-select
-                v-model:value="filter.semesterId"
-                placeholder="Chọn kỳ học"
-                allowClear
-                @change="fetchAttendanceRecovery"
-                :dropdownMatchSelectWidth="false"
-                class="w-100"
-              >
-                <a-select-option v-for="item in semester" :key="item.id" :value="item.id">
-                  {{ item.code }}
-                </a-select-option>
-              </a-select>
-            </div> -->
             <div class="col-md-6 col-sm-12">
               <div class="label-title">Khoảng ngày:</div>
               <a-range-picker
@@ -258,11 +312,14 @@ onMounted(() => {
         <a-card :bordered="false" class="cart">
           <template #title> <UnorderedListOutlined /> Danh sách sự kiện khôi phục điểm danh </template>
           <div class="d-flex justify-content-end mb-3 flex-wrap gap-3">
-              <a-tooltip title="Thêm Sự kiện khôi phục điểm danh">
+            <a-space>
+              <a-tooltip>
+                <template #title>Thêm Sự kiện khôi phục điểm danh</template>
                 <a-button type="primary" @click="handleShowModalAdd">
                   <PlusOutlined /> Thêm
                 </a-button>
               </a-tooltip>
+            </a-space>
           </div>
           <a-table
             class="nowrap"
@@ -287,11 +344,14 @@ onMounted(() => {
                 </template>
               </template>
               <template v-else-if="column.key === 'action'">
-                <a-tooltip title="Sửa thông tin khôi phục điểm danh">
-                  <a-button type="text" class="btn-outline-info me-2" @click="handleEdit(record)">
-                    <EditFilled />
-                  </a-button>
-                </a-tooltip>
+                <a-space>
+                  <a-tooltip>
+                    <template #title>Sửa thông tin khôi phục điểm danh</template>
+                    <a-button type="text" class="btn-outline-info me-2" @click="handleShowModalEdit(record)">
+                      <EditFilled />
+                    </a-button>
+                  </a-tooltip>
+                </a-space>
               </template>
             </template>
           </a-table>
@@ -331,8 +391,16 @@ onMounted(() => {
   @cancel="clearData"
   @close="clearData">
 
-    <a-form :model="newEvent" layout="vertical">
-      <a-form-item label="Tên sự kiện" required></a-form-item>
+    <a-form :model="editEvent" layout="vertical">
+      <a-form-item label="Tên sự kiện" required>
+        <a-input v-model:value="editEvent.name" placeholder="Nhập tên sự kiện" />
+      </a-form-item>
+      <a-form-item label="Mô tả">
+        <a-textarea v-model:value="editEvent.description" placeholder="Nhập mô tả" />
+      </a-form-item>
+      <a-form-item label="Ngày" required>
+        <a-date-picker v-model:value="editEvent.day" placeholder="Chọn ngày" :format="DEFAULT_DATE_FORMAT" class="w-100" />
+      </a-form-item>
     </a-form>
 
   </a-modal>

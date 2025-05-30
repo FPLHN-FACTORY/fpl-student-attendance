@@ -3,6 +3,7 @@ package udpm.hn.studentattendance.core.staff.attendancerecovery.service;
 import org.springframework.http.ResponseEntity;
 import udpm.hn.studentattendance.core.staff.attendancerecovery.model.request.STAttendanceRecoveryRequest;
 import udpm.hn.studentattendance.core.staff.attendancerecovery.model.request.STCreateOrUpdateNewEventRequest;
+import udpm.hn.studentattendance.core.staff.attendancerecovery.model.request.STStudentAttendanceRecoveryRequest;
 
 public interface STAttendanceRecoveryService {
 
@@ -17,5 +18,7 @@ public interface STAttendanceRecoveryService {
     ResponseEntity<?> getDetailEventAttendanceRecovery(String idEventAttendanceRecovery);
 
     ResponseEntity<?> updateEventAttendanceRecovery(STCreateOrUpdateNewEventRequest request, String id);
+
+    ResponseEntity<?> importAttendanceRecoveryStudent(STStudentAttendanceRecoveryRequest request);
 
 }

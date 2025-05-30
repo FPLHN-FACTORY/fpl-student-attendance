@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
 import udpm.hn.studentattendance.core.staff.attendancerecovery.model.request.STAttendanceRecoveryRequest;
 import udpm.hn.studentattendance.core.staff.attendancerecovery.model.request.STCreateOrUpdateNewEventRequest;
+import udpm.hn.studentattendance.core.staff.attendancerecovery.model.request.STStudentAttendanceRecoveryRequest;
 import udpm.hn.studentattendance.core.staff.attendancerecovery.repository.STAttendanceRecoveryFacilityRepository;
 import udpm.hn.studentattendance.core.staff.attendancerecovery.repository.STAttendanceRecoveryRepository;
 import udpm.hn.studentattendance.core.staff.attendancerecovery.repository.STAttendanceRecoverySemesterRepository;
@@ -17,6 +18,7 @@ import udpm.hn.studentattendance.entities.Semester;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
 import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.helpers.SessionHelper;
+import udpm.hn.studentattendance.helpers.ValidateHelper;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 
@@ -35,6 +37,7 @@ public class STAttendanceRecoveryServiceImpl implements STAttendanceRecoveryServ
     private final STAttendanceRecoveryFacilityRepository facilityRepository;
 
     private final SessionHelper sessionHelper;
+
 
     @Override
     public ResponseEntity<?> getListAttendanceRecovery(STAttendanceRecoveryRequest request) {
@@ -61,6 +64,9 @@ public class STAttendanceRecoveryServiceImpl implements STAttendanceRecoveryServ
         if (facilityOptional == null){
             return RouterHelper.responseError("Cơ sở không tồn tại", null);
         }
+        if (!ValidateHelper.isValidFullname(request.getName())){
+            return RouterHelper.responseError("Tên sự kiện không hợp lệ: Tối thiểu 2 từ, cách nhau bởi khoảng trắng và Chỉ gồm ký tự chữ không chứa số hay ký tự đặc biệt.", null);
+        }
         AttendanceRecovery attendanceRecovery = new AttendanceRecovery();
         attendanceRecovery.setName(request.getName());
         attendanceRecovery.setDescription(request.getDescription());
@@ -83,9 +89,23 @@ public class STAttendanceRecoveryServiceImpl implements STAttendanceRecoveryServ
     @Override
     public ResponseEntity<?> updateEventAttendanceRecovery(STCreateOrUpdateNewEventRequest request, String id) {
         Optional<AttendanceRecovery> attendanceRecoveryOptional = attendanceRecoveryRepository.findById(id);
+        if (!ValidateHelper.isValidFullname(request.getName())){
+            return RouterHelper.responseError("Tên sự kiện không hợp lệ: Tối thiểu 2 từ, cách nhau bởi khoảng trắng và Chỉ gồm ký tự chữ không chứa số hay ký tự đặc biệt.", null);
+        }
         if (attendanceRecoveryOptional.isPresent()){
             AttendanceRecovery attendanceRecovery = attendanceRecoveryOptional.get();
+            attendanceRecovery.setName(request.getName());
+            attendanceRecovery.setDescription(request.getDescription());
+            attendanceRecovery.setDay(request.getDay());
+            attendanceRecoveryRepository.save(attendanceRecovery);
+            return RouterHelper.responseSuccess("Cập nhất sự kiện khôi phục điểm danh thành công", attendanceRecovery);
         }
+        return RouterHelper.responseError("Sự kiện khôi phục điểm danh không tồn tại", null);
+    }
+
+    @Override
+    public ResponseEntity<?> importAttendanceRecoveryStudent(STStudentAttendanceRecoveryRequest request) {
+
         return null;
     }
 }
