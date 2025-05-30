@@ -12,7 +12,7 @@ import udpm.hn.studentattendance.repositories.SubjectFacilityRepository;
 import java.util.Optional;
 
 @Repository
-public interface Admin_SubjectFacilityRepository extends SubjectFacilityRepository {
+public interface ADSubjectFacilityRepository extends SubjectFacilityRepository {
 
     @Query(value = """
                     SELECT
@@ -31,12 +31,12 @@ public interface Admin_SubjectFacilityRepository extends SubjectFacilityReposito
                     WHERE
                         f.status = 1 AND
                     (
-                        (:#{#request.name} IS NULL OR s.name LIKE CONCAT('%', :#{#request.name}, '%'))
+                        (:#{#request.name} IS NULL OR TRIM(s.name) LIKE CONCAT('%', TRIM(:#{#request.name}), '%'))
                         AND s.id = :#{#request.subjectId}
                     )
                     AND (:#{#request.facilityId} IS NULL OR sf.id_facility = :#{#request.facilityId})
                     AND (:#{#request.status} IS NULL OR sf.status = :#{#request.status})
-                    ORDER BY sf.created_at DESC, sf.status DESC
+                    ORDER BY sf.status DESC, sf.created_at DESC
             """, countQuery = """
                     SELECT COUNT(*)
                     FROM subject_facility sf
@@ -45,7 +45,7 @@ public interface Admin_SubjectFacilityRepository extends SubjectFacilityReposito
                     WHERE
                         f.status = 1 AND
                     (
-                        (:#{#request.name} IS NULL OR s.name LIKE CONCAT('%', :#{#request.name}, '%'))
+                        (:#{#request.name} IS NULL OR TRIM(s.name) LIKE CONCAT('%', TRIM(:#{#request.name}), '%'))
                         AND s.id = :#{#request.subjectId}
                     )
                     AND (:#{#request.facilityId} IS NULL OR sf.id_facility = :#{#request.facilityId})

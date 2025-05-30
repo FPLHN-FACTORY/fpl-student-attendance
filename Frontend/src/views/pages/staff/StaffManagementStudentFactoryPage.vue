@@ -754,6 +754,7 @@ onMounted(() => {
       width="80%"
       @cancel="resetStudentModal"
       @ok="handleAddStudents"
+      :okButtonProps="{ loading: isLoading }"
     >
       <div class="row g-3 filter-container" style="margin-bottom: 16px">
         <div class="col-21">

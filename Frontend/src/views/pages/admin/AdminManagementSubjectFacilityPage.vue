@@ -181,9 +181,8 @@ const handleAddSubjectFacility = () => {
   }
 
   Modal.confirm({
-    title: `Xác nhận thêm mới`,
-    type: 'info',
-    content: `Bạn có chắc muốn thêm mới cơ sở vào bộ môn này?`,
+    title: 'Xác nhận thêm mới',
+    content: 'Bạn có chắc chắn muốn thêm bộ môn cơ sở mới này?',
     okText: 'Tiếp tục',
     cancelText: 'Hủy bỏ',
     onOk() {
@@ -214,9 +213,8 @@ const handleUpdateSubjectFacility = () => {
   }
 
   Modal.confirm({
-    title: `Xác nhận cập nhật`,
-    type: 'info',
-    content: `Bạn có chắc muốn lưu lại thay đổi?`,
+    title: 'Xác nhận cập nhật',
+    content: 'Bạn có chắc chắn muốn cập nhật thông tin bộ môn cơ sở này?',
     okText: 'Tiếp tục',
     cancelText: 'Hủy bỏ',
     onOk() {

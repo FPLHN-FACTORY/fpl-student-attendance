@@ -22,7 +22,7 @@ public interface STProjectSubjectFacilityExtendRepository extends SubjectFacilit
                 FROM subject_facility sf
                 LEFT JOIN subject s ON sf.id_subject = s.id
                 WHERE (
-                    :facilityId IS NULL OR sf.id_facility = :facilityId
+                    :facilityId IS NULL OR sf.id_facility = TRIM(:facilityId)
                 ) AND sf.status = 1
                 AND s.status = 1
                 ORDER BY sf.created_at DESC
@@ -30,14 +30,14 @@ public interface STProjectSubjectFacilityExtendRepository extends SubjectFacilit
     List<USSubjectResponse> getSubjectFacility(@Param("facilityId") String facilityId);
 
     @Query(value = """
-            SELECT 
+            SELECT
             sf
-            FROM SubjectFacility sf 
+            FROM SubjectFacility sf
             LEFT JOIN Subject sb ON sf.subject.id = sb.id
             LEFT JOIN Facility f ON f.id = sf.facility.id
-            WHERE 
-            f.id = :facilityId
-            AND sf.id = :subjectFacilityId
+            WHERE
+            f.id = TRIM(:facilityId)
+            AND sf.id = TRIM(:subjectFacilityId)
             """)
     SubjectFacility getSubjectFacilityByName(String facilityId, String subjectFacilityId);
 }

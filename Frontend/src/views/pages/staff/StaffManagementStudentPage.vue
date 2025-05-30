@@ -137,9 +137,8 @@ const handleAddStudent = () => {
     return
   }
   Modal.confirm({
-    title: `Xác nhận thêm mới`,
-    type: 'info',
-    content: `Bạn có chắc muốn thêm mới sinh viên này?`,
+    title: 'Xác nhận thêm mới',
+    content: 'Bạn có chắc chắn muốn thêm sinh viên mới này?',
     okText: 'Tiếp tục',
     cancelText: 'Hủy bỏ',
     onOk() {
@@ -220,9 +219,8 @@ const updateStudent = () => {
     return
   }
   Modal.confirm({
-    title: `Xác nhận cập nhật`,
-    type: 'info',
-    content: `Bạn có chắc muốn lưu lại thay đổi?`,
+    title: 'Xác nhận cập nhật',
+    content: 'Bạn có chắc chắn muốn cập nhật thông tin sinh viên này?',
     okText: 'Tiếp tục',
     cancelText: 'Hủy bỏ',
     onOk() {
@@ -322,6 +320,14 @@ const handleClearFilter = () => {
   })
   pagination.current = 1
   fetchStudents() // or whatever your fetch function is named
+}
+
+const clearUpdateStudentForm = () => {
+  detailStudent.id = ''
+  detailStudent.code = ''
+  detailStudent.name = ''
+  detailStudent.email = ''
+  modalUpdate.value = false
 }
 
 const handleShowModalAdd = () => {
@@ -486,6 +492,7 @@ onMounted(() => {
       v-model:open="modalAdd"
       title="Thêm sinh viên"
       @ok="handleAddStudent"
+      :okButtonProps="{ loading: isLoading }"
       @cancel="clearNewStudentForm"
       @close="clearNewStudentForm"
     >
@@ -515,7 +522,14 @@ onMounted(() => {
     </a-modal>
 
     <!-- Modal cập nhật sinh viên -->
-    <a-modal v-model:open="modalUpdate" title="Cập nhật sinh viên" @ok="updateStudent">
+    <a-modal
+      v-model:open="modalUpdate"
+      title="Cập nhật sinh viên"
+      @ok="updateStudent"
+      :okButtonProps="{ loading: isLoading }"
+      @cancel="clearUpdateStudentForm"
+      @close="clearUpdateStudentForm"
+    >
       <a-form layout="vertical">
         <a-form-item label="Mã sinh viên" required>
           <a-input

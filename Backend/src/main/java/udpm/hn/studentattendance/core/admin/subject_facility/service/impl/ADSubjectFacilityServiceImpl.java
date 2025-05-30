@@ -1,35 +1,31 @@
 package udpm.hn.studentattendance.core.admin.subject_facility.service.impl;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import udpm.hn.studentattendance.core.admin.subject_facility.model.request.ADSubjectFacilityCreateRequest;
 import udpm.hn.studentattendance.core.admin.subject_facility.model.request.ADSubjectFacilitySearchRequest;
 import udpm.hn.studentattendance.core.admin.subject_facility.model.request.ADSubjectFacilityUpdateRequest;
 import udpm.hn.studentattendance.core.admin.subject_facility.model.response.ADSubjectFacilityResponse;
-import udpm.hn.studentattendance.core.admin.subject_facility.repository.Admin_SubjectFacilityRepository;
-import udpm.hn.studentattendance.core.admin.subject_facility.service.Admin_SubjectFacilityService;
+import udpm.hn.studentattendance.core.admin.subject_facility.repository.ADSubjectFacilityRepository;
+import udpm.hn.studentattendance.core.admin.subject_facility.service.ADSubjectFacilityService;
 import udpm.hn.studentattendance.entities.Facility;
 import udpm.hn.studentattendance.entities.Subject;
 import udpm.hn.studentattendance.entities.SubjectFacility;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
 import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
-import udpm.hn.studentattendance.infrastructure.common.ResponseObject;
 import udpm.hn.studentattendance.infrastructure.common.repositories.CommonUserStudentRepository;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.repositories.FacilityRepository;
-import udpm.hn.studentattendance.repositories.SubjectFacilityRepository;
 import udpm.hn.studentattendance.repositories.SubjectRepository;
 
 @Service
 @RequiredArgsConstructor
-public class Admin_SubjectFacilityServiceImpl implements Admin_SubjectFacilityService {
+public class ADSubjectFacilityServiceImpl implements ADSubjectFacilityService {
 
-    private final Admin_SubjectFacilityRepository repository;
+    private final ADSubjectFacilityRepository repository;
 
     private final SubjectRepository subjectRepository;
 

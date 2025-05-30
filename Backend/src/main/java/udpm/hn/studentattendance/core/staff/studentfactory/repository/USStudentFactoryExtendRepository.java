@@ -29,7 +29,7 @@ public interface USStudentFactoryExtendRepository extends UserStudentFactoryRepo
                     pf.id_factory = :factoryId AND
                     pd.start_date <= UNIX_TIMESTAMP(NOW()) * 1000
             ),
-            
+
             cte_total_shift AS (
                 SELECT COUNT(DISTINCT pd.id) AS total_shift
                 FROM plan_date pd
@@ -75,11 +75,11 @@ public interface USStudentFactoryExtendRepository extends UserStudentFactoryRepo
                 AND (:#{#studentFactoryRequest.status} IS NULL OR usf.status = :#{#studentFactoryRequest.status})
                 AND (
                     :#{#studentFactoryRequest.searchQuery} IS NULL OR :#{#studentFactoryRequest.searchQuery} = ''
-                    OR us.code LIKE CONCAT('%', :#{#studentFactoryRequest.searchQuery}, '%')
-                    OR us.name LIKE CONCAT('%', :#{#studentFactoryRequest.searchQuery}, '%')
-                    OR us.email LIKE CONCAT('%', :#{#studentFactoryRequest.searchQuery}, '%')
+                    OR us.code LIKE CONCAT('%', TRIM(:#{#studentFactoryRequest.searchQuery}), '%')
+                    OR us.name LIKE CONCAT('%', TRIM(:#{#studentFactoryRequest.searchQuery}), '%')
+                    OR us.email LIKE CONCAT('%', TRIM(:#{#studentFactoryRequest.searchQuery}), '%')
                 )
-            ORDER BY usf.created_at DESC, usf.status DESC 
+            ORDER BY usf.created_at DESC, usf.status DESC
             """, countQuery = """
             SELECT COUNT(DISTINCT usf.id)
             FROM user_student_factory usf
@@ -92,17 +92,17 @@ public interface USStudentFactoryExtendRepository extends UserStudentFactoryRepo
                 AND (:#{#studentFactoryRequest.status} IS NULL OR usf.status = :#{#studentFactoryRequest.status})
                 AND (
                     :#{#studentFactoryRequest.searchQuery} IS NULL OR :#{#studentFactoryRequest.searchQuery} = ''
-                    OR us.code LIKE CONCAT('%', :#{#studentFactoryRequest.searchQuery}, '%')
-                    OR us.name LIKE CONCAT('%', :#{#studentFactoryRequest.searchQuery}, '%')
-                    OR us.email LIKE CONCAT('%', :#{#studentFactoryRequest.searchQuery}, '%')
+                    OR us.code LIKE CONCAT('%', TRIM(:#{#studentFactoryRequest.searchQuery}), '%')
+                    OR us.name LIKE CONCAT('%', TRIM(:#{#studentFactoryRequest.searchQuery}), '%')
+                    OR us.email LIKE CONCAT('%', TRIM(:#{#studentFactoryRequest.searchQuery}), '%')
                 )
 
             """, nativeQuery = true)
     Page<STStudentFactoryResponse> getUserStudentInFactory(Pageable pageable, String factoryId,
-                                                           USStudentFactoryRequest studentFactoryRequest);
+            USStudentFactoryRequest studentFactoryRequest);
 
     Optional<UserStudentFactory> getUserStudentFactoriesByUserStudentIdAndFactoryId(String userStudentId,
-                                                                                    String factoryId);
+            String factoryId);
 
     @Query(value = """
             SELECT
@@ -112,7 +112,7 @@ public interface USStudentFactoryExtendRepository extends UserStudentFactoryRepo
             usf.status as userStudentStatus,
             s.from_date as startDate,
             s.to_date as endDate,
-            s.code as semesterCode 
+            s.code as semesterCode
             FROM user_student_factory usf
             LEFT JOIN factory ft ON ft.id = usf.id_factory
             LEFT JOIN user_student us ON us.id = usf.id_user_student
@@ -124,13 +124,11 @@ public interface USStudentFactoryExtendRepository extends UserStudentFactoryRepo
             WHERE us.id = :userStudentId
             AND s.id = p.id_semester
             LIMIT 1
-            """
-            , nativeQuery = true
-    )
+            """, nativeQuery = true)
     Optional<STDetailUserStudentFactory> getDetailUserStudent(String userStudentId);
 
     @Query(value = """
-                SELECT 
+                SELECT
                     ROW_NUMBER() OVER (ORDER BY pd.start_date ASC) as orderNumber,
                     pd.id,
                     pd.start_date,
@@ -150,7 +148,7 @@ public interface USStudentFactoryExtendRepository extends UserStudentFactoryRepo
                     CASE
                         WHEN UNIX_TIMESTAMP(NOW()) * 1000 > pd.start_date AND UNIX_TIMESTAMP(NOW()) * 1000 < pd.end_date
                         THEN 'DANG_DIEN_RA'
-                        WHEN UNIX_TIMESTAMP(NOW()) * 1000 > pd.end_date 
+                        WHEN UNIX_TIMESTAMP(NOW()) * 1000 > pd.end_date
                         THEN 'DA_DIEN_RA'
                         ELSE 'CHUA_DIEN_RA'
                     END AS status
@@ -162,7 +160,7 @@ public interface USStudentFactoryExtendRepository extends UserStudentFactoryRepo
                 JOIN user_student_factory usf ON usf.id_factory = f.id
                 JOIN user_student us ON us.id = usf.id_user_student
                 LEFT JOIN attendance a ON pd.id = a.id_plan_date AND a.id_user_student = usf.id_user_student
-                WHERE 
+                WHERE
                     (:#{#request.startDate} IS NULL OR (
                         DAY(FROM_UNIXTIME(pd.start_date / 1000)) = DAY(FROM_UNIXTIME(:#{#request.startDate} / 1000)) AND
                         MONTH(FROM_UNIXTIME(pd.start_date / 1000)) = MONTH(FROM_UNIXTIME(:#{#request.startDate} / 1000)) AND
@@ -178,7 +176,7 @@ public interface USStudentFactoryExtendRepository extends UserStudentFactoryRepo
                     AND us.id = :userStudentId
                 ORDER BY pd.start_date ASC
             """, countQuery = """
-                SELECT 
+                SELECT
                     COUNT(pd.id)
                 FROM plan_date pd
                 JOIN plan_factory pf ON pd.id_plan_factory = pf.id
@@ -188,7 +186,7 @@ public interface USStudentFactoryExtendRepository extends UserStudentFactoryRepo
                 JOIN user_student_factory usf ON usf.id_factory = f.id
                 JOIN user_student us ON us.id = usf.id_user_student
                 LEFT JOIN attendance a ON pd.id = a.id_plan_date AND a.id_user_student = usf.id_user_student
-                WHERE 
+                WHERE
                     (:#{#request.startDate} IS NULL OR (
                         DAY(FROM_UNIXTIME(pd.start_date / 1000)) = DAY(FROM_UNIXTIME(:#{#request.startDate} / 1000)) AND
                         MONTH(FROM_UNIXTIME(pd.start_date / 1000)) = MONTH(FROM_UNIXTIME(:#{#request.startDate} / 1000)) AND
@@ -196,12 +194,13 @@ public interface USStudentFactoryExtendRepository extends UserStudentFactoryRepo
                     )) AND
                     (:#{#request.status} IS NULL OR (
                         CASE
-                            WHEN UNIX_TIMESTAMP(NOW()) * 1000 > pd.start_date 
+                            WHEN UNIX_TIMESTAMP(NOW()) * 1000 > pd.start_date
                             THEN 'DA_DIEN_RA'
                             ELSE 'CHUA_DIEN_RA'
                         END
                     ) = :#{#request.status})
                     AND us.id = :userStudentId
             """, nativeQuery = true)
-    Page<STPDDetailShiftByStudentResponse> getAllPlanDateByStudent(Pageable pageable, USPDDetailShiftByStudentRequest request, String userStudentId);
+    Page<STPDDetailShiftByStudentResponse> getAllPlanDateByStudent(Pageable pageable,
+            USPDDetailShiftByStudentRequest request, String userStudentId);
 }

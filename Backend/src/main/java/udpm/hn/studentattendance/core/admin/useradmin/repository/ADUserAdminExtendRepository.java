@@ -33,7 +33,7 @@ public interface ADUserAdminExtendRepository extends UserAdminRepository {
                 )
                 AND
                 ( :#{#request.status} IS NULL OR ua.status = :#{#request.status} )
-            ORDER BY ua.created_at DESC, ua.status DESC 
+            ORDER BY ua.status DESC, ua.created_at DESC 
             """, countQuery = """
                                SELECT COUNT(*)
                                FROM user_admin ua

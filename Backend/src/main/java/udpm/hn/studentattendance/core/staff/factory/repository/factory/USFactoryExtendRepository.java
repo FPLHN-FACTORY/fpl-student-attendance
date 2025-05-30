@@ -47,8 +47,8 @@ public interface USFactoryExtendRepository extends FactoryRepository {
                 AND (:#{#staffFactoryRequest.idSemester} IS NULL OR s.id = :#{#staffFactoryRequest.idSemester})
                 AND (:#{#staffFactoryRequest.status} IS NULL OR ft.status = :#{#staffFactoryRequest.status})
                 AND (:#{#staffFactoryRequest.factoryName} IS NULL OR
-                    CONCAT(ft.name, ' (', s.code, ')') LIKE CONCAT('%', :#{#staffFactoryRequest.factoryName}, '%'))
-            ORDER BY ft.created_at DESC, ft.status DESC 
+                    CONCAT(ft.name, ' (', s.code, ')') LIKE CONCAT('%', TRIM(:#{#staffFactoryRequest.factoryName}), '%'))
+            ORDER BY ft.status DESC, ft.created_at DESC
             """, countQuery = """
                 SELECT COUNT(*)
                 FROM factory ft
@@ -71,11 +71,11 @@ public interface USFactoryExtendRepository extends FactoryRepository {
             AND (:#{#staffFactoryRequest.idStaff} IS NULL OR us.id = :#{#staffFactoryRequest.idStaff})
             AND (:#{#staffFactoryRequest.idSemester} IS NULL OR s.id = :#{#staffFactoryRequest.idSemester})
             AND (:#{#staffFactoryRequest.factoryName} IS NULL OR
-                CONCAT(ft.name, '-', s.code) LIKE CONCAT('%', :#{#staffFactoryRequest.factoryName}, '%'))
+                CONCAT(ft.name, '-', s.code) LIKE CONCAT('%', TRIM(:#{#staffFactoryRequest.factoryName}), '%'))
             AND (:#{#staffFactoryRequest.status} IS NULL OR ft.status = :#{#staffFactoryRequest.status})
                 """, nativeQuery = true)
     Page<USFactoryResponse> getAllFactory(Pageable pageable, String facilityId,
-                                          USFactoryRequest staffFactoryRequest);
+            USFactoryRequest staffFactoryRequest);
 
     @Query(value = """
             SELECT
@@ -103,7 +103,7 @@ public interface USFactoryExtendRepository extends FactoryRepository {
                 AND sub.status = 1
                 AND f.status = 1
                 AND lp.status = 1
-            ORDER BY ft.created_at DESC, ft.status DESC 
+            ORDER BY ft.status DESC, ft.created_at DESC
             """, nativeQuery = true)
     List<USFactoryResponse> exportAllFactory(String facilityId);
 
@@ -167,56 +167,56 @@ public interface USFactoryExtendRepository extends FactoryRepository {
             p.id_semester = :semesterId
             AND
             ft.status = 1
-            AND 
+            AND
             p.status = 1
                 """, nativeQuery = true)
     boolean isTeacherJoinThanThreeFactory(String userStaffId, String semesterId);
 
     @Query(value = """
-        SELECT
-            ROW_NUMBER() OVER (ORDER BY us.name ASC) AS orderNumber,
-            pd.id,
-            us.name,
-            us.code,
-            pd.start_date,
-            pd.end_date,
-            pd.shift,
-            pd.required_checkin,
-            pd.required_checkout,
-            COALESCE(a.attendance_status, 0) AS status,
-            COALESCE(a.created_at, 0) AS createdAt,
-            COALESCE(a.updated_at, 0) AS updatedAt
-        FROM plan_date pd
-        JOIN plan_factory pf ON pd.id_plan_factory = pf.id
-        JOIN user_student_factory usf ON pf.id_factory = usf.id_factory
-        JOIN user_student us ON usf.id_user_student = us.id
-        LEFT JOIN attendance a ON pd.id = a.id_plan_date AND a.id_user_student = us.id
-        WHERE
-            pd.status = 1 AND
-            pf.status = 1 AND
-            us.status = 1 AND
-            usf.status = 1 AND
-            pf.id_factory = :idFactory AND
-            EXISTS(
-                SELECT 1
-                FROM plan p
-                JOIN factory f ON f.id = pf.id_factory
-                JOIN project pj ON f.id_project = pj.id
-                JOIN subject_facility sf ON sf.id = pj.id_subject_facility
-                JOIN subject s2 ON s2.id = sf.id_subject
-                JOIN facility f2 ON sf.id_facility = f2.id
-                JOIN semester s ON pj.id_semester = s.id
+                SELECT
+                    ROW_NUMBER() OVER (ORDER BY us.name ASC) AS orderNumber,
+                    pd.id,
+                    us.name,
+                    us.code,
+                    pd.start_date,
+                    pd.end_date,
+                    pd.shift,
+                    pd.required_checkin,
+                    pd.required_checkout,
+                    COALESCE(a.attendance_status, 0) AS status,
+                    COALESCE(a.created_at, 0) AS createdAt,
+                    COALESCE(a.updated_at, 0) AS updatedAt
+                FROM plan_date pd
+                JOIN plan_factory pf ON pd.id_plan_factory = pf.id
+                JOIN user_student_factory usf ON pf.id_factory = usf.id_factory
+                JOIN user_student us ON usf.id_user_student = us.id
+                LEFT JOIN attendance a ON pd.id = a.id_plan_date AND a.id_user_student = us.id
                 WHERE
-                     pf.id_plan = p.id AND
-                     f.status = 1 AND
-                     p.status = 1 AND
-                     pj.status = 1 AND
-                     s.status = 1 AND
-                     s2.status = 1 AND
-                     f2.status = 1 AND
-                     sf.status = 1
-            )
-        ORDER BY us.name ASC
-    """, nativeQuery = true)
+                    pd.status = 1 AND
+                    pf.status = 1 AND
+                    us.status = 1 AND
+                    usf.status = 1 AND
+                    pf.id_factory = :idFactory AND
+                    EXISTS(
+                        SELECT 1
+                        FROM plan p
+                        JOIN factory f ON f.id = pf.id_factory
+                        JOIN project pj ON f.id_project = pj.id
+                        JOIN subject_facility sf ON sf.id = pj.id_subject_facility
+                        JOIN subject s2 ON s2.id = sf.id_subject
+                        JOIN facility f2 ON sf.id_facility = f2.id
+                        JOIN semester s ON pj.id_semester = s.id
+                        WHERE
+                             pf.id_plan = p.id AND
+                             f.status = 1 AND
+                             p.status = 1 AND
+                             pj.status = 1 AND
+                             s.status = 1 AND
+                             s2.status = 1 AND
+                             f2.status = 1 AND
+                             sf.status = 1
+                    )
+                ORDER BY us.name ASC
+            """, nativeQuery = true)
     List<USPlanDateStudentFactoryResponse> getAllPlanDateAttendanceByIdFactory(String idFactory);
 }

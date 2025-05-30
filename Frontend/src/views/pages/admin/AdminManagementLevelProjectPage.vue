@@ -100,10 +100,7 @@ const fetchLevels = () => {
     })
 }
 
-const clearNewLevelForm = () => {
-  newLevel.name = ''
-  newLevel.description = ''
-}
+
 
 const handleTableChange = (pageInfo) => {
   pagination.current = pageInfo.current
@@ -116,11 +113,9 @@ const handleAddLevelProject = () => {
     message.error('Vui lòng nhập tên cấp dự án')
     return
   }
-
   Modal.confirm({
-    title: `Xác nhận thêm mới`,
-    type: 'info',
-    content: `Bạn có chắc muốn thêm mới cấp độ dự án này?`,
+    title: 'Xác nhận thêm mới',
+    content: 'Bạn có chắc chắn muốn thêm cấp dự án mới này?',
     okText: 'Tiếp tục',
     cancelText: 'Hủy bỏ',
     onOk() {
@@ -131,7 +126,6 @@ const handleAddLevelProject = () => {
           message.success(response.data.message || 'Thêm cấp dự án thành công')
           modalAdd.value = false
           fetchLevels()
-          clearNewLevelForm()
         })
         .catch((error) => {
           message.error(error.response?.data?.message || 'Lỗi khi thêm cấp dự án')
@@ -180,11 +174,9 @@ const submitUpdateLevel = () => {
     message.error('Vui lòng nhập tên cấp dự án')
     return
   }
-
   Modal.confirm({
-    title: `Xác nhận cập nhật`,
-    type: 'info',
-    content: `Bạn có chắc muốn lưu lại thay đổi?`,
+    title: 'Xác nhận cập nhật',
+    content: 'Bạn có chắc chắn muốn cập nhật thông tin cấp dự án này?',
     okText: 'Tiếp tục',
     cancelText: 'Hủy bỏ',
     onOk() {
@@ -290,7 +282,9 @@ onMounted(() => {
   </a-modal>
 
   <!-- Modal Cập nhật cấp dự án -->
-  <a-modal v-model:open="modalUpdate" title="Cập nhật cấp dự án" @ok="submitUpdateLevel">
+  <a-modal v-model:open="modalUpdate" title="Cập nhật cấp dự án"
+  :okButtonProps="{ loading: loadingStore.isLoading }"
+  @ok="submitUpdateLevel">
     <a-form :model="detailLevel" layout="vertical">
       <a-form-item label="Tên cấp dự án" required>
         <a-input
