@@ -63,9 +63,9 @@ public interface SAAttendanceRepository extends AttendanceRepository {
                      f2.status = 1
             ) AND
             (NULLIF(TRIM(:#{#request.keyword}), '') IS NULL OR (
-                BINARY f.name LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%') OR
-                BINARY us.code LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%') OR
-                BINARY us.name LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%')
+                f.name LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%') OR
+                us.code LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%') OR
+                us.name LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%')
             )) AND
             (COALESCE(:#{#request.status}, 0) = 0 OR a.status = :#{#request.status}) AND
             (:#{#request.type} IS NULL OR pd.type = :#{#request.type}) AND
@@ -106,9 +106,9 @@ public interface SAAttendanceRepository extends AttendanceRepository {
                      f2.status = 1
             ) AND
             (NULLIF(TRIM(:#{#request.keyword}), '') IS NULL OR (
-                BINARY f.name LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%') OR
-                BINARY us.code LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%') OR
-                BINARY us.name LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%')
+                f.name LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%') OR
+                us.code LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%') OR
+                us.name LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%')
             )) AND
             (COALESCE(:#{#request.status}, 0) = 0 OR a.status = :#{#request.status}) AND
             (:#{#request.type} IS NULL OR pd.type = :#{#request.type}) AND

@@ -173,16 +173,16 @@ const handleListShift = (record) => {
 
 const handleClearFilter = () => {
   // Clear only search filters but keep necessary parameters
-  filter.factoryName = '';
-  filter.projectId = '';
-  filter.semesterId = null;
+  filter.factoryName = ''
+  filter.projectId = ''
+  filter.semesterId = null
 
   // Reset pagination to first page
-  pagination.current = 1;
-  filter.page = 1;
+  pagination.current = 1
+  filter.page = 1
 
   // Fetch with cleared filters
-  fetchFactoryByTeacher();
+  fetchFactoryByTeacher()
 }
 
 const handleShowDescription = (text) => {

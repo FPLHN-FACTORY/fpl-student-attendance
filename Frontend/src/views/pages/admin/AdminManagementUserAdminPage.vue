@@ -59,7 +59,7 @@ const columns = ref(
     { title: 'Email', dataIndex: 'userAdminEmail', key: 'userAdminEmail' },
     { title: 'Trạng thái', dataIndex: 'userAdminStatus', key: 'userAdminStatus' },
     { title: 'Chức năng', key: 'actions' },
-  ])
+  ]),
 )
 
 const fetchUsers = async () => {
@@ -81,10 +81,10 @@ const fetchUsers = async () => {
     const usersWithFlag = await Promise.all(
       data.data.map(async (user) => {
         const flagRes = await requestAPI.get(
-          `${API_ROUTES_ADMIN.FETCH_DATA_ADMIN}/is-myself/${user.userAdminId}`
+          `${API_ROUTES_ADMIN.FETCH_DATA_ADMIN}/is-myself/${user.userAdminId}`,
         )
         return { ...user, isMySelf: flagRes.data.data }
-      })
+      }),
     )
 
     users.value = usersWithFlag
@@ -191,7 +191,16 @@ const handleUpdateUser = () => {
       },
     })
   } else {
-    performUpdate()
+    Modal.confirm({
+      title: `Xác nhận cập nhật`,
+      type: 'info',
+      content: `Bạn có chắc muốn lưu lại thay đổi?`,
+      okText: 'Tiếp tục',
+      cancelText: 'Hủy bỏ',
+      onOk() {
+        performUpdate()
+      },
+    })
   }
 }
 
@@ -434,13 +443,25 @@ onMounted(() => {
     >
       <a-form layout="vertical">
         <a-form-item label="Mã Admin" required>
-          <a-input v-model:value="newUser.staffCode" placeholder="Nhập mã Admin" />
+          <a-input
+            v-model:value="newUser.staffCode"
+            placeholder="Nhập mã Admin"
+            @keyup.enter="handleAddUser"
+          />
         </a-form-item>
         <a-form-item label="Tên Admin" required>
-          <a-input v-model:value="newUser.staffName" placeholder="Nhập tên Admin" />
+          <a-input
+            v-model:value="newUser.staffName"
+            placeholder="Nhập tên Admin"
+            @keyup.enter="handleAddUser"
+          />
         </a-form-item>
         <a-form-item label="Email" required>
-          <a-input v-model:value="newUser.email" placeholder="Nhập email" />
+          <a-input
+            v-model:value="newUser.email"
+            placeholder="Nhập email"
+            @keyup.enter="handleAddUser"
+          />
         </a-form-item>
       </a-form>
     </a-modal>
@@ -454,13 +475,25 @@ onMounted(() => {
     >
       <a-form layout="vertical">
         <a-form-item label="Mã Admin" required>
-          <a-input v-model:value="editUser.staffCode" placeholder="Nhập mã Admin" />
+          <a-input
+            v-model:value="editUser.staffCode"
+            placeholder="Nhập mã Admin"
+            @keyup.enter="handleUpdateUser"
+          />
         </a-form-item>
         <a-form-item label="Tên Admin" required>
-          <a-input v-model:value="editUser.staffName" placeholder="Nhập tên Admin" />
+          <a-input
+            v-model:value="editUser.staffName"
+            placeholder="Nhập tên Admin"
+            @keyup.enter="handleUpdateUser"
+          />
         </a-form-item>
         <a-form-item label="Email" required>
-          <a-input v-model:value="editUser.email" placeholder="Nhập email" />
+          <a-input
+            v-model:value="editUser.email"
+            placeholder="Nhập email"
+            @keyup.enter="handleUpdateUser"
+          />
         </a-form-item>
       </a-form>
     </a-modal>

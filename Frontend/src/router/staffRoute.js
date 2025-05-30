@@ -3,12 +3,14 @@ import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
 import {
   FileTextOutlined,
   GoldOutlined,
+  PieChartOutlined,
   ProjectOutlined,
   UsergroupAddOutlined,
   ContainerOutlined,
 } from '@ant-design/icons-vue'
 
 export const ROUTE_NAMES = {
+  MANAGEMENT_STATISTICS: 'route_staff_management_statistics',
   MANAGEMENT_PROJECT: 'route_staff_management_project',
   MANAGEMENT_FACTORY: 'route_staff_management_factory',
   MANAGEMENT_STUDENT_FACTORY: 'route_staff_management_student_factory',
@@ -27,12 +29,22 @@ export const StaffRoutes = [
     path: '/Staff',
     name: GLOBAL_ROUTE_NAMES.STAFF_PAGE,
     component: () => import('@/views/layout/StaffLayout.vue'),
-    redirect: { name: ROUTE_NAMES.MANAGEMENT_PROJECT },
+    redirect: { name: ROUTE_NAMES.MANAGEMENT_STATISTICS },
     meta: {
       title: 'Phụ trách xưởng',
       requireRole: ROLE.STAFF,
     },
     children: [
+      {
+        path: 'management-statistics',
+        name: ROUTE_NAMES.MANAGEMENT_STATISTICS,
+        component: () => import('@/views/pages/staff/StaffStatisticsPage.vue'),
+        meta: {
+          selectedKey: selectedKey++,
+          name: 'Thống kê',
+          icon: PieChartOutlined,
+        },
+      },
       {
         path: 'management-project',
         name: ROUTE_NAMES.MANAGEMENT_PROJECT,

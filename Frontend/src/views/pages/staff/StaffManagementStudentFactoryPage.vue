@@ -82,7 +82,7 @@ const columns = ref(
     },
     { title: 'Trạng thái', dataIndex: 'statusStudentFactory', key: 'statusStudentFactory' },
     { title: 'Chi tiết', key: 'action' },
-  ])
+  ]),
 )
 
 /* -------------------- Phân trang cho danh sách sinh viên trong nhóm xưởng -------------------- */
@@ -160,7 +160,7 @@ const studentColumns = ref(
     { title: 'Tên sinh viên', dataIndex: 'name', key: 'name' },
     { title: 'Email', dataIndex: 'email', key: 'email' },
     { title: 'Chọn', key: 'select' },
-  ])
+  ]),
 )
 const selectedStudents = reactive({})
 
@@ -388,7 +388,7 @@ const shiftColumns = ref(
     { title: 'Ca học', dataIndex: 'shift', key: 'shift' },
     { title: 'Trạng thái điểm danh', dataIndex: 'statusAttendance', key: 'statusAttendance' },
     { title: 'Trạng thái', dataIndex: 'status', key: 'status' },
-  ])
+  ]),
 )
 
 let currentStudentForShift = null
@@ -718,16 +718,16 @@ onMounted(() => {
                 record.statusAttendance === 3
                   ? 'success'
                   : record.statusAttendance === null
-                  ? null
-                  : 'error'
+                    ? null
+                    : 'error'
               "
             >
               {{
                 record.statusAttendance === 3
                   ? 'Có mặt'
                   : record.statusAttendance === null
-                  ? ''
-                  : 'Vắng mặt'
+                    ? ''
+                    : 'Vắng mặt'
               }}
             </a-tag>
           </template>
@@ -737,8 +737,8 @@ onMounted(() => {
                 record.status === 'DA_DIEN_RA'
                   ? 'error'
                   : record.status === 'DANG_DIEN_RA'
-                  ? 'processing'
-                  : 'success'
+                    ? 'processing'
+                    : 'success'
               "
             />
             {{ STATUS_PLAN_DATE_DETAIL[record.status] }}

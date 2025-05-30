@@ -70,7 +70,7 @@ const fetchAllAttendanceHistory = async () => {
         promises.push(
           requestAPI.get(API_ROUTES_STUDENT.FETCH_DATA_HISTORY_ATTENDANCE, {
             params: { ...filter, page },
-          })
+          }),
         )
       }
       const responses = await Promise.all(promises)
@@ -116,7 +116,7 @@ const fetchSemesters = () => {
       // Find current semester and set it as default
       const now = new Date().getTime()
       const currentSemester = semesters.value.find(
-        (semester) => semester.fromDate <= now && now <= semester.toDate
+        (semester) => semester.fromDate <= now && now <= semester.toDate,
       )
       if (currentSemester) {
         filter.semesterId = currentSemester.id
@@ -173,7 +173,7 @@ const exportPDF = async (factoryId, factoryName) => {
       {
         params: { factoryName, factoryId },
         responseType: 'blob',
-      }
+      },
     )
     const url = window.URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }))
     const link = document.createElement('a')
@@ -195,7 +195,7 @@ const handleClearFilter = () => {
   // Find current semester when clearing filter
   const now = new Date().getTime()
   const currentSemester = semesters.value.find(
-    (semester) => semester.fromDate <= now && now <= semester.toDate
+    (semester) => semester.fromDate <= now && now <= semester.toDate,
   )
   if (currentSemester) {
     filter.semesterId = currentSemester.id
@@ -360,23 +360,23 @@ onMounted(async () => {
                       record.statusAttendance === 'CHUA_DIEN_RA'
                         ? 'warning'
                         : record.statusAttendance === 'DANG_DIEN_RA'
-                        ? 'processing'
-                        : record.statusAttendance === 'CO_MAT'
-                        ? 'success'
-                        : record.statusAttendance === 'CHECK_IN'
-                        ? 'processing'
-                        : 'error'
+                          ? 'processing'
+                          : record.statusAttendance === 'CO_MAT'
+                            ? 'success'
+                            : record.statusAttendance === 'CHECK_IN'
+                              ? 'processing'
+                              : 'error'
                     "
                     :text="
                       record.statusAttendance === 'CHUA_DIEN_RA'
                         ? 'Chưa diễn ra'
                         : record.statusAttendance === 'DANG_DIEN_RA'
-                        ? 'Đang diễn ra'
-                        : record.statusAttendance === 'CO_MAT'
-                        ? 'Có mặt'
-                        : record.statusAttendance === 'CHECK_IN'
-                        ? 'Đã check-in'
-                        : 'Vắng mặt'
+                          ? 'Đang diễn ra'
+                          : record.statusAttendance === 'CO_MAT'
+                            ? 'Có mặt'
+                            : record.statusAttendance === 'CHECK_IN'
+                              ? 'Đã check-in'
+                              : 'Vắng mặt'
                     "
                   />
                 </template>
