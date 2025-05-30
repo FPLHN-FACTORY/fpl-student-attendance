@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
+import { ref, onMounted, onBeforeUnmount, watch, nextTick, toRaw } from 'vue'
 import { Chart, registerables } from 'chart.js'
 
 Chart.register(...registerables)
@@ -15,10 +15,28 @@ const props = defineProps({
 const chart = ref(null)
 const canvas = ref(null)
 
-const renderChart = () => {
-  if (!canvas.value) return
-  const ctx = canvas.value.getContext('2d')
-  if (chart.value) chart.value.destroy()
+const clearChart = () => {
+  toRaw(chart.value).destroy()
+  chart.value = null
+}
+
+const renderChart = async () => {
+  await nextTick()
+
+  if (!canvas.value || !canvas.value.isConnected) {
+    return
+  }
+
+  const ctx = canvas.value?.getContext('2d')
+
+  if (!ctx) {
+    return
+  }
+
+  if (chart.value) {
+    clearChart()
+  }
+
   chart.value = new Chart(ctx, {
     type: 'line',
     data: props.data,
@@ -88,22 +106,20 @@ const renderChart = () => {
   })
 }
 
-onMounted(async () => {
-  await nextTick()
-  renderChart()
-})
+onMounted(renderChart)
 
 watch(
   () => props.data,
   async () => {
-    await nextTick()
     renderChart()
   },
   { deep: true },
 )
 
 onBeforeUnmount(() => {
-  if (chart.value) chart.value.destroy()
+  if (chart.value) {
+    clearChart()
+  }
 })
 </script>
 
