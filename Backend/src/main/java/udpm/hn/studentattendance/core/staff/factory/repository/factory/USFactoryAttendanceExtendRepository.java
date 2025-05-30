@@ -13,8 +13,7 @@ public interface USFactoryAttendanceExtendRepository extends AttendanceRepositor
     List<Attendance> getAttendanceByPlanDateId(String planDateId);
 
     @Query(value = """
-            DELETE attendance WHERE id_plan_date = :planDateId
-            """, nativeQuery = true
-    )
+            DELETE FROM attendance WHERE id_plan_date = :planDateId
+            """, nativeQuery = true)
     void deleteAllAttendanceByPlanDate(String planDateId);
 }

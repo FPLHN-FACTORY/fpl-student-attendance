@@ -4,9 +4,8 @@ import org.springframework.http.ResponseEntity;
 import udpm.hn.studentattendance.core.admin.subject_facility.model.request.ADSubjectFacilityCreateRequest;
 import udpm.hn.studentattendance.core.admin.subject_facility.model.request.ADSubjectFacilitySearchRequest;
 import udpm.hn.studentattendance.core.admin.subject_facility.model.request.ADSubjectFacilityUpdateRequest;
-import udpm.hn.studentattendance.infrastructure.common.ResponseObject;
 
-public interface Admin_SubjectFacilityService {
+public interface ADSubjectFacilityService {
 
     ResponseEntity<?> getListSubjectFacility(ADSubjectFacilitySearchRequest request);
 

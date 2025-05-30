@@ -26,7 +26,7 @@ public interface ADSubjectRepository extends SubjectRepository {
             LEFT JOIN
                 facility f ON sf.id_facility = f.id AND f.status = 1
              WHERE
-                 (:#{#request.name} IS NULL OR s.name LIKE CONCAT('%', :#{#request.name}, '%'))
+                 (:#{#request.name} IS NULL OR s.name LIKE CONCAT('%', TRIM(:#{#request.name}), '%'))
                  AND (:#{#request.status} IS NULL OR s.status = :#{#request.status})
              GROUP BY
                  s.id, s.name, s.status, s.code, s.created_at
@@ -39,7 +39,7 @@ public interface ADSubjectRepository extends SubjectRepository {
             FROM
                 subject s
             WHERE
-                (:#{#request.name} IS NULL OR s.name LIKE CONCAT('%', :#{#request.name}, '%'))
+                (:#{#request.name} IS NULL OR s.name LIKE CONCAT('%', TRIM(:#{#request.name}), '%'))
                 AND (:#{#request.status} IS NULL OR s.status = :#{#request.status})
             """, nativeQuery = true)
     Page<ADSubjectResponse> getAll(Pageable pageable, ADSubjectSearchRequest request);
@@ -50,8 +50,8 @@ public interface ADSubjectRepository extends SubjectRepository {
                 FROM subject
                 WHERE
                     status = 1 AND
-                    code LIKE :code AND
-                    (:idSubject IS NULL OR id != :idSubject)
+                    code LIKE TRIM(:code) AND
+                    (:idSubject IS NULL OR id != TRIM(:idSubject))
             """, nativeQuery = true)
     boolean isExistsCodeSubject(String code, String idSubject);
 
@@ -61,8 +61,8 @@ public interface ADSubjectRepository extends SubjectRepository {
                 FROM subject
                 WHERE
                     status = 1 AND
-                    name LIKE :name AND
-                    (:idSubject IS NULL OR id != :idSubject)
+                    name LIKE TRIM(:name) AND
+                    (:idSubject IS NULL OR id != TRIM(:idSubject))
             """, nativeQuery = true)
     boolean isExistsNameSubject(String name, String idSubject);
 

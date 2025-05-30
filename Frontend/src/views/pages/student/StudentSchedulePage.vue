@@ -21,6 +21,7 @@ const breadcrumb = ref([
 ])
 const loadingStore = useLoadingStore()
 const isLoading = ref(false)
+const isLoadingExport = ref(false)
 
 const attendanceList = ref([])
 const filter = reactive({
@@ -96,90 +97,96 @@ const handleShowDescription = (text) => {
 }
 
 const exportToExcel = async () => {
-  const wb = new ExcelJS.Workbook()
-  const ws = wb.addWorksheet('DanhSach')
+  isLoadingExport.value = true
+  try {
+    const wb = new ExcelJS.Workbook()
+    const ws = wb.addWorksheet('DanhSach')
 
-  // 1. Định nghĩa cột + độ rộng
-  ws.columns = [
-    { header: 'STT', key: 'stt', width: 6 },
-    { header: 'Ngày điểm danh', key: 'day', width: 45 },
-    { header: 'Ca', key: 'shift', width: 35 },
-    { header: 'Nhóm xưởng', key: 'factoryName', width: 30 },
-    { header: 'Dự án', key: 'projectName', width: 30 },
-    { header: 'Tên môn học', key: 'subjectName', width: 30 },
-    { header: 'Tên giảng viên', key: 'staffName', width: 30 },
-    { header: 'Mô tả', key: 'description', width: 40 },
-  ]
+    // 1. Định nghĩa cột + độ rộng
+    ws.columns = [
+      { header: 'STT', key: 'stt', width: 6 },
+      { header: 'Ngày điểm danh', key: 'day', width: 45 },
+      { header: 'Ca', key: 'shift', width: 35 },
+      { header: 'Nhóm xưởng', key: 'factoryName', width: 30 },
+      { header: 'Dự án', key: 'projectName', width: 30 },
+      { header: 'Tên môn học', key: 'subjectName', width: 30 },
+      { header: 'Tên giảng viên', key: 'staffName', width: 30 },
+      { header: 'Mô tả', key: 'description', width: 40 },
+    ]
 
-  // 2. Thêm dữ liệu (giữ nguyên logic cũ của bạn)
-  attendanceList.value.forEach((item, idx) => {
-    const dayString = `${dayOfWeek(item.attendanceDayStart)}, ${formatDate(
-      item.attendanceDayStart,
-      DEFAULT_DATE_FORMAT,
-    )}`
-    const timeRange = `${formatDate(item.attendanceDayStart, 'HH:mm')} - ${formatDate(
-      item.attendanceDayEnd,
-      'HH:mm',
-    )}`
+    // 2. Thêm dữ liệu (giữ nguyên logic cũ của bạn)
+    attendanceList.value.forEach((item, idx) => {
+      const dayString = `${dayOfWeek(item.attendanceDayStart)}, ${formatDate(
+        item.attendanceDayStart,
+        DEFAULT_DATE_FORMAT,
+      )}`
+      const timeRange = `${formatDate(item.attendanceDayStart, 'HH:mm')} - ${formatDate(
+        item.attendanceDayEnd,
+        'HH:mm',
+      )}`
 
-    ws.addRow({
-      stt: idx + 1,
-      day: `${dayString} ${timeRange}`,
-      shift: `Ca ${item.shift}`,
-      factoryName: item.factoryName,
-      projectName: item.projectName,
-      subjectName: item.subjectName,
-      staffName: item.staffName,
-      description: item.description || '',
+      ws.addRow({
+        stt: idx + 1,
+        day: `${dayString} ${timeRange}`,
+        shift: `Ca ${item.shift}`,
+        factoryName: item.factoryName,
+        projectName: item.projectName,
+        subjectName: item.subjectName,
+        staffName: item.staffName,
+        description: item.description || '',
+      })
     })
-  })
 
-  // 3. Style header
-  const headerRow = ws.getRow(1)
-  headerRow.font = { bold: true, size: 12 }
-  headerRow.alignment = { vertical: 'middle', horizontal: 'center' }
-  headerRow.eachCell((cell) => {
-    cell.fill = {
-      type: 'pattern',
-      pattern: 'solid',
-      fgColor: { argb: 'FFADD8E6' },
-    }
-  })
+    // 3. Style header
+    const headerRow = ws.getRow(1)
+    headerRow.font = { bold: true, size: 12 }
+    headerRow.alignment = { vertical: 'middle', horizontal: 'center' }
+    headerRow.eachCell((cell) => {
+      cell.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FFADD8E6' },
+      }
+    })
 
-  // 4. Wrap text cho cột description
-  ws.getColumn('description').alignment = { wrapText: true }
+    // 4. Wrap text cho cột description
+    ws.getColumn('description').alignment = { wrapText: true }
 
-  // —— BẮT ĐẦU CHO READ-ONLY —— //
+    // —— BẮT ĐẦU CHO READ-ONLY —— //
 
-  // 5. Đánh dấu tất cả các ô là locked (mặc định locked=true, nhưng làm rõ lại)
-  ws.eachRow((row) =>
-    row.eachCell((cell) => {
-      cell.protection = { locked: true }
-    }),
-  )
+    // 5. Đánh dấu tất cả các ô là locked (mặc định locked=true, nhưng làm rõ lại)
+    ws.eachRow((row) =>
+      row.eachCell((cell) => {
+        cell.protection = { locked: true }
+      }),
+    )
 
-  // 6. Protect toàn bộ worksheet
-  //    - Nếu muốn để không có mật khẩu thì gọi ws.protect() không tham số.
-  //    - Nếu muốn mật khẩu, truyền vào string, ví dụ '1234'.
-  await ws.protect('', {
-    selectLockedCells: true,
-    selectUnlockedCells: true,
-    formatCells: false,
-    formatRows: false,
-    formatColumns: false,
-    insertRows: false,
-    deleteRows: false,
-    // ... bạn có thể tắt thêm các quyền khác nếu cần
-  })
 
-  // —— KẾT THÚC READ-ONLY —— //
+    await ws.protect('', {
+      selectLockedCells: true,
+      selectUnlockedCells: true,
+      formatCells: false,
+      formatRows: false,
+      formatColumns: false,
+      insertRows: false,
+      deleteRows: false,
+      // ... bạn có thể tắt thêm các quyền khác nếu cần
+    })
 
-  // 7. Xuất file
-  const buf = await wb.xlsx.writeBuffer()
-  saveAs(new Blob([buf]), 'DiemDanh.xlsx')
+    // —— KẾT THÚC READ-ONLY —— //
+
+    // 7. Xuất file
+    const buf = await wb.xlsx.writeBuffer()
+    saveAs(new Blob([buf]), 'DiemDanh.xlsx')
+  } catch (error) {
+    message.error('Lỗi khi xuất Excel: ' + error.message)
+  } finally {
+    isLoadingExport.value = false
+  }
 }
 
 const exportToPDF = () => {
+  isLoadingExport.value = true
   const { now, max } = getTimeRange()
 
   loadingStore.show()
@@ -195,16 +202,17 @@ const exportToPDF = () => {
     })
     .then((res) => {
       const blob = new Blob([res.data], { type: 'application/pdf' })
-      // đặt tên file có dấu Unicode
       const fileName = 'DiemDanh.pdf'
-      // sử dụng FileSaver để đảm bảo cross-browser
       saveAs(blob, fileName)
       message.success('Xuất file PDF thành công')
     })
     .catch((err) => {
       message.error(err.response?.data?.message || 'Lỗi khi xuất file PDF')
     })
-    .finally(() => loadingStore.hide())
+    .finally(() => {
+      loadingStore.hide()
+      isLoadingExport.value = false
+    })
 }
 
 const handleClearFilter = () => {
@@ -265,8 +273,8 @@ onMounted(() => {
             Danh sách điểm danh
           </template>
           <div class="d-flex justify-content-end mb-3">
-            <a-button type="primary" @click="exportToExcel" class="me-3">Tải xuống Excel</a-button>
-            <a-button type="default" @click="exportToPDF">Tải xuống PDF</a-button>
+            <a-button type="primary" @click="exportToExcel" :loading="isLoadingExport" class="me-3">Tải xuống Excel</a-button>
+            <a-button type="default" @click="exportToPDF" :loading="isLoadingExport">Tải xuống PDF</a-button>
           </div>
 
           <a-table
@@ -311,9 +319,6 @@ onMounted(() => {
               </template>
               <template v-else-if="column.dataIndex === 'link'">
                 <a v-if="record.link" :href="record.link" target="_blank">{{ record.link }}</a>
-              </template>
-              <template v-if="column.dataIndex === 'staffName'">
-                <a-tag color="green">{{ record.staffName }}</a-tag>
               </template>
               <template v-if="column.dataIndex === 'factoryName'">
                 <a-badge status="processing" :text="record.factoryName" />

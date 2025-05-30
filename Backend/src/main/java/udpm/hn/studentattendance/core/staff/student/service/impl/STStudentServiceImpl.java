@@ -62,11 +62,11 @@ public class STStudentServiceImpl implements STStudentService {
     public ResponseEntity<?> createStudent(USStudentCreateUpdateRequest studentCreateUpdateRequest) {
         // Validate input
         if (!ValidateHelper.isValidCode(studentCreateUpdateRequest.getCode())) {
-            return RouterHelper.responseError("Mã sinh viên không hợp lệ");
+            return RouterHelper.responseError("Mã sinh viên không hợp lệ: không có khoảng trắng, không có ký tự đặc biệt ngoài dấu chấm . và dấu gạch dưới _.");
         }
 
         if (!ValidateHelper.isValidFullname(studentCreateUpdateRequest.getName())) {
-            return RouterHelper.responseError("Họ tên sinh viên không hợp lệ");
+            return RouterHelper.responseError("Họ Tên admin không hợp lệ: Tối thiểu 2 từ, cách nhau bởi khoảng trắng và Chỉ gồm ký tự chữ không chứa số hay ký tự đặc biệt.");
         }
 
         if (!ValidateHelper.isValidEmailGmail(studentCreateUpdateRequest.getEmail())) {
@@ -101,11 +101,11 @@ public class STStudentServiceImpl implements STStudentService {
     public ResponseEntity<?> updateStudent(USStudentCreateUpdateRequest studentCreateUpdateRequest) {
         // Validate input
         if (!ValidateHelper.isValidCode(studentCreateUpdateRequest.getCode())) {
-            return RouterHelper.responseError("Mã sinh viên không hợp lệ");
+            return RouterHelper.responseError("Mã sinh viên không hợp lệ: không có khoảng trắng, không có ký tự đặc biệt ngoài dấu chấm . và dấu gạch dưới _.");
         }
 
         if (!ValidateHelper.isValidFullname(studentCreateUpdateRequest.getName())) {
-            return RouterHelper.responseError("Họ tên sinh viên không hợp lệ");
+            return RouterHelper.responseError("Họ Tên sinh viên không hợp lệ: Tối thiểu 2 từ, cách nhau bởi khoảng trắng và Chỉ gồm ký tự chữ không chứa số hay ký tự đặc biệt.");
         }
 
         if (!ValidateHelper.isValidEmailGmail(studentCreateUpdateRequest.getEmail())) {

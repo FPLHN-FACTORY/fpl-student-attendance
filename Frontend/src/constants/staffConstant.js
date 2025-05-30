@@ -18,4 +18,6 @@ export const API_ROUTES_STAFF = {
   FETCH_DATA_STATISTICS: API_URL + '/staff/statistics-management',
 
   FETCH_DATA_PLAN_DATE_ATTENDANCE: API_URL + '/staff/plan-date-attendance-management',
+
+  FETCH_DATA_ATTENDANCE_RECOVERY: API_URL + '/staff/attendance-recovery-management',
 }
