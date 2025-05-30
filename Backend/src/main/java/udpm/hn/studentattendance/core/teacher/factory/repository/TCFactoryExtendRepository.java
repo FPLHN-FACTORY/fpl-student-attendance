@@ -52,8 +52,8 @@ public interface TCFactoryExtendRepository extends FactoryRepository {
                 AND sf.status = 1
                 AND ft.status = 1
                 AND (:#{#teacherStudentRequest.semesterId} IS NULL OR s.id = :#{#teacherStudentRequest.semesterId})
-                AND (:#{#teacherStudentRequest.factoryName} IS NULL OR ft.name LIKE CONCAT('%', :#{#teacherStudentRequest.factoryName}, '%'))
-                AND (:#{#teacherStudentRequest.projectId} IS NULL OR p.id LIKE CONCAT('%', :#{#teacherStudentRequest.projectId}, '%'))
+                AND (:#{#teacherStudentRequest.factoryName} IS NULL OR ft.name LIKE CONCAT('%', TRIM(:#{#teacherStudentRequest.factoryName}), '%'))
+                AND (:#{#teacherStudentRequest.projectId} IS NULL OR p.id LIKE CONCAT('%', TRIM(:#{#teacherStudentRequest.projectId}), '%'))
                 AND (:#{#teacherStudentRequest.factoryStatus} IS NULL OR ft.status = :#{#teacherStudentRequest.factoryStatus})
 
             ORDER BY ft.created_at DESC
@@ -72,13 +72,13 @@ public interface TCFactoryExtendRepository extends FactoryRepository {
                 AND p.status = 1
                 AND sf.status = 1
                 AND ft.status = 1
-                AND (:#{#teacherStudentRequest.factoryName} IS NULL OR ft.name LIKE CONCAT('%', :#{#teacherStudentRequest.factoryName}, '%'))
-                AND (:#{#teacherStudentRequest.projectId} IS NULL OR p.id LIKE CONCAT('%', :#{#teacherStudentRequest.projectId}, '%'))
+                AND (:#{#teacherStudentRequest.factoryName} IS NULL OR ft.name LIKE CONCAT('%', TRIM(:#{#teacherStudentRequest.factoryName}), '%'))
+                AND (:#{#teacherStudentRequest.projectId} IS NULL OR p.id LIKE CONCAT('%', TRIM(:#{#teacherStudentRequest.projectId}), '%'))
                 AND (:#{#teacherStudentRequest.factoryStatus} IS NULL OR ft.status = :#{#teacherStudentRequest.factoryStatus})
                 AND (:#{#teacherStudentRequest.semesterId} IS NULL OR s.id = :#{#teacherStudentRequest.semesterId})
 
             """, nativeQuery = true)
     Page<TCFactoryResponse> getAllFactoryByTeacher(Pageable pageable, String facilityId, String userStaffCode,
-                                                   TCFactoryRequest teacherStudentRequest);
+            TCFactoryRequest teacherStudentRequest);
 
 }

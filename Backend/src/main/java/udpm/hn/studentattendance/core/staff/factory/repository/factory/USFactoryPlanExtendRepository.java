@@ -34,4 +34,6 @@ public interface USFactoryPlanExtendRepository extends PlanFactoryRepository {
                 """, nativeQuery = true)
         boolean existsByFactoryIdAndPlanId(String factoryId, String planId);
 
+
+
 }

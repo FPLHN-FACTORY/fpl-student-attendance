@@ -575,7 +575,7 @@ onMounted(() => {
                 </span>
               </div>
               <div>
-                <a-button type="primary" @click="handleExportPDF">
+                <a-button type="primary" @click="handleExportPDF" :loading="isLoading">
                   <DownloadOutlined /> Xuất PDF
                 </a-button>
               </div>
@@ -754,6 +754,7 @@ onMounted(() => {
       title="Nhập link học để chuyển sang Online"
       @ok="confirmLinkModal"
       @cancel="showLinkModal = false"
+      :okButtonProps="{ loading: isLoading }"
     >
       <a-form layout="vertical">
         <a-form-item label="Link học">
@@ -767,6 +768,7 @@ onMounted(() => {
       title="Nhập phòng học để chuyển sang Offline"
       @ok="confirmRoomModal"
       @cancel="showRoomModal = false"
+      :okButtonProps="{ loading: isLoading }"
     >
       <a-form layout="vertical">
         <a-form-item label="Phòng học">
