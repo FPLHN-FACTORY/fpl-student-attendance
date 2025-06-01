@@ -22,4 +22,8 @@ public interface SSPlanDateStudentFactoryResponse extends IsIdentify, HasOrderNu
 
     Integer getRequiredCheckout();
 
+    Long getLateCheckin();
+
+    Long getLateCheckout();
+
 }
