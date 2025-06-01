@@ -22,7 +22,6 @@ import java.io.Serializable;
 @NoArgsConstructor
 @Table(name = "subject_facility")
 @DynamicUpdate
-@ToString
 public class SubjectFacility extends PrimaryEntity implements Serializable {
 
     @ManyToOne
