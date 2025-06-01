@@ -226,7 +226,7 @@ public class TSStatisticsServiceImpl implements TSStatisticsService {
                     dataCell.add(studentCode);
                     dataCell.add(studentName);
 
-                    int total_absent = 0;
+                    double total_absent = 0;
                     int total_recovery = 0;
                     for(String namePlanDate: lstPlanDate) {
                         TSPlanDateStudentFactoryResponse planDate = lstData.stream().filter(s -> s.getCode().equals(studentCode) && buildCellPlanDate(s).equals(namePlanDate)).findFirst().orElse(null);
@@ -237,6 +237,7 @@ public class TSStatisticsServiceImpl implements TSStatisticsService {
                         if (planDate.getStatus() == AttendanceStatus.PRESENT.ordinal()) {
                             if (planDate.getLateCheckin() != null && planDate.getLateCheckin() > 0 || planDate.getLateCheckout() != null && planDate.getLateCheckout() > 0) {
                                 total_recovery++;
+                                total_absent += 0.5;
                                 dataCell.add("Có mặt (bù)");
                             } else {
                                 dataCell.add("Có mặt");
@@ -248,7 +249,7 @@ public class TSStatisticsServiceImpl implements TSStatisticsService {
                     }
 
                     dataCell.add(total_absent + "/" + lstPlanDate.size());
-                    dataCell.add(Math.round((double) total_absent / lstPlanDate.size() * 1000) / 10.0 + "%");
+                    dataCell.add(Math.round(total_absent / lstPlanDate.size() * 1000) / 10.0 + "%");
                     dataCell.add(total_recovery);
 
                     ExcelUtils.insertRow(sheet, row, dataCell, colorMap);
