@@ -19,7 +19,6 @@ import java.io.Serializable;
 @NoArgsConstructor
 @Table(name = "facility")
 @DynamicUpdate
-@ToString
 public class Facility extends PrimaryEntity implements Serializable {
 
     @Column(name = "code", length = EntityProperties.LENGTH_NAME)
