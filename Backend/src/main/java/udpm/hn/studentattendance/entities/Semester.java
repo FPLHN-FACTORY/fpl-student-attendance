@@ -18,7 +18,6 @@ import java.io.Serializable;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-@ToString
 @Table(name = "semester")
 @DynamicUpdate
 public class Semester extends PrimaryEntity implements Serializable {

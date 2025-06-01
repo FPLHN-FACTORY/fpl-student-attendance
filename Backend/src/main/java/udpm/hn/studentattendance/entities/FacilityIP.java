@@ -26,7 +26,6 @@ import java.io.Serializable;
 @NoArgsConstructor
 @Table(name = "facility_ip")
 @DynamicUpdate
-@ToString
 public class FacilityIP extends PrimaryEntity implements Serializable {
 
     @Column(name = "type")
