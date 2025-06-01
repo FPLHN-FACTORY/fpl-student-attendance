@@ -5,6 +5,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import udpm.hn.studentattendance.core.staff.attendancerecovery.model.request.STStudentAttendanceRecoveryRequest;
+import udpm.hn.studentattendance.core.staff.attendancerecovery.service.STAttendanceRecoveryService;
+import udpm.hn.studentattendance.core.staff.student.model.request.USStudentCreateUpdateRequest;
 import udpm.hn.studentattendance.helpers.ExcelHelper;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
 import udpm.hn.studentattendance.helpers.RouterHelper;
@@ -12,6 +15,7 @@ import udpm.hn.studentattendance.helpers.SessionHelper;
 import udpm.hn.studentattendance.infrastructure.common.ApiResponse;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.constants.ImportLogType;
+import udpm.hn.studentattendance.infrastructure.constants.RestApiStatus;
 import udpm.hn.studentattendance.infrastructure.excel.model.request.EXDataRequest;
 import udpm.hn.studentattendance.infrastructure.excel.model.request.EXImportRequest;
 import udpm.hn.studentattendance.infrastructure.excel.model.request.EXUploadRequest;
@@ -21,6 +25,10 @@ import udpm.hn.studentattendance.infrastructure.excel.repositories.EXImportLogDe
 import udpm.hn.studentattendance.infrastructure.excel.repositories.EXImportLogRepository;
 import udpm.hn.studentattendance.infrastructure.excel.service.EXAttendanceRecoveryService;
 
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -30,6 +38,7 @@ import java.util.Map;
 public class EXAttendanceRecoveryServiceImpl implements EXAttendanceRecoveryService {
 
 
+
     private final EXImportLogRepository importLogRepository;
 
     private final EXImportLogDetailRepository importLogDetailRepository;
@@ -37,6 +46,8 @@ public class EXAttendanceRecoveryServiceImpl implements EXAttendanceRecoveryServ
     private final SessionHelper sessionHelper;
 
     private final ExcelHelper excelHelper;
+
+    private final STAttendanceRecoveryService attendanceRecoveryService;
 
     @Override
     public ResponseEntity<?> getDataFromFile(EXUploadRequest request) {
@@ -56,7 +67,39 @@ public class EXAttendanceRecoveryServiceImpl implements EXAttendanceRecoveryServ
     public ResponseEntity<?> importItem(EXImportRequest request) {
         Map<String, String> item = request.getItem();
 
-        return null;
+        String dayString = item.get("NGAY_DIEM_DANH");
+        if (dayString.isEmpty() || dayString == null || dayString.equals("")){
+            String msg = "Thông tin về ngày điểm danh không được để trống.";
+            excelHelper.saveLogError(ImportLogType.ATTENDANCE_RECOVERY, msg, request);
+            return RouterHelper.responseError(msg, HttpStatus.BAD_REQUEST);
+        }
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
+        LocalDateTime localDateTime = LocalDateTime.parse(dayString, formatter);
+        ZoneId vietnamZone = ZoneId.of("Asia/Ho_Chi_Minh");
+        ZonedDateTime zonedDateTime = localDateTime.atZone(vietnamZone);
+
+        Long dayAttendance = zonedDateTime.toInstant().toEpochMilli();
+
+        String studentCode = item.get("MA_SINH_VIEN");
+        if (studentCode.isEmpty() || studentCode == null || studentCode.equals("")){
+            String msg = "Thông tin về mã sinh viên không được để trống.";
+            excelHelper.saveLogError(ImportLogType.ATTENDANCE_RECOVERY, msg, request);
+            return RouterHelper.responseError(msg, HttpStatus.BAD_REQUEST);
+        }
+
+        STStudentAttendanceRecoveryRequest stStudentAttendanceRecoveryRequest = new STStudentAttendanceRecoveryRequest();
+        stStudentAttendanceRecoveryRequest.setStudentCode(studentCode);
+        stStudentAttendanceRecoveryRequest.setDay(dayAttendance);
+
+        ResponseEntity<ApiResponse> result = (ResponseEntity<ApiResponse>) attendanceRecoveryService.importAttendanceRecoveryStudent(stStudentAttendanceRecoveryRequest);
+        ApiResponse response = result.getBody();
+        if (response.getStatus() == RestApiStatus.SUCCESS) {
+            excelHelper.saveLogSuccess(ImportLogType.ATTENDANCE_RECOVERY, response.getMessage(), request);
+        } else {
+            excelHelper.saveLogError(ImportLogType.ATTENDANCE_RECOVERY, response.getMessage(), request);
+        }
+        return result;
     }
 
     @Override
@@ -69,7 +112,7 @@ public class EXAttendanceRecoveryServiceImpl implements EXAttendanceRecoveryServ
 
         String filename = "template-import-attendance-recovery.xlsx";
 
-        List<String> headers = List.of("Mã sinh viên", "Họ và tên", "Nhóm");
+        List<String> headers = List.of("Ngày điểm danh", "Mã sinh viên", "Họ và tên");
         byte[] data = ExcelHelper.createExcelStream("student-recovery", headers, new ArrayList<>());
         if (data == null) {
             return null;

@@ -12,5 +12,5 @@ public class STStudentAttendanceRecoveryRequest {
     private String studentCode;
 
     // vẽ sơ đồ
-    private String factoryName;
+//    private String factoryName;
 }
