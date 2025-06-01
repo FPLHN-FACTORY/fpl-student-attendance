@@ -32,6 +32,7 @@ public interface SPDPlanRepository extends PlanRepository {
                     s.from_date AS fromDateSemester,
                     s.to_date AS toDateSemester,
                     pl.description,
+                    pl.max_late_arrival,
                     CONCAT(s.name, ' - ', s.year) AS semesterName,
                     s2.name AS subjectName,
                     LEAST(pl.status, p.status, lp.status, s.status, sf.status, s2.status) AS status
@@ -91,6 +92,7 @@ public interface SPDPlanRepository extends PlanRepository {
                     s.from_date AS fromDateSemester,
                     s.to_date AS toDateSemester,
                     pl.description,
+                    pl.max_late_arrival,
                     CONCAT(s.name, ' - ', s.year) AS semesterName,
                     s2.name AS subjectName,
                     LEAST(pl.status, p.status, lp.status, s.status, sf.status, s2.status) AS status
