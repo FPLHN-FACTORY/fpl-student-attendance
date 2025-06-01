@@ -25,7 +25,6 @@ import java.io.Serializable;
 @NoArgsConstructor
 @Table(name = "user_activity_log")
 @DynamicUpdate
-@ToString
 public class UserActivityLog extends PrimaryEntity implements Serializable {
 
     @Column(name = "id_user", length = EntityProperties.LENGTH_CODE)
