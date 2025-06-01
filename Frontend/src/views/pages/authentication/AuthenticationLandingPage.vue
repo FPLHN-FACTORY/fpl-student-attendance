@@ -64,11 +64,7 @@ const isRoleAdm =
 
 if (isRouteAdm || isRoleAdm) {
   roles = roles.filter((o) => o.role !== ROLE.STUDENT)
-}
-
-const isRoleStudent = authStore?.user?.role.includes(ROLE.STUDENT)
-
-if (!roles.length || isRoleStudent) {
+} else {
   roles = roles.filter((o) => o.role === ROLE.STUDENT)
 }
 
