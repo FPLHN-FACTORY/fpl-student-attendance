@@ -29,7 +29,32 @@ const facilityID = ref(null)
 const isShowModalSelectFacility = ref(false)
 const lstFacility = ref([])
 
-let roles = []
+let roles = (roles = [
+  {
+    role: ROLE.ADMIN,
+    label: 'Admin',
+    img: imgRoleAdmin,
+    route: GLOBAL_ROUTE_NAMES.ADMIN_PAGE,
+  },
+  {
+    role: ROLE.STAFF,
+    label: 'Phụ trách xưởng',
+    img: imgRoleStaff,
+    route: GLOBAL_ROUTE_NAMES.STAFF_PAGE,
+  },
+  {
+    role: ROLE.TEACHER,
+    label: 'Giảng viên',
+    img: imgRoleTeacher,
+    route: GLOBAL_ROUTE_NAMES.TEACHER_PAGE,
+  },
+  {
+    role: ROLE.STUDENT,
+    label: 'Sinh viên',
+    img: imgRoleStudent,
+    route: GLOBAL_ROUTE_NAMES.STUDENT_PAGE,
+  },
+])
 
 const isRouteAdm = route.path === PREFIX_ADMIN_PANEL
 const isRoleAdm =
@@ -38,39 +63,17 @@ const isRoleAdm =
   authStore?.user?.role.includes(ROLE.TEACHER)
 
 if (isRouteAdm || isRoleAdm) {
-  roles = [
-    {
-      role: ROLE.ADMIN,
-      label: 'Admin',
-      img: imgRoleAdmin,
-      route: GLOBAL_ROUTE_NAMES.ADMIN_PAGE,
-    },
-    {
-      role: ROLE.STAFF,
-      label: 'Phụ trách xưởng',
-      img: imgRoleStaff,
-      route: GLOBAL_ROUTE_NAMES.STAFF_PAGE,
-    },
-    {
-      role: ROLE.TEACHER,
-      label: 'Giảng viên',
-      img: imgRoleTeacher,
-      route: GLOBAL_ROUTE_NAMES.TEACHER_PAGE,
-    },
-  ]
+  roles = roles.filter((o) => o.role !== ROLE.STUDENT)
 }
 
 const isRoleStudent = authStore?.user?.role.includes(ROLE.STUDENT)
 
 if (!roles.length || isRoleStudent) {
-  roles = [
-    {
-      role: ROLE.STUDENT,
-      label: 'Sinh viên',
-      img: imgRoleStudent,
-      route: GLOBAL_ROUTE_NAMES.STUDENT_PAGE,
-    },
-  ]
+  roles = roles.filter((o) => o.role === ROLE.STUDENT)
+}
+
+if (!roles.length && authStore.isLogin) {
+  roles = roles.filter((o) => authStore.user.role.includes(o.role))
 }
 
 const showModalSelectFacility = () => (isShowModalSelectFacility.value = true)
