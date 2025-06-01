@@ -29,7 +29,7 @@ const facilityID = ref(null)
 const isShowModalSelectFacility = ref(false)
 const lstFacility = ref([])
 
-let roles = (roles = [
+let roles = [
   {
     role: ROLE.ADMIN,
     label: 'Admin',
@@ -54,7 +54,7 @@ let roles = (roles = [
     img: imgRoleStudent,
     route: GLOBAL_ROUTE_NAMES.STUDENT_PAGE,
   },
-])
+]
 
 const isRouteAdm = route.path === PREFIX_ADMIN_PANEL
 const isRoleAdm =
