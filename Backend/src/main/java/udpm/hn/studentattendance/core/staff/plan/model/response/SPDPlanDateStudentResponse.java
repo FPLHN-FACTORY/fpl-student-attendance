@@ -12,4 +12,8 @@ public interface SPDPlanDateStudentResponse extends IsIdentify, HasOrderNumber, 
 
     Integer getStatus();
 
+    Long getLateCheckin();
+
+    Long getLateCheckout();
+    
 }

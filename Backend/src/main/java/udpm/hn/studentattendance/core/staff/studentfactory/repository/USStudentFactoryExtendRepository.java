@@ -59,13 +59,32 @@ public interface USStudentFactoryExtendRepository extends UserStudentFactoryRepo
                             a.id_user_student = usf.id_user_student
                     )
                 ) AS totalAbsentShift,
+                (SELECT COUNT(*) FROM plan_date WHERE id_plan_factory = pf.id) / 100 * COALESCE(p.max_late_arrival, 0)  AS totalLateAttendance,
+                (
+                  SELECT
+                      SUM(
+                          CASE
+                            WHEN a2.late_checkin IS NOT NULL AND a2.late_checkout IS NOT NULL THEN 2
+                            WHEN a2.late_checkin IS NOT NULL OR a2.late_checkout IS NOT NULL THEN 1
+                            ELSE 0
+                          END
+                      )
+                  FROM attendance a2
+                  JOIN plan_date pd2 ON pd2.id = a2.id_plan_date
+                  WHERE
+                    pd2.status = 1 AND
+                    a2.id_user_student = usf.id_user_student AND
+                    pd2.id_plan_factory = pf.id
+                ) AS currentLateAttendance,
                 us.name AS studentName,
                 us.email AS studentEmail,
                 usf.status AS statusStudentFactory,
                 ROW_NUMBER() OVER (ORDER BY usf.created_at DESC) AS rowNumber
             FROM user_student_factory usf
             LEFT JOIN user_student us ON us.id = usf.id_user_student
-            LEFT JOIN factory ft ON ft.id = usf.id_factory
+            JOIN factory ft ON ft.id = usf.id_factory
+            LEFT JOIN plan_factory pf ON ft.id = pf.id_factory AND pf.status = 1
+            LEFT JOIN plan p ON pf.id_plan = p.id AND p.status = 1
             CROSS JOIN cte_total_current_shift cte_tcs
             CROSS JOIN cte_total_shift cte_ts
             WHERE
@@ -84,7 +103,7 @@ public interface USStudentFactoryExtendRepository extends UserStudentFactoryRepo
             SELECT COUNT(DISTINCT usf.id)
             FROM user_student_factory usf
             LEFT JOIN user_student us ON us.id = usf.id_user_student
-            LEFT JOIN factory ft ON ft.id = usf.id_factory
+            JOIN factory ft ON ft.id = usf.id_factory
             WHERE
                 ft.id = :factoryId
                 AND ft.status = 1
