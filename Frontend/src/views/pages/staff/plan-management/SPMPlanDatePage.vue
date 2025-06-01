@@ -320,7 +320,7 @@ const handleShowAdd = () => {
   formData.startDate = dayjs()
   formData.shift = []
   formData.link = null
-  formData.type = null
+  formData.type = Object.keys(TYPE_SHIFT)[0]
   formData.room = null
   formData.requiredLocation = STATUS_TYPE.ENABLE
   formData.requiredIp = STATUS_TYPE.ENABLE
@@ -539,6 +539,9 @@ watch(
         >
           <a-select-option v-for="o in lstShift" :key="o.id" :value="o.shift">
             {{ SHIFT[o.shift] }}
+            ({{
+              `${String(o.fromHour).padStart(2, 0)}:${String(o.fromMinute).padStart(2, 0)} - ${String(o.toHour).padStart(2, 0)}:${String(o.toMinute).padStart(2, 0)}`
+            }})
           </a-select-option>
         </a-select>
       </a-form-item>
@@ -629,7 +632,11 @@ watch(
           <div class="col-sm-6">
             <a-switch
               class="me-2"
-              :checked="formData.requiredIp === STATUS_TYPE.ENABLE"
+              :checked="
+                formData.requiredIp === STATUS_TYPE.ENABLE &&
+                formData.type === Object.keys(TYPE_SHIFT)[0]
+              "
+              :disabled="formData.type !== Object.keys(TYPE_SHIFT)[0]"
               @change="
                 formData.requiredIp =
                   formData.requiredIp === STATUS_TYPE.ENABLE
@@ -644,7 +651,11 @@ watch(
           <div class="col-sm-6">
             <a-switch
               class="me-2"
-              :checked="formData.requiredLocation === STATUS_TYPE.ENABLE"
+              :checked="
+                formData.requiredLocation === STATUS_TYPE.ENABLE &&
+                formData.type === Object.keys(TYPE_SHIFT)[0]
+              "
+              :disabled="formData.type !== Object.keys(TYPE_SHIFT)[0]"
               @change="
                 formData.requiredLocation =
                   formData.requiredLocation === STATUS_TYPE.ENABLE

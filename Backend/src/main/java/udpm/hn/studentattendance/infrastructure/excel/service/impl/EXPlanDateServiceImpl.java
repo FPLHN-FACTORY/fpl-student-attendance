@@ -135,6 +135,8 @@ public class EXPlanDateServiceImpl implements EXPlanDateService {
         String phongHoc = item.get("PHONG_HOC");
         String checkIp = item.get("CHECK_IP");
         String checkDiaDiem = item.get("CHECK_DIA_DIEM");
+        String yeuCauCheckin = item.get("YEU_CAU_CHECKIN");
+        String yeuCauCheckout = item.get("YEU_CAU_CHECKOUT");
 
         try {
             addOrUpdatePlanDateRequest.setStartDate(DateTimeUtils.convertStringToTimeMillis(ngayDienRa, "dd/MM/yyyy"));
@@ -165,7 +167,7 @@ public class EXPlanDateServiceImpl implements EXPlanDateService {
         try {
             addOrUpdatePlanDateRequest.setLateArrival((int) Double.parseDouble(diemDanhMuonToiDa));
         } catch (Exception e) {
-            return error("Thời gian điểm danh muộn tối đa không hợp lệ (14, 21, ...)", diemDanhMuonToiDa, request);
+            return error("Thời gian điểm danh muộn tối đa không hợp lệ (0, 15, ...)", diemDanhMuonToiDa, request);
         }
 
         try {
@@ -183,9 +185,29 @@ public class EXPlanDateServiceImpl implements EXPlanDateService {
                 throw new RuntimeException();
             }
             boolean isCheckLocation = Boolean.parseBoolean(checkDiaDiem);
-            addOrUpdatePlanDateRequest.setRequiredIp(isCheckLocation ? StatusType.ENABLE.getKey() : StatusType.DISABLE.getKey());
+            addOrUpdatePlanDateRequest.setRequiredLocation(isCheckLocation ? StatusType.ENABLE.getKey() : StatusType.DISABLE.getKey());
         } catch (Exception e) {
             return error("Check địa điểm không hợp lệ (TRUE / FALSE)", checkDiaDiem, request);
+        }
+
+        try {
+            if(!StringUtils.hasText(yeuCauCheckin)) {
+                throw new RuntimeException();
+            }
+            boolean isRequiredCheckin = Boolean.parseBoolean(yeuCauCheckin);
+            addOrUpdatePlanDateRequest.setRequiredCheckin(isRequiredCheckin ? StatusType.ENABLE.getKey() : StatusType.DISABLE.getKey());
+        } catch (Exception e) {
+            return error("Yêu cầu checkin không hợp lệ (TRUE / FALSE)", yeuCauCheckin, request);
+        }
+
+        try {
+            if(!StringUtils.hasText(yeuCauCheckout)) {
+                throw new RuntimeException();
+            }
+            boolean isRequiredCheckout = Boolean.parseBoolean(yeuCauCheckout);
+            addOrUpdatePlanDateRequest.setRequiredCheckout(isRequiredCheckout ? StatusType.ENABLE.getKey() : StatusType.DISABLE.getKey());
+        } catch (Exception e) {
+            return error("Yêu cầu checkout không hợp lệ (TRUE / FALSE)", yeuCauCheckout, request);
         }
 
         addOrUpdatePlanDateRequest.setRoom(phongHoc);
@@ -227,7 +249,7 @@ public class EXPlanDateServiceImpl implements EXPlanDateService {
         try (Workbook workbook = new XSSFWorkbook();
              ByteArrayOutputStream data = new ByteArrayOutputStream()) {
             String filename = "template-import-plan-date.xlsx";
-            List<String> headers = List.of("Ngày diễn ra", "Hình thức học", "Ca bắt đầu", "Ca kết thúc", "Điểm danh muộn tối đa", "Nội dung buổi học", "Link học online", "Phòng học", "Check IP", "Check địa điểm");
+            List<String> headers = List.of("Ngày diễn ra", "Hình thức học", "Ca bắt đầu", "Ca kết thúc", "Điểm danh muộn tối đa", "Nội dung buổi học", "Link học online", "Phòng học", "Check IP", "Check địa điểm", "Yêu cầu checkin", "Yêu cầu checkout");
 
             int firstRow = 1;
             int lastRow = 500;
@@ -245,6 +267,8 @@ public class EXPlanDateServiceImpl implements EXPlanDateService {
             ExcelUtils.addListValidation(templateSheet, firstRow, lastRow, 3, lstShift);
             ExcelUtils.addListValidation(templateSheet, firstRow, lastRow, 8, List.of(true, false));
             ExcelUtils.addListValidation(templateSheet, firstRow, lastRow, 9, List.of(true, false));
+            ExcelUtils.addListValidation(templateSheet, firstRow, lastRow, 10, List.of(true, false));
+            ExcelUtils.addListValidation(templateSheet, firstRow, lastRow, 11, List.of(true, false));
             workbook.write(data);
 
             HttpHeaders headersHttp = new HttpHeaders();
