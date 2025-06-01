@@ -1,6 +1,7 @@
 package udpm.hn.studentattendance.entities;
 
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.JoinColumn;
@@ -36,6 +37,7 @@ public class FacilityIP extends PrimaryEntity implements Serializable {
 
     @ManyToOne
     @JoinColumn(name = "id_facility", nullable = false)
+    @JsonIgnore
     private Facility facility;
 
 }
