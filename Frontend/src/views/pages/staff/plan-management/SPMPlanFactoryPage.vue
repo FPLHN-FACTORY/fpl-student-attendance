@@ -399,6 +399,9 @@ watch(
         >
           <a-select-option v-for="o in lstShift" :key="o.id" :value="o.shift">
             {{ SHIFT[o.shift] }}
+            ({{
+              `${String(o.fromHour).padStart(2, 0)}:${String(o.fromMinute).padStart(2, 0)} - ${String(o.toHour).padStart(2, 0)}:${String(o.toMinute).padStart(2, 0)}`
+            }})
           </a-select-option>
         </a-select>
       </a-form-item>
@@ -486,7 +489,11 @@ watch(
           <div class="col-sm-6">
             <a-switch
               class="me-2"
-              :checked="formDataAdd.requiredIp === STATUS_TYPE.ENABLE"
+              :checked="
+                formDataAdd.requiredIp === STATUS_TYPE.ENABLE &&
+                formDataAdd.type === Object.keys(TYPE_SHIFT)[0]
+              "
+              :disabled="formDataAdd.type !== Object.keys(TYPE_SHIFT)[0]"
               @change="
                 formDataAdd.requiredIp =
                   formDataAdd.requiredIp === STATUS_TYPE.ENABLE
@@ -501,7 +508,11 @@ watch(
           <div class="col-sm-6">
             <a-switch
               class="me-2"
-              :checked="formDataAdd.requiredLocation === STATUS_TYPE.ENABLE"
+              :checked="
+                formDataAdd.requiredLocation === STATUS_TYPE.ENABLE &&
+                formDataAdd.type === Object.keys(TYPE_SHIFT)[0]
+              "
+              :disabled="formDataAdd.type !== Object.keys(TYPE_SHIFT)[0]"
               @change="
                 formDataAdd.requiredLocation =
                   formDataAdd.requiredLocation === STATUS_TYPE.ENABLE
