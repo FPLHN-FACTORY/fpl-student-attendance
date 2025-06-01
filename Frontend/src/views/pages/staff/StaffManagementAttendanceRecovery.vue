@@ -4,13 +4,14 @@ import useLoadingStore from '@/stores/useLoadingStore';
 import { ref, reactive, onMounted } from 'vue';
 import { DEFAULT_PAGINATION, DEFAULT_DATE_FORMAT } from '@/constants';
 import { autoAddColumnWidth, formatDate } from '@/utils/utils';
-import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
+import { API_ROUTES_EXCEL, GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
 import { ROUTE_NAMES } from '@/router/staffRoute';
 import requestAPI from '@/services/requestApiService';
 import { API_ROUTES_STAFF } from '@/constants/staffConstant';
 import { message, Modal } from 'ant-design-vue';
 import { EditFilled, FilterFilled, PlusOutlined, SearchOutlined, UnorderedListOutlined } from '@ant-design/icons-vue';
 import dayjs from 'dayjs'
+import ExcelUploadButton from '@/components/excel/ExcelUploadButton.vue';
 
 const breadcrumbStore = useBreadcrumbStore();
 const loadingStore = useLoadingStore();
@@ -258,6 +259,18 @@ const clearData = () => {
   modalEditEvent.value = false
 }
 
+const configImportExcel = {
+  fetchUrl: API_ROUTES_EXCEL.FETCH_IMPORT_ATTENDANCE_RECOVERY,
+  onSuccess: () => {
+    fetchAttendanceRecovery()
+  },
+  onError: () => {
+    message.error('Không thể xử lý file excel')
+  },
+  showDownloadTemplate: true,
+  showHistoryLog: true,
+}
+
 onMounted(() => {
   breadcrumbStore.setRoutes(breadcrumb.value)
   fetchAttendanceRecovery()
@@ -344,13 +357,14 @@ onMounted(() => {
                 </template>
               </template>
               <template v-else-if="column.key === 'action'">
-                <a-space>
+                <a-space class="d-flex flex-wrap gap-3">
                   <a-tooltip>
                     <template #title>Sửa thông tin khôi phục điểm danh</template>
                     <a-button type="text" class="btn-outline-info me-2" @click="handleShowModalEdit(record)">
                       <EditFilled />
                     </a-button>
                   </a-tooltip>
+                  <ExcelUploadButton v-bind="configImportExcel" />
                 </a-space>
               </template>
             </template>
