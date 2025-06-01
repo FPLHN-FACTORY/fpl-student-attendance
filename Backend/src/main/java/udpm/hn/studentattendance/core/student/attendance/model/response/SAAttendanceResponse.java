@@ -31,4 +31,8 @@ public interface SAAttendanceResponse extends IsIdentify, HasOrderNumber {
 
     Integer getRequiredCheckout();
 
+    Integer getTotalLateAttendance();
+
+    Integer getCurrentLateAttendance();
+
 }

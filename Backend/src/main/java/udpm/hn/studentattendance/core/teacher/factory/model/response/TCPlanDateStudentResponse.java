@@ -12,4 +12,8 @@ public interface TCPlanDateStudentResponse extends IsIdentify, HasOrderNumber, H
 
     Integer getStatus();
 
+    Long getLateCheckin();
+
+    Long getLateCheckout();
+
 }

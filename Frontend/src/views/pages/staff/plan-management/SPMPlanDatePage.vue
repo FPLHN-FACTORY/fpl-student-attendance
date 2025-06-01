@@ -791,13 +791,21 @@ watch(
               @change="handleTableChange"
             >
               <template #bodyCell="{ column, record }">
-                <template v-if="column.dataIndex === 'description' && record.description">
-                  <a-typography-link @click="handleShowDescription(record.description)"
+                <template v-if="column.dataIndex === 'description'">
+                  <a-typography-link
+                    v-if="record.description"
+                    @click="handleShowDescription(record.description)"
                     >Chi tiết</a-typography-link
                   >
+                  <span v-else>--</span>
                 </template>
-                <template v-if="column.dataIndex === 'link' && record.link">
-                  <a target="_blank" :href="record.link">Link</a>
+                <template v-if="column.dataIndex === 'link'">
+                  <a v-if="record.link" target="_blank" :href="record.link">Link</a>
+                  <span v-else>--</span>
+                </template>
+                <template v-if="column.dataIndex === 'room'">
+                  <span v-if="record.room">{{ record.room }}</span>
+                  <span v-else>--</span>
                 </template>
                 <template v-if="column.dataIndex === 'lateArrival'">
                   <a-tag color="gold">

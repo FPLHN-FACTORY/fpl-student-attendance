@@ -40,9 +40,9 @@ public class Attendance extends PrimaryEntity implements Serializable {
     private AttendanceStatus attendanceStatus = AttendanceStatus.NOTCHECKIN;
 
     @Column(name = "late_checkin")
-    private StatusType lateCheckin = StatusType.DISABLE;
+    private Long lateCheckin;
 
     @Column(name = "late_checkout")
-    private StatusType lateCheckout = StatusType.DISABLE;
+    private Long lateCheckout;
 
 }
