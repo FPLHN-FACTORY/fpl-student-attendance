@@ -95,6 +95,7 @@ const formData = reactive({
   idProject: null,
   name: null,
   description: null,
+  maxLateArrival: 0,
   rangeDate: [],
 })
 
@@ -416,6 +417,7 @@ const handleShowModalAdd = () => {
   formData.name = null
   formData.description = null
   formData.rangeDate = []
+  formData.maxLateArrival = 0
 }
 
 const handleShowModalUpdate = (item) => {
@@ -453,6 +455,7 @@ const handleShowModalUpdate = (item) => {
   formData.name = item.planName
   formData.description = item.description
   formData.rangeDate = [dayjs(item.fromDate), dayjs(item.toDate)]
+  formData.maxLateArrival = item.maxLateArrival
 }
 
 onMounted(() => {
@@ -591,10 +594,27 @@ watch(
         />
       </a-form-item>
 
-      <a-form-item class="col-sm-12" label="Tên kế hoạch" name="name" :rules="formRules.name">
+      <a-form-item class="col-sm-7" label="Tên kế hoạch" name="name" :rules="formRules.name">
         <a-input
           class="w-100"
           v-model:value="formData.name"
+          :disabled="modalAddOrUpdate.isLoading"
+          allowClear
+          @keyup.enter="modalAddOrUpdate.onOk"
+        />
+      </a-form-item>
+
+      <a-form-item
+        class="col-sm-5"
+        label="Checkin/checkout muộn (%/tổng buổi)"
+        name="maxLateArrival"
+        :rules="formRules.maxLateArrival"
+      >
+        <a-input-number
+          class="w-100"
+          v-model:value="formData.maxLateArrival"
+          :min="0"
+          :max="50"
           :disabled="modalAddOrUpdate.isLoading"
           allowClear
           @keyup.enter="modalAddOrUpdate.onOk"

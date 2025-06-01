@@ -13,6 +13,8 @@ import org.hibernate.annotations.OnDeleteAction;
 import udpm.hn.studentattendance.entities.base.PrimaryEntity;
 import udpm.hn.studentattendance.infrastructure.constants.EntityProperties;
 import udpm.hn.studentattendance.infrastructure.constants.AttendanceStatus;
+import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
+import udpm.hn.studentattendance.infrastructure.constants.StatusType;
 
 import java.io.Serializable;
 
@@ -23,8 +25,8 @@ import java.io.Serializable;
 @NoArgsConstructor
 @Table(name = "attendance")
 @DynamicUpdate
-@ToString
 public class Attendance extends PrimaryEntity implements Serializable {
+
     @ManyToOne
     @JoinColumn(name = "id_plan_date")
     @OnDelete(action = OnDeleteAction.CASCADE)
@@ -36,5 +38,11 @@ public class Attendance extends PrimaryEntity implements Serializable {
 
     @Column(name = "attendance_status")
     private AttendanceStatus attendanceStatus = AttendanceStatus.NOTCHECKIN;
+
+    @Column(name = "late_checkin")
+    private StatusType lateCheckin = StatusType.DISABLE;
+
+    @Column(name = "late_checkout")
+    private StatusType lateCheckout = StatusType.DISABLE;
 
 }
