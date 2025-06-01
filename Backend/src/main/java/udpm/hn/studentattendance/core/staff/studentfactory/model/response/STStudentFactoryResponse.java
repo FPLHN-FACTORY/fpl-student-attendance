@@ -21,4 +21,8 @@ public interface STStudentFactoryResponse {
 
     Integer getTotalShift();
 
+    Integer getTotalLateAttendance();
+
+    Integer getCurrentLateAttendance();
+
 }

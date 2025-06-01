@@ -22,4 +22,8 @@ public interface TCStudentFactoryResponse {
 
     Integer getTotalShift();
 
+    Integer getTotalLateAttendance();
+
+    Integer getCurrentLateAttendance();
+
 }

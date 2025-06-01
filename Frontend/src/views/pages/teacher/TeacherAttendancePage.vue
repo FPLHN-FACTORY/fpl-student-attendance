@@ -201,7 +201,10 @@ onMounted(() => {
                 <a-badge status="error" /> Chưa checkin
               </span>
               <span v-else>
-                <a-badge status="success" />
+                <template v-if="record.lateCheckin">
+                  <a-badge status="warning" /> Checkin bù -
+                </template>
+                <a-badge v-else status="success" />
                 {{ formatDate(record.createdAt, 'dd/MM/yyyy HH:mm') || ' - ' }}
               </span>
             </template>
@@ -221,7 +224,10 @@ onMounted(() => {
                 <a-badge status="error" /> Chưa checkout
               </span>
               <span v-else>
-                <a-badge status="success" />
+                <template v-if="record.lateCheckout">
+                  <a-badge status="warning" /> Checkout bù -
+                </template>
+                <a-badge v-else status="success" />
                 {{ formatDate(record.updatedAt, 'dd/MM/yyyy HH:mm') || ' - ' }}
               </span>
             </template>
