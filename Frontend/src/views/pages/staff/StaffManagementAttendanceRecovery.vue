@@ -13,9 +13,9 @@ import { EditFilled, FilterFilled, PlusOutlined, SearchOutlined, UnorderedListOu
 import dayjs from 'dayjs'
 import ExcelUploadButton from '@/components/excel/ExcelUploadButton.vue';
 
-const breadcrumbStore = useBreadcrumbStore();
-const loadingStore = useLoadingStore();
-const isLoading = ref(false);
+const breadcrumbStore = useBreadcrumbStore()
+const loadingStore = useLoadingStore()
+const isLoading = ref(false)
 
 const breadcrumb = ref([
   {
@@ -34,11 +34,11 @@ const filter = reactive({
   toDate: null,
   dateRange: null,
   semesterId: null,
-});
+})
 
 const pagination = reactive({
   ...DEFAULT_PAGINATION,
-});
+})
 
 const columns = ref(
   autoAddColumnWidth([
@@ -56,7 +56,7 @@ const columns = ref(
   ])
 )
 
-const attendanceRecovery = ref([]);
+const attendanceRecovery = ref([])
 const fetchAttendanceRecovery = () => {
   loadingStore.show()
   requestAPI
@@ -93,20 +93,20 @@ const handleTableChange = (pageInfo) => {
   fetchAttendanceRecovery()
 }
 
-const semester = ref([]);
+const semester = ref([])
 const fetchSemester = () => {
   loadingStore.show()
   requestAPI
-  .get(API_ROUTES_STAFF.FETCH_DATA_ATTENDANCE_RECOVERY + '/semesters')
-  .then((response) => {
-    semester.value = response.data.data
-  })
-  .catch((error) => {
-    message.error(error.response?.data?.message || 'Lỗi khi lấy danh sách kỳ học')
-  })
-  .finally(() => {
-    loadingStore.hide()
-  })
+    .get(API_ROUTES_STAFF.FETCH_DATA_ATTENDANCE_RECOVERY + '/semesters')
+    .then((response) => {
+      semester.value = response.data.data
+    })
+    .catch((error) => {
+      message.error(error.response?.data?.message || 'Lỗi khi lấy danh sách kỳ học')
+    })
+    .finally(() => {
+      loadingStore.hide()
+    })
 }
 
 const handleDateRangeChange = (range) => {
@@ -131,7 +131,7 @@ const handleClearFilter = () => {
   fetchAttendanceRecovery()
 }
 
-const modalAddEvent = ref(false);
+const modalAddEvent = ref(false)
 const modalAddLoading = ref(false)
 const newEvent = reactive({
   name: '',
@@ -147,7 +147,7 @@ const handleShowModalAdd = () => {
   modalAddEvent.value = true
 }
 const handleAddEvent = () => {
-  if(!newEvent.name || !newEvent.dayHappen) {
+  if (!newEvent.name || !newEvent.dayHappen) {
     message.error('Vui lòng nhập đầy đủ thông tin')
     return
   }
@@ -279,13 +279,15 @@ onMounted(() => {
 })
 </script>
 <template>
-
   <!-- Danh sách sự kiện khôi phục điểm danh -->
   <div class="container-fluid">
     <div class="row g-3">
       <div class="col-12">
-        <a-card :bordered="false" class="cart mb-3">
-          <template #title> <FilterFilled /> Bộ lọc </template>
+        <a-card :bordered="false" class="cart">
+          <template #title>
+            <UnorderedListOutlined /> Danh sách sự kiện khôi phục điểm danh
+          </template>
+
           <div class="row g-2">
             <div class="col-md-6 col-sm-12">
               <div class="label-title">Từ khoá:</div>
@@ -308,70 +310,73 @@ onMounted(() => {
                 @change="handleDateRangeChange"
               />
             </div>
-          </div>
-          <div class="row">
-            <div class="col-12">
-              <div class="d-flex justify-content-center flex-wrap gap-2 mt-3">
+            <div class="col-md-2 col-sm-12">
+              <div class="d-flex justify-content-end mb-3 flex-wrap gap-3">
                 <a-button class="btn-light" @click="fetchAttendanceRecovery">
                   <FilterFilled /> Lọc
                 </a-button>
                 <a-button class="btn-gray" @click="handleClearFilter"> Huỷ lọc </a-button>
+                <a-tooltip title="Thêm Sự kiện khôi phục điểm danh">
+                  <a-button type="primary" @click="handleShowModalAdd">
+                    <PlusOutlined /> Thêm mới
+                  </a-button>
+                </a-tooltip>
               </div>
             </div>
           </div>
-        </a-card>
-      </div>
 
-      <div class="col-12">
-        <a-card :bordered="false" class="cart">
-          <template #title> <UnorderedListOutlined /> Danh sách sự kiện khôi phục điểm danh </template>
-          <div class="d-flex justify-content-end mb-3 flex-wrap gap-3">
-            <a-space>
-              <a-tooltip>
-                <template #title>Thêm Sự kiện khôi phục điểm danh</template>
-                <a-button type="primary" @click="handleShowModalAdd">
-                  <PlusOutlined /> Thêm
-                </a-button>
-              </a-tooltip>
-            </a-space>
-          </div>
-          <a-table
-            class="nowrap"
-            rowKey="id"
-            :dataSource="attendanceRecovery"
-            :columns="columns"
-            :pagination="pagination"
-            @change="handleTableChange"
-            :loading="isLoading"
-            :scroll="{ x: 'auto' }"
-          >
-            <template #bodyCell="{ column, record, index }">
-              <template v-if="column.dataIndex">
-                <template v-if="column.dataIndex === 'rowNumber'">
-                  {{ (pagination.current - 1) * pagination.pageSize + index + 1 }}
-                </template>
-                <template v-else-if="column.dataIndex === 'dayHappen'">
-                  {{ formatDate(record.dayHappen, DEFAULT_DATE_FORMAT) }}
-                </template>
-                <template v-else>
-                  {{ record[column.dataIndex] }}
-                </template>
-              </template>
-              <template v-else-if="column.key === 'action'">
-                <div class="d-flex flex-wrap gap-2">
+          <div class="col-12">
+            <a-card :bordered="false" class="cart">
+              <template #title> <UnorderedListOutlined /> Danh sách sự kiện khôi phục điểm danh </template>
+              <div class="d-flex justify-content-end mb-3 flex-wrap gap-3">
+                <a-space>
                   <a-tooltip>
-                    <template #title>Sửa thông tin khôi phục điểm danh</template>
-                    <a-button type="text" class="btn-outline-info" @click="handleShowModalEdit(record)">
-                      <EditFilled />
+                    <template #title>Thêm Sự kiện khôi phục điểm danh</template>
+                    <a-button type="primary" @click="handleShowModalAdd">
+                      <PlusOutlined /> Thêm
                     </a-button>
                   </a-tooltip>
-                  <div class="excel-upload-wrapper">
-                    <ExcelUploadButton v-bind="configImportExcel" />
-                  </div>
-                </div>
-              </template>
-            </template>
-          </a-table>
+                </a-space>
+              </div>
+              <a-table
+                class="nowrap"
+                rowKey="id"
+                :dataSource="attendanceRecovery"
+                :columns="columns"
+                :pagination="pagination"
+                @change="handleTableChange"
+                :loading="isLoading"
+                :scroll="{ x: 'auto' }"
+              >
+                <template #bodyCell="{ column, record, index }">
+                  <template v-if="column.dataIndex">
+                    <template v-if="column.dataIndex === 'rowNumber'">
+                      {{ (pagination.current - 1) * pagination.pageSize + index + 1 }}
+                    </template>
+                    <template v-else-if="column.dataIndex === 'dayHappen'">
+                      {{ formatDate(record.dayHappen, DEFAULT_DATE_FORMAT) }}
+                    </template>
+                    <template v-else>
+                      {{ record[column.dataIndex] }}
+                    </template>
+                  </template>
+                  <template v-else-if="column.key === 'action'">
+                    <div class="d-flex flex-wrap gap-2">
+                      <a-tooltip>
+                        <template #title>Sửa thông tin khôi phục điểm danh</template>
+                        <a-button type="text" class="btn-outline-info" @click="handleShowModalEdit(record)">
+                          <EditFilled />
+                        </a-button>
+                      </a-tooltip>
+                      <div class="excel-upload-wrapper">
+                        <ExcelUploadButton v-bind="configImportExcel" />
+                      </div>
+                    </div>
+                  </template>
+                </template>
+              </a-table>
+            </a-card>
+          </div>
         </a-card>
       </div>
     </div>
@@ -379,13 +384,13 @@ onMounted(() => {
 
   <!-- Modal Thêm sự kiện khôi phục điểm danh -->
   <a-modal
-  v-model:open="modalAddEvent"
-   title="Thêm sự kiện khôi phục điểm danh"
-   :okButtonProps="{ loading: modalAddLoading }"
-   @ok="handleAddEvent"
-   @cancel="clearData"
-   @close="clearData">
-
+    v-model:open="modalAddEvent"
+    title="Thêm sự kiện khôi phục điểm danh"
+    :okButtonProps="{ loading: modalAddLoading }"
+    @ok="handleAddEvent"
+    @cancel="clearData"
+    @close="clearData"
+  >
     <a-form :model="newEvent" layout="vertical">
       <a-form-item label="Tên sự kiện" required>
         <a-input v-model:value="newEvent.name" placeholder="Nhập tên sự kiện" />
@@ -394,10 +399,14 @@ onMounted(() => {
         <a-textarea v-model:value="newEvent.description" placeholder="Nhập mô tả" />
       </a-form-item>
       <a-form-item label="Ngày" required>
-        <a-date-picker v-model:value="newEvent.dayHappen" placeholder="Chọn ngày" :format="DEFAULT_DATE_FORMAT" class="w-100" />
+        <a-date-picker
+          v-model:value="newEvent.dayHappen"
+          placeholder="Chọn ngày"
+          :format="DEFAULT_DATE_FORMAT"
+          class="w-100"
+        />
       </a-form-item>
     </a-form>
-
   </a-modal>
 
   <!-- Modal Sửa sự kiện khôi phục điểm danh -->
@@ -419,9 +428,7 @@ onMounted(() => {
         <a-date-picker v-model:value="editEvent.day" placeholder="Chọn ngày" :format="DEFAULT_DATE_FORMAT" class="w-100" />
       </a-form-item>
     </a-form>
-
   </a-modal>
-
 </template>
 
 <style scoped>
