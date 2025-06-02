@@ -283,100 +283,101 @@ onMounted(() => {
   <div class="container-fluid">
     <div class="row g-3">
       <div class="col-12">
-        <a-card :bordered="false" class="cart">
-          <template #title>
-            <UnorderedListOutlined /> Danh sách sự kiện khôi phục điểm danh
-          </template>
-
-          <div class="row g-2">
-            <div class="col-md-6 col-sm-12">
-              <div class="label-title">Từ khoá:</div>
-              <a-input
-                v-model:value="filter.searchQuery"
-                placeholder="Tìm theo tên hoặc mô tả"
-                allowClear
-                @change="fetchAttendanceRecovery"
-                class="w-100"
-              >
-                <template #suffix> <SearchOutlined /> </template>
-              </a-input>
-            </div>
-            <div class="col-md-6 col-sm-12">
-              <div class="label-title">Khoảng ngày:</div>
-              <a-range-picker
-                v-model:value="filter.dateRange"
-                class="w-100"
-                :format="DEFAULT_DATE_FORMAT"
-                @change="handleDateRangeChange"
-              />
-            </div>
-            <div class="col-md-2 col-sm-12">
-              <div class="d-flex justify-content-end mb-3 flex-wrap gap-3">
-                <a-button class="btn-light" @click="fetchAttendanceRecovery">
-                  <FilterFilled /> Lọc
-                </a-button>
-                <a-button class="btn-gray" @click="handleClearFilter"> Huỷ lọc </a-button>
-                <a-tooltip title="Thêm Sự kiện khôi phục điểm danh">
-                  <a-button type="primary" @click="handleShowModalAdd">
-                    <PlusOutlined /> Thêm mới
-                  </a-button>
-                </a-tooltip>
+        <!-- Bộ lọc tìm kiếm -->
+        <a-card :bordered="false" class="cart no-body-padding">
+          <a-collapse ghost>
+            <a-collapse-panel class="px-2">
+              <template #header><FilterFilled /> Bộ lọc</template>
+              <div class="row g-2">
+                <div class="col-md-12 col-sm-12">
+                  <div class="label-title">Từ khoá:</div>
+                  <a-input
+                    v-model:value="filter.searchQuery"
+                    placeholder="Tìm theo tên hoặc mô tả"
+                    allowClear
+                    class="filter-input w-100"
+                    @change="fetchAttendanceRecovery"
+                  >
+                    <template #prefix>
+                      <SearchOutlined />
+                    </template>
+                  </a-input>
+                </div>
+                <div class="col-md-12 col-sm-12">
+                  <div class="label-title">Khoảng ngày:</div>
+                  <a-range-picker
+                    v-model:value="filter.dateRange"
+                    class="filter-input w-100"
+                    :format="DEFAULT_DATE_FORMAT"
+                    @change="handleDateRangeChange"
+                  />
+                </div>
               </div>
-            </div>
-          </div>
+              <div class="row">
+                <div class="col-12">
+                  <div class="d-flex justify-content-center flex-wrap gap-2 mt-3">
+                    <a-button class="btn-light" @click="fetchAttendanceRecovery">
+                      <FilterFilled /> Lọc
+                    </a-button>
+                    <a-button class="btn-gray" @click="handleClearFilter"> Huỷ lọc </a-button>
+                  </div>
+                </div>
+              </div>
+            </a-collapse-panel>
+          </a-collapse>
+        </a-card>
+      </div>
 
-          <div class="col-12">
-            <a-card :bordered="false" class="cart">
-              <template #title> <UnorderedListOutlined /> Danh sách sự kiện khôi phục điểm danh </template>
-              <div class="d-flex justify-content-end mb-3 flex-wrap gap-3">
-                <a-space>
+      <div class="col-12">
+        <a-card :bordered="false" class="cart">
+          <template #title> <UnorderedListOutlined /> Danh sách sự kiện khôi phục điểm danh </template>
+          <div class="d-flex justify-content-end mb-3 flex-wrap gap-3">
+            <a-space>
+              <a-tooltip>
+                <template #title>Thêm Sự kiện khôi phục điểm danh</template>
+                <a-button type="primary" @click="handleShowModalAdd">
+                  <PlusOutlined /> Thêm
+                </a-button>
+              </a-tooltip>
+            </a-space>
+          </div>
+          <a-table
+            class="nowrap"
+            rowKey="id"
+            :dataSource="attendanceRecovery"
+            :columns="columns"
+            :pagination="pagination"
+            @change="handleTableChange"
+            :loading="isLoading"
+            :scroll="{ x: 'auto' }"
+          >
+            <template #bodyCell="{ column, record, index }">
+              <template v-if="column.dataIndex">
+                <template v-if="column.dataIndex === 'rowNumber'">
+                  {{ (pagination.current - 1) * pagination.pageSize + index + 1 }}
+                </template>
+                <template v-else-if="column.dataIndex === 'dayHappen'">
+                  {{ formatDate(record.dayHappen, DEFAULT_DATE_FORMAT) }}
+                </template>
+                <template v-else>
+                  {{ record[column.dataIndex] }}
+                </template>
+              </template>
+              <template v-else-if="column.key === 'action'">
+                <div class="d-flex flex-wrap gap-2">
                   <a-tooltip>
-                    <template #title>Thêm Sự kiện khôi phục điểm danh</template>
-                    <a-button type="primary" @click="handleShowModalAdd">
-                      <PlusOutlined /> Thêm
+                    <template #title>Sửa thông tin khôi phục điểm danh</template>
+                    <a-button type="text" class="btn-outline-info" @click="handleShowModalEdit(record)">
+                      <EditFilled />
                     </a-button>
                   </a-tooltip>
-                </a-space>
-              </div>
-              <a-table
-                class="nowrap"
-                rowKey="id"
-                :dataSource="attendanceRecovery"
-                :columns="columns"
-                :pagination="pagination"
-                @change="handleTableChange"
-                :loading="isLoading"
-                :scroll="{ x: 'auto' }"
-              >
-                <template #bodyCell="{ column, record, index }">
-                  <template v-if="column.dataIndex">
-                    <template v-if="column.dataIndex === 'rowNumber'">
-                      {{ (pagination.current - 1) * pagination.pageSize + index + 1 }}
-                    </template>
-                    <template v-else-if="column.dataIndex === 'dayHappen'">
-                      {{ formatDate(record.dayHappen, DEFAULT_DATE_FORMAT) }}
-                    </template>
-                    <template v-else>
-                      {{ record[column.dataIndex] }}
-                    </template>
-                  </template>
-                  <template v-else-if="column.key === 'action'">
-                    <div class="d-flex flex-wrap gap-2">
-                      <a-tooltip>
-                        <template #title>Sửa thông tin khôi phục điểm danh</template>
-                        <a-button type="text" class="btn-outline-info" @click="handleShowModalEdit(record)">
-                          <EditFilled />
-                        </a-button>
-                      </a-tooltip>
-                      <div class="excel-upload-wrapper">
-                        <ExcelUploadButton v-bind="configImportExcel" />
-                      </div>
-                    </div>
-                  </template>
-                </template>
-              </a-table>
-            </a-card>
-          </div>
+                  <div class="excel-upload-wrapper">
+                    <ExcelUploadButton v-bind="configImportExcel" />
+                  </div>
+                </div>
+              </template>
+            </template>
+          </a-table>
         </a-card>
       </div>
     </div>
