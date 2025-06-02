@@ -46,6 +46,7 @@ const columns = ref(
     { title: 'Tên hoạt động', dataIndex: 'name', key: 'name' },
     { title: 'Mô tả', dataIndex: 'description', key: 'description' },
     { title: 'Ngày', dataIndex: 'dayHappen', key: 'dayHappen' },
+    { title: 'Tổng sinh viên', dataIndex: 'student', key: 'student' },
     {
       title: 'Chức năng',
       key: 'action',
@@ -357,15 +358,17 @@ onMounted(() => {
                 </template>
               </template>
               <template v-else-if="column.key === 'action'">
-                <a-space class="d-flex flex-wrap gap-3">
+                <div class="d-flex flex-wrap gap-2">
                   <a-tooltip>
                     <template #title>Sửa thông tin khôi phục điểm danh</template>
-                    <a-button type="text" class="btn-outline-info me-2" @click="handleShowModalEdit(record)">
+                    <a-button type="text" class="btn-outline-info" @click="handleShowModalEdit(record)">
                       <EditFilled />
                     </a-button>
                   </a-tooltip>
-                  <ExcelUploadButton v-bind="configImportExcel" />
-                </a-space>
+                  <div class="excel-upload-wrapper">
+                    <ExcelUploadButton v-bind="configImportExcel" />
+                  </div>
+                </div>
               </template>
             </template>
           </a-table>
@@ -420,4 +423,20 @@ onMounted(() => {
   </a-modal>
 
 </template>
+
+<style scoped>
+.excel-upload-wrapper {
+  display: inline-flex;
+  gap: 8px;
+}
+
+/* Đảm bảo các nút trong ExcelUploadButton không bị dính */
+.excel-upload-wrapper :deep(.ant-space) {
+  gap: 8px !important;
+}
+
+.excel-upload-wrapper :deep(.ant-btn) {
+  margin: 0 !important;
+}
+</style>
 

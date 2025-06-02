@@ -44,7 +44,10 @@ import udpm.hn.studentattendance.utils.ExcelUtils;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -189,7 +192,10 @@ public class TSStatisticsServiceImpl implements TSStatisticsService {
                         .map(this::buildCellPlanDate)
                         .collect(Collectors.toSet());
                 List<String> lstPlanDate = stPlanDate.stream()
-                        .sorted()
+                        .sorted(Comparator.comparing(s -> {
+                            String datePart = s.split(" - ")[0];
+                            return LocalDate.parse(datePart, DateTimeFormatter.ofPattern(DateTimeUtils.DATE_FORMAT.replace('/', '-')));
+                        }))
                         .toList();
 
                 Set<ExStudentModel> stPStudent = lstData.stream()
@@ -201,11 +207,13 @@ public class TSStatisticsServiceImpl implements TSStatisticsService {
                 headers.addAll(lstPlanDate);
                 headers.add("Tổng");
                 headers.add("Vắng(%)");
+                headers.add("Điểm danh bù(lần)");
 
                 Sheet sheet = ExcelUtils.createTemplate(workbook, factory.getName(), headers, new ArrayList<>());
 
                 Map<Object, String> colorMap = new HashMap<>();
                 colorMap.put("Có mặt", "#a9d08e");
+                colorMap.put("Có mặt (bù)", "#ffd966");
                 colorMap.put("Vắng mặt", "#ff7d7d");
 
 
@@ -218,7 +226,8 @@ public class TSStatisticsServiceImpl implements TSStatisticsService {
                     dataCell.add(studentCode);
                     dataCell.add(studentName);
 
-                    int total_absent = 0;
+                    double total_absent = 0;
+                    int total_recovery = 0;
                     for(String namePlanDate: lstPlanDate) {
                         TSPlanDateStudentFactoryResponse planDate = lstData.stream().filter(s -> s.getCode().equals(studentCode) && buildCellPlanDate(s).equals(namePlanDate)).findFirst().orElse(null);
                         if (planDate == null || planDate.getStartDate() > DateTimeUtils.getCurrentTimeMillis()) {
@@ -226,7 +235,13 @@ public class TSStatisticsServiceImpl implements TSStatisticsService {
                             continue;
                         }
                         if (planDate.getStatus() == AttendanceStatus.PRESENT.ordinal()) {
-                            dataCell.add("Có mặt");
+                            if (planDate.getLateCheckin() != null && planDate.getLateCheckin() > 0 || planDate.getLateCheckout() != null && planDate.getLateCheckout() > 0) {
+                                total_recovery++;
+                                total_absent += 0.5;
+                                dataCell.add("Có mặt (bù)");
+                            } else {
+                                dataCell.add("Có mặt");
+                            }
                         } else {
                             total_absent++;
                             dataCell.add("Vắng mặt");
@@ -234,7 +249,8 @@ public class TSStatisticsServiceImpl implements TSStatisticsService {
                     }
 
                     dataCell.add(total_absent + "/" + lstPlanDate.size());
-                    dataCell.add(Math.round((double) total_absent / lstPlanDate.size() * 1000) / 10.0 + "%");
+                    dataCell.add(Math.round(total_absent / lstPlanDate.size() * 1000) / 10.0 + "%");
+                    dataCell.add(total_recovery);
 
                     ExcelUtils.insertRow(sheet, row, dataCell, colorMap);
                     row++;
@@ -250,7 +266,7 @@ public class TSStatisticsServiceImpl implements TSStatisticsService {
     }
 
     private String buildCellPlanDate(TSPlanDateStudentFactoryResponse o) {
-        return DateTimeUtils.convertMillisToDate(o.getStartDate(), "dd-MM-yyyy") + " - Ca " + o.getShift();
+        return DateTimeUtils.convertMillisToDate(o.getStartDate(), DateTimeUtils.DATE_FORMAT.replace('/', '-')) + " - Ca " + o.getShift();
     }
 
 }

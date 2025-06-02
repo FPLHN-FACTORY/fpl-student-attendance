@@ -79,6 +79,12 @@ const columns = ref(
     },
     { title: 'Email', dataIndex: 'studentEmail', key: 'studentEmail' },
     {
+      title: 'Checkin/checkout bù',
+      dataIndex: 'lateAttendance',
+      key: 'lateAttendance',
+      align: 'center',
+    },
+    {
       title: 'Số buổi đã nghỉ',
       dataIndex: 'totalAbsentShift',
       key: 'totalAbsentShift',
@@ -248,7 +254,10 @@ onMounted(() => {
                     <a-badge status="error" /> Chưa checkin
                   </span>
                   <span v-else>
-                    <a-badge status="success" />
+                    <template v-if="record.lateCheckin">
+                      <a-badge status="warning" /> Checkin bù -
+                    </template>
+                    <a-badge v-else status="success" />
                     {{ formatDate(record.createdAt, 'dd/MM/yyyy HH:mm') }}
                   </span>
                 </template>
@@ -269,7 +278,10 @@ onMounted(() => {
                     <a-badge status="error" /> Chưa checkout
                   </span>
                   <span v-else>
-                    <a-badge status="success" />
+                    <template v-if="record.lateCheckout">
+                      <a-badge status="warning" /> Checkout bù -
+                    </template>
+                    <a-badge v-else status="success" />
                     {{ formatDate(record.updatedAt, 'dd/MM/yyyy HH:mm') }}
                   </span>
                 </template>
@@ -383,7 +395,12 @@ onMounted(() => {
                 </template>
                 <template v-if="column.dataIndex === 'totalAbsentShift'">
                   <a-tag :color="record.totalAbsentShift > 0 ? 'red' : 'green'"
-                    >{{ record.totalAbsentShift || 0 }} / {{ record.totalShift || 0 }}</a-tag
+                    >{{
+                      record.totalAbsentShift > 0
+                        ? Math.max(record.totalAbsentShift - 0.5 * record.currentLateAttendance, 0)
+                        : 0
+                    }}
+                    / {{ record.totalShift || 0 }}</a-tag
                   >
                 </template>
                 <template v-if="column.dataIndex === 'percenAbsentShift'">
@@ -396,6 +413,19 @@ onMounted(() => {
                         record.totalShift && (record.totalAbsentShift / record.totalShift) * 100
                       ).toFixed(1) || 0
                     }}%</a-tag
+                  >
+                </template>
+                <template v-if="column.dataIndex === 'lateAttendance'">
+                  <a-tag
+                    :color="
+                      record.totalLateAttendance > 0
+                        ? record.currentLateAttendance >= record.totalLateAttendance
+                          ? 'red'
+                          : 'green'
+                        : 'default'
+                    "
+                    >{{ record.currentLateAttendance || 0 }} /
+                    {{ record.totalLateAttendance }} lần</a-tag
                   >
                 </template>
                 <template v-if="column.dataIndex === 'detailAttendance'">

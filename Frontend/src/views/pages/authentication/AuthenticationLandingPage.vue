@@ -29,7 +29,7 @@ const facilityID = ref(null)
 const isShowModalSelectFacility = ref(false)
 const lstFacility = ref([])
 
-let roles = (roles = [
+let roles = [
   {
     role: ROLE.ADMIN,
     label: 'Admin',
@@ -54,7 +54,9 @@ let roles = (roles = [
     img: imgRoleStudent,
     route: GLOBAL_ROUTE_NAMES.STUDENT_PAGE,
   },
-])
+]
+
+const tmpRoles = [...roles]
 
 const isRouteAdm = route.path === PREFIX_ADMIN_PANEL
 const isRoleAdm =
@@ -64,16 +66,12 @@ const isRoleAdm =
 
 if (isRouteAdm || isRoleAdm) {
   roles = roles.filter((o) => o.role !== ROLE.STUDENT)
-}
-
-const isRoleStudent = authStore?.user?.role.includes(ROLE.STUDENT)
-
-if (!roles.length || isRoleStudent) {
+} else {
   roles = roles.filter((o) => o.role === ROLE.STUDENT)
 }
 
 if (!roles.length && authStore.isLogin) {
-  roles = roles.filter((o) => authStore.user.role.includes(o.role))
+  roles = tmpRoles.filter((o) => authStore.user.role.includes(o.role))
 }
 
 const showModalSelectFacility = () => (isShowModalSelectFacility.value = true)
