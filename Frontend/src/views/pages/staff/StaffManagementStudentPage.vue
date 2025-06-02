@@ -349,47 +349,53 @@ onMounted(() => {
     <!-- Bộ lọc tìm kiếm -->
     <div class="row g-3">
       <div class="col-12">
-        <a-card :bordered="false" class="cart mb-3">
-          <template #title> <FilterFilled /> Bộ lọc </template>
-          <div class="row g-3">
-            <!-- Input tìm kiếm theo mã, tên, email -->
-            <div class="col-md-6 col-sm-12">
-              <div class="label-title">Từ khoá:</div>
-              <a-input
-                v-model:value="filter.searchQuery"
-                placeholder="Tìm kiếm theo mã, tên, email"
-                allowClear
-                @change="fetchStudents"
-              >
-                <template #prefix>
-                  <SearchOutlined />
-                </template>
-              </a-input>
-            </div>
-            <!-- Combobox trạng thái -->
-            <div class="col-md-6 col-sm-12">
-              <div class="label-title">Trạng thái:</div>
-              <a-select
-                v-model:value="filter.studentStatus"
-                placeholder="Chọn trạng thái"
-                allowClear
-                class="w-100"
-                @change="fetchStudents"
-              >
-                <a-select-option :value="''">Tất cả trạng thái</a-select-option>
-                <a-select-option value="ACTIVE">Hoạt động</a-select-option>
-                <a-select-option value="INACTIVE">Không hoạt động</a-select-option>
-              </a-select>
-            </div>
-          </div>
-          <div class="row">
-            <div class="col-12">
-              <div class="d-flex justify-content-center flex-wrap gap-2 mt-3">
-                <a-button class="btn-light" @click="fetchStudents"> <FilterFilled /> Lọc </a-button>
-                <a-button class="btn-gray" @click="handleClearFilter"> Huỷ lọc </a-button>
+        <a-card :bordered="false" class="cart mb-3 no-body-padding">
+          <a-collapse ghost>
+            <a-collapse-panel class="px-2">
+              <template #header><FilterFilled /> Bộ lọc</template>
+              <div class="row g-3">
+                <!-- Input tìm kiếm theo mã, tên, email -->
+                <div class="col-md-6 col-sm-12">
+                  <div class="label-title">Từ khoá:</div>
+                  <a-input
+                    v-model:value="filter.searchQuery"
+                    placeholder="Tìm kiếm theo mã, tên, email"
+                    allowClear
+                    @change="fetchStudents"
+                  >
+                    <template #prefix>
+                      <SearchOutlined />
+                    </template>
+                  </a-input>
+                </div>
+                <!-- Combobox trạng thái -->
+                <div class="col-md-6 col-sm-12">
+                  <div class="label-title">Trạng thái:</div>
+                  <a-select
+                    v-model:value="filter.studentStatus"
+                    placeholder="Chọn trạng thái"
+                    allowClear
+                    class="w-100"
+                    @change="fetchStudents"
+                  >
+                    <a-select-option :value="''">Tất cả trạng thái</a-select-option>
+                    <a-select-option value="ACTIVE">Hoạt động</a-select-option>
+                    <a-select-option value="INACTIVE">Không hoạt động</a-select-option>
+                  </a-select>
+                </div>
               </div>
-            </div>
-          </div>
+              <div class="row">
+                <div class="col-12">
+                  <div class="d-flex justify-content-center flex-wrap gap-2 mt-3">
+                    <a-button class="btn-light" @click="fetchStudents">
+                      <FilterFilled /> Lọc
+                    </a-button>
+                    <a-button class="btn-gray" @click="handleClearFilter"> Huỷ lọc </a-button>
+                  </div>
+                </div>
+              </div>
+            </a-collapse-panel>
+          </a-collapse>
         </a-card>
       </div>
     </div>
