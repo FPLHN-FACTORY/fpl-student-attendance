@@ -217,53 +217,61 @@ onMounted(async () => {
   <div class="container-fluid">
     <div class="row g-3">
       <div class="col-12">
-        <a-card :bordered="false" class="card mb-3">
-          <template #title> <FilterFilled /> Bộ lọc </template>
-          <a-row :gutter="16" class="row g-2">
-            <a-col :xs="24" :md="12">
-              <div class="label-title">Học kỳ:</div>
-              <a-select
-                v-model:value="filter.semesterId"
-                placeholder="Chọn học kỳ"
-                class="w-100"
-                allowClear
-                @change="fetchAllAttendanceHistory"
-              >
-                <a-select-option
-                  v-for="semester in semesters"
-                  :key="semester.id"
-                  :value="semester.id"
-                >
-                  {{ semester.code }}
-                </a-select-option>
-              </a-select>
-            </a-col>
-            <a-col :xs="24" :md="12">
-              <div class="label-title">Nhóm xưởng:</div>
-              <a-select
-                v-model:value="filter.factoryId"
-                placeholder="Chọn xưởng"
-                class="w-100"
-                allowClear
-                @change="fetchAllAttendanceHistory"
-              >
-                <a-select-option :value="''">Tất cả xưởng</a-select-option>
-                <a-select-option v-for="factory in factories" :key="factory.id" :value="factory.id">
-                  {{ factory.name }}
-                </a-select-option>
-              </a-select>
-            </a-col>
-          </a-row>
-          <div class="row">
-            <div class="col-12">
-              <div class="d-flex justify-content-center flex-wrap gap-2 mt-3">
-                <a-button class="btn-light" @click="fetchAllAttendanceHistory">
-                  <FilterFilled /> Lọc
-                </a-button>
-                <a-button class="btn-gray" @click="handleClearFilter"> Huỷ lọc </a-button>
+        <a-card :bordered="false" class="card mb-3 no-body-padding">
+          <a-collapse ghost>
+            <a-collapse-panel class="px-2">
+              <template #header><FilterFilled /> Bộ lọc</template>
+              <a-row :gutter="16" class="row g-2">
+                <a-col :xs="24" :md="12">
+                  <div class="label-title">Học kỳ:</div>
+                  <a-select
+                    v-model:value="filter.semesterId"
+                    placeholder="Chọn học kỳ"
+                    class="w-100"
+                    allowClear
+                    @change="fetchAllAttendanceHistory"
+                  >
+                    <a-select-option
+                      v-for="semester in semesters"
+                      :key="semester.id"
+                      :value="semester.id"
+                    >
+                      {{ semester.code }}
+                    </a-select-option>
+                  </a-select>
+                </a-col>
+                <a-col :xs="24" :md="12">
+                  <div class="label-title">Nhóm xưởng:</div>
+                  <a-select
+                    v-model:value="filter.factoryId"
+                    placeholder="Chọn xưởng"
+                    class="w-100"
+                    allowClear
+                    @change="fetchAllAttendanceHistory"
+                  >
+                    <a-select-option :value="''">Tất cả xưởng</a-select-option>
+                    <a-select-option
+                      v-for="factory in factories"
+                      :key="factory.id"
+                      :value="factory.id"
+                    >
+                      {{ factory.name }}
+                    </a-select-option>
+                  </a-select>
+                </a-col>
+              </a-row>
+              <div class="row">
+                <div class="col-12">
+                  <div class="d-flex justify-content-center flex-wrap gap-2 mt-3 mb-2">
+                    <a-button class="btn-light" @click="fetchAllAttendanceHistory">
+                      <FilterFilled /> Lọc
+                    </a-button>
+                    <a-button class="btn-gray" @click="handleClearFilter"> Huỷ lọc </a-button>
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
+            </a-collapse-panel>
+          </a-collapse>
         </a-card>
       </div>
     </div>
@@ -273,7 +281,7 @@ onMounted(async () => {
         <a-card :bordered="false" class="card mb-3">
           <template #title>
             <UnorderedListOutlined />
-            Danh sách điểm danh nhóm: {{ getFactoryName(factoryId) }}
+            {{ getFactoryName(factoryId) }}
           </template>
           <template #extra>
             <a-button
@@ -337,17 +345,11 @@ onMounted(async () => {
                 </template>
                 <template v-else-if="column.dataIndex === 'checkOut'">
                   <template v-if="record.requiredCheckOut == STATUS_REQUIRED_ATTENDANCE.ENABLE">
-                    <span
-                      v-if="
-                        record.statusAttendance === 'CO_MAT'
-                      "
-                    >
-                    <a-badge status="success" />
+                    <span v-if="record.statusAttendance === 'CO_MAT'">
+                      <a-badge status="success" />
                       {{ formatDate(record.checkOut, 'dd/MM/yyyy HH:mm') }}
                     </span>
-                    <span v-else>
-                      <a-badge status="error" /> Chưa checkout
-                    </span>
+                    <span v-else> <a-badge status="error" /> Chưa checkout </span>
                   </template>
                   <template v-else>
                     <a-badge status="default" />

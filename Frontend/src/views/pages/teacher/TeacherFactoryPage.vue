@@ -207,74 +207,72 @@ onMounted(() => {
 
 <template>
   <div class="container-fluid">
-    <div class="row g-3">
-      <div class="col-12">
-        <a-card :bordered="false" class="cart mb-3">
-          <template #title> <FilterFilled /> Bộ lọc</template>
-          <div class="row g-3 filter-container">
-            <div class="col-xl-6 col-md-12 col-sm-12">
-              <div class="label-title">Từ khoá:</div>
-              <a-input
-                v-model:value="filter.factoryName"
-                placeholder="Tìm theo tên nhóm xưởng"
-                allowClear
-                @change="fetchFactoryByTeacher"
-              >
-                <template #prefix>
-                  <SearchOutlined />
-                </template>
-              </a-input>
-            </div>
-            <div class="col-xl-3 col-md-6 col-sm-6">
-              <div class="label-title">Dự án:</div>
-              <a-select
-                v-model:value="filter.projectId"
-                placeholder="Chọn dự án"
-                allowClear
-                class="w-100"
-                @change="fetchFactoryByTeacher"
-              >
-                <a-select-option :value="''">Tất cả dự án</a-select-option>
-                <a-select-option v-for="item in projects" :key="item.id" :value="item.id">
-                  {{ item.name }}
-                </a-select-option>
-              </a-select>
-            </div>
-            <div class="col-xl-3 col-md-6 col-sm-6">
-              <div class="label-title">Học kỳ:</div>
-              <a-select
-                v-model:value="filter.semesterId"
-                placeholder="Chọn học kỳ"
-                allowClear
-                class="w-100"
-                @change="fetchFactoryByTeacher"
-              >
-                <a-select-option :value="null">Tất cả học kỳ</a-select-option>
-                <a-select-option v-for="item in semesters" :key="item.id" :value="item.id">
-                  {{ item.code }}
-                </a-select-option>
-              </a-select>
-            </div>
-          </div>
-          <div class="row">
-            <div class="col-12">
-              <div class="d-flex justify-content-center flex-wrap gap-2 mt-3">
-                <a-button class="btn-light" @click="fetchFactoryByTeacher">
-                  <FilterFilled /> Lọc
-                </a-button>
-                <a-button class="btn-gray" @click="handleClearFilter"> Huỷ lọc </a-button>
-              </div>
-            </div>
-          </div>
-        </a-card>
-      </div>
-    </div>
-
     <!-- Danh sách nhóm xưởng -->
     <div class="row g-3">
       <div class="col-12">
         <a-card :bordered="false" class="cart">
           <template #title> <UnorderedListOutlined /> Danh sách nhóm xưởng </template>
+          <a-collapse ghost>
+            <a-collapse-panel>
+              <template #header><FilterFilled /> Bộ lọc</template>
+              <div class="row g-3 filter-container">
+                <div class="col-xl-6 col-md-12 col-sm-12">
+                  <div class="label-title">Từ khoá:</div>
+                  <a-input
+                    v-model:value="filter.factoryName"
+                    placeholder="Tìm theo tên nhóm xưởng"
+                    allowClear
+                    @change="fetchFactoryByTeacher"
+                  >
+                    <template #prefix>
+                      <SearchOutlined />
+                    </template>
+                  </a-input>
+                </div>
+                <div class="col-xl-3 col-md-6 col-sm-6">
+                  <div class="label-title">Dự án:</div>
+                  <a-select
+                    v-model:value="filter.projectId"
+                    placeholder="Chọn dự án"
+                    allowClear
+                    class="w-100"
+                    @change="fetchFactoryByTeacher"
+                  >
+                    <a-select-option :value="''">Tất cả dự án</a-select-option>
+                    <a-select-option v-for="item in projects" :key="item.id" :value="item.id">
+                      {{ item.name }}
+                    </a-select-option>
+                  </a-select>
+                </div>
+                <div class="col-xl-3 col-md-6 col-sm-6">
+                  <div class="label-title">Học kỳ:</div>
+                  <a-select
+                    v-model:value="filter.semesterId"
+                    placeholder="Chọn học kỳ"
+                    allowClear
+                    class="w-100"
+                    @change="fetchFactoryByTeacher"
+                  >
+                    <a-select-option :value="null">Tất cả học kỳ</a-select-option>
+                    <a-select-option v-for="item in semesters" :key="item.id" :value="item.id">
+                      {{ item.code }}
+                    </a-select-option>
+                  </a-select>
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-12">
+                  <div class="d-flex justify-content-center flex-wrap gap-2 mt-3">
+                    <a-button class="btn-light" @click="fetchFactoryByTeacher">
+                      <FilterFilled /> Lọc
+                    </a-button>
+                    <a-button class="btn-gray" @click="handleClearFilter"> Huỷ lọc </a-button>
+                  </div>
+                </div>
+              </div>
+            </a-collapse-panel>
+          </a-collapse>
+
           <a-table
             class="nowrap"
             :loading="isLoading"
