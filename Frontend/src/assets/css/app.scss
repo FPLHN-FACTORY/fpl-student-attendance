@@ -443,6 +443,9 @@ hr {
 }
 
 .ant-card {
+  &.no-body-padding > .ant-card-body {
+    padding: 0px;
+  }
   .ant-card-head-title {
     white-space: normal;
   }
@@ -497,6 +500,14 @@ hr {
     .ant-table-content {
       overflow: auto !important;
       max-height: 500px;
+    }
+  }
+}
+
+.ant-collapse {
+  &-content {
+    & > &-box {
+      padding: 0 16px 20px !important;
     }
   }
 }
