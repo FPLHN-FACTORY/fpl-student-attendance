@@ -198,6 +198,14 @@ const handleShowModalAdd = () => {
   if (nearestSemester) {
     newProject.semesterId = nearestSemester.id
   }
+   // Pre-select first values if available
+   if (levels.value && levels.value.length > 0) {
+    newProject.levelProjectId = levels.value[0].id
+  }
+
+  if (subjects.value && subjects.value.length > 0) {
+    newProject.subjectFacilityId = subjects.value[0].id
+  }
   modalAdd.value = true
 }
 
