@@ -56,6 +56,12 @@ const columns = ref(
     { title: 'Bộ môn', dataIndex: 'subjectName', key: 'subjectName' },
     { title: 'Cấp độ', dataIndex: 'level', key: 'level' },
     { title: 'Ngày diễn ra', dataIndex: 'semesterName', key: 'semesterName' },
+    {
+      title: 'Checkin/checkout muộn',
+      dataIndex: 'maxLateArrival',
+      key: 'maxLateArrival',
+      align: 'center',
+    },
     { title: 'Trạng thái', dataIndex: 'status', key: 'status' },
     { title: '', key: 'actions' },
   ]),
@@ -95,6 +101,7 @@ const formData = reactive({
   idProject: null,
   name: null,
   description: null,
+  maxLateArrival: 0,
   rangeDate: [],
 })
 
@@ -102,6 +109,7 @@ const formRules = reactive({
   idProject: [{ required: true, message: 'Vui lòng chọn 1 dự án!' }],
   name: [{ required: true, message: 'Vui lòng nhập mục này!' }],
   rangeDate: [{ required: true, message: 'Vui lòng nhập mục này!' }],
+  maxLateArrival: [{ required: true, message: 'Vui lòng nhập mục này!' }],
 })
 
 const disabledDate = (current) => {
@@ -416,6 +424,7 @@ const handleShowModalAdd = () => {
   formData.name = null
   formData.description = null
   formData.rangeDate = []
+  formData.maxLateArrival = 0
 }
 
 const handleShowModalUpdate = (item) => {
@@ -453,6 +462,7 @@ const handleShowModalUpdate = (item) => {
   formData.name = item.planName
   formData.description = item.description
   formData.rangeDate = [dayjs(item.fromDate), dayjs(item.toDate)]
+  formData.maxLateArrival = item.maxLateArrival || 0
 }
 
 onMounted(() => {
@@ -591,10 +601,28 @@ watch(
         />
       </a-form-item>
 
-      <a-form-item class="col-sm-12" label="Tên kế hoạch" name="name" :rules="formRules.name">
+      <a-form-item class="col-sm-8" label="Tên kế hoạch" name="name" :rules="formRules.name">
         <a-input
           class="w-100"
           v-model:value="formData.name"
+          :disabled="modalAddOrUpdate.isLoading"
+          allowClear
+          @keyup.enter="modalAddOrUpdate.onOk"
+        />
+      </a-form-item>
+
+      <a-form-item
+        class="col-sm-4"
+        label="Checkin/checkout muộn"
+        name="maxLateArrival"
+        :rules="formRules.maxLateArrival"
+      >
+        <a-input-number
+          class="w-100"
+          placeholder="% / tổng số buổi"
+          v-model:value="formData.maxLateArrival"
+          :min="0"
+          :max="50"
           :disabled="modalAddOrUpdate.isLoading"
           allowClear
           @keyup.enter="modalAddOrUpdate.onOk"
@@ -754,6 +782,11 @@ watch(
                 >
                   {{ record.planName }}
                 </RouterLink>
+              </template>
+
+              <template v-if="column.dataIndex === 'maxLateArrival'">
+                <span v-if="record.maxLateArrival <= 0">--</span>
+                <a-tag v-else color="purple">{{ record.maxLateArrival }}% số buổi</a-tag>
               </template>
 
               <template v-if="column.dataIndex === 'semesterName'">

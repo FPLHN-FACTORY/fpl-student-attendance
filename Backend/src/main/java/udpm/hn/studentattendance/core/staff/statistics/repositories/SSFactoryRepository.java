@@ -118,7 +118,9 @@ public interface SSFactoryRepository extends FactoryRepository {
             pd.required_checkout,
             COALESCE(a.attendance_status, 0) AS status,
             COALESCE(a.created_at, 0) AS createdAt,
-            COALESCE(a.updated_at, 0) AS updatedAt
+            COALESCE(a.updated_at, 0) AS updatedAt,
+            a.late_checkout,
+            a.late_checkin
         FROM plan_date pd
         JOIN plan_factory pf ON pd.id_plan_factory = pf.id
         JOIN user_student_factory usf ON pf.id_factory = usf.id_factory

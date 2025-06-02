@@ -23,7 +23,6 @@ import java.io.Serializable;
 @NoArgsConstructor
 @Table(name = "plan_factory")
 @DynamicUpdate
-@ToString
 public class PlanFactory extends PrimaryEntity implements Serializable {
 
     @ManyToOne

@@ -29,4 +29,6 @@ public interface SPDPlanResponse extends IsIdentify, HasOrderNumber {
 
     Integer getStatus();
 
+    Integer getMaxLateArrival();
+
 }

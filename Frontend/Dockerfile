@@ -14,8 +14,7 @@ ENV VITE_PREFIX_ADMIN_PANEL="/admin-panel"
 
 # Copy package và cài dependencies
 COPY package.json package-lock.json ./
-RUN npm ci --production=false && \
-    npm audit fix --force
+RUN npm ci --production=false
 
 # Copy toàn bộ source và build
 COPY . .
