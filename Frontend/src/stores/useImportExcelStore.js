@@ -354,7 +354,6 @@ const useImportExcelStore = defineStore('importExcel', () => {
           }
         })
         .catch((error) => {
-          console.error(error)
           message.error(error?.response?.data?.message || 'Không thể xuất excel')
         })
     }

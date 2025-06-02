@@ -161,7 +161,6 @@ const exportToExcel = async () => {
       }),
     )
 
-
     await ws.protect('', {
       selectLockedCells: true,
       selectUnlockedCells: true,
@@ -232,49 +231,63 @@ onMounted(() => {
   <div class="container-fluid">
     <div class="row g-3">
       <div class="col-12">
-        <a-card :bordered="false" class="card mb-3">
-          <template #title><FilterFilled /> Bộ lọc</template>
-          <div class="row g-3 filter-container">
-            <div class="col-md-12">
-              <div class="label-title">Lịch học:</div>
-              <a-select
-                v-model:value="filter.plan"
-                placeholder="Chọn khoảng thời gian"
-                allowClear
-                class="w-100"
-                @change="fetchAttendanceList"
-              >
-                <a-select-option :value="-90">90 ngày trước</a-select-option>
-                <a-select-option :value="-30">30 ngày trước</a-select-option>
-                <a-select-option :value="-14">14 ngày trước</a-select-option>
-                <a-select-option :value="-7">7 ngày trước</a-select-option>
-                <a-select-option :value="7">7 ngày tới</a-select-option>
-                <a-select-option :value="14">14 ngày tới</a-select-option>
-                <a-select-option :value="30">30 ngày tới</a-select-option>
-                <a-select-option :value="90">90 ngày tới</a-select-option>
-              </a-select>
-            </div>
-          </div>
-          <div class="row">
-            <div class="col-12">
-              <div class="d-flex justify-content-center flex-wrap gap-2 mt-3">
-                <a-button class="btn-light" @click="fetchAttendanceList">
-                  <FilterFilled /> Lọc
-                </a-button>
-                <a-button class="btn-gray" @click="handleClearFilter"> Huỷ lọc </a-button>
-              </div>
-            </div>
-          </div>
-        </a-card>
-
         <a-card :bordered="false" class="cart">
           <template #title>
             <UnorderedListOutlined />
-            Danh sách điểm danh
+            Lịch học sắp tới
           </template>
-          <div class="d-flex justify-content-end mb-3">
-            <a-button type="primary" @click="exportToExcel" :loading="isLoadingExport" class="me-3">Tải xuống Excel</a-button>
-            <a-button type="default" @click="exportToPDF" :loading="isLoadingExport">Tải xuống PDF</a-button>
+
+          <div class="row g-3">
+            <a-collapse class="col-md-8 col-sm-12" ghost>
+              <a-collapse-panel>
+                <template #header><FilterFilled /> Bộ lọc</template>
+                <div class="row g-3 filter-container">
+                  <div class="col-sm-7">
+                    <a-select
+                      v-model:value="filter.plan"
+                      placeholder="Chọn khoảng thời gian"
+                      allowClear
+                      class="w-100"
+                      @change="fetchAttendanceList"
+                    >
+                      <a-select-option :value="-90">90 ngày trước</a-select-option>
+                      <a-select-option :value="-30">30 ngày trước</a-select-option>
+                      <a-select-option :value="-14">14 ngày trước</a-select-option>
+                      <a-select-option :value="-7">7 ngày trước</a-select-option>
+                      <a-select-option :value="7">7 ngày tới</a-select-option>
+                      <a-select-option :value="14">14 ngày tới</a-select-option>
+                      <a-select-option :value="30">30 ngày tới</a-select-option>
+                      <a-select-option :value="90">90 ngày tới</a-select-option>
+                    </a-select>
+                  </div>
+                  <div class="col-sm-5">
+                    <div
+                      class="d-flex justify-content-center justify-content-md-start flex-wrap gap-2"
+                    >
+                      <a-button class="btn-light" @click="fetchAttendanceList">
+                        <FilterFilled /> Lọc
+                      </a-button>
+                      <a-button class="btn-gray" @click="handleClearFilter"> Huỷ lọc </a-button>
+                    </div>
+                  </div>
+                </div>
+              </a-collapse-panel>
+            </a-collapse>
+
+            <div class="col-md-4 col-sm-12">
+              <div class="d-flex justify-content-end mb-3">
+                <a-button
+                  type="primary"
+                  @click="exportToExcel"
+                  :loading="isLoadingExport"
+                  class="me-3"
+                  >Tải xuống Excel</a-button
+                >
+                <a-button type="default" @click="exportToPDF" :loading="isLoadingExport"
+                  >Tải xuống PDF</a-button
+                >
+              </div>
+            </div>
           </div>
 
           <a-table
