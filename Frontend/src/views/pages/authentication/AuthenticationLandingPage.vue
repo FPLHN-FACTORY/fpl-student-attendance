@@ -56,6 +56,8 @@ let roles = [
   },
 ]
 
+const tmpRoles = [...roles]
+
 const isRouteAdm = route.path === PREFIX_ADMIN_PANEL
 const isRoleAdm =
   authStore?.user?.role.includes(ROLE.ADMIN) ||
@@ -69,7 +71,7 @@ if (isRouteAdm || isRoleAdm) {
 }
 
 if (!roles.length && authStore.isLogin) {
-  roles = roles.filter((o) => authStore.user.role.includes(o.role))
+  roles = tmpRoles.filter((o) => authStore.user.role.includes(o.role))
 }
 
 const showModalSelectFacility = () => (isShowModalSelectFacility.value = true)
