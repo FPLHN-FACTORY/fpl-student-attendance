@@ -1,19 +1,25 @@
 <script setup>
-import useBreadcrumbStore from '@/stores/useBreadCrumbStore';
-import useLoadingStore from '@/stores/useLoadingStore';
-import { ref, reactive, onMounted } from 'vue';
-import { DEFAULT_PAGINATION, DEFAULT_DATE_FORMAT } from '@/constants';
-import { autoAddColumnWidth, formatDate } from '@/utils/utils';
+import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
+import useLoadingStore from '@/stores/useLoadingStore'
+import { ref, reactive, onMounted } from 'vue'
+import { DEFAULT_PAGINATION, DEFAULT_DATE_FORMAT } from '@/constants'
+import { autoAddColumnWidth, formatDate } from '@/utils/utils'
 import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
-import { ROUTE_NAMES } from '@/router/staffRoute';
-import requestAPI from '@/services/requestApiService';
-import { API_ROUTES_STAFF } from '@/constants/staffConstant';
-import { message } from 'ant-design-vue';
-import { EditFilled, FilterFilled, PlusOutlined, SearchOutlined, UnorderedListOutlined } from '@ant-design/icons-vue';
+import { ROUTE_NAMES } from '@/router/staffRoute'
+import requestAPI from '@/services/requestApiService'
+import { API_ROUTES_STAFF } from '@/constants/staffConstant'
+import { message } from 'ant-design-vue'
+import {
+  EditFilled,
+  FilterFilled,
+  PlusOutlined,
+  SearchOutlined,
+  UnorderedListOutlined,
+} from '@ant-design/icons-vue'
 
-const breadcrumbStore = useBreadcrumbStore();
-const loadingStore = useLoadingStore();
-const isLoading = ref(false);
+const breadcrumbStore = useBreadcrumbStore()
+const loadingStore = useLoadingStore()
+const isLoading = ref(false)
 
 const breadcrumb = ref([
   {
@@ -32,11 +38,11 @@ const filter = reactive({
   toDate: null,
   dateRange: null,
   semesterId: null,
-});
+})
 
 const pagination = reactive({
   ...DEFAULT_PAGINATION,
-});
+})
 
 const columns = ref(
   autoAddColumnWidth([
@@ -45,10 +51,10 @@ const columns = ref(
     { title: 'Mô tả', dataIndex: 'description', key: 'description' },
     { title: 'Ngày', dataIndex: 'dayHappen', key: 'dayHappen' },
     { title: 'Chức năng', key: 'action' },
-  ])
+  ]),
 )
 
-const attendanceRecovery = ref([]);
+const attendanceRecovery = ref([])
 const fetchAttendanceRecovery = () => {
   loadingStore.show()
   requestAPI
@@ -85,20 +91,20 @@ const handleTableChange = (pageInfo) => {
   fetchAttendanceRecovery()
 }
 
-const semester = ref([]);
+const semester = ref([])
 const fetchSemester = () => {
   loadingStore.show()
   requestAPI
-  .get(API_ROUTES_STAFF.FETCH_DATA_ATTENDANCE_RECOVERY + '/semesters')
-  .then((response) => {
-    semester.value = response.data.data
-  })
-  .catch((error) => {
-    message.error(error.response?.data?.message || 'Lỗi khi lấy danh sách kỳ học')
-  })
-  .finally(() => {
-    loadingStore.hide()
-  })
+    .get(API_ROUTES_STAFF.FETCH_DATA_ATTENDANCE_RECOVERY + '/semesters')
+    .then((response) => {
+      semester.value = response.data.data
+    })
+    .catch((error) => {
+      message.error(error.response?.data?.message || 'Lỗi khi lấy danh sách kỳ học')
+    })
+    .finally(() => {
+      loadingStore.hide()
+    })
 }
 
 const handleDateRangeChange = (range) => {
@@ -123,7 +129,7 @@ const handleClearFilter = () => {
   fetchAttendanceRecovery()
 }
 
-const modalAddEvent = ref(false);
+const modalAddEvent = ref(false)
 const modalAddLoading = ref(false)
 
 const newEvent = reactive({
@@ -148,7 +154,7 @@ const handleShowModalAdd = () => {
 }
 
 const handleAddEvent = () => {
-  if(!newEvent.name || !newEvent.dayHappen) {
+  if (!newEvent.name || !newEvent.dayHappen) {
     message.error('Vui lòng nhập đầy đủ thông tin')
     return
   }
@@ -159,7 +165,8 @@ const handleAddEvent = () => {
     description: newEvent.description,
     day: newEvent.dayHappen.valueOf(),
   }
-  requestAPI.post(API_ROUTES_STAFF.FETCH_DATA_ATTENDANCE_RECOVERY, payload)
+  requestAPI
+    .post(API_ROUTES_STAFF.FETCH_DATA_ATTENDANCE_RECOVERY, payload)
     .then(() => {
       message.success('Thêm sự kiện khôi phục điểm danh thành công')
       clearData()
@@ -182,11 +189,9 @@ const editEvent = reactive({
   description: '',
   dayHappen: null,
 })
-const handleShowModalEdit = (record) => {
-
-}
+const handleShowModalEdit = (record) => {}
 const handleEditEvent = () => {
-  console.log('handleEditEvent')
+  console.log('handleEditEvent2')
 }
 
 onMounted(() => {
@@ -196,27 +201,33 @@ onMounted(() => {
 })
 </script>
 <template>
-
   <!-- Danh sách sự kiện khôi phục điểm danh -->
   <div class="container-fluid">
     <div class="row g-3">
       <div class="col-12">
-        <a-card :bordered="false" class="cart mb-3">
-          <template #title> <FilterFilled /> Bộ lọc </template>
+        <a-card :bordered="false" class="cart">
+          <template #title>
+            <UnorderedListOutlined /> Danh sách sự kiện khôi phục điểm danh
+          </template>
+
           <div class="row g-2">
-            <div class="col-md-6 col-sm-12">
-              <div class="label-title">Từ khoá:</div>
-              <a-input
-                v-model:value="filter.searchQuery"
-                placeholder="Tìm theo tên hoặc mô tả"
-                allowClear
-                @change="fetchAttendanceRecovery"
-                class="w-100"
-              >
-                <template #suffix> <SearchOutlined /> </template>
-              </a-input>
-            </div>
-            <!-- <div class="col-md-6 col-sm-12">
+            <div class="col-md-10 col-sm-12">
+              <a-collapse ghost>
+                <a-collapse-panel>
+                  <template #header><FilterFilled /> Bộ lọc</template>
+                  <div class="row g-2">
+                    <div class="col-md-4 col-sm-6">
+                      <a-input
+                        v-model:value="filter.searchQuery"
+                        placeholder="Tìm theo tên hoặc mô tả"
+                        allowClear
+                        @change="fetchAttendanceRecovery"
+                        class="w-100"
+                      >
+                        <template #prefix> <SearchOutlined /> </template>
+                      </a-input>
+                    </div>
+                    <!-- <div class="col-md-6 col-sm-12">
               <div class="label-title">Kỳ học:</div>
               <a-select
                 v-model:value="filter.semesterId"
@@ -231,39 +242,40 @@ onMounted(() => {
                 </a-select-option>
               </a-select>
             </div> -->
-            <div class="col-md-6 col-sm-12">
-              <div class="label-title">Khoảng ngày:</div>
-              <a-range-picker
-                v-model:value="filter.dateRange"
-                class="w-100"
-                :format="DEFAULT_DATE_FORMAT"
-                @change="handleDateRangeChange"
-              />
+                    <div class="col-md-4 col-sm-6">
+                      <a-range-picker
+                        v-model:value="filter.dateRange"
+                        class="w-100"
+                        :format="DEFAULT_DATE_FORMAT"
+                        @change="handleDateRangeChange"
+                      />
+                    </div>
+
+                    <div class="col-md-4 col-sm-12">
+                      <div
+                        class="d-flex justify-content-center justify-content-md-start flex-wrap gap-2"
+                      >
+                        <a-button class="btn-light" @click="fetchAttendanceRecovery">
+                          <FilterFilled /> Lọc
+                        </a-button>
+                        <a-button class="btn-gray" @click="handleClearFilter"> Huỷ lọc </a-button>
+                      </div>
+                    </div>
+                  </div>
+                </a-collapse-panel>
+              </a-collapse>
             </div>
-          </div>
-          <div class="row">
-            <div class="col-12">
-              <div class="d-flex justify-content-center flex-wrap gap-2 mt-3">
-                <a-button class="btn-light" @click="fetchAttendanceRecovery">
-                  <FilterFilled /> Lọc
-                </a-button>
-                <a-button class="btn-gray" @click="handleClearFilter"> Huỷ lọc </a-button>
+            <div class="col-md-2 col-sm-12">
+              <div class="d-flex justify-content-end mb-3 flex-wrap gap-3">
+                <a-tooltip title="Thêm Sự kiện khôi phục điểm danh">
+                  <a-button type="primary" @click="handleShowModalAdd">
+                    <PlusOutlined /> Thêm mới
+                  </a-button>
+                </a-tooltip>
               </div>
             </div>
           </div>
-        </a-card>
-      </div>
 
-      <div class="col-12">
-        <a-card :bordered="false" class="cart">
-          <template #title> <UnorderedListOutlined /> Danh sách sự kiện khôi phục điểm danh </template>
-          <div class="d-flex justify-content-end mb-3 flex-wrap gap-3">
-              <a-tooltip title="Thêm Sự kiện khôi phục điểm danh">
-                <a-button type="primary" @click="handleShowModalAdd">
-                  <PlusOutlined /> Thêm
-                </a-button>
-              </a-tooltip>
-          </div>
           <a-table
             class="nowrap"
             rowKey="id"
@@ -302,13 +314,13 @@ onMounted(() => {
 
   <!-- Modal Thêm sự kiện khôi phục điểm danh -->
   <a-modal
-  v-model:open="modalAddEvent"
-   title="Thêm sự kiện khôi phục điểm danh"
-   :okButtonProps="{ loading: modalAddLoading }"
-   @ok="handleAddEvent"
-   @cancel="clearData"
-   @close="clearData">
-
+    v-model:open="modalAddEvent"
+    title="Thêm sự kiện khôi phục điểm danh"
+    :okButtonProps="{ loading: modalAddLoading }"
+    @ok="handleAddEvent"
+    @cancel="clearData"
+    @close="clearData"
+  >
     <a-form :model="newEvent" layout="vertical">
       <a-form-item label="Tên sự kiện" required>
         <a-input v-model:value="newEvent.name" placeholder="Nhập tên sự kiện" />
@@ -317,25 +329,27 @@ onMounted(() => {
         <a-textarea v-model:value="newEvent.description" placeholder="Nhập mô tả" />
       </a-form-item>
       <a-form-item label="Ngày" required>
-        <a-date-picker v-model:value="newEvent.dayHappen" placeholder="Chọn ngày" :format="DEFAULT_DATE_FORMAT" class="w-100" />
+        <a-date-picker
+          v-model:value="newEvent.dayHappen"
+          placeholder="Chọn ngày"
+          :format="DEFAULT_DATE_FORMAT"
+          class="w-100"
+        />
       </a-form-item>
     </a-form>
-
   </a-modal>
 
   <!-- Modal Sửa sự kiện khôi phục điểm danh -->
-  <a-modal v-model:open="modalEditEvent"
-  title="Sửa sự kiện khôi phục điểm danh"
-  :okButtonProps="{ loading: modalUpdateLoading }"
-  @ok="handleEditEvent"
-  @cancel="clearData"
-  @close="clearData">
-
+  <a-modal
+    v-model:open="modalEditEvent"
+    title="Sửa sự kiện khôi phục điểm danh"
+    :okButtonProps="{ loading: modalUpdateLoading }"
+    @ok="handleEditEvent"
+    @cancel="clearData"
+    @close="clearData"
+  >
     <a-form :model="newEvent" layout="vertical">
       <a-form-item label="Tên sự kiện" required></a-form-item>
     </a-form>
-
   </a-modal>
-
 </template>
-

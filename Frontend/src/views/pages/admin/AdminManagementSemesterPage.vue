@@ -73,7 +73,7 @@ const getSemesterByMonth = () => {
 const defaultDateRange = reactive({
   fromDate: dayjs().add(1, 'day'), // Ngày mai
   toDate: dayjs().add(4, 'month'), // 4 tháng sau
-  semesterName: getSemesterByMonth() // Tự động chọn học kỳ dựa trên tháng
+  semesterName: getSemesterByMonth(), // Tự động chọn học kỳ dựa trên tháng
 })
 
 // Dữ liệu cho modal Thêm/Cập Nhật (DatePicker trả về đối tượng dayjs)
@@ -335,58 +335,62 @@ onMounted(() => {
     <!-- Card Bộ lọc -->
     <div class="row g-3">
       <div class="col-12">
-        <a-card :bordered="false" class="cart mb-3">
-          <template #title> <FilterFilled /> Bộ lọc </template>
-          <!-- Hàng 1: Input tìm kiếm & Select trạng thái -->
-          <div class="row g-3 filter-container">
-            <div class="col-xl-6 col-md-12 col-sm-12">
-              <div class="label-title">Từ khoá:</div>
-              <a-input
-                v-model:value="filter.semesterCode"
-                placeholder="Tìm kiếm theo mã học kỳ"
-                allowClear
-                @change="fetchSemesters"
-              >
-                <template #prefix>
-                  <SearchOutlined />
-                </template>
-              </a-input>
-            </div>
-            <div class="col-xl-3 col-md-6 col-sm-6">
-              <div class="label-title">Trạng thái:</div>
-              <a-select
-                v-model:value="filter.status"
-                placeholder="Chọn trạng thái"
-                allowClear
-                class="w-100"
-                @change="fetchSemesters"
-              >
-                <a-select-option :value="''">Tất cả trạng thái</a-select-option>
-                <a-select-option value="ACTIVE">Đang hoạt động</a-select-option>
-                <a-select-option value="INACTIVE">Đã kết thúc</a-select-option>
-              </a-select>
-            </div>
+        <a-card :bordered="false" class="cart mb-3 no-body-padding">
+          <a-collapse ghost>
+            <a-collapse-panel class="px-2">
+              <template #header><FilterFilled /> Bộ lọc</template>
+              <!-- Hàng 1: Input tìm kiếm & Select trạng thái -->
+              <div class="row g-3 filter-container">
+                <div class="col-xl-6 col-md-12 col-sm-12">
+                  <div class="label-title">Từ khoá:</div>
+                  <a-input
+                    v-model:value="filter.semesterCode"
+                    placeholder="Tìm kiếm theo mã học kỳ"
+                    allowClear
+                    @change="fetchSemesters"
+                  >
+                    <template #prefix>
+                      <SearchOutlined />
+                    </template>
+                  </a-input>
+                </div>
+                <div class="col-xl-3 col-md-6 col-sm-6">
+                  <div class="label-title">Trạng thái:</div>
+                  <a-select
+                    v-model:value="filter.status"
+                    placeholder="Chọn trạng thái"
+                    allowClear
+                    class="w-100"
+                    @change="fetchSemesters"
+                  >
+                    <a-select-option :value="''">Tất cả trạng thái</a-select-option>
+                    <a-select-option value="ACTIVE">Đang hoạt động</a-select-option>
+                    <a-select-option value="INACTIVE">Đã kết thúc</a-select-option>
+                  </a-select>
+                </div>
 
-            <div class="col-xl-3 col-md-6 col-sm-6">
-              <div class="label-title">Khoảng ngày:</div>
-              <a-range-picker
-                v-model:value="filter.dateRange"
-                class="w-100"
-                format="DD/MM/YYYY"
-                @change="handleDateRangeChange"
-              />
-            </div>
-          </div>
-          <div class="row">
-            <div class="col-12">
-              <div class="d-flex justify-content-center flex-wrap gap-2 mt-3">
-                <a-button class="btn-light" @click="fetchSemesters">
-                  <FilterFilled /> Lọc
-                </a-button>
-                <a-button class="btn-gray" @click="handleClearFilter"> Huỷ lọc </a-button>
+                <div class="col-xl-3 col-md-6 col-sm-6">
+                  <div class="label-title">Khoảng ngày:</div>
+                  <a-range-picker
+                    v-model:value="filter.dateRange"
+                    class="w-100"
+                    format="DD/MM/YYYY"
+                    @change="handleDateRangeChange"
+                  />
+                </div>
               </div>
-            </div>
-          </div>
+              <div class="row">
+                <div class="col-12">
+                  <div class="d-flex justify-content-center flex-wrap gap-2 mt-3">
+                    <a-button class="btn-light" @click="fetchSemesters">
+                      <FilterFilled /> Lọc
+                    </a-button>
+                    <a-button class="btn-gray" @click="handleClearFilter"> Huỷ lọc </a-button>
+                  </div>
+                </div>
+              </div>
+            </a-collapse-panel>
+          </a-collapse>
         </a-card>
       </div>
     </div>
