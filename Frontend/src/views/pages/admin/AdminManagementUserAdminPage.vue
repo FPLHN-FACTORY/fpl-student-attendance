@@ -318,90 +318,103 @@ onMounted(() => {
 
 <template>
   <div class="container-fluid">
+    <!-- Table -->
     <div class="row g-3">
       <div class="col-12">
-        <a-card :bordered="false" class="cart mb-3">
-          <template #title> <FilterFilled /> Bộ lọc</template>
-          <div class="row g-3 filter-container">
-            <div class="col-md-8 col-sm-6">
-              <div class="label-title">Từ khoá:</div>
-              <a-input
-                v-model:value="filter.searchQuery"
-                placeholder="Nhập mã, tên hoặc email"
-                allowClear
-                @change="fetchUsers"
-              >
-                <template #prefix>
-                  <SearchOutlined />
-                </template>
-              </a-input>
+        <a-card :bordered="false" class="cart">
+          <template #title><UnorderedListOutlined /> Danh sách Admin</template>
+
+          <div class="row g-2">
+            <div class="col-md-10 col-sm-12">
+              <a-collapse ghost>
+                <a-collapse-panel>
+                  <template #header><FilterFilled /> Bộ lọc</template>
+                  <div class="row g-3 filter-container">
+                    <div class="col-md-5 col-sm-6">
+                      <a-input
+                        v-model:value="filter.searchQuery"
+                        placeholder="Nhập mã, tên hoặc email"
+                        allowClear
+                        @change="fetchUsers"
+                      >
+                        <template #prefix>
+                          <SearchOutlined />
+                        </template>
+                      </a-input>
+                    </div>
+                    <div class="col-md-3 col-sm-6">
+                      <a-select
+                        v-model:value="filter.status"
+                        placeholder="Chọn trạng thái"
+                        allowClear
+                        class="w-100"
+                        @change="fetchUsers"
+                      >
+                        <a-select-option :value="''">Tất cả trạng thái</a-select-option>
+                        <a-select-option value="1">Hoạt động</a-select-option>
+                        <a-select-option value="0">Không hoạt động</a-select-option>
+                      </a-select>
+                    </div>
+
+                    <div class="col-md-4 col-sm-12">
+                      <div
+                        class="d-flex justify-content-center justify-content-md-start flex-wrap gap-2"
+                      >
+                        <a-button class="btn-light" @click="fetchUsers">
+                          <FilterFilled /> Lọc
+                        </a-button>
+                        <a-button class="btn-gray" @click="handleClearFilter"> Huỷ lọc </a-button>
+                      </div>
+                    </div>
+                  </div>
+                </a-collapse-panel>
+              </a-collapse>
             </div>
-            <div class="col-md-4 col-sm-6">
-              <div class="label-title">Trạng thái:</div>
-              <a-select
-                v-model:value="filter.status"
-                placeholder="Chọn trạng thái"
-                allowClear
-                class="w-100"
-                @change="fetchUsers"
-              >
-                <a-select-option :value="''">Tất cả trạng thái</a-select-option>
-                <a-select-option value="1">Hoạt động</a-select-option>
-                <a-select-option value="0">Không hoạt động</a-select-option>
-              </a-select>
-            </div>
-          </div>
-          <div class="row">
-            <div class="col-12">
-              <div class="d-flex justify-content-center flex-wrap gap-2 mt-3">
-                <a-button class="btn-light" @click="fetchUsers"> <FilterFilled /> Lọc </a-button>
-                <a-button class="btn-gray" @click="handleClearFilter"> Huỷ lọc </a-button>
+            <div class="col-md-2 col-sm-12">
+              <div class="d-flex justify-content-end mb-3 flex-wrap gap-3">
+                <a-tooltip title="Thêm mới Admin">
+                  <a-button type="primary" @click="handleShowModalAdd"
+                    ><PlusOutlined /> Thêm mới</a-button
+                  >
+                </a-tooltip>
               </div>
             </div>
           </div>
-        </a-card>
-      </div>
-    </div>
 
-    <!-- Table -->
-    <a-card>
-      <template #title><UnorderedListOutlined /> Danh sách Admin</template>
-      <div class="d-flex justify-content-end mb-3 flex-wrap gap-3">
-        <a-tooltip title="Thêm mới Admin">
-          <a-button type="primary" @click="handleShowModalAdd"><PlusOutlined /> Thêm mới</a-button>
-        </a-tooltip>
-      </div>
-      <a-table
-        class="nowrap"
-        :dataSource="users"
-        :columns="columns"
-        rowKey="userAdminId"
-        :loading="isLoading"
-        :pagination="pagination"
-        @change="handleTableChange"
-        :scroll="{ x: 'auto' }"
-      >
-        <template #bodyCell="{ column, record }">
-          <template v-if="column.dataIndex === 'userAdminStatus'">
-            <a-switch
-              :checked="record.userAdminStatus === 1"
-              :disabled="record.isMySelf"
-              class="me-2"
-              @change="handleChangeStatus(record)"
-            />
-            <a-tag :color="record.userAdminStatus === 1 ? 'green' : 'red'">{{
-              record.userAdminStatus === 1 ? 'Đang hoạt động' : 'Ngưng hoạt động'
-            }}</a-tag>
-          </template>
+          <a-table
+            class="nowrap"
+            :dataSource="users"
+            :columns="columns"
+            rowKey="userAdminId"
+            :loading="isLoading"
+            :pagination="pagination"
+            @change="handleTableChange"
+            :scroll="{ x: 'auto' }"
+          >
+            <template #bodyCell="{ column, record }">
+              <template v-if="column.dataIndex === 'userAdminStatus'">
+                <a-switch
+                  :checked="record.userAdminStatus === 1"
+                  :disabled="record.isMySelf"
+                  class="me-2"
+                  @change="handleChangeStatus(record)"
+                />
+                <a-tag :color="record.userAdminStatus === 1 ? 'green' : 'red'">{{
+                  record.userAdminStatus === 1 ? 'Đang hoạt động' : 'Ngưng hoạt động'
+                }}</a-tag>
+              </template>
 
-          <template v-else-if="column.key === 'actions'">
-            <a-tooltip title="Chỉnh sửa thông tin">
-              <a-button type="text" class="btn-outline-info me-2" @click="handleEditUser(record)"
-                ><EditFilled
-              /></a-button>
-            </a-tooltip>
-            <!-- Chuyển quyền: chỉ hiện khi là chính mình -->
-            <!-- <a-tooltip title="Chuyển quyền" v-if="record.isMySelf">
+              <template v-else-if="column.key === 'actions'">
+                <a-tooltip title="Chỉnh sửa thông tin">
+                  <a-button
+                    type="text"
+                    class="btn-outline-info me-2"
+                    @click="handleEditUser(record)"
+                    ><EditFilled
+                  /></a-button>
+                </a-tooltip>
+                <!-- Chuyển quyền: chỉ hiện khi là chính mình -->
+                <!-- <a-tooltip title="Chuyển quyền" v-if="record.isMySelf">
               <a-button
                 type="text"
                 class="btn-outline-warning"
@@ -409,20 +422,22 @@ onMounted(() => {
                 ><FilterFilled
               /></a-button>
             </a-tooltip> -->
-            <template v-if="!record.isMySelf">
-              <a-tooltip title="Xóa Admin">
-                <a-button type="text" class="btn-outline-danger" @click="handleDelete(record)">
-                  <DeleteFilled />
-                </a-button>
-              </a-tooltip>
+                <template v-if="!record.isMySelf">
+                  <a-tooltip title="Xóa Admin">
+                    <a-button type="text" class="btn-outline-danger" @click="handleDelete(record)">
+                      <DeleteFilled />
+                    </a-button>
+                  </a-tooltip>
+                </template>
+              </template>
+              <template v-else>
+                {{ record[column.dataIndex] }}
+              </template>
             </template>
-          </template>
-          <template v-else>
-            {{ record[column.dataIndex] }}
-          </template>
-        </template>
-      </a-table>
-    </a-card>
+          </a-table>
+        </a-card>
+      </div>
+    </div>
 
     <!-- Modal Thêm -->
     <a-modal

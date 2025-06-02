@@ -333,58 +333,63 @@ onMounted(() => {
   <div class="container-fluid">
     <div class="row g-3">
       <div class="col-12">
-        <!-- Bộ lọc tìm kiếm -->
-        <a-card :bordered="false" class="cart">
-          <template #title> <FilterFilled /> Bộ lọc </template>
-          <div class="row g-3">
-            <div class="col-xxl-8 col-md-8 col-sm-6">
-              <div class="label-title">Từ khoá:</div>
-              <a-input
-                v-model:value="filter.name"
-                placeholder="Tìm kiếm theo tên"
-                allowClear
-                @change="fetchFacilities"
-              >
-                <template #prefix>
-                  <SearchOutlined />
-                </template>
-              </a-input>
-            </div>
-            <div class="col-xxl-4 col-md-4 col-sm-6">
-              <div class="label-title">Trạng thái:</div>
-              <a-select
-                v-model:value="filter.status"
-                placeholder="Chọn trạng thái"
-                allowClear
-                class="w-100"
-                @change="fetchFacilities"
-              >
-                <a-select-option :value="null">Tất cả trạng thái</a-select-option>
-                <a-select-option value="ACTIVE">Hoạt động</a-select-option>
-                <a-select-option value="INACTIVE">Không hoạt động</a-select-option>
-              </a-select>
-            </div>
-            <div class="col-12">
-              <div class="d-flex justify-content-center flex-wrap gap-2">
-                <a-button class="btn-light" @click="handleSubmitFilter">
-                  <FilterFilled /> Lọc
-                </a-button>
-                <a-button class="btn-gray" @click="handleClearFilter"> Huỷ lọc </a-button>
-              </div>
-            </div>
-          </div>
-        </a-card>
-      </div>
-
-      <div class="col-12">
         <!-- Danh sách cơ sở -->
         <a-card :bordered="false" class="cart">
           <template #title> <UnorderedListOutlined /> Danh sách cơ sở </template>
-          <div class="d-flex justify-content-end mb-3">
-            <!-- Nút Thêm sử dụng kiểu primary (filled) -->
-            <a-button type="primary" @click="handleShowModalAdd">
-              <PlusOutlined /> Thêm cơ sở
-            </a-button>
+
+          <div class="row g-2">
+            <div class="col-md-10 col-sm-12">
+              <a-collapse ghost>
+                <a-collapse-panel>
+                  <template #header><FilterFilled /> Bộ lọc</template>
+                  <div class="row g-3">
+                    <div class="col-md-5 col-sm-6">
+                      <a-input
+                        v-model:value="filter.name"
+                        placeholder="Tìm kiếm theo tên"
+                        allowClear
+                        @change="fetchFacilities"
+                      >
+                        <template #prefix>
+                          <SearchOutlined />
+                        </template>
+                      </a-input>
+                    </div>
+                    <div class="col-md-3 col-sm-6">
+                      <a-select
+                        v-model:value="filter.status"
+                        placeholder="Chọn trạng thái"
+                        allowClear
+                        class="w-100"
+                        @change="fetchFacilities"
+                      >
+                        <a-select-option :value="null">Tất cả trạng thái</a-select-option>
+                        <a-select-option value="ACTIVE">Hoạt động</a-select-option>
+                        <a-select-option value="INACTIVE">Không hoạt động</a-select-option>
+                      </a-select>
+                    </div>
+                    <div class="col-md-4 col-sm-12">
+                      <div
+                        class="d-flex justify-content-center justify-content-md-start flex-wrap gap-2"
+                      >
+                        <a-button class="btn-light" @click="handleSubmitFilter">
+                          <FilterFilled /> Lọc
+                        </a-button>
+                        <a-button class="btn-gray" @click="handleClearFilter"> Huỷ lọc </a-button>
+                      </div>
+                    </div>
+                  </div>
+                </a-collapse-panel>
+              </a-collapse>
+            </div>
+            <div class="col-md-2 col-sm-12">
+              <div class="d-flex justify-content-end mb-3">
+                <!-- Nút Thêm sử dụng kiểu primary (filled) -->
+                <a-button type="primary" @click="handleShowModalAdd">
+                  <PlusOutlined /> Thêm cơ sở
+                </a-button>
+              </div>
+            </div>
           </div>
 
           <a-table

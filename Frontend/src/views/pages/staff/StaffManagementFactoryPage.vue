@@ -244,16 +244,17 @@ const submitUpdateFactory = () => {
   }
 
   // Check if project is changed
-  const originalFactory = factories.value.find(f => f.id === detailFactory.id)
+  const originalFactory = factories.value.find((f) => f.id === detailFactory.id)
   if (originalFactory && originalFactory.projectId !== detailFactory.idProject) {
     Modal.confirm({
       title: 'Xác nhận thay đổi dự án',
-      content: 'Bạn đang cập nhật dự án mới. Tất cả lịch kế hoạch nhóm xưởng của dự án cũ sẽ chuyển sang kế hoạch dự án mới. Bạn có chắc chắn muốn tiếp tục?',
+      content:
+        'Bạn đang cập nhật dự án mới. Tất cả lịch kế hoạch nhóm xưởng của dự án cũ sẽ chuyển sang kế hoạch dự án mới. Bạn có chắc chắn muốn tiếp tục?',
       okText: 'Tiếp tục',
       cancelText: 'Hủy bỏ',
       onOk() {
         performUpdate()
-      }
+      },
     })
   } else {
     Modal.confirm({
@@ -566,84 +567,88 @@ onMounted(() => {
     <div class="row g-3">
       <!-- Bộ lọc tìm kiếm -->
       <div class="col-12">
-        <a-card :bordered="false" class="cart mb-3">
-          <template #title> <FilterFilled /> Bộ lọc </template>
-          <div class="row g-2">
-            <div class="col-md-6 col-sm-12">
-              <div class="label-title">Từ khoá:</div>
-              <a-input
-                v-model:value="filter.factoryName"
-                placeholder="Tìm theo tên nhóm xưởng"
-                allowClear
-                @change="onFilterChange"
-                class="w-100"
-              >
-                <template #prefix>
-                  <SearchOutlined />
-                </template>
-              </a-input>
-            </div>
-            <div class="col-md-3 col-sm-6">
-              <div class="label-title">Giảng viên:</div>
-              <a-select
-                v-model:value="filter.idStaff"
-                placeholder="Chọn giảng viên"
-                allowClear
-                show-search
-                @change="onFilterChange"
-                class="w-100"
-                :filter-option="
-                  (input, option) =>
-                    (option.label || '').toLowerCase().includes(input.toLowerCase())
-                "
-              >
-                <a-select-option :value="null">Tất cả giảng viên</a-select-option>
-                <a-select-option
-                  v-for="staff in staffs"
-                  :key="staff.id"
-                  :value="staff.id"
-                  :label="staff.code + ' - ' + staff.name"
-                >
-                  {{ staff.code + ' - ' + staff.name }}
-                </a-select-option>
-              </a-select>
-            </div>
-            <div class="col-md-3 col-sm-6">
-              <div class="label-title">Kỳ học:</div>
-              <a-select
-                v-model:value="filter.idSemester"
-                placeholder="Chọn kỳ học"
-                allowClear
-                show-search
-                @change="onFilterChange"
-                class="w-100"
-                :filter-option="
-                  (input, option) =>
-                    (option.label || '').toLowerCase().includes(input.toLowerCase())
-                "
-              >
-                <a-select-option :value="null">Tất cả kỳ học</a-select-option>
-                <a-select-option
-                  v-for="semester in semesters"
-                  :key="semester.id"
-                  :value="semester.id"
-                  :label="semester.code"
-                >
-                  {{ semester.code }}
-                </a-select-option>
-              </a-select>
-            </div>
-          </div>
-          <div class="row">
-            <div class="col-12">
-              <div class="d-flex justify-content-center flex-wrap gap-2 mt-3">
-                <a-button class="btn-light" @click="fetchFactories">
-                  <FilterFilled /> Lọc
-                </a-button>
-                <a-button class="btn-gray" @click="handleClearFilter"> Huỷ lọc </a-button>
+        <a-card :bordered="false" class="cart no-body-padding">
+          <a-collapse ghost>
+            <a-collapse-panel class="px-2">
+              <template #header><FilterFilled /> Bộ lọc</template>
+              <div class="row g-2">
+                <div class="col-md-6 col-sm-12">
+                  <div class="label-title">Từ khoá:</div>
+                  <a-input
+                    v-model:value="filter.factoryName"
+                    placeholder="Tìm theo tên nhóm xưởng"
+                    allowClear
+                    @change="onFilterChange"
+                    class="w-100"
+                  >
+                    <template #prefix>
+                      <SearchOutlined />
+                    </template>
+                  </a-input>
+                </div>
+                <div class="col-md-3 col-sm-6">
+                  <div class="label-title">Giảng viên:</div>
+                  <a-select
+                    v-model:value="filter.idStaff"
+                    placeholder="Chọn giảng viên"
+                    allowClear
+                    show-search
+                    @change="onFilterChange"
+                    class="w-100"
+                    :filter-option="
+                      (input, option) =>
+                        (option.label || '').toLowerCase().includes(input.toLowerCase())
+                    "
+                  >
+                    <a-select-option :value="null">Tất cả giảng viên</a-select-option>
+                    <a-select-option
+                      v-for="staff in staffs"
+                      :key="staff.id"
+                      :value="staff.id"
+                      :label="staff.code + ' - ' + staff.name"
+                    >
+                      {{ staff.code + ' - ' + staff.name }}
+                    </a-select-option>
+                  </a-select>
+                </div>
+                <div class="col-md-3 col-sm-6">
+                  <div class="label-title">Kỳ học:</div>
+                  <a-select
+                    v-model:value="filter.idSemester"
+                    placeholder="Chọn kỳ học"
+                    allowClear
+                    show-search
+                    @change="onFilterChange"
+                    class="w-100"
+                    :filter-option="
+                      (input, option) =>
+                        (option.label || '').toLowerCase().includes(input.toLowerCase())
+                    "
+                  >
+                    <a-select-option :value="null">Tất cả kỳ học</a-select-option>
+                    <a-select-option
+                      v-for="semester in semesters"
+                      :key="semester.id"
+                      :value="semester.id"
+                      :label="semester.code"
+                    >
+                      {{ semester.code }}
+                    </a-select-option>
+                  </a-select>
+                </div>
               </div>
-            </div>
-          </div>
+              <div class="row">
+                <div class="col-12">
+                  <div class="d-flex justify-content-center flex-wrap gap-2 mt-3">
+                    <a-button class="btn-light" @click="fetchFactories">
+                      <FilterFilled /> Lọc
+                    </a-button>
+                    <a-button class="btn-gray" @click="handleClearFilter"> Huỷ lọc </a-button>
+                  </div>
+                </div>
+              </div>
+            </a-collapse-panel>
+          </a-collapse>
         </a-card>
       </div>
 

@@ -185,7 +185,7 @@ const handleClearFilter = () => {
 const getNearestActiveSemester = (semesters) => {
   const now = new Date().getTime()
   return semesters
-    .filter(semester => semester.toDate > now) // Lọc các học kỳ có ngày kết thúc > hiện tại
+    .filter((semester) => semester.toDate > now) // Lọc các học kỳ có ngày kết thúc > hiện tại
     .sort((a, b) => a.toDate - b.toDate) // Sắp xếp theo ngày kết thúc tăng dần
     .shift() // Lấy học kỳ đầu tiên (gần nhất)
 }
@@ -383,100 +383,110 @@ onMounted(() => {
     <div class="row g-3">
       <div class="col-12">
         <!-- Bộ lọc tìm kiếm -->
-        <a-card :bordered="false" class="cart">
-          <template #title> <FilterFilled /> Bộ lọc </template>
-          <div class="row g-2">
-            <div class="col-md-12 col-sm-12">
-              <div class="label-title">Từ khoá:</div>
-              <a-input
-                v-model:value="filter.name"
-                placeholder="Tìm kiếm theo tên"
-                allowClear
-                class="filter-input w-100"
-                @change="fetchProjects"
-              >
-                <template #prefix>
-                  <SearchOutlined />
-                </template>
-              </a-input>
-            </div>
-            <div class="col-lg-3 col-md-6 col-sm-6">
-              <div class="label-title">Cấp dự án:</div>
-              <a-select
-                v-model:value="filter.levelProjectId"
-                placeholder="Cấp dự án"
-                allowClear
-                class="filter-select w-100"
-                :dropdownMatchSelectWidth="false"
-                @change="fetchProjects"
-              >
-                <a-select-option :value="null">Tất cả cấp dự án</a-select-option>
-                <a-select-option v-for="level in levels" :key="level.id" :value="level.id">
-                  {{ level.name }}
-                </a-select-option>
-              </a-select>
-            </div>
+        <a-card :bordered="false" class="cart no-body-padding">
+          <a-collapse ghost>
+            <a-collapse-panel class="px-2">
+              <template #header><FilterFilled /> Bộ lọc</template>
+              <div class="row g-2">
+                <div class="col-md-12 col-sm-12">
+                  <div class="label-title">Từ khoá:</div>
+                  <a-input
+                    v-model:value="filter.name"
+                    placeholder="Tìm kiếm theo tên"
+                    allowClear
+                    class="filter-input w-100"
+                    @change="fetchProjects"
+                  >
+                    <template #prefix>
+                      <SearchOutlined />
+                    </template>
+                  </a-input>
+                </div>
+                <div class="col-lg-3 col-md-6 col-sm-6">
+                  <div class="label-title">Cấp dự án:</div>
+                  <a-select
+                    v-model:value="filter.levelProjectId"
+                    placeholder="Cấp dự án"
+                    allowClear
+                    class="filter-select w-100"
+                    :dropdownMatchSelectWidth="false"
+                    @change="fetchProjects"
+                  >
+                    <a-select-option :value="null">Tất cả cấp dự án</a-select-option>
+                    <a-select-option v-for="level in levels" :key="level.id" :value="level.id">
+                      {{ level.name }}
+                    </a-select-option>
+                  </a-select>
+                </div>
 
-            <div class="col-lg-3 col-md-6 col-sm-6">
-              <div class="label-title">Học kỳ:</div>
-              <a-select
-                v-model:value="filter.semesterId"
-                placeholder="Học kỳ"
-                allowClear
-                class="filter-select w-100"
-                :dropdownMatchSelectWidth="false"
-                @change="fetchProjects"
-              >
-                <a-select-option :value="null">Tất cả học kỳ</a-select-option>
-                <a-select-option
-                  v-for="semester in allSemesters"
-                  :key="semester.id"
-                  :value="semester.id"
-                >
-                  {{ semester.code }}
-                </a-select-option>
-              </a-select>
-            </div>
-            <div class="col-lg-3 col-md-6 col-sm-6">
-              <div class="label-title">Môn học:</div>
-              <a-select
-                v-model:value="filter.subjectId"
-                placeholder="Môn học"
-                allowClear
-                class="filter-select w-100"
-                :dropdownMatchSelectWidth="false"
-                @change="fetchProjects"
-              >
-                <a-select-option :value="null">Tất cả môn học</a-select-option>
-                <a-select-option v-for="subject in subjects" :key="subject.id" :value="subject.id">
-                  {{ subject.name }}
-                </a-select-option>
-              </a-select>
-            </div>
-            <div class="col-lg-3 col-md-6 col-sm-6">
-              <div class="label-title">Trạng thái:</div>
-              <a-select
-                v-model:value="filter.status"
-                placeholder="Trạng thái"
-                allowClear
-                class="filter-select w-100"
-                :dropdownMatchSelectWidth="false"
-                @change="fetchProjects"
-              >
-                <a-select-option :value="null">Tất cả trạng thái</a-select-option>
-                <a-select-option :value="1">Đang triển khai</a-select-option>
-                <a-select-option :value="0">Không hoạt động</a-select-option>
-              </a-select>
-            </div>
-          </div>
-          <div class="row">
-            <div class="col-12">
-              <div class="d-flex justify-content-center flex-wrap gap-2 mt-3">
-                <a-button class="btn-light" @click="fetchProjects"> <FilterFilled /> Lọc </a-button>
-                <a-button class="btn-gray" @click="handleClearFilter"> Huỷ lọc </a-button>
+                <div class="col-lg-3 col-md-6 col-sm-6">
+                  <div class="label-title">Học kỳ:</div>
+                  <a-select
+                    v-model:value="filter.semesterId"
+                    placeholder="Học kỳ"
+                    allowClear
+                    class="filter-select w-100"
+                    :dropdownMatchSelectWidth="false"
+                    @change="fetchProjects"
+                  >
+                    <a-select-option :value="null">Tất cả học kỳ</a-select-option>
+                    <a-select-option
+                      v-for="semester in allSemesters"
+                      :key="semester.id"
+                      :value="semester.id"
+                    >
+                      {{ semester.code }}
+                    </a-select-option>
+                  </a-select>
+                </div>
+                <div class="col-lg-3 col-md-6 col-sm-6">
+                  <div class="label-title">Môn học:</div>
+                  <a-select
+                    v-model:value="filter.subjectId"
+                    placeholder="Môn học"
+                    allowClear
+                    class="filter-select w-100"
+                    :dropdownMatchSelectWidth="false"
+                    @change="fetchProjects"
+                  >
+                    <a-select-option :value="null">Tất cả môn học</a-select-option>
+                    <a-select-option
+                      v-for="subject in subjects"
+                      :key="subject.id"
+                      :value="subject.id"
+                    >
+                      {{ subject.name }}
+                    </a-select-option>
+                  </a-select>
+                </div>
+                <div class="col-lg-3 col-md-6 col-sm-6">
+                  <div class="label-title">Trạng thái:</div>
+                  <a-select
+                    v-model:value="filter.status"
+                    placeholder="Trạng thái"
+                    allowClear
+                    class="filter-select w-100"
+                    :dropdownMatchSelectWidth="false"
+                    @change="fetchProjects"
+                  >
+                    <a-select-option :value="null">Tất cả trạng thái</a-select-option>
+                    <a-select-option :value="1">Đang triển khai</a-select-option>
+                    <a-select-option :value="0">Không hoạt động</a-select-option>
+                  </a-select>
+                </div>
               </div>
-            </div>
-          </div>
+              <div class="row">
+                <div class="col-12">
+                  <div class="d-flex justify-content-center flex-wrap gap-2 mt-3">
+                    <a-button class="btn-light" @click="fetchProjects">
+                      <FilterFilled /> Lọc
+                    </a-button>
+                    <a-button class="btn-gray" @click="handleClearFilter"> Huỷ lọc </a-button>
+                  </div>
+                </div>
+              </div>
+            </a-collapse-panel>
+          </a-collapse>
         </a-card>
       </div>
 
@@ -581,16 +591,8 @@ onMounted(() => {
           </a-select>
         </a-form-item>
         <a-form-item label="Học kỳ" required>
-          <a-select
-            v-model:value="newProject.semesterId"
-            placeholder="Chọn học kỳ"
-            allowClear
-          >
-            <a-select-option
-              v-for="semester in semesters"
-              :key="semester.id"
-              :value="semester.id"
-            >
+          <a-select v-model:value="newProject.semesterId" placeholder="Chọn học kỳ" allowClear>
+            <a-select-option v-for="semester in semesters" :key="semester.id" :value="semester.id">
               {{ semester.code }}
             </a-select-option>
           </a-select>
