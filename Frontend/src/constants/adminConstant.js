@@ -19,4 +19,6 @@ export const API_ROUTES_ADMIN = {
 
   FETCH_DATA_ADMIN: API_URL + '/admin/admin-management',
 
+  FETCH_DATA_USER_LOG_ACTIVITY: API_URL + '/admin/user-activity-management',
+
 }
