@@ -9,7 +9,9 @@ import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import udpm.hn.studentattendance.core.staff.attendancerecovery.model.request.STStudentAttendanceRecoveryRequest;
+import udpm.hn.studentattendance.core.staff.attendancerecovery.repository.STAttendanceRecoveryRepository;
 import udpm.hn.studentattendance.core.staff.attendancerecovery.service.STAttendanceRecoveryService;
+import udpm.hn.studentattendance.entities.AttendanceRecovery;
 import udpm.hn.studentattendance.helpers.ExcelHelper;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
 import udpm.hn.studentattendance.helpers.RouterHelper;
@@ -39,6 +41,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -54,6 +57,7 @@ public class EXAttendanceRecoveryServiceImpl implements EXAttendanceRecoveryServ
 
     private final STAttendanceRecoveryService attendanceRecoveryService;
 
+    private final STAttendanceRecoveryRepository attendanceRecoveryRepository;
     @Override
     public ResponseEntity<?> getDataFromFile(EXUploadRequest request) {
         MultipartFile file = request.getFile();
@@ -62,6 +66,7 @@ public class EXAttendanceRecoveryServiceImpl implements EXAttendanceRecoveryServ
         }
         try {
             List<Map<String, String>> data = ExcelHelper.readFile(file);
+
             return RouterHelper.responseSuccess("Tải lên excel thành công", data);
         } catch (Exception e) {
             return RouterHelper.responseError("Lỗi khi xử lý excel", e.getMessage());
@@ -116,6 +121,11 @@ public class EXAttendanceRecoveryServiceImpl implements EXAttendanceRecoveryServ
         stStudentAttendanceRecoveryRequest.setStudentCode(studentCode);
         stStudentAttendanceRecoveryRequest.setDay(dayAttendance);
         stStudentAttendanceRecoveryRequest.setAttendanceRecoveryId(idAttendanceRecovery);
+
+        Optional<AttendanceRecovery> attendanceRecoveryOptional = attendanceRecoveryRepository.findById(idAttendanceRecovery);
+        AttendanceRecovery attendanceRecovery = attendanceRecoveryOptional.get();
+        attendanceRecovery.setTotalStudent(request.getLine());
+        attendanceRecoveryRepository.save(attendanceRecovery);
 
         ResponseEntity<ApiResponse> result = (ResponseEntity<ApiResponse>) attendanceRecoveryService.importAttendanceRecoveryStudent(stStudentAttendanceRecoveryRequest);
         ApiResponse response = result.getBody();

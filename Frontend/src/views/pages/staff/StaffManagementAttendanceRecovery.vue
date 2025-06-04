@@ -46,7 +46,7 @@ const columns = ref(
     { title: 'Tên hoạt động', dataIndex: 'name', key: 'name' },
     { title: 'Mô tả', dataIndex: 'description', key: 'description' },
     { title: 'Ngày', dataIndex: 'dayHappen', key: 'dayHappen' },
-    { title: 'Tổng sinh viên', dataIndex: 'student', key: 'student' },
+    { title: 'Tổng sinh viên', dataIndex: 'totalStudent', key: 'totalStudent' },
     {
       title: 'Chức năng',
       key: 'action',
@@ -359,6 +359,9 @@ onMounted(() => {
                 <template v-else-if="column.dataIndex === 'dayHappen'">
                   {{ formatDate(record.dayHappen, DEFAULT_DATE_FORMAT) }}
                 </template>
+                <template v-else-if="column.dataIndex === 'totalStudent'">
+                  <a-tag> {{ record.totalStudent }} Sinh Viên</a-tag>
+                 </template>
                 <template v-else>
                   {{ record[column.dataIndex] }}
                 </template>
@@ -372,7 +375,7 @@ onMounted(() => {
                     </a-button>
                   </a-tooltip>
                   <div class="excel-upload-wrapper">
-                    <ExcelUploadButton v-bind="configImportExcel" :data="{ idAttendanceRecovery: record.id }" />
+                    <ExcelUploadButton v-bind="configImportExcel" :data="{ attendanceRecoveryId: record.id }" />
                   </div>
                 </div>
               </template>
