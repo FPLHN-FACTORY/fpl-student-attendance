@@ -12,12 +12,16 @@ import udpm.hn.studentattendance.core.staff.attendancerecovery.model.request.STS
 import udpm.hn.studentattendance.core.staff.attendancerecovery.repository.STAttendanceRecoveryRepository;
 import udpm.hn.studentattendance.core.staff.attendancerecovery.service.STAttendanceRecoveryService;
 import udpm.hn.studentattendance.entities.AttendanceRecovery;
+import udpm.hn.studentattendance.entities.Facility;
+import udpm.hn.studentattendance.entities.ImportLog;
+import udpm.hn.studentattendance.entities.ImportLogDetail;
 import udpm.hn.studentattendance.helpers.ExcelHelper;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
 import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.helpers.SessionHelper;
 import udpm.hn.studentattendance.infrastructure.common.ApiResponse;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
+import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.ImportLogType;
 import udpm.hn.studentattendance.infrastructure.constants.RestApiStatus;
 import udpm.hn.studentattendance.infrastructure.excel.model.request.EXDataRequest;
@@ -58,10 +62,11 @@ public class EXAttendanceRecoveryServiceImpl implements EXAttendanceRecoveryServ
     private final STAttendanceRecoveryService attendanceRecoveryService;
 
     private final STAttendanceRecoveryRepository attendanceRecoveryRepository;
+
     @Override
     public ResponseEntity<?> getDataFromFile(EXUploadRequest request) {
         MultipartFile file = request.getFile();
-        if (file.isEmpty()){
+        if (file.isEmpty()) {
             return RouterHelper.createResponseApi(ApiResponse.error("Vui lòng tải lên file excel"), HttpStatus.BAD_GATEWAY);
         }
         try {
@@ -80,7 +85,7 @@ public class EXAttendanceRecoveryServiceImpl implements EXAttendanceRecoveryServ
 
         String idAttendanceRecovery = (String) data.get("attendanceRecoveryId");
         String dayString = item.get("NGAY_DIEM_DANH");
-        if (dayString.isEmpty() || dayString == null || dayString.equals("")){
+        if (dayString.isEmpty() || dayString == null || dayString.equals("")) {
             String msg = "Thông tin về ngày điểm danh không được để trống.";
             excelHelper.saveLogError(ImportLogType.ATTENDANCE_RECOVERY, msg, request);
             return RouterHelper.responseError(msg, HttpStatus.BAD_REQUEST);
@@ -111,7 +116,7 @@ public class EXAttendanceRecoveryServiceImpl implements EXAttendanceRecoveryServ
 
         // Phần còn lại giữ nguyên...
         String studentCode = item.get("MA_SINH_VIEN");
-        if (studentCode.isEmpty() || studentCode == null || studentCode.equals("")){
+        if (studentCode.isEmpty() || studentCode == null || studentCode.equals("")) {
             String msg = "Thông tin về mã sinh viên không được để trống.";
             excelHelper.saveLogError(ImportLogType.ATTENDANCE_RECOVERY, msg, request);
             return RouterHelper.responseError(msg, HttpStatus.BAD_REQUEST);
@@ -130,9 +135,61 @@ public class EXAttendanceRecoveryServiceImpl implements EXAttendanceRecoveryServ
         ResponseEntity<ApiResponse> result = (ResponseEntity<ApiResponse>) attendanceRecoveryService.importAttendanceRecoveryStudent(stStudentAttendanceRecoveryRequest);
         ApiResponse response = result.getBody();
         if (response.getStatus() == RestApiStatus.SUCCESS) {
-            excelHelper.saveLogSuccess(ImportLogType.ATTENDANCE_RECOVERY, response.getMessage(), request);
+            ImportLog importLog = importLogRepository.findByIdUserAndCodeAndFileNameAndFacility_Id(sessionHelper.getUserId(), request.getCode(), request.getFileName(), sessionHelper.getFacilityId()).orElse(null);
+            if (importLog == null) {
+                Facility facility = new Facility();
+                facility.setId(sessionHelper.getFacilityId());
+
+                if (facility.getId() == null) {
+                    facility = null;
+                }
+
+                ImportLog newImportLog = new ImportLog();
+                newImportLog.setIdUser(sessionHelper.getUserId());
+                newImportLog.setFacility(facility);
+                newImportLog.setCode(request.getCode());
+                newImportLog.setType(6);
+                newImportLog.setFileName(request.getFileName());
+                importLog = importLogRepository.save(newImportLog);
+            }
+
+            ImportLogDetail importLogDetail = new ImportLogDetail();
+            importLogDetail.setImportLog(importLog);
+            importLogDetail.setLine(request.getLine());
+            importLogDetail.setMessage(response.getMessage());
+            importLogDetail.setStatus(EntityStatus.ACTIVE);
+
+            importLogDetailRepository.save(importLogDetail);
+            attendanceRecovery.setImportLog(importLog);
+            attendanceRecoveryRepository.save(attendanceRecovery);
         } else {
-            excelHelper.saveLogError(ImportLogType.ATTENDANCE_RECOVERY, response.getMessage(), request);
+            ImportLog importLog = importLogRepository.findByIdUserAndCodeAndFileNameAndFacility_Id(sessionHelper.getUserId(), request.getCode(), request.getFileName(), sessionHelper.getFacilityId()).orElse(null);
+            if (importLog == null) {
+                Facility facility = new Facility();
+                facility.setId(sessionHelper.getFacilityId());
+
+                if (facility.getId() == null) {
+                    facility = null;
+                }
+
+                ImportLog newImportLog = new ImportLog();
+                newImportLog.setIdUser(sessionHelper.getUserId());
+                newImportLog.setFacility(facility);
+                newImportLog.setCode(request.getCode());
+                newImportLog.setType(6);
+                newImportLog.setFileName(request.getFileName());
+                importLog = importLogRepository.save(newImportLog);
+            }
+
+            ImportLogDetail importLogDetail = new ImportLogDetail();
+            importLogDetail.setImportLog(importLog);
+            importLogDetail.setLine(request.getLine());
+            importLogDetail.setMessage(response.getMessage());
+            importLogDetail.setStatus(EntityStatus.INACTIVE);
+
+            importLogDetailRepository.save(importLogDetail);
+            attendanceRecovery.setImportLog(importLog);
+            attendanceRecoveryRepository.save(attendanceRecovery);
         }
         return result;
     }
@@ -169,7 +226,8 @@ public class EXAttendanceRecoveryServiceImpl implements EXAttendanceRecoveryServ
     public ResponseEntity<?> historyLog(EXDataRequest request) {
         Pageable pageable = PaginationHelper.createPageable(request);
         PageableObject<ExImportLogResponse> data = PageableObject.of(importLogRepository.getListHistory(pageable, ImportLogType.ATTENDANCE_RECOVERY.ordinal(), sessionHelper.getUserId(), sessionHelper.getFacilityId()));
-        return RouterHelper.responseSuccess("Lấy danh sách dữ liệu thành công", data);    }
+        return RouterHelper.responseSuccess("Lấy danh sách dữ liệu thành công", data);
+    }
 
     @Override
     public ResponseEntity<?> historyLogDetail(EXDataRequest request, String id) {
