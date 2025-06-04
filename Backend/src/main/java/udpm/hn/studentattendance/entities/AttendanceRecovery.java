@@ -32,7 +32,7 @@ public class AttendanceRecovery extends PrimaryEntity implements Serializable {
     private Long day;
 
     @Column(name = "total_student")
-    private Integer total_student;
+    private Integer totalStudent;
 
 //    @ManyToOne
 //    @JoinColumn(name = "id_user_student")

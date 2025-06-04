@@ -165,7 +165,7 @@ public class STAttendanceRecoveryServiceImpl implements STAttendanceRecoveryServ
 
             List<PlanDate> planDatesToProcess = filterExistingAttendance(validPlanDates, userStudent);
             if (planDatesToProcess.isEmpty()) {
-                return RouterHelper.responseSuccess(
+                return RouterHelper.responseError(
                         "Sinh viên đã được điểm danh cho tất cả ca học trong ngày này",
                         null);
             }
@@ -174,9 +174,7 @@ public class STAttendanceRecoveryServiceImpl implements STAttendanceRecoveryServ
             attendanceRepository.saveAll(attendanceList);
 
             Optional<AttendanceRecovery> attendanceRecoveryOptional = attendanceRecoveryRepository.findById(request.getAttendanceRecoveryId());
-            AttendanceRecovery attendanceRecovery = attendanceRecoveryOptional.get();
-            attendanceRecovery.setTotal_student(attendanceList.size());
-            attendanceRecoveryRepository.save(attendanceRecovery);
+
 
             return RouterHelper.responseSuccess(
                     String.format("Khôi phục điểm danh thành công cho %d ca học của sinh viên %s",
