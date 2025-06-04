@@ -13,6 +13,7 @@ import udpm.hn.studentattendance.core.admin.semester.service.ADSemesterService;
 import udpm.hn.studentattendance.entities.Semester;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
 import udpm.hn.studentattendance.helpers.RouterHelper;
+import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.common.repositories.CommonUserStudentRepository;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
@@ -34,6 +35,8 @@ public class ADSemesterServiceImpl implements ADSemesterService {
         private final ADSemesterRepository adSemesterRepository;
 
         private final CommonUserStudentRepository commonUserStudentRepository;
+
+        private final UserActivityLogHelper userActivityLogHelper;
 
         @Override
         public ResponseEntity<?> getAllSemester(ADSemesterRequest request) {
@@ -98,6 +101,7 @@ public class ADSemesterServiceImpl implements ADSemesterService {
                         semester.setStatus(EntityStatus.ACTIVE);
 
                         Semester semesterSave = adSemesterRepository.save(semester);
+                        userActivityLogHelper.saveLog("vừa thêm 1 học kỳ mới: " + semesterSave.getCode());
                         return RouterHelper.responseSuccess("Created semester successfully", semesterSave);
                 } catch (Exception e) {
                         e.printStackTrace();
@@ -113,6 +117,7 @@ public class ADSemesterServiceImpl implements ADSemesterService {
                 }
 
                 Semester semester = existSemester.get();
+                String oldCode = semester.getCode();
 
                 LocalDateTime fromDate = Instant
                                 .ofEpochMilli(request.getFromDate())
@@ -168,6 +173,7 @@ public class ADSemesterServiceImpl implements ADSemesterService {
                 semester.setFromDate(fromTimeSemester);
                 semester.setToDate(toTimeSemester);
                 Semester semesterSave = adSemesterRepository.save(semester);
+                userActivityLogHelper.saveLog("vừa cập nhật học kỳ: " + oldCode + " → " + semesterSave.getCode());
                 return RouterHelper.responseSuccess("Cập nhật thành công", semesterSave);
         }
 
@@ -176,11 +182,15 @@ public class ADSemesterServiceImpl implements ADSemesterService {
                 Optional<Semester> existSemester = adSemesterRepository.findById(semesterID);
                 if (existSemester.isPresent()) {
                         Semester semester = existSemester.get();
+                        String oldStatus = semester.getStatus() == EntityStatus.ACTIVE ? "Hoạt động"
+                                        : "Không hoạt động";
                         if (semester.getStatus().equals(EntityStatus.ACTIVE)) {
                                 semester.setStatus(EntityStatus.INACTIVE);
                         } else {
                                 semester.setStatus(EntityStatus.ACTIVE);
                         }
+                        String newStatus = semester.getStatus() == EntityStatus.ACTIVE ? "Hoạt động"
+                                        : "Không hoạt động";
                         adSemesterRepository.save(semester);
 
                         if (semester.getStatus() == EntityStatus.ACTIVE) {
@@ -188,6 +198,8 @@ public class ADSemesterServiceImpl implements ADSemesterService {
                                                 .disableAllStudentDuplicateShiftByIdSemester(semester.getId());
                         }
 
+                        userActivityLogHelper.saveLog("vừa thay đổi trạng thái học kỳ " + semester.getCode() + " từ "
+                                        + oldStatus + " thành " + newStatus);
                         return RouterHelper.responseSuccess("Thay đổi trạng thái học kỳ thành công");
                 }
                 return RouterHelper.responseError("Học kỳ không tồn tại");

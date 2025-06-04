@@ -17,6 +17,7 @@ import udpm.hn.studentattendance.helpers.GenerateNameHelper;
 import udpm.hn.studentattendance.helpers.MailerHelper;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
 import udpm.hn.studentattendance.helpers.RouterHelper;
+import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.common.repositories.CommonUserStudentRepository;
 import udpm.hn.studentattendance.infrastructure.config.mailer.model.MailerDefaultRequest;
@@ -40,6 +41,8 @@ public class AFFacilityServiceImpl implements AFFacilityService {
     private final CommonUserStudentRepository commonUserStudentRepository;
 
     private final MailerHelper mailerHelper;
+
+    private final UserActivityLogHelper userActivityLogHelper;
 
     @Value("${app.config.app-name}")
     private String appName;
@@ -66,6 +69,7 @@ public class AFFacilityServiceImpl implements AFFacilityService {
         facility.setPosition(position);
         facility.setStatus(EntityStatus.ACTIVE);
         facilityRepository.save(facility);
+        userActivityLogHelper.saveLog("vừa thêm 1 cơ sở mới: " + facility.getName());
         return RouterHelper.responseSuccess("Thêm cơ sở mới thành công", null);
     }
 
@@ -81,10 +85,13 @@ public class AFFacilityServiceImpl implements AFFacilityService {
         }
 
         Facility facility = existFacility.get();
+        String oldName = facility.getName();
         facility.setCode(GenerateNameHelper.generateCodeFromName(request.getFacilityName().trim()));
         facility.setName(GenerateNameHelper.replaceManySpaceToOneSpace(request.getFacilityName().trim()));
 
-        return RouterHelper.responseSuccess("Cập nhật cơ sở thành công", facilityRepository.save(facility));
+        Facility savedFacility = facilityRepository.save(facility);
+        userActivityLogHelper.saveLog("vừa cập nhật cơ sở: " + oldName + " → " + savedFacility.getName());
+        return RouterHelper.responseSuccess("Cập nhật cơ sở thành công", savedFacility);
     }
 
     @Override
@@ -108,7 +115,9 @@ public class AFFacilityServiceImpl implements AFFacilityService {
         }
         // ---------------------------------------------------------------
 
+        String oldStatus = facility.getStatus() == EntityStatus.ACTIVE ? "Hoạt động" : "Không hoạt động";
         facility.setStatus(facility.getStatus() == EntityStatus.ACTIVE ? EntityStatus.INACTIVE : EntityStatus.ACTIVE);
+        String newStatus = facility.getStatus() == EntityStatus.ACTIVE ? "Hoạt động" : "Không hoạt động";
         Facility entity = facilityRepository.save(facility);
 
         if (entity.getStatus() == EntityStatus.INACTIVE) {
@@ -131,6 +140,8 @@ public class AFFacilityServiceImpl implements AFFacilityService {
             commonUserStudentRepository.disableAllStudentDuplicateShiftByIdFacility(facility.getId());
         }
 
+        userActivityLogHelper.saveLog(
+                "vừa thay đổi trạng thái cơ sở " + facility.getName() + " từ " + oldStatus + " thành " + newStatus);
         return RouterHelper.responseSuccess("Thay đổi trạng thái cơ sở thành công", entity);
     }
 

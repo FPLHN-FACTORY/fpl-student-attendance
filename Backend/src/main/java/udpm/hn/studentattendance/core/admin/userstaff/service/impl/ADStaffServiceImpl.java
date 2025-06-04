@@ -24,6 +24,7 @@ import udpm.hn.studentattendance.helpers.NotificationHelper;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
 import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.helpers.SessionHelper;
+import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
 import udpm.hn.studentattendance.helpers.ValidateHelper;
 
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
@@ -50,6 +51,8 @@ public class ADStaffServiceImpl implements ADStaffService {
 
     private final SessionHelper sessionHelper;
 
+    private final UserActivityLogHelper userActivityLogHelper;
+
     @Value("${app.config.disabled-check-email-fpt}")
     private String isDisableCheckEmailFpt;
 
@@ -67,11 +70,13 @@ public class ADStaffServiceImpl implements ADStaffService {
     public ResponseEntity<?> createStaff(ADCreateUpdateStaffRequest adCreateUpdateStaffRequest) {
 
         if (!ValidateHelper.isValidCode(adCreateUpdateStaffRequest.getStaffCode())) {
-            return RouterHelper.responseError("Mã nhân viên không hợp lệ: Không có khoảng trắng, không có ký tự đặc biệt ngoài dấu chấm . và dấu gạch dưới _.");
+            return RouterHelper.responseError(
+                    "Mã nhân viên không hợp lệ: Không có khoảng trắng, không có ký tự đặc biệt ngoài dấu chấm . và dấu gạch dưới _.");
         }
 
         if (!ValidateHelper.isValidFullname(adCreateUpdateStaffRequest.getName())) {
-            return RouterHelper.responseError("Tên nhân viên không hợp lệ: Tối thiểu 2 từ, cách nhau bởi khoảng trắng và Chỉ gồm ký tự chữ không chứa số hay ký tự đặc biệt.");
+            return RouterHelper.responseError(
+                    "Tên nhân viên không hợp lệ: Tối thiểu 2 từ, cách nhau bởi khoảng trắng và Chỉ gồm ký tự chữ không chứa số hay ký tự đặc biệt.");
         }
 
         if (!isDisableCheckEmailFpt.equalsIgnoreCase("true")) {
@@ -147,6 +152,7 @@ public class ADStaffServiceImpl implements ADStaffService {
             notificationService.add(notificationAddRequest);
         }
 
+        userActivityLogHelper.saveLog("vừa thêm 1 nhân viên mới: " + staff.getName() + " (" + staff.getCode() + ")");
         return RouterHelper.responseSuccess("Thêm nhân viên mới thành công");
     }
 
@@ -154,11 +160,13 @@ public class ADStaffServiceImpl implements ADStaffService {
     public ResponseEntity<?> updateStaff(ADCreateUpdateStaffRequest adCreateUpdateStaffRequest, String id) {
 
         if (!ValidateHelper.isValidCode(adCreateUpdateStaffRequest.getStaffCode())) {
-            return RouterHelper.responseError("Mã nhân viên không hợp lệ: Không có khoảng trắng, không có ký tự đặc biệt ngoài dấu chấm . và dấu gạch dưới _.");
+            return RouterHelper.responseError(
+                    "Mã nhân viên không hợp lệ: Không có khoảng trắng, không có ký tự đặc biệt ngoài dấu chấm . và dấu gạch dưới _.");
         }
 
         if (!ValidateHelper.isValidFullname(adCreateUpdateStaffRequest.getName())) {
-            return RouterHelper.responseError("Tên nhân viên không hợp lệ: Tối thiểu 2 từ, cách nhau bởi khoảng trắng và Chỉ gồm ký tự chữ không chứa số hay ký tự đặc biệt.");
+            return RouterHelper.responseError(
+                    "Tên nhân viên không hợp lệ: Tối thiểu 2 từ, cách nhau bởi khoảng trắng và Chỉ gồm ký tự chữ không chứa số hay ký tự đặc biệt.");
         }
 
         // Kiểm tra nhân viên tồn tại
@@ -272,6 +280,7 @@ public class ADStaffServiceImpl implements ADStaffService {
             notificationService.add(notificationAddRequest);
         }
 
+        userActivityLogHelper.saveLog("vừa cập nhật nhân viên: " + staff.getName() + " (" + staff.getCode() + ")");
         return RouterHelper.responseSuccess("Cập nhật nhân viên thành công");
     }
 
@@ -282,7 +291,9 @@ public class ADStaffServiceImpl implements ADStaffService {
             return RouterHelper.responseError("Nhân viên không tồn tại");
         }
         UserStaff staff = existStaff.get();
+        String oldStatus = staff.getStatus() == EntityStatus.ACTIVE ? "Hoạt động" : "Không hoạt động";
         staff.setStatus(staff.getStatus() == EntityStatus.ACTIVE ? EntityStatus.INACTIVE : EntityStatus.ACTIVE);
+        String newStatus = staff.getStatus() == EntityStatus.ACTIVE ? "Hoạt động" : "Không hoạt động";
 
         List<Role> staffRoles = adStaffRoleRepository.findAllByUserStaffId(staffId);
         staffRoles.forEach(staffRole -> staffRole
@@ -290,6 +301,8 @@ public class ADStaffServiceImpl implements ADStaffService {
         adStaffRoleRepository.saveAll(staffRoles);
 
         adStaffRepository.save(staff);
+        userActivityLogHelper.saveLog("vừa thay đổi trạng thái nhân viên " + staff.getName() + " (" + staff.getCode()
+                + ") từ " + oldStatus + " thành " + newStatus);
         return RouterHelper.responseSuccess("Thay đổi trạng thái giảng viên thành công");
     }
 

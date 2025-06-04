@@ -372,7 +372,7 @@ onMounted(() => {
                     </a-button>
                   </a-tooltip>
                   <div class="excel-upload-wrapper">
-                    <ExcelUploadButton v-bind="configImportExcel" />
+                    <ExcelUploadButton v-bind="configImportExcel" :data="{ idAttendanceRecovery: record.id }" />
                   </div>
                 </div>
               </template>

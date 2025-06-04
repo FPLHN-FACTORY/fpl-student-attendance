@@ -16,6 +16,7 @@ import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.common.repositories.CommonUserStudentRepository;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.utils.CodeGeneratorUtils;
+import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
 
 @Service
 @RequiredArgsConstructor
@@ -25,10 +26,13 @@ public class ADLevelProjectManagementServiceImpl implements ADLevelProjectManage
 
     private final CommonUserStudentRepository commonUserStudentRepository;
 
+    private final UserActivityLogHelper userActivityLogHelper;
+
     @Override
     public ResponseEntity<?> getListLevelProject(ADLevelProjectSearchRequest request) {
         Pageable pageable = PaginationHelper.createPageable(request, "id");
-        return RouterHelper.responseSuccess("Lấy danh sách cấp độ dự án thành công", PageableObject.of(repository.getAll(pageable, request)));
+        return RouterHelper.responseSuccess("Lấy danh sách cấp độ dự án thành công",
+                PageableObject.of(repository.getAll(pageable, request)));
     }
 
     @Override
@@ -44,7 +48,9 @@ public class ADLevelProjectManagementServiceImpl implements ADLevelProjectManage
         lv.setCode(code);
         lv.setDescription(request.getDescription());
 
-        return RouterHelper.responseSuccess("Thêm mới cấp độ dự án thành công", repository.save(lv));
+        LevelProject savedLevel = repository.save(lv);
+        userActivityLogHelper.saveLog("vừa thêm cấp độ dự án " + savedLevel.getName());
+        return RouterHelper.responseSuccess("Thêm mới cấp độ dự án thành công", savedLevel);
     }
 
     @Override
@@ -63,7 +69,9 @@ public class ADLevelProjectManagementServiceImpl implements ADLevelProjectManage
         lv.setCode(code);
         lv.setDescription(request.getDescription());
 
-        return RouterHelper.responseSuccess("Cập nhật cấp độ dự án thành công", repository.save(lv));
+        LevelProject updatedLevel = repository.save(lv);
+        userActivityLogHelper.saveLog("vừa cập nhật cấp độ dự án " + updatedLevel.getName());
+        return RouterHelper.responseSuccess("Cập nhật cấp độ dự án thành công", updatedLevel);
     }
 
     @Override
@@ -86,6 +94,8 @@ public class ADLevelProjectManagementServiceImpl implements ADLevelProjectManage
         if (entity.getStatus() == EntityStatus.ACTIVE) {
             commonUserStudentRepository.disableAllStudentDuplicateShiftByIdLevelProject(entity.getId());
         }
+        userActivityLogHelper.saveLog(
+                "vừa thay đổi trạng thái cấp độ dự án " + entity.getName() + " thành " + entity.getStatus().name());
         return RouterHelper.responseSuccess("Chuyển trạng thái cấp độ dự án thành công", entity);
     }
 

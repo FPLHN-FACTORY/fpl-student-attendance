@@ -228,7 +228,6 @@ onMounted(async () => {
                     v-model:value="filter.semesterId"
                     placeholder="Chọn học kỳ"
                     class="w-100"
-                    allowClear
                     @change="fetchAllAttendanceHistory"
                   >
                     <a-select-option
