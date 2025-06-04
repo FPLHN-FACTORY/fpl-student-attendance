@@ -1,13 +1,15 @@
 package udpm.hn.studentattendance.infrastructure.excel.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import udpm.hn.studentattendance.core.staff.attendancerecovery.model.request.STStudentAttendanceRecoveryRequest;
 import udpm.hn.studentattendance.core.staff.attendancerecovery.service.STAttendanceRecoveryService;
-import udpm.hn.studentattendance.core.staff.student.model.request.USStudentCreateUpdateRequest;
 import udpm.hn.studentattendance.helpers.ExcelHelper;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
 import udpm.hn.studentattendance.helpers.RouterHelper;
@@ -24,7 +26,12 @@ import udpm.hn.studentattendance.infrastructure.excel.model.response.ExImportLog
 import udpm.hn.studentattendance.infrastructure.excel.repositories.EXImportLogDetailRepository;
 import udpm.hn.studentattendance.infrastructure.excel.repositories.EXImportLogRepository;
 import udpm.hn.studentattendance.infrastructure.excel.service.EXAttendanceRecoveryService;
+import udpm.hn.studentattendance.utils.ExcelUtils;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.text.ParseException;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -36,8 +43,6 @@ import java.util.Map;
 @Service
 @RequiredArgsConstructor
 public class EXAttendanceRecoveryServiceImpl implements EXAttendanceRecoveryService {
-
-
 
     private final EXImportLogRepository importLogRepository;
 
@@ -66,7 +71,9 @@ public class EXAttendanceRecoveryServiceImpl implements EXAttendanceRecoveryServ
     @Override
     public ResponseEntity<?> importItem(EXImportRequest request) {
         Map<String, String> item = request.getItem();
+        Map<String, Object> data = request.getData();
 
+        String idAttendanceRecovery = (String) data.get("attendanceRecoveryId");
         String dayString = item.get("NGAY_DIEM_DANH");
         if (dayString.isEmpty() || dayString == null || dayString.equals("")){
             String msg = "Thông tin về ngày điểm danh không được để trống.";
@@ -74,13 +81,30 @@ public class EXAttendanceRecoveryServiceImpl implements EXAttendanceRecoveryServ
             return RouterHelper.responseError(msg, HttpStatus.BAD_REQUEST);
         }
 
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
-        LocalDateTime localDateTime = LocalDateTime.parse(dayString, formatter);
-        ZoneId vietnamZone = ZoneId.of("Asia/Ho_Chi_Minh");
-        ZonedDateTime zonedDateTime = localDateTime.atZone(vietnamZone);
+        Long dayAttendance;
+        try {
+            LocalDateTime localDateTime;
 
-        Long dayAttendance = zonedDateTime.toInstant().toEpochMilli();
+            if (dayString.contains(":")) {
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
+                localDateTime = LocalDateTime.parse(dayString, formatter);
+            } else {
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+                LocalDate localDate = LocalDate.parse(dayString, formatter);
+                localDateTime = localDate.atStartOfDay();
+            }
 
+            ZoneId vietnamZone = ZoneId.of("Asia/Ho_Chi_Minh");
+            ZonedDateTime zonedDateTime = localDateTime.atZone(vietnamZone);
+            dayAttendance = zonedDateTime.toInstant().toEpochMilli();
+
+        } catch (Exception e) {
+            String msg = "Định dạng ngày điểm danh không hợp lệ. Vui lòng sử dụng format: dd/MM/yyyy hoặc dd/MM/yyyy HH:mm:ss";
+            excelHelper.saveLogError(ImportLogType.ATTENDANCE_RECOVERY, msg, request);
+            return RouterHelper.responseError(msg, HttpStatus.BAD_REQUEST);
+        }
+
+        // Phần còn lại giữ nguyên...
         String studentCode = item.get("MA_SINH_VIEN");
         if (studentCode.isEmpty() || studentCode == null || studentCode.equals("")){
             String msg = "Thông tin về mã sinh viên không được để trống.";
@@ -91,6 +115,7 @@ public class EXAttendanceRecoveryServiceImpl implements EXAttendanceRecoveryServ
         STStudentAttendanceRecoveryRequest stStudentAttendanceRecoveryRequest = new STStudentAttendanceRecoveryRequest();
         stStudentAttendanceRecoveryRequest.setStudentCode(studentCode);
         stStudentAttendanceRecoveryRequest.setDay(dayAttendance);
+        stStudentAttendanceRecoveryRequest.setAttendanceRecoveryId(idAttendanceRecovery);
 
         ResponseEntity<ApiResponse> result = (ResponseEntity<ApiResponse>) attendanceRecoveryService.importAttendanceRecoveryStudent(stStudentAttendanceRecoveryRequest);
         ApiResponse response = result.getBody();
@@ -108,22 +133,27 @@ public class EXAttendanceRecoveryServiceImpl implements EXAttendanceRecoveryServ
     }
 
     @Override
-    public ResponseEntity<?> downloadTemplate(EXDataRequest request) {
+    public ResponseEntity<byte[]> downloadTemplate(EXDataRequest request) {
+        try (Workbook workbook = new XSSFWorkbook();
+             ByteArrayOutputStream data = new ByteArrayOutputStream()) {
+            String filename = "template-import-attendance-recovery.xlsx";
+            List<String> headers = List.of("Ngày điểm danh", "Mã sinh viên");
+            int firstRow = 1;
+            int lastRow = 500;
 
-        String filename = "template-import-attendance-recovery.xlsx";
+            Sheet templateSheet = ExcelUtils.createTemplate(workbook, "Data Import", headers, new ArrayList<>());
+            ExcelUtils.addDateValidation(templateSheet, firstRow, lastRow, 0, "dd/MM/yyyy HH:mm:ss", "01/01/1900 00:00:00", "31/12/9999 00:00:00");
+            workbook.write(data);
 
-        List<String> headers = List.of("Ngày điểm danh", "Mã sinh viên", "Họ và tên");
-        byte[] data = ExcelHelper.createExcelStream("student-recovery", headers, new ArrayList<>());
-        if (data == null) {
+            HttpHeaders headersHttp = new HttpHeaders();
+            headersHttp.setContentDisposition(ContentDisposition.builder("attachment").filename(filename).build());
+            headersHttp.set(HttpHeaders.ACCESS_CONTROL_EXPOSE_HEADERS, HttpHeaders.CONTENT_DISPOSITION);
+            headersHttp.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+            return new ResponseEntity<>(data.toByteArray(), headersHttp, HttpStatus.OK);
+        } catch (IOException | ParseException e) {
             return null;
         }
-
-        HttpHeaders httpHeaders = new HttpHeaders();
-        httpHeaders.setContentDisposition(ContentDisposition.builder("attachment").filename(filename).build());
-        httpHeaders.set(HttpHeaders.ACCESS_CONTROL_EXPOSE_HEADERS, HttpHeaders.CONTENT_DISPOSITION);
-        httpHeaders.setContentType(MediaType.APPLICATION_OCTET_STREAM);
-
-        return new ResponseEntity<>(data, httpHeaders, HttpStatus.OK);    }
+    }
 
     @Override
     public ResponseEntity<?> historyLog(EXDataRequest request) {

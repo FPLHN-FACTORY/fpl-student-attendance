@@ -41,6 +41,8 @@ public class ADUserAdminServiceImpl implements ADUserAdminService {
 
         private final MailerHelper mailerHelper;
 
+        private final UserActivityLogHelper userActivityLogHelper;
+
         @Value("${app.config.app-name}")
         private String appName;
 
@@ -75,7 +77,8 @@ public class ADUserAdminServiceImpl implements ADUserAdminService {
                 }
 
                 if (!ValidateHelper.isValidFullname(createOrUpdateRequest.getStaffName())) {
-                        return RouterHelper.responseError("Tên admin không hợp lệ: Tối thiểu 2 từ, cách nhau bởi khoảng trắng và Chỉ gồm ký tự chữ không chứa số hay ký tự đặc biệt.");
+                        return RouterHelper.responseError(
+                                        "Tên admin không hợp lệ: Tối thiểu 2 từ, cách nhau bởi khoảng trắng và Chỉ gồm ký tự chữ không chứa số hay ký tự đặc biệt.");
                 }
 
                 if (!isDisableCheckEmailFpt.equalsIgnoreCase("true")) {
@@ -106,6 +109,9 @@ public class ADUserAdminServiceImpl implements ADUserAdminService {
                 notificationAddRequest.setType(NotificationHelper.TYPE_ADD_ADMIN);
                 notificationAddRequest.setData(dataNotification);
                 notificationService.add(notificationAddRequest);
+
+                userActivityLogHelper.saveLog("vừa thêm 1 tài khoản admin mới: " + userAdmin.getName() + " ("
+                                + userAdmin.getCode() + ")");
                 return RouterHelper.responseSuccess("Thêm admin mới thành công", userAdmin);
         }
 
@@ -116,7 +122,8 @@ public class ADUserAdminServiceImpl implements ADUserAdminService {
                 }
 
                 if (!ValidateHelper.isValidFullname(createOrUpdateRequest.getStaffName())) {
-                        return RouterHelper.responseError("Tên admin không hợp lệ: Tối thiểu 2 từ, cách nhau bởi khoảng trắng và Chỉ gồm ký tự chữ không chứa số hay ký tự đặc biệt.");
+                        return RouterHelper.responseError(
+                                        "Tên admin không hợp lệ: Tối thiểu 2 từ, cách nhau bởi khoảng trắng và Chỉ gồm ký tự chữ không chứa số hay ký tự đặc biệt.");
                 }
 
                 Optional<UserAdmin> opt = userAdminExtendRepository.findById(id);
@@ -149,6 +156,9 @@ public class ADUserAdminServiceImpl implements ADUserAdminService {
                 notificationAddRequest.setType(NotificationHelper.TYPE_UPDATE_ADMIN);
                 notificationAddRequest.setData(dataNotification);
                 notificationService.add(notificationAddRequest);
+
+                userActivityLogHelper.saveLog("vừa cập nhật tài khoản admin: " + userAdmin.getName() + " ("
+                                + userAdmin.getCode() + ")");
                 return RouterHelper.responseSuccess("Cập nhật admin thành công", userAdmin);
         }
 
@@ -160,8 +170,12 @@ public class ADUserAdminServiceImpl implements ADUserAdminService {
                         return RouterHelper.responseError("Không được sửa trạng thái của chính bản thân");
                 } else if (optionalUserAdmin.isPresent()) {
                         UserAdmin userAdmin = optionalUserAdmin.get();
+                        String oldStatus = userAdmin.getStatus() == EntityStatus.ACTIVE ? "Hoạt động"
+                                        : "Không hoạt động";
                         userAdmin.setStatus(userAdmin.getStatus() == EntityStatus.ACTIVE ? EntityStatus.INACTIVE
                                         : EntityStatus.ACTIVE);
+                        String newStatus = userAdmin.getStatus() == EntityStatus.ACTIVE ? "Hoạt động"
+                                        : "Không hoạt động";
                         UserAdmin saveAdmin = userAdminExtendRepository.save(userAdmin);
                         if (saveAdmin.getStatus() == EntityStatus.INACTIVE) {
                                 MailerDefaultRequest mailerDefaultRequest = new MailerDefaultRequest();
@@ -177,6 +191,9 @@ public class ADUserAdminServiceImpl implements ADUserAdminService {
                                                 .loadTemplate(MailerHelper.TEMPLATE_CHANGE_STATUS_ADMIN, vars));
                                 mailerHelper.send(mailerDefaultRequest);
                         }
+
+                        userActivityLogHelper.saveLog("vừa thay đổi trạng thái tài khoản admin " + saveAdmin.getName()
+                                        + " (" + saveAdmin.getCode() + ") từ " + oldStatus + " thành " + newStatus);
                         return RouterHelper.responseSuccess("Thay đổi trạng thái thành công", saveAdmin);
                 }
 
@@ -205,6 +222,9 @@ public class ADUserAdminServiceImpl implements ADUserAdminService {
                         return RouterHelper.responseError("Nhân viên này đã có quyền admin");
                 }
                 if (userStaff.isPresent()) {
+                        UserAdmin oldAdmin = userAdminExtendRepository
+                                        .findById(userAdminChangePowerShiftRequest.getUserAdminId()).orElse(null);
+
                         UserAdmin userAdmin = new UserAdmin();
                         userAdmin.setCode(userStaff.get().getCode());
                         userAdmin.setName(userStaff.get().getName());
@@ -213,6 +233,11 @@ public class ADUserAdminServiceImpl implements ADUserAdminService {
                         userAdminExtendRepository.save(userAdmin);
 
                         userAdminExtendRepository.deleteById(userAdminChangePowerShiftRequest.getUserAdminId());
+
+                        String oldAdminName = oldAdmin != null ? oldAdmin.getName() + " (" + oldAdmin.getCode() + ")"
+                                        : "Unknown";
+                        userActivityLogHelper.saveLog("vừa chuyển quyền admin từ " + oldAdminName + " sang "
+                                        + userAdmin.getName() + " (" + userAdmin.getCode() + ")");
                         return RouterHelper.responseSuccess("Kiểm tra thành công", userAdmin);
                 }
                 return RouterHelper.responseError("Giảng viên hoặc phụ trách xưởng không tồn tại");
@@ -230,18 +255,23 @@ public class ADUserAdminServiceImpl implements ADUserAdminService {
                 if (existUserAdmin.isEmpty()) {
                         return RouterHelper.responseError("Không tìm thấy tài khoản admin");
                 }
+
+                UserAdmin adminToDelete = existUserAdmin.get();
                 userAdminExtendRepository.deleteById(userAdminId);
                 MailerDefaultRequest mailerDefaultRequest = new MailerDefaultRequest();
-                mailerDefaultRequest.setTo(existUserAdmin.get().getEmail());
+                mailerDefaultRequest.setTo(adminToDelete.getEmail());
                 mailerDefaultRequest.setTemplate(null);
                 mailerDefaultRequest.setTitle("Thông báo quan trọng về xoá quyền từ:  " + appName);
 
                 Map<String, Object> vars = Map.of(
-                                "ADMIN_NAME", existUserAdmin.get().getCode() + " - " + existUserAdmin.get().getName(),
+                                "ADMIN_NAME", adminToDelete.getCode() + " - " + adminToDelete.getName(),
                                 "MY_NAME", sessionHelper.getUserCode() + " - " + sessionHelper.getUserName());
                 mailerDefaultRequest
                                 .setContent(MailerHelper.loadTemplate(MailerHelper.TEMPLATE_CHANGE_STATUS_ADMIN, vars));
                 mailerHelper.send(mailerDefaultRequest);
+
+                userActivityLogHelper.saveLog("vừa xóa tài khoản admin: " + adminToDelete.getName() + " ("
+                                + adminToDelete.getCode() + ")");
                 return RouterHelper.responseSuccess("Xóa tài khoản admin thành công", userAdminId);
         }
 }

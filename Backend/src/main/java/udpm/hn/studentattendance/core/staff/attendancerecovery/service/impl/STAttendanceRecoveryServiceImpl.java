@@ -173,6 +173,11 @@ public class STAttendanceRecoveryServiceImpl implements STAttendanceRecoveryServ
             List<Attendance> attendanceList = createAttendanceRecords(planDatesToProcess, userStudent);
             attendanceRepository.saveAll(attendanceList);
 
+            Optional<AttendanceRecovery> attendanceRecoveryOptional = attendanceRecoveryRepository.findById(request.getAttendanceRecoveryId());
+            AttendanceRecovery attendanceRecovery = attendanceRecoveryOptional.get();
+            attendanceRecovery.setTotal_student(attendanceList.size());
+            attendanceRecoveryRepository.save(attendanceRecovery);
+
             return RouterHelper.responseSuccess(
                     String.format("Khôi phục điểm danh thành công cho %d ca học của sinh viên %s",
                             attendanceList.size(), userStudent.getCode()),

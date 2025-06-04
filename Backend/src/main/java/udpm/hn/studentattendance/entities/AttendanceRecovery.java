@@ -31,6 +31,9 @@ public class AttendanceRecovery extends PrimaryEntity implements Serializable {
     @Column(name = "day")
     private Long day;
 
+    @Column(name = "total_student")
+    private Integer total_student;
+
 //    @ManyToOne
 //    @JoinColumn(name = "id_user_student")
 //    @OnDelete(action = OnDeleteAction.CASCADE)
