@@ -18,4 +18,7 @@ public class UALFilterRequest extends PageableRequest {
 
     private Integer role;
 
+    private String searchQuery;
+
+
 }

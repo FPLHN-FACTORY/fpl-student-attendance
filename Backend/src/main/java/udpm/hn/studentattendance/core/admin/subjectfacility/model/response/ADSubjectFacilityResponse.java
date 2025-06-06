@@ -1,4 +1,4 @@
-package udpm.hn.studentattendance.core.admin.subject_facility.model.response;
+package udpm.hn.studentattendance.core.admin.subjectfacility.model.response;
 
 import udpm.hn.studentattendance.infrastructure.common.HasOrderNumber;
 import udpm.hn.studentattendance.infrastructure.common.IsIdentify;

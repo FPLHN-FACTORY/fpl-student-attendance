@@ -9,7 +9,7 @@ import udpm.hn.studentattendance.core.admin.subject.model.response.ADSubjectResp
 import udpm.hn.studentattendance.repositories.SubjectRepository;
 
 @Repository
-public interface ADSubjectRepository extends SubjectRepository {
+public interface ADSubjectExtendRepository extends SubjectRepository {
 
     @Query(value = """
              SELECT

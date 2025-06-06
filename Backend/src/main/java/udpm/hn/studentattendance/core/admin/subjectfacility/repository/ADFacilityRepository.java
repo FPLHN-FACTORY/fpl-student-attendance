@@ -1,16 +1,17 @@
-package udpm.hn.studentattendance.core.admin.subject_facility.repository;
+package udpm.hn.studentattendance.core.admin.subjectfacility.repository;
 
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
-import udpm.hn.studentattendance.core.admin.subject_facility.model.request.ADSubjectFacilitySearchRequest;
-import udpm.hn.studentattendance.core.admin.subject_facility.model.response.ADFacilityResponse;
+import udpm.hn.studentattendance.core.admin.subjectfacility.model.request.ADSubjectFacilitySearchRequest;
+import udpm.hn.studentattendance.core.admin.subjectfacility.model.response.ADFacilityResponse;
+import udpm.hn.studentattendance.repositories.FacilityRepository;
 import udpm.hn.studentattendance.repositories.ProjectRepository;
 
 import java.util.List;
 
 @Repository
-public interface ADFacilityRepository extends ProjectRepository {
+public interface ADFacilityRepository extends FacilityRepository {
 
     @Query(value = """
                 SELECT

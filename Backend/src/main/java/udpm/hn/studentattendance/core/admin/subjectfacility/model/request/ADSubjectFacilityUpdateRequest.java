@@ -1,4 +1,4 @@
-package udpm.hn.studentattendance.core.admin.subject_facility.model.request;
+package udpm.hn.studentattendance.core.admin.subjectfacility.model.request;
 
 import lombok.Getter;
 import lombok.Setter;

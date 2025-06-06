@@ -15,6 +15,7 @@ import udpm.hn.studentattendance.entities.*;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
 import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.helpers.SessionHelper;
+import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
 import udpm.hn.studentattendance.helpers.ValidateHelper;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.constants.AttendanceStatus;
@@ -51,6 +52,8 @@ public class STAttendanceRecoveryServiceImpl implements STAttendanceRecoveryServ
 
     private final STAttendanceRevoveryAttendanceRepository attendanceRepository;
 
+    private final UserActivityLogHelper userActivityLogHelper;
+
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
     private static final ZoneId VN_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
@@ -72,9 +75,7 @@ public class STAttendanceRecoveryServiceImpl implements STAttendanceRecoveryServ
     public ResponseEntity<?> getAllSemester() {
         List<Semester> semesters = semesterRepository.getAllSemester(EntityStatus.ACTIVE);
         return RouterHelper.responseSuccess("Lấy tất cả học kỳ thành công", semesters);
-    }
-
-    @Override
+    }    @Override
     public ResponseEntity<?> createNewEventAttendanceRecovery(STCreateOrUpdateNewEventRequest request) {
         Optional<Facility> facilityOptional = facilityRepository.findById(sessionHelper.getFacilityId());
         if (facilityOptional == null) {
@@ -90,6 +91,7 @@ public class STAttendanceRecoveryServiceImpl implements STAttendanceRecoveryServ
         attendanceRecovery.setFacility(facilityOptional.get());
         AttendanceRecovery attendanceRecoverySave = attendanceRecoveryRepository.save(attendanceRecovery);
 
+        userActivityLogHelper.saveLog("vừa thêm sự kiện khôi phục điểm danh mới: " + attendanceRecoverySave.getName());
         return RouterHelper.responseSuccess("Thêm sự kiện khôi phục điểm danh mới thành công", attendanceRecoverySave);
     }
 
@@ -100,9 +102,7 @@ public class STAttendanceRecoveryServiceImpl implements STAttendanceRecoveryServ
             return RouterHelper.responseSuccess("Lấy chi tiết sự kiện khôi phục điểm danh thành công", attendanceRecoveryOptional);
         }
         return RouterHelper.responseError("Sự Kiện khôi phục điểm danh không tồn tại", null);
-    }
-
-    @Override
+    }    @Override
     public ResponseEntity<?> updateEventAttendanceRecovery(STCreateOrUpdateNewEventRequest request, String id) {
         Optional<AttendanceRecovery> attendanceRecoveryOptional = attendanceRecoveryRepository.findById(id);
         if (!ValidateHelper.isValidFullname(request.getName())) {
@@ -110,10 +110,13 @@ public class STAttendanceRecoveryServiceImpl implements STAttendanceRecoveryServ
         }
         if (attendanceRecoveryOptional.isPresent()) {
             AttendanceRecovery attendanceRecovery = attendanceRecoveryOptional.get();
+            String oldName = attendanceRecovery.getName();
             attendanceRecovery.setName(request.getName());
             attendanceRecovery.setDescription(request.getDescription());
             attendanceRecovery.setDay(request.getDay());
             attendanceRecoveryRepository.save(attendanceRecovery);
+            
+            userActivityLogHelper.saveLog("vừa cập nhật sự kiện khôi phục điểm danh: " + oldName + " → " + attendanceRecovery.getName());
             return RouterHelper.responseSuccess("Cập nhật sự kiện khôi phục điểm danh thành công", attendanceRecovery);
         }
         return RouterHelper.responseError("Sự kiện khôi phục điểm danh không tồn tại", null);

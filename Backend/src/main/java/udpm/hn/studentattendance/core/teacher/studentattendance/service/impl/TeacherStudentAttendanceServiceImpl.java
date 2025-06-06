@@ -14,6 +14,7 @@ import udpm.hn.studentattendance.entities.PlanDate;
 import udpm.hn.studentattendance.entities.UserStudent;
 import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.helpers.SessionHelper;
+import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
 import udpm.hn.studentattendance.infrastructure.constants.AttendanceStatus;
 import udpm.hn.studentattendance.repositories.PlanDateRepository;
 import udpm.hn.studentattendance.repositories.UserStudentRepository;
@@ -34,6 +35,8 @@ public class TeacherStudentAttendanceServiceImpl implements TeacherStudentAttend
     private final PlanDateRepository planDateRepository;
 
     private final SessionHelper sessionHelper;
+
+    private final UserActivityLogHelper userActivityLogHelper;
 
     @Override
     public ResponseEntity<?> createAttendance(String planDateId) {
@@ -112,13 +115,33 @@ public class TeacherStudentAttendanceServiceImpl implements TeacherStudentAttend
             if (attendance != null) {
                 lstData.add(attendance);
             }
-        }
-
-        if (lstData.isEmpty()) {
+        }        if (lstData.isEmpty()) {
             return RouterHelper.responseError("Không có thay đổi nào");
         }
 
         repository.saveAllAndFlush(lstData);
+        
+        // Log the activity
+        int presentCount = 0;
+        int absentCount = 0;
+        for (Attendance attendance : lstData) {
+            if (attendance.getAttendanceStatus() == AttendanceStatus.PRESENT) {
+                presentCount++;
+            } else if (attendance.getAttendanceStatus() == AttendanceStatus.ABSENT) {
+                absentCount++;
+            }
+        }
+        
+        String logMessage = "vừa cập nhật trạng thái điểm danh cho " + lstData.size() + " sinh viên";
+        if (presentCount > 0 && absentCount > 0) {
+            logMessage += " (" + presentCount + " có mặt, " + absentCount + " vắng mặt)";
+        } else if (presentCount > 0) {
+            logMessage += " (tất cả có mặt)";
+        } else if (absentCount > 0) {
+            logMessage += " (tất cả vắng mặt)";
+        }
+        
+        userActivityLogHelper.saveLog(logMessage);
         return RouterHelper.responseSuccess("Cập nhật trạng thái điểm danh thành công");
     }
 }

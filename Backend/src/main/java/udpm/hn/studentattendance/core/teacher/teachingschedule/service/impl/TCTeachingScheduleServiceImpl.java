@@ -23,6 +23,7 @@ import udpm.hn.studentattendance.entities.*;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
 import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.helpers.SessionHelper;
+import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
 import udpm.hn.studentattendance.helpers.ValidateHelper;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
@@ -47,10 +48,11 @@ public class TCTeachingScheduleServiceImpl implements TCTeachingScheduleService 
         private final TCTSProjectExtendRepository teacherTsProjectExtendRepository;
 
         private final TCTSSubjectExtendRepository teacherTsSubjectExtendRepository;
-
         private final TCTSFactoryExtendRepository teacherTsFactoryExtendRepository;
 
         private final SessionHelper sessionHelper;
+
+        private final UserActivityLogHelper userActivityLogHelper;
 
         @Value("${app.config.shift.max-late-arrival}")
         private int MAX_LATE_ARRIVAL;
@@ -270,14 +272,17 @@ public class TCTeachingScheduleServiceImpl implements TCTeachingScheduleService 
                                 && !ValidateHelper.isValidURL(planDateUpdateRequest.getLink())) {
                         return RouterHelper.responseError("Link học online không hợp lệ");
                 }
-
                 planDate.setDescription(planDateUpdateRequest.getDescription());
                 planDate.setLateArrival(planDateUpdateRequest.getLateArrival());
                 planDate.setLink(planDateUpdateRequest.getLink());
                 planDate.setRoom(planDateUpdateRequest.getRoom());
-                teacherTeachingScheduleExtendRepository.save(planDate);
+                PlanDate savedPlanDate = teacherTeachingScheduleExtendRepository.save(planDate);
 
-                return RouterHelper.responseSuccess("Cập nhật thông tin buổi học thành công", planDate);
+                // Log user activity
+                userActivityLogHelper.saveLog("Cập nhật kế hoạch chi tiết: " + planDate.getDescription() +
+                                " - Thời gian muộn: " + planDateUpdateRequest.getLateArrival() + " phút");
+
+                return RouterHelper.responseSuccess("Cập nhật thông tin buổi học thành công", savedPlanDate);
         }
 
         @Override
@@ -319,7 +324,7 @@ public class TCTeachingScheduleServiceImpl implements TCTeachingScheduleService 
                 if (isOutOfTime) {
                         return RouterHelper.responseError("Đã quá giờ cập nhật ca dạy");
                 }
-
+                ShiftType oldType = planDate.getType();
                 planDate.setType(planDate.getType() == ShiftType.ONLINE ? ShiftType.OFFLINE : ShiftType.ONLINE);
                 planDate.setRequiredIp(planDate.getRequiredIp() == StatusType.DISABLE ? StatusType.ENABLE
                                 : StatusType.DISABLE);
@@ -327,9 +332,14 @@ public class TCTeachingScheduleServiceImpl implements TCTeachingScheduleService 
                                 : StatusType.DISABLE);
                 planDate.setRoom(planDate.getType() == ShiftType.ONLINE ? "" : room);
                 planDate.setLink(planDate.getType() == ShiftType.ONLINE ? planDate.getLink() : "");
-                teacherTeachingScheduleExtendRepository.save(planDate);
+                PlanDate savedPlanDate = teacherTeachingScheduleExtendRepository.save(planDate);
 
-                return RouterHelper.responseSuccess("Lấy chi tiết kế hoạch thành công", planDate);
+                // Log user activity
+                String typeChange = oldType == ShiftType.ONLINE ? "từ Online thành Offline" : "từ Offline thành Online";
+                userActivityLogHelper.saveLog("Thay đổi hình thức dạy học " + typeChange +
+                                " cho kế hoạch: " + planDate.getDescription());
+
+                return RouterHelper.responseSuccess("Lấy chi tiết kế hoạch thành công", savedPlanDate);
         }
 
 }
