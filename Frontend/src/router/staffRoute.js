@@ -7,6 +7,7 @@ import {
   ProjectOutlined,
   UsergroupAddOutlined,
   ContainerOutlined,
+  SolutionOutlined,
 } from '@ant-design/icons-vue'
 
 export const ROUTE_NAMES = {
@@ -20,6 +21,7 @@ export const ROUTE_NAMES = {
   MANAGEMENT_PLAN_FACTORY: 'route_staff_management_plan_factory',
   MANAGEMENT_STUDENT: 'route_staff_management_student',
   MANAGEMENT_ATTENDANCE_RECOVERY: 'route_staff_management_attendance_recovery',
+  MANAGEMENT_USER_LOG_ACTIVITY: 'route_staff_management_user_log_activity',
 }
 
 let selectedKey = 1
@@ -118,6 +120,16 @@ export const StaffRoutes = [
           selectedKey: selectedKey++,
           name: 'Khôi phục điểm danh',
           icon: ContainerOutlined,
+        },
+      },
+      {
+        path: 'management-user-log-activity',
+        name: ROUTE_NAMES.MANAGEMENT_USER_LOG_ACTIVITY,
+        component: () => import('@/views/pages/staff/StaffManagementUserLogActivity.vue'),
+        meta: {
+          selectedKey: selectedKey++,
+          name: 'Quản lý hoạt động người dùng',
+          icon: SolutionOutlined,
         },
       },
       {
