@@ -532,12 +532,11 @@ watch(
   <div class="container-fluid">
     <div class="row g-3">
       <div class="col-12">
-        <!-- Bộ lọc tìm kiếm -->
         <a-card :bordered="false" class="cart no-body-padding">
           <a-collapse ghost>
-            <a-collapse-panel class="px-2">
+            <a-collapse-panel>
               <template #header><FilterFilled /> Bộ lọc</template>
-              <div class="row g-2">
+              <div class="row g-3">
                 <div class="col-md-4 col-sm-12">
                   <div class="label-title">Từ khoá:</div>
                   <a-input
@@ -574,7 +573,7 @@ watch(
                   />
                 </div>
                 <div class="col-12">
-                  <div class="d-flex justify-content-center flex-wrap gap-2 mt-2">
+                  <div class="d-flex justify-content-center flex-wrap gap-2">
                     <a-button class="btn-light" @click="handleSubmitFilter">
                       <FilterFilled /> Lọc
                     </a-button>
@@ -590,7 +589,7 @@ watch(
       <div class="col-12">
         <a-card :bordered="false" class="cart">
           <template #title> <UnorderedListOutlined /> Danh sách phân công nhóm xưởng </template>
-          <div class="d-flex justify-content-end mb-3 gap-3">
+          <div class="d-flex justify-content-end gap-3 mb-2">
             <a-button type="primary" @click="handleShowModalAdd">
               <PlusOutlined /> Phân công nhóm xưởng
             </a-button>

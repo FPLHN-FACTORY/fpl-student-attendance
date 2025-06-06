@@ -332,14 +332,13 @@ onMounted(() => {
 
 <template>
   <div class="container-fluid">
-    <!-- Card Bộ lọc -->
+    <!-- Card Danh sách học kỳ -->
     <div class="row g-3">
       <div class="col-12">
-        <a-card :bordered="false" class="cart mb-3 no-body-padding">
+        <a-card :bordered="false" class="cart no-body-padding">
           <a-collapse ghost>
-            <a-collapse-panel class="px-2">
+            <a-collapse-panel>
               <template #header><FilterFilled /> Bộ lọc</template>
-              <!-- Hàng 1: Input tìm kiếm & Select trạng thái -->
               <div class="row g-3 filter-container">
                 <div class="col-xl-6 col-md-12 col-sm-12">
                   <div class="label-title">Từ khoá:</div>
@@ -378,10 +377,9 @@ onMounted(() => {
                     @change="handleDateRangeChange"
                   />
                 </div>
-              </div>
-              <div class="row">
+
                 <div class="col-12">
-                  <div class="d-flex justify-content-center flex-wrap gap-2 mt-3">
+                  <div class="d-flex justify-content-center flex-wrap gap-2">
                     <a-button class="btn-light" @click="fetchSemesters">
                       <FilterFilled /> Lọc
                     </a-button>
@@ -393,15 +391,12 @@ onMounted(() => {
           </a-collapse>
         </a-card>
       </div>
-    </div>
 
-    <!-- Card Danh sách học kỳ -->
-    <div class="row g-3">
       <div class="col-12">
         <a-card :bordered="false" class="cart">
           <template #title> <UnorderedListOutlined /> Danh sách học kỳ </template>
           <!-- Nút Thêm học kỳ -->
-          <div class="d-flex justify-content-end mb-3">
+          <div class="d-flex justify-content-end mb-2">
             <a-tooltip title="Thêm học kỳ mới">
               <a-button type="primary" @click="handleShowModalAdd">
                 <PlusOutlined />
@@ -409,6 +404,7 @@ onMounted(() => {
               </a-button>
             </a-tooltip>
           </div>
+
           <!-- Bảng hiển thị danh sách học kỳ với chỉ báo loading -->
           <a-table
             class="nowrap"

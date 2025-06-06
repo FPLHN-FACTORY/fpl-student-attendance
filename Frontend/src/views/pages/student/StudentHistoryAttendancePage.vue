@@ -217,18 +217,17 @@ onMounted(async () => {
   <div class="container-fluid">
     <div class="row g-3">
       <div class="col-12">
-        <a-card :bordered="false" class="card mb-3 no-body-padding">
+        <a-card :bordered="false" class="cart no-body-padding">
           <a-collapse ghost>
-            <a-collapse-panel class="px-2">
+            <a-collapse-panel>
               <template #header><FilterFilled /> Bộ lọc</template>
-              <a-row :gutter="16" class="row g-2">
-                <a-col :xs="24" :md="12">
+              <div class="row g-3">
+                <div class="col-md-6 col-sm-6">
                   <div class="label-title">Học kỳ:</div>
                   <a-select
                     v-model:value="filter.semesterId"
                     placeholder="Chọn học kỳ"
                     class="w-100"
-                    allowClear
                     @change="fetchAllAttendanceHistory"
                   >
                     <a-select-option
@@ -239,8 +238,8 @@ onMounted(async () => {
                       {{ semester.code }}
                     </a-select-option>
                   </a-select>
-                </a-col>
-                <a-col :xs="24" :md="12">
+                </div>
+                <div class="col-md-6 col-sm-6">
                   <div class="label-title">Nhóm xưởng:</div>
                   <a-select
                     v-model:value="filter.factoryId"
@@ -258,11 +257,9 @@ onMounted(async () => {
                       {{ factory.name }}
                     </a-select-option>
                   </a-select>
-                </a-col>
-              </a-row>
-              <div class="row">
+                </div>
                 <div class="col-12">
-                  <div class="d-flex justify-content-center flex-wrap gap-2 mt-3 mb-2">
+                  <div class="d-flex justify-content-center flex-wrap gap-2">
                     <a-button class="btn-light" @click="fetchAllAttendanceHistory">
                       <FilterFilled /> Lọc
                     </a-button>
@@ -274,11 +271,8 @@ onMounted(async () => {
           </a-collapse>
         </a-card>
       </div>
-    </div>
-
-    <div class="row g-3" v-for="(records, factoryId) in groupedAttendance" :key="factoryId">
-      <div class="col-12">
-        <a-card :bordered="false" class="card mb-3">
+      <div class="col-12" v-for="(records, factoryId) in groupedAttendance" :key="factoryId">
+        <a-card :bordered="false" class="card">
           <template #title>
             <UnorderedListOutlined />
             {{ getFactoryName(factoryId) }}
@@ -292,6 +286,7 @@ onMounted(async () => {
               Xuất PDF
             </a-button>
           </template>
+
           <a-table
             class="nowrap"
             :dataSource="records"

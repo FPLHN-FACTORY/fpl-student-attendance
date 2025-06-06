@@ -469,12 +469,12 @@ onMounted(() => {
 
 <template>
   <div class="container-fluid">
-    <!-- Bộ lọc tìm kiếm -->
+    <!-- Bảng danh sách sinh viên trong nhóm xưởng -->
     <div class="row g-3">
       <div class="col-12">
-        <a-card :bordered="false" class="cart mb-3 no-body-padding">
+        <a-card :bordered="false" class="cart no-body-padding">
           <a-collapse ghost>
-            <a-collapse-panel class="px-2">
+            <a-collapse-panel>
               <template #header><FilterFilled /> Bộ lọc</template>
               <div class="row g-3 filter-container">
                 <div class="col-md-6 col-sm-12">
@@ -504,10 +504,9 @@ onMounted(() => {
                     <a-select-option value="0">Ngưng học</a-select-option>
                   </a-select>
                 </div>
-              </div>
-              <div class="row">
+
                 <div class="col-12">
-                  <div class="d-flex justify-content-center flex-wrap gap-2 mt-3">
+                  <div class="d-flex justify-content-center flex-wrap gap-2">
                     <a-button class="btn-light" @click="fetchStudentFactories">
                       <FilterFilled /> Lọc
                     </a-button>
@@ -519,14 +518,11 @@ onMounted(() => {
           </a-collapse>
         </a-card>
       </div>
-    </div>
 
-    <!-- Bảng danh sách sinh viên trong nhóm xưởng -->
-    <div class="row g-3">
       <div class="col-12">
         <a-card :bordered="false" class="cart">
           <template #title> <UnorderedListOutlined /> Danh sách sinh viên </template>
-          <div class="d-flex justify-content-end mb-3 flex-wrap gap-3">
+          <div class="d-flex justify-content-end flex-wrap gap-3 mb-2">
             <ExcelUploadButton v-bind="configImportExcel" />
             <a-tooltip title="Thêm sinh viên vào nhóm xưởng">
               <a-button type="primary" @click="isAddStudentModalVisible = true">
@@ -534,6 +530,7 @@ onMounted(() => {
               </a-button>
             </a-tooltip>
           </div>
+
           <a-table
             class="nowrap"
             :dataSource="studentFactories"
