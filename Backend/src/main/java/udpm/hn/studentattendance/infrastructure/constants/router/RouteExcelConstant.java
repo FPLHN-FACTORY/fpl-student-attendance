@@ -25,4 +25,6 @@ public final class RouteExcelConstant {
     public static final String URL_API_STUDENT_FACTORY = PREFIX_API_EXCEL + "/student-factory";
 
     public static final String URL_API_PROJECT = PREFIX_API_EXCEL + "/project";
+
+    public static final String URL_API_ATTENDANCE_RECOVERY = PREFIX_API_EXCEL + "/attendance-recovery";
 }

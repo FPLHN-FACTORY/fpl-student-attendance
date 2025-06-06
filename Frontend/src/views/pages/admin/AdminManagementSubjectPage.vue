@@ -201,36 +201,26 @@ const updateSubject = () => {
     message.error('Vui lòng nhập mã bộ môn')
     return
   }
+  loadingStore.show()
+  const requestData = {
+    id: detailSubject.id,
+    name: detailSubject.name,
+    code: detailSubject.code,
+  }
 
-  Modal.confirm({
-    title: `Xác nhận cập nhật`,
-    type: 'info',
-    content: `Bạn có chắc muốn lưu lại thay đổi?`,
-    okText: 'Tiếp tục',
-    cancelText: 'Hủy bỏ',
-    onOk() {
-      loadingStore.show()
-      const requestData = {
-        id: detailSubject.id,
-        name: detailSubject.name,
-        code: detailSubject.code,
-      }
-
-      requestAPI
-        .put(`${API_ROUTES_ADMIN.FETCH_DATA_SUBJECT}/${detailSubject.id}`, requestData)
-        .then((response) => {
-          message.success(response.data.message || 'Cập nhật bộ môn thành công')
-          modalUpdate.value = false
-          fetchSubjects()
-        })
-        .catch((error) => {
-          message.error(error.response?.data?.message || 'Lỗi khi cập nhật bộ môn')
-        })
-        .finally(() => {
-          loadingStore.hide()
-        })
-    },
-  })
+  requestAPI
+    .put(`${API_ROUTES_ADMIN.FETCH_DATA_SUBJECT}/${detailSubject.id}`, requestData)
+    .then((response) => {
+      message.success(response.data.message || 'Cập nhật bộ môn thành công')
+      modalUpdate.value = false
+      fetchSubjects()
+    })
+    .catch((error) => {
+      message.error(error.response?.data?.message || 'Lỗi khi cập nhật bộ môn')
+    })
+    .finally(() => {
+      loadingStore.hide()
+    })
 }
 
 const confirmChangeStatus = (record) => {

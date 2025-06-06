@@ -26,6 +26,7 @@ import udpm.hn.studentattendance.infrastructure.constants.AttendanceStatus;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.StatusType;
 import udpm.hn.studentattendance.utils.DateTimeUtils;
+import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
 
 import java.util.Optional;
 
@@ -40,11 +41,15 @@ public class SPDPlanDateAttendanceServiceImpl implements SPDPlanDateAttendanceSe
     private final SPDPlanDateRepository spdPlanDateRepository;
 
     private final SPDUserStudentRepository spdUserStudentRepository;
+
     private final STDScheduleAttendanceRepository sTDScheduleAttendanceRepository;
+
+    private final UserActivityLogHelper userActivityLogHelper;
 
     @Override
     public ResponseEntity<?> getDetail(String idPlanDate) {
-        Optional<SPDPlanDateAttendanceResponse> data = spdAttendanceRepository.getDetailPlanDate(idPlanDate, sessionHelper.getFacilityId());
+        Optional<SPDPlanDateAttendanceResponse> data = spdAttendanceRepository.getDetailPlanDate(idPlanDate,
+                sessionHelper.getFacilityId());
         return data
                 .map(spdPlanDateResponse -> RouterHelper.responseSuccess("Get dữ liệu thành công", spdPlanDateResponse))
                 .orElseGet(() -> RouterHelper.responseError("Không tìm thấy kế hoạch"));
@@ -54,7 +59,8 @@ public class SPDPlanDateAttendanceServiceImpl implements SPDPlanDateAttendanceSe
     public ResponseEntity<?> getAllList(SPDFilterPlanDateAttendanceRequest request) {
         request.setIdFacility(sessionHelper.getFacilityId());
         Pageable pageable = PaginationHelper.createPageable(request);
-        PageableObject<SPDPlanDateStudentResponse> data = PageableObject.of(spdAttendanceRepository.getAllByFilter(pageable, request));
+        PageableObject<SPDPlanDateStudentResponse> data = PageableObject
+                .of(spdAttendanceRepository.getAllByFilter(pageable, request));
         return RouterHelper.responseSuccess("Lấy danh sách dữ liệu thành công", data);
     }
 
@@ -77,7 +83,8 @@ public class SPDPlanDateAttendanceServiceImpl implements SPDPlanDateAttendanceSe
         boolean isEnableCheckin = planDate.getRequiredCheckin() == StatusType.ENABLE;
         boolean isEnableCheckout = planDate.getRequiredCheckout() == StatusType.ENABLE;
 
-        Attendance attendance = spdAttendanceRepository.findByPlanDate_IdAndUserStudent_Id(planDate.getId(), userStudent.getId()).orElse(null);
+        Attendance attendance = spdAttendanceRepository
+                .findByPlanDate_IdAndUserStudent_Id(planDate.getId(), userStudent.getId()).orElse(null);
         if (attendance == null) {
             attendance = new Attendance();
             attendance.setPlanDate(planDate);
@@ -109,6 +116,8 @@ public class SPDPlanDateAttendanceServiceImpl implements SPDPlanDateAttendanceSe
         attendance.setAttendanceStatus(status);
 
         Attendance newEntity = spdAttendanceRepository.save(attendance);
+        userActivityLogHelper.saveLog(
+                "vừa thay đổi trạng thái điểm danh của sinh viên " + userStudent.getName() + " thành " + status.name());
         return RouterHelper.responseSuccess(message + " sinh viên " + userStudent.getName(), newEntity);
     }
 
