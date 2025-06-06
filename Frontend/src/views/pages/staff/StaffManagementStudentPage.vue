@@ -346,12 +346,12 @@ onMounted(() => {
 
 <template>
   <div class="container-fluid">
-    <!-- Bộ lọc tìm kiếm -->
+    <!-- Danh sách sinh viên -->
     <div class="row g-3">
       <div class="col-12">
-        <a-card :bordered="false" class="cart mb-3 no-body-padding">
+        <a-card :bordered="false" class="cart no-body-padding">
           <a-collapse ghost>
-            <a-collapse-panel class="px-2">
+            <a-collapse-panel>
               <template #header><FilterFilled /> Bộ lọc</template>
               <div class="row g-3">
                 <!-- Input tìm kiếm theo mã, tên, email -->
@@ -383,10 +383,9 @@ onMounted(() => {
                     <a-select-option value="INACTIVE">Không hoạt động</a-select-option>
                   </a-select>
                 </div>
-              </div>
-              <div class="row">
+
                 <div class="col-12">
-                  <div class="d-flex justify-content-center flex-wrap gap-2 mt-3">
+                  <div class="d-flex justify-content-center flex-wrap gap-2">
                     <a-button class="btn-light" @click="fetchStudents">
                       <FilterFilled /> Lọc
                     </a-button>
@@ -398,14 +397,11 @@ onMounted(() => {
           </a-collapse>
         </a-card>
       </div>
-    </div>
 
-    <!-- Danh sách sinh viên -->
-    <div class="row g-3">
       <div class="col-12">
         <a-card :bordered="false" class="cart">
           <template #title> <UnorderedListOutlined /> Danh sách sinh viên </template>
-          <div class="d-flex justify-content-end mb-3 flex-wrap gap-3">
+          <div class="d-flex justify-content-end flex-wrap gap-3 mb-2">
             <ExcelUploadButton v-bind="configImportExcel" />
 
             <a-tooltip title="Thêm mới sinh viên">
@@ -415,6 +411,7 @@ onMounted(() => {
               </a-button>
             </a-tooltip>
           </div>
+
           <a-table
             :dataSource="students"
             :columns="columns"

@@ -74,6 +74,11 @@ if (!roles.length && authStore.isLogin) {
   roles = tmpRoles.filter((o) => authStore.user.role.includes(o.role))
 }
 
+const handleLogout = () => {
+  authStore.logout()
+  window.location.href = isRoleAdm ? URL_ADMIN_PANEL : BASE_URL
+}
+
 const showModalSelectFacility = () => (isShowModalSelectFacility.value = true)
 
 const handleSelectFacility = (role) => {
@@ -199,6 +204,19 @@ onMounted(async () => {
           </template>
         </div>
       </div>
+      <div class="d-flex justify-content-center align-items-center" v-if="authStore.isLogin">
+        <div class="role-container mt-2">
+          <div class="role-item">
+            <a-button
+              type="primary"
+              class="role-button button-logout"
+              size="large"
+              @click="handleLogout"
+              >Đăng xuất</a-button
+            >
+          </div>
+        </div>
+      </div>
       <p class="footer">Powered by <strong>FPLHN-UDPM</strong></p>
     </div>
 
@@ -293,6 +311,7 @@ onMounted(async () => {
   height: auto;
   max-width: 100%;
 }
+
 .role-button {
   width: 100%;
   margin-top: 10px;
@@ -305,6 +324,20 @@ onMounted(async () => {
   background-color: #6b667d;
   border-color: #6b667d;
   color: white;
+}
+.button-logout {
+  width: 280px;
+  max-width: 100%;
+  color: #000;
+  background-color: #f1f3f5;
+  border-color: #d9d9d9;
+  box-shadow: none;
+}
+.button-logout:hover,
+.button-logout:active {
+  background: #dce1e3;
+  color: #000;
+  border-color: #d9d9d9;
 }
 .footer {
   margin-top: 6rem;
