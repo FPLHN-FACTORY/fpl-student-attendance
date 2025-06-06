@@ -147,6 +147,7 @@ public interface STDHistoryAttendanceExtendRepository extends FactoryRepository 
                     ORDER BY pd.start_date
             """, nativeQuery = true)
     List<STDHistoryPlanDateAttendanceResponse> getDetailPlanDate(String idUserStudent, String idFacility);
+
     @Query(value = """
             SELECT
                 ROW_NUMBER() OVER (

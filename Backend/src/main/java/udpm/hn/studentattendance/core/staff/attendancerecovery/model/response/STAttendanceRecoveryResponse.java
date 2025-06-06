@@ -10,4 +10,6 @@ public interface STAttendanceRecoveryResponse {
 
     String getDescription();
 
+    Integer getTotalStudent();
+
 }

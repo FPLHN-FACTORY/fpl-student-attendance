@@ -176,29 +176,31 @@ const showAddModal = () => {
 }
 
 const handleAddSubjectFacility = () => {
-  if (newSubjectFacility.facilityId === null) {
-    return message.error('Vui lòng chọn 1 cơ sở')
+  if (!newSubjectFacility.subjectId) {
+    message.error('Vui lòng chọn bộ môn')
+    return
   }
-
+  if (!newSubjectFacility.facilityId) {
+    message.error('Vui lòng chọn cơ sở')
+    return
+  }
   Modal.confirm({
     title: 'Xác nhận thêm mới',
-    content: 'Bạn có chắc chắn muốn thêm bộ môn cơ sở mới này?',
+    content: 'Bạn có chắc chắn muốn thêm mới bộ môn cơ sở này?',
     okText: 'Tiếp tục',
     cancelText: 'Hủy bỏ',
     onOk() {
       loadingStore.show()
       requestAPI
-        .post(API_ROUTES_ADMIN.FETCH_DATA_SUBJECT_FACILITY, {
-          facilityId: newSubjectFacility.facilityId,
-          subjectId: newSubjectFacility.subjectId,
-        })
-        .then(({ data: response }) => {
-          message.success(response.message)
+        .post(API_ROUTES_ADMIN.FETCH_DATA_SUBJECT_FACILITY, newSubjectFacility)
+        .then((response) => {
+          message.success(response.data.message || 'Thêm bộ môn cơ sở thành công')
           modalAdd.value = false
           fetchSubjectFacility()
+          clearFormAdd()
         })
         .catch((error) => {
-          message.error(error.response?.data?.message || 'Không thể thêm bộ môn cơ sở')
+          message.error(error.response?.data?.message || 'Lỗi khi thêm bộ môn cơ sở')
         })
         .finally(() => {
           loadingStore.hide()
@@ -208,10 +210,14 @@ const handleAddSubjectFacility = () => {
 }
 
 const handleUpdateSubjectFacility = () => {
-  if (updateSubjectFacility.facilityId === null) {
-    return message.error('Vui lòng chọn 1 cơ sở')
+  if (!detailSubjectFacility.subjectId) {
+    message.error('Vui lòng chọn bộ môn')
+    return
   }
-
+  if (!detailSubjectFacility.facilityId) {
+    message.error('Vui lòng chọn cơ sở')
+    return
+  }
   Modal.confirm({
     title: 'Xác nhận cập nhật',
     content: 'Bạn có chắc chắn muốn cập nhật thông tin bộ môn cơ sở này?',
@@ -219,18 +225,21 @@ const handleUpdateSubjectFacility = () => {
     cancelText: 'Hủy bỏ',
     onOk() {
       loadingStore.show()
+      const requestData = {
+        id: detailSubjectFacility.id,
+        subjectId: detailSubjectFacility.subjectId,
+        facilityId: detailSubjectFacility.facilityId,
+      }
+
       requestAPI
-        .put(
-          API_ROUTES_ADMIN.FETCH_DATA_SUBJECT_FACILITY + '/' + updateSubjectFacility.id,
-          updateSubjectFacility,
-        )
-        .then(({ data: response }) => {
-          message.success(response.message)
+        .put(`${API_ROUTES_ADMIN.FETCH_DATA_SUBJECT_FACILITY}/${detailSubjectFacility.id}`, requestData)
+        .then((response) => {
+          message.success(response.data.message || 'Cập nhật bộ môn cơ sở thành công')
           modalUpdate.value = false
           fetchSubjectFacility()
         })
         .catch((error) => {
-          message.error(error.response?.data?.message || 'Không thể cập nhật bộ môn cơ sở')
+          message.error(error.response?.data?.message || 'Lỗi khi cập nhật bộ môn cơ sở')
         })
         .finally(() => {
           loadingStore.hide()
@@ -296,6 +305,10 @@ const getStatusText = (status) => {
 
 const getStatusColor = (status) => {
   return status == 1 || status === 'ACTIVE' ? 'green' : 'red'
+}
+
+const clearFormAdd = () => {
+  newSubjectFacility.facilityId = null
 }
 
 const handleClearFilter = () => {
