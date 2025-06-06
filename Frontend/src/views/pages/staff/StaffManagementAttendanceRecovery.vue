@@ -289,7 +289,7 @@ onMounted(() => {
             <a-collapse-panel class="px-2">
               <template #header><FilterFilled /> Bộ lọc</template>
               <div class="row g-2">
-                <div class="col-md-12 col-sm-12">
+                <div class="col-lg-6 col-md-6 col-sm-12">
                   <div class="label-title">Từ khoá:</div>
                   <a-input
                     v-model:value="filter.searchQuery"
@@ -303,7 +303,7 @@ onMounted(() => {
                     </template>
                   </a-input>
                 </div>
-                <div class="col-md-12 col-sm-12">
+                <div class="col-lg-6 col-md-6 col-sm-12">
                   <div class="label-title">Khoảng ngày:</div>
                   <a-range-picker
                     v-model:value="filter.dateRange"
