@@ -577,7 +577,10 @@ onMounted(() => {
                   <a-tag :color="record.totalAbsentShift > 0 ? 'red' : 'green'"
                     >{{
                       record.totalAbsentShift > 0
-                        ? Math.max(record.totalAbsentShift - 0.5 * record.currentLateAttendance, 0)
+                        ? Math.max(
+                            record.totalAbsentShift + 0.5 * record.currentLateAttendance,
+                            record.totalShift,
+                          )
                         : 0
                     }}
                     / {{ record.totalShift || 0 }}</a-tag
