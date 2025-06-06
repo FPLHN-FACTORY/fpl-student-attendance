@@ -1,14 +1,14 @@
-package udpm.hn.studentattendance.core.admin.subject_facility.controller;
+package udpm.hn.studentattendance.core.admin.subjectfacility.controller;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import udpm.hn.studentattendance.core.admin.subject_facility.model.request.ADSubjectFacilityCreateRequest;
-import udpm.hn.studentattendance.core.admin.subject_facility.model.request.ADSubjectFacilitySearchRequest;
-import udpm.hn.studentattendance.core.admin.subject_facility.model.request.ADSubjectFacilityUpdateRequest;
-import udpm.hn.studentattendance.core.admin.subject_facility.service.ADSubjectFacilityService;
-import udpm.hn.studentattendance.core.admin.subject_facility.service.ADFacilityManagementService;
+import udpm.hn.studentattendance.core.admin.subjectfacility.model.request.ADSubjectFacilityCreateRequest;
+import udpm.hn.studentattendance.core.admin.subjectfacility.model.request.ADSubjectFacilitySearchRequest;
+import udpm.hn.studentattendance.core.admin.subjectfacility.model.request.ADSubjectFacilityUpdateRequest;
+import udpm.hn.studentattendance.core.admin.subjectfacility.service.ADSubjectFacilityService;
+import udpm.hn.studentattendance.core.admin.subjectfacility.service.ADFacilityManagementService;
 import udpm.hn.studentattendance.infrastructure.constants.router.RouteAdminConstant;
 
 @RestController

@@ -39,7 +39,13 @@ public class ValidateHelper {
 
     private static final String DOMAIN_REGEX = "^(?=.{1,253}$)([a-zA-Z0-9-]{1,63}\\.)+[a-zA-Z]{2,}$";
 
+    private static final String CONTAINS_EMOJI_REGEX = "[\\p{So}\\p{Sk}\\p{Sm}\\p{Cn}\\x{1F000}-\\x{1F9FF}\\x{2600}-\\x{26FF}\\x{2700}-\\x{27BF}]";
+
     private static final InetAddressValidator validator = InetAddressValidator.getInstance();
+
+    public static boolean containsEmoji(String input) {
+        return input.matches(".*" + CONTAINS_EMOJI_REGEX + ".*");
+    }
 
     public static boolean isValidPhoneNumber(String phoneNumber) {
         Pattern pattern = Pattern.compile(PHONE_REGEX);

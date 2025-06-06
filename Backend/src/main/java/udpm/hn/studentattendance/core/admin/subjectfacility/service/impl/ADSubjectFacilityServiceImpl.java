@@ -1,20 +1,23 @@
-package udpm.hn.studentattendance.core.admin.subject_facility.service.impl;
+package udpm.hn.studentattendance.core.admin.subjectfacility.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import udpm.hn.studentattendance.core.admin.subject_facility.model.request.ADSubjectFacilityCreateRequest;
-import udpm.hn.studentattendance.core.admin.subject_facility.model.request.ADSubjectFacilitySearchRequest;
-import udpm.hn.studentattendance.core.admin.subject_facility.model.request.ADSubjectFacilityUpdateRequest;
-import udpm.hn.studentattendance.core.admin.subject_facility.model.response.ADSubjectFacilityResponse;
-import udpm.hn.studentattendance.core.admin.subject_facility.repository.ADSubjectFacilityRepository;
-import udpm.hn.studentattendance.core.admin.subject_facility.service.ADSubjectFacilityService;
+import udpm.hn.studentattendance.core.admin.subjectfacility.model.request.ADSubjectFacilityCreateRequest;
+import udpm.hn.studentattendance.core.admin.subjectfacility.model.request.ADSubjectFacilitySearchRequest;
+import udpm.hn.studentattendance.core.admin.subjectfacility.model.request.ADSubjectFacilityUpdateRequest;
+import udpm.hn.studentattendance.core.admin.subjectfacility.model.response.ADSubjectFacilityResponse;
+import udpm.hn.studentattendance.core.admin.subjectfacility.repository.ADFacilityRepository;
+import udpm.hn.studentattendance.core.admin.subjectfacility.repository.ADSubjectFacilityRepository;
+import udpm.hn.studentattendance.core.admin.subjectfacility.repository.ADSubjectRepository;
+import udpm.hn.studentattendance.core.admin.subjectfacility.service.ADSubjectFacilityService;
 import udpm.hn.studentattendance.entities.Facility;
 import udpm.hn.studentattendance.entities.Subject;
 import udpm.hn.studentattendance.entities.SubjectFacility;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
 import udpm.hn.studentattendance.helpers.RouterHelper;
+import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.common.repositories.CommonUserStudentRepository;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
@@ -27,11 +30,13 @@ public class ADSubjectFacilityServiceImpl implements ADSubjectFacilityService {
 
     private final ADSubjectFacilityRepository repository;
 
-    private final SubjectRepository subjectRepository;
+    private final ADSubjectRepository subjectRepository;
 
-    private final FacilityRepository facilityRepository;
+    private final ADFacilityRepository facilityRepository;
 
     private final CommonUserStudentRepository commonUserStudentRepository;
+
+    private final UserActivityLogHelper userActivityLogHelper;
 
     public ResponseEntity<?> getListSubjectFacility(ADSubjectFacilitySearchRequest request) {
         Pageable pageable = PaginationHelper.createPageable(request, "id");
@@ -53,12 +58,13 @@ public class ADSubjectFacilityServiceImpl implements ADSubjectFacilityService {
         if (repository.isExistsSubjectFacility(facility.getId(), subject.getId(), null)) {
             return RouterHelper.responseError("Bộ môn đã tồn tại trong cơ sở này");
         }
-
         SubjectFacility subjectFacility = new SubjectFacility();
         subjectFacility.setFacility(facility);
         subjectFacility.setSubject(subject);
 
-        return RouterHelper.responseSuccess("Thêm bộ môn cơ sở thành công", repository.save(subjectFacility));
+        SubjectFacility savedSubjectFacility = repository.save(subjectFacility);
+        userActivityLogHelper.saveLog("vừa thêm mới bộ môn cơ sở : " + subject.getName() + " tại cơ sở " + facility.getName());
+        return RouterHelper.responseSuccess("Thêm bộ môn cơ sở thành công", savedSubjectFacility);
     }
 
     @Override
@@ -81,11 +87,12 @@ public class ADSubjectFacilityServiceImpl implements ADSubjectFacilityService {
         if (repository.isExistsSubjectFacility(facility.getId(), subject.getId(), subjectFacility.getId())) {
             return RouterHelper.responseError("Bộ môn đã tồn tại trong cơ sở này");
         }
-
         subjectFacility.setFacility(facility);
         subjectFacility.setSubject(subject);
 
-        return RouterHelper.responseSuccess("Cập nhật bộ môn cơ sở thành công", repository.save(subjectFacility));
+        SubjectFacility savedSubjectFacility = repository.save(subjectFacility);
+        userActivityLogHelper.saveLog("vừa cập nhật bộ môn cơ sở: " + subject.getName() + " tại cơ sở " + facility.getName());
+        return RouterHelper.responseSuccess("Cập nhật bộ môn cơ sở thành công", savedSubjectFacility);
     }
 
     @Override
@@ -110,6 +117,8 @@ public class ADSubjectFacilityServiceImpl implements ADSubjectFacilityService {
         if (subjectFacility.getStatus() == EntityStatus.ACTIVE) {
             commonUserStudentRepository.disableAllStudentDuplicateShiftByIdSubjectFacility(subjectFacility.getId());
         }
+        String statusText = newEntity.getStatus() == EntityStatus.ACTIVE ? "Hoạt động" : "Không hoạt động";
+        userActivityLogHelper.saveLog("vừa thay đổi trạng thái bộ môn cơ sở: " + newEntity.getSubject().getName() + " tại cơ sở " + newEntity.getFacility().getName() + " thành " + statusText);
         return RouterHelper.responseSuccess("Thay đổi trạng thái thành công", newEntity);
     }
 

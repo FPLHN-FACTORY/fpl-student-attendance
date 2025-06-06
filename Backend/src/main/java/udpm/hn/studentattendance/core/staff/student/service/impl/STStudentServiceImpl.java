@@ -98,10 +98,10 @@ public class STStudentServiceImpl implements STStudentService {
         userStudent.setEmail(studentCreateUpdateRequest.getEmail());
         userStudent.setFacility(facility.get());
         userStudent.setStatus(EntityStatus.ACTIVE);
-        studentExtendRepository.save(userStudent);
+        UserStudent saveUserStudent = studentExtendRepository.save(userStudent);
         userActivityLogHelper
-                .saveLog("vừa thêm 1 sinh viên mới: " + userStudent.getName() + " (" + userStudent.getCode() + ")");
-        return RouterHelper.responseSuccess("Thêm sinh viên mới thành công", userStudent);
+                .saveLog("vừa thêm 1 sinh viên mới: " + saveUserStudent.getName() + " (" + saveUserStudent.getCode() + ")");
+        return RouterHelper.responseSuccess("Thêm sinh viên mới thành công", saveUserStudent);
     }
 
     @Override
@@ -146,10 +146,10 @@ public class STStudentServiceImpl implements STStudentService {
         userStudent.setCode(studentCreateUpdateRequest.getCode());
         userStudent.setEmail(studentCreateUpdateRequest.getEmail());
         userStudent.setName(studentCreateUpdateRequest.getName());
-        studentExtendRepository.save(userStudent);
+        UserStudent saveUserStudent = studentExtendRepository.save(userStudent);
         userActivityLogHelper
-                .saveLog("vừa cập nhật sinh viên: " + userStudent.getName() + " (" + userStudent.getCode() + ")");
-        return RouterHelper.responseSuccess("Cập nhật sinh viên thành công", userStudent);
+                .saveLog("vừa cập nhật sinh viên: " + saveUserStudent.getName() + " (" + saveUserStudent.getCode() + ")");
+        return RouterHelper.responseSuccess("Cập nhật sinh viên thành công", saveUserStudent);
     }
 
     @Override

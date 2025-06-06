@@ -124,7 +124,8 @@ public class USFactoryServiceImpl implements USFactoryService {
         factory.setUserStaff(userStaff.get());
         factory.setProject(project.get());
         factory.setStatus(EntityStatus.ACTIVE);
-        factoryRepository.save(factory);
+
+        Factory saveFactory = factoryRepository.save(factory);
 
         Map<String, Object> dataNotification = new HashMap<>();
         dataNotification.put(NotificationHelper.KEY_USER_ADMIN,
@@ -137,8 +138,8 @@ public class USFactoryServiceImpl implements USFactoryService {
         notificationService.add(notificationAddRequest);
 
         userActivityLogHelper
-                .saveLog("vừa thêm 1 nhóm xưởng mới: " + factory.getName() + " trong dự án " + project.get().getName());
-        return RouterHelper.responseSuccess("Thêm nhóm xưởng mới thành công", factory);
+                .saveLog("vừa thêm 1 nhóm xưởng mới: " + saveFactory.getName() + " trong dự án " + project.get().getName());
+        return RouterHelper.responseSuccess("Thêm nhóm xưởng mới thành công", saveFactory);
     }
 
     @Override
@@ -190,7 +191,7 @@ public class USFactoryServiceImpl implements USFactoryService {
         factory.setDescription(req.getFactoryDescription());
         factory.setUserStaff(newStaff);
         factory.setProject(newProject);
-        factoryRepository.save(factory);
+        Factory saveFactory  = factoryRepository.save(factory);
 
         Map<String, Object> dataNotification = new HashMap<>();
         NotificationAddRequest notificationAddRequest = new NotificationAddRequest();
@@ -207,8 +208,8 @@ public class USFactoryServiceImpl implements USFactoryService {
         notificationAddRequest.setType(NotificationHelper.TYPE_ADD_TEACHER_TO_FACTORY);
         notificationService.add(notificationAddRequest);
 
-        userActivityLogHelper.saveLog("vừa cập nhật nhóm xưởng: " + oldName + " → " + factory.getName());
-        return RouterHelper.responseSuccess("Cập nhật nhóm xưởng thành công", factory);
+        userActivityLogHelper.saveLog("vừa cập nhật nhóm xưởng: " + oldName + " → " + saveFactory.getName());
+        return RouterHelper.responseSuccess("Cập nhật nhóm xưởng thành công", saveFactory);
     }
 
     @Override
@@ -220,11 +221,11 @@ public class USFactoryServiceImpl implements USFactoryService {
             factory.setStatus(existFactory.get().getStatus() == EntityStatus.ACTIVE ? EntityStatus.INACTIVE
                     : EntityStatus.ACTIVE);
             String newStatus = factory.getStatus() == EntityStatus.ACTIVE ? "Hoạt động" : "Không hoạt động";
-            factoryRepository.save(factory);
+            Factory saveFactory = factoryRepository.save(factory);
             if (factory.getStatus() == EntityStatus.ACTIVE) {
                 commonUserStudentRepository.disableAllStudentDuplicateShiftByIdFactory(factory.getId());
             }
-            userActivityLogHelper.saveLog("vừa thay đổi trạng thái nhóm xưởng " + factory.getName() + " từ " + oldStatus
+            userActivityLogHelper.saveLog("vừa thay đổi trạng thái nhóm xưởng " + saveFactory.getName() + " từ " + oldStatus
                     + " thành " + newStatus);
         }
         return RouterHelper.responseSuccess("Đổi trạng thái nhóm xưởng thành công", null);

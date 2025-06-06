@@ -135,7 +135,8 @@ public class EXAttendanceRecoveryServiceImpl implements EXAttendanceRecoveryServ
         ResponseEntity<ApiResponse> result = (ResponseEntity<ApiResponse>) attendanceRecoveryService.importAttendanceRecoveryStudent(stStudentAttendanceRecoveryRequest);
         ApiResponse response = result.getBody();
         if (response.getStatus() == RestApiStatus.SUCCESS) {
-            ImportLog importLog = importLogRepository.findByIdUserAndCodeAndFileNameAndFacility_Id(sessionHelper.getUserId(), request.getCode(), request.getFileName(), sessionHelper.getFacilityId()).orElse(null);
+            ImportLog importLog = importLogRepository.findByIdUserAndCodeAndFileNameAndFacility_Id
+                    (sessionHelper.getUserId(), request.getCode(), request.getFileName(), sessionHelper.getFacilityId()).orElse(null);
             if (importLog == null) {
                 Facility facility = new Facility();
                 facility.setId(sessionHelper.getFacilityId());
@@ -163,7 +164,8 @@ public class EXAttendanceRecoveryServiceImpl implements EXAttendanceRecoveryServ
             attendanceRecovery.setImportLog(importLog);
             attendanceRecoveryRepository.save(attendanceRecovery);
         } else {
-            ImportLog importLog = importLogRepository.findByIdUserAndCodeAndFileNameAndFacility_Id(sessionHelper.getUserId(), request.getCode(), request.getFileName(), sessionHelper.getFacilityId()).orElse(null);
+            ImportLog importLog = importLogRepository.findByIdUserAndCodeAndFileNameAndFacility_Id
+                    (sessionHelper.getUserId(), request.getCode(), request.getFileName(), sessionHelper.getFacilityId()).orElse(null);
             if (importLog == null) {
                 Facility facility = new Facility();
                 facility.setId(sessionHelper.getFacilityId());
@@ -225,7 +227,8 @@ public class EXAttendanceRecoveryServiceImpl implements EXAttendanceRecoveryServ
     @Override
     public ResponseEntity<?> historyLog(EXDataRequest request) {
         Pageable pageable = PaginationHelper.createPageable(request);
-        PageableObject<ExImportLogResponse> data = PageableObject.of(importLogRepository.getListHistory(pageable, ImportLogType.ATTENDANCE_RECOVERY.ordinal(), sessionHelper.getUserId(), sessionHelper.getFacilityId()));
+        PageableObject<ExImportLogResponse> data = PageableObject.of(importLogRepository.getListHistory
+                (pageable, ImportLogType.ATTENDANCE_RECOVERY.ordinal(), sessionHelper.getUserId(), sessionHelper.getFacilityId()));
         return RouterHelper.responseSuccess("Lấy danh sách dữ liệu thành công", data);
     }
 

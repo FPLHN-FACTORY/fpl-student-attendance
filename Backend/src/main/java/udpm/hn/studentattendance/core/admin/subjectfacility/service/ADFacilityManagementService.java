@@ -1,8 +1,8 @@
-package udpm.hn.studentattendance.core.admin.subject_facility.service;
+package udpm.hn.studentattendance.core.admin.subjectfacility.service;
 
 
 import org.springframework.http.ResponseEntity;
-import udpm.hn.studentattendance.core.admin.subject_facility.model.request.ADSubjectFacilitySearchRequest;
+import udpm.hn.studentattendance.core.admin.subjectfacility.model.request.ADSubjectFacilitySearchRequest;
 
 public interface ADFacilityManagementService {
 

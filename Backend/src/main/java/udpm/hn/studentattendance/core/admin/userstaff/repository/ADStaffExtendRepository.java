@@ -48,8 +48,8 @@ public interface ADStaffExtendRepository extends UserStaffRepository {
             HAVING
               (:#{#adStaffRequest.roleCodeFilter} IS NULL
                OR SUM(r.code = :#{#adStaffRequest.roleCodeFilter}) > 0)
-            ORDER BY
-              s.created_at DESC, s.status DESC
+            ORDER BY s.status DESC,
+              s.created_at DESC
             """,
             countQuery = """
                     SELECT COUNT(1)
@@ -97,7 +97,7 @@ public interface ADStaffExtendRepository extends UserStaffRepository {
             GROUP BY
               s.id, s.name, s.code, s.email_fe, s.email_fpt, s.status, s.created_at, f.id
             ORDER BY
-              s.created_at DESC, s.status DESC
+              s.status DESC, s.created_at DESC
             """,
             nativeQuery = true
     )
