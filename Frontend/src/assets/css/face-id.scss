@@ -207,7 +207,7 @@
       transform: rotate(325deg);
     }
 
-    @for $i from 1 through 36 {
+    @for $i from 1 through 40 {
       & > .dot:nth-child(#{$i}) {
         transform: rotate(#{($i - 1) * 10}deg);
       }
@@ -220,7 +220,7 @@
       }
     }
 
-    &.step {
+    &.step1 {
       @for $i from 1 through 9 {
         & > .dot:nth-child(#{$i}) {
           animation: step 0s alternate forwards;
