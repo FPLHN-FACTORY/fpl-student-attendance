@@ -524,65 +524,60 @@ watch(mapCenter, (newCenter) => {
   <div class="container-fluid">
     <div class="row g-3">
       <div class="col-12">
+        <a-card :bordered="false" class="cart no-body-padding">
+          <a-collapse ghost>
+            <a-collapse-panel>
+              <template #header><FilterFilled /> Bộ lọc</template>
+              <div class="row g-3">
+                <div class="col-lg-8 col-md-6 col-sm-6">
+                  <div class="label-title">Từ khoá:</div>
+                  <a-input
+                    v-model:value="dataFilter.keyword"
+                    placeholder="Tìm theo địa điểm..."
+                    allowClear
+                  >
+                    <template #prefix>
+                      <SearchOutlined />
+                    </template>
+                  </a-input>
+                </div>
+                <div class="col-lg-4 col-md-6 col-sm-6">
+                  <div class="label-title">Trạng thái:</div>
+                  <a-select
+                    v-model:value="dataFilter.status"
+                    class="w-100"
+                    :dropdownMatchSelectWidth="false"
+                    placeholder="-- Tất cả trạng thái --"
+                    allowClear
+                  >
+                    <a-select-option :value="null">-- Tất cả trạng thái --</a-select-option>
+                    <a-select-option v-for="(name, id) in STATUS_FACILITY_IP" :key="id" :value="id">
+                      {{ name }}
+                    </a-select-option>
+                  </a-select>
+                </div>
+                <div class="col-12">
+                  <div class="d-flex justify-content-center flex-wrap gap-2">
+                    <a-button class="btn-light" @click="handleSubmitFilter">
+                      <FilterFilled /> Lọc
+                    </a-button>
+                    <a-button class="btn-gray" @click="handleClearFilter"> Huỷ lọc </a-button>
+                  </div>
+                </div>
+              </div>
+            </a-collapse-panel>
+          </a-collapse>
+        </a-card>
+      </div>
+
+      <div class="col-12">
         <a-card :bordered="false" class="cart">
           <template #title> <UnorderedListOutlined /> Danh sách địa điểm cho phép </template>
 
-          <div class="row g-2">
-            <div class="col-md-10 col-sm-12">
-              <a-collapse ghost>
-                <a-collapse-panel>
-                  <template #header><FilterFilled /> Bộ lọc</template>
-                  <div class="row g-2">
-                    <div class="col-md-5 col-sm-6">
-                      <a-input
-                        v-model:value="dataFilter.keyword"
-                        placeholder="Tìm theo địa điểm..."
-                        allowClear
-                      >
-                        <template #prefix>
-                          <SearchOutlined />
-                        </template>
-                      </a-input>
-                    </div>
-                    <div class="col-md-3 col-sm-6">
-                      <a-select
-                        v-model:value="dataFilter.status"
-                        class="w-100"
-                        :dropdownMatchSelectWidth="false"
-                        placeholder="-- Tất cả trạng thái --"
-                        allowClear
-                      >
-                        <a-select-option :value="null">-- Tất cả trạng thái --</a-select-option>
-                        <a-select-option
-                          v-for="(name, id) in STATUS_FACILITY_IP"
-                          :key="id"
-                          :value="id"
-                        >
-                          {{ name }}
-                        </a-select-option>
-                      </a-select>
-                    </div>
-                    <div class="col-md-4 col-sm-12">
-                      <div
-                        class="d-flex justify-content-center justify-content-md-start flex-wrap gap-2"
-                      >
-                        <a-button class="btn-light" @click="handleSubmitFilter">
-                          <FilterFilled /> Lọc
-                        </a-button>
-                        <a-button class="btn-gray" @click="handleClearFilter"> Huỷ lọc </a-button>
-                      </div>
-                    </div>
-                  </div>
-                </a-collapse-panel>
-              </a-collapse>
-            </div>
-            <div class="col-md-2 col-sm-12">
-              <div class="d-flex justify-content-end mb-3 flex-wrap gap-3">
-                <a-button type="primary" @click="handleShowAdd">
-                  <PlusOutlined /> Thêm địa điểm mới
-                </a-button>
-              </div>
-            </div>
+          <div class="d-flex justify-content-end mb-2 flex-wrap gap-3">
+            <a-button type="primary" @click="handleShowAdd">
+              <PlusOutlined /> Thêm địa điểm mới
+            </a-button>
           </div>
 
           <div>

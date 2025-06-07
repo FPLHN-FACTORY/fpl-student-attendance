@@ -565,13 +565,12 @@ onMounted(() => {
 
   <div class="container-fluid">
     <div class="row g-3">
-      <!-- Bộ lọc tìm kiếm -->
       <div class="col-12">
         <a-card :bordered="false" class="cart no-body-padding">
           <a-collapse ghost>
-            <a-collapse-panel class="px-2">
+            <a-collapse-panel>
               <template #header><FilterFilled /> Bộ lọc</template>
-              <div class="row g-2">
+              <div class="row g-3">
                 <div class="col-md-6 col-sm-12">
                   <div class="label-title">Từ khoá:</div>
                   <a-input
@@ -636,10 +635,9 @@ onMounted(() => {
                     </a-select-option>
                   </a-select>
                 </div>
-              </div>
-              <div class="row">
+
                 <div class="col-12">
-                  <div class="d-flex justify-content-center flex-wrap gap-2 mt-3">
+                  <div class="d-flex justify-content-center flex-wrap gap-2">
                     <a-button class="btn-light" @click="fetchFactories">
                       <FilterFilled /> Lọc
                     </a-button>
@@ -652,11 +650,11 @@ onMounted(() => {
         </a-card>
       </div>
 
-      <!-- Danh sách nhóm xưởng -->
       <div class="col-12">
         <a-card :bordered="false" class="cart">
           <template #title> <UnorderedListOutlined /> Danh sách nhóm xưởng </template>
-          <div class="d-flex justify-content-end mb-3 flex-wrap gap-3">
+
+          <div class="d-flex justify-content-end flex-wrap gap-3 mb-2">
             <ExcelUploadButton v-bind="configImportExcel" />
             <a-tooltip title="Đổi trạng thái tất cả nhóm xưởng kỳ trước">
               <a-button
@@ -673,6 +671,7 @@ onMounted(() => {
               </a-button>
             </a-tooltip>
           </div>
+
           <a-table
             class="nowrap"
             rowKey="id"

@@ -1,17 +1,23 @@
 <script setup>
-import useBreadcrumbStore from '@/stores/useBreadCrumbStore';
-import useLoadingStore from '@/stores/useLoadingStore';
-import { ref, reactive, onMounted } from 'vue';
-import { DEFAULT_PAGINATION, DEFAULT_DATE_FORMAT } from '@/constants';
-import { autoAddColumnWidth, formatDate } from '@/utils/utils';
+import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
+import useLoadingStore from '@/stores/useLoadingStore'
+import { ref, reactive, onMounted } from 'vue'
+import { DEFAULT_PAGINATION, DEFAULT_DATE_FORMAT } from '@/constants'
+import { autoAddColumnWidth, formatDate } from '@/utils/utils'
 import { API_ROUTES_EXCEL, GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
-import { ROUTE_NAMES } from '@/router/staffRoute';
-import requestAPI from '@/services/requestApiService';
-import { API_ROUTES_STAFF } from '@/constants/staffConstant';
-import { message, Modal } from 'ant-design-vue';
-import { EditFilled, FilterFilled, PlusOutlined, SearchOutlined, UnorderedListOutlined } from '@ant-design/icons-vue';
+import { ROUTE_NAMES } from '@/router/staffRoute'
+import requestAPI from '@/services/requestApiService'
+import { API_ROUTES_STAFF } from '@/constants/staffConstant'
+import { message, Modal } from 'ant-design-vue'
+import {
+  EditFilled,
+  FilterFilled,
+  PlusOutlined,
+  SearchOutlined,
+  UnorderedListOutlined,
+} from '@ant-design/icons-vue'
 import dayjs from 'dayjs'
-import ExcelUploadButton from '@/components/excel/ExcelUploadButton.vue';
+import ExcelUploadButton from '@/components/excel/ExcelUploadButton.vue'
 
 const breadcrumbStore = useBreadcrumbStore()
 const loadingStore = useLoadingStore()
@@ -51,9 +57,9 @@ const columns = ref(
       title: 'Chức năng',
       key: 'action',
       fixed: 'right',
-      width: 100
-    }
-  ])
+      width: 100,
+    },
+  ]),
 )
 
 const attendanceRecovery = ref([])
@@ -164,7 +170,8 @@ const handleAddEvent = () => {
         description: newEvent.description,
         day: newEvent.dayHappen.valueOf(),
       }
-      requestAPI.post(API_ROUTES_STAFF.FETCH_DATA_ATTENDANCE_RECOVERY, payload)
+      requestAPI
+        .post(API_ROUTES_STAFF.FETCH_DATA_ATTENDANCE_RECOVERY, payload)
         .then(() => {
           message.success('Thêm sự kiện khôi phục điểm danh thành công')
           clearData()
@@ -203,7 +210,9 @@ const handleShowModalEdit = (record) => {
       modalEditEvent.value = true
     })
     .catch((error) => {
-      message.error(error.response?.data?.message || 'Lỗi khi lấy chi tiết sự kiện khôi phục điểm danh')
+      message.error(
+        error.response?.data?.message || 'Lỗi khi lấy chi tiết sự kiện khôi phục điểm danh',
+      )
     })
     .finally(() => {
       loadingStore.hide()
@@ -211,7 +220,7 @@ const handleShowModalEdit = (record) => {
 }
 
 const handleEditEvent = () => {
-  if(!editEvent.name || !editEvent.day) {
+  if (!editEvent.name || !editEvent.day) {
     message.error('Vui lòng nhập đầy đủ thông tin')
     return
   }
@@ -229,14 +238,17 @@ const handleEditEvent = () => {
         description: editEvent.description,
         day: editEvent.day.valueOf(),
       }
-      requestAPI.put(API_ROUTES_STAFF.FETCH_DATA_ATTENDANCE_RECOVERY + '/' + editEvent.id, payload)
+      requestAPI
+        .put(API_ROUTES_STAFF.FETCH_DATA_ATTENDANCE_RECOVERY + '/' + editEvent.id, payload)
         .then(() => {
           message.success('Cập nhật sự kiện khôi phục điểm danh thành công')
           clearData()
           fetchAttendanceRecovery()
         })
         .catch((error) => {
-          message.error(error.response?.data?.message || 'Lỗi khi cập nhật sự kiện khôi phục điểm danh')
+          message.error(
+            error.response?.data?.message || 'Lỗi khi cập nhật sự kiện khôi phục điểm danh',
+          )
         })
         .finally(() => {
           modalUpdateLoading.value = false
@@ -286,9 +298,9 @@ onMounted(() => {
         <!-- Bộ lọc tìm kiếm -->
         <a-card :bordered="false" class="cart no-body-padding">
           <a-collapse ghost>
-            <a-collapse-panel class="px-2">
+            <a-collapse-panel>
               <template #header><FilterFilled /> Bộ lọc</template>
-              <div class="row g-2">
+              <div class="row g-3">
                 <div class="col-lg-6 col-md-6 col-sm-12">
                   <div class="label-title">Từ khoá:</div>
                   <a-input
@@ -312,10 +324,8 @@ onMounted(() => {
                     @change="handleDateRangeChange"
                   />
                 </div>
-              </div>
-              <div class="row">
                 <div class="col-12">
-                  <div class="d-flex justify-content-center flex-wrap gap-2 mt-3">
+                  <div class="d-flex justify-content-center flex-wrap gap-2">
                     <a-button class="btn-light" @click="fetchAttendanceRecovery">
                       <FilterFilled /> Lọc
                     </a-button>
@@ -330,7 +340,9 @@ onMounted(() => {
 
       <div class="col-12">
         <a-card :bordered="false" class="cart">
-          <template #title> <UnorderedListOutlined /> Danh sách sự kiện khôi phục điểm danh </template>
+          <template #title>
+            <UnorderedListOutlined /> Danh sách sự kiện khôi phục điểm danh
+          </template>
           <div class="d-flex justify-content-end mb-3 flex-wrap gap-3">
             <a-space>
               <a-tooltip>
@@ -361,7 +373,7 @@ onMounted(() => {
                 </template>
                 <template v-else-if="column.dataIndex === 'totalStudent'">
                   <a-tag> {{ record.totalStudent }} Sinh Viên</a-tag>
-                 </template>
+                </template>
                 <template v-else>
                   {{ record[column.dataIndex] }}
                 </template>
@@ -370,12 +382,19 @@ onMounted(() => {
                 <div class="d-flex flex-wrap gap-2">
                   <a-tooltip>
                     <template #title>Sửa thông tin khôi phục điểm danh</template>
-                    <a-button type="text" class="btn-outline-info" @click="handleShowModalEdit(record)">
+                    <a-button
+                      type="text"
+                      class="btn-outline-info"
+                      @click="handleShowModalEdit(record)"
+                    >
                       <EditFilled />
                     </a-button>
                   </a-tooltip>
                   <div class="excel-upload-wrapper">
-                    <ExcelUploadButton v-bind="configImportExcel" :data="{ attendanceRecoveryId: record.id }" />
+                    <ExcelUploadButton
+                      v-bind="configImportExcel"
+                      :data="{ attendanceRecoveryId: record.id }"
+                    />
                   </div>
                 </div>
               </template>
@@ -414,13 +433,14 @@ onMounted(() => {
   </a-modal>
 
   <!-- Modal Sửa sự kiện khôi phục điểm danh -->
-  <a-modal v-model:open="modalEditEvent"
-  title="Sửa sự kiện khôi phục điểm danh"
-  :okButtonProps="{ loading: modalUpdateLoading }"
-  @ok="handleEditEvent"
-  @cancel="clearData"
-  @close="clearData">
-
+  <a-modal
+    v-model:open="modalEditEvent"
+    title="Sửa sự kiện khôi phục điểm danh"
+    :okButtonProps="{ loading: modalUpdateLoading }"
+    @ok="handleEditEvent"
+    @cancel="clearData"
+    @close="clearData"
+  >
     <a-form :model="editEvent" layout="vertical">
       <a-form-item label="Tên sự kiện" required>
         <a-input v-model:value="editEvent.name" placeholder="Nhập tên sự kiện" />
@@ -429,7 +449,12 @@ onMounted(() => {
         <a-textarea v-model:value="editEvent.description" placeholder="Nhập mô tả" />
       </a-form-item>
       <a-form-item label="Ngày" required>
-        <a-date-picker v-model:value="editEvent.day" placeholder="Chọn ngày" :format="DEFAULT_DATE_FORMAT" class="w-100" />
+        <a-date-picker
+          v-model:value="editEvent.day"
+          placeholder="Chọn ngày"
+          :format="DEFAULT_DATE_FORMAT"
+          class="w-100"
+        />
       </a-form-item>
     </a-form>
   </a-modal>
@@ -450,4 +475,3 @@ onMounted(() => {
   margin: 0 !important;
 }
 </style>
-

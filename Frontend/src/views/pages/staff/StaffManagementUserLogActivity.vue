@@ -1,15 +1,15 @@
 <script setup>
-import useBreadcrumbStore from '@/stores/useBreadCrumbStore';
-import useLoadingStore from '@/stores/useLoadingStore';
-import { ref, reactive, onMounted, watch } from 'vue';
-import { DEFAULT_PAGINATION, DEFAULT_DATE_FORMAT } from '@/constants';
-import { autoAddColumnWidth, formatDate, debounce } from '@/utils/utils';
+import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
+import useLoadingStore from '@/stores/useLoadingStore'
+import { ref, reactive, onMounted, watch } from 'vue'
+import { DEFAULT_PAGINATION, DEFAULT_DATE_FORMAT } from '@/constants'
+import { autoAddColumnWidth, formatDate, debounce } from '@/utils/utils'
 import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
-import { ROUTE_NAMES } from '@/router/staffRoute';
-import requestAPI from '@/services/requestApiService';
-import { API_ROUTES_STAFF } from '@/constants/staffConstant';
-import { message } from 'ant-design-vue';
-import { FilterFilled, SearchOutlined, UnorderedListOutlined } from '@ant-design/icons-vue';
+import { ROUTE_NAMES } from '@/router/staffRoute'
+import requestAPI from '@/services/requestApiService'
+import { API_ROUTES_STAFF } from '@/constants/staffConstant'
+import { message } from 'ant-design-vue'
+import { FilterFilled, SearchOutlined, UnorderedListOutlined } from '@ant-design/icons-vue'
 
 const breadcrumbStore = useBreadcrumbStore()
 const loadingStore = useLoadingStore()
@@ -60,19 +60,17 @@ const columns = ref(
       key: 'message',
       width: 300,
     },
-  ])
+  ]),
 )
-
-  
 
 const pagination = ref({
   ...DEFAULT_PAGINATION,
 })
 
 const dataFilter = reactive({
-  searchQuery: '', 
-  role: '', 
-  userId: '', 
+  searchQuery: '',
+  role: '',
+  userId: '',
 })
 
 const list = ref([])
@@ -82,7 +80,7 @@ const getList = async () => {
   try {
     const response = await requestAPI.get(API_ROUTES_STAFF.FETCH_DATA_USER_LOG_ACTIVITY, {
       params: {
-        page: pagination.value.current, 
+        page: pagination.value.current,
         size: pagination.value.pageSize,
         searchQuery: dataFilter.searchQuery,
         role: dataFilter.role,
@@ -90,21 +88,20 @@ const getList = async () => {
         userStaffId: dataFilter.userStaffId,
       },
     })
-    
+
     // FIX 3: Đảm bảo dữ liệu được gán đúng cách và thêm key cho mỗi row
     const responseData = response.data.data.data || []
     list.value = responseData.map((item, index) => ({
       ...item,
       key: item.id || index, // Đảm bảo mỗi row có key unique
     }))
-    
+
     // FIX 4: Tính toán pagination đúng cách
     pagination.value.total = response.data.data.totalPages * pagination.value.pageSize
   } catch (error) {
     console.log(error)
     message.error(error?.response?.data?.message || 'Lỗi khi tải danh sách')
-  }
-  finally {
+  } finally {
     loadingStore.hide()
   }
 }
@@ -112,14 +109,15 @@ const getList = async () => {
 const staff = ref([])
 const fetchStaff = async () => {
   try {
-    const response = await requestAPI.get(API_ROUTES_STAFF.FETCH_DATA_USER_LOG_ACTIVITY + '/user-staff')
+    const response = await requestAPI.get(
+      API_ROUTES_STAFF.FETCH_DATA_USER_LOG_ACTIVITY + '/user-staff',
+    )
     staff.value = response.data.data
   } catch (error) {
     console.log(error)
     message.error(error?.response?.data?.message || 'Lỗi khi tải danh sách')
   }
 }
-
 
 const handleSubmitFilter = () => {
   pagination.value.current = 1
@@ -164,9 +162,9 @@ watch(
       <div class="col-12">
         <a-card :bordered="false" class="cart no-body-padding">
           <a-collapse ghost>
-            <a-collapse-panel class="px-2">
+            <a-collapse-panel>
               <template #header><FilterFilled /> Bộ lọc</template>
-              <div class="row g-2">
+              <div class="row g-3">
                 <div class="col-lg-6 col-md-8 col-sm-12">
                   <div class="label-title">Từ khoá:</div>
                   <a-input
@@ -194,7 +192,7 @@ watch(
                   </a-select>
                 </div>
                 <div class="col-12">
-                  <div class="d-flex justify-content-center flex-wrap gap-2 mt-2">
+                  <div class="d-flex justify-content-center flex-wrap gap-2">
                     <a-button class="btn-light" @click="handleSubmitFilter">
                       <FilterFilled /> Lọc
                     </a-button>
@@ -226,12 +224,8 @@ watch(
                   {{ (pagination.current - 1) * pagination.pageSize + index + 1 }}
                 </template>
                 <template v-else-if="column.dataIndex === 'role'">
-                  <a-tag v-if="record.role === 1" color="geekblue">
-                    Phụ trách xưởng
-                  </a-tag>
-                  <a-tag v-else-if="record.role === 3" color="blue">
-                    Giảng viên
-                  </a-tag>
+                  <a-tag v-if="record.role === 1" color="geekblue"> Phụ trách xưởng </a-tag>
+                  <a-tag v-else-if="record.role === 3" color="blue"> Giảng viên </a-tag>
                 </template>
               </template>
             </a-table>
