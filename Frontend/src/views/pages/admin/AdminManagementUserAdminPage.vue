@@ -118,17 +118,8 @@ const clearNewUser = () => {
 }
 
 const handleAddUser = () => {
-  if (!newUser.username || !newUser.username.trim()) {
-    message.error('Vui lòng nhập tên đăng nhập')
-    return
-  }
-  if (!newUser.password || !newUser.password.trim()) {
-    message.error('Vui lòng nhập mật khẩu')
-    return
-  }
-  if (!newUser.email || !newUser.email.trim()) {
-    message.error('Vui lòng nhập email')
-    return
+   if (!newUser.staffCode || !newUser.staffName || !newUser.email) {
+    return message.error('Vui lòng điền đầy đủ thông tin')
   }
   Modal.confirm({
     title: 'Xác nhận thêm mới',
@@ -138,7 +129,7 @@ const handleAddUser = () => {
     onOk() {
       loadingStore.show()
       requestAPI
-        .post(API_ROUTES_ADMIN.FETCH_DATA_USER_ADMIN, newUser)
+        .post(API_ROUTES_ADMIN.FETCH_DATA_ADMIN, newUser)
         .then((response) => {
           message.success(response.data.message || 'Thêm tài khoản admin thành công')
           modalAdd.value = false

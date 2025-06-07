@@ -84,6 +84,17 @@ public class STAttendanceRecoveryServiceImpl implements STAttendanceRecoveryServ
         if (!ValidateHelper.isValidFullname(request.getName())) {
             return RouterHelper.responseError("Tên sự kiện không hợp lệ: Tối thiểu 2 từ, cách nhau bởi khoảng trắng và Chỉ gồm ký tự chữ không chứa số hay ký tự đặc biệt.", null);
         }
+        
+        // Validate emoji in event name
+        if (ValidateHelper.containsEmoji(request.getName())) {
+            return RouterHelper.responseError("Tên sự kiện không được chứa emoji", null);
+        }
+        
+        // Validate emoji in event description
+        if (request.getDescription() != null && ValidateHelper.containsEmoji(request.getDescription())) {
+            return RouterHelper.responseError("Mô tả sự kiện không được chứa emoji", null);
+        }
+        
         AttendanceRecovery attendanceRecovery = new AttendanceRecovery();
         attendanceRecovery.setName(request.getName());
         attendanceRecovery.setDescription(request.getDescription());
@@ -104,10 +115,21 @@ public class STAttendanceRecoveryServiceImpl implements STAttendanceRecoveryServ
         return RouterHelper.responseError("Sự Kiện khôi phục điểm danh không tồn tại", null);
     }    @Override
     public ResponseEntity<?> updateEventAttendanceRecovery(STCreateOrUpdateNewEventRequest request, String id) {
-        Optional<AttendanceRecovery> attendanceRecoveryOptional = attendanceRecoveryRepository.findById(id);
         if (!ValidateHelper.isValidFullname(request.getName())) {
             return RouterHelper.responseError("Tên sự kiện không hợp lệ: Tối thiểu 2 từ, cách nhau bởi khoảng trắng và Chỉ gồm ký tự chữ không chứa số hay ký tự đặc biệt.", null);
         }
+        
+        // Validate emoji in event name
+        if (ValidateHelper.containsEmoji(request.getName())) {
+            return RouterHelper.responseError("Tên sự kiện không được chứa emoji", null);
+        }
+        
+        // Validate emoji in event description
+        if (request.getDescription() != null && ValidateHelper.containsEmoji(request.getDescription())) {
+            return RouterHelper.responseError("Mô tả sự kiện không được chứa emoji", null);
+        }
+        
+        Optional<AttendanceRecovery> attendanceRecoveryOptional = attendanceRecoveryRepository.findById(id);
         if (attendanceRecoveryOptional.isPresent()) {
             AttendanceRecovery attendanceRecovery = attendanceRecoveryOptional.get();
             String oldName = attendanceRecovery.getName();
