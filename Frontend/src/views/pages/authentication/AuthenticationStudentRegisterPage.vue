@@ -9,7 +9,7 @@ import useLoadingStore from '@/stores/useLoadingStore'
 import { ROUTE_NAMES_API } from '@/router/authenticationRoute'
 
 import { message, Modal } from 'ant-design-vue'
-import { BASE_URL, GLOBAL_ROUTE_NAMES, URL_ADMIN_PANEL } from '@/constants/routesConstant'
+import { BASE_URL, GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
 import useFaceIDStore from '@/stores/useFaceIDStore'
 
 const router = useRouter()
@@ -33,12 +33,8 @@ const formData = reactive({
 const lstFacility = ref([])
 
 const handleLogout = () => {
-  const isAdm =
-    authStore?.user?.role.includes(ROLE.ADMIN) ||
-    authStore?.user?.role.includes(ROLE.STAFF) ||
-    authStore?.user?.role.includes(ROLE.TEACHER)
   authStore.logout()
-  window.location.href = isAdm ? URL_ADMIN_PANEL : BASE_URL
+  window.location.href = BASE_URL
 }
 
 const formRules = reactive({

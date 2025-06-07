@@ -9,7 +9,7 @@ const THRESHOLD_X = 10
 const THRESHOLD_Y = 25
 const MIN_BRIGHTNESS = 100
 const MAX_BRIGHTNESS = 180
-const THRESHOLD_LIGHT = 50
+const THRESHOLD_LIGHT = 60
 const REGION_WIDTH_LIGHT = 5
 
 const useFaceIDStore = defineStore('faceID', () => {
