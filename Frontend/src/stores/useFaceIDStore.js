@@ -4,13 +4,13 @@ import { ref } from 'vue'
 import * as faceapi from 'face-api.js'
 
 const DEEP_CHECK = true
-const TIME_LOOP_RECHECK = 300
-const THRESHOLD_X = 10
+const TIME_LOOP_RECHECK = 400
+const THRESHOLD_X = 5
 const THRESHOLD_Y = 25
 const MIN_BRIGHTNESS = 100
 const MAX_BRIGHTNESS = 180
-const THRESHOLD_LIGHT = 60
-const REGION_WIDTH_LIGHT = 5
+const THRESHOLD_LIGHT = 80
+const REGION_WIDTH_LIGHT = 10
 
 const useFaceIDStore = defineStore('faceID', () => {
   let isFullStep = false
@@ -269,13 +269,13 @@ const useFaceIDStore = defineStore('faceID', () => {
       const eyeCenterY = (leftEye[0].y + rightEye[3].y) / 2
 
       const noseOffset = noseX - eyeCenterX
-      const eyeDistance = Math.abs(eyeCenterX - eyeCenterY)
-
       const rawVerticalOffset = noseY - eyeCenterY
 
       if (BASELINE_VERTICAL_OFFSET === null) {
         BASELINE_VERTICAL_OFFSET = rawVerticalOffset
       }
+
+      const eyeDistance = Math.hypot(rightEye[3].x - leftEye[0].x, rightEye[3].y - leftEye[0].y)
       const offsetFromCenter = rawVerticalOffset - BASELINE_VERTICAL_OFFSET
       const verticalOffset = (offsetFromCenter / eyeDistance) * 50
 
@@ -296,6 +296,76 @@ const useFaceIDStore = defineStore('faceID', () => {
       }
 
       return -2
+    }
+
+    const checkObstruction = (landmarks, video, faceBox) => {
+      const cvs = document.createElement('canvas')
+      const ctx = cvs.getContext('2d')
+      cvs.width = faceBox.width
+      cvs.height = faceBox.height
+
+      ctx.drawImage(
+        video,
+        faceBox.x,
+        faceBox.y,
+        faceBox.width,
+        faceBox.height,
+        0,
+        0,
+        faceBox.width,
+        faceBox.height,
+      )
+
+      const getStdDev = (points) => {
+        const luminances = []
+
+        points.forEach((point) => {
+          const x = Math.round(point.x - faceBox.x)
+          const y = Math.round(point.y - faceBox.y)
+
+          for (let i = -3; i <= 3; i++) {
+            for (let j = -3; j <= 3; j++) {
+              const px = x + i
+              const py = y + j
+              if (px < 0 || px >= cvs.width || py < 0 || py >= cvs.height) continue
+
+              const [r, g, b] = ctx.getImageData(px, py, 1, 1).data
+              const lum = 0.299 * r + 0.587 * g + 0.114 * b
+              luminances.push(lum)
+            }
+          }
+        })
+
+        const mean = luminances.reduce((a, b) => a + b, 0) / luminances.length
+        const variance =
+          luminances.reduce((sum, val) => sum + (val - mean) ** 2, 0) / luminances.length
+        return Math.sqrt(variance)
+      }
+
+      const mouth = landmarks.getMouth()
+      const nose = landmarks.getNose()
+      const leftEye = landmarks.getLeftEye()
+      const rightEye = landmarks.getRightEye()
+      const cheeks = [
+        landmarks.positions[2],
+        landmarks.positions[3],
+        landmarks.positions[13],
+        landmarks.positions[14],
+      ]
+
+      const stdMouth = getStdDev(mouth)
+      const stdNose = getStdDev(nose)
+      const stdEyeL = getStdDev(leftEye)
+      const stdEyeR = getStdDev(rightEye)
+      const stdCheek = getStdDev(cheeks)
+
+      const isObstructed =
+        stdMouth < stdCheek * 0.6 ||
+        stdNose < stdCheek * 0.6 ||
+        stdEyeL < stdCheek * 0.6 ||
+        stdEyeR < stdCheek * 0.6
+
+      return isObstructed
     }
 
     const captureFace = () => {
@@ -361,7 +431,7 @@ const useFaceIDStore = defineStore('faceID', () => {
           return renderTextStep()
         }
 
-        if (!(await isLightBalance(landmarks, faceBox))) {
+        if (!(await isLightBalance(landmarks, faceBox)) && angle === 0) {
           step.value = -3
           faceDescriptor = null
           return renderTextStep()
@@ -380,7 +450,13 @@ const useFaceIDStore = defineStore('faceID', () => {
           return renderTextStep()
         }
 
-        if (step.value === -1 || step.value === -2 || step.value === -3 || step.value === -4) {
+        // if (checkObstruction(landmarks, video.value, faceBox)) {
+        //   step.value = -5
+        //   faceDescriptor = null
+        //   return renderTextStep()
+        // }
+
+        if (step.value < 0) {
           step.value = 0
           renderTextStep()
         }
