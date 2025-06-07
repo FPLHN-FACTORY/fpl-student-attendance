@@ -114,7 +114,6 @@ public class EXAttendanceRecoveryServiceImpl implements EXAttendanceRecoveryServ
             return RouterHelper.responseError(msg, HttpStatus.BAD_REQUEST);
         }
 
-        // Phần còn lại giữ nguyên...
         String studentCode = item.get("MA_SINH_VIEN");
         if (studentCode.isEmpty() || studentCode == null || studentCode.equals("")) {
             String msg = "Thông tin về mã sinh viên không được để trống.";
@@ -149,7 +148,7 @@ public class EXAttendanceRecoveryServiceImpl implements EXAttendanceRecoveryServ
                 newImportLog.setIdUser(sessionHelper.getUserId());
                 newImportLog.setFacility(facility);
                 newImportLog.setCode(request.getCode());
-                newImportLog.setType(6);
+//                newImportLog.setType(6);
                 newImportLog.setFileName(request.getFileName());
                 importLog = importLogRepository.save(newImportLog);
             }
@@ -178,7 +177,7 @@ public class EXAttendanceRecoveryServiceImpl implements EXAttendanceRecoveryServ
                 newImportLog.setIdUser(sessionHelper.getUserId());
                 newImportLog.setFacility(facility);
                 newImportLog.setCode(request.getCode());
-                newImportLog.setType(6);
+//                newImportLog.setType(6);
                 newImportLog.setFileName(request.getFileName());
                 importLog = importLogRepository.save(newImportLog);
             }

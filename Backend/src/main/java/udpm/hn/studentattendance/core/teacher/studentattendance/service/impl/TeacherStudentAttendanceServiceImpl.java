@@ -40,7 +40,6 @@ public class TeacherStudentAttendanceServiceImpl implements TeacherStudentAttend
 
     @Override
     public ResponseEntity<?> createAttendance(String planDateId) {
-        // Lấy danh sách học sinh cho planDate (nếu cần bulk tạo)
         List<String> studentIds = repository.getUserStudentIdsByPlanDate(planDateId);
         if (studentIds.isEmpty()) {
             return RouterHelper.responseError("Không tìm thấy sinh viên cho ngày điểm danh");
