@@ -21,6 +21,7 @@ const faceIDStore = useFaceIDStore()
 const isShowCamera = ref(false)
 const video = ref(null)
 const canvas = ref(null)
+const axis = ref(null)
 
 const formData = reactive({
   idFacility: null,
@@ -100,7 +101,7 @@ const fetchSubmitRegister = () => {
 onMounted(async () => {
   document.body.classList.add('bg-login')
   fetchDataFacility()
-  faceIDStore.init(video, canvas, false, (descriptor) => {
+  faceIDStore.init(video, canvas, axis, false, (descriptor) => {
     formData.faceEmbedding = JSON.stringify(descriptor)
     isShowCamera.value = false
   })
@@ -119,44 +120,50 @@ onMounted(async () => {
       <canvas ref="canvas"></canvas>
       <video ref="video" autoplay muted></video>
       <div class="face-id-step" :class="faceIDStore.renderStyle()">
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
+        <div class="axis" ref="axis">
+          <div class="a-x">
+            <div></div>
+          </div>
+          <div class="a-y">
+            <div></div>
+          </div>
+        </div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
       </div>
       <div class="face-id-loading" v-show="faceIDStore.isLoading">
         <div class="bg-loading">

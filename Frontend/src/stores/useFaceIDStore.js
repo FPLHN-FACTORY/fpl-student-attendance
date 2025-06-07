@@ -4,18 +4,19 @@ import { ref } from 'vue'
 import * as faceapi from 'face-api.js'
 
 const DEEP_CHECK = true
-const TIME_LOOP_RECHECK = 400
+const TIME_LOOP_RECHECK = 300
 const THRESHOLD_X = 5
-const THRESHOLD_NOSE = 25
+const THRESHOLD_Y = 25
 const MIN_BRIGHTNESS = 100
 const MAX_BRIGHTNESS = 180
-const THRESHOLD_LIGHT = 10
+const THRESHOLD_LIGHT = 30
 const REGION_WIDTH_LIGHT = 30
 
 const useFaceIDStore = defineStore('faceID', () => {
   let isFullStep = false
   let video = null
   let canvas = null
+  let axis = null
   let onSuccess = null
 
   const isRunScan = ref(false)
@@ -74,10 +75,11 @@ const useFaceIDStore = defineStore('faceID', () => {
     }
   }
 
-  const init = (v, c, fullStep, callback) => {
+  const init = (v, c, a, fullStep, callback) => {
     isFullStep = fullStep
     video = v
     canvas = c
+    axis = a
     onSuccess = callback
   }
 
@@ -137,6 +139,9 @@ const useFaceIDStore = defineStore('faceID', () => {
 
     faceapi.matchDimensions(canvas.value, displaySize)
 
+    const aX = axis.value.querySelector('.a-x > div')
+    const aY = axis.value.querySelector('.a-y > div')
+
     let faceDescriptor = null
 
     const getAverageBrightness = async (faceBox) => {
@@ -190,6 +195,7 @@ const useFaceIDStore = defineStore('faceID', () => {
         faceBox.width,
         faceBox.height,
       )
+
       const frame = context.getImageData(0, 0, cvs.width, cvs.height)
       const frameData = frame.data
 
@@ -199,23 +205,28 @@ const useFaceIDStore = defineStore('faceID', () => {
       const leftCheek = [positions[2], positions[3], positions[4]]
       const rightCheek = [positions[12], positions[13], positions[14]]
 
-      const leftSidePoints = [landmarks.getLeftEye(), leftEyebrow, leftCheek]
-
-      const rightSidePoints = [landmarks.getRightEye(), rightEyebrow, rightCheek]
+      const leftSidePoints = [...landmarks.getLeftEye(), ...leftEyebrow, ...leftCheek]
+      const rightSidePoints = [...landmarks.getRightEye(), ...rightEyebrow, ...rightCheek]
 
       const getRegionBrightness = (sidePoints) => {
         let totalLuminance = 0
         let count = 0
 
         sidePoints.forEach((point) => {
-          const x = point[0].x
-          const y = point[0].y
+          const x = Math.round(point.x - faceBox.x)
+          const y = Math.round(point.y - faceBox.y)
 
           const regionWidth = REGION_WIDTH_LIGHT
+
           for (let i = -regionWidth; i < regionWidth; i++) {
             for (let j = -regionWidth; j < regionWidth; j++) {
-              const pixelIndex = ((y + j) * frame.width + (x + i)) * 4
-              if (pixelIndex < 0 || pixelIndex >= frameData.length) continue
+              const px = x + i
+              const py = y + j
+
+              if (px < 0 || px >= frame.width || py < 0 || py >= frame.height) continue
+
+              const pixelIndex = (py * frame.width + px) * 4
+
               const r = frameData[pixelIndex]
               const g = frameData[pixelIndex + 1]
               const b = frameData[pixelIndex + 2]
@@ -234,15 +245,15 @@ const useFaceIDStore = defineStore('faceID', () => {
       const rightBrightness = getRegionBrightness(rightSidePoints)
 
       const brightnessDifference = Math.abs(leftBrightness - rightBrightness)
-      const threshold = THRESHOLD_LIGHT
 
-      if (brightnessDifference > threshold) {
+      if (brightnessDifference > THRESHOLD_LIGHT) {
         return false
       }
 
       return true
     }
 
+    let BASELINE_VERTICAL_OFFSET = null
     const getFaceAngle = async (landmarks) => {
       const leftEye = landmarks.getLeftEye()
       const rightEye = landmarks.getRightEye()
@@ -259,21 +270,28 @@ const useFaceIDStore = defineStore('faceID', () => {
 
       const noseOffset = noseX - eyeCenterX
       const eyeDistance = Math.abs(eyeCenterX - eyeCenterY)
-      const verticalOffset = Math.abs(noseY - eyeCenterY) / eyeDistance
+
+      const rawVerticalOffset = noseY - eyeCenterY
+
+      if (BASELINE_VERTICAL_OFFSET === null) {
+        BASELINE_VERTICAL_OFFSET = rawVerticalOffset
+      }
+      const offsetFromCenter = rawVerticalOffset - BASELINE_VERTICAL_OFFSET
+      const verticalOffset = (offsetFromCenter / eyeDistance) * 50
+
+      updateAxis(verticalOffset, noseOffset)
 
       if (
         Math.abs(eyeAngle) < THRESHOLD_X &&
-        Math.abs(noseOffset) < THRESHOLD_NOSE
-        // &&
-        // verticalOffset < 0.9 &&
-        // verticalOffset > 0.5
+        Math.abs(noseOffset) < THRESHOLD_Y &&
+        Math.abs(verticalOffset) < THRESHOLD_X
       ) {
         return 0
       }
 
-      if (noseOffset < -THRESHOLD_NOSE) {
+      if (noseOffset < -THRESHOLD_Y) {
         return -1
-      } else if (noseOffset > THRESHOLD_NOSE) {
+      } else if (noseOffset > THRESHOLD_Y) {
         return 1
       }
 
@@ -289,12 +307,25 @@ const useFaceIDStore = defineStore('faceID', () => {
       dataImage.value = canvas.value.toDataURL('image/png')
     }
 
+    const updateAxis = (x, y) => {
+      axis.value.classList.add('active')
+      aX.style.transform = `rotateY(90deg)`
+      aY.style.transform = `rotateX(90deg)`
+
+      aX.style.transform = `rotateY(${90 + x}deg)`
+      aY.style.transform = `rotateX(${90 + y}deg)`
+    }
+
     const runTask = async () => {
       const detections = await faceapi
         .detectAllFaces(video.value, options)
         .withFaceLandmarks()
         .withFaceDescriptors()
         .withFaceExpressions()
+
+      if (!aX.length || !aY.length || step.value < 0) {
+        axis.value.classList.remove('active')
+      }
 
       if (detections.length === 1) {
         const detection = detections[0]
@@ -328,6 +359,12 @@ const useFaceIDStore = defineStore('faceID', () => {
           return renderTextStep()
         }
 
+        if (!(await isLightBalance(landmarks, faceBox))) {
+          step.value = -3
+          faceDescriptor = null
+          return renderTextStep()
+        }
+
         if (
           expressions.happy > 0.7 ||
           expressions.surprised > 0.7 ||
@@ -337,12 +374,6 @@ const useFaceIDStore = defineStore('faceID', () => {
           expressions.fearful > 0.7
         ) {
           step.value = -4
-          faceDescriptor = null
-          return renderTextStep()
-        }
-
-        if (!isLightBalance(landmarks, faceBox)) {
-          step.value = -3
           faceDescriptor = null
           return renderTextStep()
         }

@@ -99,7 +99,6 @@ const getList = async () => {
     // FIX 4: Tính toán pagination đúng cách
     pagination.value.total = response.data.data.totalPages * pagination.value.pageSize
   } catch (error) {
-    console.log(error)
     message.error(error?.response?.data?.message || 'Lỗi khi tải danh sách')
   } finally {
     loadingStore.hide()
@@ -114,7 +113,6 @@ const fetchStaff = async () => {
     )
     staff.value = response.data.data
   } catch (error) {
-    console.log(error)
     message.error(error?.response?.data?.message || 'Lỗi khi tải danh sách')
   }
 }
