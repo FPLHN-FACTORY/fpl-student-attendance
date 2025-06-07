@@ -128,7 +128,7 @@ export const StaffRoutes = [
         component: () => import('@/views/pages/staff/StaffManagementUserLogActivity.vue'),
         meta: {
           selectedKey: selectedKey++,
-          name: 'Quản lý hoạt động người dùng',
+          name: 'Lịch sử hoạt động',
           icon: SolutionOutlined,
         },
       },
