@@ -311,14 +311,12 @@ onMounted(() => {
     <!-- Danh sách học sinh trong nhóm xưởng -->
     <div class="row g-3">
       <div class="col-12">
-        <a-card :bordered="false" class="cart">
-          <template #title> <UnorderedListOutlined /> Danh sách học sinh </template>
-
+        <a-card :bordered="false" class="cart no-body-padding">
           <a-collapse ghost>
             <a-collapse-panel>
               <template #header><FilterFilled /> Bộ lọc</template>
               <div class="row g-3 filter-container">
-                <div class="col-md-8 col-sm-6">
+                <div class="col-md-6 col-sm-6">
                   <div class="label-title">Từ khoá:</div>
                   <a-input
                     v-model:value="filter.searchQuery"
@@ -331,7 +329,7 @@ onMounted(() => {
                     </template>
                   </a-input>
                 </div>
-                <div class="col-md-4 col-sm-6">
+                <div class="col-md-6 col-sm-6">
                   <div class="label-title">Trạng thái:</div>
                   <a-select
                     v-model:value="filter.status"
@@ -345,10 +343,9 @@ onMounted(() => {
                     <a-select-option value="0">Ngưng học</a-select-option>
                   </a-select>
                 </div>
-              </div>
-              <div class="row">
+
                 <div class="col-12">
-                  <div class="d-flex justify-content-center flex-wrap gap-2 mt-3">
+                  <div class="d-flex justify-content-center flex-wrap gap-2">
                     <a-button class="btn-light" @click="fetchStudentFactory">
                       <FilterFilled /> Lọc
                     </a-button>
@@ -358,6 +355,12 @@ onMounted(() => {
               </div>
             </a-collapse-panel>
           </a-collapse>
+        </a-card>
+      </div>
+
+      <div class="col-12">
+        <a-card :bordered="false" class="cart">
+          <template #title> <UnorderedListOutlined /> Danh sách học sinh </template>
 
           <a-table
             class="nowrap"
@@ -395,7 +398,10 @@ onMounted(() => {
                   <a-tag :color="record.totalAbsentShift > 0 ? 'red' : 'green'"
                     >{{
                       record.totalAbsentShift > 0
-                        ? Math.max(record.totalAbsentShift - 0.5 * record.currentLateAttendance, 0)
+                        ? Math.max(
+                            record.totalAbsentShift + 0.5 * record.currentLateAttendance,
+                            record.totalShift,
+                          )
                         : 0
                     }}
                     / {{ record.totalShift || 0 }}</a-tag

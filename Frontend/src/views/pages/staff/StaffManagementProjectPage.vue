@@ -390,12 +390,11 @@ onMounted(() => {
   <div class="container-fluid">
     <div class="row g-3">
       <div class="col-12">
-        <!-- Bộ lọc tìm kiếm -->
         <a-card :bordered="false" class="cart no-body-padding">
           <a-collapse ghost>
-            <a-collapse-panel class="px-2">
+            <a-collapse-panel>
               <template #header><FilterFilled /> Bộ lọc</template>
-              <div class="row g-2">
+              <div class="row g-3">
                 <div class="col-md-12 col-sm-12">
                   <div class="label-title">Từ khoá:</div>
                   <a-input
@@ -501,7 +500,8 @@ onMounted(() => {
       <div class="col-12">
         <a-card :bordered="false" class="cart">
           <template #title> <UnorderedListOutlined /> Danh sách dự án</template>
-          <div class="d-flex justify-content-end mb-3 flex-wrap gap-3">
+
+          <div class="d-flex justify-content-end flex-wrap gap-3 mb-2">
             <ExcelUploadButton v-bind="configImportExcel" />
             <a-tooltip title="Đổi trạng thái tất cả dự án kỳ trước">
               <a-button
