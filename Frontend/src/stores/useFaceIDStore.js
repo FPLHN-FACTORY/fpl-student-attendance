@@ -5,6 +5,7 @@ import * as faceapi from 'face-api.js'
 
 const DEEP_CHECK = true
 const TIME_LOOP_RECHECK = 400
+const THRESHOLD_P = 10
 const THRESHOLD_X = 5
 const THRESHOLD_Y = 25
 const MIN_BRIGHTNESS = 100
@@ -161,7 +162,14 @@ const useFaceIDStore = defineStore('faceID', () => {
         faceBox.width,
         faceBox.height,
       )
-      const frame = context.getImageData(0, 0, cvs.width, cvs.height)
+
+      // Lấy vùng trung tâm khuôn mặt (1/3 giữa)
+      const regionX = Math.floor(cvs.width / 3)
+      const regionY = Math.floor(cvs.height / 3)
+      const regionW = Math.floor(cvs.width / 3)
+      const regionH = Math.floor(cvs.height / 3)
+
+      const frame = context.getImageData(regionX, regionY, regionW, regionH)
       const data = frame.data
 
       let totalLuminance = 0
@@ -284,7 +292,7 @@ const useFaceIDStore = defineStore('faceID', () => {
       if (
         Math.abs(eyeAngle) < THRESHOLD_X &&
         Math.abs(noseOffset) < THRESHOLD_Y &&
-        Math.abs(verticalOffset) < THRESHOLD_X
+        Math.abs(verticalOffset) < THRESHOLD_P
       ) {
         return 0
       }
