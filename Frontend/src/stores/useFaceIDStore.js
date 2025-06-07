@@ -5,12 +5,12 @@ import * as faceapi from 'face-api.js'
 
 const DEEP_CHECK = true
 const TIME_LOOP_RECHECK = 300
-const THRESHOLD_X = 5
+const THRESHOLD_X = 10
 const THRESHOLD_Y = 25
 const MIN_BRIGHTNESS = 100
 const MAX_BRIGHTNESS = 180
-const THRESHOLD_LIGHT = 30
-const REGION_WIDTH_LIGHT = 30
+const THRESHOLD_LIGHT = 50
+const REGION_WIDTH_LIGHT = 5
 
 const useFaceIDStore = defineStore('faceID', () => {
   let isFullStep = false
@@ -324,7 +324,9 @@ const useFaceIDStore = defineStore('faceID', () => {
         .withFaceExpressions()
 
       if (!aX.length || !aY.length || step.value < 0) {
-        axis.value.classList.remove('active')
+        if (axis.value) {
+          axis.value.classList.remove('active')
+        }
       }
 
       if (detections.length === 1) {
