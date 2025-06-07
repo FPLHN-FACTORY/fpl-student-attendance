@@ -8,7 +8,6 @@ import {
   SolutionOutlined,
   TeamOutlined,
   UserOutlined,
-
 } from '@ant-design/icons-vue'
 
 export const ROUTE_NAMES = {
