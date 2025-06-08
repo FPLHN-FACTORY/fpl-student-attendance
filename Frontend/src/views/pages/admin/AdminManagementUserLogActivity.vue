@@ -214,20 +214,7 @@ watch(
                     </template>
                   </a-input>
                 </div>
-                <div class="col-lg-3 col-md-6 col-sm-6">
-                  <div class="label-title">Giảng viên:</div>
-                  <a-select
-                    v-model:value="dataFilter.userId"
-                    placeholder="Chọn nhân viên"
-                    allowClear
-                    class="w-100"
-                  >
-                    <a-select-option :value="''">--Tất cả giảng viên--</a-select-option>
-                    <a-select-option v-for="item in staff" :key="item.id" :value="item.id">
-                      {{ item.name }}
-                    </a-select-option>
-                  </a-select>
-                </div>
+               
                 <div class="col-lg-3 col-md-6 col-sm-6">
                   <div class="label-title">Cơ sở:</div>
                   <a-select
@@ -240,20 +227,6 @@ watch(
                     <a-select-option v-for="item in facility" :key="item.id" :value="item.id">
                       {{ item.name }}
                     </a-select-option>
-                  </a-select>
-                </div>
-                <div class="col-lg-3 col-md-6 col-sm-6">
-                  <div class="label-title">Vai trò:</div>
-                  <a-select
-                    v-model:value="dataFilter.role"
-                    placeholder="Chọn vai trò"
-                    allowClear
-                    class="w-100"
-                    :dropdownMatchSelectWidth="false"
-                  >
-                    <a-select-option :value="''">--Tất cả vai trò--</a-select-option>
-                    <a-select-option value="1">Phụ trách xưởng</a-select-option>
-                    <a-select-option value="3">Giảng viên</a-select-option>
                   </a-select>
                 </div>
                 <div class="col-12">

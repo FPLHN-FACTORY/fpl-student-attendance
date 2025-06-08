@@ -12,6 +12,7 @@ import { message, Modal } from 'ant-design-vue'
 import {
   EditFilled,
   FilterFilled,
+  HistoryOutlined,
   PlusOutlined,
   SearchOutlined,
   UnorderedListOutlined,
@@ -281,8 +282,29 @@ const configImportExcel = {
     message.error('Không thể xử lý file excel')
   },
   showDownloadTemplate: true,
-  showHistoryLog: true,
+  showHistoryLog: false,
 }
+
+const importHistory = ref([])
+
+const handleShowImportHistory = () => {
+  fetchImportHistory()
+}
+const fetchImportHistory = () => {
+  loadingStore.show()
+  requestAPI
+    .get(API_ROUTES_EXCEL.FETCH_IMPORT_ATTENDANCE_RECOVERY + '/history')
+    .then((response) => {
+      importHistory.value = response.data.data || []
+    })
+    .catch((error) => {
+      message.error(error.response?.data?.message || 'Lỗi khi lấy lịch sử nhập dữ liệu')
+    })
+    .finally(() => {
+      loadingStore.hide()
+    })
+}
+
 
 onMounted(() => {
   breadcrumbStore.setRoutes(breadcrumb.value)
@@ -291,11 +313,10 @@ onMounted(() => {
 })
 </script>
 <template>
-  <!-- Danh sách sự kiện khôi phục điểm danh -->
   <div class="container-fluid">
     <div class="row g-3">
+
       <div class="col-12">
-        <!-- Bộ lọc tìm kiếm -->
         <a-card :bordered="false" class="cart no-body-padding">
           <a-collapse ghost>
             <a-collapse-panel>
@@ -390,6 +411,15 @@ onMounted(() => {
                       <EditFilled />
                     </a-button>
                   </a-tooltip>
+                  <a-tooltip>
+                    <template #title><HistoryOutlined class="text-primary" /> Lịch sử import</template>
+                    <a-button
+                      type="text"
+                      class="btn-gray"
+                      @click="handleShowImportHistory"
+                    >
+                    </a-button>
+                  </a-tooltip>
                   <div class="excel-upload-wrapper">
                     <ExcelUploadButton
                       v-bind="configImportExcel"
@@ -405,7 +435,6 @@ onMounted(() => {
     </div>
   </div>
 
-  <!-- Modal Thêm sự kiện khôi phục điểm danh -->
   <a-modal
     v-model:open="modalAddEvent"
     title="Thêm sự kiện khôi phục điểm danh"
@@ -432,7 +461,6 @@ onMounted(() => {
     </a-form>
   </a-modal>
 
-  <!-- Modal Sửa sự kiện khôi phục điểm danh -->
   <a-modal
     v-model:open="modalEditEvent"
     title="Sửa sự kiện khôi phục điểm danh"
@@ -466,7 +494,6 @@ onMounted(() => {
   gap: 8px;
 }
 
-/* Đảm bảo các nút trong ExcelUploadButton không bị dính */
 .excel-upload-wrapper :deep(.ant-space) {
   gap: 8px !important;
 }
