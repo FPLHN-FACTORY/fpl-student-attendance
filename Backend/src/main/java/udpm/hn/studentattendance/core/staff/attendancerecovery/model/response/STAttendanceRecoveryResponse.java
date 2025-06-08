@@ -12,4 +12,6 @@ public interface STAttendanceRecoveryResponse {
 
     Integer getTotalStudent();
 
+    String getIdImportLog();
+
 }
