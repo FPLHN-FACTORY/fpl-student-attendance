@@ -9,6 +9,7 @@ import udpm.hn.studentattendance.core.staff.attendancerecovery.model.request.STA
 import udpm.hn.studentattendance.core.staff.attendancerecovery.model.request.STCreateOrUpdateNewEventRequest;
 import udpm.hn.studentattendance.core.staff.attendancerecovery.service.STAttendanceRecoveryService;
 import udpm.hn.studentattendance.infrastructure.constants.router.RouteStaffConstant;
+import udpm.hn.studentattendance.infrastructure.excel.model.request.EXDataRequest;
 
 @Controller
 @RequiredArgsConstructor
@@ -40,5 +41,15 @@ public class STAttendanceRecoveryController {
     @PutMapping("{id}")
     ResponseEntity<?> updateEvent(@Valid @RequestBody STCreateOrUpdateNewEventRequest request, @PathVariable String id){
         return service.updateEventAttendanceRecovery(request, id);
+    }
+
+    @GetMapping("/history-log/{id}")
+    ResponseEntity<?> getHistoryLog(@PathVariable(name = "id") String id, EXDataRequest dataRequest){
+        return service.getAllHistoryLogByEvent(id,dataRequest);
+    }
+
+    @GetMapping("/detail-history-log/{id}")
+    ResponseEntity<?> getDetailHistoryLog(@PathVariable(name = "id") String id){
+        return service.getAllHistoryLogDetailEvent(id);
     }
 }

@@ -8,7 +8,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-import udpm.hn.studentattendance.core.staff.attendancerecovery.model.request.STStudentAttendanceRecoveryRequest;
+import udpm.hn.studentattendance.core.staff.attendancerecovery.model.request.STStudentAttendanceRecoveryAddRequest;
 import udpm.hn.studentattendance.core.staff.attendancerecovery.repository.STAttendanceRecoveryRepository;
 import udpm.hn.studentattendance.core.staff.attendancerecovery.service.STAttendanceRecoveryService;
 import udpm.hn.studentattendance.entities.AttendanceRecovery;
@@ -92,6 +92,7 @@ public class EXAttendanceRecoveryServiceImpl implements EXAttendanceRecoveryServ
         }
 
         Long dayAttendance;
+        LocalDateTime attendanceDateTime;
         try {
             LocalDateTime localDateTime;
 
@@ -104,12 +105,21 @@ public class EXAttendanceRecoveryServiceImpl implements EXAttendanceRecoveryServ
                 localDateTime = localDate.atStartOfDay();
             }
 
+            attendanceDateTime = localDateTime;
             ZoneId vietnamZone = ZoneId.of("Asia/Ho_Chi_Minh");
             ZonedDateTime zonedDateTime = localDateTime.atZone(vietnamZone);
             dayAttendance = zonedDateTime.toInstant().toEpochMilli();
 
         } catch (Exception e) {
             String msg = "Định dạng ngày điểm danh không hợp lệ. Vui lòng sử dụng format: dd/MM/yyyy hoặc dd/MM/yyyy HH:mm:ss";
+            excelHelper.saveLogError(ImportLogType.ATTENDANCE_RECOVERY, msg, request);
+            return RouterHelper.responseError(msg, HttpStatus.BAD_REQUEST);
+        }
+
+        // Validation: Kiểm tra ngày điểm danh không được là ngày trong tương lai
+        LocalDateTime currentDateTime = LocalDateTime.now(ZoneId.of("Asia/Ho_Chi_Minh"));
+        if (attendanceDateTime.isAfter(currentDateTime)) {
+            String msg = "Không thể khôi phục điểm danh cho ngày trong tương lai. Ngày điểm danh phải là ngày hiện tại hoặc trong quá khứ.";
             excelHelper.saveLogError(ImportLogType.ATTENDANCE_RECOVERY, msg, request);
             return RouterHelper.responseError(msg, HttpStatus.BAD_REQUEST);
         }
@@ -121,7 +131,7 @@ public class EXAttendanceRecoveryServiceImpl implements EXAttendanceRecoveryServ
             return RouterHelper.responseError(msg, HttpStatus.BAD_REQUEST);
         }
 
-        STStudentAttendanceRecoveryRequest stStudentAttendanceRecoveryRequest = new STStudentAttendanceRecoveryRequest();
+        STStudentAttendanceRecoveryAddRequest stStudentAttendanceRecoveryRequest = new STStudentAttendanceRecoveryAddRequest();
         stStudentAttendanceRecoveryRequest.setStudentCode(studentCode);
         stStudentAttendanceRecoveryRequest.setDay(dayAttendance);
         stStudentAttendanceRecoveryRequest.setAttendanceRecoveryId(idAttendanceRecovery);
@@ -133,68 +143,55 @@ public class EXAttendanceRecoveryServiceImpl implements EXAttendanceRecoveryServ
 
         ResponseEntity<ApiResponse> result = (ResponseEntity<ApiResponse>) attendanceRecoveryService.importAttendanceRecoveryStudent(stStudentAttendanceRecoveryRequest);
         ApiResponse response = result.getBody();
+
+        ImportLog importLog = getOrCreateImportLog(request);
+
+        ImportLogDetail importLogDetail = new ImportLogDetail();
+        importLogDetail.setImportLog(importLog);
+        importLogDetail.setLine(request.getLine());
+        importLogDetail.setMessage(response.getMessage());
+
         if (response.getStatus() == RestApiStatus.SUCCESS) {
-            ImportLog importLog = importLogRepository.findByIdUserAndCodeAndFileNameAndFacility_Id
-                    (sessionHelper.getUserId(), request.getCode(), request.getFileName(), sessionHelper.getFacilityId()).orElse(null);
-            if (importLog == null) {
-                Facility facility = new Facility();
-                facility.setId(sessionHelper.getFacilityId());
-
-                if (facility.getId() == null) {
-                    facility = null;
-                }
-
-                ImportLog newImportLog = new ImportLog();
-                newImportLog.setIdUser(sessionHelper.getUserId());
-                newImportLog.setFacility(facility);
-                newImportLog.setCode(request.getCode());
-//                newImportLog.setType(6);
-                newImportLog.setFileName(request.getFileName());
-                importLog = importLogRepository.save(newImportLog);
-            }
-
-            ImportLogDetail importLogDetail = new ImportLogDetail();
-            importLogDetail.setImportLog(importLog);
-            importLogDetail.setLine(request.getLine());
-            importLogDetail.setMessage(response.getMessage());
             importLogDetail.setStatus(EntityStatus.ACTIVE);
-
-            importLogDetailRepository.save(importLogDetail);
-            attendanceRecovery.setImportLog(importLog);
-            attendanceRecoveryRepository.save(attendanceRecovery);
         } else {
-            ImportLog importLog = importLogRepository.findByIdUserAndCodeAndFileNameAndFacility_Id
-                    (sessionHelper.getUserId(), request.getCode(), request.getFileName(), sessionHelper.getFacilityId()).orElse(null);
-            if (importLog == null) {
-                Facility facility = new Facility();
-                facility.setId(sessionHelper.getFacilityId());
-
-                if (facility.getId() == null) {
-                    facility = null;
-                }
-
-                ImportLog newImportLog = new ImportLog();
-                newImportLog.setIdUser(sessionHelper.getUserId());
-                newImportLog.setFacility(facility);
-                newImportLog.setCode(request.getCode());
-//                newImportLog.setType(6);
-                newImportLog.setFileName(request.getFileName());
-                importLog = importLogRepository.save(newImportLog);
-            }
-
-            ImportLogDetail importLogDetail = new ImportLogDetail();
-            importLogDetail.setImportLog(importLog);
-            importLogDetail.setLine(request.getLine());
-            importLogDetail.setMessage(response.getMessage());
             importLogDetail.setStatus(EntityStatus.INACTIVE);
-
-            importLogDetailRepository.save(importLogDetail);
-            attendanceRecovery.setImportLog(importLog);
-            attendanceRecoveryRepository.save(attendanceRecovery);
         }
+
+        importLogDetailRepository.save(importLogDetail);
+        attendanceRecovery.setImportLog(importLog);
+        attendanceRecoveryRepository.save(attendanceRecovery);
+
         return result;
     }
 
+    // Helper method to reduce code duplication
+    private ImportLog getOrCreateImportLog(EXImportRequest request) {
+        ImportLog importLog = importLogRepository.findByIdUserAndCodeAndFileNameAndFacility_Id(
+                sessionHelper.getUserId(),
+                request.getCode(),
+                request.getFileName(),
+                sessionHelper.getFacilityId()
+        ).orElse(null);
+
+        if (importLog == null) {
+            Facility facility = new Facility();
+            facility.setId(sessionHelper.getFacilityId());
+
+            if (facility.getId() == null) {
+                facility = null;
+            }
+
+            ImportLog newImportLog = new ImportLog();
+            newImportLog.setIdUser(sessionHelper.getUserId());
+            newImportLog.setFacility(facility);
+            newImportLog.setCode(request.getCode());
+            newImportLog.setType(6);
+            newImportLog.setFileName(request.getFileName());
+            importLog = importLogRepository.save(newImportLog);
+        }
+
+        return importLog;
+    }
     @Override
     public ResponseEntity<?> exportData(EXDataRequest request) {
         return null;
@@ -236,4 +233,8 @@ public class EXAttendanceRecoveryServiceImpl implements EXAttendanceRecoveryServ
         List<ExImportLogDetailResponse> data = importLogDetailRepository.getAllList(id, sessionHelper.getUserId(), sessionHelper.getFacilityId());
         return RouterHelper.responseSuccess("Lấy danh sách dữ liệu thành công", data);
     }
+
 }
+
+
+
