@@ -81,7 +81,7 @@ public class STAttendanceRecoveryServiceImpl implements STAttendanceRecoveryServ
     }
 
     @Override
-    public ResponseEntity<?> importAttendanceRecoveryStudent(STCreateOrUpdateNewEventRequest request) {
+    public ResponseEntity<?> createNewEventAttendanceRecovery(STCreateOrUpdateNewEventRequest request) {
         Optional<Facility> facilityOptional = facilityRepository.findById(sessionHelper.getFacilityId());
         if (facilityOptional == null) {
             return RouterHelper.responseError("Cơ sở không tồn tại", null);
@@ -269,9 +269,17 @@ public class STAttendanceRecoveryServiceImpl implements STAttendanceRecoveryServ
             this.responseData = responseData;
         }
 
-        public int getCreatedCount() { return createdCount; }
-        public int getUpdatedCount() { return updatedCount; }
-        public List<Object> getResponseData() { return responseData; }
+        public int getCreatedCount() {
+            return createdCount;
+        }
+
+        public int getUpdatedCount() {
+            return updatedCount;
+        }
+
+        public List<Object> getResponseData() {
+            return responseData;
+        }
     }
 
     // Các phương thức validation giữ nguyên như cũ
@@ -347,7 +355,7 @@ public class STAttendanceRecoveryServiceImpl implements STAttendanceRecoveryServ
     }
 
     @Override
-    private ResponseEntity<?> getAllHistoryLogDetailEvent(String idImportLog) {
+    public ResponseEntity<?> getAllHistoryLogDetailEvent(String idImportLog) {
         List<ExImportLogDetailResponse> logDetailResponseList = historyLogRepository.getAllList(idImportLog, sessionHelper.getUserId(), sessionHelper.getFacilityId());
         return RouterHelper.responseSuccess("Lấy chi tiết lịch sử import khôi phục điểm danh thành công", logDetailResponseList);
     }

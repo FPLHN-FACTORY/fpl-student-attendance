@@ -45,7 +45,7 @@ public class STAttendanceRecoveryController {
 
     @GetMapping("/history-log/{id}")
     ResponseEntity<?> getHistoryLog(@PathVariable(name = "id") String id, EXDataRequest dataRequest){
-        return service.getAllHistoryLogByEvent(id,dataRequest);
+        return service.getAllHistoryLogByEvent(id, dataRequest);
     }
 
     @GetMapping("/detail-history-log/{id}")
