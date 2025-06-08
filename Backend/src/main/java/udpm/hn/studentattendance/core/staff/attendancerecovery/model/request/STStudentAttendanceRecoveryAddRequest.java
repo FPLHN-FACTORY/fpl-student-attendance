@@ -5,7 +5,7 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class STStudentAttendanceRecoveryRequest {
+public class STStudentAttendanceRecoveryAddRequest {
 
     private Long day;
 
