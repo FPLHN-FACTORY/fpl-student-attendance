@@ -1,14 +1,13 @@
 package udpm.hn.studentattendance.core.staff.attendancerecovery.service.impl;
 
 import lombok.RequiredArgsConstructor;
-import org.apache.catalina.User;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
 import udpm.hn.studentattendance.core.staff.attendancerecovery.model.request.STAttendanceRecoveryRequest;
 import udpm.hn.studentattendance.core.staff.attendancerecovery.model.request.STCreateOrUpdateNewEventRequest;
-import udpm.hn.studentattendance.core.staff.attendancerecovery.model.request.STStudentAttendanceRecoveryRequest;
+import udpm.hn.studentattendance.core.staff.attendancerecovery.model.request.STStudentAttendanceRecoveryAddRequest;
 import udpm.hn.studentattendance.core.staff.attendancerecovery.repository.*;
 import udpm.hn.studentattendance.core.staff.attendancerecovery.service.STAttendanceRecoveryService;
 import udpm.hn.studentattendance.entities.*;
@@ -20,8 +19,9 @@ import udpm.hn.studentattendance.helpers.ValidateHelper;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.constants.AttendanceStatus;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
+import udpm.hn.studentattendance.infrastructure.excel.model.request.EXDataRequest;
+import udpm.hn.studentattendance.infrastructure.excel.model.response.ExImportLogDetailResponse;
 
-import java.time.DateTimeException;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -58,6 +58,8 @@ public class STAttendanceRecoveryServiceImpl implements STAttendanceRecoveryServ
 
     private static final ZoneId VN_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
 
+    private final STAttendanceRecoveryHistoryLogRepository historyLogRepository;
+
     @Override
     public ResponseEntity<?> getListAttendanceRecovery(STAttendanceRecoveryRequest request) {
         Pageable pageable = PaginationHelper.createPageable(request);
@@ -67,7 +69,8 @@ public class STAttendanceRecoveryServiceImpl implements STAttendanceRecoveryServ
     }
 
     @Override
-    public ResponseEntity<?> deleteAttendanceRecovery(String attendanceRecoveryId) {
+    public ResponseEntity<?> deleteAttendanceRecovery(String attendanceRecoveryId, STStudentAttendanceRecoveryAddRequest request) {
+
         return null;
     }
 
@@ -75,8 +78,10 @@ public class STAttendanceRecoveryServiceImpl implements STAttendanceRecoveryServ
     public ResponseEntity<?> getAllSemester() {
         List<Semester> semesters = semesterRepository.getAllSemester(EntityStatus.ACTIVE);
         return RouterHelper.responseSuccess("Lấy tất cả học kỳ thành công", semesters);
-    }    @Override
-    public ResponseEntity<?> createNewEventAttendanceRecovery(STCreateOrUpdateNewEventRequest request) {
+    }
+
+    @Override
+    public ResponseEntity<?> importAttendanceRecoveryStudent(STCreateOrUpdateNewEventRequest request) {
         Optional<Facility> facilityOptional = facilityRepository.findById(sessionHelper.getFacilityId());
         if (facilityOptional == null) {
             return RouterHelper.responseError("Cơ sở không tồn tại", null);
@@ -84,17 +89,17 @@ public class STAttendanceRecoveryServiceImpl implements STAttendanceRecoveryServ
         if (!ValidateHelper.isValidFullname(request.getName())) {
             return RouterHelper.responseError("Tên sự kiện không hợp lệ: Tối thiểu 2 từ, cách nhau bởi khoảng trắng và Chỉ gồm ký tự chữ không chứa số hay ký tự đặc biệt.", null);
         }
-        
+
         // Validate emoji in event name
         if (ValidateHelper.containsEmoji(request.getName())) {
             return RouterHelper.responseError("Tên sự kiện không được chứa emoji", null);
         }
-        
+
         // Validate emoji in event description
         if (request.getDescription() != null && ValidateHelper.containsEmoji(request.getDescription())) {
             return RouterHelper.responseError("Mô tả sự kiện không được chứa emoji", null);
         }
-        
+
         AttendanceRecovery attendanceRecovery = new AttendanceRecovery();
         attendanceRecovery.setName(request.getName());
         attendanceRecovery.setDescription(request.getDescription());
@@ -113,22 +118,24 @@ public class STAttendanceRecoveryServiceImpl implements STAttendanceRecoveryServ
             return RouterHelper.responseSuccess("Lấy chi tiết sự kiện khôi phục điểm danh thành công", attendanceRecoveryOptional);
         }
         return RouterHelper.responseError("Sự Kiện khôi phục điểm danh không tồn tại", null);
-    }    @Override
+    }
+
+    @Override
     public ResponseEntity<?> updateEventAttendanceRecovery(STCreateOrUpdateNewEventRequest request, String id) {
         if (!ValidateHelper.isValidFullname(request.getName())) {
             return RouterHelper.responseError("Tên sự kiện không hợp lệ: Tối thiểu 2 từ, cách nhau bởi khoảng trắng và Chỉ gồm ký tự chữ không chứa số hay ký tự đặc biệt.", null);
         }
-        
+
         // Validate emoji in event name
         if (ValidateHelper.containsEmoji(request.getName())) {
             return RouterHelper.responseError("Tên sự kiện không được chứa emoji", null);
         }
-        
+
         // Validate emoji in event description
         if (request.getDescription() != null && ValidateHelper.containsEmoji(request.getDescription())) {
             return RouterHelper.responseError("Mô tả sự kiện không được chứa emoji", null);
         }
-        
+
         Optional<AttendanceRecovery> attendanceRecoveryOptional = attendanceRecoveryRepository.findById(id);
         if (attendanceRecoveryOptional.isPresent()) {
             AttendanceRecovery attendanceRecovery = attendanceRecoveryOptional.get();
@@ -137,7 +144,7 @@ public class STAttendanceRecoveryServiceImpl implements STAttendanceRecoveryServ
             attendanceRecovery.setDescription(request.getDescription());
             attendanceRecovery.setDay(request.getDay());
             attendanceRecoveryRepository.save(attendanceRecovery);
-            
+
             userActivityLogHelper.saveLog("vừa cập nhật sự kiện khôi phục điểm danh: " + oldName + " → " + attendanceRecovery.getName());
             return RouterHelper.responseSuccess("Cập nhật sự kiện khôi phục điểm danh thành công", attendanceRecovery);
         }
@@ -146,7 +153,7 @@ public class STAttendanceRecoveryServiceImpl implements STAttendanceRecoveryServ
 
 
     @Override
-    public ResponseEntity<?> importAttendanceRecoveryStudent(STStudentAttendanceRecoveryRequest request) {
+    public ResponseEntity<?> importAttendanceRecoveryStudent(STStudentAttendanceRecoveryAddRequest request) {
         try {
             if (request == null || request.getStudentCode() == null || request.getDay() == null) {
                 return RouterHelper.responseError("Dữ liệu đầu vào không hợp lệ", null);
@@ -174,7 +181,6 @@ public class STAttendanceRecoveryServiceImpl implements STAttendanceRecoveryServ
                         null);
             }
 
-            // Gọi hàm đã chỉnh sửa để so sánh chỉ theo phần ngày (dd/MM/yyyy)
             List<PlanDate> validPlanDates = getValidPlanDatesForRecovery(
                     planFactory.getId(),
                     request.getDay()
@@ -188,23 +194,18 @@ public class STAttendanceRecoveryServiceImpl implements STAttendanceRecoveryServ
                         null);
             }
 
-            List<PlanDate> planDatesToProcess = filterExistingAttendance(validPlanDates, userStudent);
-            if (planDatesToProcess.isEmpty()) {
+            AttendanceProcessResult result = processAttendanceRecords(validPlanDates, userStudent);
+
+            if (result.getCreatedCount() == 0 && result.getUpdatedCount() == 0) {
                 return RouterHelper.responseError(
-                        "Sinh viên đã được điểm danh cho tất cả ca học trong ngày này",
+                        "Sinh viên đã được điểm danh PRESENT cho tất cả ca học trong ngày này",
                         null);
             }
 
-            List<Attendance> attendanceList = createAttendanceRecords(planDatesToProcess, userStudent);
-            attendanceRepository.saveAll(attendanceList);
-
-            Optional<AttendanceRecovery> attendanceRecoveryOptional = attendanceRecoveryRepository.findById(request.getAttendanceRecoveryId());
-
-
             return RouterHelper.responseSuccess(
-                    String.format("Khôi phục điểm danh thành công cho %d ca học của sinh viên %s",
-                            attendanceList.size(), userStudent.getCode()),
-                    createAttendanceResponse(attendanceList)
+                    String.format("Khôi phục điểm danh thành công: %d ca học mới, %d ca học đã cập nhật cho sinh viên %s",
+                            result.getCreatedCount(), result.getUpdatedCount(), userStudent.getCode()),
+                    result.getResponseData()
             );
 
         } catch (Exception e) {
@@ -212,6 +213,68 @@ public class STAttendanceRecoveryServiceImpl implements STAttendanceRecoveryServ
         }
     }
 
+    private AttendanceProcessResult processAttendanceRecords(List<PlanDate> planDates, UserStudent userStudent) {
+        List<Object> responseData = new ArrayList<>();
+        int createdCount = 0;
+        int updatedCount = 0;
+
+        for (PlanDate planDate : planDates) {
+            // Kiểm tra xem đã có attendance record chưa
+            Attendance existingAttendance = attendanceRepository.findByUserStudentIdAndPlanDateId(
+                    userStudent.getId(), planDate.getId());
+
+            if (existingAttendance == null) {
+                // Tạo mới attendance record
+                Attendance newAttendance = new Attendance();
+                newAttendance.setUserStudent(userStudent);
+                newAttendance.setPlanDate(planDate);
+                newAttendance.setStatus(EntityStatus.ACTIVE);
+                newAttendance.setAttendanceStatus(AttendanceStatus.PRESENT);
+                attendanceRepository.save(newAttendance);
+
+                createdCount++;
+                responseData.add(createAttendanceResponseItem(newAttendance, "CREATED"));
+
+            } else if (existingAttendance.getAttendanceStatus() == AttendanceStatus.CHECKIN) {
+                // Update attendance từ CHECKIN thành PRESENT
+                existingAttendance.setAttendanceStatus(AttendanceStatus.PRESENT);
+                attendanceRepository.save(existingAttendance);
+
+                updatedCount++;
+                responseData.add(createAttendanceResponseItem(existingAttendance, "UPDATED"));
+            }
+        }
+
+        return new AttendanceProcessResult(createdCount, updatedCount, responseData);
+    }
+
+    private Map<String, Object> createAttendanceResponseItem(Attendance attendance, String action) {
+        Map<String, Object> item = new HashMap<>();
+        item.put("planDateId", attendance.getPlanDate().getId());
+        item.put("studentCode", attendance.getUserStudent().getCode());
+        item.put("attendanceStatus", attendance.getAttendanceStatus());
+        item.put("action", action); // "CREATED" hoặc "UPDATED"
+        return item;
+    }
+
+    // Inner class để lưu kết quả xử lý
+    private static class AttendanceProcessResult {
+        private final int createdCount;
+        private final int updatedCount;
+        private final List<Object> responseData;
+
+        public AttendanceProcessResult(int createdCount, int updatedCount, List<Object> responseData) {
+            this.createdCount = createdCount;
+            this.updatedCount = updatedCount;
+            this.responseData = responseData;
+        }
+
+        public int getCreatedCount() { return createdCount; }
+        public int getUpdatedCount() { return updatedCount; }
+        public List<Object> getResponseData() { return responseData; }
+    }
+
+    // Các phương thức validation giữ nguyên như cũ
     private UserStudent validateAndGetStudent(String studentCode) {
         if (studentCode == null || studentCode.trim().isEmpty()) {
             return null;
@@ -244,10 +307,6 @@ public class STAttendanceRecoveryServiceImpl implements STAttendanceRecoveryServ
         );
     }
 
-    /**
-     * Lọc ra các PlanDate sao cho endDate (epochMilli) khi format sang "dd/MM/yyyy"
-     * trùng với requestDay (epochMilli) format sang "dd/MM/yyyy"
-     */
     private List<PlanDate> getValidPlanDatesForRecovery(String planFactoryId, Long requestDay) {
         LocalDate requestLocalDate = Instant.ofEpochMilli(requestDay)
                 .atZone(VN_ZONE)
@@ -269,36 +328,6 @@ public class STAttendanceRecoveryServiceImpl implements STAttendanceRecoveryServ
                 .collect(Collectors.toList());
     }
 
-    private List<PlanDate> filterExistingAttendance(List<PlanDate> planDates, UserStudent userStudent) {
-        if (planDates.isEmpty()) {
-            return new ArrayList<>();
-        }
-
-        List<String> planDateIds = planDates.stream()
-                .map(PlanDate::getId)
-                .collect(Collectors.toList());
-
-        List<String> existingAttendanceIds = planDateRepository.findExistingAttendance(
-                userStudent.getId(), planDateIds);
-
-        return planDates.stream()
-                .filter(pd -> !existingAttendanceIds.contains(pd.getId()))
-                .collect(Collectors.toList());
-    }
-
-    private List<Attendance> createAttendanceRecords(List<PlanDate> planDates, UserStudent userStudent) {
-        return planDates.stream()
-                .map(planDate -> {
-                    Attendance attendance = new Attendance();
-                    attendance.setUserStudent(userStudent);
-                    attendance.setPlanDate(planDate);
-                    attendance.setStatus(EntityStatus.ACTIVE);
-                    attendance.setAttendanceStatus(AttendanceStatus.PRESENT);
-                    return attendance;
-                })
-                .collect(Collectors.toList());
-    }
-
     private String formatDate(Long timestamp) {
         try {
             LocalDate date = Instant.ofEpochMilli(timestamp)
@@ -310,17 +339,17 @@ public class STAttendanceRecoveryServiceImpl implements STAttendanceRecoveryServ
         }
     }
 
-    private Object createAttendanceResponse(List<Attendance> attendanceList) {
-        return attendanceList.stream()
-                .map(attendance -> {
-                    Map<String, Object> item = new HashMap<>();
-                    item.put("planDateId", attendance.getPlanDate().getId());
-                    item.put("studentCode", attendance.getUserStudent().getCode());
-                    item.put("attendanceStatus", attendance.getAttendanceStatus());
-                    return item;
-                })
-                .collect(Collectors.toList());
+    @Override
+    public ResponseEntity<?> getAllHistoryLogByEvent(String idImportLog, EXDataRequest request) {
+        Pageable pageable = PaginationHelper.createPageable(request);
+        PageableObject list = PageableObject.of(historyLogRepository.getListHistory(pageable, 6, sessionHelper.getUserId(), sessionHelper.getFacilityId(), idImportLog));
+        return RouterHelper.responseSuccess("Lấy tất cả log import excel khôi phục điểm danh thành công", list);
     }
 
+    @Override
+    private ResponseEntity<?> getAllHistoryLogDetailEvent(String idImportLog) {
+        List<ExImportLogDetailResponse> logDetailResponseList = historyLogRepository.getAllList(idImportLog, sessionHelper.getUserId(), sessionHelper.getFacilityId());
+        return RouterHelper.responseSuccess("Lấy chi tiết lịch sử import khôi phục điểm danh thành công", logDetailResponseList);
+    }
 
 }

@@ -127,7 +127,7 @@ export const AdminRoutes = [
         component: () => import('@/views/pages/admin/AdminManagementUserLogActivity.vue'),
         meta: {
           selectedKey: selectedKey++,
-          name: 'Lịch sử hoạt động',
+          name: 'Quản lý hoạt động người dùng',
           icon: SolutionOutlined,
         },
       },

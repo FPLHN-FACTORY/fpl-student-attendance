@@ -177,20 +177,6 @@ watch(
                     </template>
                   </a-input>
                 </div>
-                <div class="col-lg-6 col-md-8 col-sm-12">
-                  <div class="label-title">Giảng viên:</div>
-                  <a-select
-                    v-model:value="dataFilter.userId"
-                    placeholder="Chọn nhân viên"
-                    allowClear
-                    class="w-100"
-                  >
-                    <a-select-option :value="''">--Tất cả giảng viên--</a-select-option>
-                    <a-select-option v-for="item in staff" :key="item.id" :value="item.id">
-                      {{ item.name }}
-                    </a-select-option>
-                  </a-select>
-                </div>
                 <div class="col-12">
                   <div class="d-flex justify-content-center flex-wrap gap-2">
                     <a-button class="btn-light" @click="handleSubmitFilter">
@@ -224,8 +210,7 @@ watch(
                   {{ (pagination.current - 1) * pagination.pageSize + index + 1 }}
                 </template>
                 <template v-else-if="column.dataIndex === 'role'">
-                  <a-tag v-if="record.role === 1" color="geekblue"> Phụ trách xưởng </a-tag>
-                  <a-tag v-else-if="record.role === 3" color="blue"> Giảng viên </a-tag>
+                  <a-tag v-if="record.role === 1" color="blue"> Phụ trách xưởng </a-tag>
                 </template>
               </template>
             </a-table>
