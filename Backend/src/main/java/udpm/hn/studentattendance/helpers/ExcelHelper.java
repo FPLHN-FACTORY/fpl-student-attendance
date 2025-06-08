@@ -69,112 +69,129 @@ public class ExcelHelper {
 
         importLogDetailRepository.save(importLogDetail);
     }
-    /**
-     * Đọc file Excel, tự evaluate công thức và định dạng ô
-     */
+//    /**
+//     * Đọc file Excel, tự evaluate công thức và định dạng ô
+//     */
+//    public static List<Map<String, String>> readFile(MultipartFile file) throws IOException {
+//        List<Map<String, String>> result = new ArrayList<>();
+//        try (Workbook workbook = new XSSFWorkbook(file.getInputStream())) {
+//            Sheet sheet = workbook.getSheetAt(0);
+//            if (sheet == null) {
+//                throw new IllegalArgumentException("File Excel không có dữ liệu!");
+//            }
+//
+//            DataFormatter formatter    = new DataFormatter();
+//            FormulaEvaluator evaluator = workbook.getCreationHelper().createFormulaEvaluator();
+//
+//            Row headerRow = sheet.getRow(0);
+//            if (headerRow == null) {
+//                throw new IllegalArgumentException("File Excel không có tiêu đề cột!");
+//            }
+//            int lastCellNum = headerRow.getLastCellNum();
+//            List<String> headers = new ArrayList<>();
+//            for (int c = 0; c < lastCellNum; c++) {
+//                Cell hCell = headerRow.getCell(c, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
+//                headers.add(hCell.getStringCellValue().trim());
+//            }
+//
+//            // Đọc dữ liệu từ dòng 1 đến cuối
+//            for (int i = 1; i <= sheet.getLastRowNum(); i++) {
+//                Row row = sheet.getRow(i);
+//                if (row == null) continue;
+//
+//                Map<String, String> rowData = new LinkedHashMap<>();
+//                rowData.put("_LINE", String.valueOf(i));
+//                for (int c = 0; c < lastCellNum; c++) {
+//                    Cell cell = row.getCell(c, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
+//                    String rawValue = formatter.formatCellValue(cell, evaluator);
+//                    String key = CodeGeneratorUtils.generateCodeFromString(headers.get(c));
+//                    rowData.put(key, rawValue);
+//                }
+//                result.add(rowData);
+//            }
+//        }
+//        // Loại bỏ bản ghi trùng lặp
+//        return new ArrayList<>(new LinkedHashSet<>(result));
+//    }
+
     public static List<Map<String, String>> readFile(MultipartFile file) throws IOException {
         List<Map<String, String>> result = new ArrayList<>();
-        try (Workbook workbook = new XSSFWorkbook(file.getInputStream())) {
-            Sheet sheet = workbook.getSheetAt(0);
-            if (sheet == null) {
-                throw new IllegalArgumentException("File Excel không có dữ liệu!");
-            }
+        Workbook workbook = new XSSFWorkbook(file.getInputStream());
+        Sheet sheet = workbook.getSheetAt(0);
 
-            DataFormatter formatter    = new DataFormatter();
-            FormulaEvaluator evaluator = workbook.getCreationHelper().createFormulaEvaluator();
-
-            Row headerRow = sheet.getRow(0);
-            if (headerRow == null) {
-                throw new IllegalArgumentException("File Excel không có tiêu đề cột!");
-            }
-            int lastCellNum = headerRow.getLastCellNum();
-            List<String> headers = new ArrayList<>();
-            for (int c = 0; c < lastCellNum; c++) {
-                Cell hCell = headerRow.getCell(c, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
-                headers.add(hCell.getStringCellValue().trim());
-            }
-
-            // Đọc dữ liệu từ dòng 1 đến cuối
-            for (int i = 1; i <= sheet.getLastRowNum(); i++) {
-                Row row = sheet.getRow(i);
-                if (row == null) continue;
-
-                Map<String, String> rowData = new LinkedHashMap<>();
-                rowData.put("_LINE", String.valueOf(i));
-                for (int c = 0; c < lastCellNum; c++) {
-                    Cell cell = row.getCell(c, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
-                    String rawValue = formatter.formatCellValue(cell, evaluator);
-                    String key = CodeGeneratorUtils.generateCodeFromString(headers.get(c));
-                    rowData.put(key, rawValue);
-                }
-                result.add(rowData);
-            }
+        if (sheet == null) {
+            throw new IllegalArgumentException("File Excel không có dữ liệu!");
         }
-        // Loại bỏ bản ghi trùng lặp
-        return new ArrayList<>(new LinkedHashSet<>(result));
+
+        Row headerRow = sheet.getRow(0);
+        if (headerRow == null) {
+            throw new IllegalArgumentException("File Excel không có tiêu đề cột!");
+        }
+
+        List<String> headers = new ArrayList<>();
+        for (Cell cell : headerRow) {
+            headers.add(cell.getStringCellValue().trim());
+        }
+
+        for (int i = 1; i <= sheet.getLastRowNum(); i++) {
+            Row row = sheet.getRow(i);
+            if (row == null) continue;
+
+            Map<String, String> rowData = new HashMap<>();
+            rowData.put("_LINE", String.valueOf(i));
+            for (int j = 0; j < headers.size(); j++) {
+                Cell cell = row.getCell(j, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
+                rowData.put(CodeGeneratorUtils.generateCodeFromString(headers.get(j)), getCellValue(cell));
+            }
+            result.add(rowData);
+        }
+
+        workbook.close();
+
+        Set<Map<String, String>> uniqueSet = new LinkedHashSet<>(result);
+        return new ArrayList<>(uniqueSet);
     }
 
     private static String getCellValue(Cell cell) {
         if (cell == null) return "";
-        return switch (cell.getCellType()) {
-            case STRING  -> cell.getStringCellValue();
+
+        CellType type = cell.getCellType();
+
+        if (type == CellType.FORMULA) {
+            FormulaEvaluator evaluator = cell.getSheet().getWorkbook()
+                    .getCreationHelper().createFormulaEvaluator();
+            CellValue evaluated = evaluator.evaluate(cell);
+            return getEvaluatedValue(cell, evaluated);
+        }
+
+        return getEvaluatedValue(cell, cell.getCellType(), cell);
+    }
+
+    private static String getEvaluatedValue(Cell cell, CellValue cellValue) {
+        return switch (cellValue.getCellType()) {
+            case STRING -> cellValue.getStringValue();
             case NUMERIC -> DateUtil.isCellDateFormatted(cell)
                     ? new SimpleDateFormat("dd/MM/yyyy").format(cell.getDateCellValue())
-                    : String.valueOf(cell.getNumericCellValue());
-            case BOOLEAN -> String.valueOf(cell.getBooleanCellValue());
-            default      -> "";
+                    : formatNumeric(cellValue.getNumberValue());
+            case BOOLEAN -> String.valueOf(cellValue.getBooleanValue());
+            default -> "";
         };
     }
 
-//    public static List<Map<String, String>> readFile(MultipartFile file) throws IOException {
-//        List<Map<String, String>> result = new ArrayList<>();
-//        Workbook workbook = new XSSFWorkbook(file.getInputStream());
-//        Sheet sheet = workbook.getSheetAt(0);
-//
-//        if (sheet == null) {
-//            throw new IllegalArgumentException("File Excel không có dữ liệu!");
-//        }
-//
-//        Row headerRow = sheet.getRow(0);
-//        if (headerRow == null) {
-//            throw new IllegalArgumentException("File Excel không có tiêu đề cột!");
-//        }
-//
-//        List<String> headers = new ArrayList<>();
-//        for (Cell cell : headerRow) {
-//            headers.add(cell.getStringCellValue().trim());
-//        }
-//
-//        for (int i = 1; i <= sheet.getLastRowNum(); i++) {
-//            Row row = sheet.getRow(i);
-//            if (row == null) continue;
-//
-//            Map<String, String> rowData = new HashMap<>();
-//            rowData.put("_LINE", String.valueOf(i));
-//            for (int j = 0; j < headers.size(); j++) {
-//                Cell cell = row.getCell(j, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
-//                rowData.put(CodeGeneratorUtils.generateCodeFromString(headers.get(j)), getCellValue(cell));
-//            }
-//            result.add(rowData);
-//        }
-//
-//        workbook.close();
-//
-//        Set<Map<String, String>> uniqueSet = new LinkedHashSet<>(result);
-//        return new ArrayList<>(uniqueSet);
-//    }
+    private static String getEvaluatedValue(Cell cell, CellType type, Cell originCell) {
+        return switch (type) {
+            case STRING -> originCell.getStringCellValue();
+            case NUMERIC -> DateUtil.isCellDateFormatted(cell)
+                    ? new SimpleDateFormat("dd/MM/yyyy").format(cell.getDateCellValue())
+                    : formatNumeric(originCell.getNumericCellValue());
+            case BOOLEAN -> String.valueOf(originCell.getBooleanCellValue());
+            default -> "";
+        };
+    }
 
-//    private static String getCellValue(Cell cell) {
-//        if (cell == null) return "";
-//        return switch (cell.getCellType()) {
-//            case STRING -> cell.getStringCellValue();
-//            case NUMERIC -> DateUtil.isCellDateFormatted(cell)
-//                    ? new SimpleDateFormat("dd/MM/yyyy").format(cell.getDateCellValue())
-//                    : String.valueOf(cell.getNumericCellValue());
-//            case BOOLEAN -> String.valueOf(cell.getBooleanCellValue());
-//            default -> "";
-//        };
-//    }
+    private static String formatNumeric(double value) {
+        return value == Math.floor(value) ? String.valueOf((long) value) : String.valueOf(value);
+    }
 
     public static byte[] createExcelStream(String sheetName, List<String> headers, List<List<Object>> data) {
         try (Workbook workbook = new XSSFWorkbook();
