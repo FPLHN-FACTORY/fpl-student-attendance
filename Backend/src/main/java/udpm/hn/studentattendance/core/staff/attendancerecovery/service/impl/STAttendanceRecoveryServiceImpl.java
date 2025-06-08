@@ -90,12 +90,10 @@ public class STAttendanceRecoveryServiceImpl implements STAttendanceRecoveryServ
             return RouterHelper.responseError("Tên sự kiện không hợp lệ: Tối thiểu 2 từ, cách nhau bởi khoảng trắng và Chỉ gồm ký tự chữ không chứa số hay ký tự đặc biệt.", null);
         }
 
-        // Validate emoji in event name
         if (ValidateHelper.containsEmoji(request.getName())) {
             return RouterHelper.responseError("Tên sự kiện không được chứa emoji", null);
         }
 
-        // Validate emoji in event description
         if (request.getDescription() != null && ValidateHelper.containsEmoji(request.getDescription())) {
             return RouterHelper.responseError("Mô tả sự kiện không được chứa emoji", null);
         }
