@@ -60,7 +60,7 @@ const columns = ref(
       fixed: 'right',
       width: 100,
     },
-  ]),
+  ])
 )
 
 const attendanceRecovery = ref([])
@@ -212,7 +212,7 @@ const handleShowModalEdit = (record) => {
     })
     .catch((error) => {
       message.error(
-        error.response?.data?.message || 'Lỗi khi lấy chi tiết sự kiện khôi phục điểm danh',
+        error.response?.data?.message || 'Lỗi khi lấy chi tiết sự kiện khôi phục điểm danh'
       )
     })
     .finally(() => {
@@ -248,7 +248,7 @@ const handleEditEvent = () => {
         })
         .catch((error) => {
           message.error(
-            error.response?.data?.message || 'Lỗi khi cập nhật sự kiện khôi phục điểm danh',
+            error.response?.data?.message || 'Lỗi khi cập nhật sự kiện khôi phục điểm danh'
           )
         })
         .finally(() => {
@@ -285,27 +285,57 @@ const configImportExcel = {
   showHistoryLog: false,
 }
 
-const importHistory = ref([])
+const columnsImportLog = ref(
+  autoAddColumnWidth([
+    { title: 'Thời gian', dataIndex: 'createdAt', key: 'createdAt' },
+    { title: 'Tệp tin', dataIndex: 'fileName', key: 'fileName' },
+    {
+      title: 'Thành công',
+      dataIndex: 'totalSuccess',
+      key: 'totalSuccess',
+    },
+    { title: 'Lỗi', dataIndex: 'totalError', key: 'totalError' },
+    { title: '', key: 'actions' },
+  ])
+)
 
-const handleShowImportHistory = () => {
-  fetchImportHistory()
-}
-const fetchImportHistory = () => {
+const importHistory = ref([])
+const isShowHistoryLog = ref(false)
+
+const handleShowImportHistory = (idImportLog) => {
   loadingStore.show()
   requestAPI
-    .get(API_ROUTES_EXCEL.FETCH_IMPORT_ATTENDANCE_RECOVERY + '/history')
+    .get(API_ROUTES_STAFF.FETCH_DATA_ATTENDANCE_RECOVERY + '/history-log/' + idImportLog)
     .then((response) => {
-      importHistory.value = response.data.data || []
+      importHistory.value = response.data.data.data
+      isShowHistoryLog.value = true
     })
     .catch((error) => {
-      message.error(error.response?.data?.message || 'Lỗi khi lấy lịch sử nhập dữ liệu')
+      message.error(error.response?.data?.message || 'Lỗi khi lấy lịch sử import excel')
     })
     .finally(() => {
       loadingStore.hide()
     })
 }
 
+const importHistoryDetailLog = ref([])
+const isShowHistoryLogDetail = ref(false)
 
+const handleShowImportLogDetail = (id) => {
+  loadingStore.show()
+  requestAPI
+    .get(API_ROUTES_STAFF.FETCH_DATA_ATTENDANCE_RECOVERY + '/detail-history-log/' + id)
+    .then((response) => {
+      importHistoryDetailLog.value = response.data.data
+      isShowHistoryLogDetail.value = true
+    })
+    .catch((error) => {
+      message.error(error.response?.data?.message || 'Lỗi khi lấy lịch sử chi tiết import excel')
+    })
+    .finally(() => {
+      loadingStore.hide()
+    })
+}
 onMounted(() => {
   breadcrumbStore.setRoutes(breadcrumb.value)
   fetchAttendanceRecovery()
@@ -315,7 +345,6 @@ onMounted(() => {
 <template>
   <div class="container-fluid">
     <div class="row g-3">
-
       <div class="col-12">
         <a-card :bordered="false" class="cart no-body-padding">
           <a-collapse ghost>
@@ -393,7 +422,10 @@ onMounted(() => {
                   {{ formatDate(record.dayHappen, DEFAULT_DATE_FORMAT) }}
                 </template>
                 <template v-else-if="column.dataIndex === 'totalStudent'">
-                  <a-tag> {{ record.totalStudent }} Sinh Viên</a-tag>
+                  <a-tag v-if="record.totalStudent > 0">
+                    {{ record.totalStudent + ' Sinh Viên' }}
+                  </a-tag>
+                  <a-tag v-else> Chưa có sinh viên </a-tag>
                 </template>
                 <template v-else>
                   {{ record[column.dataIndex] }}
@@ -411,21 +443,23 @@ onMounted(() => {
                       <EditFilled />
                     </a-button>
                   </a-tooltip>
-                  <a-tooltip>
-                    <template #title><HistoryOutlined class="text-primary" /> Lịch sử import</template>
+                  <template v-if="record.idImportLog != null">
                     <a-button
                       type="text"
                       class="btn-gray"
-                      @click="handleShowImportHistory"
+                      @click="handleShowImportHistory(record.idImportLog)"
                     >
+                      <HistoryOutlined class="text-primary" /> Lịch sử import
                     </a-button>
-                  </a-tooltip>
-                  <div class="excel-upload-wrapper">
-                    <ExcelUploadButton
-                      v-bind="configImportExcel"
-                      :data="{ attendanceRecoveryId: record.id }"
-                    />
-                  </div>
+                  </template>
+                  <template v-else>
+                    <div class="excel-upload-wrapper">
+                      <ExcelUploadButton
+                        v-bind="configImportExcel"
+                        :data="{ attendanceRecoveryId: record.id }"
+                      />
+                    </div>
+                  </template>
                 </div>
               </template>
             </template>
@@ -485,6 +519,43 @@ onMounted(() => {
         />
       </a-form-item>
     </a-form>
+  </a-modal>
+
+  <a-modal v-model:open="isShowHistoryLog" :width="1000">
+    <template #title><HistoryOutlined class="text-primary" /> Lịch sử import</template>
+    <template #footer>
+      <a-button @click="isShowHistoryLog = false" class="btn-gray">Đóng</a-button>
+    </template>
+    <a-table
+      rowKey="id"
+      class="nowrap"
+      :dataSource="importHistory"
+      :columns="columnsImportLog"
+      :pagination="pagination"
+      :scroll="{ x: 'auto' }"
+      :loading="isLoading"
+      @change="handleShowImportHistory"
+    >
+      <template #bodyCell="{ column, record }">
+        <template v-if="column.dataIndex === 'createdAt'">
+          {{ formatDate(record.createdAt, 'dd/MM/yyyy HH:mm:ss') }}
+        </template>
+        <template v-if="column.dataIndex === 'status'">
+          <a-tag :color="record.status == true ? 'green' : 'red'">{{
+            record.status == true ? 'Thành công' : 'Thất bại'
+          }}</a-tag>
+        </template>
+        <template v-if="column.dataIndex === 'totalSuccess'">
+          <a-tag :color="record.totalSuccess > 0 ? 'green' : ''">{{ record.totalSuccess }}</a-tag>
+        </template>
+        <template v-if="column.dataIndex === 'totalError'">
+          <a-tag :color="record.totalError > 0 ? 'red' : ''">{{ record.totalError }}</a-tag>
+        </template>
+        <template v-if="column.key === 'actions'">
+          <a-typography-link @click="handleShowDetail(record.id)">Chi tiết</a-typography-link>
+        </template>
+      </template>
+    </a-table>
   </a-modal>
 </template>
 
