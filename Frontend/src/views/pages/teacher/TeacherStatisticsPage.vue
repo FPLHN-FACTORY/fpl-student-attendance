@@ -490,7 +490,6 @@ watch(
               v-model:value="dataFilter.semester"
               :dropdownMatchSelectWidth="false"
               placeholder="-- Vui lòng chọn 1 học kỳ --"
-              allowClear
             >
               <a-select-option v-for="o in lstSemester" :key="o.id" :value="o.id">{{
                 o.code
