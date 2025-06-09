@@ -110,8 +110,8 @@ public class ADUserAdminServiceImpl implements ADUserAdminService {
                 notificationAddRequest.setData(dataNotification);
                 notificationService.add(notificationAddRequest);
 
-                userActivityLogHelper.saveLog("vừa thêm 1 tài khoản admin mới: " + userAdmin.getName() + " ("
-                                + userAdmin.getCode() + ")");
+                userActivityLogHelper.saveLog("vừa thêm 1 tài khoản admin mới: " + userAdmin.getCode()  + " - "
+                                + userAdmin.getName());
                 return RouterHelper.responseSuccess("Thêm admin mới thành công", userAdmin);
         }
 
@@ -157,8 +157,8 @@ public class ADUserAdminServiceImpl implements ADUserAdminService {
                 notificationAddRequest.setData(dataNotification);
                 notificationService.add(notificationAddRequest);
 
-                userActivityLogHelper.saveLog("vừa cập nhật tài khoản admin: " + userAdmin.getName() + " ("
-                                + userAdmin.getCode() + ")");
+                userActivityLogHelper.saveLog("vừa cập nhật tài khoản admin: " + userAdmin.getCode() + " - "
+                                + userAdmin.getName());
                 return RouterHelper.responseSuccess("Cập nhật admin thành công", userAdmin);
         }
 
@@ -192,8 +192,8 @@ public class ADUserAdminServiceImpl implements ADUserAdminService {
                                 mailerHelper.send(mailerDefaultRequest);
                         }
 
-                        userActivityLogHelper.saveLog("vừa thay đổi trạng thái tài khoản admin " + saveAdmin.getName()
-                                        + " (" + saveAdmin.getCode() + ") từ " + oldStatus + " thành " + newStatus);
+                        userActivityLogHelper.saveLog("vừa thay đổi trạng thái tài khoản admin " + saveAdmin.getCode()
+                                        + " - " + saveAdmin.getName() + " từ " + oldStatus + " thành " + newStatus);
                         return RouterHelper.responseSuccess("Thay đổi trạng thái thành công", saveAdmin);
                 }
 
@@ -270,8 +270,8 @@ public class ADUserAdminServiceImpl implements ADUserAdminService {
                                 .setContent(MailerHelper.loadTemplate(MailerHelper.TEMPLATE_CHANGE_STATUS_ADMIN, vars));
                 mailerHelper.send(mailerDefaultRequest);
 
-                userActivityLogHelper.saveLog("vừa xóa tài khoản admin: " + adminToDelete.getName() + " ("
-                                + adminToDelete.getCode() + ")");
+                userActivityLogHelper.saveLog("vừa xóa tài khoản admin: " + adminToDelete.getCode() + " - "
+                                + adminToDelete.getName());
                 return RouterHelper.responseSuccess("Xóa tài khoản admin thành công", userAdminId);
         }
 }

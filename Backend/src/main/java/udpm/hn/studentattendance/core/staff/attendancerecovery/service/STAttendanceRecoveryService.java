@@ -10,7 +10,7 @@ public interface STAttendanceRecoveryService {
 
     ResponseEntity<?> getListAttendanceRecovery(STAttendanceRecoveryRequest request);
 
-    ResponseEntity<?> deleteAttendanceRecovery(String attendanceRecoveryId, STStudentAttendanceRecoveryAddRequest request);
+    ResponseEntity<?> deleteAttendanceRecovery(String attendanceRecoveryId);
 
     ResponseEntity<?> getAllSemester();
 
@@ -25,5 +25,11 @@ public interface STAttendanceRecoveryService {
     ResponseEntity<?> getAllHistoryLogByEvent(String idImportLog, EXDataRequest request);
 
     ResponseEntity<?> getAllHistoryLogDetailEvent(String idImportLog);
+
+    Integer getAllImportStudentSuccess(String idImportLog, String userId, String facilityId, Integer type);
+
+    ResponseEntity<?> isHasStudentAttendanceRecovery(String idAttendanceRecovery);
+
+    ResponseEntity<?> deleteAttendanceRecordByAttendanceRecovery(String idAttendanceRecovery);
 
 }

@@ -230,7 +230,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     }
 
     @Override
-    public ResponseEntity<?> getAvater(String urlImage) {
+    public ResponseEntity<?> getAvatar(String urlImage) {
         return RouterHelper.responseSuccess("Lấy dữ liệu avatar thành công", AppUtils.imageUrlToBase64(urlImage));
     }
 

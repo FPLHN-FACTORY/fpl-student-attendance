@@ -529,11 +529,12 @@ onMounted(() => {
                   }}</a-typography-link>
                 </template>
                 <template v-else-if="column.dataIndex === 'description'">
-                  <a-tooltip title="Xem, sửa chi tiết buổi dạy">
+                  <a-tooltip v-if="record.description" title="Xem, sửa chi tiết buổi dạy">
                     <a-typography-link @click="handleShowDescription(record)"
                       >Chi tiết</a-typography-link
                     >
                   </a-tooltip>
+                  <span v-else>Không có mô tả</span>
                 </template>
               </template>
               <!-- Cột action -->
@@ -682,11 +683,12 @@ onMounted(() => {
                   </a-tag>
                 </template>
                 <template v-else-if="column.dataIndex === 'description'">
-                  <a-tooltip title="Xem, sửa chi tiết buổi dạy">
+                  <a-tooltip v-if="record.description" title="Xem, sửa chi tiết buổi dạy">
                     <a-typography-link @click="handleShowDescription(record)"
                       >Chi tiết</a-typography-link
                     >
                   </a-tooltip>
+                  <span v-else>Không có mô tả</span>
                 </template>
                 <template v-else-if="column.dataIndex === 'factoryName'">
                   <a-typography-link @click="handleShowFactory(record)">{{
@@ -717,7 +719,7 @@ onMounted(() => {
             v-model:value="formUpdateData.description"
             rows="4"
             class="w-100"
-            placeholder="Không có nội dung nào"
+            placeholder="Không có mô tả"
           />
         </a-form-item>
         <a-form-item label="Điểm danh muộn" name="lateArrival">

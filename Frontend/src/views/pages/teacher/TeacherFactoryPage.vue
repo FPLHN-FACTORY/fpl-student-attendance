@@ -189,7 +189,7 @@ const handleShowDescription = (text) => {
   Modal.info({
     title: 'Mô tả nhóm xưởng',
     type: 'info',
-    content: text,
+    content: text || 'Không có mô tả',
     okText: 'Đóng',
     okButtonProps: {
       class: 'btn-gray',
@@ -289,11 +289,14 @@ onMounted(() => {
             <template #bodyCell="{ column, record, index }">
               <template v-if="column.dataIndex">
                 <template
-                  v-if="column.dataIndex === 'factoryDescription' && record.factoryDescription"
+                  v-if="column.dataIndex === 'factoryDescription'"
                 >
-                  <a-typography-link @click="handleShowDescription(record.factoryDescription)"
+                  <a-typography-link 
+                    v-if="record.factoryDescription"
+                    @click="handleShowDescription(record.factoryDescription)"
                     >Chi tiết</a-typography-link
                   >
+                  <span v-else>Không có mô tả</span>
                 </template>
 
                 <template v-if="column.dataIndex === 'totalStudent'">

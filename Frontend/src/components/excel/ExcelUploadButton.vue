@@ -34,6 +34,7 @@ const props = defineProps({
   fetchUrl: { type: String, default: null },
   onSuccess: { type: Function, default: null },
   onError: { type: Function, default: null },
+  onBeforeImport: { type: Function, default: null },
   didParseCellPDF: { type: Function, default: null },
   data: { type: Object, default: {} },
   showDownloadTemplate: { type: Boolean, default: false },
@@ -76,7 +77,25 @@ const handleShowDetail = (id) => {
   fetchDataHistoryLogDetail(id)
 }
 
-const handleBeforeUpload = (file) => {
+const handleBeforeUpload = async (file) => {
+  console.log('handleBeforeUpload called with:', { file: file.name, hasOnBeforeImport: !!props.onBeforeImport, data: props.data })
+  
+  if (props.onBeforeImport && typeof props.onBeforeImport === 'function') {
+    try {
+      console.log('Calling onBeforeImport with data:', props.data)
+      const shouldContinue = await props.onBeforeImport(props.data)
+      console.log('onBeforeImport result:', shouldContinue)
+      if (!shouldContinue) {
+        console.log('onBeforeImport returned false, cancelling upload')
+        return false
+      }
+    } catch (error) {
+      console.error('Error in onBeforeImport:', error)
+      return false
+    }
+  }
+  
+  console.log('Proceeding with file upload')
   serviceStore.enqueue(file, {
     fetchUrl: props.fetchUrl,
     onSuccess: props.onSuccess,

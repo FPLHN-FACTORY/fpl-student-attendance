@@ -198,7 +198,7 @@ watch(
             <a-collapse-panel>
               <template #header><FilterFilled /> Bộ lọc</template>
               <div class="row g-3">
-                <div class="col-lg-3 col-md-12 col-sm-12">
+                <div class="col-lg-8 col-md-8 col-sm-12">
                   <div class="label-title">Từ khoá:</div>
                   <a-input
                     v-model:value="dataFilter.searchQuery"
@@ -211,7 +211,7 @@ watch(
                   </a-input>
                 </div>
                
-                <div class="col-lg-3 col-md-6 col-sm-6">
+                <div class="col-lg-4 col-md-6 col-sm-12">
                   <div class="label-title">Cơ sở:</div>
                   <a-select
                     v-model:value="dataFilter.facilityId"
@@ -248,7 +248,7 @@ watch(
               class="nowrap"
               :dataSource="list"
               :columns="columns"
-              :loading="isLoading"
+              :loading="loadingStore.isLoading"
               :pagination="pagination"
               :scroll="{ x: 1000 }"
               @change="handleTableChange"
@@ -258,8 +258,7 @@ watch(
                   {{ (pagination.current - 1) * pagination.pageSize + index + 1 }}
                 </template>
                 <template v-else-if="column.dataIndex === 'role'">
-                  <a-tag v-if="record.role === 1" color="geekblue"> Phụ trách xưởng </a-tag>
-                  <a-tag v-else-if="record.role === 3" color="blue"> Giảng viên </a-tag>
+                  <a-tag v-if="record.role === 1" color="blue"> Phụ trách xưởng </a-tag>
                   <a-tag v-else color="purple"> Admin </a-tag>
                 </template>
                 <template v-else-if="column.dataIndex === 'facilityName'">

@@ -26,7 +26,7 @@ public interface AuthenticationService {
 
     ResponseEntity<?> refreshToken(String refreshToken);
 
-    ResponseEntity<?> getAvater(String urlImage);
+    ResponseEntity<?> getAvatar(String urlImage);
 
     ResponseEntity<?> getAllSemester();
 

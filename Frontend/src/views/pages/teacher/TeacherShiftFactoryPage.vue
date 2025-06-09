@@ -167,7 +167,7 @@ const handleShowDescription = (text) => {
   Modal.info({
     title: 'Nội dung chi tiết',
     type: 'info',
-    content: text,
+    content: text || 'Buổi học chưa có nội dung',
     okText: 'Đóng',
     okButtonProps: {
       class: 'btn-gray',
@@ -315,10 +315,14 @@ watch(
               @change="handleTableChange"
             >
               <template #bodyCell="{ column, record }">
-                <template v-if="column.dataIndex === 'description' && record.description">
-                  <a-typography-link @click="handleShowDescription(record.description)"
-                    >Chi tiết</a-typography-link
+                <template v-if="column.dataIndex === 'description'">
+                  <a-typography-link 
+                    v-if="record.description" 
+                    @click="handleShowDescription(record.description)"
                   >
+                    Chi tiết
+                  </a-typography-link>
+                  <span v-else>Không có mô tả</span>
                 </template>
                 <template v-if="column.dataIndex === 'link' && record.link">
                   <a target="_blank" :href="record.link">Link</a>

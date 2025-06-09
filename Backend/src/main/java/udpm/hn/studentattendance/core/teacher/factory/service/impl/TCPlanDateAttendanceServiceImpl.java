@@ -4,31 +4,17 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import udpm.hn.studentattendance.core.staff.plan.model.request.SPDFilterPlanDateAttendanceRequest;
-import udpm.hn.studentattendance.core.staff.plan.model.request.SPDModifyPlanDateAttendanceRequest;
-import udpm.hn.studentattendance.core.staff.plan.model.response.SPDPlanDateAttendanceResponse;
-import udpm.hn.studentattendance.core.staff.plan.model.response.SPDPlanDateStudentResponse;
-import udpm.hn.studentattendance.core.staff.plan.repositories.SPDAttendanceRepository;
-import udpm.hn.studentattendance.core.staff.plan.repositories.SPDPlanDateRepository;
-import udpm.hn.studentattendance.core.staff.plan.repositories.SPDUserStudentRepository;
-import udpm.hn.studentattendance.core.staff.plan.services.SPDPlanDateAttendanceService;
-import udpm.hn.studentattendance.core.student.schedule.repository.STDScheduleAttendanceRepository;
+
 import udpm.hn.studentattendance.core.teacher.factory.model.request.TCFilterPlanDateAttendanceRequest;
 import udpm.hn.studentattendance.core.teacher.factory.model.response.TCPlanDateAttendanceResponse;
 import udpm.hn.studentattendance.core.teacher.factory.model.response.TCPlanDateStudentResponse;
 import udpm.hn.studentattendance.core.teacher.factory.repository.TCAttendanceRepository;
-import udpm.hn.studentattendance.core.teacher.factory.repository.TCPlanDateRepository;
 import udpm.hn.studentattendance.core.teacher.factory.service.TCPlanDateAttendanceService;
-import udpm.hn.studentattendance.entities.Attendance;
-import udpm.hn.studentattendance.entities.PlanDate;
-import udpm.hn.studentattendance.entities.UserStudent;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
 import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.helpers.SessionHelper;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
-import udpm.hn.studentattendance.infrastructure.constants.AttendanceStatus;
-import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
-import udpm.hn.studentattendance.utils.DateTimeUtils;
+
 
 import java.util.Optional;
 

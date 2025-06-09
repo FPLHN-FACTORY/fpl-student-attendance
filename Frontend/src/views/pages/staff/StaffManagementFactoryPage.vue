@@ -378,7 +378,7 @@ const configImportExcel = {
   },
   showDownloadTemplate: true,
   showHistoryLog: true,
-  showExport: true,
+  showExport: false,
   btnImport: 'Import nhóm xưởng',
   btnExport: 'Export nhóm xưởng',
 }
@@ -399,7 +399,7 @@ const handleShowDescription = (text) => {
   Modal.info({
     title: 'Mô tả nhóm xưởng',
     type: 'info',
-    content: text,
+    content: text || 'Không có mô tả',
     okText: 'Đóng',
     okButtonProps: {
       class: 'btn-gray',
@@ -679,7 +679,7 @@ onMounted(() => {
             :columns="columns"
             :pagination="pagination"
             @change="handleTableChange"
-            :loading="isLoading"
+            :loading="loadingStore.isLoading"
             :scroll="{ x: 'auto' }"
           >
             <template #bodyCell="{ column, record, index }">
@@ -712,12 +712,14 @@ onMounted(() => {
                     </a-tag>
                   </span>
                 </template>
-                <template
-                  v-if="column.dataIndex === 'factoryDescription' && record.factoryDescription"
-                >
-                  <a-typography-link @click="handleShowDescription(record.factoryDescription)"
-                    >Chi tiết</a-typography-link
+                <template v-if="column.dataIndex === 'factoryDescription'">
+                  <a-typography-link 
+                    v-if="record.factoryDescription" 
+                    @click="handleShowDescription(record.factoryDescription)"
                   >
+                    Chi tiết
+                  </a-typography-link>
+                  <span v-else>Không có mô tả</span>
                 </template>
               </template>
               <template v-else-if="column.key === 'actions'">
