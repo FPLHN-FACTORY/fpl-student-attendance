@@ -13,7 +13,12 @@ import { REDIRECT_LOGIN_ADMIN } from '@/constants/authenticationConstant'
 import useAuthStore from '@/stores/useAuthStore'
 import useLoadingStore from '@/stores/useLoadingStore'
 import { decodeBase64 } from '@/utils/utils'
-import { GLOBAL_ROUTE_NAMES, PREFIX_ADMIN_PANEL, URL_ADMIN_PANEL } from '@/constants/routesConstant'
+import {
+  BASE_URL,
+  GLOBAL_ROUTE_NAMES,
+  PREFIX_ADMIN_PANEL,
+  URL_ADMIN_PANEL,
+} from '@/constants/routesConstant'
 import { ROUTE_NAMES_API } from '@/router/authenticationRoute'
 import { ROLE } from '@/constants'
 import { message } from 'ant-design-vue'

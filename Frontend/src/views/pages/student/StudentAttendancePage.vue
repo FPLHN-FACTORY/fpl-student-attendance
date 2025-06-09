@@ -245,10 +245,10 @@ const getCurrentLocation = async () => {
 onMounted(async () => {
   breadcrumbStore.setRoutes(breadcrumb.value)
   loadingPage.show()
-  await getCurrentLocation()
   fetchDataStudentInfo()
   fetchDataList()
-  await faceIDStore.loadModels()
+  faceIDStore.loadModels()
+  await getCurrentLocation()
   loadingPage.hide()
 })
 
