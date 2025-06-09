@@ -13,6 +13,7 @@ import {
   EditFilled,
   FilterFilled,
   HistoryOutlined,
+  InfoCircleFilled,
   PlusOutlined,
   SearchOutlined,
   UnorderedListOutlined,
@@ -318,6 +319,13 @@ const handleShowImportHistory = (idImportLog) => {
     })
 }
 
+const columnsDetail = ref(
+  autoAddColumnWidth([
+    { title: 'Dòng', dataIndex: 'line', key: 'line' },
+    { title: 'Trạng thái', dataIndex: 'status', key: 'status' },
+    { title: 'Nội dung', dataIndex: 'message', key: 'message' },
+  ])
+)
 const importHistoryDetailLog = ref([])
 const isShowHistoryLogDetail = ref(false)
 
@@ -336,6 +344,7 @@ const handleShowImportLogDetail = (id) => {
       loadingStore.hide()
     })
 }
+
 onMounted(() => {
   breadcrumbStore.setRoutes(breadcrumb.value)
   fetchAttendanceRecovery()
@@ -552,7 +561,32 @@ onMounted(() => {
           <a-tag :color="record.totalError > 0 ? 'red' : ''">{{ record.totalError }}</a-tag>
         </template>
         <template v-if="column.key === 'actions'">
-          <a-typography-link @click="handleShowDetail(record.id)">Chi tiết</a-typography-link>
+          <a-typography-link @click="handleShowImportLogDetail(record.id)"
+            >Chi tiết</a-typography-link
+          >
+        </template>
+      </template>
+    </a-table>
+  </a-modal>
+
+  <a-modal v-model:open="isShowHistoryLogDetail" :width="800">
+    <template #title><InfoCircleFilled class="text-primary" /> Chi tiết import excel </template>
+    <template #footer>
+      <a-button @click="isShowHistoryLogDetail = false" class="btn-gray">Đóng</a-button>
+    </template>
+    <a-table
+      rowKey="id"
+      class="nowrap"
+      :dataSource="importHistoryDetailLog"
+      :columns="columnsDetail"
+      :pagination="false"
+      :scroll="{ x: 'auto' }"
+    >
+      <template #bodyCell="{ column, record }">
+        <template v-if="column.dataIndex === 'status'">
+          <a-tag :color="record.status === 1 ? 'green' : 'red'">{{
+            record.status === 1 ? 'Thành công' : 'Thất bại'
+          }}</a-tag>
         </template>
       </template>
     </a-table>
