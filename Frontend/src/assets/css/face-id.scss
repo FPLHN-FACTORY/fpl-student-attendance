@@ -45,7 +45,7 @@
   height: 250px;
   background: #000;
   border-radius: 10px;
-  &::after {
+  .face-background {
     content: '';
     position: absolute;
     inset: 0;
@@ -61,11 +61,11 @@
   }
   video {
     position: absolute;
-    left: 0;
+    // left: 0;
     top: 0;
     height: 100%;
-    width: 100%;
-    object-fit: cover;
+    // width: 100%;
+    // object-fit: cover;
     transform: scaleX(-1);
   }
   canvas {
@@ -217,6 +217,9 @@
       & > .dot {
         color: #ffffff;
         opacity: 1;
+      }
+      & + .face-background {
+        background: #222;
       }
     }
 
