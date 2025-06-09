@@ -1,15 +1,17 @@
 import { Modal } from 'ant-design-vue'
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import * as faceapi from 'face-api.js'
+import * as tf from '@tensorflow/tfjs'
+import * as faceapi from '@vladmandic/face-api'
 
 const DEEP_CHECK = true
 const TIME_LOOP_RECHECK = 400
-const THRESHOLD_P = 10
+const THRESHOLD_P = 15
 const THRESHOLD_X = 5
 const THRESHOLD_Y = 25
+const THRESHOLD_EXPRESSIONS = 0.8
 const MIN_BRIGHTNESS = 100
-const MAX_BRIGHTNESS = 180
+const MAX_BRIGHTNESS = 220
 const THRESHOLD_LIGHT = 80
 const REGION_WIDTH_LIGHT = 10
 
@@ -36,13 +38,19 @@ const useFaceIDStore = defineStore('faceID', () => {
     if (isFullStep) {
       switch (step.value) {
         case -1:
-          return (textStep.value = 'Camera quá tối, vui lòng tăng độ sáng')
+          return (textStep.value = 'Camera quá tối, Vui lòng tăng độ sáng')
         case -2:
-          return (textStep.value = 'Camera quá sáng, vui lòng giảm độ sáng')
+          return (textStep.value = 'Camera quá sáng, Vui lòng giảm độ sáng')
         case -3:
           return (textStep.value = 'Ánh sáng không đều. Vui lòng thử lại')
         case -4:
-          return (textStep.value = 'Không được biểu cảm. Vui lòng thử lại')
+          return (textStep.value = 'Vui lòng không biểu cảm')
+        case -5:
+          return (textStep.value = 'Vui lòng không đeo khẩu trang')
+        case -6:
+          return (textStep.value = 'Vui lòng không đeo kính')
+        case -7:
+          return (textStep.value = 'Vui lòng không che mặt')
         case 0:
           return (textStep.value = 'Vui lòng nhìn thẳng')
         case 1:
@@ -54,13 +62,19 @@ const useFaceIDStore = defineStore('faceID', () => {
 
     switch (step.value) {
       case -1:
-        return (textStep.value = 'Camera quá tối, vui lòng tăng độ sáng')
+        return (textStep.value = 'Camera quá tối, Vui lòng tăng độ sáng')
       case -2:
-        return (textStep.value = 'Camera quá sáng, vui lòng giảm độ sáng')
+        return (textStep.value = 'Camera quá sáng, Vui lòng giảm độ sáng')
       case -3:
         return (textStep.value = 'Ánh sáng không đều. Vui lòng thử lại')
       case -4:
-        return (textStep.value = 'Không được biểu cảm. Vui lòng thử lại')
+        return (textStep.value = 'Vui lòng không biểu cảm')
+      case -5:
+        return (textStep.value = 'Vui lòng không đeo khẩu trang')
+      case -6:
+        return (textStep.value = 'Vui lòng không đeo kính')
+      case -7:
+        return (textStep.value = 'Vui lòng không che mặt')
       case 0:
         return (textStep.value = 'Vui lòng nhìn thẳng')
       case 1:
@@ -92,7 +106,7 @@ const useFaceIDStore = defineStore('faceID', () => {
     isLoading.value = true
     try {
       const constraints = {
-        video: { facingMode: 'user' },
+        video: { facingMode: 'user', width: { ideal: 320 }, height: { ideal: 320 } },
       }
       const stream = await navigator.mediaDevices.getUserMedia(constraints)
       if (video.value) {
@@ -124,12 +138,18 @@ const useFaceIDStore = defineStore('faceID', () => {
     }
   }
 
+  let glassesModel
+  let maskModel
+  let hideFaceModel
   const loadModels = async () => {
-    DEEP_CHECK && (await faceapi.nets.ssdMobilenetv1.loadFromUri('/models'))
-    !DEEP_CHECK && (await faceapi.nets.tinyFaceDetector.loadFromUri('/models'))
-    await faceapi.nets.faceLandmark68Net.loadFromUri('/models')
-    await faceapi.nets.faceRecognitionNet.loadFromUri('/models')
-    await faceapi.nets.faceExpressionNet.loadFromUri('/models')
+    DEEP_CHECK && (await faceapi.nets.ssdMobilenetv1.loadFromUri('/models/face'))
+    !DEEP_CHECK && (await faceapi.nets.tinyFaceDetector.loadFromUri('/models/face'))
+    await faceapi.nets.faceLandmark68Net.loadFromUri('/models/face')
+    await faceapi.nets.faceRecognitionNet.loadFromUri('/models/face')
+    await faceapi.nets.faceExpressionNet.loadFromUri('/models/face')
+    glassesModel = await tf.loadLayersModel('/models/glasses/model.json')
+    maskModel = await tf.loadLayersModel('/models/maskes/model.json')
+    hideFaceModel = await tf.loadLayersModel('/models/hideface/model.json')
   }
 
   const detectFace = async () => {
@@ -145,25 +165,7 @@ const useFaceIDStore = defineStore('faceID', () => {
 
     let faceDescriptor = null
 
-    const getAverageBrightness = async (faceBox) => {
-      const cvs = document.createElement('canvas')
-      const context = cvs.getContext('2d')
-      cvs.width = faceBox.width
-      cvs.height = faceBox.height
-
-      context.drawImage(
-        video.value,
-        faceBox.x,
-        faceBox.y,
-        cvs.width,
-        cvs.height,
-        0,
-        0,
-        faceBox.width,
-        faceBox.height,
-      )
-
-      // Lấy vùng trung tâm khuôn mặt (1/3 giữa)
+    const getAverageBrightness = async (cvs, context) => {
       const regionX = Math.floor(cvs.width / 3)
       const regionY = Math.floor(cvs.height / 3)
       const regionW = Math.floor(cvs.width / 3)
@@ -186,26 +188,12 @@ const useFaceIDStore = defineStore('faceID', () => {
       return averageBrightness
     }
 
-    const isLightBalance = async (landmarks, faceBox) => {
-      const cvs = document.createElement('canvas')
-      const context = cvs.getContext('2d')
-      cvs.width = faceBox.width
-      cvs.height = faceBox.height
-
-      context.drawImage(
-        video.value,
-        faceBox.x,
-        faceBox.y,
-        cvs.width,
-        cvs.height,
-        0,
-        0,
-        faceBox.width,
-        faceBox.height,
-      )
-
-      const frame = context.getImageData(0, 0, cvs.width, cvs.height)
-      const frameData = frame.data
+    const isLightBalance = async (landmarks, faceBox, cvs, ctx) => {
+      const frameData = ctx.getImageData(0, 0, cvs.width, cvs.height)
+      const frame = {
+        width: cvs.width,
+        height: cvs.height,
+      }
 
       const positions = landmarks.positions
       const leftEyebrow = positions.slice(17, 22)
@@ -306,74 +294,53 @@ const useFaceIDStore = defineStore('faceID', () => {
       return -2
     }
 
-    const checkObstruction = (landmarks, video, faceBox) => {
+    const isWithMask = async (faceBox) => {
+      const cvs = createCanvas()
+      const input = tf.browser
+        .fromPixels(cvs)
+        .resizeNearestNeighbor([224, 224])
+        .toFloat()
+        .div(255)
+        .expandDims()
+      const result = await maskModel.predict(input).data()
+      input.dispose()
+      return result[1] > 0.9
+    }
+
+    const isWithGlasses = async (faceBox) => {
+      const cvs = createCanvas()
+      const input = tf.browser
+        .fromPixels(cvs)
+        .resizeNearestNeighbor([224, 224])
+        .toFloat()
+        .div(255)
+        .expandDims()
+      const result = await glassesModel.predict(input).data()
+      input.dispose()
+      return result[1] > 0.9
+    }
+
+    const isHideFace = async (faceBox) => {
+      const cvs = createCanvas()
+      const input = tf.browser
+        .fromPixels(cvs)
+        .resizeNearestNeighbor([224, 224])
+        .toFloat()
+        .div(255)
+        .expandDims()
+      const result = await hideFaceModel.predict(input).data()
+      input.dispose()
+      return result[1] > 0.8
+    }
+
+    const createCanvas = () => {
       const cvs = document.createElement('canvas')
       const ctx = cvs.getContext('2d')
-      cvs.width = faceBox.width
-      cvs.height = faceBox.height
+      cvs.width = video.value.videoWidth
+      cvs.height = video.value.videoHeight
 
-      ctx.drawImage(
-        video,
-        faceBox.x,
-        faceBox.y,
-        faceBox.width,
-        faceBox.height,
-        0,
-        0,
-        faceBox.width,
-        faceBox.height,
-      )
-
-      const getStdDev = (points) => {
-        const luminances = []
-
-        points.forEach((point) => {
-          const x = Math.round(point.x - faceBox.x)
-          const y = Math.round(point.y - faceBox.y)
-
-          for (let i = -3; i <= 3; i++) {
-            for (let j = -3; j <= 3; j++) {
-              const px = x + i
-              const py = y + j
-              if (px < 0 || px >= cvs.width || py < 0 || py >= cvs.height) continue
-
-              const [r, g, b] = ctx.getImageData(px, py, 1, 1).data
-              const lum = 0.299 * r + 0.587 * g + 0.114 * b
-              luminances.push(lum)
-            }
-          }
-        })
-
-        const mean = luminances.reduce((a, b) => a + b, 0) / luminances.length
-        const variance =
-          luminances.reduce((sum, val) => sum + (val - mean) ** 2, 0) / luminances.length
-        return Math.sqrt(variance)
-      }
-
-      const mouth = landmarks.getMouth()
-      const nose = landmarks.getNose()
-      const leftEye = landmarks.getLeftEye()
-      const rightEye = landmarks.getRightEye()
-      const cheeks = [
-        landmarks.positions[2],
-        landmarks.positions[3],
-        landmarks.positions[13],
-        landmarks.positions[14],
-      ]
-
-      const stdMouth = getStdDev(mouth)
-      const stdNose = getStdDev(nose)
-      const stdEyeL = getStdDev(leftEye)
-      const stdEyeR = getStdDev(rightEye)
-      const stdCheek = getStdDev(cheeks)
-
-      const isObstructed =
-        stdMouth < stdCheek * 0.6 ||
-        stdNose < stdCheek * 0.6 ||
-        stdEyeL < stdCheek * 0.6 ||
-        stdEyeR < stdCheek * 0.6
-
-      return isObstructed
+      ctx.drawImage(video.value, 0, 0, cvs.width, cvs.height)
+      return cvs
     }
 
     const captureFace = () => {
@@ -424,8 +391,42 @@ const useFaceIDStore = defineStore('faceID', () => {
         }
 
         const faceBox = detections[0].detection.box
+        const cvs = document.createElement('canvas')
+        const ctx = cvs.getContext('2d')
+        cvs.width = faceBox.width
+        cvs.height = faceBox.height
 
-        const avgBrightness = await getAverageBrightness(faceBox)
+        ctx.drawImage(
+          video.value,
+          faceBox.x,
+          faceBox.y,
+          cvs.width,
+          cvs.height,
+          0,
+          0,
+          faceBox.width,
+          faceBox.height,
+        )
+
+        const avgBrightness = await getAverageBrightness(cvs, ctx)
+
+        if (await isWithGlasses(faceBox)) {
+          step.value = -6
+          faceDescriptor = null
+          return renderTextStep()
+        }
+
+        if (await isWithMask(faceBox)) {
+          step.value = -5
+          faceDescriptor = null
+          return renderTextStep()
+        }
+
+        if (await isHideFace(faceBox)) {
+          step.value = -7
+          faceDescriptor = null
+          return renderTextStep()
+        }
 
         if (avgBrightness < MIN_BRIGHTNESS) {
           step.value = -1
@@ -439,30 +440,24 @@ const useFaceIDStore = defineStore('faceID', () => {
           return renderTextStep()
         }
 
-        if (!(await isLightBalance(landmarks, faceBox)) && angle === 0) {
+        if (!(await isLightBalance(landmarks, faceBox, cvs, ctx)) && angle === 0) {
           step.value = -3
           faceDescriptor = null
           return renderTextStep()
         }
 
         if (
-          expressions.happy > 0.7 ||
-          expressions.surprised > 0.7 ||
-          expressions.sad > 0.7 ||
-          expressions.surprised > 0.7 ||
-          expressions.disgusted > 0.7 ||
-          expressions.fearful > 0.7
+          expressions.happy > THRESHOLD_EXPRESSIONS ||
+          expressions.surprised > THRESHOLD_EXPRESSIONS ||
+          expressions.sad > THRESHOLD_EXPRESSIONS ||
+          expressions.surprised > THRESHOLD_EXPRESSIONS ||
+          expressions.disgusted > THRESHOLD_EXPRESSIONS ||
+          expressions.fearful > THRESHOLD_EXPRESSIONS
         ) {
           step.value = -4
           faceDescriptor = null
           return renderTextStep()
         }
-
-        // if (checkObstruction(landmarks, video.value, faceBox)) {
-        //   step.value = -5
-        //   faceDescriptor = null
-        //   return renderTextStep()
-        // }
 
         if (step.value < 0) {
           step.value = 0

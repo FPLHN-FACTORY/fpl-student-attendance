@@ -318,6 +318,7 @@ watch(
           </div>
         </div>
       </div>
+      <div class="face-background"></div>
       <div class="face-id-loading" v-show="faceIDStore.isLoading">
         <div class="bg-loading">
           <div></div>
