@@ -136,24 +136,32 @@ const handleAddStudent = () => {
     message.error('Vui lòng nhập đầy đủ thông tin')
     return
   }
-  loadingStore.show()
-  requestAPI
-    .post(API_ROUTES_STAFF.FETCH_DATA_STUDENT, newStudent)
-    .then(() => {
-      message.success('Thêm sinh viên thành công')
-      modalAdd.value = false
-      fetchStudents()
-      clearNewStudentForm()
-    })
-    .catch((error) => {
-      message.error(
-        (error.response && error.response.data && error.response.data.message) ||
-          'Lỗi khi thêm sinh viên',
-      )
-    })
-    .finally(() => {
-      loadingStore.hide()
-    })
+  Modal.confirm({
+    title: 'Xác nhận thêm mới',
+    content: 'Bạn có chắc chắn muốn thêm sinh viên mới này?',
+    okText: 'Tiếp tục',
+    cancelText: 'Hủy bỏ',
+    onOk() {
+      loadingStore.show()
+      requestAPI
+        .post(API_ROUTES_STAFF.FETCH_DATA_STUDENT, newStudent)
+        .then(() => {
+          message.success('Thêm sinh viên thành công')
+          modalAdd.value = false
+          fetchStudents()
+          clearNewStudentForm()
+        })
+        .catch((error) => {
+          message.error(
+            (error.response && error.response.data && error.response.data.message) ||
+              'Lỗi khi thêm sinh viên',
+          )
+        })
+        .finally(() => {
+          loadingStore.hide()
+        })
+    },
+  })
 }
 
 // Hàm mở modal cập nhật và load chi tiết sinh viên
@@ -210,23 +218,31 @@ const updateStudent = () => {
     message.error('Vui lòng nhập đầy đủ thông tin')
     return
   }
-  loadingStore.show()
-  requestAPI
-    .put(API_ROUTES_STAFF.FETCH_DATA_STUDENT, detailStudent)
-    .then(() => {
-      message.success('Cập nhật sinh viên thành công')
-      modalUpdate.value = false
-      fetchStudents()
-    })
-    .catch((error) => {
-      message.error(
-        (error.response && error.response.data && error.response.data.message) ||
-          'Lỗi khi cập nhật sinh viên',
-      )
-    })
-    .finally(() => {
-      loadingStore.hide()
-    })
+  Modal.confirm({
+    title: 'Xác nhận cập nhật',
+    content: 'Bạn có chắc chắn muốn cập nhật thông tin sinh viên này?',
+    okText: 'Tiếp tục',
+    cancelText: 'Hủy bỏ',
+    onOk() {
+      loadingStore.show()
+      requestAPI
+        .put(API_ROUTES_STAFF.FETCH_DATA_STUDENT, detailStudent)
+        .then(() => {
+          message.success('Cập nhật sinh viên thành công')
+          modalUpdate.value = false
+          fetchStudents()
+        })
+        .catch((error) => {
+          message.error(
+            (error.response && error.response.data && error.response.data.message) ||
+              'Lỗi khi cập nhật sinh viên',
+          )
+        })
+        .finally(() => {
+          loadingStore.hide()
+        })
+    },
+  })
 }
 
 // Hàm đổi trạng thái sinh viên
@@ -306,6 +322,14 @@ const handleClearFilter = () => {
   fetchStudents() // or whatever your fetch function is named
 }
 
+const clearUpdateStudentForm = () => {
+  detailStudent.id = ''
+  detailStudent.code = ''
+  detailStudent.name = ''
+  detailStudent.email = ''
+  modalUpdate.value = false
+}
+
 const handleShowModalAdd = () => {
   newStudent.code = null
   newStudent.email = null
@@ -322,69 +346,72 @@ onMounted(() => {
 
 <template>
   <div class="container-fluid">
-    <!-- Bộ lọc tìm kiếm -->
-    <div class="row g-3">
-      <div class="col-12">
-        <a-card :bordered="false" class="cart mb-3">
-          <template #title> <FilterFilled /> Bộ lọc </template>
-          <div class="row g-3">
-            <!-- Input tìm kiếm theo mã, tên, email -->
-            <div class="col-md-6 col-sm-12">
-              <div class="label-title">Từ khoá:</div>
-              <a-input
-                v-model:value="filter.searchQuery"
-                placeholder="Tìm kiếm theo mã, tên, email"
-                allowClear
-                @change="fetchStudents"
-              >
-                <template #prefix>
-                  <SearchOutlined />
-                </template>
-              </a-input>
-            </div>
-            <!-- Combobox trạng thái -->
-            <div class="col-md-6 col-sm-12">
-              <div class="label-title">Trạng thái:</div>
-              <a-select
-                v-model:value="filter.studentStatus"
-                placeholder="Chọn trạng thái"
-                allowClear
-                class="w-100"
-                @change="fetchStudents"
-              >
-                <a-select-option :value="''">Tất cả trạng thái</a-select-option>
-                <a-select-option value="ACTIVE">Hoạt động</a-select-option>
-                <a-select-option value="INACTIVE">Không hoạt động</a-select-option>
-              </a-select>
-            </div>
-          </div>
-          <div class="row">
-            <div class="col-12">
-              <div class="d-flex justify-content-center flex-wrap gap-2 mt-3">
-                <a-button class="btn-light" @click="fetchStudents"> <FilterFilled /> Lọc </a-button>
-                <a-button class="btn-gray" @click="handleClearFilter"> Huỷ lọc </a-button>
-              </div>
-            </div>
-          </div>
-        </a-card>
-      </div>
-    </div>
-
     <!-- Danh sách sinh viên -->
     <div class="row g-3">
       <div class="col-12">
+        <a-card :bordered="false" class="cart no-body-padding">
+          <a-collapse ghost>
+            <a-collapse-panel>
+              <template #header><FilterFilled /> Bộ lọc</template>
+              <div class="row g-3">
+                <!-- Input tìm kiếm theo mã, tên, email -->
+                <div class="col-md-6 col-sm-12">
+                  <div class="label-title">Từ khoá:</div>
+                  <a-input
+                    v-model:value="filter.searchQuery"
+                    placeholder="Tìm kiếm theo mã, tên, email"
+                    allowClear
+                    @change="fetchStudents"
+                  >
+                    <template #prefix>
+                      <SearchOutlined />
+                    </template>
+                  </a-input>
+                </div>
+                <!-- Combobox trạng thái -->
+                <div class="col-md-6 col-sm-12">
+                  <div class="label-title">Trạng thái:</div>
+                  <a-select
+                    v-model:value="filter.studentStatus"
+                    placeholder="Chọn trạng thái"
+                    allowClear
+                    class="w-100"
+                    @change="fetchStudents"
+                  >
+                    <a-select-option :value="''">Tất cả trạng thái</a-select-option>
+                    <a-select-option value="ACTIVE">Hoạt động</a-select-option>
+                    <a-select-option value="INACTIVE">Không hoạt động</a-select-option>
+                  </a-select>
+                </div>
+
+                <div class="col-12">
+                  <div class="d-flex justify-content-center flex-wrap gap-2">
+                    <a-button class="btn-light" @click="fetchStudents">
+                      <FilterFilled /> Lọc
+                    </a-button>
+                    <a-button class="btn-gray" @click="handleClearFilter"> Huỷ lọc </a-button>
+                  </div>
+                </div>
+              </div>
+            </a-collapse-panel>
+          </a-collapse>
+        </a-card>
+      </div>
+
+      <div class="col-12">
         <a-card :bordered="false" class="cart">
           <template #title> <UnorderedListOutlined /> Danh sách sinh viên </template>
-          <div class="d-flex justify-content-end mb-3 flex-wrap gap-3">
+          <div class="d-flex justify-content-end flex-wrap gap-3 mb-2">
             <ExcelUploadButton v-bind="configImportExcel" />
 
             <a-tooltip title="Thêm mới sinh viên">
               <!-- Sử dụng nút primary kiểu filled -->
               <a-button type="primary" @click="handleShowModalAdd">
-                <PlusOutlined /> Thêm
+                <PlusOutlined /> Thêm sinh viên
               </a-button>
             </a-tooltip>
           </div>
+
           <a-table
             :dataSource="students"
             :columns="columns"
@@ -468,33 +495,65 @@ onMounted(() => {
       v-model:open="modalAdd"
       title="Thêm sinh viên"
       @ok="handleAddStudent"
+      :okButtonProps="{ loading: isLoading }"
       @cancel="clearNewStudentForm"
       @close="clearNewStudentForm"
     >
       <a-form layout="vertical">
         <a-form-item label="Mã sinh viên" required>
-          <a-input v-model:value="newStudent.code" placeholder="--Nhập mã sinh viên--" />
+          <a-input
+            v-model:value="newStudent.code"
+            placeholder="--Nhập mã sinh viên--"
+            @keyup.enter="handleAddStudent"
+          />
         </a-form-item>
         <a-form-item label="Tên sinh viên" required>
-          <a-input v-model:value="newStudent.name" placeholder="--Nhập tên sinh viên--" />
+          <a-input
+            v-model:value="newStudent.name"
+            placeholder="--Nhập tên sinh viên--"
+            @keyup.enter="handleAddStudent"
+          />
         </a-form-item>
         <a-form-item label="Email" required>
-          <a-input v-model:value="newStudent.email" placeholder="--Nhập email sinh viên--" />
+          <a-input
+            v-model:value="newStudent.email"
+            placeholder="--Nhập email sinh viên--"
+            @keyup.enter="handleAddStudent"
+          />
         </a-form-item>
       </a-form>
     </a-modal>
 
     <!-- Modal cập nhật sinh viên -->
-    <a-modal v-model:open="modalUpdate" title="Cập nhật sinh viên" @ok="updateStudent">
+    <a-modal
+      v-model:open="modalUpdate"
+      title="Cập nhật sinh viên"
+      @ok="updateStudent"
+      :okButtonProps="{ loading: isLoading }"
+      @cancel="clearUpdateStudentForm"
+      @close="clearUpdateStudentForm"
+    >
       <a-form layout="vertical">
         <a-form-item label="Mã sinh viên" required>
-          <a-input v-model:value="detailStudent.code" placeholder="--Nhập mã sinh viên--" />
+          <a-input
+            v-model:value="detailStudent.code"
+            placeholder="--Nhập mã sinh viên--"
+            @keyup.enter="updateStudent"
+          />
         </a-form-item>
         <a-form-item label="Tên sinh viên" required>
-          <a-input v-model:value="detailStudent.name" placeholder="--Nhập tên sinh viên--" />
+          <a-input
+            v-model:value="detailStudent.name"
+            placeholder="--Nhập tên sinh viên--"
+            @keyup.enter="updateStudent"
+          />
         </a-form-item>
         <a-form-item label="Email" required>
-          <a-input v-model:value="detailStudent.email" placeholder="--Nhập email sinh viên--" />
+          <a-input
+            v-model:value="detailStudent.email"
+            placeholder="--Nhập email sinh viên--"
+            @keyup.enter="updateStudent"
+          />
         </a-form-item>
       </a-form>
     </a-modal>

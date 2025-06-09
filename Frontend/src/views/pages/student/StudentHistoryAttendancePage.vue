@@ -47,7 +47,7 @@ const columns = autoAddColumnWidth([
   { title: 'Nội dung', dataIndex: 'planDateDescription', key: 'planDateDescription' },
   { title: 'Check in', dataIndex: 'checkIn', key: 'checkIn' },
   { title: 'Check out', dataIndex: 'checkOut', key: 'checkOut' },
-  { title: 'Trạng thái đi học', dataIndex: 'statusAttendance', key: 'statusAttendance' },
+  { title: 'Trạng thái', dataIndex: 'statusAttendance', key: 'statusAttendance' },
 ])
 
 const semesters = ref([])
@@ -70,7 +70,7 @@ const fetchAllAttendanceHistory = async () => {
         promises.push(
           requestAPI.get(API_ROUTES_STUDENT.FETCH_DATA_HISTORY_ATTENDANCE, {
             params: { ...filter, page },
-          })
+          }),
         )
       }
       const responses = await Promise.all(promises)
@@ -116,7 +116,7 @@ const fetchSemesters = () => {
       // Find current semester and set it as default
       const now = new Date().getTime()
       const currentSemester = semesters.value.find(
-        (semester) => semester.fromDate <= now && now <= semester.toDate
+        (semester) => semester.fromDate <= now && now <= semester.toDate,
       )
       if (currentSemester) {
         filter.semesterId = currentSemester.id
@@ -173,7 +173,7 @@ const exportPDF = async (factoryId, factoryName) => {
       {
         params: { factoryName, factoryId },
         responseType: 'blob',
-      }
+      },
     )
     const url = window.URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }))
     const link = document.createElement('a')
@@ -195,7 +195,7 @@ const handleClearFilter = () => {
   // Find current semester when clearing filter
   const now = new Date().getTime()
   const currentSemester = semesters.value.find(
-    (semester) => semester.fromDate <= now && now <= semester.toDate
+    (semester) => semester.fromDate <= now && now <= semester.toDate,
   )
   if (currentSemester) {
     filter.semesterId = currentSemester.id
@@ -217,63 +217,65 @@ onMounted(async () => {
   <div class="container-fluid">
     <div class="row g-3">
       <div class="col-12">
-        <a-card :bordered="false" class="card mb-3">
-          <template #title> <FilterFilled /> Bộ lọc </template>
-          <a-row :gutter="16" class="row g-2">
-            <a-col :xs="24" :md="12">
-              <div class="label-title">Học kỳ:</div>
-              <a-select
-                v-model:value="filter.semesterId"
-                placeholder="Chọn học kỳ"
-                class="w-100"
-                allowClear
-                @change="fetchAllAttendanceHistory"
-              >
-                <a-select-option
-                  v-for="semester in semesters"
-                  :key="semester.id"
-                  :value="semester.id"
-                >
-                  {{ semester.code }}
-                </a-select-option>
-              </a-select>
-            </a-col>
-            <a-col :xs="24" :md="12">
-              <div class="label-title">Nhóm xưởng:</div>
-              <a-select
-                v-model:value="filter.factoryId"
-                placeholder="Chọn xưởng"
-                class="w-100"
-                allowClear
-                @change="fetchAllAttendanceHistory"
-              >
-                <a-select-option :value="''">Tất cả xưởng</a-select-option>
-                <a-select-option v-for="factory in factories" :key="factory.id" :value="factory.id">
-                  {{ factory.name }}
-                </a-select-option>
-              </a-select>
-            </a-col>
-          </a-row>
-          <div class="row">
-            <div class="col-12">
-              <div class="d-flex justify-content-center flex-wrap gap-2 mt-3">
-                <a-button class="btn-light" @click="fetchAllAttendanceHistory">
-                  <FilterFilled /> Lọc
-                </a-button>
-                <a-button class="btn-gray" @click="handleClearFilter"> Huỷ lọc </a-button>
+        <a-card :bordered="false" class="cart no-body-padding">
+          <a-collapse ghost>
+            <a-collapse-panel>
+              <template #header><FilterFilled /> Bộ lọc</template>
+              <div class="row g-3">
+                <div class="col-md-6 col-sm-6">
+                  <div class="label-title">Học kỳ:</div>
+                  <a-select
+                    v-model:value="filter.semesterId"
+                    placeholder="Chọn học kỳ"
+                    class="w-100"
+                    @change="fetchAllAttendanceHistory"
+                  >
+                    <a-select-option
+                      v-for="semester in semesters"
+                      :key="semester.id"
+                      :value="semester.id"
+                    >
+                      {{ semester.code }}
+                    </a-select-option>
+                  </a-select>
+                </div>
+                <div class="col-md-6 col-sm-6">
+                  <div class="label-title">Nhóm xưởng:</div>
+                  <a-select
+                    v-model:value="filter.factoryId"
+                    placeholder="Chọn xưởng"
+                    class="w-100"
+                    allowClear
+                    @change="fetchAllAttendanceHistory"
+                  >
+                    <a-select-option :value="''">Tất cả xưởng</a-select-option>
+                    <a-select-option
+                      v-for="factory in factories"
+                      :key="factory.id"
+                      :value="factory.id"
+                    >
+                      {{ factory.name }}
+                    </a-select-option>
+                  </a-select>
+                </div>
+                <div class="col-12">
+                  <div class="d-flex justify-content-center flex-wrap gap-2">
+                    <a-button class="btn-light" @click="fetchAllAttendanceHistory">
+                      <FilterFilled /> Lọc
+                    </a-button>
+                    <a-button class="btn-gray" @click="handleClearFilter"> Huỷ lọc </a-button>
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
+            </a-collapse-panel>
+          </a-collapse>
         </a-card>
       </div>
-    </div>
-
-    <div class="row g-3" v-for="(records, factoryId) in groupedAttendance" :key="factoryId">
-      <div class="col-12">
-        <a-card :bordered="false" class="card mb-3">
+      <div class="col-12" v-for="(records, factoryId) in groupedAttendance" :key="factoryId">
+        <a-card :bordered="false" class="card">
           <template #title>
             <UnorderedListOutlined />
-            Danh sách điểm danh nhóm: {{ getFactoryName(factoryId) }}
+            {{ getFactoryName(factoryId) }}
           </template>
           <template #extra>
             <a-button
@@ -284,6 +286,7 @@ onMounted(async () => {
               Xuất PDF
             </a-button>
           </template>
+
           <a-table
             class="nowrap"
             :dataSource="records"
@@ -337,19 +340,11 @@ onMounted(async () => {
                 </template>
                 <template v-else-if="column.dataIndex === 'checkOut'">
                   <template v-if="record.requiredCheckOut == STATUS_REQUIRED_ATTENDANCE.ENABLE">
-                    <span
-                      v-if="
-                        record.statusAttendance !== 'CHUA_DIEN_RA' ||
-                        record.statusAttendance !== 'CO_MAT' ||
-                        record.statusAttendance !== 'CHECK_IN'
-                      "
-                    >
-                      <a-badge status="error" /> Chưa checkout
-                    </span>
-                    <span v-else>
+                    <span v-if="record.statusAttendance === 'CO_MAT'">
                       <a-badge status="success" />
                       {{ formatDate(record.checkOut, 'dd/MM/yyyy HH:mm') }}
                     </span>
+                    <span v-else> <a-badge status="error" /> Chưa checkout </span>
                   </template>
                   <template v-else>
                     <a-badge status="default" />
@@ -362,23 +357,23 @@ onMounted(async () => {
                       record.statusAttendance === 'CHUA_DIEN_RA'
                         ? 'warning'
                         : record.statusAttendance === 'DANG_DIEN_RA'
-                        ? 'processing'
-                        : record.statusAttendance === 'CO_MAT'
-                        ? 'success'
-                        : record.statusAttendance === 'CHECK_IN'
-                        ? 'processing'
-                        : 'error'
+                          ? 'processing'
+                          : record.statusAttendance === 'CO_MAT'
+                            ? 'success'
+                            : record.statusAttendance === 'CHECK_IN'
+                              ? 'processing'
+                              : 'error'
                     "
                     :text="
                       record.statusAttendance === 'CHUA_DIEN_RA'
                         ? 'Chưa diễn ra'
                         : record.statusAttendance === 'DANG_DIEN_RA'
-                        ? 'Đang diễn ra'
-                        : record.statusAttendance === 'CO_MAT'
-                        ? 'Có mặt'
-                        : record.statusAttendance === 'CHECK_IN'
-                        ? 'Đã check-in'
-                        : 'Vắng mặt'
+                          ? 'Đang diễn ra'
+                          : record.statusAttendance === 'CO_MAT'
+                            ? 'Có mặt'
+                            : record.statusAttendance === 'CHECK_IN'
+                              ? 'Đã check-in'
+                              : 'Vắng mặt'
                     "
                   />
                 </template>

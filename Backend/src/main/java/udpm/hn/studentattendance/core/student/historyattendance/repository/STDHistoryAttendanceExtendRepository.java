@@ -34,7 +34,7 @@ public interface STDHistoryAttendanceExtendRepository extends FactoryRepository 
                 pd.required_checkout   AS requiredCheckOut,
                 CASE
                   WHEN :nowTs < pd.start_date THEN 'CHUA_DIEN_RA'
-                  WHEN a.attendance_status = 0 AND :nowTs > pd.start_date AND :nowTs < pd.end_date THEN 'DANG_DIEN_RA'
+                  WHEN :nowTs > pd.start_date AND :nowTs < pd.end_date THEN 'DANG_DIEN_RA'
                   WHEN a.attendance_status = 2 THEN 'CHECK_IN'
                   WHEN a.attendance_status = 3 THEN 'CO_MAT'
                   WHEN a.attendance_status = 1 THEN 'VANG_MAT'
@@ -147,6 +147,7 @@ public interface STDHistoryAttendanceExtendRepository extends FactoryRepository 
                     ORDER BY pd.start_date
             """, nativeQuery = true)
     List<STDHistoryPlanDateAttendanceResponse> getDetailPlanDate(String idUserStudent, String idFacility);
+
     @Query(value = """
             SELECT
                 ROW_NUMBER() OVER (
@@ -162,7 +163,7 @@ public interface STDHistoryAttendanceExtendRepository extends FactoryRepository 
                 
                 CASE
                     WHEN :nowTs < pd.start_date THEN 'CHUA_DIEN_RA'
-                     WHEN att.max_status = 0 AND :nowTs > pd.start_date AND :nowTs < pd.end_date THEN 'DANG_DIEN_RA'
+                    WHEN :nowTs > pd.start_date AND :nowTs < pd.end_date THEN 'DANG_DIEN_RA'
                     WHEN att.max_status = 2 THEN 'CHECK_IN'
                     WHEN att.max_status = 3 THEN 'CO_MAT'
                     WHEN att.max_status = 1 THEN 'VANG_MAT'

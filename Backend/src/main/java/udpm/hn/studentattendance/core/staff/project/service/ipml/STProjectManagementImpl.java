@@ -12,6 +12,7 @@ import udpm.hn.studentattendance.entities.*;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
 import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.helpers.SessionHelper;
+import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.common.repositories.CommonUserStudentRepository;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
@@ -37,6 +38,8 @@ public class STProjectManagementImpl implements STProjectManagementService {
 
     private final STProjectChangeSemesterExtendRepository deleteBulkByProject;
 
+    private final UserActivityLogHelper userActivityLogHelper;
+
     @Override
     public ResponseEntity<?> getListProject(USProjectSearchRequest request) {
         Pageable pageable = PaginationHelper.createPageable(request, "createdAt");
@@ -56,6 +59,11 @@ public class STProjectManagementImpl implements STProjectManagementService {
         Semester semester = semesterRepository.findById(request.getSemesterId()).orElse(null);
         if (semester == null) {
             return RouterHelper.responseError("Không tìm thấy học kỳ");
+        }
+
+        Long now = new Date().getTime();
+        if (semester.getToDate() < now) {
+            return RouterHelper.responseError("Vui lòng chọn học kỳ đang hoặc chưa diễn ra cho dự án mới");
         }
 
         SubjectFacility subjectFacility = subjectFacilityRepository.findById(request.getSubjectFacilityId())
@@ -81,6 +89,7 @@ public class STProjectManagementImpl implements STProjectManagementService {
                     + project.getSubjectFacility().getSubject().getName());
         }
         projectManagementRepository.save(project);
+        userActivityLogHelper.saveLog("vừa thêm 1 dự án mới: " + project.getName());
         return RouterHelper.responseSuccess("Thêm dự án thành công", project);
     }
 
@@ -118,6 +127,7 @@ public class STProjectManagementImpl implements STProjectManagementService {
         if (!project.getSemester().getId().equals(request.getSemesterId())) {
             deleteBulkByProject.deleteAllByProjectId(project.getId());
         }
+        String oldName = project.getName();
         project.setName(request.getName());
         project.setDescription(request.getDescription());
         project.setLevelProject(levelProject);
@@ -125,6 +135,7 @@ public class STProjectManagementImpl implements STProjectManagementService {
         project.setSubjectFacility(subjectFacility);
         projectManagementRepository.save(project);
 
+        userActivityLogHelper.saveLog("vừa cập nhật dự án: " + oldName + " → " + project.getName());
         return RouterHelper.responseSuccess("Cập nhật dự án thành công", project);
     }
 
@@ -138,15 +149,19 @@ public class STProjectManagementImpl implements STProjectManagementService {
     @Override
     public ResponseEntity<?> changeStatus(String idProject) {
         Project project = projectManagementRepository.findById(idProject).get();
+        String oldStatus = project.getStatus() == EntityStatus.ACTIVE ? "Hoạt động" : "Không hoạt động";
         if (project.getStatus() == EntityStatus.ACTIVE) {
             project.setStatus(EntityStatus.INACTIVE);
         } else {
             project.setStatus(EntityStatus.ACTIVE);
         }
+        String newStatus = project.getStatus() == EntityStatus.ACTIVE ? "Hoạt động" : "Không hoạt động";
         projectManagementRepository.save(project);
         if (project.getStatus() == EntityStatus.ACTIVE) {
             commonUserStudentRepository.disableAllStudentDuplicateShiftByIdProject(project.getId());
         }
+        userActivityLogHelper.saveLog(
+                "vừa thay đổi trạng thái dự án " + project.getName() + " từ " + oldStatus + " thành " + newStatus);
         return RouterHelper.responseSuccess("Chuyển trạng thái thành công", project);
     }
 
@@ -182,6 +197,8 @@ public class STProjectManagementImpl implements STProjectManagementService {
             }
         }
 
+        userActivityLogHelper
+                .saveLog("vừa thay đổi trạng thái hàng loạt " + projects.size() + " dự án của kỳ học đã kết thúc");
         return RouterHelper.responseSuccess("Đổi trạng thái các dự án kỳ trước thành công", projects);
     }
 

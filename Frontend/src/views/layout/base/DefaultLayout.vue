@@ -288,7 +288,7 @@ watch(
 
     <a-layout class="sider-content">
       <!-- HEADER -->
-      <a-layout-header class="d-flex justify-content-between bg-white ps-0">
+      <a-layout-header class="d-flex justify-content-between ps-0">
         <component
           :is="collapsed ? MenuUnfoldOutlined : MenuFoldOutlined"
           class="trigger"
@@ -372,23 +372,23 @@ watch(
           </a-dropdown>
           <a-dropdown>
             <a class="user-menu" @click.prevent>
-              <a-avatar size="medium" :src="authStore.user.picture" />
+              <a-avatar size="medium" :src="authStore.user?.picture" />
               <div class="user-deital">
-                <div class="username">{{ authStore.user.name }}</div>
-                <div class="email">{{ authStore.user.sub }}</div>
+                <div class="username">{{ authStore.user?.name }}</div>
+                <div class="email">{{ authStore.user?.sub }}</div>
               </div>
             </a>
             <template #overlay>
               <a-menu>
                 <a-menu-item class="active d-lg-none">
-                  <b>{{ authStore.user.name }}</b>
-                  <div>{{ authStore.user.sub }}</div>
+                  <b>{{ authStore.user?.name }}</b>
+                  <div>{{ authStore.user?.sub }}</div>
                 </a-menu-item>
                 <a-menu-divider class="d-lg-none" />
                 <a-menu-item
                   key="switchRole"
                   @click="handleSwitchRole()"
-                  v-if="authStore.user.role.length > 1"
+                  v-if="authStore.user?.role.length > 1"
                 >
                   <UserSwitchOutlined />
                   <span class="ms-2">Thay đổi vai trò</span>

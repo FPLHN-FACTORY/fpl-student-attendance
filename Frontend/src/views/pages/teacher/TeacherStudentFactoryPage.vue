@@ -79,6 +79,12 @@ const columns = ref(
     },
     { title: 'Email', dataIndex: 'studentEmail', key: 'studentEmail' },
     {
+      title: 'Checkin/checkout bù',
+      dataIndex: 'lateAttendance',
+      key: 'lateAttendance',
+      align: 'center',
+    },
+    {
       title: 'Số buổi đã nghỉ',
       dataIndex: 'totalAbsentShift',
       key: 'totalAbsentShift',
@@ -248,7 +254,10 @@ onMounted(() => {
                     <a-badge status="error" /> Chưa checkin
                   </span>
                   <span v-else>
-                    <a-badge status="success" />
+                    <template v-if="record.lateCheckin">
+                      <a-badge status="warning" /> Checkin bù -
+                    </template>
+                    <a-badge v-else status="success" />
                     {{ formatDate(record.createdAt, 'dd/MM/yyyy HH:mm') }}
                   </span>
                 </template>
@@ -269,7 +278,10 @@ onMounted(() => {
                     <a-badge status="error" /> Chưa checkout
                   </span>
                   <span v-else>
-                    <a-badge status="success" />
+                    <template v-if="record.lateCheckout">
+                      <a-badge status="warning" /> Checkout bù -
+                    </template>
+                    <a-badge v-else status="success" />
                     {{ formatDate(record.updatedAt, 'dd/MM/yyyy HH:mm') }}
                   </span>
                 </template>
@@ -296,59 +308,60 @@ onMounted(() => {
   </a-modal>
 
   <div class="container-fluid">
-    <!-- Bộ lọc tìm kiếm -->
-    <div class="row g-3">
-      <div class="col-12">
-        <a-card :bordered="false" class="cart mb-3">
-          <template #title> <FilterFilled /> Bộ lọc</template>
-          <div class="row g-3 filter-container">
-            <div class="col-md-8 col-sm-6">
-              <div class="label-title">Từ khoá:</div>
-              <a-input
-                v-model:value="filter.searchQuery"
-                placeholder="Nhập mã, tên hoặc email học sinh"
-                allowClear
-                @change="fetchStudentFactory"
-              >
-                <template #prefix>
-                  <SearchOutlined />
-                </template>
-              </a-input>
-            </div>
-            <div class="col-md-4 col-sm-6">
-              <div class="label-title">Trạng thái:</div>
-              <a-select
-                v-model:value="filter.status"
-                placeholder="Chọn trạng thái"
-                allowClear
-                class="w-100"
-                @change="fetchStudentFactory"
-              >
-                <a-select-option :value="''">Tất cả trạng thái</a-select-option>
-                <a-select-option value="1">Đang học</a-select-option>
-                <a-select-option value="0">Ngưng học</a-select-option>
-              </a-select>
-            </div>
-          </div>
-          <div class="row">
-            <div class="col-12">
-              <div class="d-flex justify-content-center flex-wrap gap-2 mt-3">
-                <a-button class="btn-light" @click="fetchStudentFactory">
-                  <FilterFilled /> Lọc
-                </a-button>
-                <a-button class="btn-gray" @click="handleClearFilter"> Huỷ lọc </a-button>
-              </div>
-            </div>
-          </div>
-        </a-card>
-      </div>
-    </div>
-
     <!-- Danh sách học sinh trong nhóm xưởng -->
     <div class="row g-3">
       <div class="col-12">
+        <a-card :bordered="false" class="cart no-body-padding">
+          <a-collapse ghost>
+            <a-collapse-panel>
+              <template #header><FilterFilled /> Bộ lọc</template>
+              <div class="row g-3 filter-container">
+                <div class="col-md-6 col-sm-6">
+                  <div class="label-title">Từ khoá:</div>
+                  <a-input
+                    v-model:value="filter.searchQuery"
+                    placeholder="Nhập mã, tên hoặc email học sinh"
+                    allowClear
+                    @change="fetchStudentFactory"
+                  >
+                    <template #prefix>
+                      <SearchOutlined />
+                    </template>
+                  </a-input>
+                </div>
+                <div class="col-md-6 col-sm-6">
+                  <div class="label-title">Trạng thái:</div>
+                  <a-select
+                    v-model:value="filter.status"
+                    placeholder="Chọn trạng thái"
+                    allowClear
+                    class="w-100"
+                    @change="fetchStudentFactory"
+                  >
+                    <a-select-option :value="''">Tất cả trạng thái</a-select-option>
+                    <a-select-option value="1">Đang học</a-select-option>
+                    <a-select-option value="0">Ngưng học</a-select-option>
+                  </a-select>
+                </div>
+
+                <div class="col-12">
+                  <div class="d-flex justify-content-center flex-wrap gap-2">
+                    <a-button class="btn-light" @click="fetchStudentFactory">
+                      <FilterFilled /> Lọc
+                    </a-button>
+                    <a-button class="btn-gray" @click="handleClearFilter"> Huỷ lọc </a-button>
+                  </div>
+                </div>
+              </div>
+            </a-collapse-panel>
+          </a-collapse>
+        </a-card>
+      </div>
+
+      <div class="col-12">
         <a-card :bordered="false" class="cart">
           <template #title> <UnorderedListOutlined /> Danh sách học sinh </template>
+
           <a-table
             class="nowrap"
             :loading="isLoading"
@@ -383,7 +396,15 @@ onMounted(() => {
                 </template>
                 <template v-if="column.dataIndex === 'totalAbsentShift'">
                   <a-tag :color="record.totalAbsentShift > 0 ? 'red' : 'green'"
-                    >{{ record.totalAbsentShift || 0 }} / {{ record.totalShift || 0 }}</a-tag
+                    >{{
+                      record.totalAbsentShift > 0
+                        ? Math.min(
+                            record.totalAbsentShift + 0.5 * record.currentLateAttendance,
+                            record.totalShift,
+                          )
+                        : 0
+                    }}
+                    / {{ record.totalShift || 0 }}</a-tag
                   >
                 </template>
                 <template v-if="column.dataIndex === 'percenAbsentShift'">
@@ -396,6 +417,19 @@ onMounted(() => {
                         record.totalShift && (record.totalAbsentShift / record.totalShift) * 100
                       ).toFixed(1) || 0
                     }}%</a-tag
+                  >
+                </template>
+                <template v-if="column.dataIndex === 'lateAttendance'">
+                  <a-tag
+                    :color="
+                      record.totalLateAttendance > 0
+                        ? record.currentLateAttendance >= record.totalLateAttendance
+                          ? 'red'
+                          : 'green'
+                        : 'default'
+                    "
+                    >{{ record.currentLateAttendance || 0 }} /
+                    {{ record.totalLateAttendance }} lần</a-tag
                   >
                 </template>
                 <template v-if="column.dataIndex === 'detailAttendance'">

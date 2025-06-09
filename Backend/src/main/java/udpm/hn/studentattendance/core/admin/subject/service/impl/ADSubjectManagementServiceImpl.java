@@ -1,19 +1,18 @@
 package udpm.hn.studentattendance.core.admin.subject.service.impl;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import udpm.hn.studentattendance.core.admin.subject.model.request.ADSubjectCreateRequest;
 import udpm.hn.studentattendance.core.admin.subject.model.request.ADSubjectSearchRequest;
 import udpm.hn.studentattendance.core.admin.subject.model.request.ADSubjectUpdateRequest;
-import udpm.hn.studentattendance.core.admin.subject.repository.ADSubjectRepository;
+import udpm.hn.studentattendance.core.admin.subject.repository.ADSubjectExtendRepository;
 import udpm.hn.studentattendance.core.admin.subject.service.ADSubjectManagementService;
 import udpm.hn.studentattendance.entities.Subject;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
 import udpm.hn.studentattendance.helpers.RouterHelper;
+import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
 import udpm.hn.studentattendance.helpers.ValidateHelper;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.common.repositories.CommonUserStudentRepository;
@@ -23,9 +22,11 @@ import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 @RequiredArgsConstructor
 public class ADSubjectManagementServiceImpl implements ADSubjectManagementService {
     
-    private final ADSubjectRepository adminSubjectRepository;
+    private final ADSubjectExtendRepository adminSubjectRepository;
 
     private final CommonUserStudentRepository commonUserStudentRepository;
+
+    private final UserActivityLogHelper userActivityLogHelper;
 
     @Override
     public ResponseEntity<?> getListSubject(ADSubjectSearchRequest request) {
@@ -50,8 +51,9 @@ public class ADSubjectManagementServiceImpl implements ADSubjectManagementServic
         if (adminSubjectRepository.isExistsNameSubject(s.getName(), null)) {
             return RouterHelper.responseError("Tên bộ môn đã tồn tại trên hệ thống");
         }
-
-        return RouterHelper.responseSuccess("Thêm mới bộ môn thành công", adminSubjectRepository.save(s));
+        Subject saveSubject = adminSubjectRepository.save(s);
+        userActivityLogHelper.saveLog("vừa thêm 1 bộ môn mới: " + saveSubject.getCode() + " - " + saveSubject.getName());
+        return RouterHelper.responseSuccess("Thêm mới bộ môn thành công", saveSubject);
     }
 
     @Override
@@ -77,7 +79,9 @@ public class ADSubjectManagementServiceImpl implements ADSubjectManagementServic
             return RouterHelper.responseError("Tên bộ môn đã tồn tại trên hệ thống");
         }
 
-        return RouterHelper.responseSuccess("Cập nhật bộ môn thành công", adminSubjectRepository.save(s));
+        Subject saveSubject = adminSubjectRepository.save(s);
+        userActivityLogHelper.saveLog("vừa cập nhật 1 bộ môn: " + saveSubject.getCode() + " - " + saveSubject.getName());
+        return RouterHelper.responseSuccess("Cập nhật bộ môn thành công", saveSubject);
     }
 
     @Override
@@ -102,6 +106,8 @@ public class ADSubjectManagementServiceImpl implements ADSubjectManagementServic
         if (s.getStatus() == EntityStatus.ACTIVE) {
             commonUserStudentRepository.disableAllStudentDuplicateShiftByIdSubject(s.getId());
         }
+        userActivityLogHelper.saveLog("vừa thay đổi trạng thái 1 bộ môn : " + newEntity.getCode() + " - " + newEntity.getName());
+
         return RouterHelper.responseSuccess("Đổi trạng thái bộ môn thành công", newEntity);
     }
 

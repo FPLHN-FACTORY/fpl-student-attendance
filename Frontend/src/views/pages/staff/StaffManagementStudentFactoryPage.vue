@@ -54,7 +54,7 @@ const studentFactories = ref([])
 
 const filter = reactive({
   searchQuery: '',
-  status: '',
+  status: null,
   page: 1,
   pageSize: 5,
 })
@@ -82,7 +82,7 @@ const columns = ref(
     },
     { title: 'Trạng thái', dataIndex: 'statusStudentFactory', key: 'statusStudentFactory' },
     { title: 'Chi tiết', key: 'action' },
-  ])
+  ]),
 )
 
 /* -------------------- Phân trang cho danh sách sinh viên trong nhóm xưởng -------------------- */
@@ -160,7 +160,7 @@ const studentColumns = ref(
     { title: 'Tên sinh viên', dataIndex: 'name', key: 'name' },
     { title: 'Email', dataIndex: 'email', key: 'email' },
     { title: 'Chọn', key: 'select' },
-  ])
+  ]),
 )
 const selectedStudents = reactive({})
 
@@ -388,7 +388,7 @@ const shiftColumns = ref(
     { title: 'Ca học', dataIndex: 'shift', key: 'shift' },
     { title: 'Trạng thái điểm danh', dataIndex: 'statusAttendance', key: 'statusAttendance' },
     { title: 'Trạng thái', dataIndex: 'status', key: 'status' },
-  ])
+  ]),
 )
 
 let currentStudentForShift = null
@@ -403,7 +403,7 @@ function openShiftModal(userStudentId) {
 function closeShiftModal() {
   shiftModalVisible.value = false
   shiftFilter.startDate = null
-  shiftFilter.status = ''
+  shiftFilter.status = null
 }
 
 function fetchShiftDetails() {
@@ -451,7 +451,7 @@ watch(isAddStudentModalVisible, (newVal) => {
 const handleClearFilter = () => {
   Object.assign(filter, {
     searchQuery: '',
-    status: '',
+    status: null,
     page: 1,
     pageSize: 5,
   })
@@ -469,60 +469,60 @@ onMounted(() => {
 
 <template>
   <div class="container-fluid">
-    <!-- Bộ lọc tìm kiếm -->
-    <div class="row g-3">
-      <div class="col-12">
-        <a-card :bordered="false" class="cart mb-3">
-          <template #title> <FilterFilled /> Bộ lọc </template>
-          <div class="row g-3 filter-container">
-            <div class="col-md-6 col-sm-12">
-              <div class="label-title">Từ khoá:</div>
-              <a-input
-                v-model:value="filter.searchQuery"
-                placeholder="Tìm theo mã, tên hoặc email sinh viên"
-                allowClear
-                @change="fetchStudentFactories"
-              >
-                <template #prefix>
-                  <SearchOutlined />
-                </template>
-              </a-input>
-            </div>
-            <div class="col-md-6 col-sm-12">
-              <div class="label-title">Trạng thái:</div>
-              <a-select
-                v-model:value="filter.status"
-                placeholder="Chọn trạng thái"
-                allowClear
-                class="w-100"
-                @change="fetchStudentFactories"
-              >
-                <a-select-option :value="null">Tất cả trạng thái</a-select-option>
-                <a-select-option value="1">Đang học</a-select-option>
-                <a-select-option value="0">Ngưng học</a-select-option>
-              </a-select>
-            </div>
-          </div>
-          <div class="row">
-            <div class="col-12">
-              <div class="d-flex justify-content-center flex-wrap gap-2 mt-3">
-                <a-button class="btn-light" @click="fetchStudentFactories">
-                  <FilterFilled /> Lọc
-                </a-button>
-                <a-button class="btn-gray" @click="handleClearFilter"> Huỷ lọc </a-button>
-              </div>
-            </div>
-          </div>
-        </a-card>
-      </div>
-    </div>
-
     <!-- Bảng danh sách sinh viên trong nhóm xưởng -->
     <div class="row g-3">
       <div class="col-12">
+        <a-card :bordered="false" class="cart no-body-padding">
+          <a-collapse ghost>
+            <a-collapse-panel>
+              <template #header><FilterFilled /> Bộ lọc</template>
+              <div class="row g-3 filter-container">
+                <div class="col-md-6 col-sm-12">
+                  <div class="label-title">Từ khoá:</div>
+                  <a-input
+                    v-model:value="filter.searchQuery"
+                    placeholder="Tìm theo mã, tên hoặc email sinh viên"
+                    allowClear
+                    @change="fetchStudentFactories"
+                  >
+                    <template #prefix>
+                      <SearchOutlined />
+                    </template>
+                  </a-input>
+                </div>
+                <div class="col-md-6 col-sm-12">
+                  <div class="label-title">Trạng thái:</div>
+                  <a-select
+                    v-model:value="filter.status"
+                    placeholder="Chọn trạng thái"
+                    allowClear
+                    class="w-100"
+                    @change="fetchStudentFactories"
+                  >
+                    <a-select-option :value="null">Tất cả trạng thái</a-select-option>
+                    <a-select-option value="1">Đang học</a-select-option>
+                    <a-select-option value="0">Ngưng học</a-select-option>
+                  </a-select>
+                </div>
+
+                <div class="col-12">
+                  <div class="d-flex justify-content-center flex-wrap gap-2">
+                    <a-button class="btn-light" @click="fetchStudentFactories">
+                      <FilterFilled /> Lọc
+                    </a-button>
+                    <a-button class="btn-gray" @click="handleClearFilter"> Huỷ lọc </a-button>
+                  </div>
+                </div>
+              </div>
+            </a-collapse-panel>
+          </a-collapse>
+        </a-card>
+      </div>
+
+      <div class="col-12">
         <a-card :bordered="false" class="cart">
           <template #title> <UnorderedListOutlined /> Danh sách sinh viên </template>
-          <div class="d-flex justify-content-end mb-3 flex-wrap gap-3">
+          <div class="d-flex justify-content-end flex-wrap gap-3 mb-2">
             <ExcelUploadButton v-bind="configImportExcel" />
             <a-tooltip title="Thêm sinh viên vào nhóm xưởng">
               <a-button type="primary" @click="isAddStudentModalVisible = true">
@@ -530,6 +530,7 @@ onMounted(() => {
               </a-button>
             </a-tooltip>
           </div>
+
           <a-table
             class="nowrap"
             :dataSource="studentFactories"
@@ -574,7 +575,15 @@ onMounted(() => {
                 </template>
                 <template v-else-if="column.dataIndex === 'totalAbsentShift'">
                   <a-tag :color="record.totalAbsentShift > 0 ? 'red' : 'green'"
-                    >{{ record.totalAbsentShift || 0 }} / {{ record.totalShift || 0 }}</a-tag
+                    >{{
+                      record.totalAbsentShift > 0
+                        ? Math.min(
+                            record.totalAbsentShift + 0.5 * record.currentLateAttendance,
+                            record.totalShift,
+                          )
+                        : 0
+                    }}
+                    / {{ record.totalShift || 0 }}</a-tag
                   >
                 </template>
                 <template v-else-if="column.dataIndex === 'percenAbsentShift'">
@@ -644,6 +653,7 @@ onMounted(() => {
         </a-descriptions-item>
       </a-descriptions>
     </a-modal>
+    
     <a-modal
       v-model:open="shiftModalVisible"
       title="Chi tiết ca học"
@@ -718,16 +728,16 @@ onMounted(() => {
                 record.statusAttendance === 3
                   ? 'success'
                   : record.statusAttendance === null
-                  ? null
-                  : 'error'
+                    ? null
+                    : 'error'
               "
             >
               {{
                 record.statusAttendance === 3
                   ? 'Có mặt'
                   : record.statusAttendance === null
-                  ? ''
-                  : 'Vắng mặt'
+                    ? ''
+                    : 'Vắng mặt'
               }}
             </a-tag>
           </template>
@@ -737,8 +747,8 @@ onMounted(() => {
                 record.status === 'DA_DIEN_RA'
                   ? 'error'
                   : record.status === 'DANG_DIEN_RA'
-                  ? 'processing'
-                  : 'success'
+                    ? 'processing'
+                    : 'success'
               "
             />
             {{ STATUS_PLAN_DATE_DETAIL[record.status] }}
@@ -754,6 +764,7 @@ onMounted(() => {
       width="80%"
       @cancel="resetStudentModal"
       @ok="handleAddStudents"
+      :okButtonProps="{ loading: isLoading }"
     >
       <div class="row g-3 filter-container" style="margin-bottom: 16px">
         <div class="col-21">

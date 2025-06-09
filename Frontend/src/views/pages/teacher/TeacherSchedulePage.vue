@@ -329,7 +329,7 @@ const handleExportPDF = () => {
       const blob = new Blob([res.data], { type: 'application/pdf' })
       const link = document.createElement('a')
       link.href = URL.createObjectURL(blob)
-      link.download = 'lich-day.pdf'
+      link.download = `lich_day__${formatDate(computedStartDate.value, 'dd-MM-yyyy')}__${formatDate(computedEndDate.value, 'dd-MM-yyyy')}.pdf`
       link.click()
       message.success('Xuất file PDF thành công')
     })
@@ -449,7 +449,8 @@ const handleClearFilter = () => {
 
 const handleShowFactory = (item) => {
   applicationStore.setSelectedKeys(
-    TeacherRoutes[0].children.find((o) => o.name == ROUTE_NAMES.MANAGEMENT_FACTORY).meta.selectedKey
+    TeacherRoutes[0].children.find((o) => o.name == ROUTE_NAMES.MANAGEMENT_FACTORY).meta
+      .selectedKey,
   )
   router.push({ name: ROUTE_NAMES.MANAGEMENT_SHIFT_FACTORY, params: { id: item.factoryId } })
 }
@@ -466,55 +467,6 @@ onMounted(() => {
 
 <template>
   <div class="container-fluid">
-    <div class="row g-3">
-      <div class="col-12">
-        <a-card :bordered="false" class="cart mb-3">
-          <template #title> <FilterFilled /> Bộ lọc</template>
-          <div class="row g-3 filter-container">
-            <div class="col-md-6 col-sm-6">
-              <div class="label-title">Khoảng thời gian:</div>
-              <a-select
-                v-model:value="filter.durationOption"
-                class="w-100"
-                @change="fetchTeachingSchedule"
-              >
-                <a-select-option
-                  v-for="opt in durationOptions"
-                  :key="opt.value"
-                  :value="opt.value"
-                  >{{ opt.label }}</a-select-option
-                >
-              </a-select>
-            </div>
-            <div class="col-md-6 col-sm-6">
-              <div class="label-title">Hình thức học:</div>
-              <a-select
-                v-model:value="filter.shiftType"
-                placeholder="Chọn hình thức học"
-                allowClear
-                class="w-100"
-                @change="fetchTeachingSchedule"
-              >
-                <a-select-option :value="''">Tất cả hình thức học</a-select-option>
-                <a-select-option value="1">Online</a-select-option>
-                <a-select-option value="0">Offline</a-select-option>
-              </a-select>
-            </div>
-          </div>
-          <div class="row">
-            <div class="col-12">
-              <div class="d-flex justify-content-center flex-wrap gap-2 mt-3">
-                <a-button class="btn-light" @click="fetchTeachingSchedule">
-                  <FilterFilled /> Lọc
-                </a-button>
-                <a-button class="btn-gray" @click="handleClearFilter"> Huỷ lọc </a-button>
-              </div>
-            </div>
-          </div>
-        </a-card>
-      </div>
-    </div>
-
     <!-- Lịch dạy hôm nay -->
     <div class="row g-4 mb-3">
       <div class="col-12">
@@ -535,7 +487,7 @@ onMounted(() => {
                 {{
                   `${formatDate(record.startTeaching, 'HH:mm')} - ${formatDate(
                     record.endTeaching,
-                    'HH:mm'
+                    'HH:mm',
                   )}`
                 }}
               </template>
@@ -549,7 +501,7 @@ onMounted(() => {
                   {{
                     `${dayOfWeek(record.startTeaching)}, ${formatDate(
                       record.startTeaching,
-                      DEFAULT_DATE_FORMAT
+                      DEFAULT_DATE_FORMAT,
                     )}`
                   }}
                 </template>
@@ -623,12 +575,55 @@ onMounted(() => {
                 </span>
               </div>
               <div>
-                <a-button type="primary" @click="handleExportPDF">
+                <a-button type="primary" @click="handleExportPDF" :loading="isLoading">
                   <DownloadOutlined /> Xuất PDF
                 </a-button>
               </div>
             </div>
           </template>
+
+          <a-collapse ghost>
+            <a-collapse-panel>
+              <template #header><FilterFilled /> Bộ lọc</template>
+              <div class="row g-3">
+                <div class="col-md-4 col-sm-6">
+                  <a-select
+                    v-model:value="filter.durationOption"
+                    class="w-100"
+                    @change="fetchTeachingSchedule"
+                  >
+                    <a-select-option
+                      v-for="opt in durationOptions"
+                      :key="opt.value"
+                      :value="opt.value"
+                      >{{ opt.label }}</a-select-option
+                    >
+                  </a-select>
+                </div>
+                <div class="col-md-4 col-sm-6">
+                  <a-select
+                    v-model:value="filter.shiftType"
+                    placeholder="Chọn hình thức học"
+                    allowClear
+                    class="w-100"
+                    @change="fetchTeachingSchedule"
+                  >
+                    <a-select-option :value="''">Tất cả hình thức học</a-select-option>
+                    <a-select-option value="1">Online</a-select-option>
+                    <a-select-option value="0">Offline</a-select-option>
+                  </a-select>
+                </div>
+                <div class="col-md-4 col-sm-12">
+                  <div class="d-flex justify-content-center justify-content-md-start gap-2">
+                    <a-button class="btn-light" @click="fetchTeachingSchedule">
+                      <FilterFilled /> Lọc
+                    </a-button>
+                    <a-button class="btn-gray" @click="handleClearFilter"> Huỷ lọc </a-button>
+                  </div>
+                </div>
+              </div>
+            </a-collapse-panel>
+          </a-collapse>
 
           <a-table
             :dataSource="teachingScheduleRecords"
@@ -646,7 +641,7 @@ onMounted(() => {
                 {{
                   `${formatDate(record.startTeaching, 'HH:mm')} - ${formatDate(
                     record.endTeaching,
-                    'HH:mm'
+                    'HH:mm',
                   )}`
                 }}
               </template>
@@ -660,7 +655,7 @@ onMounted(() => {
                   {{
                     `${dayOfWeek(record.startTeaching)}, ${formatDate(
                       record.startTeaching,
-                      DEFAULT_DATE_FORMAT
+                      DEFAULT_DATE_FORMAT,
                     )}`
                   }}
                 </template>
@@ -726,7 +721,12 @@ onMounted(() => {
           />
         </a-form-item>
         <a-form-item label="Điểm danh muộn" name="lateArrival">
-          <a-input-number v-model:value="formUpdateData.lateArrival" :min="0" class="w-100" />
+          <a-input-number
+            v-model:value="formUpdateData.lateArrival"
+            :min="0"
+            class="w-100"
+            @keyup.enter="handleUpdatePlanDate"
+          />
         </a-form-item>
         <a-form-item label="Link học" name="link">
           <a-input
@@ -734,10 +734,16 @@ onMounted(() => {
             placeholder="https://"
             class="w-100"
             allowClear
+            @keyup.enter="handleUpdatePlanDate"
           />
         </a-form-item>
         <a-form-item label="Địa điểm học" name="room">
-          <a-input v-model:value="formUpdateData.room" placeholder="Nhập phòng học" class="w-100" />
+          <a-input
+            v-model:value="formUpdateData.room"
+            placeholder="Nhập phòng học"
+            class="w-100"
+            @keyup.enter="handleUpdatePlanDate"
+          />
         </a-form-item>
       </a-form>
     </a-modal>
@@ -748,6 +754,7 @@ onMounted(() => {
       title="Nhập link học để chuyển sang Online"
       @ok="confirmLinkModal"
       @cancel="showLinkModal = false"
+      :okButtonProps="{ loading: isLoading }"
     >
       <a-form layout="vertical">
         <a-form-item label="Link học">
@@ -761,6 +768,7 @@ onMounted(() => {
       title="Nhập phòng học để chuyển sang Offline"
       @ok="confirmRoomModal"
       @cancel="showRoomModal = false"
+      :okButtonProps="{ loading: isLoading }"
     >
       <a-form layout="vertical">
         <a-form-item label="Phòng học">

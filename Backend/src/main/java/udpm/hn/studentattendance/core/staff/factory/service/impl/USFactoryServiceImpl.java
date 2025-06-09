@@ -18,6 +18,7 @@ import udpm.hn.studentattendance.helpers.NotificationHelper;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
 import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.helpers.SessionHelper;
+import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.common.repositories.CommonUserStudentRepository;
 import udpm.hn.studentattendance.infrastructure.constants.*;
@@ -53,9 +54,11 @@ public class USFactoryServiceImpl implements USFactoryService {
 
     private final USFactoryProjectPlanExtendRepository projectPlanExtendRepository;
 
-//    private final USFactoryPlanDateExtendRepository planDateExtendRepository;
-//
-//    private final USFactoryAttendanceExtendRepository attendanceExtendRepository;
+    private final UserActivityLogHelper userActivityLogHelper;
+
+    // private final USFactoryPlanDateExtendRepository planDateExtendRepository;
+    //
+    // private final USFactoryAttendanceExtendRepository attendanceExtendRepository;
 
     @Override
     public ResponseEntity<?> getAllFactory(USFactoryRequest staffFactoryRequest) {
@@ -121,7 +124,8 @@ public class USFactoryServiceImpl implements USFactoryService {
         factory.setUserStaff(userStaff.get());
         factory.setProject(project.get());
         factory.setStatus(EntityStatus.ACTIVE);
-        factoryRepository.save(factory);
+
+        Factory saveFactory = factoryRepository.save(factory);
 
         Map<String, Object> dataNotification = new HashMap<>();
         dataNotification.put(NotificationHelper.KEY_USER_ADMIN,
@@ -133,77 +137,11 @@ public class USFactoryServiceImpl implements USFactoryService {
         notificationAddRequest.setData(dataNotification);
         notificationService.add(notificationAddRequest);
 
-        return RouterHelper.responseSuccess("Thêm nhóm xưởng mới thành công", factory);
+        userActivityLogHelper
+                .saveLog("vừa thêm 1 nhóm xưởng mới: " + saveFactory.getName() + " trong dự án " + project.get().getName());
+        return RouterHelper.responseSuccess("Thêm nhóm xưởng mới thành công", saveFactory);
     }
 
-    //    @Override
-//    public ResponseEntity<?> updateFactory(USFactoryCreateUpdateRequest factoryCreateUpdateRequest) {
-//        Optional<Factory> existFactory = factoryRepository.findById(factoryCreateUpdateRequest.getId());
-//
-//        Optional<UserStaff> userStaff = staffFactoryExtendRepository
-//                .findById(factoryCreateUpdateRequest.getIdUserStaff());
-//        Optional<Project> project = projectFactoryExtendRepository
-//                .findById(factoryCreateUpdateRequest.getIdProject());
-//
-//        if (existFactory.isEmpty()) {
-//            return RouterHelper.responseError("Không tìm thấy nhóm xưởng");
-//        }
-//
-//        if (userStaff.isEmpty()) {
-//            return RouterHelper.responseError("Giảng viên không tồn tại");
-//        }
-//
-//        if (project.isEmpty()) {
-//            return RouterHelper.responseError("Dự án không tồn tại");
-//        }
-//
-//        Factory factory = existFactory.get();
-//
-//        if (project.get() != existFactory.get().getProject()) {
-//            Plan planProject = projectPlanExtendRepository.getPlanByProjectId(project.get().getId());
-//            if (planProject != null) {
-//                PlanFactory planFactory = factoryPlanExtendRepository.getPlanFactoryByFactoryId(factory.getId());
-//                if (planFactory != null) {
-//                    Plan planProject2 = projectPlanExtendRepository.getPlanByProjectId(factory.getProject().getId());
-//
-//                    planFactory.setFactory(factory);
-//                    planFactory.setPlan(planProject2);
-//                    factoryPlanExtendRepository.save(planFactory);
-//                }
-//            }
-//        }
-//        UserStaff currentUserStaff = factory.getUserStaff();
-//
-//        factory.setName(factoryCreateUpdateRequest.getFactoryName());
-//        factory.setDescription(factoryCreateUpdateRequest.getFactoryDescription());
-//        factory.setUserStaff(userStaff.get());
-//        factory.setProject(project.get());
-//
-//
-//        if (factoryRepository.isExistNameAndProject(factory.getName(),
-//                factory.getProject().getId(), factory.getId())) {
-//            return RouterHelper.responseError("Nhóm xưởng đã tồn tại trong dự án này");
-//        }
-//
-//        factoryRepository.save(factory);
-//
-//        Map<String, Object> dataNotification = new HashMap<>();
-//        NotificationAddRequest notificationAddRequest = new NotificationAddRequest();
-//        dataNotification.put(NotificationHelper.KEY_USER_ADMIN,
-//                sessionHelper.getUserCode() + " - " + sessionHelper.getUserName());
-//        dataNotification.put(NotificationHelper.KEY_FACTORY, factory.getName());
-//        notificationAddRequest.setData(dataNotification);
-//        if (!currentUserStaff.getId().equals(userStaff.get().getId())) {
-//            notificationAddRequest.setIdUser(currentUserStaff.getId());
-//            notificationAddRequest.setType(NotificationHelper.TYPE_REMOVE_TEACHER_TO_FACTORY);
-//            notificationService.add(notificationAddRequest);
-//        }
-//        notificationAddRequest.setIdUser(userStaff.get().getId());
-//        notificationAddRequest.setType(NotificationHelper.TYPE_ADD_TEACHER_TO_FACTORY);
-//        notificationService.add(notificationAddRequest);
-//
-//        return RouterHelper.responseSuccess("Cập nhật nhóm xưởng thành công", factory);
-//    }
     @Override
     public ResponseEntity<?> updateFactory(USFactoryCreateUpdateRequest req) {
         Factory factory = factoryRepository.findById(req.getId())
@@ -233,8 +171,9 @@ public class USFactoryServiceImpl implements USFactoryService {
             // Lấy plan cũ & plan mới chỉ trong 2 lần gọi
             Plan oldPlan = projectPlanExtendRepository.getPlanByProjectId(oldProjectId);
             Plan newPlan = projectPlanExtendRepository.getPlanByProjectId(newProjectId);
-
-            if (oldPlan != null && newPlan != null) {
+            if (newPlan == null) {
+                projectPlanExtendRepository.deleteAllAttendanceAndPlanDateAndPlanFactoryByPlan(oldPlan.getId());
+            } else if (oldPlan != null && newPlan != null) {
                 // Kiểm tra xem association đã tồn tại chưa, nếu chưa thì tạo mới
                 boolean associationExists = factoryPlanExtendRepository
                         .existsByFactoryIdAndPlanId(factory.getId(), newPlan.getId());
@@ -243,17 +182,16 @@ public class USFactoryServiceImpl implements USFactoryService {
                     pf.setPlan(newPlan);
                     factoryPlanExtendRepository.save(pf);
                 }
-            } else {
-                projectPlanExtendRepository.deleteAllAttendanceAndPlanDateAndPlanFactoryByPlan(oldPlan.getId());
             }
         }
 
+        String oldName = factory.getName();
         UserStaff oldStaff = factory.getUserStaff();
         factory.setName(req.getFactoryName());
         factory.setDescription(req.getFactoryDescription());
         factory.setUserStaff(newStaff);
         factory.setProject(newProject);
-        factoryRepository.save(factory);
+        Factory saveFactory  = factoryRepository.save(factory);
 
         Map<String, Object> dataNotification = new HashMap<>();
         NotificationAddRequest notificationAddRequest = new NotificationAddRequest();
@@ -270,7 +208,8 @@ public class USFactoryServiceImpl implements USFactoryService {
         notificationAddRequest.setType(NotificationHelper.TYPE_ADD_TEACHER_TO_FACTORY);
         notificationService.add(notificationAddRequest);
 
-        return RouterHelper.responseSuccess("Cập nhật nhóm xưởng thành công", factory);
+        userActivityLogHelper.saveLog("vừa cập nhật nhóm xưởng: " + oldName + " → " + saveFactory.getName());
+        return RouterHelper.responseSuccess("Cập nhật nhóm xưởng thành công", saveFactory);
     }
 
     @Override
@@ -278,12 +217,16 @@ public class USFactoryServiceImpl implements USFactoryService {
         Optional<Factory> existFactory = factoryRepository.findById(factoryId);
         if (existFactory.isPresent()) {
             Factory factory = existFactory.get();
+            String oldStatus = factory.getStatus() == EntityStatus.ACTIVE ? "Hoạt động" : "Không hoạt động";
             factory.setStatus(existFactory.get().getStatus() == EntityStatus.ACTIVE ? EntityStatus.INACTIVE
                     : EntityStatus.ACTIVE);
-            factoryRepository.save(factory);
+            String newStatus = factory.getStatus() == EntityStatus.ACTIVE ? "Hoạt động" : "Không hoạt động";
+            Factory saveFactory = factoryRepository.save(factory);
             if (factory.getStatus() == EntityStatus.ACTIVE) {
                 commonUserStudentRepository.disableAllStudentDuplicateShiftByIdFactory(factory.getId());
             }
+            userActivityLogHelper.saveLog("vừa thay đổi trạng thái nhóm xưởng " + saveFactory.getName() + " từ " + oldStatus
+                    + " thành " + newStatus);
         }
         return RouterHelper.responseSuccess("Đổi trạng thái nhóm xưởng thành công", null);
     }
@@ -336,6 +279,8 @@ public class USFactoryServiceImpl implements USFactoryService {
             }
         }
 
+        userActivityLogHelper.saveLog(
+                "vừa thay đổi trạng thái hàng loạt " + factories.size() + " nhóm xưởng của kỳ học đã kết thúc");
         return RouterHelper.responseSuccess("Đổi trạng thái nhóm xưởng kỳ trước thành công", factories);
     }
 

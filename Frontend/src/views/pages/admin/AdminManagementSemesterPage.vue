@@ -57,11 +57,30 @@ const modalUpdateLoading = ref(false)
 const modalAdd = ref(false)
 const modalUpdate = ref(false)
 
+// Thêm hàm để xác định học kỳ dựa trên tháng
+const getSemesterByMonth = () => {
+  const currentMonth = dayjs().month() + 1 // +1 vì month() trả về 0-11
+  if (currentMonth >= 1 && currentMonth <= 4) {
+    return 'SPRING'
+  } else if (currentMonth >= 5 && currentMonth <= 8) {
+    return 'SUMMER'
+  } else {
+    return 'FALL'
+  }
+}
+
+// Thêm hàm để lưu khoảng thời gian mặc định
+const defaultDateRange = reactive({
+  fromDate: dayjs().add(1, 'day'), // Ngày mai
+  toDate: dayjs().add(4, 'month'), // 4 tháng sau
+  semesterName: getSemesterByMonth(), // Tự động chọn học kỳ dựa trên tháng
+})
+
 // Dữ liệu cho modal Thêm/Cập Nhật (DatePicker trả về đối tượng dayjs)
 const newSemester = reactive({
-  semesterName: null,
-  fromDate: null,
-  toDate: null,
+  semesterName: defaultDateRange.semesterName, // Set mặc định là học kỳ hiện tại
+  fromDate: defaultDateRange.fromDate,
+  toDate: defaultDateRange.toDate,
 })
 const detailSemester = ref({})
 
@@ -148,10 +167,9 @@ const handleTableChange = (pageInfo) => {
 }
 
 const handleShowModalAdd = () => {
-  newSemester.semesterName = null
-  newSemester.fromDate = null
-  newSemester.toDate = null
-
+  newSemester.semesterName = defaultDateRange.semesterName // Set lại là học kỳ hiện tại
+  newSemester.fromDate = defaultDateRange.fromDate
+  newSemester.toDate = defaultDateRange.toDate
   modalAdd.value = true
 }
 
@@ -160,31 +178,39 @@ const handleAddSemester = () => {
     message.error('Vui lòng nhập đầy đủ thông tin')
     return
   }
-  modalAddLoading.value = true
-  loadingStore.show()
-  const payload = {
-    ...newSemester,
-    fromDate: newSemester.fromDate.valueOf(),
-    toDate: newSemester.toDate.valueOf(),
-  }
-  requestAPI
-    .post(API_ROUTES_ADMIN.FETCH_DATA_SEMESTER, payload)
-    .then(() => {
-      message.success('Thêm học kỳ thành công')
-      modalAdd.value = false
-      fetchSemesters()
-      clearFormAdd()
-    })
-    .catch((error) => {
-      message.error(
-        (error.response && error.response.data && error.response.data.message) ||
-          'Lỗi khi thêm học kỳ',
-      )
-    })
-    .finally(() => {
-      modalAddLoading.value = false
-      loadingStore.hide()
-    })
+  Modal.confirm({
+    title: 'Xác nhận thêm mới',
+    content: 'Bạn có chắc chắn muốn thêm học kỳ mới này?',
+    okText: 'Tiếp tục',
+    cancelText: 'Hủy bỏ',
+    onOk() {
+      modalAddLoading.value = true
+      loadingStore.show()
+      const payload = {
+        ...newSemester,
+        fromDate: newSemester.fromDate.valueOf(),
+        toDate: newSemester.toDate.valueOf(),
+      }
+      requestAPI
+        .post(API_ROUTES_ADMIN.FETCH_DATA_SEMESTER, payload)
+        .then(() => {
+          message.success('Thêm học kỳ thành công')
+          modalAdd.value = false
+          fetchSemesters()
+          clearFormAdd()
+        })
+        .catch((error) => {
+          message.error(
+            (error.response && error.response.data && error.response.data.message) ||
+              'Lỗi khi thêm học kỳ',
+          )
+        })
+        .finally(() => {
+          modalAddLoading.value = false
+          loadingStore.hide()
+        })
+    },
+  })
 }
 
 const handleUpdateSemester = (record) => {
@@ -225,7 +251,8 @@ const updateSemester = () => {
   // Show confirmation dialog with warning about scheduled classes
   Modal.confirm({
     title: 'Xác nhận cập nhật học kỳ',
-    content: 'Lưu ý: Các lịch học mà sinh viên đã được phân công trước ngày bắt đầu hoặc sau ngày kết thúc của học kỳ vẫn sẽ hoạt động bình thường.',
+    content:
+      'Lưu ý: Các lịch học mà sinh viên đã được phân công trước ngày bắt đầu hoặc sau ngày kết thúc của học kỳ vẫn sẽ hoạt động bình thường.',
     okText: 'Cập nhật',
     cancelText: 'Hủy',
     onOk: () => {
@@ -283,9 +310,9 @@ const handleChangeStatusSemester = (record) => {
 }
 
 const clearFormAdd = () => {
-  newSemester.semesterName = ''
-  newSemester.fromDate = null
-  newSemester.toDate = null
+  newSemester.semesterName = defaultDateRange.semesterName
+  newSemester.fromDate = defaultDateRange.fromDate
+  newSemester.toDate = defaultDateRange.toDate
 }
 
 const handleClearFilter = () => {
@@ -305,79 +332,79 @@ onMounted(() => {
 
 <template>
   <div class="container-fluid">
-    <!-- Card Bộ lọc -->
-    <div class="row g-3">
-      <div class="col-12">
-        <a-card :bordered="false" class="cart mb-3">
-          <template #title> <FilterFilled /> Bộ lọc </template>
-          <!-- Hàng 1: Input tìm kiếm & Select trạng thái -->
-          <div class="row g-3 filter-container">
-            <div class="col-xl-6 col-md-12 col-sm-12">
-              <div class="label-title">Từ khoá:</div>
-              <a-input
-                v-model:value="filter.semesterCode"
-                placeholder="Tìm kiếm theo mã học kỳ"
-                allowClear
-                @change="fetchSemesters"
-              >
-                <template #prefix>
-                  <SearchOutlined />
-                </template>
-              </a-input>
-            </div>
-            <div class="col-xl-3 col-md-6 col-sm-6">
-              <div class="label-title">Trạng thái:</div>
-              <a-select
-                v-model:value="filter.status"
-                placeholder="Chọn trạng thái"
-                allowClear
-                class="w-100"
-                @change="fetchSemesters"
-              >
-                <a-select-option :value="''">Tất cả trạng thái</a-select-option>
-                <a-select-option value="ACTIVE">Đang hoạt động</a-select-option>
-                <a-select-option value="INACTIVE">Đã kết thúc</a-select-option>
-              </a-select>
-            </div>
-
-            <div class="col-xl-3 col-md-6 col-sm-6">
-              <div class="label-title">Khoảng ngày:</div>
-              <a-range-picker
-                v-model:value="filter.dateRange"
-                class="w-100"
-                format="DD/MM/YYYY"
-                @change="handleDateRangeChange"
-              />
-            </div>
-          </div>
-          <div class="row">
-            <div class="col-12">
-              <div class="d-flex justify-content-center flex-wrap gap-2 mt-3">
-                <a-button class="btn-light" @click="fetchSemesters">
-                  <FilterFilled /> Lọc
-                </a-button>
-                <a-button class="btn-gray" @click="handleClearFilter"> Huỷ lọc </a-button>
-              </div>
-            </div>
-          </div>
-        </a-card>
-      </div>
-    </div>
-
     <!-- Card Danh sách học kỳ -->
     <div class="row g-3">
+      <div class="col-12">
+        <a-card :bordered="false" class="cart no-body-padding">
+          <a-collapse ghost>
+            <a-collapse-panel>
+              <template #header><FilterFilled /> Bộ lọc</template>
+              <div class="row g-3 filter-container">
+                <div class="col-xl-6 col-md-12 col-sm-12">
+                  <div class="label-title">Từ khoá:</div>
+                  <a-input
+                    v-model:value="filter.semesterCode"
+                    placeholder="Tìm kiếm theo mã học kỳ"
+                    allowClear
+                    @change="fetchSemesters"
+                  >
+                    <template #prefix>
+                      <SearchOutlined />
+                    </template>
+                  </a-input>
+                </div>
+                <div class="col-xl-3 col-md-6 col-sm-6">
+                  <div class="label-title">Trạng thái:</div>
+                  <a-select
+                    v-model:value="filter.status"
+                    placeholder="Chọn trạng thái"
+                    allowClear
+                    class="w-100"
+                    @change="fetchSemesters"
+                  >
+                    <a-select-option :value="''">Tất cả trạng thái</a-select-option>
+                    <a-select-option value="ACTIVE">Đang hoạt động</a-select-option>
+                    <a-select-option value="INACTIVE">Đã kết thúc</a-select-option>
+                  </a-select>
+                </div>
+
+                <div class="col-xl-3 col-md-6 col-sm-6">
+                  <div class="label-title">Khoảng ngày:</div>
+                  <a-range-picker
+                    v-model:value="filter.dateRange"
+                    class="w-100"
+                    format="DD/MM/YYYY"
+                    @change="handleDateRangeChange"
+                  />
+                </div>
+
+                <div class="col-12">
+                  <div class="d-flex justify-content-center flex-wrap gap-2">
+                    <a-button class="btn-light" @click="fetchSemesters">
+                      <FilterFilled /> Lọc
+                    </a-button>
+                    <a-button class="btn-gray" @click="handleClearFilter"> Huỷ lọc </a-button>
+                  </div>
+                </div>
+              </div>
+            </a-collapse-panel>
+          </a-collapse>
+        </a-card>
+      </div>
+
       <div class="col-12">
         <a-card :bordered="false" class="cart">
           <template #title> <UnorderedListOutlined /> Danh sách học kỳ </template>
           <!-- Nút Thêm học kỳ -->
-          <div class="d-flex justify-content-end mb-3">
+          <div class="d-flex justify-content-end mb-2">
             <a-tooltip title="Thêm học kỳ mới">
               <a-button type="primary" @click="handleShowModalAdd">
                 <PlusOutlined />
-                Thêm
+                Thêm mới
               </a-button>
             </a-tooltip>
           </div>
+
           <!-- Bảng hiển thị danh sách học kỳ với chỉ báo loading -->
           <a-table
             class="nowrap"
@@ -472,6 +499,8 @@ onMounted(() => {
             placeholder="Chọn ngày bắt đầu"
             class="w-100"
             format="DD/MM/YYYY"
+            @keyup.enter="handleAddSemester"
+            :disabledDate="(current) => current && current < dayjs().startOf('day')"
           />
         </a-form-item>
         <a-form-item label="Ngày kết thúc" required>
@@ -480,6 +509,8 @@ onMounted(() => {
             placeholder="Chọn ngày kết thúc"
             class="w-100"
             format="DD/MM/YYYY"
+            @keyup.enter="handleAddSemester"
+            :disabledDate="(current) => current && current < newSemester.fromDate"
           />
         </a-form-item>
       </a-form>
@@ -510,6 +541,7 @@ onMounted(() => {
             placeholder="Chọn ngày bắt đầu"
             class="w-100"
             format="DD/MM/YYYY"
+            @keyup.enter="updateSemester"
           />
         </a-form-item>
         <a-form-item label="Ngày kết thúc" required>
@@ -518,6 +550,7 @@ onMounted(() => {
             placeholder="Chọn ngày kết thúc"
             class="w-100"
             format="DD/MM/YYYY"
+            @keyup.enter="updateSemester"
           />
         </a-form-item>
       </a-form>

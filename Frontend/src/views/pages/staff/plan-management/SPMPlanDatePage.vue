@@ -320,7 +320,7 @@ const handleShowAdd = () => {
   formData.startDate = dayjs()
   formData.shift = []
   formData.link = null
-  formData.type = null
+  formData.type = Object.keys(TYPE_SHIFT)[0]
   formData.room = null
   formData.requiredLocation = STATUS_TYPE.ENABLE
   formData.requiredIp = STATUS_TYPE.ENABLE
@@ -525,6 +525,7 @@ watch(
           placeholder="Địa điểm học chi tiết"
           :disabled="modalAddOrUpdate.isLoading || formData.type == '1'"
           allowClear
+          @keyup.enter="modalAddOrUpdate.onOk"
         />
       </a-form-item>
       <a-form-item class="col-sm-12" label="Ca học" name="shift" :rules="formRules.shift">
@@ -538,6 +539,9 @@ watch(
         >
           <a-select-option v-for="o in lstShift" :key="o.id" :value="o.shift">
             {{ SHIFT[o.shift] }}
+            ({{
+              `${String(o.fromHour).padStart(2, 0)}:${String(o.fromMinute).padStart(2, 0)} - ${String(o.toHour).padStart(2, 0)}:${String(o.toMinute).padStart(2, 0)}`
+            }})
           </a-select-option>
         </a-select>
       </a-form-item>
@@ -570,6 +574,7 @@ watch(
           :step="1"
           :disabled="modalAddOrUpdate.isLoading"
           allowClear
+          @keyup.enter="modalAddOrUpdate.onOk"
         />
       </a-form-item>
 
@@ -589,6 +594,7 @@ watch(
           placeholder="https://"
           :disabled="modalAddOrUpdate.isLoading"
           allowClear
+          @keyup.enter="modalAddOrUpdate.onOk"
         />
       </a-form-item>
       <a-form-item class="col-sm-12" label="Điều kiện điểm danh">
@@ -626,7 +632,11 @@ watch(
           <div class="col-sm-6">
             <a-switch
               class="me-2"
-              :checked="formData.requiredIp === STATUS_TYPE.ENABLE"
+              :checked="
+                formData.requiredIp === STATUS_TYPE.ENABLE &&
+                formData.type === Object.keys(TYPE_SHIFT)[0]
+              "
+              :disabled="formData.type !== Object.keys(TYPE_SHIFT)[0]"
               @change="
                 formData.requiredIp =
                   formData.requiredIp === STATUS_TYPE.ENABLE
@@ -641,7 +651,11 @@ watch(
           <div class="col-sm-6">
             <a-switch
               class="me-2"
-              :checked="formData.requiredLocation === STATUS_TYPE.ENABLE"
+              :checked="
+                formData.requiredLocation === STATUS_TYPE.ENABLE &&
+                formData.type === Object.keys(TYPE_SHIFT)[0]
+              "
+              :disabled="formData.type !== Object.keys(TYPE_SHIFT)[0]"
               @change="
                 formData.requiredLocation =
                   formData.requiredLocation === STATUS_TYPE.ENABLE
@@ -661,89 +675,92 @@ watch(
   <div class="container-fluid">
     <div class="row g-3">
       <div class="col-12">
-        <!-- Bộ lọc tìm kiếm -->
-        <a-card :bordered="false" class="cart">
-          <template #title> <FilterFilled /> Bộ lọc </template>
-          <div class="row g-2">
-            <div class="col-xxl-4 col-lg-8 col-md-8 col-sm-12">
-              <div class="label-title">Từ khoá:</div>
-              <a-input
-                v-model:value="dataFilter.keyword"
-                placeholder="Tìm theo nội dung..."
-                allowClear
-              >
-                <template #prefix>
-                  <SearchOutlined />
-                </template>
-              </a-input>
-            </div>
-            <div class="col-xxl-2 col-lg-4 col-md-4 col-sm-6">
-              <div class="label-title">Trạng thái:</div>
-              <a-select
-                v-model:value="dataFilter.status"
-                class="w-100"
-                :dropdownMatchSelectWidth="false"
-                placeholder="-- Tất cả trạng thái --"
-                allowClear
-              >
-                <a-select-option :value="null">-- Tất cả trạng thái --</a-select-option>
-                <a-select-option
-                  v-for="(name, id) in STATUS_PLAN_DATE_DETAIL"
-                  :key="id"
-                  :value="id"
-                >
-                  {{ name }}
-                </a-select-option>
-              </a-select>
-            </div>
-            <div class="col-xxl-2 col-lg-4 col-md-4 col-sm-6">
-              <div class="label-title">Hình thức học:</div>
-              <a-select
-                v-model:value="dataFilter.type"
-                class="w-100"
-                :dropdownMatchSelectWidth="false"
-                placeholder="-- Tất cả hình thức --"
-                allowClear
-              >
-                <a-select-option :value="null">-- Tất cả hình thức --</a-select-option>
-                <a-select-option v-for="(name, id) in TYPE_SHIFT" :key="id" :value="id">
-                  {{ name }}
-                </a-select-option>
-              </a-select>
-            </div>
-            <div class="col-xxl-2 col-lg-4 col-md-4 col-sm-6">
-              <div class="label-title">Ca học:</div>
-              <a-select
-                v-model:value="dataFilter.shift"
-                class="w-100"
-                :dropdownMatchSelectWidth="false"
-                placeholder="-- Tất cả ca học --"
-                allowClear
-              >
-                <a-select-option :value="null">-- Tất cả ca học --</a-select-option>
-                <a-select-option v-for="o in lstShift" :key="o.id" :value="o.shift">
-                  {{ SHIFT[o.shift] }}
-                </a-select-option>
-              </a-select>
-            </div>
-            <div class="col-xxl-2 col-lg-4 col-md-4 col-sm-6">
-              <div class="label-title">Ngày diễn ra:</div>
-              <a-date-picker
-                class="w-100"
-                placeholder="-- Tất cả các ngày --"
-                v-model:value="dataFilter.startDate"
-                :format="DEFAULT_DATE_FORMAT"
-              />
-            </div>
-            <div class="col-12">
-              <div class="d-flex justify-content-center flex-wrap gap-2 mt-3">
-                <a-button class="btn-light" @click="handleSubmitFilter">
-                  <FilterFilled /> Lọc
-                </a-button>
-                <a-button class="btn-gray" @click="handleClearFilter"> Huỷ lọc </a-button>
+        <a-card :bordered="false" class="cart no-body-padding">
+          <a-collapse ghost>
+            <a-collapse-panel>
+              <template #header><FilterFilled /> Bộ lọc</template>
+              <div class="row g-3">
+                <div class="col-xxl-4 col-lg-8 col-md-8 col-sm-12">
+                  <div class="label-title">Từ khoá:</div>
+                  <a-input
+                    v-model:value="dataFilter.keyword"
+                    placeholder="Tìm theo nội dung..."
+                    allowClear
+                  >
+                    <template #prefix>
+                      <SearchOutlined />
+                    </template>
+                  </a-input>
+                </div>
+                <div class="col-xxl-2 col-lg-4 col-md-4 col-sm-6">
+                  <div class="label-title">Trạng thái:</div>
+                  <a-select
+                    v-model:value="dataFilter.status"
+                    class="w-100"
+                    :dropdownMatchSelectWidth="false"
+                    placeholder="-- Tất cả trạng thái --"
+                    allowClear
+                  >
+                    <a-select-option :value="null">-- Tất cả trạng thái --</a-select-option>
+                    <a-select-option
+                      v-for="(name, id) in STATUS_PLAN_DATE_DETAIL"
+                      :key="id"
+                      :value="id"
+                    >
+                      {{ name }}
+                    </a-select-option>
+                  </a-select>
+                </div>
+                <div class="col-xxl-2 col-lg-4 col-md-4 col-sm-6">
+                  <div class="label-title">Hình thức học:</div>
+                  <a-select
+                    v-model:value="dataFilter.type"
+                    class="w-100"
+                    :dropdownMatchSelectWidth="false"
+                    placeholder="-- Tất cả hình thức --"
+                    allowClear
+                  >
+                    <a-select-option :value="null">-- Tất cả hình thức --</a-select-option>
+                    <a-select-option v-for="(name, id) in TYPE_SHIFT" :key="id" :value="id">
+                      {{ name }}
+                    </a-select-option>
+                  </a-select>
+                </div>
+                <div class="col-xxl-2 col-lg-4 col-md-4 col-sm-6">
+                  <div class="label-title">Ca học:</div>
+                  <a-select
+                    v-model:value="dataFilter.shift"
+                    class="w-100"
+                    :dropdownMatchSelectWidth="false"
+                    placeholder="-- Tất cả ca học --"
+                    allowClear
+                  >
+                    <a-select-option :value="null">-- Tất cả ca học --</a-select-option>
+                    <a-select-option v-for="o in lstShift" :key="o.id" :value="o.shift">
+                      {{ SHIFT[o.shift] }}
+                    </a-select-option>
+                  </a-select>
+                </div>
+                <div class="col-xxl-2 col-lg-4 col-md-4 col-sm-6">
+                  <div class="label-title">Ngày diễn ra:</div>
+                  <a-date-picker
+                    class="w-100"
+                    placeholder="-- Tất cả các ngày --"
+                    v-model:value="dataFilter.startDate"
+                    :format="DEFAULT_DATE_FORMAT"
+                  />
+                </div>
+                <div class="col-12">
+                  <div class="d-flex justify-content-center flex-wrap gap-2">
+                    <a-button class="btn-light" @click="handleSubmitFilter">
+                      <FilterFilled /> Lọc
+                    </a-button>
+                    <a-button class="btn-gray" @click="handleClearFilter"> Huỷ lọc </a-button>
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
+            </a-collapse-panel>
+          </a-collapse>
         </a-card>
       </div>
 
@@ -753,7 +770,8 @@ watch(
             <UnorderedListOutlined /> Danh sách ca học
             {{ `(${formatDate(_detail?.fromDate)} - ${formatDate(_detail?.toDate)})` }}
           </template>
-          <div class="d-flex justify-content-end mb-3 flex-wrap gap-3">
+
+          <div class="d-flex justify-content-end flex-wrap gap-3 mb-2">
             <a-button
               v-show="selectedRowKeys.length > 0"
               class="btn-outline-danger"
@@ -777,13 +795,21 @@ watch(
               @change="handleTableChange"
             >
               <template #bodyCell="{ column, record }">
-                <template v-if="column.dataIndex === 'description' && record.description">
-                  <a-typography-link @click="handleShowDescription(record.description)"
+                <template v-if="column.dataIndex === 'description'">
+                  <a-typography-link
+                    v-if="record.description"
+                    @click="handleShowDescription(record.description)"
                     >Chi tiết</a-typography-link
                   >
+                  <span v-else>--</span>
                 </template>
-                <template v-if="column.dataIndex === 'link' && record.link">
-                  <a target="_blank" :href="record.link">Link</a>
+                <template v-if="column.dataIndex === 'link'">
+                  <a v-if="record.link" target="_blank" :href="record.link">Link</a>
+                  <span v-else>--</span>
+                </template>
+                <template v-if="column.dataIndex === 'room'">
+                  <span v-if="record.room">{{ record.room }}</span>
+                  <span v-else>--</span>
                 </template>
                 <template v-if="column.dataIndex === 'lateArrival'">
                   <a-tag color="gold">
@@ -817,7 +843,7 @@ watch(
                   </a-tag>
                 </template>
                 <template v-if="column.dataIndex === 'status'">
-                  <a-badge :status="record.status === 'DA_DIEN_RA' ? 'error' : 'success'" />
+                  <a-badge :status="record.status === 'DA_DIEN_RA' ? 'success' : 'default'" />
                   {{ STATUS_PLAN_DATE_DETAIL[record.status] }}
                 </template>
                 <template v-if="column.dataIndex === 'totalShift'">

@@ -3,12 +3,15 @@ import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
 import {
   FileTextOutlined,
   GoldOutlined,
+  PieChartOutlined,
   ProjectOutlined,
   UsergroupAddOutlined,
   ContainerOutlined,
+  SolutionOutlined,
 } from '@ant-design/icons-vue'
 
 export const ROUTE_NAMES = {
+  MANAGEMENT_STATISTICS: 'route_staff_management_statistics',
   MANAGEMENT_PROJECT: 'route_staff_management_project',
   MANAGEMENT_FACTORY: 'route_staff_management_factory',
   MANAGEMENT_STUDENT_FACTORY: 'route_staff_management_student_factory',
@@ -18,6 +21,7 @@ export const ROUTE_NAMES = {
   MANAGEMENT_PLAN_FACTORY: 'route_staff_management_plan_factory',
   MANAGEMENT_STUDENT: 'route_staff_management_student',
   MANAGEMENT_ATTENDANCE_RECOVERY: 'route_staff_management_attendance_recovery',
+  MANAGEMENT_USER_LOG_ACTIVITY: 'route_staff_management_user_log_activity',
 }
 
 let selectedKey = 1
@@ -27,12 +31,22 @@ export const StaffRoutes = [
     path: '/Staff',
     name: GLOBAL_ROUTE_NAMES.STAFF_PAGE,
     component: () => import('@/views/layout/StaffLayout.vue'),
-    redirect: { name: ROUTE_NAMES.MANAGEMENT_PROJECT },
+    redirect: { name: ROUTE_NAMES.MANAGEMENT_STATISTICS },
     meta: {
       title: 'Phụ trách xưởng',
       requireRole: ROLE.STAFF,
     },
     children: [
+      {
+        path: 'management-statistics',
+        name: ROUTE_NAMES.MANAGEMENT_STATISTICS,
+        component: () => import('@/views/pages/staff/StaffStatisticsPage.vue'),
+        meta: {
+          selectedKey: selectedKey++,
+          name: 'Thống kê',
+          icon: PieChartOutlined,
+        },
+      },
       {
         path: 'management-project',
         name: ROUTE_NAMES.MANAGEMENT_PROJECT,
@@ -106,6 +120,16 @@ export const StaffRoutes = [
           selectedKey: selectedKey++,
           name: 'Khôi phục điểm danh',
           icon: ContainerOutlined,
+        },
+      },
+      {
+        path: 'management-user-log-activity',
+        name: ROUTE_NAMES.MANAGEMENT_USER_LOG_ACTIVITY,
+        component: () => import('@/views/pages/staff/StaffManagementUserLogActivity.vue'),
+        meta: {
+          selectedKey: selectedKey++,
+          name: 'Lịch sử hoạt động',
+          icon: SolutionOutlined,
         },
       },
       {

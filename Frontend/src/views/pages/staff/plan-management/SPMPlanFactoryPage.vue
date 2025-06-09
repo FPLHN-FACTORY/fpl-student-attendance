@@ -66,6 +66,7 @@ const columns = ref(
       dataIndex: 'totalStudent',
       key: 'totalStudent',
     },
+    { title: 'Tiến độ', dataIndex: 'process' },
     { title: 'Trạng thái', dataIndex: 'status', key: 'status' },
     { title: '', key: 'actions' },
   ]),
@@ -398,6 +399,9 @@ watch(
         >
           <a-select-option v-for="o in lstShift" :key="o.id" :value="o.shift">
             {{ SHIFT[o.shift] }}
+            ({{
+              `${String(o.fromHour).padStart(2, 0)}:${String(o.fromMinute).padStart(2, 0)} - ${String(o.toHour).padStart(2, 0)}:${String(o.toMinute).padStart(2, 0)}`
+            }})
           </a-select-option>
         </a-select>
       </a-form-item>
@@ -427,6 +431,7 @@ watch(
           :step="1"
           :disabled="modalAdd.isLoading"
           allowClear
+          @keyup.enter="modalAdd.onOk"
         />
       </a-form-item>
       <a-form-item class="col-sm-4" label="Phòng học">
@@ -436,6 +441,7 @@ watch(
           placeholder="Địa điểm học chi tiết"
           :disabled="modalAdd.isLoading || formDataAdd.type == '1'"
           allowClear
+          @keyup.enter="modalAdd.onOk"
         />
       </a-form-item>
       <a-form-item class="col-sm-12" label="Link học online" name="link">
@@ -445,6 +451,7 @@ watch(
           placeholder="https://"
           :disabled="modalAdd.isLoading"
           allowClear
+          @keyup.enter="modalAdd.onOk"
         />
       </a-form-item>
       <a-form-item class="col-sm-12" label="Điều kiện điểm danh">
@@ -482,7 +489,11 @@ watch(
           <div class="col-sm-6">
             <a-switch
               class="me-2"
-              :checked="formDataAdd.requiredIp === STATUS_TYPE.ENABLE"
+              :checked="
+                formDataAdd.requiredIp === STATUS_TYPE.ENABLE &&
+                formDataAdd.type === Object.keys(TYPE_SHIFT)[0]
+              "
+              :disabled="formDataAdd.type !== Object.keys(TYPE_SHIFT)[0]"
               @change="
                 formDataAdd.requiredIp =
                   formDataAdd.requiredIp === STATUS_TYPE.ENABLE
@@ -497,7 +508,11 @@ watch(
           <div class="col-sm-6">
             <a-switch
               class="me-2"
-              :checked="formDataAdd.requiredLocation === STATUS_TYPE.ENABLE"
+              :checked="
+                formDataAdd.requiredLocation === STATUS_TYPE.ENABLE &&
+                formDataAdd.type === Object.keys(TYPE_SHIFT)[0]
+              "
+              :disabled="formDataAdd.type !== Object.keys(TYPE_SHIFT)[0]"
               @change="
                 formDataAdd.requiredLocation =
                   formDataAdd.requiredLocation === STATUS_TYPE.ENABLE
@@ -517,61 +532,64 @@ watch(
   <div class="container-fluid">
     <div class="row g-3">
       <div class="col-12">
-        <!-- Bộ lọc tìm kiếm -->
-        <a-card :bordered="false" class="cart">
-          <template #title> <FilterFilled /> Bộ lọc </template>
-          <div class="row g-2">
-            <div class="col-md-4 col-sm-12">
-              <div class="label-title">Từ khoá:</div>
-              <a-input
-                v-model:value="dataFilter.keyword"
-                placeholder="Tìm theo tên nhóm xưởng, giảng viên..."
-                allowClear
-              >
-                <template #prefix>
-                  <SearchOutlined />
-                </template>
-              </a-input>
-            </div>
-            <div class="col-md-4 col-sm-6">
-              <div class="label-title">Trạng thái:</div>
-              <a-select
-                v-model:value="dataFilter.status"
-                class="w-100"
-                :dropdownMatchSelectWidth="false"
-                placeholder="-- Tất cả trạng thái --"
-                allowClear
-              >
-                <a-select-option :value="null">-- Tất cả trạng thái --</a-select-option>
-                <a-select-option :value="1">Đang triển khai</a-select-option>
-                <a-select-option :value="0">Ngừng triển khai</a-select-option>
-              </a-select>
-            </div>
-            <div class="col-md-4 col-sm-6">
-              <div class="label-title">Thời gian diễn ra:</div>
-              <a-range-picker
-                class="w-100"
-                :placeholder="['Ngày bắt đầu', 'Ngày kết thúc']"
-                v-model:value="dataFilter.rangeDate"
-                :format="DEFAULT_DATE_FORMAT"
-              />
-            </div>
-            <div class="col-12">
-              <div class="d-flex justify-content-center flex-wrap gap-2 mt-3">
-                <a-button class="btn-light" @click="handleSubmitFilter">
-                  <FilterFilled /> Lọc
-                </a-button>
-                <a-button class="btn-gray" @click="handleClearFilter"> Huỷ lọc </a-button>
+        <a-card :bordered="false" class="cart no-body-padding">
+          <a-collapse ghost>
+            <a-collapse-panel>
+              <template #header><FilterFilled /> Bộ lọc</template>
+              <div class="row g-3">
+                <div class="col-md-4 col-sm-12">
+                  <div class="label-title">Từ khoá:</div>
+                  <a-input
+                    v-model:value="dataFilter.keyword"
+                    placeholder="Tìm theo tên nhóm xưởng, giảng viên..."
+                    allowClear
+                  >
+                    <template #prefix>
+                      <SearchOutlined />
+                    </template>
+                  </a-input>
+                </div>
+                <div class="col-md-4 col-sm-6">
+                  <div class="label-title">Trạng thái:</div>
+                  <a-select
+                    v-model:value="dataFilter.status"
+                    class="w-100"
+                    :dropdownMatchSelectWidth="false"
+                    placeholder="-- Tất cả trạng thái --"
+                    allowClear
+                  >
+                    <a-select-option :value="null">-- Tất cả trạng thái --</a-select-option>
+                    <a-select-option :value="1">Đang triển khai</a-select-option>
+                    <a-select-option :value="0">Ngừng triển khai</a-select-option>
+                  </a-select>
+                </div>
+                <div class="col-md-4 col-sm-6">
+                  <div class="label-title">Thời gian diễn ra:</div>
+                  <a-range-picker
+                    class="w-100"
+                    :placeholder="['Ngày bắt đầu', 'Ngày kết thúc']"
+                    v-model:value="dataFilter.rangeDate"
+                    :format="DEFAULT_DATE_FORMAT"
+                  />
+                </div>
+                <div class="col-12">
+                  <div class="d-flex justify-content-center flex-wrap gap-2">
+                    <a-button class="btn-light" @click="handleSubmitFilter">
+                      <FilterFilled /> Lọc
+                    </a-button>
+                    <a-button class="btn-gray" @click="handleClearFilter"> Huỷ lọc </a-button>
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
+            </a-collapse-panel>
+          </a-collapse>
         </a-card>
       </div>
 
       <div class="col-12">
         <a-card :bordered="false" class="cart">
           <template #title> <UnorderedListOutlined /> Danh sách phân công nhóm xưởng </template>
-          <div class="d-flex justify-content-end mb-3 gap-3">
+          <div class="d-flex justify-content-end gap-3 mb-2">
             <a-button type="primary" @click="handleShowModalAdd">
               <PlusOutlined /> Phân công nhóm xưởng
             </a-button>
@@ -598,13 +616,20 @@ watch(
               <template v-if="column.key === 'time'">
                 <a-tag color="blue">{{ formatDate(record.fromDate) }}</a-tag
                 >->
-                <a-tag color="red">{{ formatDate(record.toDate) }}</a-tag>
+                <a-tag color="purple">{{ formatDate(record.toDate) }}</a-tag>
               </template>
               <template v-if="column.dataIndex === 'totalShift'">
-                <a-tag> {{ record.totalShift }} buổi </a-tag>
+                <a-tag color="orange"> {{ record.totalShift }} buổi </a-tag>
               </template>
               <template v-if="column.dataIndex === 'totalStudent'">
                 <a-tag> {{ record.totalStudent }} sinh viên </a-tag>
+              </template>
+              <template v-if="column.dataIndex === 'process'">
+                <a-progress
+                  :percent="Math.round((record.totalCurrentShift / record.totalShift) * 100)"
+                  :steps="5"
+                  :stroke-color="['#FDD835', '#FFCA28', '#CDDC39', '#7CB342', '#4CAF50']"
+                />
               </template>
               <template v-if="column.dataIndex === 'status'">
                 <a-switch

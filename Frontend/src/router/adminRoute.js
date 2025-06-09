@@ -5,6 +5,7 @@ import {
   BookOutlined,
   CalendarOutlined,
   ClusterOutlined,
+  SolutionOutlined,
   TeamOutlined,
   UserOutlined,
 } from '@ant-design/icons-vue'
@@ -20,6 +21,7 @@ export const ROUTE_NAMES = {
   MANAGEMENT_LEVEL_PROJECT: 'route_admin_management_level_project',
   MANAGEMENT_STAFF: 'route_admin_management_staff',
   MANAGEMENT_ADMIN: 'route_admin_management_admin',
+  MANAGEMENT_USER_LOG_ACTIVITY: 'route_admin_management_user_log_activity',
 }
 let selectedKey = 1
 
@@ -116,6 +118,16 @@ export const AdminRoutes = [
           selectedKey: selectedKey++,
           name: 'Quản lý Admin',
           icon: UserOutlined,
+        },
+      },
+      {
+        path: 'management-user-log-activity',
+        name: ROUTE_NAMES.MANAGEMENT_USER_LOG_ACTIVITY,
+        component: () => import('@/views/pages/admin/AdminManagementUserLogActivity.vue'),
+        meta: {
+          selectedKey: selectedKey++,
+          name: 'Lịch sử hoạt động',
+          icon: SolutionOutlined,
         },
       },
       {

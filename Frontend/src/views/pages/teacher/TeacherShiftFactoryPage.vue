@@ -202,89 +202,92 @@ watch(
   <div class="container-fluid">
     <div class="row g-3">
       <div class="col-12">
-        <!-- Bộ lọc tìm kiếm -->
-        <a-card :bordered="false" class="cart">
-          <template #title> <FilterFilled /> Bộ lọc </template>
-          <div class="row g-2">
-            <div class="col-xxl-4 col-lg-8 col-md-8 col-sm-12">
-              <div class="label-title">Từ khoá:</div>
-              <a-input
-                v-model:value="dataFilter.keyword"
-                placeholder="Tìm theo nội dung..."
-                allowClear
-              >
-                <template #prefix>
-                  <SearchOutlined />
-                </template>
-              </a-input>
-            </div>
-            <div class="col-xxl-2 col-lg-4 col-md-4 col-sm-6">
-              <div class="label-title">Trạng thái:</div>
-              <a-select
-                v-model:value="dataFilter.status"
-                class="w-100"
-                :dropdownMatchSelectWidth="false"
-                placeholder="-- Tất cả trạng thái --"
-                allowClear
-              >
-                <a-select-option :value="null">-- Tất cả trạng thái --</a-select-option>
-                <a-select-option
-                  v-for="(name, id) in STATUS_PLAN_DATE_DETAIL"
-                  :key="id"
-                  :value="id"
-                >
-                  {{ name }}
-                </a-select-option>
-              </a-select>
-            </div>
-            <div class="col-xxl-2 col-lg-4 col-md-4 col-sm-6">
-              <div class="label-title">Hình thức học:</div>
-              <a-select
-                v-model:value="dataFilter.type"
-                class="w-100"
-                :dropdownMatchSelectWidth="false"
-                placeholder="-- Tất cả hình thức --"
-                allowClear
-              >
-                <a-select-option :value="null">-- Tất cả hình thức --</a-select-option>
-                <a-select-option v-for="(name, id) in TYPE_SHIFT" :key="id" :value="id">
-                  {{ name }}
-                </a-select-option>
-              </a-select>
-            </div>
-            <div class="col-xxl-2 col-lg-4 col-md-4 col-sm-6">
-              <div class="label-title">Ca học:</div>
-              <a-select
-                v-model:value="dataFilter.shift"
-                class="w-100"
-                :dropdownMatchSelectWidth="false"
-                placeholder="-- Tất cả ca học --"
-                allowClear
-              >
-                <a-select-option :value="null">-- Tất cả ca học --</a-select-option>
-                <a-select-option v-for="o in lstShift" :key="o.id" :value="o.shift">
-                  {{ SHIFT[o.shift] }}
-                </a-select-option>
-              </a-select>
-            </div>
-            <div class="col-xxl-2 col-lg-4 col-md-4 col-sm-6">
-              <div class="label-title">Ngày diễn ra:</div>
-              <a-date-picker
-                class="w-100"
-                placeholder="-- Tất cả các ngày --"
-                v-model:value="dataFilter.startDate"
-                :format="DEFAULT_DATE_FORMAT"
-              />
-            </div>
-            <div class="col-12">
-              <div class="d-flex justify-content-center flex-wrap gap-2 mt-3">
-                <a-button class="btn-light" @click="handleSubmitFilter">
-                  <FilterFilled /> Lọc
-                </a-button>
-                <a-button class="btn-gray" @click="handleClearFilter"> Huỷ lọc </a-button>
+        <a-card :bordered="false" class="cart no-body-padding">
+          <a-collapse ghost>
+            <a-collapse-panel>
+              <template #header><FilterFilled /> Bộ lọc</template>
+              <div class="row g-2">
+                <div class="col-xxl-4 col-lg-8 col-md-8 col-sm-12">
+                  <div class="label-title">Từ khoá:</div>
+                  <a-input
+                    v-model:value="dataFilter.keyword"
+                    placeholder="Tìm theo nội dung..."
+                    allowClear
+                  >
+                    <template #prefix>
+                      <SearchOutlined />
+                    </template>
+                  </a-input>
+                </div>
+                <div class="col-xxl-2 col-lg-4 col-md-4 col-sm-6">
+                  <div class="label-title">Trạng thái:</div>
+                  <a-select
+                    v-model:value="dataFilter.status"
+                    class="w-100"
+                    :dropdownMatchSelectWidth="false"
+                    placeholder="-- Tất cả trạng thái --"
+                    allowClear
+                  >
+                    <a-select-option :value="null">-- Tất cả trạng thái --</a-select-option>
+                    <a-select-option
+                      v-for="(name, id) in STATUS_PLAN_DATE_DETAIL"
+                      :key="id"
+                      :value="id"
+                    >
+                      {{ name }}
+                    </a-select-option>
+                  </a-select>
+                </div>
+                <div class="col-xxl-2 col-lg-4 col-md-4 col-sm-6">
+                  <div class="label-title">Hình thức học:</div>
+                  <a-select
+                    v-model:value="dataFilter.type"
+                    class="w-100"
+                    :dropdownMatchSelectWidth="false"
+                    placeholder="-- Tất cả hình thức --"
+                    allowClear
+                  >
+                    <a-select-option :value="null">-- Tất cả hình thức --</a-select-option>
+                    <a-select-option v-for="(name, id) in TYPE_SHIFT" :key="id" :value="id">
+                      {{ name }}
+                    </a-select-option>
+                  </a-select>
+                </div>
+                <div class="col-xxl-2 col-lg-4 col-md-4 col-sm-6">
+                  <div class="label-title">Ca học:</div>
+                  <a-select
+                    v-model:value="dataFilter.shift"
+                    class="w-100"
+                    :dropdownMatchSelectWidth="false"
+                    placeholder="-- Tất cả ca học --"
+                    allowClear
+                  >
+                    <a-select-option :value="null">-- Tất cả ca học --</a-select-option>
+                    <a-select-option v-for="o in lstShift" :key="o.id" :value="o.shift">
+                      {{ SHIFT[o.shift] }}
+                    </a-select-option>
+                  </a-select>
+                </div>
+                <div class="col-xxl-2 col-lg-4 col-md-4 col-sm-6">
+                  <div class="label-title">Ngày diễn ra:</div>
+                  <a-date-picker
+                    class="w-100"
+                    placeholder="-- Tất cả các ngày --"
+                    v-model:value="dataFilter.startDate"
+                    :format="DEFAULT_DATE_FORMAT"
+                  />
+                </div>
+                <div class="col-12">
+                  <div class="d-flex justify-content-center flex-wrap gap-2">
+                    <a-button class="btn-light" @click="handleSubmitFilter">
+                      <FilterFilled /> Lọc
+                    </a-button>
+                    <a-button class="btn-gray" @click="handleClearFilter"> Huỷ lọc </a-button>
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
+            </a-collapse-panel>
+          </a-collapse>
         </a-card>
       </div>
 
@@ -294,9 +297,11 @@ watch(
             <UnorderedListOutlined /> Danh sách ca học
             {{ `(${formatDate(_detail?.fromDate)} - ${formatDate(_detail?.toDate)})` }}
           </template>
-          <div class="d-flex justify-content-end mb-3 flex-wrap gap-3">
+
+          <div class="d-flex justify-content-end flex-wrap gap-3 mb-2">
             <ExcelUploadButton v-bind="configImportExcel" />
           </div>
+
           <div>
             <a-table
               rowKey="id"

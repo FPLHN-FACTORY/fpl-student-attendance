@@ -13,6 +13,7 @@ import udpm.hn.studentattendance.entities.UserStudentFactory;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
 import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
+import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
 
 import java.util.Optional;
 
@@ -22,6 +23,8 @@ import java.util.Optional;
 public class TCStudentFactoryServiceImpl implements TCStudentFactoryService {
 
         private final TCStudentFactoryExtendRepository teacherStudentFactoryExtendRepository;
+
+        private final UserActivityLogHelper userActivityLogHelper;
 
         @Override
         public ResponseEntity<?> getAllStudentFactory(TCStudentFactoryRequest studentRequest) {
@@ -51,6 +54,9 @@ public class TCStudentFactoryServiceImpl implements TCStudentFactoryService {
                                 .findById(studentFactoryId);
                 if (userStudentFactory.isPresent()) {
                         teacherStudentFactoryExtendRepository.deleteById(studentFactoryId);
+                        userActivityLogHelper.saveLog("vừa xóa sinh viên "
+                                        + userStudentFactory.get().getUserStudent().getCode() + " khỏi nhóm xưởng "
+                                        + userStudentFactory.get().getFactory().getName());
                         return RouterHelper.responseSuccess("Xoá sinh viên có mã " + userStudentFactory.get()
                                         .getUserStudent().getCode() + " thành công", null);
                 }

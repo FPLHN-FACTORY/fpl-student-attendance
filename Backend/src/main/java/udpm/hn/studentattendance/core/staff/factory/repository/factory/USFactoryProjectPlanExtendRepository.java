@@ -1,7 +1,9 @@
 package udpm.hn.studentattendance.core.staff.factory.repository.factory;
 
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 import udpm.hn.studentattendance.entities.Plan;
 import udpm.hn.studentattendance.repositories.PlanRepository;
 
@@ -10,6 +12,8 @@ public interface USFactoryProjectPlanExtendRepository extends PlanRepository {
 
     Plan getPlanByProjectId(String projectId);
 
+    @Modifying
+    @Transactional
     @Query(value = """
             DELETE  a, pd, pf
             FROM plan p

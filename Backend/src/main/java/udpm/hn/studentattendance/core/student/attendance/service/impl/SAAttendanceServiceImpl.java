@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import udpm.hn.studentattendance.core.student.attendance.model.request.SACheckinAttendanceRequest;
 import udpm.hn.studentattendance.core.student.attendance.model.request.SAFilterAttendanceRequest;
+import udpm.hn.studentattendance.core.student.attendance.model.response.SAAttendanceRecoveryResponse;
 import udpm.hn.studentattendance.core.student.attendance.model.response.SAAttendanceResponse;
 import udpm.hn.studentattendance.core.student.attendance.repositories.SAAttendanceRepository;
 import udpm.hn.studentattendance.core.student.attendance.repositories.SAFacilityIPRepository;
@@ -38,6 +39,7 @@ import udpm.hn.studentattendance.utils.DateTimeUtils;
 import udpm.hn.studentattendance.utils.FaceRecognitionUtils;
 import udpm.hn.studentattendance.utils.GeoUtils;
 
+import java.util.Calendar;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -131,6 +133,12 @@ public class SAAttendanceServiceImpl implements SAAttendanceService {
             }
         }
 
+        SAAttendanceRecoveryResponse attendanceRecovery = attendanceRepository.getAttendanceRecovery(planDate.getId(), userStudentFactory.getUserStudent().getId()).orElse(null);
+        boolean isRecovery = attendanceRecovery != null && attendanceRecovery.getTotalLateAttendance() > attendanceRecovery.getCurrentLateAttendance();
+
+        Long lateCheckin = null;
+        Long lateCheckout = null;
+
         if (attendance == null || attendance.getAttendanceStatus() == AttendanceStatus.NOTCHECKIN) {
             if (isEnableCheckin || !isEnableCheckout) {
                 if (DateTimeUtils.getCurrentTimeMillis() <= planDate.getStartDate() - (long) EARLY_CHECKIN * 60 * 1000) {
@@ -138,7 +146,10 @@ public class SAAttendanceServiceImpl implements SAAttendanceService {
                 }
 
                 if (DateTimeUtils.getCurrentTimeMillis() > planDate.getStartDate() + planDate.getLateArrival() * 60 * 1000) {
-                    return RouterHelper.responseError("Đã quá giờ " + (isEnableCheckin ? "checkin đầu giờ" : "điểm danh"));
+                    if (!isRecovery) {
+                        return RouterHelper.responseError("Đã quá giờ " + (isEnableCheckin ? "checkin đầu giờ" : "điểm danh"));
+                    }
+                    lateCheckin = Calendar.getInstance().getTimeInMillis();
                 }
             }
 
@@ -148,7 +159,10 @@ public class SAAttendanceServiceImpl implements SAAttendanceService {
                 }
 
                 if (DateTimeUtils.getCurrentTimeMillis() > planDate.getEndDate() + planDate.getLateArrival() * 60 * 1000) {
-                    return RouterHelper.responseError("Đã quá giờ checkout cuối giờ");
+                    if (!isRecovery) {
+                        return RouterHelper.responseError("Đã quá giờ checkout cuối giờ");
+                    }
+                    lateCheckout = Calendar.getInstance().getTimeInMillis();
                 }
             }
 
@@ -163,7 +177,10 @@ public class SAAttendanceServiceImpl implements SAAttendanceService {
             }
 
             if (DateTimeUtils.getCurrentTimeMillis() > planDate.getEndDate() + planDate.getLateArrival() * 60 * 1000) {
-                return RouterHelper.responseError("Đã quá giờ checkout cuối giờ");
+                if (!isRecovery) {
+                    return RouterHelper.responseError("Đã quá giờ checkout cuối giờ");
+                }
+                attendance.setLateCheckout(Calendar.getInstance().getTimeInMillis());
             }
 
         }
@@ -191,6 +208,8 @@ public class SAAttendanceServiceImpl implements SAAttendanceService {
         attendance.setAttendanceStatus(AttendanceStatus.CHECKIN);
         attendance.setUserStudent(userStudent);
         attendance.setPlanDate(planDate);
+        attendance.setLateCheckin(lateCheckin);
+        attendance.setLateCheckout(lateCheckout);
 
         Attendance entity = attendanceRepository.save(attendance);
         sendMessageWS(planDate, userStudent);

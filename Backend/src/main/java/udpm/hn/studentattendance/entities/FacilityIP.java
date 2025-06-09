@@ -1,6 +1,7 @@
 package udpm.hn.studentattendance.entities;
 
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.JoinColumn;
@@ -25,7 +26,6 @@ import java.io.Serializable;
 @NoArgsConstructor
 @Table(name = "facility_ip")
 @DynamicUpdate
-@ToString
 public class FacilityIP extends PrimaryEntity implements Serializable {
 
     @Column(name = "type")
@@ -36,6 +36,7 @@ public class FacilityIP extends PrimaryEntity implements Serializable {
 
     @ManyToOne
     @JoinColumn(name = "id_facility", nullable = false)
+    @JsonIgnore
     private Facility facility;
 
 }

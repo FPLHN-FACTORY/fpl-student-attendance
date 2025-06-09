@@ -24,14 +24,15 @@ public interface ADSemesterRepository extends SemesterRepository {
                             s.semesterName AS semesterName,
                             s.status AS semesterStatus,
                             s.fromDate AS startDate,
-                            s.toDate AS endDate
+                            s.toDate AS endDate,
+                            s.createdAt
                         FROM Semester s
                         WHERE (:#{#request.semesterCode} IS NULL OR s.code LIKE CONCAT('%', TRIM(:#{#request.semesterCode}), '%'))
                           AND (:#{#request.status} IS NULL OR s.status = :#{#request.status})
                           AND ((:#{#request.fromDateSemester} IS NULL OR :#{#request.toDateSemester} IS NULL)
                                OR (s.fromDate >= :#{#request.fromDateSemester} AND s.toDate <= :#{#request.toDateSemester})
                                OR (s.toDate >= :#{#request.fromDateSemester} AND s.fromDate <= :#{#request.toDateSemester}))
-                        ORDER BY s.status desc
+                        ORDER BY s.status desc, s.createdAt desc 
                         """, countQuery = """
                         SELECT COUNT(s.id)
                         FROM Semester s

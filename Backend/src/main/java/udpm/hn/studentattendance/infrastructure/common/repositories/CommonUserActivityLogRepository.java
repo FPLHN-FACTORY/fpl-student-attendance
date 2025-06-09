@@ -8,7 +8,6 @@ import udpm.hn.studentattendance.infrastructure.common.model.request.UALFilterRe
 import udpm.hn.studentattendance.infrastructure.common.model.response.UALResponse;
 import udpm.hn.studentattendance.repositories.UserActivityLogRepository;
 
-
 @Repository
 public interface CommonUserActivityLogRepository extends UserActivityLogRepository {
 
@@ -19,6 +18,7 @@ public interface CommonUserActivityLogRepository extends UserActivityLogReposito
             ual.created_at,
             ual.updated_at,
             ual.message,
+            ual.role,
             f.id AS facilityId,
             f.name AS facilityName,
             COALESCE(ua.id, us.id) AS userId,
@@ -28,23 +28,29 @@ public interface CommonUserActivityLogRepository extends UserActivityLogReposito
         LEFT JOIN facility f ON ual.id_facility = f.id
         LEFT JOIN user_admin ua ON ua.id = ual.id_user
         LEFT JOIN user_staff us ON us.id = ual.id_user
-        WHERE
-            (:#{#request.facilityId} IS NULL OR ual.id_facility = :#{#request.facilityId}) AND
-            (:#{#request.role} IS NULL OR ual.role = :#{#request.role}) AND
-            (:#{#request.userId} IS NULL OR ual.id_user = :#{#request.userId})
+        WHERE 1=1
+            AND (COALESCE(:#{#request.facilityId}, '') = '' OR ual.id_facility = :#{#request.facilityId})
+            AND (COALESCE(:#{#request.role}, 0) = 0 OR ual.role = :#{#request.role})
+            AND (COALESCE(:#{#request.userId}, '') = '' OR ual.id_user = :#{#request.userId})
+            AND (COALESCE(:#{#request.searchQuery}, '') = '' OR
+                 COALESCE(ua.name, us.name, '') LIKE CONCAT('%', :#{#request.searchQuery}, '%') OR
+                 COALESCE(ual.message, '') LIKE CONCAT('%', :#{#request.searchQuery}, '%') OR
+                 COALESCE(ua.code, us.code, '') LIKE CONCAT('%', :#{#request.searchQuery}, '%'))
         ORDER BY ual.created_at DESC
     """, countQuery = """
-        SELECT
-            COUNT(*)
+        SELECT COUNT(*)
         FROM user_activity_log ual
         LEFT JOIN facility f ON ual.id_facility = f.id
         LEFT JOIN user_admin ua ON ua.id = ual.id_user
         LEFT JOIN user_staff us ON us.id = ual.id_user
-        WHERE
-            (:#{#request.facilityId} IS NULL OR ual.id_facility = :#{#request.facilityId}) AND
-            (:#{#request.role} IS NULL OR ual.role = :#{#request.role}) AND
-            (:#{#request.userId} IS NULL OR ual.id_user = :#{#request.userId})
-        ORDER BY ual.created_at DESC
+        WHERE 1=1
+            AND (COALESCE(:#{#request.facilityId}, '') = '' OR ual.id_facility = :#{#request.facilityId})
+            AND (COALESCE(:#{#request.role}, 0) = 0 OR ual.role = :#{#request.role})
+            AND (COALESCE(:#{#request.userId}, '') = '' OR ual.id_user = :#{#request.userId})
+            AND (COALESCE(:#{#request.searchQuery}, '') = '' OR
+                 COALESCE(ua.name, us.name, '') LIKE CONCAT('%', :#{#request.searchQuery}, '%') OR
+                 COALESCE(ual.message, '') LIKE CONCAT('%', :#{#request.searchQuery}, '%') OR
+                 COALESCE(ua.code, us.code, '') LIKE CONCAT('%', :#{#request.searchQuery}, '%'))
     """, nativeQuery = true)
     Page<UALResponse> getListFilter(Pageable pageable, UALFilterRequest request);
 

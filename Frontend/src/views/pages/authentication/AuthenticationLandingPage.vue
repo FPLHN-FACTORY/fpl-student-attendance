@@ -29,7 +29,34 @@ const facilityID = ref(null)
 const isShowModalSelectFacility = ref(false)
 const lstFacility = ref([])
 
-let roles = []
+let roles = [
+  {
+    role: ROLE.ADMIN,
+    label: 'Admin',
+    img: imgRoleAdmin,
+    route: GLOBAL_ROUTE_NAMES.ADMIN_PAGE,
+  },
+  {
+    role: ROLE.STAFF,
+    label: 'Phụ trách xưởng',
+    img: imgRoleStaff,
+    route: GLOBAL_ROUTE_NAMES.STAFF_PAGE,
+  },
+  {
+    role: ROLE.TEACHER,
+    label: 'Giảng viên',
+    img: imgRoleTeacher,
+    route: GLOBAL_ROUTE_NAMES.TEACHER_PAGE,
+  },
+  {
+    role: ROLE.STUDENT,
+    label: 'Sinh viên',
+    img: imgRoleStudent,
+    route: GLOBAL_ROUTE_NAMES.STUDENT_PAGE,
+  },
+]
+
+const tmpRoles = [...roles]
 
 const isRouteAdm = route.path === PREFIX_ADMIN_PANEL
 const isRoleAdm =
@@ -38,39 +65,18 @@ const isRoleAdm =
   authStore?.user?.role.includes(ROLE.TEACHER)
 
 if (isRouteAdm || isRoleAdm) {
-  roles = [
-    {
-      role: ROLE.ADMIN,
-      label: 'Admin',
-      img: imgRoleAdmin,
-      route: GLOBAL_ROUTE_NAMES.ADMIN_PAGE,
-    },
-    {
-      role: ROLE.STAFF,
-      label: 'Phụ trách xưởng',
-      img: imgRoleStaff,
-      route: GLOBAL_ROUTE_NAMES.STAFF_PAGE,
-    },
-    {
-      role: ROLE.TEACHER,
-      label: 'Giảng viên',
-      img: imgRoleTeacher,
-      route: GLOBAL_ROUTE_NAMES.TEACHER_PAGE,
-    },
-  ]
+  roles = roles.filter((o) => o.role !== ROLE.STUDENT)
+} else {
+  roles = roles.filter((o) => o.role === ROLE.STUDENT)
 }
 
-const isRoleStudent = authStore?.user?.role.includes(ROLE.STUDENT)
+if (!roles.length && authStore.isLogin) {
+  roles = tmpRoles.filter((o) => authStore.user.role.includes(o.role))
+}
 
-if (!roles.length || isRoleStudent) {
-  roles = [
-    {
-      role: ROLE.STUDENT,
-      label: 'Sinh viên',
-      img: imgRoleStudent,
-      route: GLOBAL_ROUTE_NAMES.STUDENT_PAGE,
-    },
-  ]
+const handleLogout = () => {
+  authStore.logout()
+  window.location.href = isRoleAdm ? URL_ADMIN_PANEL : BASE_URL
 }
 
 const showModalSelectFacility = () => (isShowModalSelectFacility.value = true)
@@ -198,6 +204,19 @@ onMounted(async () => {
           </template>
         </div>
       </div>
+      <div class="d-flex justify-content-center align-items-center" v-if="authStore.isLogin">
+        <div class="role-container mt-2">
+          <div class="role-item">
+            <a-button
+              type="primary"
+              class="role-button button-logout"
+              size="large"
+              @click="handleLogout"
+              >Đăng xuất</a-button
+            >
+          </div>
+        </div>
+      </div>
       <p class="footer">Powered by <strong>FPLHN-UDPM</strong></p>
     </div>
 
@@ -292,6 +311,7 @@ onMounted(async () => {
   height: auto;
   max-width: 100%;
 }
+
 .role-button {
   width: 100%;
   margin-top: 10px;
@@ -304,6 +324,20 @@ onMounted(async () => {
   background-color: #6b667d;
   border-color: #6b667d;
   color: white;
+}
+.button-logout {
+  width: 280px;
+  max-width: 100%;
+  color: #000;
+  background-color: #f1f3f5;
+  border-color: #d9d9d9;
+  box-shadow: none;
+}
+.button-logout:hover,
+.button-logout:active {
+  background: #dce1e3;
+  color: #000;
+  border-color: #d9d9d9;
 }
 .footer {
   margin-top: 6rem;

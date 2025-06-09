@@ -40,7 +40,7 @@ public class UserActivityLogHelper {
         commonUserActivityLogRepository.save(userActivityLog);
     }
 
-    private PageableObject<UALResponse> getAll(UALFilterRequest request) {
+    public PageableObject<UALResponse> getAll(UALFilterRequest request) {
         Pageable pageable = PaginationHelper.createPageable(request);
         return PageableObject.of(commonUserActivityLogRepository.getListFilter(pageable, request));
     }

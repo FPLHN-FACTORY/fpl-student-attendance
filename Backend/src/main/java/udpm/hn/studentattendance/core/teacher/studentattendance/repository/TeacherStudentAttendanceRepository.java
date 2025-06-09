@@ -12,63 +12,59 @@ import java.util.Optional;
 @Repository
 public interface TeacherStudentAttendanceRepository extends AttendanceRepository {
 
-    /**
-     * Lấy danh sách sinh viên kèm trạng thái điểm danh (mặc định 1 nếu chưa có bản ghi)
-     */
+
     @Query(value = """
-        SELECT 
-            ROW_NUMBER() OVER (ORDER BY us.name ASC) as orderNumber,
-            us.id,
-            us.code,
-            us.name,
-            pd.required_checkin,
-            pd.required_checkout,
-            a.id as idAttendance,
-            COALESCE(a.attendance_status, 0) AS status,
-            COALESCE(a.created_at, 0) AS createdAt,
-            COALESCE(a.updated_at, 0) AS updatedAt
-        FROM user_student_factory usf
-        JOIN factory f ON usf.id_factory = f.id
-        JOIN plan_factory pf ON f.id = pf.id_factory
-        JOIN plan_date pd ON pd.id_plan_factory = pf.id
-        JOIN user_student us ON usf.id_user_student = us.id
-        LEFT JOIN attendance a ON pd.id = a.id_plan_date AND a.id_user_student = usf.id_user_student
-        WHERE
-            pd.status = 1 AND
-            pf.status = 1 AND
-            f.status = 1 AND
-            us.status = 1 AND
-            usf.status = 1 AND
-            EXISTS(
-                SELECT 1
-                FROM plan p
-                JOIN project pj ON f.id_project = pj.id
-                JOIN subject_facility sf ON sf.id = pj.id_subject_facility
-                JOIN subject s2 ON s2.id = sf.id_subject
-                JOIN facility f2 ON sf.id_facility = f2.id
-                JOIN semester s ON pj.id_semester = s.id
-                WHERE 
-                     pf.id_plan = p.id AND
-                     p.status = 1 AND
-                     pj.status = 1 AND
-                     s.status = 1 AND
-                     s2.status = 1 AND
-                     f2.status = 1 AND
-                     sf.status = 1 AND
-                     f2.id = :idFacility
-            ) AND
-            pd.start_date <= UNIX_TIMESTAMP(NOW()) * 1000 AND
-            pd.id = :idPlanDate
-        ORDER BY
-            us.name ASC 
-    """, nativeQuery = true)
+    SELECT 
+        ROW_NUMBER() OVER (ORDER BY us.name ASC) as orderNumber,
+        us.id,
+        us.code,
+        us.name,
+        pd.required_checkin,
+        pd.required_checkout,
+        a.id as idAttendance,
+        COALESCE(a.attendance_status, 0) AS status,
+        COALESCE(a.created_at, 0) AS createdAt,
+        COALESCE(a.updated_at, 0) AS updatedAt
+    FROM user_student_factory usf
+    JOIN factory f ON usf.id_factory = f.id
+    JOIN plan_factory pf ON f.id = pf.id_factory
+    JOIN plan_date pd ON pd.id_plan_factory = pf.id
+    JOIN user_student us ON usf.id_user_student = us.id
+    LEFT JOIN attendance a ON (pd.id = a.id_plan_date AND a.id_user_student = us.id)
+    WHERE
+        pd.status = 1 AND
+        pf.status = 1 AND
+        f.status = 1 AND
+        us.status = 1 AND
+        usf.status = 1 AND
+        pd.id = :idPlanDate AND
+        EXISTS(
+            SELECT 1
+            FROM plan p
+            JOIN project pj ON f.id_project = pj.id
+            JOIN subject_facility sf ON sf.id = pj.id_subject_facility
+            JOIN subject s2 ON s2.id = sf.id_subject
+            JOIN facility f2 ON sf.id_facility = f2.id
+            JOIN semester s ON pj.id_semester = s.id
+            WHERE 
+                 pf.id_plan = p.id AND
+                 p.status = 1 AND
+                 pj.status = 1 AND
+                 s.status = 1 AND
+                 s2.status = 1 AND
+                 f2.status = 1 AND
+                 sf.status = 1 AND
+                 f2.id = :idFacility
+        ) AND
+        pd.start_date <= UNIX_TIMESTAMP(NOW()) * 1000
+    ORDER BY
+        us.name ASC 
+""", nativeQuery = true)
     List<TeacherStudentAttendanceResponse> getAllByPlanDate(
             String idPlanDate, String idFacility
     );
 
-    /**
-     * Lấy danh sách userStudentId theo planDate
-     */
+
     @Query(value = """
         SELECT usf.id_user_student
         FROM plan_date pd
@@ -81,9 +77,6 @@ public interface TeacherStudentAttendanceRepository extends AttendanceRepository
             String planDateId
     );
 
-    /**
-     * Lấy attendanceId theo planDate và userStudent
-     */
     @Query(value = """
         SELECT a.id
         FROM attendance a

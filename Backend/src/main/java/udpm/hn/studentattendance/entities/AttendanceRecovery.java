@@ -1,5 +1,6 @@
 package udpm.hn.studentattendance.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -30,6 +31,14 @@ public class AttendanceRecovery extends PrimaryEntity implements Serializable {
 
     @Column(name = "day")
     private Long day;
+
+    @Column(name = "total_student")
+    private Integer totalStudent;
+
+    @OneToOne
+    @JsonIgnore
+    @JoinColumn(name = "id_import_log")
+    private ImportLog importLog;
 
 //    @ManyToOne
 //    @JoinColumn(name = "id_user_student")

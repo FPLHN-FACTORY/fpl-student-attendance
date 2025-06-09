@@ -28,4 +28,6 @@ public interface AuthenticationService {
 
     ResponseEntity<?> getAvater(String urlImage);
 
+    ResponseEntity<?> getAllSemester();
+
 }

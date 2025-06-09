@@ -18,6 +18,7 @@ import udpm.hn.studentattendance.helpers.NotificationHelper;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
 import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.helpers.SessionHelper;
+import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
 import udpm.hn.studentattendance.helpers.ValidateHelper;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
@@ -37,6 +38,8 @@ public class STStudentServiceImpl implements STStudentService {
     private final USStudentFacilityExtendRepository facilityRepository;
 
     private final NotificationService notificationService;
+
+    private final UserActivityLogHelper userActivityLogHelper;
 
     @Override
     public ResponseEntity<?> getAllStudentByFacility(USStudentRequest studentRequest) {
@@ -62,15 +65,29 @@ public class STStudentServiceImpl implements STStudentService {
     public ResponseEntity<?> createStudent(USStudentCreateUpdateRequest studentCreateUpdateRequest) {
         // Validate input
         if (!ValidateHelper.isValidCode(studentCreateUpdateRequest.getCode())) {
-            return RouterHelper.responseError("Mã sinh viên không hợp lệ");
+            return RouterHelper.responseError(
+                    "Mã sinh viên không hợp lệ: không có khoảng trắng, không có ký tự đặc biệt ngoài dấu chấm . và dấu gạch dưới _.");
+        }
+
+        if (ValidateHelper.containsEmoji(studentCreateUpdateRequest.getCode())) {
+            return RouterHelper.responseError("Mã sinh viên không được chứa emoji");
         }
 
         if (!ValidateHelper.isValidFullname(studentCreateUpdateRequest.getName())) {
-            return RouterHelper.responseError("Họ tên sinh viên không hợp lệ");
+            return RouterHelper.responseError(
+                    "Họ Tên admin không hợp lệ: Tối thiểu 2 từ, cách nhau bởi khoảng trắng và Chỉ gồm ký tự chữ không chứa số hay ký tự đặc biệt.");
+        }
+
+        if (ValidateHelper.containsEmoji(studentCreateUpdateRequest.getName())) {
+            return RouterHelper.responseError("Tên sinh viên không được chứa emoji");
         }
 
         if (!ValidateHelper.isValidEmailGmail(studentCreateUpdateRequest.getEmail())) {
             return RouterHelper.responseError("Email phải có định dạng @gmail.com");
+        }
+
+        if (ValidateHelper.containsEmoji(studentCreateUpdateRequest.getEmail())) {
+            return RouterHelper.responseError("Email không được chứa emoji");
         }
 
         Optional<UserStudent> existStudentCode = studentExtendRepository
@@ -93,19 +110,32 @@ public class STStudentServiceImpl implements STStudentService {
         userStudent.setEmail(studentCreateUpdateRequest.getEmail());
         userStudent.setFacility(facility.get());
         userStudent.setStatus(EntityStatus.ACTIVE);
-        studentExtendRepository.save(userStudent);
-        return RouterHelper.responseSuccess("Thêm sinh viên mới thành công", userStudent);
+        UserStudent saveUserStudent = studentExtendRepository.save(userStudent);
+        userActivityLogHelper
+                .saveLog("vừa thêm 1 sinh viên mới: " + saveUserStudent.getName() + " (" + saveUserStudent.getCode()
+                        + ")");
+        return RouterHelper.responseSuccess("Thêm sinh viên mới thành công", saveUserStudent);
     }
 
     @Override
     public ResponseEntity<?> updateStudent(USStudentCreateUpdateRequest studentCreateUpdateRequest) {
         // Validate input
         if (!ValidateHelper.isValidCode(studentCreateUpdateRequest.getCode())) {
-            return RouterHelper.responseError("Mã sinh viên không hợp lệ");
+            return RouterHelper.responseError(
+                    "Mã sinh viên không hợp lệ: không có khoảng trắng, không có ký tự đặc biệt ngoài dấu chấm . và dấu gạch dưới _.");
+        }
+
+        if (ValidateHelper.containsEmoji(studentCreateUpdateRequest.getCode())) {
+            return RouterHelper.responseError("Mã sinh viên không được chứa emoji");
         }
 
         if (!ValidateHelper.isValidFullname(studentCreateUpdateRequest.getName())) {
-            return RouterHelper.responseError("Họ tên sinh viên không hợp lệ");
+            return RouterHelper.responseError(
+                    "Họ Tên sinh viên không hợp lệ: Tối thiểu 2 từ, cách nhau bởi khoảng trắng và Chỉ gồm ký tự chữ không chứa số hay ký tự đặc biệt.");
+        }
+
+        if (ValidateHelper.containsEmoji(studentCreateUpdateRequest.getName())) {
+            return RouterHelper.responseError("Tên sinh viên không được chứa emoji");
         }
 
         if (!ValidateHelper.isValidEmailGmail(studentCreateUpdateRequest.getEmail())) {
@@ -137,8 +167,11 @@ public class STStudentServiceImpl implements STStudentService {
         userStudent.setCode(studentCreateUpdateRequest.getCode());
         userStudent.setEmail(studentCreateUpdateRequest.getEmail());
         userStudent.setName(studentCreateUpdateRequest.getName());
-        studentExtendRepository.save(userStudent);
-        return RouterHelper.responseSuccess("Cập nhật sinh viên thành công", userStudent);
+        UserStudent saveUserStudent = studentExtendRepository.save(userStudent);
+        userActivityLogHelper
+                .saveLog("vừa cập nhật sinh viên: " + saveUserStudent.getName() + " (" + saveUserStudent.getCode()
+                        + ")");
+        return RouterHelper.responseSuccess("Cập nhật sinh viên thành công", saveUserStudent);
     }
 
     @Override
@@ -147,9 +180,13 @@ public class STStudentServiceImpl implements STStudentService {
 
         if (existStudent.isPresent()) {
             UserStudent userStudent = existStudent.get();
+            String oldStatus = userStudent.getStatus() == EntityStatus.ACTIVE ? "Hoạt động" : "Không hoạt động";
             userStudent.setStatus(userStudent.getStatus() == EntityStatus.ACTIVE ? EntityStatus.INACTIVE
                     : EntityStatus.ACTIVE);
+            String newStatus = userStudent.getStatus() == EntityStatus.ACTIVE ? "Hoạt động" : "Không hoạt động";
             studentExtendRepository.save(userStudent);
+            userActivityLogHelper.saveLog("vừa thay đổi trạng thái sinh viên " + userStudent.getName() + " ("
+                    + userStudent.getCode() + ") từ " + oldStatus + " thành " + newStatus);
             return RouterHelper.responseSuccess("Thay đổi trạng thái sinh viên thành công", userStudent);
         } else {
             return RouterHelper.responseError("Sinh viên không tồn tại");
@@ -172,6 +209,8 @@ public class STStudentServiceImpl implements STStudentService {
             notificationAddRequest.setData(dataNotification);
             notificationService.add(notificationAddRequest);
 
+            userActivityLogHelper.saveLog("vừa xóa dữ liệu khuôn mặt của sinh viên: " + userStudent.getName() + " ("
+                    + userStudent.getCode() + ")");
             return RouterHelper.responseSuccess("Cấp quyền thay đổi mặt sinh viên thành công", userStudent);
         }
         return RouterHelper.responseError("Sinh viên không tồn tại");

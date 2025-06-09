@@ -10,7 +10,7 @@ import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 @Getter
 @Setter
 public class AFFacilitySearchRequest extends PageableRequest {
-    @Size(max = EntityProperties.LENGTH_CODE, message = "Keyword không được vượt quá 255 ký tự")
+    @Size(max = EntityProperties.LENGTH_CODE, message = "Tên cơ sở không được vượt quá 50 ký tự")
     private String name;
 
     private EntityStatus status;

@@ -15,25 +15,15 @@ import java.util.List;
 @Repository
 public interface TCStudentFactoryExtendRepository extends UserStudentFactoryRepository {
     @Query(value = """
-            WITH cte_total_current_shift AS (
-                SELECT COUNT(DISTINCT pd.id) AS total_shift
+            WITH cte_shift AS (
+                SELECT
+                    COUNT(DISTINCT CASE WHEN pd.start_date <= UNIX_TIMESTAMP(NOW()) * 1000 THEN pd.id END) AS total_current_shift,
+                    COUNT(DISTINCT pd.id) AS total_shift
                 FROM plan_date pd
                 JOIN plan_factory pf ON pd.id_plan_factory = pf.id
                 WHERE
                     pd.status = 1 AND
                     pf.status = 1 AND
-                    pd.id_plan_factory = pf.id AND
-                    pf.id_factory = :factoryId AND
-                    pd.start_date <= UNIX_TIMESTAMP(NOW()) * 1000
-            ),
-            cte_total_shift AS (
-                SELECT COUNT(DISTINCT pd.id) AS total_shift
-                FROM plan_date pd
-                JOIN plan_factory pf ON pd.id_plan_factory = pf.id
-                WHERE
-                    pd.status = 1 AND
-                    pf.status = 1 AND
-                    pd.id_plan_factory = pf.id AND
                     pf.id_factory = :factoryId
             )
             SELECT
@@ -44,8 +34,8 @@ public interface TCStudentFactoryExtendRepository extends UserStudentFactoryRepo
                 us.name AS studentName,
                 us.email AS studentEmail,
                 usf.status AS statusStudentFactory,
-                cte_ts.total_shift AS totalShift,
-                (cte_tcs.total_shift - (
+                cte_s.total_shift,
+                (cte_s.total_current_shift - (
                         SELECT COUNT(a.id)
                         FROM attendance a
                         JOIN plan_date pd ON a.id_plan_date = pd.id
@@ -58,14 +48,34 @@ public interface TCStudentFactoryExtendRepository extends UserStudentFactoryRepo
                             a.id_user_student = usf.id_user_student
                     )
                 ) AS totalAbsentShift,
+                (SELECT COUNT(*) FROM plan_date WHERE id_plan_factory = pf.id) / 100 * COALESCE(p.max_late_arrival, 0)  AS totalLateAttendance,
+                (
+                  SELECT
+                      SUM(
+                          CASE
+                            WHEN a2.late_checkin IS NOT NULL AND a2.late_checkout IS NOT NULL THEN 2
+                            WHEN a2.late_checkin IS NOT NULL OR a2.late_checkout IS NOT NULL THEN 1
+                            ELSE 0
+                          END
+                      )
+                  FROM attendance a2
+                  JOIN plan_date pd2 ON pd2.id = a2.id_plan_date
+                  WHERE
+                    pd2.status = 1 AND
+                    a2.id_user_student = usf.id_user_student AND
+                    pd2.id_plan_factory = pf.id
+                ) AS currentLateAttendance,
                 ROW_NUMBER() OVER (ORDER BY usf.created_at DESC) AS rowNumber
             FROM user_student_factory usf
-            CROSS JOIN cte_total_current_shift cte_tcs
-            CROSS JOIN cte_total_shift cte_ts
+            JOIN factory ft ON ft.id = usf.id_factory
+            JOIN plan_factory pf ON ft.id = pf.id_factory
+            JOIN plan p ON pf.id_plan = p.id
+            CROSS JOIN cte_shift cte_s
             LEFT JOIN user_student us ON us.id = usf.id_user_student
-            LEFT JOIN factory ft ON ft.id = usf.id_factory
             WHERE
                 ft.id = :factoryId
+                AND pf.status = 1
+                AND p.status = 1
                 AND usf.status = 1
                 AND ft.status = 1
                 AND us.status = 1
@@ -78,12 +88,17 @@ public interface TCStudentFactoryExtendRepository extends UserStudentFactoryRepo
                 )
             ORDER BY usf.created_at DESC, usf.status
             """, countQuery = """
-            SELECT COUNT(DISTINCT usf.id)
+            SELECT
+                COUNT(DISTINCT usf.id)
             FROM user_student_factory usf
+            JOIN factory ft ON ft.id = usf.id_factory
+            JOIN plan_factory pf ON ft.id = pf.id_factory
+            JOIN plan p ON pf.id_plan = p.id
             LEFT JOIN user_student us ON us.id = usf.id_user_student
-            LEFT JOIN factory ft ON ft.id = usf.id_factory
             WHERE
                 ft.id = :factoryId
+                AND pf.status = 1
+                AND p.status = 1
                 AND usf.status = 1
                 AND ft.status = 1
                 AND us.status = 1
@@ -110,7 +125,9 @@ public interface TCStudentFactoryExtendRepository extends UserStudentFactoryRepo
                     pd.required_checkout,
                     COALESCE(a.attendance_status, 0) AS status,
                     COALESCE(a.created_at, 0) AS createdAt,
-                    COALESCE(a.updated_at, 0) AS updatedAt
+                    COALESCE(a.updated_at, 0) AS updatedAt,
+                    a.late_checkin,
+                    a.late_checkout
                 FROM plan_date pd
                 JOIN plan_factory pf ON pd.id_plan_factory = pf.id
                 LEFT JOIN attendance a ON pd.id = a.id_plan_date AND a.id_user_student = :#{#request.idUserStudent}
@@ -159,7 +176,9 @@ public interface TCStudentFactoryExtendRepository extends UserStudentFactoryRepo
                     pd.required_checkout,
                     COALESCE(a.attendance_status, 0) AS status,
                     COALESCE(a.created_at, 0) AS createdAt,
-                    COALESCE(a.updated_at, 0) AS updatedAt
+                    COALESCE(a.updated_at, 0) AS updatedAt,
+                    a.late_checkin,
+                    a.late_checkout
                 FROM plan_date pd
                 JOIN plan_factory pf ON pd.id_plan_factory = pf.id
                 JOIN user_student_factory usf ON pf.id_factory = usf.id_factory

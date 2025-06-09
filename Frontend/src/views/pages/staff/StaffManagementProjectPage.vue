@@ -46,7 +46,6 @@ const modalAdd = ref(false)
 const modalDetail = ref(false)
 const modalEdit = ref(false)
 
-// Dữ liệu form
 const newProject = reactive({
   name: '',
   description: '',
@@ -58,20 +57,18 @@ const newProject = reactive({
 const detailProject = reactive({})
 const oldSemesterId = ref(null)
 
+const pagination = reactive({
+  ...DEFAULT_PAGINATION,
+})
+
 // Bộ lọc và phân trang
 const filter = reactive({
   name: null,
   status: null,
-  page: 1,
-  pageSize: 5,
   semesterId: null,
   subjectId: null,
   levelProjectId: null,
   facilityId: null,
-})
-
-const pagination = reactive({
-  ...DEFAULT_PAGINATION,
 })
 
 // Cấu hình cột bảng
@@ -85,7 +82,7 @@ const columns = ref(
     { title: 'Mô tả', dataIndex: 'description', key: 'description' },
     { title: 'Trạng thái', dataIndex: 'status', key: 'status' },
     { title: 'Chức năng', key: 'actions' },
-  ])
+  ]),
 )
 
 /* ----------------- Methods ----------------- */
@@ -95,7 +92,6 @@ const formatDate = (timestamp) => {
   return new Date(timestamp).toLocaleString()
 }
 
-// Lấy danh sách dự án
 const fetchProjects = () => {
   loadingStore.show()
   requestAPI
@@ -111,8 +107,7 @@ const fetchProjects = () => {
     })
     .then((response) => {
       projects.value = response.data.data.data
-      pagination.total = response.data.data.totalPages * filter.pageSize
-      pagination.current = response.data.data.currentPage + 1
+      pagination.total = response.data.data.totalPages * pagination.pageSize
     })
     .catch((error) => {
       message.error(error.response?.data?.message || 'Lỗi khi lấy dữ liệu')
@@ -122,7 +117,6 @@ const fetchProjects = () => {
     })
 }
 
-// Lấy danh sách combobox
 const fetchLevelCombobox = () => {
   requestAPI
     .get(`${API_ROUTES_STAFF.FETCH_DATA_PROJECT}/level-combobox`)
@@ -144,6 +138,7 @@ const fetchSemesters = () => {
       message.error(error.response?.data?.message || 'Lỗi khi lấy dữ liệu combobox học kỳ')
     })
 }
+
 const allSemesters = ref([])
 const getAllSemesters = () => {
   requestAPI
@@ -166,7 +161,6 @@ const fetchSubjects = () => {
     })
 }
 
-// Xử lý phân trang
 const handleTableChange = (pageInfo) => {
   pagination.current = pageInfo.current
   pagination.pageSize = pageInfo.pageSize
@@ -178,8 +172,6 @@ const handleClearFilter = () => {
   Object.assign(filter, {
     name: null,
     status: null,
-    page: 1,
-    pageSize: 5,
     semesterId: null,
     subjectId: null,
     levelProjectId: null,
@@ -187,6 +179,34 @@ const handleClearFilter = () => {
   })
   pagination.current = 1
   fetchProjects()
+}
+
+// Thêm hàm để lấy học kỳ gần nhất
+const getNearestActiveSemester = (semesters) => {
+  const now = new Date().getTime()
+  return semesters
+    .filter((semester) => semester.toDate > now) // Lọc các học kỳ có ngày kết thúc > hiện tại
+    .sort((a, b) => a.toDate - b.toDate) // Sắp xếp theo ngày kết thúc tăng dần
+    .shift() // Lấy học kỳ đầu tiên (gần nhất)
+}
+
+// Sửa lại hàm handleShowModalAdd để set học kỳ gần nhất
+const handleShowModalAdd = () => {
+  resetForm()
+  // Tìm học kỳ gần nhất và set vào newProject
+  const nearestSemester = getNearestActiveSemester(allSemesters.value)
+  if (nearestSemester) {
+    newProject.semesterId = nearestSemester.id
+  }
+   // Pre-select first values if available
+   if (levels.value && levels.value.length > 0) {
+    newProject.levelProjectId = levels.value[0].id
+  }
+
+  if (subjects.value && subjects.value.length > 0) {
+    newProject.subjectFacilityId = subjects.value[0].id
+  }
+  modalAdd.value = true
 }
 
 // Thêm dự án mới
@@ -208,17 +228,25 @@ const handleAddProject = () => {
     return
   }
 
-  requestAPI
-    .post(API_ROUTES_STAFF.FETCH_DATA_PROJECT, newProject)
-    .then(() => {
-      message.success('Thêm dự án thành công')
-      fetchProjects()
-      resetForm()
-      modalAdd.value = false
-    })
-    .catch((error) => {
-      message.error(error.response?.data?.message || 'Lỗi khi thêm dự án')
-    })
+  Modal.confirm({
+    title: 'Xác nhận thêm mới',
+    content: 'Bạn có chắc chắn muốn thêm dự án mới này?',
+    okText: 'Tiếp tục',
+    cancelText: 'Hủy bỏ',
+    onOk() {
+      requestAPI
+        .post(API_ROUTES_STAFF.FETCH_DATA_PROJECT, newProject)
+        .then(() => {
+          message.success('Thêm dự án thành công')
+          fetchProjects()
+          resetForm()
+          modalAdd.value = false
+        })
+        .catch((error) => {
+          message.error(error.response?.data?.message || 'Lỗi khi thêm dự án')
+        })
+    },
+  })
 }
 
 async function handleEditProject(record) {
@@ -244,49 +272,42 @@ const handleShowDescription = (text) => {
   })
 }
 
-async function actuallyUpdate() {
-  const req = {
-    name: detailProject.name,
-    description: detailProject.description,
-    levelProjectId: detailProject.levelProjectId,
-    semesterId: detailProject.semesterId,
-    subjectFacilityId: detailProject.subjectFacilityId,
+const handleUpdateProject = () => {
+  if (!detailProject.name) {
+    message.error('Tên dự án không được bỏ trống')
+    return
   }
-  try {
-    await requestAPI.put(`${API_ROUTES_STAFF.FETCH_DATA_PROJECT}/${detailProject.id}`, req)
-    message.success('Cập nhật dự án thành công')
-    modalEdit.value = false
-    fetchProjects()
-  } catch (e) {
-    message.error(e.response?.data?.message || 'Lỗi khi cập nhật')
+  if (!detailProject.levelProjectId) {
+    message.error('Phải chọn cấp dự án')
+    return
   }
-}
-function handleUpdateProject() {
-  // validate
-  if (
-    !detailProject.name ||
-    !detailProject.levelProjectId ||
-    !detailProject.semesterId ||
-    !detailProject.subjectFacilityId
-  ) {
-    return message.error('Vui lòng điền đầy đủ thông tin')
+  if (!detailProject.semesterId) {
+    message.error('Phải chọn học kỳ')
+    return
+  }
+  if (!detailProject.subjectFacilityId) {
+    message.error('Phải chọn môn học')
+    return
   }
 
-  // nếu thay đổi học kỳ → confirm
-  if (detailProject.semesterId !== oldSemesterId.value) {
-    Modal.confirm({
-      title: 'Xác nhận cập nhật dự án',
-      content:
-        'Bạn đang chuyển dự án sang học kỳ khác, toàn bộ lịch nhóm xưởng và điểm danh cũ sẽ bị xóa. Tiếp tục?',
-      onOk: actuallyUpdate,
-    })
-  } else {
-    Modal.confirm({
-      title: 'Xác nhận cập nhật dự án',
-      content: 'Bạn có muốn cập nhật thông tin dự án không',
-      onOk: actuallyUpdate,
-    })
-  }
+  Modal.confirm({
+    title: 'Xác nhận cập nhật',
+    content: 'Bạn có chắc chắn muốn cập nhật thông tin dự án này?',
+    okText: 'Tiếp tục',
+    cancelText: 'Hủy bỏ',
+    onOk() {
+      requestAPI
+        .put(API_ROUTES_STAFF.FETCH_DATA_PROJECT, detailProject)
+        .then(() => {
+          message.success('Cập nhật dự án thành công')
+          fetchProjects()
+          modalEdit.value = false
+        })
+        .catch((error) => {
+          message.error(error.response?.data?.message || 'Lỗi khi cập nhật dự án')
+        })
+    },
+  })
 }
 
 // Xóa dự án
@@ -335,7 +356,7 @@ const configImportExcel = {
   },
   showDownloadTemplate: true,
   showHistoryLog: true,
-  showExport: true,
+  // showExport: true,
   btnImport: 'Import dự án',
   btnExport: 'Export dự án',
 }
@@ -369,108 +390,118 @@ onMounted(() => {
   <div class="container-fluid">
     <div class="row g-3">
       <div class="col-12">
-        <!-- Bộ lọc tìm kiếm -->
-        <a-card :bordered="false" class="cart">
-          <template #title> <FilterFilled /> Bộ lọc </template>
-          <div class="row g-2">
-            <div class="col-md-12 col-sm-12">
-              <div class="label-title">Từ khoá:</div>
-              <a-input
-                v-model:value="filter.name"
-                placeholder="Tìm kiếm theo tên"
-                allowClear
-                class="filter-input w-100"
-                @change="fetchProjects"
-              >
-                <template #prefix>
-                  <SearchOutlined />
-                </template>
-              </a-input>
-            </div>
-            <div class="col-lg-3 col-md-6 col-sm-6">
-              <div class="label-title">Cấp dự án:</div>
-              <a-select
-                v-model:value="filter.levelProjectId"
-                placeholder="Cấp dự án"
-                allowClear
-                class="filter-select w-100"
-                :dropdownMatchSelectWidth="false"
-                @change="fetchProjects"
-              >
-                <a-select-option :value="null">Tất cả cấp dự án</a-select-option>
-                <a-select-option v-for="level in levels" :key="level.id" :value="level.id">
-                  {{ level.name }}
-                </a-select-option>
-              </a-select>
-            </div>
+        <a-card :bordered="false" class="cart no-body-padding">
+          <a-collapse ghost>
+            <a-collapse-panel>
+              <template #header><FilterFilled /> Bộ lọc</template>
+              <div class="row g-3">
+                <div class="col-md-12 col-sm-12">
+                  <div class="label-title">Từ khoá:</div>
+                  <a-input
+                    v-model:value="filter.name"
+                    placeholder="Tìm kiếm theo tên"
+                    allowClear
+                    class="filter-input w-100"
+                    @change="fetchProjects"
+                  >
+                    <template #prefix>
+                      <SearchOutlined />
+                    </template>
+                  </a-input>
+                </div>
+                <div class="col-lg-3 col-md-6 col-sm-6">
+                  <div class="label-title">Cấp dự án:</div>
+                  <a-select
+                    v-model:value="filter.levelProjectId"
+                    placeholder="Cấp dự án"
+                    allowClear
+                    class="filter-select w-100"
+                    :dropdownMatchSelectWidth="false"
+                    @change="fetchProjects"
+                  >
+                    <a-select-option :value="null">Tất cả cấp dự án</a-select-option>
+                    <a-select-option v-for="level in levels" :key="level.id" :value="level.id">
+                      {{ level.name }}
+                    </a-select-option>
+                  </a-select>
+                </div>
 
-            <div class="col-lg-3 col-md-6 col-sm-6">
-              <div class="label-title">Học kỳ:</div>
-              <a-select
-                v-model:value="filter.semesterId"
-                placeholder="Học kỳ"
-                allowClear
-                class="filter-select w-100"
-                :dropdownMatchSelectWidth="false"
-                @change="fetchProjects"
-              >
-                <a-select-option :value="null">Tất cả học kỳ</a-select-option>
-                <a-select-option
-                  v-for="semester in allSemesters"
-                  :key="semester.id"
-                  :value="semester.id"
-                >
-                  {{ semester.code }}
-                </a-select-option>
-              </a-select>
-            </div>
-            <div class="col-lg-3 col-md-6 col-sm-6">
-              <div class="label-title">Môn học:</div>
-              <a-select
-                v-model:value="filter.subjectId"
-                placeholder="Môn học"
-                allowClear
-                class="filter-select w-100"
-                :dropdownMatchSelectWidth="false"
-                @change="fetchProjects"
-              >
-                <a-select-option :value="null">Tất cả môn học</a-select-option>
-                <a-select-option v-for="subject in subjects" :key="subject.id" :value="subject.id">
-                  {{ subject.name }}
-                </a-select-option>
-              </a-select>
-            </div>
-            <div class="col-lg-3 col-md-6 col-sm-6">
-              <div class="label-title">Trạng thái:</div>
-              <a-select
-                v-model:value="filter.status"
-                placeholder="Trạng thái"
-                allowClear
-                class="filter-select w-100"
-                :dropdownMatchSelectWidth="false"
-                @change="fetchProjects"
-              >
-                <a-select-option :value="null">Tất cả trạng thái</a-select-option>
-                <a-select-option :value="1">Đang triển khai</a-select-option>
-                <a-select-option :value="0">Không hoạt động</a-select-option>
-              </a-select>
-            </div>
-          </div>
-          <div class="row">
-            <div class="col-12">
-              <div class="d-flex justify-content-center flex-wrap gap-2 mt-3">
-                <a-button class="btn-light" @click="fetchProjects"> <FilterFilled /> Lọc </a-button>
-                <a-button class="btn-gray" @click="handleClearFilter"> Huỷ lọc </a-button>
+                <div class="col-lg-3 col-md-6 col-sm-6">
+                  <div class="label-title">Học kỳ:</div>
+                  <a-select
+                    v-model:value="filter.semesterId"
+                    placeholder="Học kỳ"
+                    allowClear
+                    class="filter-select w-100"
+                    :dropdownMatchSelectWidth="false"
+                    @change="fetchProjects"
+                  >
+                    <a-select-option :value="null">Tất cả học kỳ</a-select-option>
+                    <a-select-option
+                      v-for="semester in allSemesters"
+                      :key="semester.id"
+                      :value="semester.id"
+                    >
+                      {{ semester.code }}
+                    </a-select-option>
+                  </a-select>
+                </div>
+                <div class="col-lg-3 col-md-6 col-sm-6">
+                  <div class="label-title">Môn học:</div>
+                  <a-select
+                    v-model:value="filter.subjectId"
+                    placeholder="Môn học"
+                    allowClear
+                    class="filter-select w-100"
+                    :dropdownMatchSelectWidth="false"
+                    @change="fetchProjects"
+                  >
+                    <a-select-option :value="null">Tất cả môn học</a-select-option>
+                    <a-select-option
+                      v-for="subject in subjects"
+                      :key="subject.id"
+                      :value="subject.id"
+                    >
+                      {{ subject.name }}
+                    </a-select-option>
+                  </a-select>
+                </div>
+                <div class="col-lg-3 col-md-6 col-sm-6">
+                  <div class="label-title">Trạng thái:</div>
+                  <a-select
+                    v-model:value="filter.status"
+                    placeholder="Trạng thái"
+                    allowClear
+                    class="filter-select w-100"
+                    :dropdownMatchSelectWidth="false"
+                    @change="fetchProjects"
+                  >
+                    <a-select-option :value="null">Tất cả trạng thái</a-select-option>
+                    <a-select-option :value="1">Đang triển khai</a-select-option>
+                    <a-select-option :value="0">Không hoạt động</a-select-option>
+                  </a-select>
+                </div>
               </div>
-            </div>
-          </div>
+              <div class="row">
+                <div class="col-12">
+                  <div class="d-flex justify-content-center flex-wrap gap-2 mt-3">
+                    <a-button class="btn-light" @click="fetchProjects">
+                      <FilterFilled /> Lọc
+                    </a-button>
+                    <a-button class="btn-gray" @click="handleClearFilter"> Huỷ lọc </a-button>
+                  </div>
+                </div>
+              </div>
+            </a-collapse-panel>
+          </a-collapse>
         </a-card>
       </div>
 
       <div class="col-12">
         <a-card :bordered="false" class="cart">
           <template #title> <UnorderedListOutlined /> Danh sách dự án</template>
-          <div class="d-flex justify-content-end mb-3 flex-wrap gap-3">
+
+          <div class="d-flex justify-content-end flex-wrap gap-3 mb-2">
             <ExcelUploadButton v-bind="configImportExcel" />
             <a-tooltip title="Đổi trạng thái tất cả dự án kỳ trước">
               <a-button
@@ -482,7 +513,7 @@ onMounted(() => {
               </a-button>
             </a-tooltip>
 
-            <a-button type="primary" @click="modalAdd = true">
+            <a-button type="primary" @click="handleShowModalAdd">
               <PlusOutlined /> Thêm dự án
             </a-button>
           </div>
@@ -537,10 +568,21 @@ onMounted(() => {
     </div>
 
     <!-- Modal thêm dự án -->
-    <a-modal v-model:open="modalAdd" title="Thêm dự án" @ok="handleAddProject" @cancel="resetForm">
+    <a-modal
+      v-model:open="modalAdd"
+      title="Thêm dự án"
+      @ok="handleAddProject"
+      :okButtonProps="{ loading: isLoading }"
+      @cancel="resetForm"
+      @close="resetForm"
+    >
       <a-form layout="vertical">
         <a-form-item label="Tên dự án" required>
-          <a-input v-model:value="newProject.name" placeholder="Nhập tên dự án" />
+          <a-input
+            v-model:value="newProject.name"
+            placeholder="Nhập tên dự án"
+            @keyup.enter="handleAddProject"
+          />
         </a-form-item>
         <a-form-item label="Mô tả">
           <a-textarea v-model:value="newProject.description" placeholder="Nhập mô tả" />
@@ -601,12 +643,23 @@ onMounted(() => {
     </a-modal>
 
     <!-- Modal sửa dự án -->
-    <a-modal v-model:open="modalEdit" title="Sửa dự án" @ok="handleUpdateProject">
+    <a-modal
+      v-model:open="modalEdit"
+      title="Cập nhật dự án"
+      @ok="handleUpdateProject"
+      :okButtonProps="{ loading: isLoading }"
+      @cancel="resetForm"
+      @close="resetForm"
+    >
       <a-form layout="vertical">
         <a-form-item label="Tên dự án" required>
-          <a-input v-model:value="detailProject.name" placeholder="Nhập tên dự án" />
+          <a-input
+            v-model:value="detailProject.name"
+            placeholder="Nhập tên dự án"
+            @keyup.enter="handleUpdateProject"
+          />
         </a-form-item>
-        <a-form-item label="Mô tả" >
+        <a-form-item label="Mô tả">
           <a-textarea v-model:value="detailProject.description" placeholder="Nhập mô tả" />
         </a-form-item>
         <a-form-item label="Cấp dự án" required>

@@ -127,21 +127,31 @@ const handleAddSubject = () => {
     message.error('Vui lòng nhập mã bộ môn')
     return
   }
-  loadingStore.show()
-  requestAPI
-    .post(API_ROUTES_ADMIN.FETCH_DATA_SUBJECT, newSubject)
-    .then((response) => {
-      message.success(response.data.message || 'Thêm bộ môn thành công')
-      modalAdd.value = false
-      fetchSubjects()
-      clearFormAdd()
-    })
-    .catch((error) => {
-      message.error(error.response?.data?.message || 'Lỗi khi thêm bộ môn')
-    })
-    .finally(() => {
-      loadingStore.hide()
-    })
+
+  Modal.confirm({
+    title: `Xác nhận thêm mới`,
+    type: 'info',
+    content: `Bạn có chắc muốn thêm mới bộ môn này?`,
+    okText: 'Tiếp tục',
+    cancelText: 'Hủy bỏ',
+    onOk() {
+      loadingStore.show()
+      requestAPI
+        .post(API_ROUTES_ADMIN.FETCH_DATA_SUBJECT, newSubject)
+        .then((response) => {
+          message.success(response.data.message || 'Thêm bộ môn thành công')
+          modalAdd.value = false
+          fetchSubjects()
+          clearFormAdd()
+        })
+        .catch((error) => {
+          message.error(error.response?.data?.message || 'Lỗi khi thêm bộ môn')
+        })
+        .finally(() => {
+          loadingStore.hide()
+        })
+    },
+  })
 }
 
 const clearFormAdd = () => {
@@ -275,58 +285,65 @@ onMounted(() => {
     <!-- Card Bộ lọc tìm kiếm -->
     <div class="row g-3">
       <div class="col-12">
-        <a-card :bordered="false" class="cart mb-3">
-          <template #title> <FilterFilled /> Bộ lọc</template>
-          <div class="row g-3 filter-container">
-            <div class="col-md-8 col-sm-6">
-              <div class="label-title">Từ khoá:</div>
-              <a-input
-                v-model:value="filter.name"
-                placeholder="Nhập tên hoặc mã bộ môn"
-                allowClear
-                @change="fetchSubjects"
-              >
-                <template #prefix>
-                  <SearchOutlined />
-                </template>
-              </a-input>
-            </div>
-            <div class="col-md-4 col-sm-6">
-              <div class="label-title">Trạng thái:</div>
-              <a-select
-                v-model:value="filter.status"
-                placeholder="Chọn trạng thái"
-                allowClear
-                class="w-100"
-                @change="fetchSubjects"
-              >
-                <a-select-option :value="''">Tất cả trạng thái</a-select-option>
-                <a-select-option value="1">Hoạt động</a-select-option>
-                <a-select-option value="0">Không hoạt động</a-select-option>
-              </a-select>
-            </div>
-          </div>
-          <div class="row">
-            <div class="col-12">
-              <div class="d-flex justify-content-center flex-wrap gap-2 mt-3">
-                <a-button class="btn-light" @click="fetchSubjects"> <FilterFilled /> Lọc </a-button>
-                <a-button class="btn-gray" @click="handleClearFilter"> Huỷ lọc </a-button>
+        <a-card :bordered="false" class="cart no-body-padding">
+          <a-collapse ghost>
+            <a-collapse-panel>
+              <template #header><FilterFilled /> Bộ lọc</template>
+              <div class="row g-3 filter-container">
+                <div class="col-md-8 col-sm-6">
+                  <div class="label-title">Từ khoá:</div>
+                  <a-input
+                    v-model:value="filter.name"
+                    placeholder="Nhập tên hoặc mã bộ môn"
+                    allowClear
+                    @change="fetchSubjects"
+                  >
+                    <template #prefix>
+                      <SearchOutlined />
+                    </template>
+                  </a-input>
+                </div>
+                <div class="col-md-4 col-sm-6">
+                  <div class="label-title">Trạng thái:</div>
+                  <a-select
+                    v-model:value="filter.status"
+                    placeholder="Chọn trạng thái"
+                    allowClear
+                    class="w-100"
+                    @change="fetchSubjects"
+                  >
+                    <a-select-option :value="''">Tất cả trạng thái</a-select-option>
+                    <a-select-option value="1">Hoạt động</a-select-option>
+                    <a-select-option value="0">Không hoạt động</a-select-option>
+                  </a-select>
+                </div>
+
+                <div class="col-12">
+                  <div class="d-flex justify-content-center flex-wrap gap-2">
+                    <a-button class="btn-light" @click="fetchSubjects">
+                      <FilterFilled /> Lọc
+                    </a-button>
+                    <a-button class="btn-gray" @click="handleClearFilter"> Huỷ lọc </a-button>
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
+            </a-collapse-panel>
+          </a-collapse>
         </a-card>
       </div>
 
       <div class="col-12">
         <a-card :bordered="false" class="cart">
           <template #title> <UnorderedListOutlined /> Danh sách bộ môn </template>
-          <div class="d-flex justify-content-end mb-3">
+
+          <div class="d-flex justify-content-end mb-2">
             <a-tooltip title="Thêm bộ môn">
               <a-button type="primary" @click="showAddModal(true)">
                 <PlusOutlined /> Thêm mới
               </a-button>
             </a-tooltip>
           </div>
+
           <a-table
             class="nowrap"
             :dataSource="subjects"
@@ -410,10 +427,18 @@ onMounted(() => {
     >
       <a-form layout="vertical">
         <a-form-item label="Mã bộ môn" required>
-          <a-input v-model:value="newSubject.code" placeholder="Nhập mã bộ môn" />
+          <a-input
+            v-model:value="newSubject.code"
+            placeholder="Nhập mã bộ môn"
+            @keyup.enter="handleAddSubject"
+          />
         </a-form-item>
         <a-form-item label="Tên bộ môn" required>
-          <a-input v-model:value="newSubject.name" placeholder="Nhập tên bộ môn" />
+          <a-input
+            v-model:value="newSubject.name"
+            placeholder="Nhập tên bộ môn"
+            @keyup.enter="handleAddSubject"
+          />
         </a-form-item>
       </a-form>
     </a-modal>
@@ -449,10 +474,18 @@ onMounted(() => {
     >
       <a-form layout="vertical">
         <a-form-item label="Mã bộ môn" required>
-          <a-input v-model:value="detailSubject.code" placeholder="Nhập mã bộ môn" />
+          <a-input
+            v-model:value="detailSubject.code"
+            placeholder="Nhập mã bộ môn"
+            @keyup.enter="updateSubject"
+          />
         </a-form-item>
         <a-form-item label="Tên bộ môn" required>
-          <a-input v-model:value="detailSubject.name" placeholder="Nhập tên bộ môn" />
+          <a-input
+            v-model:value="detailSubject.name"
+            placeholder="Nhập tên bộ môn"
+            @keyup.enter="updateSubject"
+          />
         </a-form-item>
       </a-form>
     </a-modal>

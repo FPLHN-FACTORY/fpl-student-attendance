@@ -148,6 +148,7 @@ public class SPDPlanServiceImpl implements SPDPlanService {
         plan.setFromDate(DateTimeUtils.toStartOfDay(startDate));
         plan.setToDate(DateTimeUtils.toEndOfDay(endDate));
         plan.setProject(project);
+        plan.setMaxLateArrival(request.getMaxLateArrival());
 
         Plan o = spdPlanRepository.save(plan);
         userActivityLogHelper.saveLog("vừa thêm 1 kế hoạch mới: " + o.getName());
@@ -199,6 +200,7 @@ public class SPDPlanServiceImpl implements SPDPlanService {
         spdPlanRepository.deleteAllPlanDateByIdPlan(plan.getId());
         spdPlanRepository.deleteAllPlanFactoryByIdPlan(plan.getId());
         spdPlanRepository.delete(plan);
+        userActivityLogHelper.saveLog("vừa xóa kế hoạch: " + plan.getName());
         return RouterHelper.responseSuccess("Xoá thành công kế hoạch: " + plan.getName());
     }
 
@@ -239,12 +241,14 @@ public class SPDPlanServiceImpl implements SPDPlanService {
         plan.setFromDate(DateTimeUtils.toStartOfDay(startDate));
         plan.setToDate(DateTimeUtils.toEndOfDay(endDate));
         plan.setProject(project);
+        plan.setMaxLateArrival(request.getMaxLateArrival());
 
         Plan updatePlan = spdPlanRepository.save(plan);
 
         spdPlanRepository.deleteAllAttendanceOutRangeDateByIdPlan(updatePlan.getId());
         spdPlanRepository.deleteAllPlanDateOutRangeDateByIdPlan(updatePlan.getId());
 
+        userActivityLogHelper.saveLog("vừa cập nhật kế hoạch: " + updatePlan.getName());
         return RouterHelper.responseSuccess("Cập nhật kế hoạch thành công", updatePlan);
     }
 

@@ -16,7 +16,9 @@ public interface STAttendanceRecoveryRepository extends AttendanceRecoveryReposi
                 ar.id          AS id,
                 ar.name        AS name,
                 ar.description AS description,
-                ar.day         AS dayHappen
+                ar.day         AS dayHappen,
+                ar.total_student AS totalStudent,
+                ar.id_import_log AS idImportLog
             FROM attendance_recovery ar
             WHERE
                 ar.id_facility = :facilityId
