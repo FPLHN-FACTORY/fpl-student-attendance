@@ -142,14 +142,39 @@ const useFaceIDStore = defineStore('faceID', () => {
   let maskModel
   let hideFaceModel
   const loadModels = async () => {
-    DEEP_CHECK && (await faceapi.nets.ssdMobilenetv1.loadFromUri('/models/face'))
-    !DEEP_CHECK && (await faceapi.nets.tinyFaceDetector.loadFromUri('/models/face'))
-    await faceapi.nets.faceLandmark68Net.loadFromUri('/models/face')
-    await faceapi.nets.faceRecognitionNet.loadFromUri('/models/face')
-    await faceapi.nets.faceExpressionNet.loadFromUri('/models/face')
-    glassesModel = await tf.loadLayersModel('/models/glasses/model.json')
-    maskModel = await tf.loadLayersModel('/models/maskes/model.json')
-    hideFaceModel = await tf.loadLayersModel('/models/hideface/model.json')
+    if (DEEP_CHECK) {
+      if (!faceapi.nets.ssdMobilenetv1.params) {
+        await faceapi.nets.ssdMobilenetv1.loadFromUri('/models/face')
+      }
+    } else {
+      if (!faceapi.nets.tinyFaceDetector.params) {
+        await faceapi.nets.tinyFaceDetector.loadFromUri('/models/face')
+      }
+    }
+
+    if (!faceapi.nets.faceLandmark68Net.params) {
+      await faceapi.nets.faceLandmark68Net.loadFromUri('/models/face')
+    }
+
+    if (!faceapi.nets.faceRecognitionNet.params) {
+      await faceapi.nets.faceRecognitionNet.loadFromUri('/models/face')
+    }
+
+    if (!faceapi.nets.faceExpressionNet.params) {
+      await faceapi.nets.faceExpressionNet.loadFromUri('/models/face')
+    }
+
+    if (!glassesModel) {
+      glassesModel = await tf.loadLayersModel('/models/glasses/model.json')
+    }
+
+    if (!maskModel) {
+      maskModel = await tf.loadLayersModel('/models/maskes/model.json')
+    }
+
+    if (!hideFaceModel) {
+      hideFaceModel = await tf.loadLayersModel('/models/hideface/model.json')
+    }
   }
 
   const detectFace = async () => {
@@ -530,6 +555,8 @@ const useFaceIDStore = defineStore('faceID', () => {
       ) {
         await runTask()
         isLoading.value && (isLoading.value = false)
+      } else {
+        await loadModels()
       }
       await new Promise((resolve) => setTimeout(resolve, TIME_LOOP_RECHECK))
     }
