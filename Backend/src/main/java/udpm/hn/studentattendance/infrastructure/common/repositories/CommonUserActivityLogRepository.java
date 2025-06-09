@@ -30,12 +30,11 @@ public interface CommonUserActivityLogRepository extends UserActivityLogReposito
         LEFT JOIN user_staff us ON us.id = ual.id_user
         WHERE 1=1
             AND (COALESCE(:#{#request.facilityId}, '') = '' OR ual.id_facility = :#{#request.facilityId})
-            AND (COALESCE(:#{#request.role}, 0) = 0 OR ual.role = :#{#request.role})
             AND (COALESCE(:#{#request.userId}, '') = '' OR ual.id_user = :#{#request.userId})
-            AND (COALESCE(:#{#request.searchQuery}, '') = '' OR
-                 COALESCE(ua.name, us.name, '') LIKE CONCAT('%', :#{#request.searchQuery}, '%') OR
-                 COALESCE(ual.message, '') LIKE CONCAT('%', :#{#request.searchQuery}, '%') OR
-                 COALESCE(ua.code, us.code, '') LIKE CONCAT('%', :#{#request.searchQuery}, '%'))
+            AND (COALESCE(TRIM(:#{#request.searchQuery}), '') = '' OR
+                 COALESCE(ua.name, us.name, '') LIKE CONCAT('%', TRIM(:#{#request.searchQuery}), '%') OR
+                 COALESCE(ual.message, '') LIKE CONCAT('%', TRIM(:#{#request.searchQuery}), '%') OR
+                 COALESCE(ua.code, us.code, '') LIKE CONCAT('%', TRIM(:#{#request.searchQuery}), '%'))
         ORDER BY ual.created_at DESC
     """, countQuery = """
         SELECT COUNT(*)
@@ -45,12 +44,11 @@ public interface CommonUserActivityLogRepository extends UserActivityLogReposito
         LEFT JOIN user_staff us ON us.id = ual.id_user
         WHERE 1=1
             AND (COALESCE(:#{#request.facilityId}, '') = '' OR ual.id_facility = :#{#request.facilityId})
-            AND (COALESCE(:#{#request.role}, 0) = 0 OR ual.role = :#{#request.role})
             AND (COALESCE(:#{#request.userId}, '') = '' OR ual.id_user = :#{#request.userId})
-            AND (COALESCE(:#{#request.searchQuery}, '') = '' OR
-                 COALESCE(ua.name, us.name, '') LIKE CONCAT('%', :#{#request.searchQuery}, '%') OR
-                 COALESCE(ual.message, '') LIKE CONCAT('%', :#{#request.searchQuery}, '%') OR
-                 COALESCE(ua.code, us.code, '') LIKE CONCAT('%', :#{#request.searchQuery}, '%'))
+            AND (COALESCE(TRIM(:#{#request.searchQuery}), '') = '' OR
+                 COALESCE(ua.name, us.name, '') LIKE CONCAT('%', TRIM(:#{#request.searchQuery}), '%') OR
+                 COALESCE(ual.message, '') LIKE CONCAT('%', TRIM(:#{#request.searchQuery}), '%') OR
+                 COALESCE(ua.code, us.code, '') LIKE CONCAT('%', TRIM(:#{#request.searchQuery}), '%'))
     """, nativeQuery = true)
     Page<UALResponse> getListFilter(Pageable pageable, UALFilterRequest request);
 

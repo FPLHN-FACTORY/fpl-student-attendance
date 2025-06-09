@@ -431,7 +431,7 @@ const handleShowDescription = (text) => {
   Modal.info({
     title: 'Nội dung chi tiết',
     type: 'info',
-    content: text,
+    content: text || 'Không có mô tả',
     okText: 'Đóng',
     okButtonProps: {
       class: 'btn-gray',
@@ -801,7 +801,7 @@ watch(
                     @click="handleShowDescription(record.description)"
                     >Chi tiết</a-typography-link
                   >
-                  <span v-else>--</span>
+                  <span v-else>Không có mô tả</span>
                 </template>
                 <template v-if="column.dataIndex === 'link'">
                   <a v-if="record.link" target="_blank" :href="record.link">Link</a>

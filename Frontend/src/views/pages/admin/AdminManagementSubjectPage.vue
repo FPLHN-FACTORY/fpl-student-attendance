@@ -339,7 +339,7 @@ onMounted(() => {
           <div class="d-flex justify-content-end mb-2">
             <a-tooltip title="Thêm bộ môn">
               <a-button type="primary" @click="showAddModal(true)">
-                <PlusOutlined /> Thêm mới
+                <PlusOutlined /> Thêm bộ môn
               </a-button>
             </a-tooltip>
           </div>

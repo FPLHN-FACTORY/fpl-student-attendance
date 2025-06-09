@@ -400,7 +400,7 @@ onMounted(() => {
             <a-tooltip title="Thêm học kỳ mới">
               <a-button type="primary" @click="handleShowModalAdd">
                 <PlusOutlined />
-                Thêm mới
+                Thêm học kỳ
               </a-button>
             </a-tooltip>
           </div>

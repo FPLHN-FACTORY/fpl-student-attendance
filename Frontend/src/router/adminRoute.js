@@ -106,7 +106,7 @@ export const AdminRoutes = [
         component: () => import('@/views/pages/admin/AdminManagementStaffPage.vue'),
         meta: {
           selectedKey: selectedKey++,
-          name: 'Quản lý phụ trách xưởng',
+          name: 'Quản lý phụ trách / giảng viên',
           icon: TeamOutlined,
         },
       },

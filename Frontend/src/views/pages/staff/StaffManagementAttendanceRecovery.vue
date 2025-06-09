@@ -59,7 +59,7 @@ const columns = ref(
       title: 'Chức năng',
       key: 'action',
       fixed: 'right',
-      width: 100,
+      width: 300,
     },
   ])
 )
@@ -274,17 +274,85 @@ const clearData = () => {
   modalEditEvent.value = false
 }
 
+const deleteOldAttendanceData = (attendanceRecoveryId) => {
+  return new Promise((resolve, reject) => {
+    loadingStore.show()
+    requestAPI
+      .delete(API_ROUTES_STAFF.FETCH_DATA_ATTENDANCE_RECOVERY + '/delete-attendance/' + attendanceRecoveryId)
+      .then(() => {
+        message.success('Đã xóa dữ liệu khôi phục điểm danh cũ')
+        resolve(true)
+      })
+      .catch((error) => {
+        message.error(error.response?.data?.message || 'Lỗi khi xóa dữ liệu khôi phục điểm danh cũ')
+        reject(error)
+      })
+      .finally(() => {
+        loadingStore.hide()
+      })
+  })
+}
+
+const checkAttendanceRecoveryHistory = (data) => {
+  return new Promise((resolve, reject) => {
+    try {
+      // Find the attendance recovery record by ID
+      const attendanceRecord = attendanceRecovery.value.find(record => record.id === data.attendanceRecoveryId)
+      
+      const hasHistory = attendanceRecord && attendanceRecord.idImportLog != null
+      
+      if (hasHistory) {
+        Modal.confirm({
+          title: 'Cảnh báo',
+          content: 'Sự kiện này đã được khôi phục điểm danh cho sinh viên rồi. Nếu import tiếp, những sinh viên cũ sẽ bị xóa. Bạn có muốn tiếp tục?',
+          okText: 'Tiếp tục',
+          cancelText: 'Hủy bỏ',
+          okType: 'danger',
+          async onOk() {
+            try {
+              // Xóa dữ liệu cũ trước khi import mới
+              await deleteOldAttendanceData(data.attendanceRecoveryId)
+              resolve(true)
+            } catch (error) {
+              resolve(false)
+            }
+          },
+          onCancel() {
+            resolve(false)
+          },
+        })
+      } else {
+        resolve(true)
+      }
+    } catch (error) {
+      console.error('Error checking history:', error)
+      reject(error)
+    }
+  })
+}
+
+
 const configImportExcel = {
   fetchUrl: API_ROUTES_EXCEL.FETCH_IMPORT_ATTENDANCE_RECOVERY,
+  onBeforeImport: async (data) => {
+    try {
+      const shouldContinue = await checkAttendanceRecoveryHistory(data)
+      return shouldContinue
+    } catch (error) {
+      console.error('Error in onBeforeImport:', error)
+      return false
+    }
+  },
   onSuccess: () => {
     fetchAttendanceRecovery()
   },
   onError: () => {
     message.error('Không thể xử lý file excel')
   },
-  showDownloadTemplate: true,
+  showDownloadTemplate: false,
   showHistoryLog: false,
 }
+
 
 const columnsImportLog = ref(
   autoAddColumnWidth([
@@ -345,6 +413,15 @@ const handleShowImportLogDetail = (id) => {
     })
 }
 
+const configImportExcelTemplate = {
+  fetchUrl: API_ROUTES_EXCEL.FETCH_IMPORT_ATTENDANCE_RECOVERY,
+  onBeforeImport: null,
+  onSuccess: null,
+  onError: null,
+  showDownloadTemplate: true,
+  showHistoryLog: false,
+  showImport: false,
+}
 onMounted(() => {
   breadcrumbStore.setRoutes(breadcrumb.value)
   fetchAttendanceRecovery()
@@ -403,13 +480,13 @@ onMounted(() => {
             <UnorderedListOutlined /> Danh sách sự kiện khôi phục điểm danh
           </template>
           <div class="d-flex justify-content-end mb-3 flex-wrap gap-3">
+            <ExcelUploadButton
+              v-bind="configImportExcelTemplate"
+            />
             <a-space>
-              <a-tooltip>
-                <template #title>Thêm Sự kiện khôi phục điểm danh</template>
-                <a-button type="primary" @click="handleShowModalAdd">
-                  <PlusOutlined /> Thêm
-                </a-button>
-              </a-tooltip>
+              <a-button type="primary" @click="handleShowModalAdd">
+                <PlusOutlined /> Thêm sự kiện
+              </a-button>
             </a-space>
           </div>
           <a-table
@@ -419,7 +496,7 @@ onMounted(() => {
             :columns="columns"
             :pagination="pagination"
             @change="handleTableChange"
-            :loading="isLoading"
+            :loading="loadingStore.isLoading"
             :scroll="{ x: 'auto' }"
           >
             <template #bodyCell="{ column, record, index }">
@@ -461,14 +538,12 @@ onMounted(() => {
                       <HistoryOutlined class="text-primary" /> Lịch sử import
                     </a-button>
                   </template>
-                  <template v-else>
                     <div class="excel-upload-wrapper">
                       <ExcelUploadButton
                         v-bind="configImportExcel"
                         :data="{ attendanceRecoveryId: record.id }"
                       />
                     </div>
-                  </template>
                 </div>
               </template>
             </template>
