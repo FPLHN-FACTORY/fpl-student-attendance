@@ -30,7 +30,6 @@ import udpm.hn.studentattendance.helpers.ValidateHelper;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.config.websocket.model.message.AttendanceMessage;
 import udpm.hn.studentattendance.infrastructure.constants.AttendanceStatus;
-import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.ShiftType;
 import udpm.hn.studentattendance.infrastructure.constants.StatusType;
 import udpm.hn.studentattendance.infrastructure.constants.router.RouteWebsocketConstant;
@@ -187,7 +186,7 @@ public class SAAttendanceServiceImpl implements SAAttendanceService {
 
         List<double[]> inputEmbedding = FaceRecognitionUtils.parseEmbeddings(request.getFaceEmbedding());
         double[] storedEmbedding = FaceRecognitionUtils.parseEmbedding(userStudent.getFaceEmbedding());
-        boolean isMatch = FaceRecognitionUtils.isSameFace(inputEmbedding, storedEmbedding);
+        boolean isMatch = FaceRecognitionUtils.isSameFaces(inputEmbedding, storedEmbedding);
         if (!isMatch) {
             return RouterHelper.responseError("Xác thực khuôn mặt thất bại");
         }

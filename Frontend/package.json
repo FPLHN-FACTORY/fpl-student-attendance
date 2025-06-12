@@ -16,7 +16,7 @@
     "@ant-design/icons-vue": "^7.0.1",
     "@stomp/stompjs": "^7.1.1",
     "@tensorflow/tfjs": "^4.22.0",
-    "@vladmandic/face-api": "^1.7.15",
+    "@vladmandic/human": "^3.3.5",
     "@vue-leaflet/vue-leaflet": "^0.10.1",
     "ant-design-vue": "^4.2.6",
     "axios": "^1.7.9",

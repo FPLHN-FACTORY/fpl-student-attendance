@@ -2,7 +2,6 @@ package udpm.hn.studentattendance.core.authentication.services.impl;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
-import jakarta.persistence.Query;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -40,7 +39,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -176,7 +174,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             return RouterHelper.responseError("Vui lòng đăng ký thông tin sinh viên");
         }
 
-        if (StringUtils.hasText(student.getFaceEmbedding())) {
+        if (student.getFaceEmbedding() != null && !student.getFaceEmbedding().isEmpty()) {
             student.setFaceEmbedding("OK");
         }
 
@@ -235,44 +233,20 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     }
 
     private boolean isFaceExists(List<double[]> embeddings) {
-        double[] embedding = embeddings.remove(0);
-        List<String> matchedIds = isFaceExists(embedding);
-        if (matchedIds.isEmpty()) {
+        List<String> lstRawFaceEmbeddings = authenticationUserStudentRepository.getAllFaceEmbedding(sessionHelper.getFacilityId());
+        List<double[]> lstFaceEmbeddings = lstRawFaceEmbeddings.stream().map(FaceRecognitionUtils::parseEmbedding).toList();
+
+        if (lstFaceEmbeddings.isEmpty()) {
             return false;
         }
-        for (double[] emb: embeddings) {
-            boolean isExist = !isFaceExists(emb).isEmpty();
-            if(!isExist) {
-                return false;
+
+        int matching_faces = 0;
+        for (double[] face: embeddings) {
+            if(FaceRecognitionUtils.isSameFaces(lstFaceEmbeddings, face)) {
+                matching_faces++;
             }
         }
-        return true;
-    }
-
-    private List<String> isFaceExists(double[] embedding) {
-        StringBuilder queryBuilder = new StringBuilder(
-                "SELECT id FROM user_student WHERE face_embedding IS NOT NULL AND face_embedding <> '' AND ");
-        queryBuilder.append("SQRT(");
-
-        for (int i = 0; i < embedding.length; i++) {
-            if (i > 0)
-                queryBuilder.append(" + ");
-            queryBuilder.append("POW(IFNULL(JSON_EXTRACT(face_embedding, '$[").append(i).append("]'), 0) - :e")
-                    .append(i).append(", 2)");
-        }
-        queryBuilder.append(") < :threshold");
-
-        Query query = entityManager.createNativeQuery(queryBuilder.toString());
-
-        for (int i = 0; i < embedding.length; i++) {
-            query.setParameter("e" + i, embedding[i]);
-        }
-
-        query.setParameter("threshold", FaceRecognitionUtils.THRESHOLD);
-        return ((List<?>) query.getResultList())
-                .stream()
-                .map(Object::toString)
-                .toList();
+        return matching_faces > 1;
     }
 
 }
