@@ -90,7 +90,7 @@ const handleShowDescription = (text) => {
   Modal.info({
     title: 'Nội dung buổi học',
     type: 'info',
-    content: text || 'Buổi học chưa có nội dung',
+    content: text || 'Không có mô tả',
     okText: 'Đóng',
     okButtonProps: { class: 'btn-gray' },
   })
@@ -323,9 +323,12 @@ onMounted(() => {
                 </a-tag>
               </template>
               <template v-if="column.dataIndex === 'description'">
-                <a-typography-link @click="handleShowDescription(record.description)"
+                <a-typography-link 
+                  v-if="record.description"
+                  @click="handleShowDescription(record.description)"
                   >Chi tiết</a-typography-link
                 >
+                <span v-else>Không có mô tả</span>
               </template>
               <template v-else-if="column.dataIndex === 'link'">
                 <a v-if="record.link" :href="record.link" target="_blank">{{ record.link }}</a>

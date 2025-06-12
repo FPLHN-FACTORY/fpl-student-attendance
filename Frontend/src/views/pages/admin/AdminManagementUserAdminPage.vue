@@ -372,11 +372,10 @@ onMounted(() => {
           <template #title><UnorderedListOutlined /> Danh sách Admin</template>
 
           <div class="d-flex justify-content-end mb-2 flex-wrap gap-3">
-            <a-tooltip title="Thêm mới Admin">
               <a-button type="primary" @click="handleShowModalAdd"
-                ><PlusOutlined /> Thêm mới</a-button
+                ><PlusOutlined /> Thêm admin
+                </a-button
               >
-            </a-tooltip>
           </div>
 
           <a-table

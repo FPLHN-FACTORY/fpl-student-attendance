@@ -525,15 +525,20 @@ onMounted(() => {
             rowKey="id"
             :pagination="pagination"
             :scroll="{ x: 'auto' }"
-            :loading="isLoading"
+            :loading="loadingStore.isLoading"
             @change="handleTableChange"
           >
             <template #bodyCell="{ column, record }">
               <!-- Hiển thị trạng thái -->
-              <template v-if="column.dataIndex === 'description' && record.description">
-                <a-typography-link @click="handleShowDescription(record.description)"
-                  >Chi tiết</a-typography-link
-                >
+              <template v-if="column.dataIndex === 'description'">
+                <template v-if="record.description">
+                  <a-typography-link @click="handleShowDescription(record.description)"
+                    >Chi tiết</a-typography-link
+                  >
+                </template>
+                <template v-else>
+                  <span>Không có mô tả</span>
+                </template>
               </template>
               <template v-if="column.dataIndex === 'status'">
                 <span class="nowrap">

@@ -52,4 +52,19 @@ public class STAttendanceRecoveryController {
     ResponseEntity<?> getDetailHistoryLog(@PathVariable(name = "id") String id){
         return service.getAllHistoryLogDetailEvent(id);
     }
+
+    @GetMapping("/has-student-recovery/{id}")
+    ResponseEntity<?> isHasStudentRecovery(@PathVariable(name = "id") String id){
+        return service.isHasStudentAttendanceRecovery(id);
+    }
+
+    @DeleteMapping("/{id}")
+    ResponseEntity<?> deleteAttendanceRecovery(@PathVariable(name = "id") String attendanceRecovery){
+        return service.deleteAttendanceRecovery(attendanceRecovery);
+    }
+
+    @DeleteMapping("/delete-attendance/{id}")
+    ResponseEntity<?> deleteAttendanceRecord(@PathVariable(name = "id") String attendanceRecovery){
+        return service.deleteAttendanceRecordByAttendanceRecovery(attendanceRecovery);
+    }
 }

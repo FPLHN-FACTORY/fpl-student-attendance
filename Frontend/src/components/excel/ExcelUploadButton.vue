@@ -34,6 +34,7 @@ const props = defineProps({
   fetchUrl: { type: String, default: null },
   onSuccess: { type: Function, default: null },
   onError: { type: Function, default: null },
+  onBeforeImport: { type: Function, default: null },
   didParseCellPDF: { type: Function, default: null },
   data: { type: Object, default: {} },
   showDownloadTemplate: { type: Boolean, default: false },
@@ -76,7 +77,18 @@ const handleShowDetail = (id) => {
   fetchDataHistoryLogDetail(id)
 }
 
-const handleBeforeUpload = (file) => {
+const handleBeforeUpload = async (file) => {
+  if (props.onBeforeImport && typeof props.onBeforeImport === 'function') {
+    try {
+      const shouldContinue = await props.onBeforeImport(props.data)
+      if (!shouldContinue) {
+        return false
+      }
+    } catch (error) {
+      return false
+    }
+  }
+
   serviceStore.enqueue(file, {
     fetchUrl: props.fetchUrl,
     onSuccess: props.onSuccess,

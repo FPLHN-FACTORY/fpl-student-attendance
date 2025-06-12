@@ -1,6 +1,7 @@
 package udpm.hn.studentattendance.entities;
 
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.JoinColumn;
@@ -44,5 +45,10 @@ public class Attendance extends PrimaryEntity implements Serializable {
 
     @Column(name = "late_checkout")
     private Long lateCheckout;
+
+    @ManyToOne
+    @JsonIgnore
+    @JoinColumn(name = "id_attendance_recovery")
+    private AttendanceRecovery attendanceRecovery;
 
 }

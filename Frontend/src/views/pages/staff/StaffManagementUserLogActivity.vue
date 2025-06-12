@@ -163,7 +163,7 @@ watch(
             <a-collapse-panel>
               <template #header><FilterFilled /> Bộ lọc</template>
               <div class="row g-3">
-                <div class="col-lg-6 col-md-8 col-sm-12">
+                <div class="col-lg-12 col-md-12 col-sm-12">
                   <div class="label-title">Từ khoá:</div>
                   <a-input
                     v-model:value="dataFilter.searchQuery"
