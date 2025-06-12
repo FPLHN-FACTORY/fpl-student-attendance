@@ -9,7 +9,7 @@ import java.util.List;
 
 public class FaceRecognitionUtils {
 
-    public final static double THRESHOLD = 0.45;
+    public final static double THRESHOLD = 0.5;
 
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -29,29 +29,39 @@ public class FaceRecognitionUtils {
         }
     }
 
-    public static double calculateEuclideanDistance(double[] emb1, double[] emb2) {
-        if (emb1.length != emb2.length) {
-            return THRESHOLD;
+    public static double cosineSimilarity(double[] vec1, double[] vec2) {
+        double dot = 0;
+        double normA = 0;
+        double normB = 0;
+
+        for (int i = 0; i < vec1.length; i++) {
+            dot += vec1[i] * vec2[i];
+            normA += vec1[i] * vec1[i];
+            normB += vec2[i] * vec2[i];
         }
 
-        double sum = 0.0;
-        for (int i = 0; i < emb1.length; i++) {
-            sum += Math.pow(emb1[i] - emb2[i], 2);
-        }
-        return Math.sqrt(sum);
+        return dot / (Math.sqrt(normA) * Math.sqrt(normB));
     }
 
-    public static boolean isSameFace(List<double[]> emb1, double[] emb2) {
-        return isSameFace(emb1, emb2, THRESHOLD);
+    public static boolean isSameFaces(List<double[]> emb1, double[] emb2) {
+        return isSameFaces(emb1, emb2, THRESHOLD);
     }
 
-    public static boolean isSameFace(List<double[]> emb1, double[] emb2, double threshold) {
+    public static boolean isSameFaces(List<double[]> emb1, double[] emb2, double threshold) {
         for (double[] input : emb1) {
-            if (calculateEuclideanDistance(input, emb2) < threshold) {
+            if (isSameFace(input, emb2, threshold)) {
                 return true;
             }
         }
         return false;
+    }
+
+    public static boolean isSameFace(double[] emb1, double[] emb2) {
+        return isSameFace(emb1, emb2, THRESHOLD);
+    }
+
+    public static boolean isSameFace(double[] emb1, double[] emb2, double threshold) {
+        return cosineSimilarity(emb1, emb2) > threshold;
     }
 
 }
