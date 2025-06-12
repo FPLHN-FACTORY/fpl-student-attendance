@@ -279,7 +279,7 @@ const handleShowDescription = (text) => {
   Modal.info({
     title: 'Nội dung kế hoạch',
     type: 'info',
-    content: text,
+    content: text || 'Không có mô tả',
     okText: 'Đóng',
     okButtonProps: {
       class: 'btn-gray',
@@ -775,9 +775,12 @@ watch(
           >
             <template #bodyCell="{ column, record }">
               <template v-if="column.dataIndex === 'description'">
-                <a-typography-link @click="handleShowDescription(record.description)"
+                <a-typography-link 
+                  v-if="record.description" 
+                  @click="handleShowDescription(record.description)"
                   >Chi tiết</a-typography-link
                 >
+                <span v-else>Không có mô tả</span>
               </template>
               <template v-if="column.key === 'planName'">
                 <RouterLink

@@ -83,88 +83,132 @@ public class EXAttendanceRecoveryServiceImpl implements EXAttendanceRecoveryServ
         Map<String, String> item = request.getItem();
         Map<String, Object> data = request.getData();
 
+        // Lấy ImportLog chung cho toàn bộ quá trình import
+        ImportLog importLog = getOrCreateImportLog(request);
+
         String idAttendanceRecovery = (String) data.get("attendanceRecoveryId");
+
+        // Set ImportLog cho AttendanceRecovery ngay từ đầu
+        setAttendanceRecoveryImportLog(idAttendanceRecovery, importLog);
+
         String dayString = item.get("NGAY_DIEM_DANH");
+
         if (dayString.isEmpty() || dayString == null || dayString.equals("")) {
             String msg = "Thông tin về ngày điểm danh không được để trống.";
-            excelHelper.saveLogError(ImportLogType.ATTENDANCE_RECOVERY, msg, request);
+            createImportLogDetail(importLog, request, msg, EntityStatus.INACTIVE);
             return RouterHelper.responseError(msg, HttpStatus.BAD_REQUEST);
         }
 
         Long dayAttendance;
         LocalDateTime attendanceDateTime;
         try {
-            LocalDateTime localDateTime;
-
-            if (dayString.contains(":")) {
-                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
-                localDateTime = LocalDateTime.parse(dayString, formatter);
-            } else {
-                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-                LocalDate localDate = LocalDate.parse(dayString, formatter);
-                localDateTime = localDate.atStartOfDay();
-            }
-
-            attendanceDateTime = localDateTime;
-            ZoneId vietnamZone = ZoneId.of("Asia/Ho_Chi_Minh");
-            ZonedDateTime zonedDateTime = localDateTime.atZone(vietnamZone);
-            dayAttendance = zonedDateTime.toInstant().toEpochMilli();
-
+            attendanceDateTime = parseAttendanceDate(dayString);
+            dayAttendance = convertToEpochMilli(attendanceDateTime);
         } catch (Exception e) {
             String msg = "Định dạng ngày điểm danh không hợp lệ. Vui lòng sử dụng format: dd/MM/yyyy hoặc dd/MM/yyyy HH:mm:ss";
-            excelHelper.saveLogError(ImportLogType.ATTENDANCE_RECOVERY, msg, request);
+            createImportLogDetail(importLog, request, msg, EntityStatus.INACTIVE);
             return RouterHelper.responseError(msg, HttpStatus.BAD_REQUEST);
         }
 
-        // Validation: Kiểm tra ngày điểm danh không được là ngày trong tương lai
         LocalDateTime currentDateTime = LocalDateTime.now(ZoneId.of("Asia/Ho_Chi_Minh"));
         if (attendanceDateTime.isAfter(currentDateTime)) {
             String msg = "Không thể khôi phục điểm danh cho ngày trong tương lai. Ngày điểm danh phải là ngày hiện tại hoặc trong quá khứ.";
-            excelHelper.saveLogError(ImportLogType.ATTENDANCE_RECOVERY, msg, request);
+            createImportLogDetail(importLog, request, msg, EntityStatus.INACTIVE);
             return RouterHelper.responseError(msg, HttpStatus.BAD_REQUEST);
         }
 
         String studentCode = item.get("MA_SINH_VIEN");
         if (studentCode.isEmpty() || studentCode == null || studentCode.equals("")) {
             String msg = "Thông tin về mã sinh viên không được để trống.";
-            excelHelper.saveLogError(ImportLogType.ATTENDANCE_RECOVERY, msg, request);
+            createImportLogDetail(importLog, request, msg, EntityStatus.INACTIVE);
             return RouterHelper.responseError(msg, HttpStatus.BAD_REQUEST);
         }
 
+        // Create attendance recovery request
         STStudentAttendanceRecoveryAddRequest stStudentAttendanceRecoveryRequest = new STStudentAttendanceRecoveryAddRequest();
         stStudentAttendanceRecoveryRequest.setStudentCode(studentCode);
         stStudentAttendanceRecoveryRequest.setDay(dayAttendance);
         stStudentAttendanceRecoveryRequest.setAttendanceRecoveryId(idAttendanceRecovery);
 
-        Optional<AttendanceRecovery> attendanceRecoveryOptional = attendanceRecoveryRepository.findById(idAttendanceRecovery);
-        AttendanceRecovery attendanceRecovery = attendanceRecoveryOptional.get();
-        attendanceRecovery.setTotalStudent(request.getLine());
-        attendanceRecoveryRepository.save(attendanceRecovery);
-
-        ResponseEntity<ApiResponse> result = (ResponseEntity<ApiResponse>) attendanceRecoveryService.importAttendanceRecoveryStudent(stStudentAttendanceRecoveryRequest);
+        // Process attendance recovery
+        ResponseEntity<ApiResponse> result = (ResponseEntity<ApiResponse>) attendanceRecoveryService
+                .importAttendanceRecoveryStudent(stStudentAttendanceRecoveryRequest);
         ApiResponse response = result.getBody();
 
-        ImportLog importLog = getOrCreateImportLog(request);
+        // Create import log detail cho kết quả xử lý
+        EntityStatus status = response.getStatus() == RestApiStatus.SUCCESS ? EntityStatus.ACTIVE : EntityStatus.INACTIVE;
+        createImportLogDetail(importLog, request, response.getMessage(), status);
 
-        ImportLogDetail importLogDetail = new ImportLogDetail();
-        importLogDetail.setImportLog(importLog);
-        importLogDetail.setLine(request.getLine());
-        importLogDetail.setMessage(response.getMessage());
-
-        if (response.getStatus() == RestApiStatus.SUCCESS) {
-            importLogDetail.setStatus(EntityStatus.ACTIVE);
-        } else {
-            importLogDetail.setStatus(EntityStatus.INACTIVE);
-        }
-
-        importLogDetailRepository.save(importLogDetail);
-        attendanceRecovery.setImportLog(importLog);
-        attendanceRecoveryRepository.save(attendanceRecovery);
+        // Update total student count
+        updateAttendanceRecoveryTotalStudent(idAttendanceRecovery, importLog);
 
         return result;
     }
 
-    // Helper method to reduce code duplication
+    private LocalDateTime parseAttendanceDate(String dayString) {
+        LocalDateTime localDateTime;
+
+        if (dayString.contains(":")) {
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
+            localDateTime = LocalDateTime.parse(dayString, formatter);
+        } else {
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+            LocalDate localDate = LocalDate.parse(dayString, formatter);
+            localDateTime = localDate.atStartOfDay();
+        }
+
+        return localDateTime;
+    }
+
+    private Long convertToEpochMilli(LocalDateTime localDateTime) {
+        ZoneId vietnamZone = ZoneId.of("Asia/Ho_Chi_Minh");
+        ZonedDateTime zonedDateTime = localDateTime.atZone(vietnamZone);
+        return zonedDateTime.toInstant().toEpochMilli();
+    }
+
+    private void createImportLogDetail(ImportLog importLog, EXImportRequest request, String message, EntityStatus status) {
+        ImportLogDetail importLogDetail = new ImportLogDetail();
+        importLogDetail.setImportLog(importLog);
+        importLogDetail.setLine(request.getLine());
+        importLogDetail.setMessage(message);
+        importLogDetail.setStatus(status);
+
+        importLogDetailRepository.save(importLogDetail);
+    }
+
+    private void setAttendanceRecoveryImportLog(String idAttendanceRecovery, ImportLog importLog) {
+        Optional<AttendanceRecovery> attendanceRecoveryOptional = attendanceRecoveryRepository.findById(idAttendanceRecovery);
+        if (attendanceRecoveryOptional.isPresent()) {
+            AttendanceRecovery attendanceRecovery = attendanceRecoveryOptional.get();
+            attendanceRecovery.setImportLog(importLog);
+            attendanceRecoveryRepository.save(attendanceRecovery);
+        }
+    }
+
+    private void updateAttendanceRecoveryTotalStudent(String idAttendanceRecovery, ImportLog importLog) {
+        int totalStudent = attendanceRecoveryService.getAllImportStudentSuccess(
+                importLog.getId(),
+                sessionHelper.getUserId(),
+                sessionHelper.getFacilityId(),
+                6
+        );
+
+        Optional<AttendanceRecovery> attendanceRecoveryOptional = attendanceRecoveryRepository.findById(idAttendanceRecovery);
+        if (attendanceRecoveryOptional.isPresent()) {
+            AttendanceRecovery attendanceRecovery = attendanceRecoveryOptional.get();
+            attendanceRecovery.setTotalStudent(totalStudent);
+            attendanceRecovery.setImportLog(importLog);
+            attendanceRecoveryRepository.save(attendanceRecovery);
+        }
+    }
+
+    // Method thay thế cho excelHelper.saveLogError - tạo ImportLogDetail INACTIVE
+// (Deprecated - sử dụng createImportLogDetail thay thế)
+    private void logImportError(String message, EXImportRequest request) {
+        ImportLog importLog = getOrCreateImportLog(request);
+        createImportLogDetail(importLog, request, message, EntityStatus.INACTIVE);
+    }
+
     private ImportLog getOrCreateImportLog(EXImportRequest request) {
         ImportLog importLog = importLogRepository.findByIdUserAndCodeAndFileNameAndFacility_Id(
                 sessionHelper.getUserId(),
@@ -192,6 +236,7 @@ public class EXAttendanceRecoveryServiceImpl implements EXAttendanceRecoveryServ
 
         return importLog;
     }
+
     @Override
     public ResponseEntity<?> exportData(EXDataRequest request) {
         return null;

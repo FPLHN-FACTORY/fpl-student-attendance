@@ -109,7 +109,7 @@ const emailFptWithDomain = computed({
   },
 })
 
-// Dữ liệu cập nhật nhân viên
+// Dữ liệu cập nhật phụ trách / giảng viên
 const detailStaff = reactive({
   id: '',
   staffCode: '',
@@ -124,8 +124,8 @@ const detailStaff = reactive({
 const columns = ref(
   autoAddColumnWidth([
     { title: '#', dataIndex: 'orderNumber', key: 'orderNumber' },
-    { title: 'Mã nhân viên', dataIndex: 'staffCode', key: 'staffCode' },
-    { title: 'Tên nhân viên', dataIndex: 'staffName', key: 'staffName' },
+    { title: 'Mã phụ trách / giảng viên', dataIndex: 'staffCode', key: 'staffCode' },
+    { title: 'Tên phụ trách / giảng viên', dataIndex: 'staffName', key: 'staffName' },
     { title: 'Email FE', dataIndex: 'staffEmailFe', key: 'staffEmailFe' },
     { title: 'Email FPT', dataIndex: 'staffEmailFpt', key: 'staffEmailFpt' },
     { title: 'Cơ sở', dataIndex: 'facilityName', key: 'facilityName' },
@@ -154,7 +154,7 @@ const fetchStaffs = () => {
     .catch((error) => {
       message.error(
         (error.response && error.response.data && error.response.data.message) ||
-          'Lỗi khi lấy danh sách nhân viên',
+          'Lỗi khi lấy danh sách phụ trách / giảng viên',
       )
     })
     .finally(() => {
@@ -199,7 +199,7 @@ const handleAddStaff = () => {
   }
   Modal.confirm({
     title: 'Xác nhận thêm mới',
-    content: 'Bạn có chắc chắn muốn thêm nhân viên mới này?',
+    content: 'Bạn có chắc chắn muốn thêm phụ trách / giảng viên mới này?',
     okText: 'Tiếp tục',
     cancelText: 'Hủy bỏ',
     onOk() {
@@ -213,7 +213,7 @@ const handleAddStaff = () => {
       requestAPI
         .post(API_ROUTES_ADMIN.FETCH_DATA_STAFF, payload)
         .then(() => {
-          message.success('Thêm nhân viên thành công')
+          message.success('Thêm phụ trách / giảng viên thành công')
           modalAdd.value = false
           fetchStaffs()
           clearNewStaffForm()
@@ -221,18 +221,17 @@ const handleAddStaff = () => {
         .catch((error) => {
           message.error(
             (error.response && error.response.data && error.response.data.message) ||
-              'Lỗi khi thêm nhân viên',
+              'Lỗi khi thêm phụ trách / giảng viên',
           )
         })
         .finally(() => {
           modalAddLoading.value = false
           loadingStore.hide()
         })
-    },
-  })
+    },    })
 }
 
-// Hàm lấy chi tiết nhân viên để cập nhật
+// Hàm lấy chi tiết phụ trách / giảng viên để cập nhật
 const handleUpdateStaff = (record) => {
   loadingStore.show()
   requestAPI
@@ -251,7 +250,7 @@ const handleUpdateStaff = (record) => {
     .catch((error) => {
       message.error(
         (error.response && error.response.data && error.response.data.message) ||
-          'Lỗi khi lấy chi tiết nhân viên',
+          'Lỗi khi lấy chi tiết phụ trách / giảng viên',
       )
     })
     .finally(() => {
@@ -259,7 +258,7 @@ const handleUpdateStaff = (record) => {
     })
 }
 
-// Hàm cập nhật nhân viên
+// Hàm cập nhật phụ trách / giảng viên
 const updateStaff = () => {
   if (
     !detailStaff.staffCode ||
@@ -274,7 +273,7 @@ const updateStaff = () => {
   }
   Modal.confirm({
     title: 'Xác nhận cập nhật',
-    content: 'Bạn có chắc chắn muốn cập nhật thông tin nhân viên này?',
+    content: 'Bạn có chắc chắn muốn cập nhật thông tin phụ trách / giảng viên này?',
     okText: 'Tiếp tục',
     cancelText: 'Hủy bỏ',
     onOk() {
@@ -283,14 +282,14 @@ const updateStaff = () => {
       requestAPI
         .put(`${API_ROUTES_ADMIN.FETCH_DATA_STAFF}/${detailStaff.id}`, detailStaff)
         .then(() => {
-          message.success('Cập nhật nhân viên thành công')
+          message.success('Cập nhật phụ trách / giảng viên thành công')
           modalUpdate.value = false
           fetchStaffs()
         })
         .catch((error) => {
           message.error(
             (error.response && error.response.data && error.response.data.message) ||
-              'Lỗi khi cập nhật nhân viên',
+              'Lỗi khi cập nhật phụ trách / giảng viên',
           )
         })
         .finally(() => {
@@ -301,11 +300,11 @@ const updateStaff = () => {
   })
 }
 
-// Hàm đổi trạng thái nhân viên
+// Hàm đổi trạng thái phụ trách / giảng viên
 const handleChangeStatusStaff = (record) => {
   Modal.confirm({
     title: 'Xác nhận thay đổi trạng thái',
-    content: `Bạn có chắc chắn muốn đổi trạng thái cho nhân viên ${record.staffName}?`,
+    content: `Bạn có chắc chắn muốn đổi trạng thái cho phụ trách / giảng viên ${record.staffName}?`,
     onOk: () => {
       loadingStore.show()
       requestAPI
@@ -317,7 +316,7 @@ const handleChangeStatusStaff = (record) => {
         .catch((error) => {
           message.error(
             (error.response && error.response.data && error.response.data.message) ||
-              'Lỗi khi đổi trạng thái nhân viên',
+              'Lỗi khi đổi trạng thái phụ trách / giảng viên',
           )
         })
         .finally(() => {
@@ -346,8 +345,8 @@ const configImportExcel = {
   showDownloadTemplate: true,
   showExport: true,
   showHistoryLog: true,
-  btnImport: 'Import giảng viên/ phụ trách xưởng',
-  btnExport: 'Export giảng viên/ phụ trách xưởng',
+  btnImport: 'Import phụ trách / giảng viên',
+  btnExport: 'Export phụ trách / giảng viên',
 }
 
 const handleClearFilter = () => {
@@ -379,7 +378,7 @@ onMounted(() => {
 
 <template>
   <div class="container-fluid">
-    <!-- Card Danh sách nhân viên -->
+    <!-- Card Danh sách phụ trách / giảng viên -->
     <div class="row g-3">
       <div class="col-12">
         <a-card :bordered="false" class="cart no-body-padding">
@@ -469,14 +468,12 @@ onMounted(() => {
 
       <div class="col-12">
         <a-card :bordered="false" class="cart">
-          <template #title> <UnorderedListOutlined /> Danh sách nhân viên </template>
+          <template #title> <UnorderedListOutlined /> Danh sách giảng viên </template>
           <div class="d-flex justify-content-end flex-wrap gap-3 mb-2">
             <ExcelUploadButton v-bind="configImportExcel" />
-            <a-tooltip title="Thêm mới nhân viên">
               <a-button type="primary" @click="handleShowModalAdd">
-                <PlusOutlined /> Thêm nhân viên
+                <PlusOutlined /> Thêm giảng viên
               </a-button>
-            </a-tooltip>
           </div>
 
           <a-table
@@ -511,11 +508,19 @@ onMounted(() => {
                 </span>
               </template>
               <template v-else-if="column.dataIndex === 'roleCode'">
-                {{ convertRole(record.roleCode) }}
+                  <a-badge
+                    status="processing"
+                  />
+                  {{ convertRole(record.roleCode) }}
+              </template>
+              <template v-else-if="column.dataIndex === 'facilityName'">
+                <a-tag>
+                  {{ record.facilityName }}
+                </a-tag>
               </template>
               <template v-else-if="column.key === 'actions'">
                 <a-space>
-                  <a-tooltip title="Sửa nhân viên">
+                  <a-tooltip title="Sửa phụ trách / giảng viên">
                     <a-button
                       @click="handleUpdateStaff(record)"
                       type="text"
@@ -535,27 +540,27 @@ onMounted(() => {
       </div>
     </div>
 
-    <!-- Modal Thêm nhân viên -->
+    <!-- Modal Thêm phụ trách / giảng viên -->
     <a-modal
       v-model:open="modalAdd"
-      title="Thêm nhân viên"
+      title="Thêm phụ trách / giảng viên"
       @ok="handleAddStaff"
       :okButtonProps="{ loading: modalAddLoading }"
       @cancel="clearNewStaffForm"
       @close="clearNewStaffForm"
     >
       <a-form layout="vertical">
-        <a-form-item label="Mã nhân viên" required>
+        <a-form-item label="Mã phụ trách / giảng viên" required>
           <a-input
             v-model:value="newStaff.staffCode"
-            placeholder="Nhập mã nhân viên"
+            placeholder="Nhập mã phụ trách / giảng viên"
             @keyup.enter="handleAddStaff"
           />
         </a-form-item>
-        <a-form-item label="Tên nhân viên" required>
+        <a-form-item label="Tên phụ trách / giảng viên" required>
           <a-input
             v-model:value="newStaff.name"
-            placeholder="Nhập tên nhân viên"
+            placeholder="Nhập tên phụ trách / giảng viên"
             @keyup.enter="handleAddStaff"
           />
         </a-form-item>
@@ -612,25 +617,25 @@ onMounted(() => {
       </a-form>
     </a-modal>
 
-    <!-- Modal Cập nhật nhân viên -->
+    <!-- Modal Cập nhật phụ trách / giảng viên -->
     <a-modal
       v-model:open="modalUpdate"
-      title="Cập nhật nhân viên"
+      title="Cập nhật phụ trách / giảng viên"
       @ok="updateStaff"
       :okButtonProps="{ loading: modalUpdateLoading }"
     >
       <a-form layout="vertical">
-        <a-form-item label="Mã nhân viên" required>
+        <a-form-item label="Mã phụ trách / giảng viên" required>
           <a-input
             v-model:value="detailStaff.staffCode"
-            placeholder="Nhập mã nhân viên"
+            placeholder="Nhập mã phụ trách / giảng viên"
             @keyup.enter="updateStaff"
           />
         </a-form-item>
-        <a-form-item label="Tên nhân viên" required>
+        <a-form-item label="Tên phụ trách / giảng viên" required>
           <a-input
             v-model:value="detailStaff.name"
-            placeholder="Nhập tên nhân viên"
+            placeholder="Nhập tên phụ trách / giảng viên"
             @keyup.enter="updateStaff"
           />
         </a-form-item>

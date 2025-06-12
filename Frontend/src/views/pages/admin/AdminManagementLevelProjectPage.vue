@@ -305,7 +305,7 @@ onMounted(() => {
     <a-descriptions bordered :column="1">
       <a-descriptions-item label="Mã">{{ detailLevel.code }}</a-descriptions-item>
       <a-descriptions-item label="Tên">{{ detailLevel.name }}</a-descriptions-item>
-      <a-descriptions-item label="Mô tả">{{ detailLevel.description }}</a-descriptions-item>
+      <a-descriptions-item label="Mô tả">{{ detailLevel.description || 'Không có mô tả' }}</a-descriptions-item>
       <a-descriptions-item label="Trạng thái">
         <a-tag :color="getStatusColor(detailLevel.status)">
           {{ getStatusText(detailLevel.status) }}
@@ -377,7 +377,7 @@ onMounted(() => {
           <div class="d-flex justify-content-end mb-2">
             <a-tooltip title="Thêm cấp dự án">
               <a-button type="primary" @click="handleShowModalAdd">
-                <PlusOutlined /> Thêm mới
+                <PlusOutlined /> Thêm cấp dự án
               </a-button>
             </a-tooltip>
           </div>
@@ -410,6 +410,15 @@ onMounted(() => {
                     }}
                   </a-tag>
                 </span>
+              </template>
+
+              <template v-else-if="column.dataIndex === 'description'">
+                <template v-if="record.description">
+                  <span>{{ record.description }}</span>
+                </template>
+                <template v-else>
+                  <span>Không có mô tả</span>
+                </template>
               </template>
 
               <template v-else-if="column.key === 'actions'">

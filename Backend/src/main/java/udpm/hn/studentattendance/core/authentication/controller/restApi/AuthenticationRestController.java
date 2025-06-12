@@ -31,7 +31,7 @@ public class AuthenticationRestController {
 
     @PostMapping(RouteAuthenticationConstant.API_CONVERT_IMAGE_TO_BASE64)
     public ResponseEntity<?> getAvatar(@RequestBody Map<String, String> requestBody) {
-        return authenticationService.getAvater(requestBody.get("url_image"));
+        return authenticationService.getAvatar(requestBody.get("url_image"));
     }
 
     @GetMapping(RouteAuthenticationConstant.API_GET_ALL_FACILITY)

@@ -99,7 +99,7 @@ const handleShowDescription = (text) => {
   Modal.info({
     title: 'Nội dung buổi học',
     type: 'info',
-    content: text || 'Buổi học chưa có nội dung',
+    content: text || 'Không có mô tả',
     okText: 'Đóng',
     okButtonProps: {
       class: 'btn-gray',
@@ -321,9 +321,12 @@ onMounted(async () => {
                   </a-tag>
                 </template>
                 <template v-else-if="column.dataIndex === 'planDateDescription'">
-                  <a-typography-link @click="handleShowDescription(record.planDateDescription)">
+                  <a-typography-link 
+                    v-if="record.planDateDescription"
+                    @click="handleShowDescription(record.planDateDescription)">
                     Chi tiết
                   </a-typography-link>
+                  <span v-else>Không có mô tả</span>
                 </template>
                 <template v-else-if="column.dataIndex === 'checkIn'">
                   <template v-if="record.requiredCheckIn == STATUS_REQUIRED_ATTENDANCE.ENABLE">
