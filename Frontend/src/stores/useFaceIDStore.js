@@ -5,8 +5,7 @@ import * as tf from '@tensorflow/tfjs'
 import Human from '@vladmandic/human'
 import Config from '@/constants/humanConfig'
 
-const TIME_LOOP_RECHECK = 300
-const THRESHOLD_P = 0.1
+const THRESHOLD_P = 0.2
 const THRESHOLD_X = 0.1
 const THRESHOLD_Y = 0.25
 const THRESHOLD_EMOTIONS = 0.8
@@ -14,7 +13,7 @@ const MIN_BRIGHTNESS = 80
 const MAX_BRIGHTNESS = 180
 const THRESHOLD_LIGHT = 80
 const DETECTION_LIVE = 0.7
-const SKIP_FRAME = 6
+const SKIP_FRAME = 10
 
 const useFaceIDStore = defineStore('faceID', () => {
   let isFullStep = false
@@ -84,7 +83,7 @@ const useFaceIDStore = defineStore('faceID', () => {
     isLoading.value = true
     try {
       const constraints = {
-        video: { facingMode: 'user', width: { ideal: 224 }, height: { ideal: 224 } },
+        video: { facingMode: 'user', width: { ideal: 256 }, height: { ideal: 256 } },
       }
       const stream = await navigator.mediaDevices.getUserMedia(constraints)
       if (video.value) {
@@ -365,11 +364,13 @@ const useFaceIDStore = defineStore('faceID', () => {
         }
       }
 
-      for (const obj of detections?.object) {
-        if (['hand', 'cell phone', 'book'].includes(obj.label)) {
-          if (checkOverlap(obj.box, face.box)) {
-            step.value = Math.max(0, step.value - 1)
-            return renderTextStep('Vui lòng không che khuất mặt')
+      if (detections?.object) {
+        for (const obj of detections?.object) {
+          if (['hand', 'cell phone', 'book'].includes(obj.label)) {
+            if (checkOverlap(obj.box, face.box)) {
+              step.value = Math.max(0, step.value - 1)
+              return renderTextStep('Vui lòng không che khuất mặt')
+            }
           }
         }
       }
@@ -400,7 +401,6 @@ const useFaceIDStore = defineStore('faceID', () => {
           if (step.value === 1) {
             step.value = 2
             lstDescriptor.value.push(descriptor)
-            await new Promise((resolve) => setTimeout(resolve, TIME_LOOP_RECHECK))
             captureFace()
             stopVideo()
             typeof onSuccess == 'function' && onSuccess(toRaw(lstDescriptor.value))
@@ -423,7 +423,6 @@ const useFaceIDStore = defineStore('faceID', () => {
           if (step.value === 3 && angle === 0) {
             step.value = 4
             lstDescriptor.value.push(descriptor)
-            await new Promise((resolve) => setTimeout(resolve, TIME_LOOP_RECHECK))
             captureFace()
             stopVideo()
             typeof onSuccess == 'function' && onSuccess(toRaw(lstDescriptor.value))

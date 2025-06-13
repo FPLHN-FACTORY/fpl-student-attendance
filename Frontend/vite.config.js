@@ -13,6 +13,16 @@ export default defineConfig({
   },
   define: {
     'process.env': {},
+    __BUILD_TIME__: JSON.stringify(Date.now()),
     global: {},
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        entryFileNames: 'assets/[name].[hash].js',
+        chunkFileNames: 'assets/[name].[hash].js',
+        assetFileNames: 'assets/[name].[hash].[ext]',
+      },
+    },
   },
 })
