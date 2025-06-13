@@ -355,10 +355,12 @@ const useFaceIDStore = defineStore('faceID', () => {
 
       if (!isFullStep) {
         if (await isWithGlasses()) {
+          step.value = Math.max(0, step.value - 1)
           return renderTextStep('Vui lòng không đeo kính')
         }
 
         if (await isWithMask()) {
+          step.value = Math.max(0, step.value - 1)
           return renderTextStep('Vui lòng không đeo khẩu trang')
         }
       }
@@ -366,6 +368,7 @@ const useFaceIDStore = defineStore('faceID', () => {
       for (const obj of detections?.object) {
         if (['hand', 'cell phone', 'book'].includes(obj.label)) {
           if (checkOverlap(obj.box, face.box)) {
+            step.value = Math.max(0, step.value - 1)
             return renderTextStep('Vui lòng không che khuất mặt')
           }
         }

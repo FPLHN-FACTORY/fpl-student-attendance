@@ -154,12 +154,12 @@ onMounted(async () => {
         <div class="dot"></div>
         <div class="axis" ref="axis">
           <div class="a-x">
-            <div class="a-x__top"></div>
-            <div class="a-x__bottom"></div>
+            <div class="a-x__left"></div>
+            <div class="a-x__right"></div>
           </div>
           <div class="a-y">
-            <div class="a-y__left"></div>
-            <div class="a-y__right"></div>
+            <div class="a-y__top"></div>
+            <div class="a-y__bottom"></div>
           </div>
         </div>
       </div>
