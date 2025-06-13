@@ -58,6 +58,15 @@ public class FaceRecognitionUtils {
         return false;
     }
 
+    public static double[] isSameFaceAndResult(List<double[]> emb1, double[] emb2, double threshold) {
+        for (double[] input : emb1) {
+            if (isSameFace(input, emb2, threshold)) {
+                return input;
+            }
+        }
+        return null;
+    }
+
     public static boolean isSameFace(double[] emb1, double[] emb2) {
         return isSameFace(emb1, emb2, THRESHOLD_CHECKIN);
     }

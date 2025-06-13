@@ -198,7 +198,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
         List<double[]> faceEmbeddings = FaceRecognitionUtils.parseEmbeddings(request.getFaceEmbedding());
         if (isFaceExists(faceEmbeddings)) {
-            return RouterHelper.responseError("Đã tồn tại khuôn mặt trên hệ thống");
+            return RouterHelper.responseError("Mặt quá mờ hoặc đã tồn tại trên hệ thống. Vui lòng thử lại");
         }
 
         student.setFaceEmbedding(Arrays.toString(faceEmbeddings.get(0)));
@@ -240,9 +240,18 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             return false;
         }
 
+        double threshold = FaceRecognitionUtils.THRESHOLD_REGISTER;
+
+        double[] firstFace = embeddings.remove(0);
+        double[] resultFace = FaceRecognitionUtils.isSameFaceAndResult(lstFaceEmbeddings, firstFace, threshold);
+
+        if (resultFace == null) {
+            return false;
+        }
+
         int matching_faces = 0;
         for (double[] face: embeddings) {
-            if(FaceRecognitionUtils.isSameFaces(lstFaceEmbeddings, face, FaceRecognitionUtils.THRESHOLD_REGISTER)) {
+            if(FaceRecognitionUtils.isSameFace(resultFace, face, threshold)) {
                 matching_faces++;
             }
         }
