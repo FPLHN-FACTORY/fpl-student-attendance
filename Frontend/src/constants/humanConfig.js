@@ -7,9 +7,10 @@ export default {
     enabled: true,
     detector: {
       rotation: true, // giúp phát hiện mặt nghiêng
+      inputSize: 256,
       maxDetected: 1, // nếu chỉ cần 1 người
-      minConfidence: 0.8, // giảm nếu muốn bắt được mặt khó
-      scoreThreshold: 0.8,
+      minConfidence: 0.6, // giảm nếu muốn bắt được mặt khó
+      scoreThreshold: 0.6,
     },
     iris: { enabled: false }, // tắt nếu không cần tracking mắt
     description: { enabled: true }, // tắt nếu không cần thông tin tuổi/giới tính
@@ -20,6 +21,6 @@ export default {
   },
   body: { enabled: false },
   hand: { enabled: false },
-  object: { enabled: true },
+  object: { enabled: false },
   gesture: { enabled: false },
 }
