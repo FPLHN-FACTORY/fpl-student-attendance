@@ -242,7 +242,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
         int matching_faces = 0;
         for (double[] face: embeddings) {
-            if(FaceRecognitionUtils.isSameFaces(lstFaceEmbeddings, face)) {
+            if(FaceRecognitionUtils.isSameFaces(lstFaceEmbeddings, face, FaceRecognitionUtils.THRESHOLD_REGISTER)) {
                 matching_faces++;
             }
         }
