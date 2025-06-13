@@ -9,7 +9,9 @@ import java.util.List;
 
 public class FaceRecognitionUtils {
 
-    public final static double THRESHOLD = 0.5;
+    public final static double THRESHOLD_CHECKIN = 0.5;
+
+    public final static double THRESHOLD_REGISTER = 0.6;
 
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -44,7 +46,7 @@ public class FaceRecognitionUtils {
     }
 
     public static boolean isSameFaces(List<double[]> emb1, double[] emb2) {
-        return isSameFaces(emb1, emb2, THRESHOLD);
+        return isSameFaces(emb1, emb2, THRESHOLD_CHECKIN);
     }
 
     public static boolean isSameFaces(List<double[]> emb1, double[] emb2, double threshold) {
@@ -57,7 +59,7 @@ public class FaceRecognitionUtils {
     }
 
     public static boolean isSameFace(double[] emb1, double[] emb2) {
-        return isSameFace(emb1, emb2, THRESHOLD);
+        return isSameFace(emb1, emb2, THRESHOLD_CHECKIN);
     }
 
     public static boolean isSameFace(double[] emb1, double[] emb2, double threshold) {

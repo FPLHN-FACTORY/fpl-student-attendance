@@ -13,6 +13,7 @@ const THRESHOLD_EMOTIONS = 0.8
 const MIN_BRIGHTNESS = 80
 const MAX_BRIGHTNESS = 180
 const THRESHOLD_LIGHT = 80
+const DETECTION_LIVE = 0.7
 const SKIP_FRAME = 6
 
 const useFaceIDStore = defineStore('faceID', () => {
@@ -300,15 +301,15 @@ const useFaceIDStore = defineStore('faceID', () => {
       const centerX = xRaw + wRaw / 2
       const centerY = yRaw + hRaw / 2
 
-      const margin_y = 0.08
-      const margin_x = 0.16
+      const margin_y = 0.1
+      const margin_x = 0.2
       const insideCenter =
         centerX > 0.5 - margin_x &&
         centerX < 0.5 + margin_x &&
         centerY > 0.5 - margin_y &&
         centerY < 0.5 + margin_y
 
-      if (detection.live < 0.8) {
+      if (detection.live < DETECTION_LIVE) {
         return
       }
 

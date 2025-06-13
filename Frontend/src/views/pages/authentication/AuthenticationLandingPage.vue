@@ -69,8 +69,10 @@ const isRoleAdm =
   authStore?.user?.role.includes(ROLE.STAFF) ||
   authStore?.user?.role.includes(ROLE.TEACHER)
 
-if (isRouteAdm || isRoleAdm) {
-  roles = roles.filter((o) => o.role !== ROLE.STUDENT)
+if (isRouteAdm) {
+  roles = roles.filter((o) =>
+    isRoleAdm || !authStore.isLogin ? o.role !== ROLE.STUDENT : o.role === ROLE.STUDENT,
+  )
 } else {
   roles = roles.filter((o) => o.role === ROLE.STUDENT)
 }
