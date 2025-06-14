@@ -164,9 +164,7 @@ const handleSubmitAttendance = () => {
       fetchDataList()
     })
     .catch((error) => {
-      message.error(
-        error.response?.data?.message || 'Lỗi khi điểm danh ca học này',
-      )
+      message.error(error.response?.data?.message || 'Lỗi khi điểm danh ca học này')
     })
     .finally(() => {
       loadingPage.hide()

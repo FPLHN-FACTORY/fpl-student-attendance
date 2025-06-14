@@ -22,7 +22,7 @@ const routes = [
     name: GLOBAL_ROUTE_NAMES.SWITCH_ROLE,
     component: () => import('@/views/pages/authentication/AuthenticationLandingPage.vue'),
     meta: {
-      title: 'Thay đổi vai trò',
+      title: 'Admin panel',
     },
   },
   { path: '/:pathMatch(.*)*', component: () => import('@/views/pages/errors/Error404Page.vue') },
@@ -80,12 +80,8 @@ router.beforeEach((to, from, next) => {
 
   const user = authStore.user || null
 
-  if (requireAuth && !user) {
-    return next({ name: RouteNameAuth.LOGIN_PAGE })
-  }
-
-  if (!user && requireRole) {
-    return next({ name: RouteNameAuth.LOGIN_PAGE })
+  if ((requireAuth && !user) || (!user && requireRole)) {
+    return next({ path: '/' })
   }
 
   if (requireRole && !user.role.includes(requireRole.toUpperCase())) {

@@ -9,10 +9,6 @@ import java.util.List;
 
 public class FaceRecognitionUtils {
 
-    public final static double THRESHOLD_CHECKIN = 0.5;
-
-    public final static double THRESHOLD_REGISTER = 0.6;
-
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
     public static double[] parseEmbedding(String embeddingStr) {
@@ -45,10 +41,6 @@ public class FaceRecognitionUtils {
         return dot / (Math.sqrt(normA) * Math.sqrt(normB));
     }
 
-    public static boolean isSameFaces(List<double[]> emb1, double[] emb2) {
-        return isSameFaces(emb1, emb2, THRESHOLD_CHECKIN);
-    }
-
     public static boolean isSameFaces(List<double[]> emb1, double[] emb2, double threshold) {
         for (double[] input : emb1) {
             if (isSameFace(input, emb2, threshold)) {
@@ -67,12 +59,10 @@ public class FaceRecognitionUtils {
         return null;
     }
 
-    public static boolean isSameFace(double[] emb1, double[] emb2) {
-        return isSameFace(emb1, emb2, THRESHOLD_CHECKIN);
-    }
-
     public static boolean isSameFace(double[] emb1, double[] emb2, double threshold) {
-        return cosineSimilarity(emb1, emb2) > threshold;
+        double a = cosineSimilarity(emb1, emb2);
+        System.out.println("cosineSimilarity: " + a);
+        return a > threshold;
     }
 
 }

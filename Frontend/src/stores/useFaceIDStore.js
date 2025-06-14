@@ -7,12 +7,12 @@ import Config from '@/constants/humanConfig'
 
 const THRESHOLD_P = 0.2
 const THRESHOLD_X = 0.1
-const THRESHOLD_Y = 0.25
+const THRESHOLD_Y = 0.2
 const THRESHOLD_EMOTIONS = 0.8
 const MIN_BRIGHTNESS = 80
 const MAX_BRIGHTNESS = 180
 const THRESHOLD_LIGHT = 80
-const DETECTION_LIVE = 0.7
+const TIME_GET_BEST_EMBEDDING = 5
 const SKIP_FRAME = 10
 
 const useFaceIDStore = defineStore('faceID', () => {
@@ -185,13 +185,21 @@ const useFaceIDStore = defineStore('faceID', () => {
       return brightnessDiff > THRESHOLD_LIGHT ? false : true
     }
 
-    const getFaceAngle = async ({ roll, yaw, pitch }) => {
+    const getFaceAngle = async (face) => {
+      const { yaw, pitch } = face.rotation?.angle || {}
+      const { bearing, strength } = face.rotation?.gaze || {}
+
       const yawDeg = toDegrees(yaw)
       const pitchDeg = toDegrees(pitch)
 
       updateAxis(pitchDeg, yawDeg)
 
-      if (Math.abs(yaw) < THRESHOLD_X && Math.abs(pitch) < THRESHOLD_P) {
+      if (
+        Math.abs(yaw) < THRESHOLD_X &&
+        Math.abs(pitch) < THRESHOLD_P &&
+        Math.abs(bearing) < 0.5 &&
+        strength < 0.4
+      ) {
         return 0
       }
 
@@ -251,10 +259,116 @@ const useFaceIDStore = defineStore('faceID', () => {
       })
     }
 
+    const normalize = (v) => {
+      const norm = Math.sqrt(v.reduce((sum, val) => sum + val * val, 0))
+      return v.map((val) => val / norm)
+    }
+
     const clearDescriptor = () => {
       if (lstDescriptor.length > 0) {
         lstDescriptor.value = []
       }
+    }
+
+    const pushDescriptor = async () => {
+      const descriptor = normalize(Array.from(await getBestEmbedding()))
+
+      const rollback = () => {
+        lstDescriptor.value.pop()
+        step.value = Math.max(0, step.value - 1)
+        renderTextStep()
+      }
+
+      if (!descriptor.length) {
+        return rollback()
+      }
+
+      if (
+        (!isFullStep && step.value === 4 && lstDescriptor.value.length < 1) ||
+        (isFullStep && step.value === 2 && lstDescriptor.value.length < 1)
+      ) {
+        return (step.value = 0)
+      }
+
+      lstDescriptor.value.push(descriptor)
+      if (lstDescriptor.value.length === 2) {
+        const a = cosineSimilarity(lstDescriptor.value[0], lstDescriptor.value[1])
+        if (a < 0.95) {
+          return rollback()
+        }
+        captureFace()
+        stopVideo()
+        typeof onSuccess == 'function' && onSuccess(toRaw(lstDescriptor.value))
+        isRunScan.value = false
+      }
+    }
+
+    const averageEmbedding = (vectors) => {
+      if (!vectors.length) {
+        return []
+      }
+      const length = vectors[0].length
+      const avg = new Array(length).fill(0)
+
+      for (const vec of vectors) {
+        for (let i = 0; i < length; i++) {
+          avg[i] += vec[i]
+        }
+      }
+
+      for (let i = 0; i < length; i++) {
+        avg[i] /= vectors.length
+      }
+
+      return avg
+    }
+
+    const delay = (ms) => new Promise((res) => setTimeout(res, ms))
+
+    const cosineSimilarity = (vec1, vec2) => {
+      let dot = 0,
+        normA = 0,
+        normB = 0
+      for (let i = 0; i < vec1.length; i++) {
+        dot += vec1[i] * vec2[i]
+        normA += vec1[i] * vec1[i]
+        normB += vec2[i] * vec2[i]
+      }
+      return dot / (Math.sqrt(normA) * Math.sqrt(normB))
+    }
+
+    const getBestEmbedding = async () => {
+      let embeddings = []
+      let prevEmbedding = null
+
+      for (let i = 0; i < TIME_GET_BEST_EMBEDDING; i++) {
+        const result = await human.detect(video.value)
+        const face = result.face?.[0]
+
+        if (face?.embedding) {
+          const currentEmbedding = Array.from(face.embedding)
+
+          if (prevEmbedding) {
+            const similarity = cosineSimilarity(currentEmbedding, prevEmbedding)
+
+            if (similarity > 0.9) {
+              embeddings.push(currentEmbedding)
+            }
+          } else {
+            embeddings.push(currentEmbedding)
+          }
+
+          prevEmbedding = currentEmbedding
+        }
+
+        await delay(50)
+      }
+
+      if (embeddings.length !== TIME_GET_BEST_EMBEDDING) {
+        return []
+      }
+
+      return averageEmbedding(embeddings)
     }
 
     let error = 0
@@ -288,12 +402,19 @@ const useFaceIDStore = defineStore('faceID', () => {
         return renderTextStep('Vui lòng nhìn vào camera')
       }
 
+      canvas.value.width = video.value.videoWidth
+      canvas.value.height = video.value.videoHeight
+      ctx.drawImage(video.value, 0, 0, canvas.value.width, canvas.value.height)
+
       error = 0
       const detection = detections.face?.[0]
-      const descriptor = Array.from(detection.embedding)
       const emotions = detection.emotion || []
       const faceBox = detection.box
       const faceBoxRaw = detection.boxRaw
+
+      if (detection?.tensor) {
+        human.tf.dispose(detection?.tensor)
+      }
 
       const [xRaw, yRaw, wRaw, hRaw] = faceBoxRaw
 
@@ -308,19 +429,15 @@ const useFaceIDStore = defineStore('faceID', () => {
         centerY > 0.5 - margin_y &&
         centerY < 0.5 + margin_y
 
-      if (detection.live < DETECTION_LIVE) {
-        return
-      }
-
       if (!insideCenter) {
         step.value = Math.max(0, step.value - 1)
         return renderTextStep()
       }
 
-      const angle = await getFaceAngle(detection.rotation?.angle || {})
+      const angle = await getFaceAngle(detection)
 
       if (!faceDescriptor) {
-        faceDescriptor = descriptor
+        faceDescriptor = true
         if (step.value >= 0) {
           step.value = 0
         }
@@ -352,10 +469,20 @@ const useFaceIDStore = defineStore('faceID', () => {
         return renderTextStep('Ánh sáng không đều. Vui lòng thử lại')
       }
 
+      if (
+        emotions.some(
+          (e) =>
+            ['happy', 'angry', 'surprise', 'disgust'].includes(e.emotion) &&
+            e.score > THRESHOLD_EMOTIONS,
+        )
+      ) {
+        return renderTextStep('Vui lòng không biểu cảm')
+      }
+
       if (!isFullStep) {
         if (await isWithGlasses()) {
           step.value = Math.max(0, step.value - 1)
-          return renderTextStep('Vui lòng không đeo kính')
+          return renderTextStep('Vui lòng không nhắm mắt hoặc đeo kính')
         }
 
         if (await isWithMask()) {
@@ -375,58 +502,34 @@ const useFaceIDStore = defineStore('faceID', () => {
         }
       }
 
-      if (
-        emotions.some(
-          (e) =>
-            ['happy', 'surprised', 'disgusted'].includes(e.emotion) && e.score > THRESHOLD_EMOTIONS,
-        )
-      ) {
-        return renderTextStep('Vui lòng không biểu cảm')
-      }
-
       if (faceDescriptor) {
-        const distance = human.match.similarity(faceDescriptor, descriptor)
-        if (distance < 0.5) {
-          return
-        }
-
         renderTextStep()
 
         if (isFullStep) {
           if (step.value === 0 && angle === 0) {
             step.value = 1
             clearDescriptor()
-            return lstDescriptor.value.push(descriptor)
+            return await pushDescriptor()
           }
           if (step.value === 1) {
             step.value = 2
-            lstDescriptor.value.push(descriptor)
-            captureFace()
-            stopVideo()
-            typeof onSuccess == 'function' && onSuccess(toRaw(lstDescriptor.value))
-            return (isRunScan.value = false)
+            return await pushDescriptor()
           }
         } else {
           if (step.value === 0 && angle === 0) {
             step.value = 1
             clearDescriptor()
-            return lstDescriptor.value.push(descriptor)
+            return await pushDescriptor()
           }
           if (step.value === 1 && angle === -1) {
-            step.value = 2
-            return lstDescriptor.value.push(descriptor)
+            return (step.value = 2)
           }
           if (step.value === 2 && angle === 1) {
-            step.value = 3
-            return lstDescriptor.value.push(descriptor)
+            return (step.value = 3)
           }
           if (step.value === 3 && angle === 0) {
             step.value = 4
-            lstDescriptor.value.push(descriptor)
-            captureFace()
-            stopVideo()
-            typeof onSuccess == 'function' && onSuccess(toRaw(lstDescriptor.value))
-            return (isRunScan.value = false)
+            return await pushDescriptor()
           }
         }
       }
@@ -438,9 +541,6 @@ const useFaceIDStore = defineStore('faceID', () => {
       if (!isRunScan.value) return
 
       if (isLoadingModels.value && video.value?.readyState === 4 && frameCount % SKIP_FRAME === 0) {
-        canvas.value.width = video.value.videoWidth
-        canvas.value.height = video.value.videoHeight
-        ctx.drawImage(video.value, 0, 0, canvas.value.width, canvas.value.height)
         if (!isProgress) {
           isProgress = true
           await runTask()
