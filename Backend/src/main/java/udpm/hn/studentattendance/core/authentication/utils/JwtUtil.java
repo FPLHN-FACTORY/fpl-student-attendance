@@ -95,7 +95,7 @@ public class JwtUtil {
     public String generateRefreshToken(String token) {
         Jws<Claims> claimsJws = getClaimsFromToken(token);
         Date expirationDate = claimsJws.getBody().getExpiration();
-        Instant newExpiration = expirationDate.toInstant().plus(Duration.ofMinutes(1));
+        Instant newExpiration = expirationDate.toInstant().plus(Duration.ofMinutes(5));
         Date updatedExpiration = Date.from(newExpiration);
         return buildToken(claimsJws.getBody(), updatedExpiration);
     }

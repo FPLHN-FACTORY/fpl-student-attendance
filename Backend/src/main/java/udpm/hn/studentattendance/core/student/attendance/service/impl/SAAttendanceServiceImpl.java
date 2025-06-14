@@ -66,6 +66,9 @@ public class SAAttendanceServiceImpl implements SAAttendanceService {
     @Value("${app.config.attendance.early-checkin}")
     private int EARLY_CHECKIN;
 
+    @Value("${app.config.face.threshold_checkin}")
+    private double threshold_checkin;
+
     @Override
     public ResponseEntity<?> getAllList(SAFilterAttendanceRequest request) {
         request.setIdFacility(sessionHelper.getFacilityId());
@@ -186,7 +189,7 @@ public class SAAttendanceServiceImpl implements SAAttendanceService {
 
         List<double[]> inputEmbedding = FaceRecognitionUtils.parseEmbeddings(request.getFaceEmbedding());
         double[] storedEmbedding = FaceRecognitionUtils.parseEmbedding(userStudent.getFaceEmbedding());
-        boolean isMatch = FaceRecognitionUtils.isSameFaces(inputEmbedding, storedEmbedding);
+        boolean isMatch = FaceRecognitionUtils.isSameFaces(inputEmbedding, storedEmbedding, threshold_checkin);
         if (!isMatch) {
             return RouterHelper.responseError("Xác thực khuôn mặt thất bại");
         }

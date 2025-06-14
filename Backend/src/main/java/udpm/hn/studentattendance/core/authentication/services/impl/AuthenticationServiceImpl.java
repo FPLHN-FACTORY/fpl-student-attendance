@@ -4,6 +4,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -64,6 +65,9 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     private final AuthenticationUserStaffRepository authenticationUserStaffRepository;
 
     private final AuthenticationUserStudentRepository authenticationUserStudentRepository;
+
+    @Value("${app.config.face.threshold_register}")
+    private double threshold_register;
 
     @Override
     public RedirectView authorSwitch(String role, String redirectUri, String facilityId) {
@@ -148,8 +152,9 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         }
 
         List<double[]> faceEmbeddings = FaceRecognitionUtils.parseEmbeddings(request.getFaceEmbedding());
-        if (isFaceExists(faceEmbeddings)) {
-            return RouterHelper.responseError("Đã tồn tại khuôn mặt trên hệ thống");
+
+        if (faceEmbeddings.isEmpty() || isFaceExists(facility.getId(), faceEmbeddings)) {
+            return RouterHelper.responseError("Dữ liệu ảnh quá mờ hoặc đã tồn tại khuôn mặt trên hệ thống");
         }
 
         student.setFacility(facility);
@@ -197,7 +202,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         }
 
         List<double[]> faceEmbeddings = FaceRecognitionUtils.parseEmbeddings(request.getFaceEmbedding());
-        if (isFaceExists(faceEmbeddings)) {
+        if (isFaceExists(sessionHelper.getFacilityId(), faceEmbeddings)) {
             return RouterHelper.responseError("Mặt quá mờ hoặc đã tồn tại trên hệ thống. Vui lòng thử lại");
         }
 
@@ -232,30 +237,23 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         return RouterHelper.responseSuccess("Lấy dữ liệu avatar thành công", AppUtils.imageUrlToBase64(urlImage));
     }
 
-    private boolean isFaceExists(List<double[]> embeddings) {
-        List<String> lstRawFaceEmbeddings = authenticationUserStudentRepository.getAllFaceEmbedding(sessionHelper.getFacilityId());
+    private boolean isFaceExists(String idFacility, List<double[]> embeddings) {
+        List<String> lstRawFaceEmbeddings = authenticationUserStudentRepository.getAllFaceEmbedding(idFacility);
         List<double[]> lstFaceEmbeddings = lstRawFaceEmbeddings.stream().map(FaceRecognitionUtils::parseEmbedding).toList();
 
         if (lstFaceEmbeddings.isEmpty()) {
             return false;
         }
 
-        double threshold = FaceRecognitionUtils.THRESHOLD_REGISTER;
-
-        double[] firstFace = embeddings.remove(0);
-        double[] resultFace = FaceRecognitionUtils.isSameFaceAndResult(lstFaceEmbeddings, firstFace, threshold);
+        double[] firstFace = embeddings.get(0);
+        double[] lastFace = embeddings.get(embeddings.size() - 1);
+        double[] resultFace = FaceRecognitionUtils.isSameFaceAndResult(lstFaceEmbeddings, firstFace, threshold_register);
 
         if (resultFace == null) {
-            return false;
+            return !(FaceRecognitionUtils.isSameFaceAndResult(lstFaceEmbeddings, lastFace, threshold_register) == null);
         }
 
-        int matching_faces = 0;
-        for (double[] face: embeddings) {
-            if(FaceRecognitionUtils.isSameFace(resultFace, face, threshold)) {
-                matching_faces++;
-            }
-        }
-        return matching_faces > 1;
+        return FaceRecognitionUtils.isSameFace(resultFace, lastFace, threshold_register);
     }
 
 }
