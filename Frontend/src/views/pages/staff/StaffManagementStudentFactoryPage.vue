@@ -238,33 +238,17 @@ const handleStudentCheckboxChange = (student, checked) => {
         loadingStore.hide()
       })
   } else {
-    const existing = existingStudents.value.find((item) => item.studentId === student.id)
-    if (existing && existing.studentFactoryId) {
-      loadingStore.show()
-      requestAPI
-        .delete(API_ROUTES_STAFF.FETCH_DATA_STUDENT_FACTORY + '/' + existing.studentFactoryId)
-        .then((response) => {
-          message.success(response.data.message || 'Xóa sinh viên khỏi nhóm xưởng thành công')
-          fetchExistingStudents() // Cập nhật danh sách sinh viên đã có trong nhóm
-          fetchAllStudents() // Cập nhật danh sách tất cả sinh viên trong modal
-          fetchStudentFactories() // Cập nhật bảng danh sách
-        })
-        .catch((error) => {
-          message.error(error.response?.data?.message || 'Lỗi khi xóa sinh viên khỏi nhóm xưởng')
-        })
-        .finally(() => {
-          loadingStore.hide()
-        })
-    } else {
-      message.warning('Sinh viên này chưa có trong nhóm xưởng')
-    }
+    // Khi bỏ tích, không thực hiện hành động xóa, chỉ hiển thị thông báo
+    message.info('Sinh viên không thể bị xóa khỏi nhóm xưởng bằng cách bỏ tích')
+    // Đặt lại giá trị checkbox
+    selectedStudents[student.id] = true
   }
 }
 // trong phần <script setup>
 function confirmDelete(record) {
   Modal.confirm({
     title: 'Xác nhận xóa sinh viên',
-    content: `Bạn có chắc muốn xóa sinh viên ${record.studentName} khỏi nhóm xưởng?`,
+    content: `Nếu xóa sinh viên ${record.studentName} các dữ liệu về buổi học của sinh viên sẽ bị mất, bạn có thể thay đổi trạng thái để bảo toàn dữ liệu. Xóa?`,
     okType: 'danger',
     onOk() {
       deleteStudentFactory(record.studentFactoryId)
@@ -524,11 +508,9 @@ onMounted(() => {
           <template #title> <UnorderedListOutlined /> Danh sách sinh viên </template>
           <div class="d-flex justify-content-end flex-wrap gap-3 mb-2">
             <ExcelUploadButton v-bind="configImportExcel" />
-            <a-tooltip title="Thêm sinh viên vào nhóm xưởng">
               <a-button type="primary" @click="isAddStudentModalVisible = true">
                 <PlusOutlined /> Thêm sinh viên
               </a-button>
-            </a-tooltip>
           </div>
 
           <a-table
@@ -765,6 +747,7 @@ onMounted(() => {
       @cancel="resetStudentModal"
       @ok="handleAddStudents"
       :okButtonProps="{ loading: isLoading }"
+      :footer="null"
     >
       <div class="row g-3 filter-container" style="margin-bottom: 16px">
         <div class="col-21">
@@ -805,11 +788,17 @@ onMounted(() => {
                   ? selectedStudents[record.id]
                   : record.checked
               "
+              :disabled="record.checked"
               @change="(e) => handleStudentCheckboxChange(record, e.target.checked)"
             />
           </template>
         </template>
       </a-table>
+      
+      <!-- Custom footer -->
+      <div style="text-align: right; margin-top: 16px;">
+        <a-button @click="resetStudentModal">Đóng</a-button>
+      </div>
     </a-modal>
   </div>
 </template>

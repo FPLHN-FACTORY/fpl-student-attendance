@@ -131,7 +131,6 @@ public class ADSemesterServiceImpl implements ADSemesterService {
                 Long fromTimeSemester = request.getStartTimeCustom();
                 Long toTimeSemester = request.getEndTimeCustom();
 
-                // **Thêm validation kiểm tra ngày quá khứ**
                 if (!Objects.equals(fromTimeSemester, semester.getFromDate())
                                 || !Objects.equals(toTimeSemester, semester.getToDate())) {
                         if (fromDate.isBefore(LocalDateTime.now())) {
@@ -167,6 +166,21 @@ public class ADSemesterServiceImpl implements ADSemesterService {
                 if (!yearStartTime.equals(yearEndTime)) {
                         return RouterHelper.responseError("Thời gian bắt đầu và kết thúc của học kỳ phải cùng 1 năm");
                 }
+
+                LocalDateTime oldFromDate = Instant
+                        .ofEpochMilli(existSemester.get().getFromDate())
+                        .atZone(ZoneId.systemDefault())
+                        .toLocalDateTime();
+                LocalDateTime oldToDate = Instant
+                        .ofEpochMilli(existSemester.get().getToDate())
+                        .atZone(ZoneId.systemDefault())
+                        .toLocalDateTime();
+
+                LocalDateTime currentDateTime = LocalDateTime.now();
+                if (oldFromDate.isBefore(currentDateTime) && oldToDate.isBefore(currentDateTime)) {
+                        return RouterHelper.responseError("Không thể sửa học kỳ đã kết thúc");
+                }
+
                 semester.setSemesterName(SemesterName.valueOf(name));
                 semester.setYear(yearStartTime);
                 semester.setCode(SemesterName.valueOf(name) + "-" + yearStartTime);
