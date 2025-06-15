@@ -11,8 +11,8 @@ export default {
       rotation: true, // giúp phát hiện mặt nghiêng
       inputSize: 256,
       maxDetected: 1, // nếu chỉ cần 1 người
-      iouThreshold: 0.5,
-      minConfidence: 0.5, // giảm nếu muốn bắt được mặt khó
+      iouThreshold: 0.3,
+      minConfidence: 0.6, // giảm nếu muốn bắt được mặt khó
     },
     iris: { enabled: false }, // tắt nếu không cần tracking mắt
     description: { enabled: true }, // tắt nếu không cần thông tin tuổi/giới tính
@@ -20,10 +20,10 @@ export default {
     emotion: { enabled: true }, // tắt nếu không cần nhận diện biểu cảm
     mesh: { enabled: true }, // tắt nếu không cần vẽ điểm mặt
     antispoof: { enabled: true },
-    liveness: { enabled: false },
+    liveness: { enabled: true },
   },
   body: { enabled: false },
   hand: { enabled: false },
   object: { enabled: false },
-  gesture: { enabled: false },
+  gesture: { enabled: true },
 }

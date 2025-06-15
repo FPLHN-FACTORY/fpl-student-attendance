@@ -7,12 +7,13 @@ import Config from '@/constants/humanConfig'
 
 const THRESHOLD_P = 0.2
 const THRESHOLD_X = 0.1
-const THRESHOLD_Y = 0.2
+const THRESHOLD_Y = 0.15
 const THRESHOLD_EMOTIONS = 0.8
 const MIN_BRIGHTNESS = 80
 const MAX_BRIGHTNESS = 180
 const THRESHOLD_LIGHT = 80
 const TIME_GET_BEST_EMBEDDING = 5
+const MAX_HISTORY = 10
 const SKIP_FRAME = 10
 
 const useFaceIDStore = defineStore('faceID', () => {
@@ -154,6 +155,9 @@ const useFaceIDStore = defineStore('faceID', () => {
 
   const detectFace = async () => {
     let faceDescriptor = null
+    let realHistory = []
+    let liveHistory = []
+    let blinkState = { blinking: false, count: 0 }
 
     const ctx = canvas.value.getContext('2d')
 
@@ -187,7 +191,6 @@ const useFaceIDStore = defineStore('faceID', () => {
 
     const getFaceAngle = async (face) => {
       const { yaw, pitch } = face.rotation?.angle || {}
-      const { bearing, strength } = face.rotation?.gaze || {}
 
       const yawDeg = toDegrees(yaw)
       const pitchDeg = toDegrees(pitch)
@@ -197,17 +200,22 @@ const useFaceIDStore = defineStore('faceID', () => {
       if (
         Math.abs(yaw) < THRESHOLD_X &&
         Math.abs(pitch) < THRESHOLD_P &&
-        Math.abs(bearing) < 0.5 &&
-        strength < 0.4
+        human.result.gesture.some((o) => o.gesture.includes('facing center'))
       ) {
         return 0
       }
 
-      if (yaw < -THRESHOLD_Y) {
+      if (
+        human.result.gesture.some((o) => o.gesture.includes('facing left')) &&
+        Math.abs(yaw) > THRESHOLD_Y
+      ) {
         return 1
       }
 
-      if (yaw > THRESHOLD_Y) {
+      if (
+        human.result.gesture.some((o) => o.gesture.includes('facing right')) &&
+        Math.abs(yaw) > THRESHOLD_Y
+      ) {
         return -1
       }
 
@@ -236,13 +244,6 @@ const useFaceIDStore = defineStore('faceID', () => {
       const result = await glassesModel.predict(input).data()
       input.dispose()
       return !(result[0] > 0.6)
-    }
-
-    const checkOverlap = (boxA, boxB) => {
-      const [xA, yA, wA, hA] = boxA
-      const [xB, yB, wB, hB] = boxB
-
-      return !(xA + wA < xB || xA > xB + wB || yA + hA < yB || yA > yB + hB)
     }
 
     const captureFace = () => {
@@ -292,8 +293,10 @@ const useFaceIDStore = defineStore('faceID', () => {
 
       lstDescriptor.value.push(descriptor)
       if (lstDescriptor.value.length === 2) {
-        const a = cosineSimilarity(lstDescriptor.value[0], lstDescriptor.value[1])
-        if (a < 0.95) {
+        if (
+          cosineSimilarity(lstDescriptor.value[0], lstDescriptor.value[1]) <
+          (isFullStep ? 0.7 : 0.92)
+        ) {
           return rollback()
         }
         captureFace()
@@ -361,7 +364,7 @@ const useFaceIDStore = defineStore('faceID', () => {
           prevEmbedding = currentEmbedding
         }
 
-        await delay(50)
+        await delay(100)
       }
 
       if (embeddings.length !== TIME_GET_BEST_EMBEDDING) {
@@ -371,7 +374,61 @@ const useFaceIDStore = defineStore('faceID', () => {
       return averageEmbedding(embeddings)
     }
 
+    const clearHistory = () => {
+      realHistory = []
+      liveHistory = []
+      blinkState = { blinking: false, count: 0 }
+    }
+
+    const updateHistories = (face, gestures) => {
+      const real = face.real ?? 0
+      const live = face.live ?? 0
+
+      realHistory.push(real)
+      liveHistory.push(live)
+      if (realHistory.length > MAX_HISTORY) realHistory.shift()
+      if (liveHistory.length > MAX_HISTORY) liveHistory.shift()
+
+      const isBlink = gestures.includes('blink left eye') || gestures.includes('blink right eye')
+      if (isBlink && !blinkState.blinking) {
+        blinkState.count++
+        blinkState.blinking = true
+      }
+      if (!isBlink) {
+        blinkState.blinking = false
+      }
+    }
+
+    const calcDelta = (arr) => {
+      let delta = 0
+      for (let i = 1; i < arr.length; i++) {
+        delta += Math.abs(arr[i] - arr[i - 1])
+      }
+      return delta
+    }
+
+    const isRealHuman = (face, options = { minConfidence: 0.6, minDelta: 0.2 }) => {
+      const real = face.real ?? 0
+      const live = face.live ?? 0
+      const confidence = face.faceScore ?? 0
+
+      const deltaReal = calcDelta(realHistory)
+      const deltaLive = calcDelta(liveHistory)
+
+      const dynamicEnough = deltaReal > options.minDelta || deltaLive > options.minDelta
+
+      return (
+        real >= options.minConfidence &&
+        live >= options.minConfidence &&
+        confidence >= options.minConfidence &&
+        blinkState.count > 0 &&
+        dynamicEnough
+      )
+    }
+
     let error = 0
+    let antispoof = 0
+    let is_fake = false
     const runTask = async () => {
       if (!faceDescriptor) {
         if (axis.value) {
@@ -398,23 +455,44 @@ const useFaceIDStore = defineStore('faceID', () => {
         }
         if (step.value === 0) {
           faceDescriptor = null
+          clearHistory()
         }
+        is_fake = false
+        antispoof = 0
         return renderTextStep('Vui lòng nhìn vào camera')
       }
 
-      canvas.value.width = video.value.videoWidth
-      canvas.value.height = video.value.videoHeight
-      ctx.drawImage(video.value, 0, 0, canvas.value.width, canvas.value.height)
+      if (is_fake) {
+        return renderTextStep('Không thể nhận diện khuôn mặt')
+      }
 
       error = 0
       const detection = detections.face?.[0]
       const emotions = detection.emotion || []
       const faceBox = detection.box
       const faceBoxRaw = detection.boxRaw
+      const gestures = Object.values(human.result.gesture).map((g) => g.gesture)
+
+      updateHistories(detection, gestures)
+
+      if (!isRealHuman(detection)) {
+        antispoof++
+        if (antispoof > 10) {
+          return (is_fake = true)
+        }
+      }
+
+      antispoof = 0
+
+      canvas.value.width = video.value.videoWidth
+      canvas.value.height = video.value.videoHeight
+      ctx.drawImage(video.value, 0, 0, canvas.value.width, canvas.value.height)
 
       if (detection?.tensor) {
         human.tf.dispose(detection?.tensor)
       }
+
+      const angle = await getFaceAngle(detection)
 
       const [xRaw, yRaw, wRaw, hRaw] = faceBoxRaw
 
@@ -429,15 +507,22 @@ const useFaceIDStore = defineStore('faceID', () => {
         centerY > 0.5 - margin_y &&
         centerY < 0.5 + margin_y
 
-      if (!insideCenter) {
-        step.value = Math.max(0, step.value - 1)
-        return renderTextStep()
+      if (angle === 0) {
+        if (human.result.gesture.some((o) => o.gesture.includes('head up'))) {
+          return renderTextStep('Vui lòng không ngẩng mặt')
+        }
+
+        if (human.result.gesture.some((o) => o.gesture.includes('head down'))) {
+          return renderTextStep('Vui lòng không cúi mặt')
+        }
       }
 
-      const angle = await getFaceAngle(detection)
+      if (!insideCenter) {
+        return renderTextStep('Vui lòng căn chỉnh khuôn mặt vào giữa')
+      }
 
       if (!faceDescriptor) {
-        faceDescriptor = true
+        faceDescriptor = [...detection.embedding]
         if (step.value >= 0) {
           step.value = 0
         }
@@ -481,28 +566,20 @@ const useFaceIDStore = defineStore('faceID', () => {
 
       if (!isFullStep) {
         if (await isWithGlasses()) {
-          step.value = Math.max(0, step.value - 1)
           return renderTextStep('Vui lòng không nhắm mắt hoặc đeo kính')
         }
 
         if (await isWithMask()) {
-          step.value = Math.max(0, step.value - 1)
           return renderTextStep('Vui lòng không đeo khẩu trang')
         }
       }
 
-      if (detections?.object) {
-        for (const obj of detections?.object) {
-          if (['hand', 'cell phone', 'book'].includes(obj.label)) {
-            if (checkOverlap(obj.box, face.box)) {
-              step.value = Math.max(0, step.value - 1)
-              return renderTextStep('Vui lòng không che khuất mặt')
-            }
-          }
-        }
-      }
-
       if (faceDescriptor) {
+        const similarity = human.match.similarity(faceDescriptor, detection.embedding)
+        if (similarity < 0.5) {
+          return clearHistory()
+        }
+
         renderTextStep()
 
         if (isFullStep) {
