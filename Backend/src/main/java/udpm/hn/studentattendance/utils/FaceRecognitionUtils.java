@@ -60,9 +60,7 @@ public class FaceRecognitionUtils {
     }
 
     public static boolean isSameFace(double[] emb1, double[] emb2, double threshold) {
-        double a = cosineSimilarity(emb1, emb2);
-        System.out.println("cosineSimilarity: " + a);
-        return a > threshold;
+        return cosineSimilarity(emb1, emb2) > threshold;
     }
 
 }

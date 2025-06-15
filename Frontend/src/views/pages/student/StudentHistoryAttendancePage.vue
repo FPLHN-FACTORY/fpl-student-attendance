@@ -321,9 +321,10 @@ onMounted(async () => {
                   </a-tag>
                 </template>
                 <template v-else-if="column.dataIndex === 'planDateDescription'">
-                  <a-typography-link 
+                  <a-typography-link
                     v-if="record.planDateDescription"
-                    @click="handleShowDescription(record.planDateDescription)">
+                    @click="handleShowDescription(record.planDateDescription)"
+                  >
                     Chi tiết
                   </a-typography-link>
                   <span v-else>Không có mô tả</span>
@@ -391,7 +392,7 @@ onMounted(async () => {
     </div>
 
     <!-- Display message when no data is available -->
-    <div class="row g-3" v-if="Object.keys(groupedAttendance).length === 0 && !isLoading">
+    <div class="row g-3 mt-3" v-if="Object.keys(groupedAttendance).length === 0 && !isLoading">
       <div class="col-12">
         <a-card :bordered="false" class="card mb-3">
           <div class="d-flex justify-content-center align-items-center p-4">
