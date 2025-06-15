@@ -78,30 +78,16 @@ const handleShowDetail = (id) => {
 }
 
 const handleBeforeUpload = async (file) => {
-  console.log('handleBeforeUpload called with:', { file: file.name, hasOnBeforeImport: !!props.onBeforeImport, data: props.data })
-  
-  if (props.onBeforeImport && typeof props.onBeforeImport === 'function') {
-    try {
-      console.log('Calling onBeforeImport with data:', props.data)
-      const shouldContinue = await props.onBeforeImport(props.data)
-      console.log('onBeforeImport result:', shouldContinue)
+  const { onBeforeImport, fetchUrl, onSuccess, onError, data } = props
+  try {
+    if (typeof onBeforeImport === 'function') {
+      const shouldContinue = await onBeforeImport(data)
       if (!shouldContinue) {
-        console.log('onBeforeImport returned false, cancelling upload')
         return false
       }
-    } catch (error) {
-      console.error('Error in onBeforeImport:', error)
-      return false
     }
-  }
-  
-  console.log('Proceeding with file upload')
-  serviceStore.enqueue(file, {
-    fetchUrl: props.fetchUrl,
-    onSuccess: props.onSuccess,
-    onError: props.onError,
-    data: props.data,
-  })
+    serviceStore.enqueue(file, { fetchUrl, onSuccess, onError, data })
+  } catch {}
   return false
 }
 

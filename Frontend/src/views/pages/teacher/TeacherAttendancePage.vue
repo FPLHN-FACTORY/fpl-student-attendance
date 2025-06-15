@@ -1,6 +1,6 @@
 <script setup>
 import { UnorderedListOutlined } from '@ant-design/icons-vue'
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted } from 'vue'
 import { message } from 'ant-design-vue'
 import { useRoute } from 'vue-router'
 import requestAPI from '@/services/requestApiService'
