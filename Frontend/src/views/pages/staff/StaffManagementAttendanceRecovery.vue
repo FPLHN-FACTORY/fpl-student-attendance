@@ -61,7 +61,7 @@ const columns = ref(
       fixed: 'right',
       width: 300,
     },
-  ])
+  ]),
 )
 
 const attendanceRecovery = ref([])
@@ -213,7 +213,7 @@ const handleShowModalEdit = (record) => {
     })
     .catch((error) => {
       message.error(
-        error.response?.data?.message || 'Lỗi khi lấy chi tiết sự kiện khôi phục điểm danh'
+        error.response?.data?.message || 'Lỗi khi lấy chi tiết sự kiện khôi phục điểm danh',
       )
     })
     .finally(() => {
@@ -249,7 +249,7 @@ const handleEditEvent = () => {
         })
         .catch((error) => {
           message.error(
-            error.response?.data?.message || 'Lỗi khi cập nhật sự kiện khôi phục điểm danh'
+            error.response?.data?.message || 'Lỗi khi cập nhật sự kiện khôi phục điểm danh',
           )
         })
         .finally(() => {
@@ -278,7 +278,11 @@ const deleteOldAttendanceData = (attendanceRecoveryId) => {
   return new Promise((resolve, reject) => {
     loadingStore.show()
     requestAPI
-      .delete(API_ROUTES_STAFF.FETCH_DATA_ATTENDANCE_RECOVERY + '/delete-attendance/' + attendanceRecoveryId)
+      .delete(
+        API_ROUTES_STAFF.FETCH_DATA_ATTENDANCE_RECOVERY +
+          '/delete-attendance/' +
+          attendanceRecoveryId,
+      )
       .then(() => {
         message.success('Đã xóa dữ liệu khôi phục điểm danh cũ')
         resolve(true)
@@ -297,14 +301,17 @@ const checkAttendanceRecoveryHistory = (data) => {
   return new Promise((resolve, reject) => {
     try {
       // Find the attendance recovery record by ID
-      const attendanceRecord = attendanceRecovery.value.find(record => record.id === data.attendanceRecoveryId)
-      
+      const attendanceRecord = attendanceRecovery.value.find(
+        (record) => record.id === data.attendanceRecoveryId,
+      )
+
       const hasHistory = attendanceRecord && attendanceRecord.idImportLog != null
-      
+
       if (hasHistory) {
         Modal.confirm({
           title: 'Cảnh báo',
-          content: 'Sự kiện này đã được khôi phục điểm danh cho sinh viên rồi. Nếu import tiếp, những sinh viên cũ sẽ bị xóa. Bạn có muốn tiếp tục?',
+          content:
+            'Sự kiện này đã được khôi phục điểm danh cho sinh viên rồi. Nếu import tiếp, những sinh viên cũ sẽ bị xóa. Bạn có muốn tiếp tục?',
           okText: 'Tiếp tục',
           cancelText: 'Hủy bỏ',
           okType: 'danger',
@@ -325,12 +332,10 @@ const checkAttendanceRecoveryHistory = (data) => {
         resolve(true)
       }
     } catch (error) {
-      console.error('Error checking history:', error)
       reject(error)
     }
   })
 }
-
 
 const configImportExcel = {
   fetchUrl: API_ROUTES_EXCEL.FETCH_IMPORT_ATTENDANCE_RECOVERY,
@@ -339,7 +344,6 @@ const configImportExcel = {
       const shouldContinue = await checkAttendanceRecoveryHistory(data)
       return shouldContinue
     } catch (error) {
-      console.error('Error in onBeforeImport:', error)
       return false
     }
   },
@@ -353,7 +357,6 @@ const configImportExcel = {
   showHistoryLog: false,
 }
 
-
 const columnsImportLog = ref(
   autoAddColumnWidth([
     { title: 'Thời gian', dataIndex: 'createdAt', key: 'createdAt' },
@@ -365,7 +368,7 @@ const columnsImportLog = ref(
     },
     { title: 'Lỗi', dataIndex: 'totalError', key: 'totalError' },
     { title: '', key: 'actions' },
-  ])
+  ]),
 )
 
 const importHistory = ref([])
@@ -392,7 +395,7 @@ const columnsDetail = ref(
     { title: 'Dòng', dataIndex: 'line', key: 'line' },
     { title: 'Trạng thái', dataIndex: 'status', key: 'status' },
     { title: 'Nội dung', dataIndex: 'message', key: 'message' },
-  ])
+  ]),
 )
 const importHistoryDetailLog = ref([])
 const isShowHistoryLogDetail = ref(false)
@@ -480,9 +483,7 @@ onMounted(() => {
             <UnorderedListOutlined /> Danh sách sự kiện khôi phục điểm danh
           </template>
           <div class="d-flex justify-content-end mb-3 flex-wrap gap-3">
-            <ExcelUploadButton
-              v-bind="configImportExcelTemplate"
-            />
+            <ExcelUploadButton v-bind="configImportExcelTemplate" />
             <a-space>
               <a-button type="primary" @click="handleShowModalAdd">
                 <PlusOutlined /> Thêm sự kiện
@@ -538,12 +539,12 @@ onMounted(() => {
                       <HistoryOutlined class="text-primary" /> Lịch sử import
                     </a-button>
                   </template>
-                    <div class="excel-upload-wrapper">
-                      <ExcelUploadButton
-                        v-bind="configImportExcel"
-                        :data="{ attendanceRecoveryId: record.id }"
-                      />
-                    </div>
+                  <div class="excel-upload-wrapper">
+                    <ExcelUploadButton
+                      v-bind="configImportExcel"
+                      :data="{ attendanceRecoveryId: record.id }"
+                    />
+                  </div>
                 </div>
               </template>
             </template>
