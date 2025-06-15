@@ -529,7 +529,7 @@ onMounted(() => {
                       <EditFilled />
                     </a-button>
                   </a-tooltip>
-                  <template v-if="record.idImportLog != null">
+                  <template v-if="record.idImportLog !== null">
                     <a-button
                       type="text"
                       class="btn-gray"

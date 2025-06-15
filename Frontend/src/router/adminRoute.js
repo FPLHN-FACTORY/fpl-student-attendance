@@ -5,12 +5,14 @@ import {
   BookOutlined,
   CalendarOutlined,
   ClusterOutlined,
+  PieChartOutlined,
   SolutionOutlined,
   TeamOutlined,
   UserOutlined,
 } from '@ant-design/icons-vue'
 
 export const ROUTE_NAMES = {
+  MANAGEMENT_STATISTICS: 'route_admin_management_statistics',
   MANAGEMENT_FACILITY: 'route_admin_management_facility',
   MANAGEMENT_FACILITY_IP: 'route_admin_management_facility_ip',
   MANAGEMENT_FACILITY_LOCATION: 'route_admin_management_facility_location',
@@ -30,12 +32,22 @@ export const AdminRoutes = [
     path: '/Admin',
     name: GLOBAL_ROUTE_NAMES.ADMIN_PAGE,
     component: () => import('@/views/layout/AdminLayout.vue'),
-    redirect: { name: ROUTE_NAMES.MANAGEMENT_FACILITY },
+    redirect: { name: ROUTE_NAMES.MANAGEMENT_STATISTICS },
     meta: {
       title: 'Admin',
       requireRole: ROLE.ADMIN,
     },
     children: [
+      {
+        path: 'management-statistics',
+        name: ROUTE_NAMES.MANAGEMENT_STATISTICS,
+        component: () => import('@/views/pages/admin/AdminManagementStatisticsPage.vue'),
+        meta: {
+          selectedKey: selectedKey++,
+          name: 'Thống kê',
+          icon: PieChartOutlined,
+        },
+      },
       {
         path: 'management-facility',
         name: ROUTE_NAMES.MANAGEMENT_FACILITY,
@@ -130,6 +142,7 @@ export const AdminRoutes = [
           icon: SolutionOutlined,
         },
       },
+
       {
         path: 'management-subject_facility',
         name: ROUTE_NAMES.MANAGEMENT_SUBJECT_FACILITY,

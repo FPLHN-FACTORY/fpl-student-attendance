@@ -31,10 +31,13 @@ public interface CommonUserActivityLogRepository extends UserActivityLogReposito
         WHERE 1=1
             AND (COALESCE(:#{#request.facilityId}, '') = '' OR ual.id_facility = :#{#request.facilityId})
             AND (COALESCE(:#{#request.userId}, '') = '' OR ual.id_user = :#{#request.userId})
+            AND (:#{#request.role} IS NULL OR ual.role = :#{#request.role})
             AND (COALESCE(TRIM(:#{#request.searchQuery}), '') = '' OR
                  COALESCE(ua.name, us.name, '') LIKE CONCAT('%', TRIM(:#{#request.searchQuery}), '%') OR
                  COALESCE(ual.message, '') LIKE CONCAT('%', TRIM(:#{#request.searchQuery}), '%') OR
                  COALESCE(ua.code, us.code, '') LIKE CONCAT('%', TRIM(:#{#request.searchQuery}), '%'))
+            AND (:#{#request.fromDate} IS NULL OR ual.created_at >= :#{#request.fromDate})
+            AND (:#{#request.toDate} IS NULL OR ual.created_at <= :#{#request.toDate})
         ORDER BY ual.created_at DESC
     """, countQuery = """
         SELECT COUNT(*)
@@ -45,10 +48,13 @@ public interface CommonUserActivityLogRepository extends UserActivityLogReposito
         WHERE 1=1
             AND (COALESCE(:#{#request.facilityId}, '') = '' OR ual.id_facility = :#{#request.facilityId})
             AND (COALESCE(:#{#request.userId}, '') = '' OR ual.id_user = :#{#request.userId})
+            AND (:#{#request.role} IS NULL OR ual.role = :#{#request.role})
             AND (COALESCE(TRIM(:#{#request.searchQuery}), '') = '' OR
                  COALESCE(ua.name, us.name, '') LIKE CONCAT('%', TRIM(:#{#request.searchQuery}), '%') OR
                  COALESCE(ual.message, '') LIKE CONCAT('%', TRIM(:#{#request.searchQuery}), '%') OR
                  COALESCE(ua.code, us.code, '') LIKE CONCAT('%', TRIM(:#{#request.searchQuery}), '%'))
+            AND (:#{#request.fromDate} IS NULL OR ual.created_at >= :#{#request.fromDate})
+            AND (:#{#request.toDate} IS NULL OR ual.created_at <= :#{#request.toDate})
     """, nativeQuery = true)
     Page<UALResponse> getListFilter(Pageable pageable, UALFilterRequest request);
 

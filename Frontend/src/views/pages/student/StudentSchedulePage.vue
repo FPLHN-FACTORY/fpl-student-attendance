@@ -11,7 +11,7 @@ import { Modal, message } from 'ant-design-vue'
 import ExcelJS from 'exceljs'
 import { saveAs } from 'file-saver'
 import { autoAddColumnWidth, dayOfWeek, formatDate } from '@/utils/utils'
-import { FilterFilled, UnorderedListOutlined } from '@ant-design/icons-vue'
+import { CloudDownloadOutlined, FilePdfFilled, FilePdfOutlined, FilterFilled, UnorderedListOutlined } from '@ant-design/icons-vue'
 
 const breadcrumbStore = useBreadcrumbStore()
 
@@ -280,10 +280,12 @@ onMounted(() => {
 
           <div class="d-flex justify-content-end mb-3">
             <a-button type="primary" @click="exportToExcel" :loading="isLoadingExport" class="me-3"
-              >Tải xuống Excel</a-button
+              >
+              <CloudDownloadOutlined /> Tải xuống Excel</a-button
             >
             <a-button type="default" @click="exportToPDF" :loading="isLoadingExport"
-              >Tải xuống PDF</a-button
+              >
+              <FilePdfOutlined />Tải xuống PDF</a-button
             >
           </div>
 

@@ -39,6 +39,7 @@ public interface STAttendanceRecoveryRepository extends AttendanceRecoveryReposi
                     :#{#req.toDate} IS NULL
                     OR ar.day <= :#{#req.toDate}
                 )
+                ORDER BY ar.created_at DESC
             """,
             countQuery = """
                     SELECT COUNT(*)
