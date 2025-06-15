@@ -21,4 +21,6 @@ export const API_ROUTES_ADMIN = {
 
   FETCH_DATA_USER_LOG_ACTIVITY: API_URL + '/admin/user-activity-management',
 
+  FETCH_DATA_STATISTICS: API_URL + '/admin/statistics-management',
+
 }

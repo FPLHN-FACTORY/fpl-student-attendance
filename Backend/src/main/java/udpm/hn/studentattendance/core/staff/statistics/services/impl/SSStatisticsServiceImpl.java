@@ -12,12 +12,7 @@ import udpm.hn.studentattendance.core.staff.statistics.model.dto.SSAllStatsAndCh
 import udpm.hn.studentattendance.core.staff.statistics.model.dto.SSListUserDto;
 import udpm.hn.studentattendance.core.staff.statistics.model.request.SSFilterFactoryStatsRequest;
 import udpm.hn.studentattendance.core.staff.statistics.model.request.SSSendMailStatsRequest;
-import udpm.hn.studentattendance.core.staff.statistics.model.response.SSAllStatsResponse;
-import udpm.hn.studentattendance.core.staff.statistics.model.response.SSChartLevelProjectResponse;
-import udpm.hn.studentattendance.core.staff.statistics.model.response.SSChartSubjectFacilityResponse;
-import udpm.hn.studentattendance.core.staff.statistics.model.response.SSFactoryStatsResponse;
-import udpm.hn.studentattendance.core.staff.statistics.model.response.SSPlanDateStudentFactoryResponse;
-import udpm.hn.studentattendance.core.staff.statistics.model.response.SSUserResponse;
+import udpm.hn.studentattendance.core.staff.statistics.model.response.*;
 import udpm.hn.studentattendance.core.staff.statistics.repositories.SSFactoryRepository;
 import udpm.hn.studentattendance.core.staff.statistics.repositories.SSLevelProjectRepository;
 import udpm.hn.studentattendance.core.staff.statistics.repositories.SSSemesterRepository;
@@ -25,7 +20,6 @@ import udpm.hn.studentattendance.core.staff.statistics.repositories.SSSubjectFac
 import udpm.hn.studentattendance.core.staff.statistics.repositories.SSUserAdminRepository;
 import udpm.hn.studentattendance.core.staff.statistics.repositories.SSUserStaffRepository;
 import udpm.hn.studentattendance.core.staff.statistics.services.SSStatisticsService;
-import udpm.hn.studentattendance.core.teacher.factory.model.response.TCPlanDateStudentFactoryResponse;
 import udpm.hn.studentattendance.entities.Facility;
 import udpm.hn.studentattendance.entities.Factory;
 import udpm.hn.studentattendance.entities.Semester;
@@ -39,7 +33,6 @@ import udpm.hn.studentattendance.infrastructure.constants.AttendanceStatus;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.excel.model.dto.ExStudentModel;
 import udpm.hn.studentattendance.repositories.FacilityRepository;
-import udpm.hn.studentattendance.utils.CodeGeneratorUtils;
 import udpm.hn.studentattendance.utils.DateTimeUtils;
 import udpm.hn.studentattendance.utils.ExcelUtils;
 

@@ -15,7 +15,7 @@ public interface ADStaffFacilityExtendRepository extends FacilityRepository {
             f
             FROM Facility f
             WHERE f.status = :status
-                                        """)
+            """)
     List<Facility> getFacility(EntityStatus status);
 
     Facility getFacilityByCodeAndStatus(String code, EntityStatus status);

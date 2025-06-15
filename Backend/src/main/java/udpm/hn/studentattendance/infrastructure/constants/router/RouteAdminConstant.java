@@ -23,4 +23,6 @@ public final class RouteAdminConstant {
 
     public static final String URL_API_USER_ACTIVITY_MANAGEMENT = PREFIX_API_ADMIN_MANAGEMENT + "/user-activity-management";
 
+    public static final String URL_API_STATISTICS_MANAGEMENT = PREFIX_API_ADMIN_MANAGEMENT + "/statistics-management";
+
 }
