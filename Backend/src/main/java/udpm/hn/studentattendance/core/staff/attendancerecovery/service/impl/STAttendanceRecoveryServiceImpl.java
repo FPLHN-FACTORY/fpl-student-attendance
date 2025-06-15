@@ -100,12 +100,6 @@ public class STAttendanceRecoveryServiceImpl implements STAttendanceRecoveryServ
         if (facilityOptional == null) {
             return RouterHelper.responseError("Cơ sở không tồn tại", null);
         }
-        if (!ValidateHelper.isValidFullname(request.getName())) {
-            return RouterHelper.responseError(
-                    "Tên sự kiện không hợp lệ: Tối thiểu 2 từ, cách nhau bởi khoảng trắng và Chỉ gồm ký tự chữ không chứa số hay ký tự đặc biệt.",
-                    null);
-        }
-
         AttendanceRecovery attendanceRecovery = new AttendanceRecovery();
         attendanceRecovery.setName(request.getName());
         attendanceRecovery.setDescription(request.getDescription());
@@ -130,13 +124,6 @@ public class STAttendanceRecoveryServiceImpl implements STAttendanceRecoveryServ
 
     @Override
     public ResponseEntity<?> updateEventAttendanceRecovery(STCreateOrUpdateNewEventRequest request, String id) {
-        if (!ValidateHelper.isValidFullname(request.getName())) {
-            return RouterHelper.responseError(
-                    "Tên sự kiện không hợp lệ: Tối thiểu 2 từ, cách nhau bởi khoảng trắng và Chỉ gồm ký tự chữ không chứa số hay ký tự đặc biệt.",
-                    null);
-        }
-
-
         Optional<AttendanceRecovery> attendanceRecoveryOptional = attendanceRecoveryRepository.findById(id);
         if (attendanceRecoveryOptional.isPresent()) {
             AttendanceRecovery attendanceRecovery = attendanceRecoveryOptional.get();
@@ -205,8 +192,7 @@ public class STAttendanceRecoveryServiceImpl implements STAttendanceRecoveryServ
                                 + formatDate(request.getDay()),
                         null);
             }
-            userActivityLogHelper.saveLog(
-                    "vừa thêm danh sách sinh viên vào sự kiện: " + attendanceRecoveryOptional.get().getName());
+
             return RouterHelper.responseSuccess(
                     String.format(
                             "Khôi phục điểm danh thành công: %d ca học mới, %d ca học đã cập nhật, ngày %s cho sinh viên %s",
@@ -393,18 +379,26 @@ public class STAttendanceRecoveryServiceImpl implements STAttendanceRecoveryServ
 
             List<Attendance> attendanceList = attendanceRepository
                     .findAllByAttendanceRecoveryId(attendanceRecovery.getId());
-            attendanceRepository.deleteAll(attendanceList);
+            if (attendanceList != null){
+                attendanceRepository.deleteAll(attendanceList);
+            }
 
             List<ImportLogDetail> importLogDetailList = historyLogRepository
                     .getAllByImportLog(attendanceRecoveryOptional.get().getImportLog().getId());
-            historyLogDetailRepository.deleteAll(importLogDetailList);
+            if (importLogDetailList != null){
+                historyLogDetailRepository.deleteAll(importLogDetailList);
+
+            }
 
             Optional<ImportLog> importLog = historyLogRepository.findById(attendanceRecoveryOptional.get().getId());
-            historyLogRepository.deleteById(importLog.get().getId());
+            if (importLog.isPresent()) {
+                historyLogRepository.deleteById(importLog.get().getId());
+            }
 
             attendanceRecovery.setImportLog(null);
             attendanceRecovery.setTotalStudent(0);
             attendanceRecoveryRepository.save(attendanceRecovery);
+
 
             userActivityLogHelper
                     .saveLog("đã xóa dữ liệu điểm danh của sự kiện khôi phục: " + attendanceRecovery.getName());

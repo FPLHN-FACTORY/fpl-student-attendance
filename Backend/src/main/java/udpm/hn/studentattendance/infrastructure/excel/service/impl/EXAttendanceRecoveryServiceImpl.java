@@ -11,16 +11,11 @@ import org.springframework.web.multipart.MultipartFile;
 import udpm.hn.studentattendance.core.staff.attendancerecovery.model.request.STStudentAttendanceRecoveryAddRequest;
 import udpm.hn.studentattendance.core.staff.attendancerecovery.repository.STAttendanceRecoveryRepository;
 import udpm.hn.studentattendance.core.staff.attendancerecovery.service.STAttendanceRecoveryService;
-import udpm.hn.studentattendance.entities.AttendanceRecovery;
-import udpm.hn.studentattendance.entities.Facility;
-import udpm.hn.studentattendance.entities.ImportLog;
-import udpm.hn.studentattendance.entities.ImportLogDetail;
-import udpm.hn.studentattendance.helpers.ExcelHelper;
-import udpm.hn.studentattendance.helpers.PaginationHelper;
-import udpm.hn.studentattendance.helpers.RouterHelper;
-import udpm.hn.studentattendance.helpers.SessionHelper;
+import udpm.hn.studentattendance.entities.*;
+import udpm.hn.studentattendance.helpers.*;
 import udpm.hn.studentattendance.infrastructure.common.ApiResponse;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
+import udpm.hn.studentattendance.infrastructure.common.repositories.CommonUserActivityLogRepository;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.ImportLogType;
 import udpm.hn.studentattendance.infrastructure.constants.RestApiStatus;
@@ -62,6 +57,10 @@ public class EXAttendanceRecoveryServiceImpl implements EXAttendanceRecoveryServ
     private final STAttendanceRecoveryService attendanceRecoveryService;
 
     private final STAttendanceRecoveryRepository attendanceRecoveryRepository;
+
+    private final UserActivityLogHelper userActivityLogHelper;
+
+    private final CommonUserActivityLogRepository userActivityLogRepository;
 
     @Override
     public ResponseEntity<?> getDataFromFile(EXUploadRequest request) {
@@ -142,6 +141,7 @@ public class EXAttendanceRecoveryServiceImpl implements EXAttendanceRecoveryServ
         // Update total student count
         updateAttendanceRecoveryTotalStudent(idAttendanceRecovery, importLog);
 
+
         return result;
     }
 
@@ -199,15 +199,13 @@ public class EXAttendanceRecoveryServiceImpl implements EXAttendanceRecoveryServ
             attendanceRecovery.setTotalStudent(totalStudent);
             attendanceRecovery.setImportLog(importLog);
             attendanceRecoveryRepository.save(attendanceRecovery);
+
+//            userActivityLogHelper.saveLog(
+//                    "vừa thêm danh sách sinh viên vào sự kiện: " + attendanceRecoveryOptional.get().getName());
+
         }
     }
 
-    // Method thay thế cho excelHelper.saveLogError - tạo ImportLogDetail INACTIVE
-// (Deprecated - sử dụng createImportLogDetail thay thế)
-    private void logImportError(String message, EXImportRequest request) {
-        ImportLog importLog = getOrCreateImportLog(request);
-        createImportLogDetail(importLog, request, message, EntityStatus.INACTIVE);
-    }
 
     private ImportLog getOrCreateImportLog(EXImportRequest request) {
         ImportLog importLog = importLogRepository.findByIdUserAndCodeAndFileNameAndFacility_Id(

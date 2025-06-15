@@ -10,6 +10,7 @@ import requestAPI from '@/services/requestApiService'
 import { API_ROUTES_ADMIN } from '@/constants/adminConstant'
 import { message } from 'ant-design-vue'
 import { FilterFilled, SearchOutlined, UnorderedListOutlined } from '@ant-design/icons-vue'
+import dayjs from 'dayjs'
 
 const breadcrumbStore = useBreadcrumbStore()
 const loadingStore = useLoadingStore()
@@ -79,6 +80,7 @@ const dataFilter = reactive({
   role: '',
   facilityId: '',
   userId: '',
+  dateRange: null, // Add date range field for the date picker component
 })
 
 const list = ref([])
@@ -94,6 +96,8 @@ const getList = async () => {
         role: dataFilter.role,
         facilityId: dataFilter.facilityId,
         userId: dataFilter.userId,
+        fromDate: dataFilter.fromDate, // Add fromDate parameter
+        toDate: dataFilter.toDate, // Add toDate parameter
       },
     })
 
@@ -166,7 +170,26 @@ const handleClearFilter = () => {
     role: '',
     facilityId: '',
     userId: '',
+    dateRange: null, // Clear dateRange
+    fromDate: null, // Clear fromDate
+    toDate: null, // Clear toDate
   })
+  pagination.value.current = 1
+  getList()
+}
+
+// Hàm xử lý khi thay đổi khoảng ngày
+const handleDateRangeChange = (range) => {
+  if (range && range.length === 2) {
+    dataFilter.dateRange = range
+    dataFilter.fromDate = range[0].valueOf()
+    dataFilter.toDate = range[1].valueOf()
+  } else {
+    dataFilter.dateRange = null
+    dataFilter.fromDate = null
+    dataFilter.toDate = null
+  }
+  // Đặt lại trang về 1 và gọi lại API
   pagination.value.current = 1
   getList()
 }
@@ -198,7 +221,7 @@ watch(
             <a-collapse-panel>
               <template #header><FilterFilled /> Bộ lọc</template>
               <div class="row g-3">
-                <div class="col-lg-8 col-md-8 col-sm-12">
+                <div class="col-lg-4 col-md-8 col-sm-12">
                   <div class="label-title">Từ khoá:</div>
                   <a-input
                     v-model:value="dataFilter.searchQuery"
@@ -209,6 +232,16 @@ watch(
                       <SearchOutlined />
                     </template>
                   </a-input>
+                </div>
+                
+                <div class="col-lg-4 col-md-4 col-sm-12">
+                  <div class="label-title">Khoảng ngày:</div>
+                  <a-range-picker
+                    v-model:value="dataFilter.dateRange"
+                    class="w-100"
+                    format="DD/MM/YYYY"
+                    @change="handleDateRangeChange"
+                  />
                 </div>
                
                 <div class="col-lg-4 col-md-6 col-sm-12">

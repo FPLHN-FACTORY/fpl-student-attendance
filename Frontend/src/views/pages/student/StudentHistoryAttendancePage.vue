@@ -5,6 +5,7 @@ import {
   FilterFilled,
   UnorderedListOutlined,
   ExclamationCircleOutlined,
+  FilePdfOutlined,
 } from '@ant-design/icons-vue'
 import { message, Modal } from 'ant-design-vue'
 import requestAPI from '@/services/requestApiService'
@@ -275,6 +276,7 @@ onMounted(async () => {
         <a-card :bordered="false" class="card">
           <template #title>
             <UnorderedListOutlined />
+            Nhóm: 
             {{ getFactoryName(factoryId) }}
           </template>
           <template #extra>
@@ -283,7 +285,7 @@ onMounted(async () => {
               :loading="loadingExport[factoryId]"
               @click="exportPDF(factoryId, getFactoryName(factoryId))"
             >
-              Xuất PDF
+             <FilePdfOutlined /> Tải xuống PDF
             </a-button>
           </template>
 
@@ -301,7 +303,8 @@ onMounted(async () => {
               <template v-if="column.dataIndex">
                 <template v-if="column.dataIndex === 'planDateStartDate'">
                   {{ dayOfWeek(record.planDateStartDate) }} -
-                  {{ formatDate(record.planDateStartDate, 'dd/MM/yyyy HH:mm') }}
+                  {{ formatDate(record.planDateStartDate, 'dd/MM/yyyy HH:mm') }} - 
+                  {{ formatDate(record.planDateEndDate, 'HH:mm') }}
                 </template>
                 <template v-else-if="column.dataIndex === 'planDateShift'">
                   <a-tag color="purple">

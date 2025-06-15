@@ -224,6 +224,7 @@ const handleUpdateSemester = (record) => {
         fromDate: dayjs(data.fromDate),
         toDate: dayjs(data.toDate),
         semesterId: data.semesterId || data.id,
+        originalFromDate: data.fromDate, // Store original fromDate to check if it was changed
       }
       modalUpdate.value = true
     })
@@ -248,11 +249,23 @@ const updateSemester = () => {
     return
   }
 
-  // Show confirmation dialog with warning about scheduled classes
+  // Kiểm tra trường hợp start date đã qua và đã bị thay đổi
+  const originalFromDate = dayjs(detailSemester.value.originalFromDate)
+  if (isStartDateBeforeToday(originalFromDate) && 
+      !originalFromDate.isSame(detailSemester.value.fromDate, 'day')) {
+    message.error('Không thể thay đổi ngày bắt đầu của học kỳ đã qua')
+    return
+  }
+
+  if (detailSemester.value.toDate.isBefore(detailSemester.value.fromDate)) {
+    message.error('Ngày kết thúc phải sau ngày bắt đầu')
+    return
+  }
+
   Modal.confirm({
     title: 'Xác nhận cập nhật học kỳ',
     content:
-      'Lưu ý: Các lịch học mà sinh viên đã được phân công trước ngày bắt đầu hoặc sau ngày kết thúc của học kỳ vẫn sẽ hoạt động bình thường.',
+      'Lưu ý: Các lịch học mà sinh viên đã được phân công theo lịch của học kỳ cũ vẫn sẽ hoạt động bình thường',
     okText: 'Cập nhật',
     cancelText: 'Hủy',
     onOk: () => {
@@ -322,6 +335,32 @@ const handleClearFilter = () => {
   })
   pagination.current = 1
   fetchSemesters() // or whatever your fetch function is named
+}
+
+// Kiểm tra nếu ngày hiện tại lớn hơn ngày bắt đầu của học kỳ
+const isStartDateBeforeToday = (startDate) => {
+  if (!startDate) return false
+  return dayjs().startOf('day') > dayjs(startDate).startOf('day')
+}
+
+// Hàm để check xem có được phép sửa ngày bắt đầu không
+const shouldDisableStartDate = (current) => {
+  // Nếu không có current (ngày đang kiểm tra), trả về false
+  if (!current) return false
+  
+  // Kiểm tra nếu học kỳ đang sửa có ngày bắt đầu trước ngày hiện tại
+  if (detailSemester.value && detailSemester.value.fromDate) {
+    const originalDate = dayjs(detailSemester.value.originalFromDate || detailSemester.value.fromDate)
+    
+    // Nếu ngày bắt đầu gốc đã qua (trước ngày hiện tại)
+    if (isStartDateBeforeToday(originalDate)) {
+      // Không cho phép chọn bất kỳ ngày nào khác ngoài ngày ban đầu
+      return !current.isSame(originalDate, 'day')
+    }
+  }
+  
+  // Mặc định: không cho phép chọn các ngày trong quá khứ
+  return current < dayjs().startOf('day')
 }
 
 onMounted(() => {
@@ -542,7 +581,12 @@ onMounted(() => {
             class="w-100"
             format="DD/MM/YYYY"
             @keyup.enter="updateSemester"
+            :disabled="detailSemester.fromDate && isStartDateBeforeToday(detailSemester.originalFromDate)"
+            :disabledDate="shouldDisableStartDate"
           />
+          <div v-if="detailSemester.fromDate && isStartDateBeforeToday(detailSemester.originalFromDate)" class="ant-form-item-explain">
+            <div class="ant-form-item-explain-error">Không thể chỉnh sửa ngày bắt đầu đã qua</div>
+          </div>
         </a-form-item>
         <a-form-item label="Ngày kết thúc" required>
           <a-date-picker
@@ -551,6 +595,7 @@ onMounted(() => {
             class="w-100"
             format="DD/MM/YYYY"
             @keyup.enter="updateSemester"
+            :disabledDate="(current) => current && current < detailSemester.fromDate"
           />
         </a-form-item>
       </a-form>

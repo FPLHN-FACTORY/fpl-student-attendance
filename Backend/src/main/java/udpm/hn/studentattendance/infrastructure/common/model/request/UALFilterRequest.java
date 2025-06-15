@@ -20,5 +20,9 @@ public class UALFilterRequest extends PageableRequest {
 
     private String searchQuery;
 
+    private Long fromDate;
+
+    private Long toDate;
+
 
 }

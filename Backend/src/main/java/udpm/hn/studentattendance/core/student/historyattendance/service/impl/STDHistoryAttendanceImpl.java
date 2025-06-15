@@ -52,7 +52,7 @@ public class STDHistoryAttendanceImpl implements STDHistoryAttendanceService {
                         STDHistoryAttendanceRequest historyAttendanceRequest) {
                 String semesterId = null;
                 Long now = new Date().getTime();
-                for (Semester semester : historyAttendanceSemesterExtendRepository.findAll()) {
+                for (Semester semester : historyAttendanceSemesterExtendRepository.getAllSemestersByStatus(EntityStatus.ACTIVE)) {
                         if (semester.getFromDate() <= now && now <= semester.getToDate()) {
                                 semesterId = semester.getId();
                                 break;
@@ -111,23 +111,19 @@ public class STDHistoryAttendanceImpl implements STDHistoryAttendanceService {
                         document.add(paragraph);
                         document.add(Chunk.NEWLINE);
 
-                        // Tạo bảng với 7 cột
                         PdfPTable pdfTable = new PdfPTable(6);
                         pdfTable.setWidthPercentage(100);
                         pdfTable.setSpacingBefore(10f);
                         pdfTable.setSpacingAfter(10f);
                         pdfTable.setWidths(new float[] { 20, 40, 20, 20, 30, 30 });
 
-                        // Header: sử dụng màu cam đậm từ ảnh mẫu (ví dụ: RGB 237,125,49)
                         Color headerColor = new Color(2, 3, 51);
 
-                        // Màu nền so le cho các dòng dữ liệu
                         Color rowColor1 = new Color(255, 255, 255);
                         Color rowColor2 = new Color(245, 245, 245);
 
-                        // Thêm header cho bảng
-                        Stream.of("Bài học", "Ngày học", "Ca học", "Điểm danh muộn tối đa (phút)", "Nội dung",
-                                        "Trạng thái đi học")
+                        Stream.of("Bài học", "Ngày học", "Ca học", "Điểm danh muộn", "Nội dung",
+                                        "Trạng thái")
                                         .forEach(headerTitle -> {
                                                 PdfPCell headerCell = new PdfPCell();
                                                 headerCell.setBackgroundColor(headerColor);
@@ -138,7 +134,6 @@ public class STDHistoryAttendanceImpl implements STDHistoryAttendanceService {
                                                 pdfTable.addCell(headerCell);
                                         });
 
-                        // Định dạng ngày dạy
                         SimpleDateFormat dateFormat = new SimpleDateFormat("EEEE - dd/MM/yyyy HH:mm",
                                         new Locale("vi", "VN"));
 
@@ -164,14 +159,12 @@ public class STDHistoryAttendanceImpl implements STDHistoryAttendanceService {
                                 styleCell(shiftCell, backgroundColor);
                                 pdfTable.addCell(shiftCell);
 
-                                // Cột "Điểm danh muộn tối đa (phút)"
                                 PdfPCell lateArrivalCell = new PdfPCell(
-                                                new Phrase(String.valueOf(attendanceResponse.getLateArrival()),
+                                                new Phrase(String.valueOf(attendanceResponse.getLateArrival() + " phút"),
                                                                 cellFont));
                                 styleCell(lateArrivalCell, backgroundColor);
                                 pdfTable.addCell(lateArrivalCell);
 
-                                // Cột "Mô tả"
                                 PdfPCell descriptionCell = new PdfPCell(new Phrase(
                                                 attendanceResponse.getPlanDateDescription() != null
                                                                 ? attendanceResponse.getPlanDateDescription()
