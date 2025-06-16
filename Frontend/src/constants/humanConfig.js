@@ -1,6 +1,5 @@
 export default {
   async: true,
-  backend: 'webgl',
   modelBasePath: '/models/human',
   cacheModels: true,
   cacheSensitivity: 0.01,
@@ -8,17 +7,17 @@ export default {
   face: {
     enabled: true,
     detector: {
-      rotation: true, // giúp phát hiện mặt nghiêng
+      rotation: true,
       inputSize: 256,
-      maxDetected: 1, // nếu chỉ cần 1 người
+      maxDetected: 1,
       iouThreshold: 0.3,
-      minConfidence: 0.6, // giảm nếu muốn bắt được mặt khó
+      minConfidence: 0.6,
     },
-    iris: { enabled: false }, // tắt nếu không cần tracking mắt
-    description: { enabled: true }, // tắt nếu không cần thông tin tuổi/giới tính
-    embedding: { enabled: true }, // giữ lại để lấy vector đặc trưng khuôn mặt
-    emotion: { enabled: true }, // tắt nếu không cần nhận diện biểu cảm
-    mesh: { enabled: true }, // tắt nếu không cần vẽ điểm mặt
+    iris: { enabled: false },
+    description: { enabled: true },
+    embedding: { enabled: true },
+    emotion: { enabled: true },
+    mesh: { enabled: true },
     antispoof: { enabled: true },
     liveness: { enabled: true },
   },
