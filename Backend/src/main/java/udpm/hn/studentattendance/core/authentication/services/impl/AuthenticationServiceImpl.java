@@ -160,7 +160,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         student.setFacility(facility);
         student.setCode(request.getCode());
         student.setName(request.getName());
-        student.setFaceEmbedding(Arrays.toString(faceEmbeddings.get(0)));
+        student.setFaceEmbedding(Arrays.toString(faceEmbeddings.get(faceEmbeddings.size() - 1)));
         authenticationUserStudentRepository.save(student);
 
         String accessToken = jwtUtil.generateToken(student.getEmail(),
@@ -206,7 +206,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             return RouterHelper.responseError("Mặt quá mờ hoặc đã tồn tại trên hệ thống. Vui lòng thử lại");
         }
 
-        student.setFaceEmbedding(Arrays.toString(faceEmbeddings.get(0)));
+        student.setFaceEmbedding(Arrays.toString(faceEmbeddings.get(faceEmbeddings.size() - 1)));
 
         NotificationAddRequest notificationAddRequest = new NotificationAddRequest();
         notificationAddRequest.setType(NotificationHelper.TYPE_SUCCESS_UPDATE_FACE_ID);
@@ -247,13 +247,15 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
         double[] firstFace = embeddings.get(0);
         double[] lastFace = embeddings.get(embeddings.size() - 1);
-        double[] resultFace = FaceRecognitionUtils.isSameFaceAndResult(lstFaceEmbeddings, firstFace, threshold_register);
+
+        double[] resultFace = FaceRecognitionUtils.isSameFaceAndResult(lstFaceEmbeddings, lastFace, threshold_register);
 
         if (resultFace == null) {
-            return !(FaceRecognitionUtils.isSameFaceAndResult(lstFaceEmbeddings, lastFace, threshold_register) == null);
+            boolean isSameFirst = FaceRecognitionUtils.isSameFaceAndResult(lstFaceEmbeddings, firstFace, threshold_register) == null;
+            return !isSameFirst;
         }
 
-        return FaceRecognitionUtils.isSameFace(resultFace, lastFace, threshold_register);
+        return FaceRecognitionUtils.isSameFace(resultFace, firstFace, threshold_register);
     }
 
 }
