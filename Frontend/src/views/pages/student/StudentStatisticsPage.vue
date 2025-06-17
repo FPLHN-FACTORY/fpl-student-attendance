@@ -73,12 +73,12 @@ const stats = ref([
     icon: GoldOutlined,
     class: 'bg-primary',
   },
-  {
-    title: 'Dự án',
-    value: 0,
-    icon: ProjectOutlined,
-    class: 'bg-info',
-  },
+  // {
+  //   title: 'Dự án',
+  //   value: 0,
+  //   icon: ProjectOutlined,
+  //   class: 'bg-info',
+  // },
   {
     title: 'Hoàn thành',
     value: 0,
@@ -215,6 +215,7 @@ watch(
 <template>
   <div class="container-fluid">
     <div class="row g-3">
+      
       <!-- Filter Section -->
       <div class="col-12">
         <div class="row g-2" :style="{ maxWidth: '500px' }">
@@ -239,7 +240,9 @@ watch(
             </div>
           </div>
         </div>
-      </div>      <!-- Statistics Cards -->
+      </div>  
+      
+      <!-- Statistics Cards -->
       <div class="col-xl col-lg col-md-4 col-sm-6" v-for="(stat, index) in stats" :key="index">
         <WidgetCounter
           :title="stat.title"
@@ -249,13 +252,15 @@ watch(
           :icon="stat.icon"
           :status="stat.status"
         ></WidgetCounter>
-      </div>      <!-- Chart Section -->
-      <div class="col-xl-8 col-lg-12">
+      </div>    
+
+      <!-- Chart Section -->
+      <div class="col-xl col-lg col-md-6 col-sm-12">
         <a-card :bordered="false" class="dashboard-line-chart">
           <template #title>
             <div class="d-flex align-items-center">
               <BookOutlined class="me-2 text-primary" />
-              <h6 class="mb-0">Tỷ lệ điểm danh theo nhóm xưởng</h6>
+              <span>Tỷ lệ điểm danh / vắng</span>
             </div>
           </template>
           <template #extra>
@@ -263,11 +268,11 @@ watch(
               {{ lstData.length }} nhóm xưởng
             </a-tag>
           </template>
-          <ChartLine :height="400" :data="lineChartData"></ChartLine>
+          <ChartLine :height="310" :data="lineChartData"></ChartLine>
         </a-card>
       </div>
 
-      <!-- Summary Card -->
+      <!-- Summary Card
       <div class="col-xl-4 col-lg-12">
         <a-card :bordered="false" class="cart card-white h-100">
           <template #title>
@@ -325,10 +330,10 @@ watch(
             </div>
           </div>
         </a-card>
-      </div>
+      </div> -->
 
       <!-- Detailed Table -->
-      <div class="col-12">
+      <div class="col-xl col-lg col-md-6 col-sm-12">
         <a-card :bordered="false" class="cart card-white">
           <template #title>
             <div class="d-flex align-items-center">

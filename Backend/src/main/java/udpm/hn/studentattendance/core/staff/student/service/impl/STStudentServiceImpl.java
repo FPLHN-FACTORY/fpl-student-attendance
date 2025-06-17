@@ -1,6 +1,7 @@
 package udpm.hn.studentattendance.core.staff.student.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -41,6 +42,9 @@ public class STStudentServiceImpl implements STStudentService {
 
     private final UserActivityLogHelper userActivityLogHelper;
 
+    @Value("${app.config.disabled-check-email-fpt}")
+    private String isDisableCheckEmailFpt;
+
     @Override
     public ResponseEntity<?> getAllStudentByFacility(USStudentRequest studentRequest) {
         Pageable pageable = PaginationHelper.createPageable(studentRequest);
@@ -63,23 +67,34 @@ public class STStudentServiceImpl implements STStudentService {
 
     @Override
     public ResponseEntity<?> createStudent(USStudentCreateUpdateRequest studentCreateUpdateRequest) {
-        // Validate input
         if (!ValidateHelper.isValidCode(studentCreateUpdateRequest.getCode())) {
             return RouterHelper.responseError(
                     "Mã sinh viên không hợp lệ: không có khoảng trắng, không có ký tự đặc biệt ngoài dấu chấm . và dấu gạch dưới _.");
         }
-
 
         if (!ValidateHelper.isValidFullname(studentCreateUpdateRequest.getName())) {
             return RouterHelper.responseError(
                     "Họ Tên admin không hợp lệ: Tối thiểu 2 từ, cách nhau bởi khoảng trắng và Chỉ gồm ký tự chữ không chứa số hay ký tự đặc biệt.");
         }
 
+        String email = studentCreateUpdateRequest.getEmail().trim();
+        boolean isValidEmail = false;
 
-        if (!ValidateHelper.isValidEmailGmail(studentCreateUpdateRequest.getEmail())) {
-            return RouterHelper.responseError("Email phải có định dạng @gmail.com");
+        if (ValidateHelper.isValidEmailGmail(email) ||
+                ValidateHelper.isValidEmailFE(email) ||
+                ValidateHelper.isValidEmailFPT(email)) {
+            isValidEmail = true;
         }
 
+        if (!isValidEmail) {
+            return RouterHelper.responseError("Email phải có định dạng @gmail.com hoặc kết thúc bằng edu.vn");
+        }
+
+        if (!isDisableCheckEmailFpt.equalsIgnoreCase("true")) {
+            if (!ValidateHelper.isValidEmailFE(email) && !ValidateHelper.isValidEmailFPT(email)) {
+                return RouterHelper.responseError("Email phải kết thúc bằng edu.vn");
+            }
+        }
 
         Optional<UserStudent> existStudentCode = studentExtendRepository
                 .getUserStudentByCode(studentCreateUpdateRequest.getCode());
@@ -109,23 +124,33 @@ public class STStudentServiceImpl implements STStudentService {
 
     @Override
     public ResponseEntity<?> updateStudent(USStudentCreateUpdateRequest studentCreateUpdateRequest) {
-        // Validate input
         if (!ValidateHelper.isValidCode(studentCreateUpdateRequest.getCode())) {
             return RouterHelper.responseError(
                     "Mã sinh viên không hợp lệ: không có khoảng trắng, không có ký tự đặc biệt ngoài dấu chấm . và dấu gạch dưới _.");
         }
-
-
 
         if (!ValidateHelper.isValidFullname(studentCreateUpdateRequest.getName())) {
             return RouterHelper.responseError(
                     "Họ Tên sinh viên không hợp lệ: Tối thiểu 2 từ, cách nhau bởi khoảng trắng và Chỉ gồm ký tự chữ không chứa số hay ký tự đặc biệt.");
         }
 
+        String email = studentCreateUpdateRequest.getEmail().trim();
+        boolean isValidEmail = false;
 
+        if (ValidateHelper.isValidEmailGmail(email) ||
+                ValidateHelper.isValidEmailFE(email) ||
+                ValidateHelper.isValidEmailFPT(email)) {
+            isValidEmail = true;
+        }
 
-        if (!ValidateHelper.isValidEmailGmail(studentCreateUpdateRequest.getEmail())) {
-            return RouterHelper.responseError("Email phải có định dạng @gmail.com");
+        if (!isValidEmail) {
+            return RouterHelper.responseError("Email phải có định dạng @gmail.com hoặc kết thúc bằng edu.vn");
+        }
+
+        if (!isDisableCheckEmailFpt.equalsIgnoreCase("true")) {
+            if (!ValidateHelper.isValidEmailFE(email) && !ValidateHelper.isValidEmailFPT(email)) {
+                return RouterHelper.responseError("Email phải kết thúc bằng edu.vn");
+            }
         }
 
         Optional<UserStudent> existStudent = studentExtendRepository
@@ -137,13 +162,11 @@ public class STStudentServiceImpl implements STStudentService {
 
         UserStudent current = existStudent.get();
 
-        // Check trùng code
         if (studentExtendRepository.isExistCodeUpdate(studentCreateUpdateRequest.getCode(),
                 current.getCode())) {
             return RouterHelper.responseError("Mã sinh viên đã tồn tại");
         }
 
-        // Check trùng email
         if (studentExtendRepository.isExistEmailFeUpdate(studentCreateUpdateRequest.getEmail(),
                 current.getEmail())) {
             return RouterHelper.responseError("Đã có sinh viên khác dùng email này");
