@@ -34,8 +34,8 @@ public class USProjectManagementRestController {
 
     private final STSubjectFacilityManagementService serviceSubjectFacility;
 
-    @PostMapping("/list")
-    public ResponseEntity<?> getListProject(@RequestBody USProjectSearchRequest request) {
+    @GetMapping("/list")
+    public ResponseEntity<?> getListProject( USProjectSearchRequest request) {
         request.setFacilityId(sessionHelper.getFacilityId());
         return service.getListProject(request);
     }
@@ -55,7 +55,7 @@ public class USProjectManagementRestController {
         return service.updateProject(id, request);
     }
 
-    @DeleteMapping("/{id}")
+    @PutMapping("/change-status/{id}")
     public ResponseEntity<?> changeStatusProject(@PathVariable String id) {
         return service.changeStatus(id);
     }

@@ -245,7 +245,7 @@ const submitUpdateFactory = () => {
 
   // Check if project is changed
   const originalFactory = factories.value.find((f) => f.id === detailFactory.id)
-  if (originalFactory && originalFactory.projectId !== detailFactory.idProject) {
+  if ( originalFactory.projectId !== detailFactory.idProject) {
     Modal.confirm({
       title: 'Xác nhận thay đổi dự án',
       content:

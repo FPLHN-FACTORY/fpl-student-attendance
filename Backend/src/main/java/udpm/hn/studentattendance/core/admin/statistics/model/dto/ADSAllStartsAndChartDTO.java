@@ -4,6 +4,8 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.springframework.data.domain.Page;
+import udpm.hn.studentattendance.core.admin.statistics.model.response.ADSProjectSubjectFacilityResponse;
 import udpm.hn.studentattendance.core.admin.statistics.model.response.ADSSubjectFacilityChartResponse;
 import udpm.hn.studentattendance.core.admin.statistics.model.response.ADStatisticsStatResponse;
 
@@ -19,4 +21,6 @@ public class ADSAllStartsAndChartDTO implements Serializable {
     private List<ADSSubjectFacilityChartResponse> subjectFacilityChartResponse;
 
     private ADStatisticsStatResponse statisticsStatResponse;
+
+    private Page<ADSProjectSubjectFacilityResponse> projectSubjectFacilityResponses;
 }

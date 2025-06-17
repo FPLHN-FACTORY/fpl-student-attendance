@@ -19,6 +19,7 @@ public class USStudentCreateUpdateRequest {
     @NotBlank(message = "Không được để trống mã sinh viên")
     @Size(max = EntityProperties.LENGTH_NAME, message = "Tên sinh viên không được vượt quá " + EntityProperties.LENGTH_NAME + " ký tự")
     private String name;
+
     @NotBlank
     @Size(max = EntityProperties.LENGTH_NAME, message = "Email sinh viên không được vượt quá " + EntityProperties.LENGTH_NAME + " ký tự")
     private String email;

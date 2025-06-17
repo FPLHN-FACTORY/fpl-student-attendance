@@ -95,7 +95,7 @@ const formatDate = (timestamp) => {
 const fetchProjects = () => {
   loadingStore.show()
   requestAPI
-    .post(`${API_ROUTES_STAFF.FETCH_DATA_PROJECT}/list`, {
+    .get(`${API_ROUTES_STAFF.FETCH_DATA_PROJECT}/list`, {
       name: filter.name,
       levelProjectId: filter.levelProjectId,
       semesterId: filter.semesterId,
@@ -198,14 +198,6 @@ const handleShowModalAdd = () => {
   if (nearestSemester) {
     newProject.semesterId = nearestSemester.id
   }
-   // Pre-select first values if available
-   if (levels.value && levels.value.length > 0) {
-    newProject.levelProjectId = levels.value[0].id
-  }
-
-  if (subjects.value && subjects.value.length > 0) {
-    newProject.subjectFacilityId = subjects.value[0].id
-  }
   modalAdd.value = true
 }
 
@@ -297,7 +289,7 @@ const handleUpdateProject = () => {
     cancelText: 'Hủy bỏ',
     onOk() {
       requestAPI
-        .put(API_ROUTES_STAFF.FETCH_DATA_PROJECT, detailProject)
+        .put(`${API_ROUTES_STAFF.FETCH_DATA_PROJECT}/${detailProject.id}`, detailProject)
         .then(() => {
           message.success('Cập nhật dự án thành công')
           fetchProjects()
@@ -317,7 +309,7 @@ const handleDeleteProject = (record) => {
     content: 'Bạn có chắc chắn muốn đổi trạng thái dự án này?',
     onOk: () => {
       requestAPI
-        .delete(`${API_ROUTES_STAFF.FETCH_DATA_PROJECT}/${record.id}`)
+        .put(`${API_ROUTES_STAFF.FETCH_DATA_PROJECT}/change-status/${record.id}`)
         .then(() => {
           message.success('Đổi trạng thái dự án thành công')
           fetchProjects()
@@ -415,12 +407,17 @@ onMounted(() => {
                     v-model:value="filter.levelProjectId"
                     placeholder="Cấp dự án"
                     allowClear
+                    show-search
                     class="filter-select w-100"
                     :dropdownMatchSelectWidth="false"
                     @change="fetchProjects"
+                    :filter-option="
+                      (input, option) =>
+                        (option.label || '').toLowerCase().includes(input.toLowerCase())
+                    "
                   >
-                    <a-select-option :value="null">Tất cả cấp dự án</a-select-option>
-                    <a-select-option v-for="level in levels" :key="level.id" :value="level.id">
+                    <a-select-option :value="null" label="Tất cả cấp dự án">Tất cả cấp dự án</a-select-option>
+                    <a-select-option v-for="level in levels" :key="level.id" :value="level.id" :label="level.name">
                       {{ level.name }}
                     </a-select-option>
                   </a-select>
@@ -432,15 +429,21 @@ onMounted(() => {
                     v-model:value="filter.semesterId"
                     placeholder="Học kỳ"
                     allowClear
+                    show-search
                     class="filter-select w-100"
                     :dropdownMatchSelectWidth="false"
                     @change="fetchProjects"
+                    :filter-option="
+                      (input, option) =>
+                        (option.label || '').toLowerCase().includes(input.toLowerCase())
+                    "
                   >
-                    <a-select-option :value="null">Tất cả học kỳ</a-select-option>
+                    <a-select-option :value="null" label="Tất cả học kỳ">Tất cả học kỳ</a-select-option>
                     <a-select-option
                       v-for="semester in allSemesters"
                       :key="semester.id"
                       :value="semester.id"
+                      :label="semester.code"
                     >
                       {{ semester.code }}
                     </a-select-option>
@@ -452,15 +455,21 @@ onMounted(() => {
                     v-model:value="filter.subjectId"
                     placeholder="Môn học"
                     allowClear
+                    show-search
                     class="filter-select w-100"
                     :dropdownMatchSelectWidth="false"
                     @change="fetchProjects"
+                    :filter-option="
+                      (input, option) =>
+                        (option.label || '').toLowerCase().includes(input.toLowerCase())
+                    "
                   >
-                    <a-select-option :value="null">Tất cả môn học</a-select-option>
+                    <a-select-option :value="null" label="Tất cả môn học">Tất cả môn học</a-select-option>
                     <a-select-option
                       v-for="subject in subjects"
                       :key="subject.id"
                       :value="subject.id"
+                      :label="subject.name"
                     >
                       {{ subject.name }}
                     </a-select-option>
@@ -597,15 +606,33 @@ onMounted(() => {
             v-model:value="newProject.levelProjectId"
             placeholder="Chọn cấp dự án"
             allowClear
+            show-search
+            :filter-option="
+              (input, option) => {
+                const text = option.label || ''
+                return text.toLowerCase().includes(input.toLowerCase())
+              }
+            "
           >
-            <a-select-option v-for="level in levels" :key="level.id" :value="level.id">
+            <a-select-option v-for="level in levels" :key="level.id" :value="level.id" :label="level.name">
               {{ level.name }}
             </a-select-option>
           </a-select>
         </a-form-item>
         <a-form-item label="Học kỳ" required>
-          <a-select v-model:value="newProject.semesterId" placeholder="Chọn học kỳ" allowClear>
-            <a-select-option v-for="semester in semesters" :key="semester.id" :value="semester.id">
+          <a-select 
+            v-model:value="newProject.semesterId" 
+            placeholder="Chọn học kỳ" 
+            allowClear
+            show-search
+            :filter-option="
+              (input, option) => {
+                const text = option.label || ''
+                return text.toLowerCase().includes(input.toLowerCase())
+              }
+            "
+          >
+            <a-select-option v-for="semester in semesters" :key="semester.id" :value="semester.id" :label="semester.code">
               {{ semester.code }}
             </a-select-option>
           </a-select>
@@ -615,8 +642,15 @@ onMounted(() => {
             v-model:value="newProject.subjectFacilityId"
             placeholder="Chọn môn học"
             allowClear
+            show-search
+            :filter-option="
+              (input, option) => {
+                const text = option.label || ''
+                return text.toLowerCase().includes(input.toLowerCase())
+              }
+            "
           >
-            <a-select-option v-for="subject in subjects" :key="subject.id" :value="subject.id">
+            <a-select-option v-for="subject in subjects" :key="subject.id" :value="subject.id" :label="subject.name">
               {{ subject.name }}
             </a-select-option>
           </a-select>
@@ -672,15 +706,33 @@ onMounted(() => {
             v-model:value="detailProject.levelProjectId"
             placeholder="Chọn cấp dự án"
             allowClear
+            show-search
+            :filter-option="
+              (input, option) => {
+                const text = option.label || ''
+                return text.toLowerCase().includes(input.toLowerCase())
+              }
+            "
           >
-            <a-select-option v-for="level in levels" :key="level.id" :value="level.id">
+            <a-select-option v-for="level in levels" :key="level.id" :value="level.id" :label="level.name">
               {{ level.name }}
             </a-select-option>
           </a-select>
         </a-form-item>
         <a-form-item label="Học kỳ" required>
-          <a-select v-model:value="detailProject.semesterId" placeholder="Chọn học kỳ" allowClear>
-            <a-select-option v-for="semester in semesters" :key="semester.id" :value="semester.id">
+          <a-select 
+            v-model:value="detailProject.semesterId" 
+            placeholder="Chọn học kỳ" 
+            allowClear
+            show-search
+            :filter-option="
+              (input, option) => {
+                const text = option.label || ''
+                return text.toLowerCase().includes(input.toLowerCase())
+              }
+            "
+          >
+            <a-select-option v-for="semester in semesters" :key="semester.id" :value="semester.id" :label="semester.code">
               {{ semester.code }}
             </a-select-option>
           </a-select>
@@ -690,8 +742,15 @@ onMounted(() => {
             v-model:value="detailProject.subjectFacilityId"
             placeholder="Chọn môn học"
             allowClear
+            show-search
+            :filter-option="
+              (input, option) => {
+                const text = option.label || ''
+                return text.toLowerCase().includes(input.toLowerCase())
+              }
+            "
           >
-            <a-select-option v-for="subject in subjects" :key="subject.id" :value="subject.id">
+            <a-select-option v-for="subject in subjects" :key="subject.id" :value="subject.id" :label="subject.name">
               {{ subject.name }}
             </a-select-option>
           </a-select>

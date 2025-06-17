@@ -68,24 +68,31 @@ public class ADUserAdminServiceImpl implements ADUserAdminService {
         @Override
         public ResponseEntity<?> createUserAdmin(ADUserAdminCreateOrUpdateRequest createOrUpdateRequest) {
                 Optional<UserAdmin> existUserAdmin = userAdminExtendRepository
-                                .getUserAdminByCode(createOrUpdateRequest.getStaffCode());
+                        .getUserAdminByCode(createOrUpdateRequest.getStaffCode());
                 Optional<UserAdmin> existUserAdmin2 = userAdminExtendRepository
-                                .getUserAdminByEmail(createOrUpdateRequest.getEmail());
-
-                if (!ValidateHelper.isValidEmail(createOrUpdateRequest.getEmail())) {
-                        return RouterHelper.responseError("Định dạng email không hợp lệ");
-                }
+                        .getUserAdminByEmail(createOrUpdateRequest.getEmail());
 
                 if (!ValidateHelper.isValidFullname(createOrUpdateRequest.getStaffName())) {
                         return RouterHelper.responseError(
-                                        "Tên admin không hợp lệ: Tối thiểu 2 từ, cách nhau bởi khoảng trắng và Chỉ gồm ký tự chữ không chứa số hay ký tự đặc biệt.");
+                                "Tên admin không hợp lệ: Tối thiểu 2 từ, cách nhau bởi khoảng trắng và Chỉ gồm ký tự chữ không chứa số hay ký tự đặc biệt.");
+                }
+
+                String email = createOrUpdateRequest.getEmail().trim();
+                boolean isValidEmail = false;
+
+                if (ValidateHelper.isValidEmailGmail(email) ||
+                        ValidateHelper.isValidEmailFE(email) ||
+                        ValidateHelper.isValidEmailFPT(email)) {
+                        isValidEmail = true;
+                }
+
+                if (!isValidEmail) {
+                        return RouterHelper.responseError("Email phải có định dạng @gmail.com hoặc kết thúc bằng edu.vn");
                 }
 
                 if (!isDisableCheckEmailFpt.equalsIgnoreCase("true")) {
-                        if (!ValidateHelper.isValidEmailFE(createOrUpdateRequest.getEmail().trim())
-                                        && !ValidateHelper.isValidEmailFPT(createOrUpdateRequest.getEmail().trim())) {
-                                return RouterHelper.responseError(
-                                                "Email không chứa khoảng trắng và phải kết thúc bằng edu.vn");
+                        if (!ValidateHelper.isValidEmailFE(email) && !ValidateHelper.isValidEmailFPT(email)) {
+                                return RouterHelper.responseError("Email phải kết thúc bằng edu.vn");
                         }
                 }
 
@@ -111,16 +118,12 @@ public class ADUserAdminServiceImpl implements ADUserAdminService {
                 notificationService.add(notificationAddRequest);
 
                 userActivityLogHelper.saveLog("vừa thêm 1 tài khoản admin mới: " + userAdmin.getCode()  + " - "
-                                + userAdmin.getName());
+                        + userAdmin.getName());
                 return RouterHelper.responseSuccess("Thêm admin mới thành công", userAdmin);
         }
 
         @Override
         public ResponseEntity<?> updateUserAdmin(ADUserAdminCreateOrUpdateRequest createOrUpdateRequest, String id) {
-                if (!ValidateHelper.isValidEmail(createOrUpdateRequest.getEmail())) {
-                        return RouterHelper.responseError("Định dạng email không hợp lệ");
-                }
-
                 if (!ValidateHelper.isValidFullname(createOrUpdateRequest.getStaffName())) {
                         return RouterHelper.responseError(
                                         "Tên admin không hợp lệ: Tối thiểu 2 từ, cách nhau bởi khoảng trắng và Chỉ gồm ký tự chữ không chứa số hay ký tự đặc biệt.");
@@ -140,6 +143,32 @@ public class ADUserAdminServiceImpl implements ADUserAdminService {
                 if (userAdminExtendRepository.isExistEmailUpdate(createOrUpdateRequest.getEmail(),
                                 current.getEmail())) {
                         return RouterHelper.responseError("Đã có admin khác dùng email fe này");
+                }
+
+                String email = createOrUpdateRequest.getEmail().trim();
+                boolean isValidEmail = false;
+
+                if (ValidateHelper.isValidEmailGmail(email) ||
+                        ValidateHelper.isValidEmailFE(email) ||
+                        ValidateHelper.isValidEmailFPT(email)) {
+                        isValidEmail = true;
+                }
+
+                if (!isValidEmail) {
+                        return RouterHelper.responseError("Email phải có định dạng @gmail.com hoặc kết thúc bằng edu.vn");
+                }
+
+                if (!isDisableCheckEmailFpt.equalsIgnoreCase("true")) {
+                        if (!ValidateHelper.isValidEmailFE(email) && !ValidateHelper.isValidEmailFPT(email)) {
+                                return RouterHelper.responseError("Email phải kết thúc bằng edu.vn");
+                        }
+                }
+
+
+                if (!ValidateHelper.isValidCode(createOrUpdateRequest.getStaffCode())) {
+                        return RouterHelper.responseError(
+                                "Mã admin không hợp lệ: không có khoảng trắng, không có ký tự đặc biệt ngoài dấu chấm . và dấu gạch dưới _."
+                        );
                 }
 
                 UserAdmin userAdmin = opt.get();
