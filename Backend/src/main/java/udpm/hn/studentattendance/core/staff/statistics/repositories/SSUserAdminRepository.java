@@ -11,17 +11,24 @@ import java.util.List;
 public interface SSUserAdminRepository extends UserAdminRepository {
 
     @Query(value = """
-        SELECT
-            id,
-            code,
-            name,
-            email
-        FROM user_admin
-        WHERE
-            status = 1 AND
-            email <> :email
-        ORDER BY name ASC
-    """, nativeQuery = true)
+                SELECT
+                    ua.id,
+                    ua.code,
+                    ua.name,
+                    ua.email
+                FROM user_admin ua
+                WHERE
+                    ua.status = 1 AND
+                    ua.email <> :email
+                ORDER BY ua.name ASC
+            """, nativeQuery = true)
     List<SSUserResponse> getAllList(String email);
 
+    @Query(value = """
+                SELECT ua.email
+                FROM user_admin ua
+                WHERE ua.status = 1
+                ORDER BY ua.name ASC
+            """, nativeQuery = true)
+    List<String> getAllAdminEmails();
 }

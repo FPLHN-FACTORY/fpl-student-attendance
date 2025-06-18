@@ -29,18 +29,18 @@ public class STDStatisticsServiceImpl implements STDStatisticsService {
 
     @Override
     public ResponseEntity<?> getStatistics(String idSemester) {
-        String semesterId = null;
-        Long now = new Date().getTime();
-        for (Semester semester : stdStatisticsSemesterRepository.getAllSemestersByStatus(EntityStatus.ACTIVE)) {
-            if (semester.getFromDate() <= now && now <= semester.getToDate()) {
-                semesterId = semester.getId();
-                break;
-            }
-        }
+//        String semesterId = null;
+//        Long now = new Date().getTime();
+//        for (Semester semester : stdStatisticsSemesterRepository.getAllSemestersByStatus(EntityStatus.ACTIVE)) {
+//            if (semester.getFromDate() <= now && now <= semester.getToDate()) {
+//                semesterId = semester.getId();
+//                break;
+//            }
+//        }
 
 
-        STDStatisticsStatResponse statisticsStatResponse = stdStatisticsSemesterRepository.getAllStatisticBySemester(sessionHelper.getFacilityId(), sessionHelper.getUserId(), semesterId).orElse(null);
-        List<STDStatisticsFactoryChartResponse> factoryChartResponse = factoryLineChartRepository.getAttendancePercentage(sessionHelper.getFacilityId(), sessionHelper.getUserId(), semesterId);
+        STDStatisticsStatResponse statisticsStatResponse = stdStatisticsSemesterRepository.getAllStatisticBySemester(sessionHelper.getFacilityId(), sessionHelper.getUserId(), idSemester).orElse(null);
+        List<STDStatisticsFactoryChartResponse> factoryChartResponse = factoryLineChartRepository.getAttendancePercentage(sessionHelper.getFacilityId(), sessionHelper.getUserId(), idSemester);
 
         STDStatisticDto statisticDto = new STDStatisticDto();
         statisticDto.setStdStatisticsStatResponse(statisticsStatResponse);

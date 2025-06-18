@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Thống kê ngày</title>
     <style>
         .container {
             max-width: 1140px;
@@ -42,14 +42,18 @@
         .border-bottom {
             border-bottom: 3px solid #ddd;
         }
+
         .border-top {
             border-top: 3px solid #ddd;
         }
+
         table {
             border-collapse: collapse;
             width: 100%;
         }
-        th, td {
+
+        th,
+        td {
             border: 1px solid #c9cbcd;
             padding: 8px;
         }
@@ -57,17 +61,58 @@
 </head>
 
 <body>
-<div class="container">
-    <div class="container" style="margin: 10px 10px;">
-        <div style="text-align: center">{{ HEADER }}</div>
-        <div style="margin: 20px 0">
-            Bạn vừa nhận được thống kê điểm danh nhóm xưởng từ ngày <b>{{ FROM_DATE }}</b> đến ngày <b>{{ TO_DATE }}</b> của phụ trách xưởng: <b>{{ STAFF_NAME }}</b>.<br />
-            Thông tin thống kê chi tiết được đính kèm trong tệp Excel bên dưới. Vui lòng kiểm tra!
+    <div class="container">
+        <div class="container" style="margin: 10px 10px;">
+            <div style="text-align: center">{{ HEADER }}</div>
+            <div style="margin: 20px 0">
+                <h2>Báo cáo thống kê ngày {{ DATE }}</h2>
+                <p>Học kỳ: <strong>{{ SEMESTER }}</strong></p>
+
+                <h3>Thống kê tổng quan:</h3>
+                <table>
+                    <tr>
+                        <th>Tổng số dự án</th>
+                        <td>{{ TOTAL_PROJECTS }}</td>
+                    </tr>
+                    <tr>
+                        <th>Tổng số xưởng</th>
+                        <td>{{ TOTAL_FACTORIES }}</td>
+                    </tr>
+                    <tr>
+                        <th>Tổng số giảng viên</th>
+                        <td>{{ TOTAL_TEACHERS }}</td>
+                    </tr>
+                    <tr>
+                        <th>Tổng số sinh viên</th>
+                        <td>{{ TOTAL_STUDENTS }}</td>
+                    </tr>
+                </table>
+
+                <h3>Thống kê kế hoạch:</h3>
+                <table>
+                    <tr>
+                        <th>Tổng số kế hoạch</th>
+                        <td>{{ TOTAL_PLANS }}</td>
+                    </tr>
+                    <tr>
+                        <th>Kế hoạch đang thực hiện</th>
+                        <td>{{ TOTAL_PLANS_IN_PROGRESS }}</td>
+                    </tr>
+                    <tr>
+                        <th>Kế hoạch hoàn thành</th>
+                        <td>{{ TOTAL_PLANS_COMPLETED }}</td>
+                    </tr>
+                    <tr>
+                        <th>Kế hoạch đã hủy</th>
+                        <td>{{ TOTAL_PLANS_CANCELLED }}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+        <div class="text-center border-top small" style="background-color: #132A4D; padding: 10px 10px;color: #FFF;">
+            {{ FOOTER }}
         </div>
     </div>
-    <div class=" text-center border-top small" style="background-color: #132A4D; padding: 10px 10px;color: #FFF;">
-        {{ FOOTER }}
-    </div>
-</div>
 </body>
+
 </html>

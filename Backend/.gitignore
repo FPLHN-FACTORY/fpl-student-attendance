@@ -9,6 +9,7 @@ build/
 Dockerfile
 docker-compose.yml
 .dockerignore
+app.log
 ### STS ###
 .apt_generated
 .classpath

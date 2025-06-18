@@ -20,14 +20,14 @@ public class ADSubjectFacilityRestController {
 
     private final ADFacilityManagementService adminFacilityManagementService;
 
-    @GetMapping("/facility-combobox")
-    public ResponseEntity<?> getFacility() {
-        return adminFacilityManagementService.getComboboxFacility();
+    @GetMapping("/facility-combobox/{idSubject}")
+    public ResponseEntity<?> getFacility(@PathVariable String idSubject) {
+        return adminFacilityManagementService.getComboboxFacility(idSubject);
     }
 
-    @PostMapping("/facility-combobox")
-    public ResponseEntity<?> getFacilitySubject(@RequestBody ADSubjectFacilitySearchRequest request) {
-        return adminFacilityManagementService.getComboboxFacilitySubject(request);
+    @GetMapping("/facilities")
+    public ResponseEntity<?> getFacilities() {
+        return adminFacilityManagementService.getListFacility();
     }
 
     @PostMapping("/list")

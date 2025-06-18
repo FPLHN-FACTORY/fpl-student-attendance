@@ -50,7 +50,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-
 @Service
 @RequiredArgsConstructor
 public class SSStatisticsServiceImpl implements SSStatisticsService {
@@ -78,13 +77,16 @@ public class SSStatisticsServiceImpl implements SSStatisticsService {
 
     @Override
     public ResponseEntity<?> getAllStats(String idSemester) {
-        SSAllStatsResponse stats = ssSemesterRepository.getAllStats(idSemester, sessionHelper.getFacilityId()).orElse(null);
+        SSAllStatsResponse stats = ssSemesterRepository.getAllStats(idSemester, sessionHelper.getFacilityId())
+                .orElse(null);
         if (stats == null) {
             return RouterHelper.responseError("Không thể lấy dữ liệu thống kê");
         }
 
-        List<SSChartLevelProjectResponse> levelProjectStats = ssLevelProjectRepository.getStats(idSemester, sessionHelper.getFacilityId());
-        List<SSChartSubjectFacilityResponse> subjectFacilityResponses = sSSubjectFacilityRepository.getStats(idSemester, sessionHelper.getFacilityId());
+        List<SSChartLevelProjectResponse> levelProjectStats = ssLevelProjectRepository.getStats(idSemester,
+                sessionHelper.getFacilityId());
+        List<SSChartSubjectFacilityResponse> subjectFacilityResponses = sSSubjectFacilityRepository.getStats(idSemester,
+                sessionHelper.getFacilityId());
 
         SSAllStatsAndChartDto data = new SSAllStatsAndChartDto();
         data.setStats(stats);
@@ -98,16 +100,19 @@ public class SSStatisticsServiceImpl implements SSStatisticsService {
     public ResponseEntity<?> getListStatsFactory(SSFilterFactoryStatsRequest request) {
         request.setIdFacility(sessionHelper.getFacilityId());
         Pageable pageable = PaginationHelper.createPageable(request);
-        PageableObject<SSFactoryStatsResponse> data = PageableObject.of(ssFactoryRepository.getAllByFilter(pageable, request));
+        PageableObject<SSFactoryStatsResponse> data = PageableObject
+                .of(ssFactoryRepository.getAllByFilter(pageable, request));
         return RouterHelper.responseSuccess("Lấy danh sách dữ liệu thành công", data);
     }
 
     @Override
     public ResponseEntity<?> getListUser(String idSemester) {
         List<SSUserResponse> lstAdmin = ssUserAdminRepository.getAllList(sessionHelper.getUserEmail());
-        List<SSUserResponse> lstStaff = ssUserStaffRepository.getAllListStaff(sessionHelper.getFacilityId(), sessionHelper.getUserEmail());
-        List<SSUserResponse> lstTeacher = ssUserStaffRepository.getAllListTeacher(sessionHelper.getFacilityId(), idSemester, sessionHelper.getUserEmail());
-        SSListUserDto data =  new SSListUserDto();
+        List<SSUserResponse> lstStaff = ssUserStaffRepository.getAllListStaff(sessionHelper.getFacilityId(),
+                sessionHelper.getUserEmail());
+        List<SSUserResponse> lstTeacher = ssUserStaffRepository.getAllListTeacher(sessionHelper.getFacilityId(),
+                idSemester, sessionHelper.getUserEmail());
+        SSListUserDto data = new SSListUserDto();
         data.setAdmin(lstAdmin);
         data.setStaff(lstStaff);
         data.setTeacher(lstTeacher);
@@ -159,7 +164,8 @@ public class SSStatisticsServiceImpl implements SSStatisticsService {
         dataMail.put("TO_DATE", DateTimeUtils.convertMillisToDate(endDate));
 
         Map<String, byte[]> filesMail = new HashMap<>();
-        filesMail.put(facility.getCode() + "__" + DateTimeUtils.convertMillisToDate(startDate, "dd-MM-yyyy") + "_" + DateTimeUtils.convertMillisToDate(endDate, "dd-MM-yyyy") + "__report.xlsx", file);
+        filesMail.put(facility.getCode() + "__" + DateTimeUtils.convertMillisToDate(startDate, "dd-MM-yyyy") + "_"
+                + DateTimeUtils.convertMillisToDate(endDate, "dd-MM-yyyy") + "__report.xlsx", file);
 
         mailerDefaultRequest.setAttachments(filesMail);
         mailerDefaultRequest.setContent(MailerHelper.loadTemplate(MailerHelper.TEMPLATE_STATISTICS_STAFF, dataMail));
@@ -168,15 +174,18 @@ public class SSStatisticsServiceImpl implements SSStatisticsService {
         return RouterHelper.responseSuccess("Gửi báo cáo thống kê thành công");
     }
 
-    private byte[] createFileStatistics(String idSemester, Long startDate, Long endDate) {
-
-        List<Factory> lstFactory = ssFactoryRepository.getAllFactoryBySemester(idSemester, sessionHelper.getFacilityId());
+    @Override
+    public byte[] createFileStatistics(String idSemester, Long startDate, Long endDate) {
+        List<Factory> lstFactory = ssFactoryRepository.getAllFactoryBySemester(idSemester,
+                sessionHelper.getFacilityId());
 
         try (Workbook workbook = new XSSFWorkbook();
-             ByteArrayOutputStream data = new ByteArrayOutputStream()) {
+                ByteArrayOutputStream data = new ByteArrayOutputStream()) {
 
-            for (Factory factory: lstFactory) {
-                List<SSPlanDateStudentFactoryResponse> lstData = ssFactoryRepository.getAllPlanDateAttendanceByIdFactory(factory.getId(), DateTimeUtils.toStartOfDay(startDate), DateTimeUtils.toEndOfDay(endDate));
+            for (Factory factory : lstFactory) {
+                List<SSPlanDateStudentFactoryResponse> lstData = ssFactoryRepository
+                        .getAllPlanDateAttendanceByIdFactory(factory.getId(), DateTimeUtils.toStartOfDay(startDate),
+                                DateTimeUtils.toEndOfDay(endDate));
                 if (lstData.isEmpty()) {
                     continue;
                 }
@@ -189,7 +198,8 @@ public class SSStatisticsServiceImpl implements SSStatisticsService {
                 List<String> lstPlanDate = stPlanDate.stream()
                         .sorted(Comparator.comparing(s -> {
                             String datePart = s.split(" - ")[0];
-                            return LocalDate.parse(datePart, DateTimeFormatter.ofPattern(DateTimeUtils.DATE_FORMAT.replace('/', '-')));
+                            return LocalDate.parse(datePart,
+                                    DateTimeFormatter.ofPattern(DateTimeUtils.DATE_FORMAT.replace('/', '-')));
                         }))
                         .toList();
 
@@ -211,9 +221,8 @@ public class SSStatisticsServiceImpl implements SSStatisticsService {
                 colorMap.put("Có mặt (bù)", "#ffd966");
                 colorMap.put("Vắng mặt", "#ff7d7d");
 
-
                 int row = 1;
-                for (ExStudentModel student: lstStudent) {
+                for (ExStudentModel student : lstStudent) {
                     String studentCode = student.getCode();
                     String studentName = student.getName();
 
@@ -223,14 +232,17 @@ public class SSStatisticsServiceImpl implements SSStatisticsService {
 
                     double total_absent = 0;
                     int total_recovery = 0;
-                    for(String namePlanDate: lstPlanDate) {
-                        SSPlanDateStudentFactoryResponse planDate = lstData.stream().filter(s -> s.getCode().equals(studentCode) && buildCellPlanDate(s).equals(namePlanDate)).findFirst().orElse(null);
+                    for (String namePlanDate : lstPlanDate) {
+                        SSPlanDateStudentFactoryResponse planDate = lstData.stream().filter(
+                                s -> s.getCode().equals(studentCode) && buildCellPlanDate(s).equals(namePlanDate))
+                                .findFirst().orElse(null);
                         if (planDate == null || planDate.getStartDate() > DateTimeUtils.getCurrentTimeMillis()) {
                             dataCell.add(" - ");
                             continue;
                         }
                         if (planDate.getStatus() == AttendanceStatus.PRESENT.ordinal()) {
-                            if (planDate.getLateCheckin() != null && planDate.getLateCheckin() > 0 || planDate.getLateCheckout() != null && planDate.getLateCheckout() > 0) {
+                            if (planDate.getLateCheckin() != null && planDate.getLateCheckin() > 0
+                                    || planDate.getLateCheckout() != null && planDate.getLateCheckout() > 0) {
                                 total_recovery++;
                                 total_absent += 0.5;
                                 dataCell.add("Có mặt (bù)");
@@ -257,11 +269,11 @@ public class SSStatisticsServiceImpl implements SSStatisticsService {
         } catch (IOException e) {
             return null;
         }
-
     }
 
     private String buildCellPlanDate(SSPlanDateStudentFactoryResponse o) {
-        return DateTimeUtils.convertMillisToDate(o.getStartDate(), DateTimeUtils.DATE_FORMAT.replace('/', '-')) + " - Ca " + o.getShift();
+        return DateTimeUtils.convertMillisToDate(o.getStartDate(), DateTimeUtils.DATE_FORMAT.replace('/', '-'))
+                + " - Ca " + o.getShift();
     }
 
 }

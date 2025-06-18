@@ -20,6 +20,8 @@ import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
 import { autoAddColumnWidth } from '@/utils/utils'
 
 const route = useRoute()
+
+const idSubject = route.query.subjectId
 const loadingStore = useLoadingStore()
 const breadcrumbStore = useBreadcrumbStore()
 
@@ -132,25 +134,11 @@ const fetchSubject = () => {
     })
 }
 
-const fetchFacilityCombobox = () => {
-  loadingStore.show()
-  requestAPI
-    .get(`${API_ROUTES_ADMIN.FETCH_DATA_SUBJECT_FACILITY}/facility-combobox`)
-    .then((response) => {
-      facility.value = response.data.data
-    })
-    .catch((error) => {
-      message.error(error.response?.data?.message || 'Lỗi khi lấy danh sách cơ sở')
-    })
-    .finally(() => {
-      loadingStore.hide()
-    })
-}
 
 const fetchFacilitySubjectCombobox = () => {
   loadingStore.show()
   requestAPI
-    .post(`${API_ROUTES_ADMIN.FETCH_DATA_SUBJECT_FACILITY}/facility-combobox`, {
+    .get(`${API_ROUTES_ADMIN.FETCH_DATA_SUBJECT_FACILITY}/facility-combobox/${idSubject}`, {
       subjectId: filter.subjectId,
     })
     .then((response) => {
@@ -164,6 +152,20 @@ const fetchFacilitySubjectCombobox = () => {
     })
 }
 
+const fetchFacility = () => {
+  loadingStore.show()
+  requestAPI
+    .get(`${API_ROUTES_ADMIN.FETCH_DATA_SUBJECT_FACILITY}/facilities`)
+    .then((response) => {
+      facility.value = response.data.data
+    })
+    .catch((error) => {
+      message.error(error.response?.data?.message || 'Lỗi khi lấy danh sách cơ sở chưa có')
+    })
+    .finally(() => {
+      loadingStore.hide()
+    })
+}
 const handleTableChange = (pageInfo) => {
   pagination.current = pageInfo.current
   pagination.pageSize = pageInfo.pageSize
@@ -172,7 +174,7 @@ const handleTableChange = (pageInfo) => {
 
 const showAddModal = () => {
   modalAdd.value = true
-  newSubjectFacility.facilityId = null
+  newSubjectFacility.facilityId = []
 }
 
 const handleAddSubjectFacility = () => {
@@ -180,27 +182,48 @@ const handleAddSubjectFacility = () => {
     message.error('Vui lòng chọn bộ môn')
     return
   }
-  if (!newSubjectFacility.facilityId) {
+  if (!newSubjectFacility.facilityId || newSubjectFacility.facilityId.length === 0) {
     message.error('Vui lòng chọn cơ sở')
     return
   }
+  
   Modal.confirm({
     title: 'Xác nhận thêm mới',
-    content: 'Bạn có chắc chắn muốn thêm mới bộ môn cơ sở này?',
+    content: `Bạn có chắc chắn muốn thêm bộ môn này vào ${newSubjectFacility.facilityId.length} cơ sở?`,
     okText: 'Tiếp tục',
     cancelText: 'Hủy bỏ',
     onOk() {
       loadingStore.show()
-      requestAPI
-        .post(API_ROUTES_ADMIN.FETCH_DATA_SUBJECT_FACILITY, newSubjectFacility)
-        .then((response) => {
-          message.success(response.data.message || 'Thêm bộ môn cơ sở thành công')
+      
+      // Tạo mảng promises để gọi API từng cơ sở một
+      const addPromises = newSubjectFacility.facilityId.map(facilityId => {
+        const requestData = {
+          subjectId: newSubjectFacility.subjectId,
+          name: newSubjectFacility.name,
+          facilityId: facilityId
+        }
+        return requestAPI.post(API_ROUTES_ADMIN.FETCH_DATA_SUBJECT_FACILITY, requestData)
+      })
+      
+      // Thực hiện tất cả các API call
+      Promise.allSettled(addPromises)
+        .then((results) => {
+          const successful = results.filter(result => result.status === 'fulfilled').length
+          const failed = results.filter(result => result.status === 'rejected').length
+          
+          if (successful > 0) {
+            message.success(`Thêm thành công ${successful} bộ môn cơ sở`)
+          }
+          if (failed > 0) {
+            message.warning(`${failed} bộ môn cơ sở thêm thất bại`)
+          }
+          
           modalAdd.value = false
           fetchSubjectFacility()
           clearFormAdd()
         })
         .catch((error) => {
-          message.error(error.response?.data?.message || 'Lỗi khi thêm bộ môn cơ sở')
+          message.error('Có lỗi xảy ra khi thêm bộ môn cơ sở')
         })
         .finally(() => {
           loadingStore.hide()
@@ -308,7 +331,18 @@ const getStatusColor = (status) => {
 }
 
 const clearFormAdd = () => {
-  newSubjectFacility.facilityId = null
+  newSubjectFacility.facilityId = []
+}
+
+const handleFacilityChange = (selectedValues) => {
+  // Nếu vừa chọn "Tất cả", thì chọn tất cả các cơ sở (không hiển thị "all" trong combobox)
+  if (selectedValues.includes('all')) {
+    const allFacilityIds = facilitySubject.value.map(f => f.id)
+    newSubjectFacility.facilityId = allFacilityIds
+  } else {
+    // Nếu không chọn "Tất cả", chỉ giữ lại các cơ sở được chọn
+    newSubjectFacility.facilityId = selectedValues
+  }
 }
 
 const handleClearFilter = () => {
@@ -325,8 +359,8 @@ onMounted(() => {
   breadcrumbStore.setRoutes(breadcrumb.value)
   fetchSubjectFacility()
   fetchSubject()
-  fetchFacilityCombobox()
   fetchFacilitySubjectCombobox()
+  fetchFacility()
 })
 </script>
 
@@ -340,20 +374,7 @@ onMounted(() => {
             <a-collapse-panel>
               <template #header><FilterFilled /> Bộ lọc</template>
               <div class="row g-3 filter-container">
-                <div class="col-xl-6 col-md-12 col-sm-12">
-                  <div class="label-title">Từ khoá:</div>
-                  <a-input
-                    v-model:value="filter.name"
-                    placeholder="Tìm theo tên hoặc mã cơ sở"
-                    allowClear
-                    @change="fetchSubjectFacility"
-                  >
-                    <template #prefix>
-                      <SearchOutlined />
-                    </template>
-                  </a-input>
-                </div>
-                <div class="col-xl-3 col-md-6 col-sm-6">
+                <div class="col-xl-6 col-md-6 col-sm-12">
                   <div class="label-title">Cơ sở:</div>
                   <a-select
                     v-model:value="filter.facilityId"
@@ -368,7 +389,7 @@ onMounted(() => {
                     </a-select-option>
                   </a-select>
                 </div>
-                <div class="col-xl-3 col-md-6 col-sm-6">
+                <div class="col-xl-6 col-md-6 col-sm-12">
                   <div class="label-title">Trạng thái:</div>
                   <a-select
                     v-model:value="filter.status"
@@ -445,7 +466,7 @@ onMounted(() => {
                       <EyeFilled />
                     </a-button>
                   </a-tooltip>
-                  <a-tooltip title="Sửa">
+                  <!-- <a-tooltip title="Sửa">
                     <a-button
                       @click="handleUpdateProject(record)"
                       type="text"
@@ -453,7 +474,7 @@ onMounted(() => {
                     >
                       <EditFilled />
                     </a-button>
-                  </a-tooltip>
+                  </a-tooltip> -->
                 </a-space>
               </template>
             </template>
@@ -476,9 +497,12 @@ onMounted(() => {
         <a-form-item label="Cơ Sở" required>
           <a-select
             v-model:value="newSubjectFacility.facilityId"
-            placeholder="Chọn một cơ sở"
+            mode="multiple"
+            placeholder="Chọn cơ sở"
             allowClear
+            @change="handleFacilityChange"
           >
+            <a-select-option value="all">Tất cả</a-select-option>
             <a-select-option v-for="f in facilitySubject" :key="f.id" :value="f.id">
               {{ f.name }}
             </a-select-option>
