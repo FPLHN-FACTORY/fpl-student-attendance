@@ -42,7 +42,7 @@ public interface ADSProjectSubjectFacilityRepository extends ProjectRepository {
             JOIN subject_facility sf_inner ON p.id_subject_facility = sf_inner.id
             JOIN semester s ON p.id_semester = s.id
             WHERE
-                s.from_date <= UNIX_TIMESTAMP(CURDATE()) AND 
+                s.from_date <= UNIX_TIMESTAMP(CURDATE()) OR 
                 s.to_date >= UNIX_TIMESTAMP(CURDATE()) AND
                 s.status = 1 AND
                 sf_inner.status = 1 AND
@@ -53,6 +53,45 @@ public interface ADSProjectSubjectFacilityRepository extends ProjectRepository {
             sb.status = 1 AND
             sf.status = 1
         GROUP BY sb.id, sb.name, done.doneProject, processing.processingProject
-        """, nativeQuery = true)
+        """,
+            countQuery = """
+                    SELECT COUNT(DISTINCT sb.id)
+                            FROM subject sb
+                            JOIN subject_facility sf ON sb.id = sf.id_subject
+                            LEFT JOIN (
+                                SELECT
+                                    sf_inner.id_subject,
+                                    COUNT(DISTINCT p.id) AS doneProject
+                                FROM project p
+                                JOIN subject_facility sf_inner ON p.id_subject_facility = sf_inner.id
+                                JOIN semester s ON p.id_semester = s.id
+                                WHERE
+                                    s.to_date < UNIX_TIMESTAMP(CURDATE()) AND
+                                    s.status = 1 AND
+                                    sf_inner.status = 1 AND
+                                    p.status = 1
+                                GROUP BY sf_inner.id_subject
+                            ) done ON sb.id = done.id_subject
+                            LEFT JOIN (
+                                SELECT
+                                    sf_inner.id_subject,
+                                    COUNT(DISTINCT p.id) AS processingProject
+                                FROM project p
+                                JOIN subject_facility sf_inner ON p.id_subject_facility = sf_inner.id
+                                JOIN semester s ON p.id_semester = s.id
+                                WHERE
+                                    s.from_date <= UNIX_TIMESTAMP(CURDATE()) AND\s
+                                    s.to_date >= UNIX_TIMESTAMP(CURDATE()) AND
+                                    s.status = 1 AND
+                                    sf_inner.status = 1 AND
+                                    p.status = 1
+                                GROUP BY sf_inner.id_subject
+                            ) processing ON sb.id = processing.id_subject
+                            WHERE
+                                sb.status = 1 AND
+                                sf.status = 1
+                    """, nativeQuery = true)
     Page<ADSProjectSubjectFacilityResponse> getProjectSubjectFacilityResponses(Pageable pageable);
+
+
 }

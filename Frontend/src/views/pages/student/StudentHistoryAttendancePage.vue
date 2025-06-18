@@ -367,9 +367,7 @@ onMounted(async () => {
                           ? 'processing'
                           : record.statusAttendance === 'CO_MAT'
                             ? 'success'
-                            : record.statusAttendance === 'CHECK_IN'
-                              ? 'processing'
-                              : 'error'
+                            : 'error'
                     "
                     :text="
                       record.statusAttendance === 'CHUA_DIEN_RA'
@@ -378,8 +376,6 @@ onMounted(async () => {
                           ? 'Đang diễn ra'
                           : record.statusAttendance === 'CO_MAT'
                             ? 'Có mặt'
-                            : record.statusAttendance === 'CHECK_IN'
-                              ? 'Đã check-in'
                               : 'Vắng mặt'
                     "
                   />

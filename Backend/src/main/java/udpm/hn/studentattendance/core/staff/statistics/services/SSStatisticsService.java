@@ -14,4 +14,6 @@ public interface SSStatisticsService {
 
     ResponseEntity<?> sendMailStats(SSSendMailStatsRequest request);
 
+    byte[] createFileStatistics(String idSemester, Long startDate, Long endDate);
+
 }

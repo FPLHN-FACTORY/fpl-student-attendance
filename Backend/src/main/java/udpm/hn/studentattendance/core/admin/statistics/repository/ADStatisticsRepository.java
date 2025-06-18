@@ -4,6 +4,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 import udpm.hn.studentattendance.core.admin.statistics.model.request.ADStatisticRequest;
 import udpm.hn.studentattendance.core.admin.statistics.model.response.ADStatisticsStatResponse;
+import udpm.hn.studentattendance.core.admin.statistics.model.response.ADSTotalProjectAndSubjectResponse;
 import udpm.hn.studentattendance.repositories.UserActivityLogRepository;
 
 import java.util.Optional;
@@ -25,4 +26,11 @@ public interface ADStatisticsRepository extends UserActivityLogRepository {
             p.status = 1) AS totalProject
            """, nativeQuery = true)
     Optional<ADStatisticsStatResponse> getAllStatistics(ADStatisticRequest request);
+
+    @Query(value = """
+                    SELECT 
+                    (SELECT COUNT(DISTINCT sb.id) FROM subject sb WHERE sb.status = 1)AS totalSubject,
+                    (SELECT COUNT(DISTINCT p.id) FROM project p WHERE p.status = 1)AS totalProject
+                        """, nativeQuery = true)
+    Optional<ADSTotalProjectAndSubjectResponse> getTotalProjectAndSubject();
 }

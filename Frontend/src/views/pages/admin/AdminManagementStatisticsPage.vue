@@ -19,6 +19,7 @@ import { autoAddColumnWidth, debounce } from '@/utils/utils'
 import useLoadingStore from '@/stores/useLoadingStore'
 import WidgetCounter from '@/components/widgets/WidgetCounter.vue'
 import ChartBar from '@/components/charts/ChartBar.vue'
+import ChartLine from '@/components/charts/ChartLine.vue'
 import dayjs from 'dayjs'
 
 const breadcrumbStore = useBreadcrumbStore()
@@ -32,6 +33,13 @@ const dataStats = reactive({
 })
 
 const lstData = ref([])
+
+const pagination = reactive({
+  current: 1,
+  pageSize: 5,
+  total: 0,
+  showQuickJumper: true,
+})
 
 const dataFilter = reactive({
   fromDay: null,
@@ -103,6 +111,34 @@ const barChartData = ref({
   ],
 })
 
+const lineChartData = ref({
+  labels: [],
+  datasets: [
+    {
+      label: 'Tổng bộ môn',
+      tension: 0.4,
+      borderWidth: 0,
+      pointRadius: 5,
+      borderColor: '#1890FF',
+      borderWidth: 3,
+      backgroundColor: 'rgba(24, 144, 255, 0.1)',
+      data: [],
+      maxBarThickness: 6,
+    },
+    {
+      label: 'Tổng dự án',
+      tension: 0.4,
+      borderWidth: 0,
+      pointRadius: 5,
+      borderColor: '#B37FEB',
+      borderWidth: 3,
+      backgroundColor: 'rgba(179, 127, 235, 0.1)',
+      data: [],
+      maxBarThickness: 6,
+    },
+  ],
+})
+
 const breadcrumb = ref([
   {
     name: GLOBAL_ROUTE_NAMES.ADMIN_PAGE,
@@ -116,38 +152,53 @@ const breadcrumb = ref([
 
 const columns = ref(
   autoAddColumnWidth([
-    { title: '#', dataIndex: 'index', key: 'index'},
-    { title: 'Tên cơ sở', dataIndex: 'facilityName', key: 'facilityName', width: 100 },
-    { title: 'Số bộ môn', dataIndex: 'totalSubjectFacility', key: 'totalSubjectFacility' },
-    { title: 'Tỷ lệ bộ môn / cơ sở', dataIndex: 'percent', key: 'percent', width: 30 },
+    { title: '#', dataIndex: 'rowNumber', key: 'rowNumber'},
+    { title: 'Tên bộ môn', dataIndex: 'subjectName', key: 'subjectName', width: 150 },
+    { title: 'Dự án hoàn thành', dataIndex: 'doneProject', key: 'doneProject', width: 120 },
+    { title: 'Dự án đang thực hiện', dataIndex: 'processingProject', key: 'processingProject', width: 130 },
+    { title: 'Tổng dự án', dataIndex: 'total', key: 'total', width: 100 },
   ]),
 )
 
 const fetchDataAllStats = () => {
   loadingStore.show()
+  const params = {
+    fromDay: dataFilter.fromDay,
+    toDay: dataFilter.toDay,
+    pageNumber: pagination.current - 1, // Convert to 0-based indexing for backend
+  }
+  
   requestAPI
     .get(`${API_ROUTES_ADMIN.FETCH_DATA_STATISTICS}`, {
-      params: {
-        fromDay: dataFilter.fromDay,
-        toDay: dataFilter.toDay,
-      },
-    })
-    .then(({ data: response }) => {
+      params,
+    }).then(({ data: response }) => {
       // Update statistics from statisticsStatResponse
       if (response.data.statisticsStatResponse) {
         Object.assign(dataStats, response.data.statisticsStatResponse)
-      }
-
-      // Update chart data from subjectFacilityChartResponse
+      }      // Update chart data from subjectFacilityChartResponse
       const subjectFacilityData = response.data.subjectFacilityChartResponse || []  
       barChartData.value.labels = subjectFacilityData.map((o) => o.facilityName)
-      barChartData.value.datasets[0].data = subjectFacilityData.map((o) => o.totalSubjectFacility)
-
-      // Add index for table display
-      lstData.value = subjectFacilityData.map((item, index) => ({
+      barChartData.value.datasets[0].data = subjectFacilityData.map((o) => o.totalSubjectFacility)      // Update line chart data using totalProjectAndSubjectResponse
+      const totalProjectAndSubject = response.data.totalProjectAndSubjectResponse || {}
+      const totalSubject = totalProjectAndSubject.totalSubject || 0
+      const totalProject = totalProjectAndSubject.totalProject || 0
+      
+      // Simple line chart showing only two points: subjects and projects
+      lineChartData.value.labels = ['', '', '']
+      lineChartData.value.datasets[0].data = [0, totalSubject, 0]  // Only show subject value at first point
+      lineChartData.value.datasets[1].data = [0, totalProject, 0]  // Only show project value at second point
+      const projectSubjectData = response.data.projectSubjectFacilityResponses?.content || []
+      const paginationInfo = response.data.projectSubjectFacilityResponses || {}
+      
+      lstData.value = projectSubjectData.map((item) => ({
         ...item,
-        index: index + 1,
+        // Backend already provides rowNumber, no need to calculate
       }))
+
+      // Update pagination information
+      pagination.current = (paginationInfo.number || 0) + 1
+      pagination.total = paginationInfo.totalElements || 0
+      pagination.pageSize = paginationInfo.size || 5
     })
     .catch((error) => {
       message.error(error?.response?.data?.message || 'Không thể tải dữ liệu thống kê')
@@ -162,10 +213,18 @@ const handleClearFilter = () => {
     fromDay: null,
     toDay: null,
   })
+  pagination.current = 1 // Reset to first page when clearing filter
   fetchDataAllStats()
 }
 
 const handleSubmitFilter = () => {
+  pagination.current = 1 // Reset to first page when filtering
+  fetchDataAllStats()
+}
+
+const handlePaginationChange = (page, pageSize) => {
+  pagination.current = page
+  pagination.pageSize = pageSize
   fetchDataAllStats()
 }
 
@@ -218,10 +277,8 @@ watch(
           :icon="stat.icon"
           :status="stat.status"
         ></WidgetCounter>
-      </div>
-
-      <!-- Chart Section -->
-      <div class="col-xl-6 col-lg-4 col-md-12 col-sm-12">
+      </div>      <!-- Chart Section -->
+      <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12">
         <a-card :bordered="false" class="dashboard-bar-chart">
           <template #title>
             <div class="d-flex align-items-center">
@@ -231,55 +288,79 @@ watch(
           </template>
           <template #extra>
             <a-tag color="blue" class="me-2">
-              {{ lstData.length }} cơ sở
+              {{ barChartData.labels.length }} cơ sở
             </a-tag>
           </template>
           <ChartBar :height="310" :data="barChartData"></ChartBar>
         </a-card>
       </div>
 
-      
-
-      <!-- Detailed Table -->
-      <div class="col-xl-6 col-lg-8 col-md-12 col-sm-12">
-        <a-card :bordered="false" class="cart card-white">
+      <!-- Line Chart Section -->
+      <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12">
+        <a-card :bordered="false" class="dashboard-bar-line header-solid">
           <template #title>
             <div class="d-flex align-items-center">
-              <UnorderedListOutlined class="me-2 text-primary" />
-              <span>Chi tiết thống kê theo cơ sở</span>
+              <ProjectOutlined class="me-2 text-primary" />
+              <span>Tổng quan bộ môn và dự án</span>
             </div>
           </template>
           <template #extra>
+            <a-badge color="primary" class="badge-dot-primary" text="Bộ môn" />
+            <a-badge color="primary" class="badge-dot-secondary" text="Dự án" />
+          </template>
+          <ChartLine :height="310" :data="lineChartData" />
+        </a-card>
+      </div>
+
+      <!-- Detailed Table -->
+      <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12">
+        <a-card :bordered="false" class="cart card-white"><template #title>
+            <div class="d-flex align-items-center">
+              <UnorderedListOutlined class="me-2 text-primary" />
+              <span>Thống kê dự án</span>
+            </div>
+          </template>          
+          <template #extra>
             <a-space>
               <a-tag color="processing">
-                {{ lstData.length }} cơ sở
-              </a-tag>
-              <a-tag color="success">
-                {{ lstData.reduce((sum, item) => sum + item.totalSubjectFacility, 0) }} bộ môn
+                {{ pagination.total }} bộ môn
+              </a-tag>              <a-tag color="success">
+                {{ lstData.reduce((sum, item) => sum + item.doneProject + item.processingProject, 0) }} dự án (trang hiện tại)
               </a-tag>
             </a-space>
           </template>
-          <div class="table-responsive">
-            <a-table
-              rowKey="id"
+          <div class="table-responsive">            <a-table
+              rowKey="rowNumber"
               class="nowrap"
               :dataSource="lstData"
               :columns="columns"
-              :pagination="false"
+              :pagination="{
+                current: pagination.current,
+                pageSize: pagination.pageSize,
+                total: pagination.total,
+                showSizeChanger: pagination.showSizeChanger,
+                showQuickJumper: pagination.showQuickJumper,
+                showTotal: pagination.showTotal,
+                onChange: handlePaginationChange,
+                onShowSizeChange: handlePaginationChange,
+              }"
               :scroll="{ x: 'auto' }"
             >
               <template #bodyCell="{ column, record }">
-                <template v-if="column.key === 'facilityName'">
-                  <a-typography-link class="fw-medium">{{ record.facilityName }}</a-typography-link>
+                <template v-if="column.key === 'rowNumber'">
+                  <span class="fw-medium text-muted">{{ record.rowNumber }}</span>
                 </template>
-                <template v-if="column.dataIndex === 'totalSubjectFacility'">
-                  <a-tag color="blue" class="fw-medium">{{ record.totalSubjectFacility }} bộ môn</a-tag>
+                <template v-if="column.key === 'subjectName'">
+                  <a-typography-link class="fw-medium">{{ record.subjectName }}</a-typography-link>
                 </template>
-                <template v-if="column.dataIndex === 'percent'">
-                  <a-progress
-                    :percent="Math.round((record.totalSubjectFacility / Math.max(lstData.reduce((sum, i) => sum + i.totalSubjectFacility, 0), 1)) * 100)"
-                    :stroke-color="record.index <= 3 ? '#52c41a' : '#1890ff'"
-                  />
+                <template v-if="column.dataIndex === 'doneProject'">
+                  <a-tag color="green" class="fw-medium">{{ record.doneProject }}</a-tag>
+                </template>
+                <template v-if="column.dataIndex === 'processingProject'">
+                  <a-tag color="blue" class="fw-medium">{{ record.processingProject }}</a-tag>
+                </template>
+                <template v-if="column.dataIndex === 'total'">
+                  <a-tag color="purple" class="fw-medium">{{ record.doneProject + record.processingProject }}</a-tag>
                 </template>
               </template>
             </a-table>
