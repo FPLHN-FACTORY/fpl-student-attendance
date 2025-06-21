@@ -160,11 +160,9 @@ public interface STDHistoryAttendanceExtendRepository extends FactoryRepository 
                 pd.end_date AS planDateEndDate,
                 pd.shift AS planDateShift,
                 ft.id AS factoryId,
-                
                 CASE
                     WHEN :nowTs < pd.start_date THEN 'CHUA_DIEN_RA'
                     WHEN :nowTs > pd.start_date AND :nowTs < pd.end_date THEN 'DANG_DIEN_RA'
-                    WHEN att.max_status = 2 THEN 'CHECK_IN'
                     WHEN att.max_status = 3 THEN 'CO_MAT'
                     WHEN att.max_status = 1 THEN 'VANG_MAT'
                     ELSE 'CHUA_CHECK_OUT'

@@ -93,7 +93,7 @@ const stats = ref([
     icon: TeamOutlined,
     class: 'bg-warning',
   },
-  
+
 ])
 
 const barChartData = ref({
@@ -118,7 +118,7 @@ const lineChartData = ref({
       label: 'Tổng bộ môn',
       tension: 0.4,
       borderWidth: 0,
-      pointRadius: 5,
+      pointRadius: 0,
       borderColor: '#1890FF',
       borderWidth: 3,
       backgroundColor: 'rgba(24, 144, 255, 0.1)',
@@ -129,7 +129,7 @@ const lineChartData = ref({
       label: 'Tổng dự án',
       tension: 0.4,
       borderWidth: 0,
-      pointRadius: 5,
+      pointRadius: 0,
       borderColor: '#B37FEB',
       borderWidth: 3,
       backgroundColor: 'rgba(179, 127, 235, 0.1)',
@@ -167,7 +167,7 @@ const fetchDataAllStats = () => {
     toDay: dataFilter.toDay,
     pageNumber: pagination.current - 1, // Convert to 0-based indexing for backend
   }
-  
+
   requestAPI
     .get(`${API_ROUTES_ADMIN.FETCH_DATA_STATISTICS}`, {
       params,
@@ -176,20 +176,20 @@ const fetchDataAllStats = () => {
       if (response.data.statisticsStatResponse) {
         Object.assign(dataStats, response.data.statisticsStatResponse)
       }      // Update chart data from subjectFacilityChartResponse
-      const subjectFacilityData = response.data.subjectFacilityChartResponse || []  
+      const subjectFacilityData = response.data.subjectFacilityChartResponse || []
       barChartData.value.labels = subjectFacilityData.map((o) => o.facilityName)
       barChartData.value.datasets[0].data = subjectFacilityData.map((o) => o.totalSubjectFacility)      // Update line chart data using totalProjectAndSubjectResponse
       const totalProjectAndSubject = response.data.totalProjectAndSubjectResponse || {}
       const totalSubject = totalProjectAndSubject.totalSubject || 0
       const totalProject = totalProjectAndSubject.totalProject || 0
-      
+
       // Simple line chart showing only two points: subjects and projects
       lineChartData.value.labels = ['', '', '']
       lineChartData.value.datasets[0].data = [0, totalSubject, 0]  // Only show subject value at first point
       lineChartData.value.datasets[1].data = [0, totalProject, 0]  // Only show project value at second point
       const projectSubjectData = response.data.projectSubjectFacilityResponses?.content || []
       const paginationInfo = response.data.projectSubjectFacilityResponses || {}
-      
+
       lstData.value = projectSubjectData.map((item) => ({
         ...item,
         // Backend already provides rowNumber, no need to calculate
@@ -319,7 +319,7 @@ watch(
               <UnorderedListOutlined class="me-2 text-primary" />
               <span>Thống kê dự án</span>
             </div>
-          </template>          
+          </template>
           <template #extra>
             <a-space>
               <a-tag color="processing">
