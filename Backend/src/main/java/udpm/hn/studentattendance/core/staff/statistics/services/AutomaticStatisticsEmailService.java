@@ -36,27 +36,30 @@ import java.util.stream.Collectors;
 public class AutomaticStatisticsEmailService {
 
     private final SSUserAdminRepository ssUserAdminRepository;
+
     private final SSSemesterRepository ssSemesterRepository;
+
     private final FacilityRepository facilityRepository;
+
     private final SSFactoryRepository ssFactoryRepository;
+
     private final MailerHelper mailerHelper;
 
     @Value("${app.config.app-name}")
     private String appName;
 
-    @Value("${app.config.cron.statistics-email:0 8 * * *}")
-    private String statisticsEmailCron;
-
     @Value("${app.config.email.statistics.enabled:true}")
     private boolean statisticsEmailEnabled;
 
-    @Scheduled(cron = "${app.config.cron.statistics-email:0 8 * * *}")
+
+    @Scheduled(cron = "0 * * * * *")
     public void sendDailyStatisticsEmail() {
         if (!statisticsEmailEnabled) {
+            System.out.println("Daily statistics email is disabled");
             return;
         }
 
-        // Lấy học kỳ hiện tại
+
         Optional<Semester> currentSemester = ssSemesterRepository.findAll().stream()
                 .filter(s -> s.getStatus() == EntityStatus.ACTIVE)
                 .filter(s -> {
@@ -66,71 +69,98 @@ public class AutomaticStatisticsEmailService {
                 .findFirst();
 
         if (currentSemester.isEmpty()) {
+            System.out.println("No active semester found");
             return;
         }
 
-        // Tính toán thời gian cho ngày hôm qua
         LocalDate yesterday = LocalDate.now().minusDays(1);
         long startOfYesterday = yesterday.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli();
-        long endOfYesterday = yesterday.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli();
+        long endOfYesterday = yesterday.atTime(23, 59, 59).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
 
-        // Lấy danh sách email của tất cả admin
-        List<String> adminEmails = ssUserAdminRepository.getAllAdminEmails();
+        List<String> adminEmails = ssUserAdminRepository.getAllUserAdmin(EntityStatus.ACTIVE);
         if (adminEmails.isEmpty()) {
+            System.out.println("No admin emails found");
             return;
         }
-
-        // Lấy danh sách tất cả cơ sở đang hoạt động
+        System.out.println(adminEmails);
         List<Facility> facilities = facilityRepository.findAll().stream()
                 .filter(f -> f.getStatus() == EntityStatus.ACTIVE)
                 .toList();
 
-        // Gửi email cho admin đầu tiên với BCC cho các admin khác
-        String toEmail = adminEmails.remove(0);
+        if (facilities.isEmpty()) {
+            System.out.println("No active facilities found");
+            return;
+        }
+
+        String toEmail = adminEmails.get(0);
+        String[] bccEmails = adminEmails.size() > 1 ?
+                adminEmails.subList(1, adminEmails.size()).toArray(new String[0]) :
+                new String[0];
+
+        System.out.println("Sending daily statistics for " + facilities.size() + " facilities");
 
         for (Facility facility : facilities) {
-            byte[] file = createFileStatisticsForFacility(
-                    currentSemester.get().getId(),
-                    startOfYesterday,
-                    endOfYesterday,
-                    facility.getId());
+            try {
+                byte[] file = createFileStatisticsForFacility(
+                        currentSemester.get().getId(),
+                        startOfYesterday,
+                        endOfYesterday,
+                        facility.getId());
 
-            if (file == null) {
-                continue;
+                if (file == null || file.length == 0) {
+                    System.out.println("No data found for facility: " + facility.getName());
+                    continue;
+                }
+
+                MailerDefaultRequest mailerRequest = new MailerDefaultRequest();
+                mailerRequest.setTo(toEmail);
+
+                if (bccEmails.length > 0) {
+                    mailerRequest.setBcc(bccEmails);
+                }
+
+                mailerRequest.setTemplate(null);
+                mailerRequest.setTitle("Báo cáo thống kê cơ sở " + facility.getName() + " - Ngày " +
+                        DateTimeUtils.convertMillisToDate(startOfYesterday) + " - " + appName);
+
+                Map<String, Object> dataMail = new HashMap<>();
+                dataMail.put("SEMESTER", currentSemester.get().getCode());
+                dataMail.put("FACILITY_NAME", facility.getName());
+                dataMail.put("FROM_DATE", DateTimeUtils.convertMillisToDate(startOfYesterday));
+                dataMail.put("TO_DATE", DateTimeUtils.convertMillisToDate(endOfYesterday));
+
+                Map<String, byte[]> filesMail = new HashMap<>();
+                String fileName = facility.getCode() + "_" +
+                        DateTimeUtils.convertMillisToDate(startOfYesterday, "dd-MM-yyyy") + "_" +
+                        DateTimeUtils.convertMillisToDate(endOfYesterday, "dd-MM-yyyy") + "_report.xlsx";
+
+                filesMail.put(fileName, file);
+
+                mailerRequest.setAttachments(filesMail);
+                mailerRequest.setContent(MailerHelper.loadTemplate(MailerHelper.TEMPLATE_STATISTICS_STAFF, dataMail));
+
+                mailerHelper.send(mailerRequest);
+                System.out.println("Sent daily statistics email for facility: " + facility.getName());
+
+            } catch (Exception e) {
+                System.err.println("Error sending daily statistics email for facility: " + facility.getName());
+                e.printStackTrace();
             }
-
-            MailerDefaultRequest mailerRequest = new MailerDefaultRequest();
-            mailerRequest.setTo(toEmail);
-            if (!adminEmails.isEmpty()) {
-                mailerRequest.setBcc(adminEmails.toArray(new String[0]));
-            }
-
-            mailerRequest.setTemplate(null);
-            mailerRequest.setTitle("Báo cáo thống kê cơ sở " + facility.getName() + " - Ngày " +
-                    DateTimeUtils.convertMillisToDate(startOfYesterday) + " - " + appName);
-
-            Map<String, Object> dataMail = new HashMap<>();
-            dataMail.put("FROM_DATE", DateTimeUtils.convertMillisToDate(startOfYesterday));
-            dataMail.put("TO_DATE", DateTimeUtils.convertMillisToDate(endOfYesterday));
-
-            Map<String, byte[]> filesMail = new HashMap<>();
-            filesMail.put(facility.getCode() + "__" +
-                    DateTimeUtils.convertMillisToDate(startOfYesterday, "dd-MM-yyyy") + "_" +
-                    DateTimeUtils.convertMillisToDate(endOfYesterday, "dd-MM-yyyy") + "__report.xlsx", file);
-
-            mailerRequest.setAttachments(filesMail);
-            mailerRequest.setContent(MailerHelper.loadTemplate(MailerHelper.TEMPLATE_STATISTICS_STAFF, dataMail));
-
-            // Gửi email bất đồng bộ
-            mailerHelper.send(mailerRequest);
         }
     }
 
     private byte[] createFileStatisticsForFacility(String idSemester, Long startDate, Long endDate, String facilityId) {
         List<Factory> lstFactory = ssFactoryRepository.getAllFactoryBySemester(idSemester, facilityId);
 
+        if (lstFactory.isEmpty()) {
+            System.out.println("No factories found for facility: " + facilityId);
+            return null;
+        }
+
         try (Workbook workbook = new XSSFWorkbook();
-                ByteArrayOutputStream data = new ByteArrayOutputStream()) {
+             ByteArrayOutputStream data = new ByteArrayOutputStream()) {
+
+            boolean hasData = false;
 
             for (Factory factory : lstFactory) {
                 List<SSPlanDateStudentFactoryResponse> lstData = ssFactoryRepository
@@ -138,33 +168,41 @@ public class AutomaticStatisticsEmailService {
                                 factory.getId(),
                                 DateTimeUtils.toStartOfDay(startDate),
                                 DateTimeUtils.toEndOfDay(endDate));
+
                 if (lstData.isEmpty()) {
+                    System.out.println("No attendance data found for factory: " + factory.getName());
                     continue;
                 }
 
-                List<String> headers = new ArrayList<>(List.of("Mã sinh viên", "Họ tên sinh viên"));
+                hasData = true;
+
+                List<String> headers = new ArrayList<>(Arrays.asList("Mã sinh viên", "Họ tên sinh viên"));
 
                 Set<String> stPlanDate = lstData.stream()
                         .map(this::buildCellPlanDate)
                         .collect(Collectors.toSet());
+
                 List<String> lstPlanDate = stPlanDate.stream()
                         .sorted(Comparator.comparing(s -> {
-                            String datePart = s.split(" - ")[0];
-                            return LocalDate.parse(datePart,
-                                    DateTimeFormatter.ofPattern(DateTimeUtils.DATE_FORMAT.replace('/', '-')));
+                            try {
+                                String datePart = s.split(" - ")[0];
+                                return LocalDate.parse(datePart,
+                                        DateTimeFormatter.ofPattern(DateTimeUtils.DATE_FORMAT.replace('/', '-')));
+                            } catch (Exception e) {
+                                System.err.println("Error parsing date: " + s);
+                                return LocalDate.MIN;
+                            }
                         }))
-                        .toList();
+                        .collect(Collectors.toList());
 
                 Set<ExStudentModel> stPStudent = lstData.stream()
                         .map(o -> new ExStudentModel(o.getCode(), o.getName()))
                         .collect(Collectors.toCollection(LinkedHashSet::new));
-                List<ExStudentModel> lstStudent = stPStudent.stream()
-                        .toList();
+
+                List<ExStudentModel> lstStudent = new ArrayList<>(stPStudent);
 
                 headers.addAll(lstPlanDate);
-                headers.add("Tổng");
-                headers.add("Vắng(%)");
-                headers.add("Điểm danh bù(lần)");
+                headers.addAll(Arrays.asList("Tổng", "Vắng(%)", "Điểm danh bù(lần)"));
 
                 Sheet sheet = ExcelUtils.createTemplate(workbook, factory.getName(), headers, new ArrayList<>());
 
@@ -182,51 +220,84 @@ public class AutomaticStatisticsEmailService {
                     dataCell.add(studentCode);
                     dataCell.add(studentName);
 
-                    double total_absent = 0;
-                    int total_recovery = 0;
+                    double totalAbsent = 0;
+                    int totalRecovery = 0;
+                    int totalDays = 0;
+
                     for (String namePlanDate : lstPlanDate) {
                         SSPlanDateStudentFactoryResponse planDate = lstData.stream()
-                                .filter(s -> s.getCode().equals(studentCode)
-                                        && buildCellPlanDate(s).equals(namePlanDate))
+                                .filter(s -> s.getCode().equals(studentCode) &&
+                                        buildCellPlanDate(s).equals(namePlanDate))
                                 .findFirst()
                                 .orElse(null);
-                        if (planDate == null || planDate.getStartDate() > DateTimeUtils.getCurrentTimeMillis()) {
+
+                        if (planDate == null) {
                             dataCell.add(" - ");
                             continue;
                         }
+
+                        if (planDate.getStartDate() > System.currentTimeMillis()) {
+                            dataCell.add(" - ");
+                            continue;
+                        }
+
+                        totalDays++;
+
                         if (planDate.getStatus() == AttendanceStatus.PRESENT.ordinal()) {
-                            if (planDate.getLateCheckin() != null && planDate.getLateCheckin() > 0 ||
-                                    planDate.getLateCheckout() != null && planDate.getLateCheckout() > 0) {
-                                total_recovery++;
-                                total_absent += 0.5;
+                            boolean isLate = (planDate.getLateCheckin() != null && planDate.getLateCheckin() > 0) ||
+                                    (planDate.getLateCheckout() != null && planDate.getLateCheckout() > 0);
+
+                            if (isLate) {
+                                totalRecovery++;
+                                totalAbsent += 0.5;
                                 dataCell.add("Có mặt (bù)");
                             } else {
                                 dataCell.add("Có mặt");
                             }
                         } else {
-                            total_absent++;
+                            totalAbsent++;
                             dataCell.add("Vắng mặt");
                         }
                     }
 
-                    dataCell.add(total_absent + "/" + lstPlanDate.size());
-                    dataCell.add(Math.round(total_absent / lstPlanDate.size() * 1000) / 10.0 + "%");
-                    dataCell.add(total_recovery);
+                    if (totalDays > 0) {
+                        dataCell.add(String.format("%.1f/%d", totalAbsent, totalDays));
+                        dataCell.add(String.format("%.1f%%", (totalAbsent / totalDays) * 100));
+                    } else {
+                        dataCell.add("0/0");
+                        dataCell.add("0%");
+                    }
+                    dataCell.add(totalRecovery);
 
                     ExcelUtils.insertRow(sheet, row, dataCell, colorMap);
                     row++;
                 }
             }
 
+            if (!hasData) {
+                System.out.println("No data found for any factory in facility: " + facilityId);
+                return null;
+            }
+
             workbook.write(data);
+            System.out.println("Created Excel file with size: " + data.size() + " bytes");
             return data.toByteArray();
+
         } catch (IOException e) {
+            System.err.println("Error creating Excel file for facility: " + facilityId);
+            e.printStackTrace();
             return null;
         }
     }
 
     private String buildCellPlanDate(SSPlanDateStudentFactoryResponse o) {
-        return DateTimeUtils.convertMillisToDate(o.getStartDate(), DateTimeUtils.DATE_FORMAT.replace('/', '-'))
-                + " - Ca " + o.getShift();
+        try {
+            return DateTimeUtils.convertMillisToDate(o.getStartDate(), DateTimeUtils.DATE_FORMAT.replace('/', '-'))
+                    + " - Ca " + o.getShift();
+        } catch (Exception e) {
+            System.err.println("Error building cell plan date for response: " + o);
+            e.printStackTrace();
+            return "Invalid Date - Ca " + o.getShift();
+        }
     }
 }
