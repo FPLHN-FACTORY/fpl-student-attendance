@@ -7,6 +7,7 @@ import {
   CloseCircleOutlined,
   SyncOutlined,
   BookOutlined,
+  ProjectOutlined,
 } from '@ant-design/icons-vue'
 import { message } from 'ant-design-vue'
 import requestAPI from '@/services/requestApiService'
@@ -282,58 +283,40 @@ watch(
 
       <!-- Bar Chart Section -->
       <div class="col-md-12 col-sm-12">
-        <a-card :bordered="false" class="dashboard-bar-chart">
+          <a-card :bordered="false" class="dashboard-bar-line header-solid">
           <template #title>
-            <div class="d-flex align-items-center">
-              <BookOutlined class="me-2 text-primary" />
-              <span>Thống kê điểm danh theo nhóm xưởng</span>
-            </div>
+            <h6><ProjectOutlined class="me-2" /> Thống kê điểm danh theo nhóm xưởng</h6>
           </template>
           <template #extra>
-            <a-tag color="blue" class="me-2">
-              {{ barChartData.labels.length }} nhóm xưởng
-            </a-tag>
+            <div class="mt-2">
+              <a-tag color="blue">Nhóm xưởng: {{ barChartData.labels.length }}</a-tag>
+              <a-tag color="success">Điểm danh: {{ dataStats.totalAttendance }}</a-tag>
+              <a-tag color="error">Vắng mặt: {{ dataStats.totalAbsent }}</a-tag>
+            </div>
           </template>
 
           <ChartBar :height="310" :data="barChartData"></ChartBar>
-          <div class="mt-3 d-flex justify-content-end">
-             <a-tag color="success" class="me-2">
-               Điểm danh: {{ dataStats.totalAttendance }}
-             </a-tag>
-             <a-tag color="error" class="me-2">
-               Vắng mặt: {{ dataStats.totalAbsent }}
-             </a-tag>
-          </div>
         </a-card>
       </div>
 
       <!-- Line Chart Section -->
       <div class="col-md-12 col-sm-12">
-        <a-card :bordered="false" class="dashboard-line-chart">
-            <template #title>
-            <div class="d-flex align-items-center">
-              <BookOutlined class="me-2 text-primary" />
-              <span>Biểu đồ tỷ lệ điểm danh / vắng</span>
-            </div>
+        <a-card :bordered="false" class="dashboard-bar-line header-solid">
+          <template #title>
+            <h6><BookOutlined class="me-2" /> Biểu đồ tỷ lệ điểm danh / vắng</h6>
           </template>
           <template #extra>
-            <a-tag color="blue" class="me-2">
-              {{ lineChartData.labels.length }} nhóm xưởng
-            </a-tag>
+            <a-badge color="primary" class="badge-dot-primary" text="Tỷ lệ điểm danh (%)" />
+            <a-badge color="primary" class="badge-dot-secondary" text="Tỷ lệ vắng (%)" />
           </template>
 
           <ChartLine :height="310" :data="lineChartData"></ChartLine>
-          <div class="mt-3 d-flex justify-content-end">
-            <a-tag color="warning" class="me-2">
-              Chưa diễn ra: {{ dataStats.notStarted }}
-            </a-tag>
-            <a-tag color="processing" class="me-2">
-              Đang diễn ra: {{ dataStats.process }}
-            </a-tag>
-            <a-tag color="success" class="me-2">
-              Kết thúc: {{ dataStats.pass }}
-            </a-tag>
-          </div>
+          <div class="mt-2 d-flex justify-content-end">
+              <a-tag color="blue">Nhóm xưởng: {{ lineChartData.labels.length }}</a-tag>
+              <a-tag color="warning">Chưa diễn ra: {{ dataStats.notStarted }}</a-tag>
+              <a-tag color="processing">Đang diễn ra: {{ dataStats.process }}</a-tag>
+              <a-tag color="success">Kết thúc: {{ dataStats.pass }}</a-tag>
+            </div>
         </a-card>
       </div>
     </div>
