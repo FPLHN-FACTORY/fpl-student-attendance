@@ -2,13 +2,11 @@
 import { ref, onMounted, watch, reactive } from 'vue'
 import {
   FilterFilled,
-  ProjectOutlined,
   GoldOutlined,
   CheckCircleOutlined,
   CloseCircleOutlined,
   SyncOutlined,
   BookOutlined,
-  UnorderedListOutlined,
 } from '@ant-design/icons-vue'
 import { message } from 'ant-design-vue'
 import requestAPI from '@/services/requestApiService'
@@ -17,11 +15,11 @@ import { ROUTE_NAMES_API } from '@/router/authenticationRoute'
 import { ROUTE_NAMES } from '@/router/studentRoute'
 import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
 import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
-import { debounce, getCurrentSemester, autoAddColumnWidth } from '@/utils/utils'
+import { debounce, getCurrentSemester } from '@/utils/utils'
 import useLoadingStore from '@/stores/useLoadingStore'
 import WidgetCounter from '@/components/widgets/WidgetCounter.vue'
 import ChartLine from '@/components/charts/ChartLine.vue'
-import dayjs from 'dayjs'
+import ChartBar from '@/components/charts/ChartBar.vue'
 
 const breadcrumbStore = useBreadcrumbStore()
 const loadingStore = useLoadingStore()
@@ -101,6 +99,26 @@ const lineChartData = ref({
   ],
 })
 
+const barChartData = ref({
+  labels: [],
+  datasets: [
+    {
+      label: 'Điểm danh',
+      backgroundColor: '#52c41a',
+      data: [],
+      borderWidth: 0,
+      borderRadius: 4,
+    },
+    {
+      label: 'Vắng mặt',
+      backgroundColor: '#ff4d4f',
+      data: [],
+      borderWidth: 0,
+      borderRadius: 4,
+    }
+  ],
+})
+
 const breadcrumb = ref([
   {
     name: GLOBAL_ROUTE_NAMES.STUDENT_PAGE,
@@ -129,6 +147,16 @@ const fetchDataAllStats = () => {
       lineChartData.value.labels = factoryChartData.map((o) => o.factoryName)
       lineChartData.value.datasets[0].data = factoryChartData.map((o) => o.attendancePercentage)
       lineChartData.value.datasets[1].data = factoryChartData.map((o) => o.absentPercentage)
+
+      // Update bar chart data from factoryAttendanceChartResponse
+      const factoryAttendanceData = response.data.factoryAttendanceChartResponse || []
+      barChartData.value.labels = factoryAttendanceData.map((o) => o.factoryName)
+      barChartData.value.datasets[0].data = factoryAttendanceData.map((o) => o.totalShift - o.totalAbsent)
+      barChartData.value.datasets[1].data = factoryAttendanceData.map((o) => o.totalAbsent)
+
+      // Calculate semester totals for attendance and absence
+      dataStats.totalAttendance = factoryAttendanceData.reduce((sum, item) => sum + (item.totalShift - item.totalAbsent), 0)
+      dataStats.totalAbsent = factoryAttendanceData.reduce((sum, item) => sum + item.totalAbsent, 0)
     })
     .catch((error) => {
       message.error(error?.response?.data?.message || 'Không thể tải dữ liệu thống kê')
@@ -143,14 +171,13 @@ const fetchDataSemester = () => {
     .get(ROUTE_NAMES_API.FETCH_DATA_SEMESTER)
     .then(({ data: response }) => {
       lstSemester.value = response.data
-      
-      // Tự động chọn học kỳ hiện tại
+
       if (response.data && response.data.length > 0) {
         const currentSemester = getCurrentSemester(response.data)
         if (currentSemester) {
           dataFilter.idSemester = currentSemester.id
         } else {
-          // Nếu không tìm thấy học kỳ hiện tại, chọn học kỳ đầu tiên
+
           dataFilter.idSemester = response.data[0].id
         }
       }
@@ -167,7 +194,7 @@ const handleClearFilter = () => {
     const currentSemester = getCurrentSemester(lstSemester.value)
     defaultSemesterId = currentSemester ? currentSemester.id : lstSemester.value[0].id
   }
-  
+
   Object.assign(dataFilter, {
     idSemester: defaultSemesterId,
   })
@@ -180,10 +207,10 @@ const handleSubmitFilter = () => {
 
 onMounted(async () => {
   breadcrumbStore.setRoutes(breadcrumb.value)
-  
+
   // Fetch semester data first, then fetch stats after semester is selected
   await fetchDataSemester()
-  
+
   // Fetch stats data after semester is selected
   if (dataFilter.idSemester) {
     fetchDataAllStats()
@@ -214,7 +241,7 @@ watch(
 <template>
   <div class="container-fluid">
     <div class="row g-3">
-      
+
       <!-- Filter Section -->
       <div class="col-12">
         <div class="row g-2" :style="{ maxWidth: '500px' }">
@@ -239,8 +266,8 @@ watch(
             </div>
           </div>
         </div>
-      </div>  
-      
+      </div>
+
       <!-- Statistics Cards -->
       <div class="col-xl col-lg col-md-4 col-sm-6" v-for="(stat, index) in stats" :key="index">
         <WidgetCounter
@@ -251,21 +278,63 @@ watch(
           :icon="stat.icon"
           :status="stat.status"
         ></WidgetCounter>
-      </div>    
+      </div>
 
-      <!-- Chart Section -->
+      <!-- Bar Chart Section -->
       <div class="col-md-12 col-sm-12">
-        <a-card :bordered="false" class="dashboard-line-chart">          <template #title>
+        <a-card :bordered="false" class="dashboard-bar-chart">
+          <template #title>
+            <div class="d-flex align-items-center">
+              <BookOutlined class="me-2 text-primary" />
+              <span>Thống kê điểm danh theo nhóm xưởng</span>
+            </div>
+          </template>
+          <template #extra>
+            <a-tag color="blue" class="me-2">
+              {{ barChartData.labels.length }} nhóm xưởng
+            </a-tag>
+          </template>
+
+          <ChartBar :height="310" :data="barChartData"></ChartBar>
+          <div class="mt-3 d-flex justify-content-end">
+             <a-tag color="success" class="me-2">
+               Điểm danh: {{ dataStats.totalAttendance }}
+             </a-tag>
+             <a-tag color="error" class="me-2">
+               Vắng mặt: {{ dataStats.totalAbsent }}
+             </a-tag>
+          </div>
+        </a-card>
+      </div>
+
+      <!-- Line Chart Section -->
+      <div class="col-md-12 col-sm-12">
+        <a-card :bordered="false" class="dashboard-line-chart">
+            <template #title>
             <div class="d-flex align-items-center">
               <BookOutlined class="me-2 text-primary" />
               <span>Biểu đồ tỷ lệ điểm danh / vắng</span>
             </div>
-          </template>          <template #extra>
+          </template>
+          <template #extra>
             <a-tag color="blue" class="me-2">
               {{ lineChartData.labels.length }} nhóm xưởng
             </a-tag>
           </template>
-          <ChartLine :height="310" :data="lineChartData"></ChartLine>        </a-card>
+
+          <ChartLine :height="310" :data="lineChartData"></ChartLine>
+          <div class="mt-3 d-flex justify-content-end">
+            <a-tag color="warning" class="me-2">
+              Chưa diễn ra: {{ dataStats.notStarted }}
+            </a-tag>
+            <a-tag color="processing" class="me-2">
+              Đang diễn ra: {{ dataStats.process }}
+            </a-tag>
+            <a-tag color="success" class="me-2">
+              Kết thúc: {{ dataStats.pass }}
+            </a-tag>
+          </div>
+        </a-card>
       </div>
     </div>
   </div>

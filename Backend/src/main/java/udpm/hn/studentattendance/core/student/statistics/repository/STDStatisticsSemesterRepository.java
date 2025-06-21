@@ -65,7 +65,11 @@ public interface STDStatisticsSemesterRepository extends SemesterRepository {
             COUNT(DISTINCT CASE 
                 WHEN factory_status = 'IN_PROGRESS' AND absent_rate <= 0.2
                 THEN factory_id 
-            END) AS process
+            END) AS process,
+            COUNT(DISTINCT CASE
+                WHEN factory_status = 'NOT_STARTED' 
+                THEN factory_id 
+            END) AS notStarted
         FROM factory_stats
         """, nativeQuery = true)
     Optional<STDStatisticsStatResponse> getAllStatisticBySemester(String idFacility, String idStudent, String idSemester);

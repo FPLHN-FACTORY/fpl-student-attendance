@@ -8,7 +8,7 @@ import udpm.hn.studentattendance.repositories.FactoryRepository;
 import java.util.List;
 
 @Repository
-public interface STDFactoryLineChartRepository extends FactoryRepository {
+public interface STDSFactoryLineChartRepository extends FactoryRepository {
     @Query(value = """
     SELECT
         ft.name AS factoryName,
