@@ -77,7 +77,7 @@ public class AutomaticStatisticsEmailService {
         long startOfYesterday = yesterday.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli();
         long endOfYesterday = yesterday.atTime(23, 59, 59).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
 
-        List<String> adminEmails = ssUserAdminRepository.getAllUserAdmin(EntityStatus.ACTIVE);
+        List<String> adminEmails = ssUserAdminRepository.getAllAdminEmails();
         if (adminEmails.isEmpty()) {
             System.out.println("No admin emails found");
             return;
