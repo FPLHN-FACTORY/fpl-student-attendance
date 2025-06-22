@@ -52,7 +52,7 @@ public class AutomaticStatisticsEmailService {
     private boolean statisticsEmailEnabled;
 
 
-    @Scheduled(cron = "0 * * * * *")
+    @Scheduled(cron = "${app.config.cron.statistics-email}")
     public void sendDailyStatisticsEmail() {
         if (!statisticsEmailEnabled) {
             System.out.println("Daily statistics email is disabled");
@@ -77,7 +77,7 @@ public class AutomaticStatisticsEmailService {
         long startOfYesterday = yesterday.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli();
         long endOfYesterday = yesterday.atTime(23, 59, 59).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
 
-        List<String> adminEmails = ssUserAdminRepository.getAllUserAdmin(EntityStatus.ACTIVE);
+        List<String> adminEmails = ssUserAdminRepository.getAllUserAdmin();
         if (adminEmails.isEmpty()) {
             System.out.println("No admin emails found");
             return;

@@ -17,7 +17,6 @@ public interface STDStatisticsSemesterRepository extends SemesterRepository {
         WITH factory_stats AS (
             SELECT 
                 usf.id as factory_id,
-                p.id as project_id,
                 MIN(pd.start_date) as start_date,
                 MAX(pd.end_date) as end_date,
                 COUNT(pd.id) as total_sessions,
@@ -29,7 +28,6 @@ public interface STDStatisticsSemesterRepository extends SemesterRepository {
                     WHEN COUNT(pd.id) = 0 THEN 0
                     ELSE (COUNT(CASE WHEN ad.id IS NULL OR ad.attendance_status = 0 THEN 1 END) * 1.0 / COUNT(pd.id))
                 END as absent_rate,
-                -- Thêm trạng thái để phân biệt các giai đoạn
                 CASE 
                     WHEN MIN(pd.start_date) > UNIX_TIMESTAMP(NOW()) * 1000 THEN 'NOT_STARTED'
                     WHEN MIN(pd.start_date) <= UNIX_TIMESTAMP(NOW()) * 1000 
@@ -53,7 +51,6 @@ public interface STDStatisticsSemesterRepository extends SemesterRepository {
         )
         SELECT
             COUNT(DISTINCT factory_id) AS factory,
-            COUNT(DISTINCT project_id) AS project,
             COUNT(DISTINCT CASE 
                 WHEN factory_status = 'COMPLETED' AND absent_rate <= 0.2
                 THEN factory_id 
@@ -63,13 +60,17 @@ public interface STDStatisticsSemesterRepository extends SemesterRepository {
                 THEN factory_id 
             END) AS fail,
             COUNT(DISTINCT CASE 
-                WHEN factory_status = 'IN_PROGRESS' AND absent_rate <= 0.2
+                WHEN factory_status = 'IN_PROGRESS'
                 THEN factory_id 
             END) AS process,
             COUNT(DISTINCT CASE
                 WHEN factory_status = 'NOT_STARTED' 
                 THEN factory_id 
-            END) AS notStarted
+            END) AS notStarted,
+            COUNT(DISTINCT CASE 
+                WHEN factory_status = 'COMPLETED' 
+                THEN factory_id 
+            END) AS complete
         FROM factory_stats
         """, nativeQuery = true)
     Optional<STDStatisticsStatResponse> getAllStatisticBySemester(String idFacility, String idStudent, String idSemester);

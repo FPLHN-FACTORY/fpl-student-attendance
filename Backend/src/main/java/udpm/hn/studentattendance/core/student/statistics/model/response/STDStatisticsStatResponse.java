@@ -13,4 +13,6 @@ public interface STDStatisticsStatResponse {
     Integer getProcess();
 
     Integer getNotStarted();
+
+    Integer getComplete();
 }
