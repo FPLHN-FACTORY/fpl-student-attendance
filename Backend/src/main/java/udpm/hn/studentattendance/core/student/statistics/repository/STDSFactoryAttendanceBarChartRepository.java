@@ -25,8 +25,10 @@ public interface STDSFactoryAttendanceBarChartRepository extends FactoryReposito
                     usf.id_user_student = :userId
             )
             SELECT
+            DISTINCT 
+            f.id,
             f.name AS factoryName,
-            cte_s.total_shift AS totalShift,
+            cte_s.total_current_shift AS totalShift,
                 (cte_s.total_current_shift - (
                         SELECT COUNT(a.id)
                         FROM attendance a
