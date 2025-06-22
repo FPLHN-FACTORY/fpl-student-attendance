@@ -31,8 +31,8 @@ public interface SSUserAdminRepository extends UserAdminRepository {
             ua.email
             FROM UserAdmin ua
             WHERE
-            ua.status = :status
+            ua.status = 1
             """)
-    List<String> getAllUserAdmin(EntityStatus status);
+    List<String> getAllUserAdmin();
 
 }

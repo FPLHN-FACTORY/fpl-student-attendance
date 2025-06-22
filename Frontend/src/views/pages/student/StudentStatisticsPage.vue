@@ -27,10 +27,11 @@ const loadingStore = useLoadingStore()
 
 const dataStats = reactive({
   factory: 0,
-  project: 0,
   pass: 0,
   fail: 0,
   process: 0,
+  complete: 0,
+  notStarted: 0
 })
 
 const lstSemester = ref([])
@@ -144,13 +145,10 @@ const fetchDataAllStats = () => {
       if (response.data.stdStatisticsStatResponse) {
         Object.assign(dataStats, response.data.stdStatisticsStatResponse)
       }      // Update chart data from factoryChartResponse
-      const factoryChartData = response.data.factoryChartResponse || []
-      lineChartData.value.labels = factoryChartData.map((o) => o.factoryName)
-      lineChartData.value.datasets[0].data = factoryChartData.map((o) => o.attendancePercentage)
-      lineChartData.value.datasets[1].data = factoryChartData.map((o) => o.absentPercentage)
 
-      // Update bar chart data from factoryAttendanceChartResponse
-      const factoryAttendanceData = response.data.factoryAttendanceChartResponse || []
+
+      // Update bar chart data from attendanceChartResponses
+      const factoryAttendanceData = response.data.attendanceChartResponses || []
       barChartData.value.labels = factoryAttendanceData.map((o) => o.factoryName)
       barChartData.value.datasets[0].data = factoryAttendanceData.map((o) => o.totalShift - o.totalAbsent)
       barChartData.value.datasets[1].data = factoryAttendanceData.map((o) => o.totalAbsent)
@@ -158,6 +156,19 @@ const fetchDataAllStats = () => {
       // Calculate semester totals for attendance and absence
       dataStats.totalAttendance = factoryAttendanceData.reduce((sum, item) => sum + (item.totalShift - item.totalAbsent), 0)
       dataStats.totalAbsent = factoryAttendanceData.reduce((sum, item) => sum + item.totalAbsent, 0)
+
+      const factoryChartData = response.data.factoryChartResponse
+      lineChartData.value.labels = ['-', factoryChartData.map((o) => o.factoryName), '-']
+      lineChartData.value.datasets[0].data = [
+        0,
+        factoryChartData.map((o) => o.attendancePercentage),
+        0,
+      ]
+      lineChartData.value.datasets[1].data = [
+        0,
+        factoryChartData.map((o) => 100 - o.attendancePercentage),
+        0,
+      ]
     })
     .catch((error) => {
       message.error(error?.response?.data?.message || 'Không thể tải dữ liệu thống kê')
@@ -306,16 +317,16 @@ watch(
             <h6><BookOutlined class="me-2" /> Biểu đồ tỷ lệ điểm danh / vắng</h6>
           </template>
           <template #extra>
-            <a-badge color="primary" class="badge-dot-primary" text="Tỷ lệ điểm danh (%)" />
-            <a-badge color="primary" class="badge-dot-secondary" text="Tỷ lệ vắng (%)" />
+            <a-badge color="primary" class="badge-dot-success" text="Tỷ lệ điểm danh (%)" />
+            <a-badge color="primary" class="badge-dot-error" text="Tỷ lệ vắng (%)" />
           </template>
 
           <ChartLine :height="310" :data="lineChartData"></ChartLine>
           <div class="mt-2 d-flex justify-content-end">
-              <a-tag color="blue">Nhóm xưởng: {{ lineChartData.labels.length }}</a-tag>
+              <a-tag color="blue">Nhóm xưởng: {{dataStats.factory }}</a-tag>
               <a-tag color="warning">Chưa diễn ra: {{ dataStats.notStarted }}</a-tag>
               <a-tag color="processing">Đang diễn ra: {{ dataStats.process }}</a-tag>
-              <a-tag color="success">Kết thúc: {{ dataStats.pass }}</a-tag>
+              <a-tag color="success">Kết thúc: {{ dataStats.complete }}</a-tag>
             </div>
         </a-card>
       </div>
