@@ -16,7 +16,7 @@ import udpm.hn.studentattendance.core.admin.statistics.model.response.ADSTotalPr
 import udpm.hn.studentattendance.core.admin.statistics.repository.*;
 import udpm.hn.studentattendance.core.admin.statistics.service.ADStatisticsService;
 import udpm.hn.studentattendance.helpers.RouterHelper;
-import udpm.hn.studentattendance.infrastructure.redis.RedisService;
+import udpm.hn.studentattendance.infrastructure.redis.service.RedisService;
 
 import java.util.List;
 

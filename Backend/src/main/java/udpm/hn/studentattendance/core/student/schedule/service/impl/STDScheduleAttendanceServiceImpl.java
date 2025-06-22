@@ -7,13 +7,11 @@ import com.lowagie.text.pdf.PdfPCell;
 import com.lowagie.text.pdf.PdfPTable;
 import com.lowagie.text.pdf.PdfWriter;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
-import udpm.hn.studentattendance.core.student.historyattendance.model.response.STDHistoryAttendanceResponse;
 import udpm.hn.studentattendance.core.student.schedule.model.request.STDScheduleAttendanceSearchRequest;
 import udpm.hn.studentattendance.core.student.schedule.model.response.STDScheduleAttendanceResponse;
 import udpm.hn.studentattendance.core.student.schedule.repository.STDScheduleAttendanceRepository;
@@ -22,6 +20,7 @@ import udpm.hn.studentattendance.helpers.PaginationHelper;
 import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.helpers.SessionHelper;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
+import udpm.hn.studentattendance.infrastructure.redis.service.RedisService;
 
 import java.awt.*;
 import java.io.ByteArrayInputStream;
@@ -37,15 +36,34 @@ import java.util.stream.Stream;
 @Validated
 public class STDScheduleAttendanceServiceImpl implements STDScheduleAttendanceService {
 
-
     private final STDScheduleAttendanceRepository repository;
 
     private final SessionHelper sessionHelper;
+    
+    private final RedisService redisService;
+    
+    @Value("${spring.cache.redis.time-to-live:3600}")
+    private long redisTTL;
 
     @Override
     public ResponseEntity<?> getList(STDScheduleAttendanceSearchRequest request) {
+        // Tạo cache key dựa trên thông tin request và user
+        String cacheKey = "schedule:list:" + sessionHelper.getUserId() + ":" + request.toString();
+        
+        // Thử lấy từ cache
+        Object cachedData = redisService.get(cacheKey);
+        if (cachedData != null) {
+            return RouterHelper.responseSuccess("Lấy danh sách điểm danh thành công (cached)", cachedData);
+        }
+        
+        // Nếu không có trong cache, truy vấn từ database
         Pageable pageable = PaginationHelper.createPageable(request, "id");
-        return RouterHelper.responseSuccess("Lấy danh sách điểm danh thành công", PageableObject.of(repository.getAllListAttendanceByUser(pageable, request)));
+        PageableObject<?> result = PageableObject.of(repository.getAllListAttendanceByUser(pageable, request));
+        
+        // Lưu vào cache
+        redisService.set(cacheKey, result, redisTTL);
+        
+        return RouterHelper.responseSuccess("Lấy danh sách điểm danh thành công", result);
     }
 
     @Override
@@ -180,5 +198,13 @@ public class STDScheduleAttendanceServiceImpl implements STDScheduleAttendanceSe
         cell.setBorderWidth(1);
         cell.setPadding(8);
         cell.setBorderColor(new Color(200, 200, 200));
+    }
+    
+    /**
+     * Xóa cache lịch học của một user
+     */
+    public void invalidateScheduleCache(String userId) {
+        String cachePattern = "schedule:list:" + userId + ":*";
+        redisService.deletePattern(cachePattern);
     }
 }

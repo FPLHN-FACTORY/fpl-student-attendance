@@ -31,6 +31,7 @@ import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 
 import udpm.hn.studentattendance.infrastructure.constants.RoleConstant;
+import udpm.hn.studentattendance.infrastructure.redis.service.RedisService;
 
 import java.util.HashMap;
 import java.util.List;
@@ -52,17 +53,31 @@ public class ADStaffServiceImpl implements ADStaffService {
     private final SessionHelper sessionHelper;
 
     private final UserActivityLogHelper userActivityLogHelper;
+    private final RedisService redisService;
 
     @Value("${app.config.disabled-check-email-fpt}")
     private String isDisableCheckEmailFpt;
+
+    @Value("${spring.cache.redis.time-to-live:3600}")
+    private long redisTTL;
 
     @PersistenceContext
     private EntityManager entityManager;
 
     @Override
     public ResponseEntity<?> getAllStaffByFilter(ADStaffRequest adStaffRequest) {
+        String cacheKey = "staff:list:" + adStaffRequest.toString();
+
+        Object cachedData = redisService.get(cacheKey);
+        if (cachedData != null) {
+            return RouterHelper.responseSuccess("Lấy tất cả giảng viên thành công (cached)", cachedData);
+        }
+
         Pageable pageable = PaginationHelper.createPageable(adStaffRequest, "createdAt");
         PageableObject staffs = PageableObject.of(adStaffRepository.getAllStaff(pageable, adStaffRequest));
+
+        redisService.set(cacheKey, staffs, redisTTL);
+
         return RouterHelper.responseSuccess("Lấy tất cả giảng viên thành công", staffs);
     }
 
@@ -90,7 +105,6 @@ public class ADStaffServiceImpl implements ADStaffService {
             }
         }
 
-        // Kiểm tra nhân viên đã tồn tại chưa
         UserStaff staffExist = isStaffExist(
                 adCreateUpdateStaffRequest.getStaffCode(),
                 adCreateUpdateStaffRequest.getEmailFe(),
@@ -99,7 +113,6 @@ public class ADStaffServiceImpl implements ADStaffService {
             return RouterHelper.responseError("Nhân viên đã tồn tại");
         }
 
-        // Tạo mới UserStaff
         UserStaff staff = new UserStaff();
         staff.setCode(adCreateUpdateStaffRequest.getStaffCode().trim());
         staff.setName(adCreateUpdateStaffRequest.getName().trim());
@@ -108,13 +121,11 @@ public class ADStaffServiceImpl implements ADStaffService {
         staff.setStatus(EntityStatus.ACTIVE);
         staff = adStaffRepository.save(staff);
 
-        // Kiểm tra cơ sở
         Facility facility = entityManager.find(Facility.class, adCreateUpdateStaffRequest.getFacilityId());
         if (facility == null) {
             return RouterHelper.responseError("Cơ sở không tồn tại");
         }
 
-        // Tạo các vai trò
         List<String> roleCodes = adCreateUpdateStaffRequest.getRoleCodes();
         if (roleCodes == null || roleCodes.isEmpty()) {
             return RouterHelper.responseError("Phải chọn ít nhất một vai trò");
@@ -140,7 +151,6 @@ public class ADStaffServiceImpl implements ADStaffService {
             role.setStatus(EntityStatus.ACTIVE);
             adStaffRoleRepository.save(role);
 
-            // Thêm thông báo
             Map<String, Object> dataNotification = new HashMap<>();
             dataNotification.put(NotificationHelper.KEY_USER_ADMIN,
                     sessionHelper.getUserCode() + " - " + sessionHelper.getUserName());
@@ -153,6 +163,10 @@ public class ADStaffServiceImpl implements ADStaffService {
         }
 
         userActivityLogHelper.saveLog("vừa thêm 1 nhân viên mới: " + staff.getName() + " (" + staff.getCode() + ")");
+
+        // Invalidate staff-related caches
+        invalidateStaffCaches();
+
         return RouterHelper.responseSuccess("Thêm nhân viên mới thành công");
     }
 
@@ -281,6 +295,12 @@ public class ADStaffServiceImpl implements ADStaffService {
         }
 
         userActivityLogHelper.saveLog("vừa cập nhật nhân viên: " + staff.getName() + " (" + staff.getCode() + ")");
+
+        // Invalidate specific cache for this staff
+        redisService.delete("staff:detail:" + id);
+        // Invalidate related caches
+        invalidateStaffCaches();
+
         return RouterHelper.responseSuccess("Cập nhật nhân viên thành công");
     }
 
@@ -303,13 +323,27 @@ public class ADStaffServiceImpl implements ADStaffService {
         adStaffRepository.save(staff);
         userActivityLogHelper.saveLog("vừa thay đổi trạng thái nhân viên " + staff.getName() + " (" + staff.getCode()
                 + ") từ " + oldStatus + " thành " + newStatus);
+
+        // Invalidate specific cache for this staff
+        redisService.delete("staff:detail:" + staffId);
+        // Invalidate related caches
+        invalidateStaffCaches();
+
         return RouterHelper.responseSuccess("Thay đổi trạng thái giảng viên thành công");
     }
 
     @Override
     public ResponseEntity<?> getStaffById(String staffId) {
+        String cacheKey = "staff:detail:" + staffId;
+
+        Object cachedData = redisService.get(cacheKey);
+        if (cachedData != null) {
+            return RouterHelper.responseSuccess("Xem chi tiết giảng viên thành công (cached)", cachedData);
+        }
+
         Optional<ADStaffDetailResponse> existStaff = adStaffRepository.getDetailStaff(staffId);
         if (existStaff.isPresent()) {
+            redisService.set(cacheKey, existStaff.get(), redisTTL);
             return RouterHelper.responseSuccess("Xem chi tiết giảng viên thành công", existStaff);
         }
         return RouterHelper.responseError("Giảng viên không tồn tại");
@@ -317,13 +351,33 @@ public class ADStaffServiceImpl implements ADStaffService {
 
     @Override
     public ResponseEntity<?> getAllRole() {
+        String cacheKey = "staff:roles:all";
+
+        Object cachedData = redisService.get(cacheKey);
+        if (cachedData != null) {
+            return RouterHelper.responseSuccess("Lấy tất cả vai trò thành công (cached)", cachedData);
+        }
+
         List<Role> getAllRole = adStaffRoleRepository.getAllRole();
+
+        redisService.set(cacheKey, getAllRole, redisTTL * 4);
+
         return RouterHelper.responseSuccess("Lấy tất cả vai trò thành công", getAllRole);
     }
 
     @Override
     public ResponseEntity<?> getAllFacility() {
+        String cacheKey = "staff:facilities:active";
+
+        Object cachedData = redisService.get(cacheKey);
+        if (cachedData != null) {
+            return RouterHelper.responseSuccess("Lấy tất cả cơ sở thành công (cached)", cachedData);
+        }
+
         List<Facility> getAllFacility = adminStaffFacilityRepository.getFacility(EntityStatus.ACTIVE);
+
+        redisService.set(cacheKey, getAllFacility, redisTTL * 4);
+
         return RouterHelper.responseSuccess("Lấy tất cả cơ sở thành công", getAllFacility);
     }
 
@@ -343,5 +397,12 @@ public class ADStaffServiceImpl implements ADStaffService {
 
         Optional<UserStaff> staffFpt = adStaffRepository.findUserStaffByEmailFpt(accountFpt);
         return staffFpt.orElse(null);
+    }
+
+    /**
+     * Helper method to invalidate staff-related caches
+     */
+    private void invalidateStaffCaches() {
+        redisService.deletePattern("staff:list:*");
     }
 }

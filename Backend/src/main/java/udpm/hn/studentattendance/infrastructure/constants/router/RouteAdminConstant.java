@@ -25,4 +25,6 @@ public final class RouteAdminConstant {
 
     public static final String URL_API_STATISTICS_MANAGEMENT = PREFIX_API_ADMIN_MANAGEMENT + "/statistics-management";
 
+    public static final String URL_API_REDIS = PREFIX_API_ADMIN_MANAGEMENT + "/redis";
+
 }
