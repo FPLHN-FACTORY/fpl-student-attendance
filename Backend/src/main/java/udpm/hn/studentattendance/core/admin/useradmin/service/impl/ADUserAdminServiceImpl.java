@@ -20,6 +20,7 @@ import udpm.hn.studentattendance.helpers.*;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.config.mailer.model.MailerDefaultRequest;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
+import udpm.hn.studentattendance.infrastructure.redis.service.RedisService;
 
 import java.util.HashMap;
 import java.util.List;
@@ -42,6 +43,7 @@ public class ADUserAdminServiceImpl implements ADUserAdminService {
         private final MailerHelper mailerHelper;
 
         private final UserActivityLogHelper userActivityLogHelper;
+        private final RedisService redisService;
 
         @Value("${app.config.app-name}")
         private String appName;
@@ -49,45 +51,78 @@ public class ADUserAdminServiceImpl implements ADUserAdminService {
         @Value("${app.config.disabled-check-email-fpt}")
         private String isDisableCheckEmailFpt;
 
+        @Value("${spring.cache.redis.time-to-live:3600}")
+        private long redisTTL;
+
         @Override
         public ResponseEntity<?> getAllUserAdmin(ADUserAdminRequest request) {
+                // Create cache key based on request parameters
+                String cacheKey = "admin:useradmin:all:" + request.toString();
+
+                // Try to get from cache
+                Object cachedData = redisService.get(cacheKey);
+                if (cachedData != null) {
+                        return RouterHelper.responseSuccess("Lấy thành công tất cả tài khoản admin (cached)",
+                                        cachedData);
+                }
+
+                // If not in cache, query from database
                 Pageable pageable = PaginationHelper.createPageable(request);
                 PageableObject list = PageableObject.of(userAdminExtendRepository.getAllUserAdmin(pageable, request));
+
+                // Save to cache
+                redisService.set(cacheKey, list, redisTTL);
+
                 return RouterHelper.responseSuccess("Lấy thành công tất cả tài khoản admin", list);
         }
 
         @Override
         public ResponseEntity<?> getUserAdminById(String id) {
+                // Create cache key
+                String cacheKey = "admin:useradmin:" + id;
+
+                // Try to get from cache
+                Object cachedData = redisService.get(cacheKey);
+                if (cachedData != null) {
+                        return RouterHelper.responseSuccess("Lấy thành công tài khoản admin (cached)", cachedData);
+                }
+
+                // If not in cache, query from database
                 Optional<UserAdmin> optionalUserAdmin = userAdminExtendRepository.findById(id);
                 if (optionalUserAdmin.isEmpty()) {
                         return RouterHelper.responseError("Admin không tồn tại");
                 }
+
+                // Save to cache
+                redisService.set(cacheKey, optionalUserAdmin.get(), redisTTL);
+
                 return RouterHelper.responseSuccess("Lấy thành công tài khoản admin", optionalUserAdmin);
         }
 
         @Override
         public ResponseEntity<?> createUserAdmin(ADUserAdminCreateOrUpdateRequest createOrUpdateRequest) {
                 Optional<UserAdmin> existUserAdmin = userAdminExtendRepository
-                        .getUserAdminByCode(createOrUpdateRequest.getStaffCode());
+                                .getUserAdminByCode(createOrUpdateRequest.getStaffCode());
                 Optional<UserAdmin> existUserAdmin2 = userAdminExtendRepository
-                        .getUserAdminByEmail(createOrUpdateRequest.getEmail());
+                                .getUserAdminByEmail(createOrUpdateRequest.getEmail());
 
                 if (!ValidateHelper.isValidFullname(createOrUpdateRequest.getStaffName())) {
                         return RouterHelper.responseError(
-                                "Tên admin không hợp lệ: Tối thiểu 2 từ, cách nhau bởi khoảng trắng và Chỉ gồm ký tự chữ không chứa số hay ký tự đặc biệt.");
+                                        "Tên admin không hợp lệ: Tối thiểu 2 từ, cách nhau bởi khoảng trắng và Chỉ gồm ký tự chữ không chứa số hay ký tự đặc biệt.");
                 }
 
                 String email = createOrUpdateRequest.getEmail().trim();
                 boolean isValidEmail = false;
 
                 if (ValidateHelper.isValidEmailGmail(email) ||
-                        ValidateHelper.isValidEmailFE(email) ||
-                        ValidateHelper.isValidEmailFPT(email)) {
+                                ValidateHelper.isValidEmailFE(email) ||
+                                ValidateHelper.isValidEmailFPT(email)) {
                         isValidEmail = true;
                 }
 
                 if (!isValidEmail) {
-                        return RouterHelper.responseError("Email phải có định dạng @gmail.com hoặc kết thúc bằng edu.vn");
+                        return RouterHelper
+                                        .responseError("Email phải có định dạng @gmail.com hoặc kết thúc bằng edu.vn");
                 }
 
                 if (!isDisableCheckEmailFpt.equalsIgnoreCase("true")) {
@@ -117,8 +152,12 @@ public class ADUserAdminServiceImpl implements ADUserAdminService {
                 notificationAddRequest.setData(dataNotification);
                 notificationService.add(notificationAddRequest);
 
-                userActivityLogHelper.saveLog("vừa thêm 1 tài khoản admin mới: " + userAdmin.getCode()  + " - "
-                        + userAdmin.getName());
+                userActivityLogHelper.saveLog("vừa thêm 1 tài khoản admin mới: " + userAdmin.getCode() + " - "
+                                + userAdmin.getName());
+
+                // Clear related caches
+                invalidateAdminCaches();
+
                 return RouterHelper.responseSuccess("Thêm admin mới thành công", userAdmin);
         }
 
@@ -149,13 +188,14 @@ public class ADUserAdminServiceImpl implements ADUserAdminService {
                 boolean isValidEmail = false;
 
                 if (ValidateHelper.isValidEmailGmail(email) ||
-                        ValidateHelper.isValidEmailFE(email) ||
-                        ValidateHelper.isValidEmailFPT(email)) {
+                                ValidateHelper.isValidEmailFE(email) ||
+                                ValidateHelper.isValidEmailFPT(email)) {
                         isValidEmail = true;
                 }
 
                 if (!isValidEmail) {
-                        return RouterHelper.responseError("Email phải có định dạng @gmail.com hoặc kết thúc bằng edu.vn");
+                        return RouterHelper
+                                        .responseError("Email phải có định dạng @gmail.com hoặc kết thúc bằng edu.vn");
                 }
 
                 if (!isDisableCheckEmailFpt.equalsIgnoreCase("true")) {
@@ -164,11 +204,9 @@ public class ADUserAdminServiceImpl implements ADUserAdminService {
                         }
                 }
 
-
                 if (!ValidateHelper.isValidCode(createOrUpdateRequest.getStaffCode())) {
                         return RouterHelper.responseError(
-                                "Mã admin không hợp lệ: không có khoảng trắng, không có ký tự đặc biệt ngoài dấu chấm . và dấu gạch dưới _."
-                        );
+                                        "Mã admin không hợp lệ: không có khoảng trắng, không có ký tự đặc biệt ngoài dấu chấm . và dấu gạch dưới _.");
                 }
 
                 UserAdmin userAdmin = opt.get();
@@ -188,6 +226,12 @@ public class ADUserAdminServiceImpl implements ADUserAdminService {
 
                 userActivityLogHelper.saveLog("vừa cập nhật tài khoản admin: " + userAdmin.getCode() + " - "
                                 + userAdmin.getName());
+
+                // Invalidate specific cache for this admin
+                redisService.delete("admin:useradmin:" + id);
+                // Clear related caches
+                invalidateAdminCaches();
+
                 return RouterHelper.responseSuccess("Cập nhật admin thành công", userAdmin);
         }
 
@@ -223,6 +267,12 @@ public class ADUserAdminServiceImpl implements ADUserAdminService {
 
                         userActivityLogHelper.saveLog("vừa thay đổi trạng thái tài khoản admin " + saveAdmin.getCode()
                                         + " - " + saveAdmin.getName() + " từ " + oldStatus + " thành " + newStatus);
+
+                        // Invalidate specific cache for this admin
+                        redisService.delete("admin:useradmin:" + id);
+                        // Clear related caches
+                        invalidateAdminCaches();
+
                         return RouterHelper.responseSuccess("Thay đổi trạng thái thành công", saveAdmin);
                 }
 
@@ -267,6 +317,13 @@ public class ADUserAdminServiceImpl implements ADUserAdminService {
                                         : "Unknown";
                         userActivityLogHelper.saveLog("vừa chuyển quyền admin từ " + oldAdminName + " sang "
                                         + userAdmin.getName() + " (" + userAdmin.getCode() + ")");
+
+                        // Clear related caches
+                        invalidateAdminCaches();
+                        if (oldAdmin != null) {
+                                redisService.delete("admin:useradmin:" + oldAdmin.getId());
+                        }
+
                         return RouterHelper.responseSuccess("Kiểm tra thành công", userAdmin);
                 }
                 return RouterHelper.responseError("Giảng viên hoặc phụ trách xưởng không tồn tại");
@@ -274,7 +331,21 @@ public class ADUserAdminServiceImpl implements ADUserAdminService {
 
         @Override
         public ResponseEntity<?> getAllUserStaff() {
+                // Create cache key
+                String cacheKey = "admin:userstaff:all";
+
+                // Try to get from cache
+                Object cachedData = redisService.get(cacheKey);
+                if (cachedData != null) {
+                        return RouterHelper.responseSuccess("Lấy thành công danh sách nhân viên (cached)", cachedData);
+                }
+
+                // If not in cache, query from database
                 List<UserStaff> userStaffList = userAdminStaffExtendRepository.getAllUserStaff();
+
+                // Save to cache
+                redisService.set(cacheKey, userStaffList, redisTTL);
+
                 return RouterHelper.responseSuccess("Lấy thành công danh sách nhân viên", userStaffList);
         }
 
@@ -301,6 +372,20 @@ public class ADUserAdminServiceImpl implements ADUserAdminService {
 
                 userActivityLogHelper.saveLog("vừa xóa tài khoản admin: " + adminToDelete.getCode() + " - "
                                 + adminToDelete.getName());
+
+                // Invalidate specific cache for this admin
+                redisService.delete("admin:useradmin:" + userAdminId);
+                // Clear related caches
+                invalidateAdminCaches();
+
                 return RouterHelper.responseSuccess("Xóa tài khoản admin thành công", userAdminId);
+        }
+
+        /**
+         * Helper method to invalidate admin-related caches
+         */
+        private void invalidateAdminCaches() {
+                // Invalidate all admin user-related cache using pattern matching
+                redisService.deletePattern("admin:useradmin:all:*");
         }
 }

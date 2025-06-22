@@ -1,6 +1,9 @@
 package udpm.hn.studentattendance.core.admin.levelproject.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -15,6 +18,7 @@ import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.common.repositories.CommonUserStudentRepository;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
+import udpm.hn.studentattendance.infrastructure.redis.service.RedisService;
 import udpm.hn.studentattendance.utils.CodeGeneratorUtils;
 import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
 
@@ -27,12 +31,27 @@ public class ADLevelProjectManagementServiceImpl implements ADLevelProjectManage
     private final CommonUserStudentRepository commonUserStudentRepository;
 
     private final UserActivityLogHelper userActivityLogHelper;
+    private final RedisService redisService;
+
+    @Value("${spring.cache.redis.time-to-live:3600}")
+    private long redisTTL;
 
     @Override
     public ResponseEntity<?> getListLevelProject(ADLevelProjectSearchRequest request) {
+        String cacheKey = "levelproject:list:" + request.toString();
+
+        Object cachedData = redisService.get(cacheKey);
+        if (cachedData != null) {
+            return RouterHelper.responseSuccess("Lấy danh sách cấp độ dự án thành công (cached)", cachedData);
+        }
+
+        // If not in cache, query from database
         Pageable pageable = PaginationHelper.createPageable(request, "id");
-        return RouterHelper.responseSuccess("Lấy danh sách cấp độ dự án thành công",
-                PageableObject.of(repository.getAll(pageable, request)));
+        PageableObject result = PageableObject.of(repository.getAll(pageable, request));
+
+        redisService.set(cacheKey, result, redisTTL);
+
+        return RouterHelper.responseSuccess("Lấy danh sách cấp độ dự án thành công", result);
     }
 
     @Override
@@ -50,6 +69,9 @@ public class ADLevelProjectManagementServiceImpl implements ADLevelProjectManage
 
         LevelProject savedLevel = repository.save(lv);
         userActivityLogHelper.saveLog("vừa thêm cấp độ dự án " + savedLevel.getName());
+
+        invalidateLevelProjectCaches();
+
         return RouterHelper.responseSuccess("Thêm mới cấp độ dự án thành công", savedLevel);
     }
 
@@ -71,15 +93,32 @@ public class ADLevelProjectManagementServiceImpl implements ADLevelProjectManage
 
         LevelProject updatedLevel = repository.save(lv);
         userActivityLogHelper.saveLog("vừa cập nhật cấp độ dự án " + updatedLevel.getName());
+
+        // Invalidate specific cache for this level project
+        redisService.delete("levelproject:" + id);
+        // Invalidate related caches
+        invalidateLevelProjectCaches();
+
         return RouterHelper.responseSuccess("Cập nhật cấp độ dự án thành công", updatedLevel);
     }
 
     @Override
     public ResponseEntity<?> detailLevelProject(String id) {
+        String cacheKey = "levelproject:" + id;
+
+        Object cachedData = redisService.get(cacheKey);
+        if (cachedData != null) {
+            return RouterHelper.responseSuccess("Lấy thông tin cấp độ dự án thành công (cached)", cachedData);
+        }
+
         LevelProject lv = repository.findById(id).orElse(null);
         if (lv == null) {
             return RouterHelper.responseError("Không tìm thây cấp độ dự án");
         }
+
+        // Save to cache
+        redisService.set(cacheKey, lv, redisTTL);
+
         return RouterHelper.responseSuccess("Lấy thông tin cấp độ dự án thành công", lv);
     }
 
@@ -96,7 +135,22 @@ public class ADLevelProjectManagementServiceImpl implements ADLevelProjectManage
         }
         userActivityLogHelper.saveLog(
                 "vừa thay đổi trạng thái cấp độ dự án " + entity.getName() + " thành " + entity.getStatus().name());
+
+        // Invalidate specific cache for this level project
+        redisService.delete("levelproject:" + id);
+        // Invalidate related caches
+        invalidateLevelProjectCaches();
+
         return RouterHelper.responseSuccess("Chuyển trạng thái cấp độ dự án thành công", entity);
     }
 
+    /**
+     * Helper method to invalidate level project-related caches
+     */
+    private void invalidateLevelProjectCaches() {
+        // Invalidate all level project lists
+        redisService.deletePattern("levelproject:list:*");
+        // Invalidate plan level caches that might use this data
+        redisService.deletePattern("plan:levels:*");
+    }
 }
