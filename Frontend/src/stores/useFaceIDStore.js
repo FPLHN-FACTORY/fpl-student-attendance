@@ -121,6 +121,16 @@ const useFaceIDStore = defineStore('faceID', () => {
     const preferBackends = ['webgpu', 'webgl', 'cpu']
     for (const backend of preferBackends) {
       try {
+        if (backend === 'webgpu') {
+          if (typeof navigator === 'undefined' || typeof navigator.gpu === 'undefined') {
+            continue
+          }
+          const adapter = await navigator.gpu.requestAdapter()
+          if (!adapter) {
+            continue
+          }
+        }
+
         await tf.setBackend(backend)
         await tf.ready()
         human = new Human({ ...Config, backend })
