@@ -179,6 +179,7 @@ const fetchDataAllStats = () => {
       const subjectFacilityData = response.data.subjectFacilityChartResponse || []
       barChartData.value.labels = subjectFacilityData.map((o) => o.facilityName)
       barChartData.value.datasets[0].data = subjectFacilityData.map((o) => o.totalSubjectFacility)      // Update line chart data using totalProjectAndSubjectResponse
+
       const totalProjectAndSubject = response.data.totalProjectAndSubjectResponse || {}
       const totalSubject = totalProjectAndSubject.totalSubject || 0
       const totalProject = totalProjectAndSubject.totalProject || 0
