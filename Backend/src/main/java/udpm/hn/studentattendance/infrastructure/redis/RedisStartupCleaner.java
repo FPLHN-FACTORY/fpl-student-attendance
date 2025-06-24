@@ -8,7 +8,6 @@ import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 import udpm.hn.studentattendance.infrastructure.redis.service.QueryCacheService;
 import udpm.hn.studentattendance.infrastructure.redis.service.RedisService;
-import udpm.hn.studentattendance.infrastructure.redis.service.SessionCacheService;
 
 /**
  * Component to clean Redis cache on application startup
@@ -19,15 +18,13 @@ public class RedisStartupCleaner {
 
     private static final Logger logger = LoggerFactory.getLogger(RedisStartupCleaner.class);
 
-    private final SessionCacheService sessionCacheService;
     private final QueryCacheService queryCacheService;
     private final RedisService redisService;
 
     @Autowired
-    public RedisStartupCleaner(SessionCacheService sessionCacheService,
+    public RedisStartupCleaner(
             QueryCacheService queryCacheService,
             RedisService redisService) {
-        this.sessionCacheService = sessionCacheService;
         this.queryCacheService = queryCacheService;
         this.redisService = redisService;
     }
@@ -36,9 +33,6 @@ public class RedisStartupCleaner {
     public void cleanRedisOnStartup() {
         try {
             logger.info("Cleaning Redis cache on application startup");
-
-            // Clean session data
-            sessionCacheService.clearAllSessions();
 
             // Clean query cache data
             queryCacheService.clearAllCaches();

@@ -28,8 +28,6 @@ public class RedisMonitoringController {
 
     private final RedisService redisService;
 
-    private final SessionHelper sessionHelper;
-
     private final UserActivityLogHelper userActivityLogHelper;
 
     /**
@@ -56,7 +54,6 @@ public class RedisMonitoringController {
     public ResponseEntity<?> clearAllCache() {
         redisService.deletePattern("*");
         userActivityLogHelper.saveLog("vừa xóa tất cả cache Redis");
-
         return RouterHelper.responseSuccess("Xóa tất cả cache thành công");
     }
 
