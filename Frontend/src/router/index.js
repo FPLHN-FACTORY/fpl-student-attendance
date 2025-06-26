@@ -11,6 +11,13 @@ import useApplicationStore from '@/stores/useApplicationStore'
 
 const routes = [
   {
+    path: '/test',
+    component: () => import('@/views/pages/Test.vue'),
+    meta: {
+      title: 'Đăng nhập hệ thống',
+    },
+  },
+  {
     path: '/',
     component: () => import('@/views/pages/authentication/AuthenticationLandingPage.vue'),
     meta: {

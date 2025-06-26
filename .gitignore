@@ -39,6 +39,10 @@ out/
 ### .env ###
 .env
 
+### File log ###
+*.log
+*.gz
+
 ### Docker Compose ###
 docker-compose*.yml
 docker-compose*.yaml
