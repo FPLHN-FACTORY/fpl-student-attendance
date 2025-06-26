@@ -9,10 +9,11 @@ const THRESHOLD_P = 0.2
 const THRESHOLD_X = 0.1
 const THRESHOLD_Y = 0.15
 const THRESHOLD_EMOTIONS = 0.8
-const MIN_BRIGHTNESS = 80
+const MIN_BRIGHTNESS = 60
 const MAX_BRIGHTNESS = 180
-const THRESHOLD_LIGHT = 80
+const THRESHOLD_LIGHT = 60
 const MAX_HISTORY = 10
+const SIZE_CAMERA = 224
 const SKIP_FRAME = 10
 
 const useFaceIDStore = defineStore('faceID', () => {
@@ -43,7 +44,7 @@ const useFaceIDStore = defineStore('faceID', () => {
         case 0:
           return (textStep.value = 'Vui lòng nhìn thẳng')
         case 1:
-          return (textStep.value = 'Xác minh hoàn tất')
+          return (textStep.value = 'Vui lòng giữ nguyên')
         default:
           return (textStep.value = 'Vui lòng nhìn vào camera')
       }
@@ -59,7 +60,7 @@ const useFaceIDStore = defineStore('faceID', () => {
       case 3:
         return (textStep.value = 'Vui lòng nhìn thẳng')
       case 4:
-        return (textStep.value = 'Xác minh hoàn tất')
+        return (textStep.value = 'Vui lòng giữ nguyên')
       default:
         return (textStep.value = 'Vui lòng nhìn vào camera')
     }
@@ -83,7 +84,11 @@ const useFaceIDStore = defineStore('faceID', () => {
     isLoading.value = true
     try {
       const constraints = {
-        video: { facingMode: 'user', width: { ideal: 256 }, height: { ideal: 256 } },
+        video: {
+          facingMode: 'user',
+          width: { ideal: SIZE_CAMERA },
+          height: { ideal: SIZE_CAMERA },
+        },
       }
       const stream = await navigator.mediaDevices.getUserMedia(constraints)
       if (video.value) {
@@ -117,6 +122,7 @@ const useFaceIDStore = defineStore('faceID', () => {
 
   let maskModel
   let glassesModel
+  let antispoofModel
   const loadModels = async () => {
     const preferBackends = ['webgpu', 'webgl', 'cpu']
     for (const backend of preferBackends) {
@@ -170,6 +176,19 @@ const useFaceIDStore = defineStore('faceID', () => {
       }
     }
 
+    const loadAntispoofModel = async () => {
+      try {
+        antispoofModel = await tf.loadLayersModel('indexeddb://antispoof-model')
+      } catch (err) {
+        antispoofModel = await tf.loadLayersModel('/models/antispoof/model.json')
+        await antispoofModel.save('indexeddb://antispoof-model')
+      }
+    }
+
+    if (!antispoofModel) {
+      models.push(loadAntispoofModel())
+    }
+
     models.push(human.load())
     models.push(human.warmup())
 
@@ -200,17 +219,19 @@ const useFaceIDStore = defineStore('faceID', () => {
       return sum / (imageData.width * imageData.height)
     }
 
-    const isLightBalance = async (faceBox) => {
-      const [x, y, width, height] = faceBox
+    const isLightBalance = async () => {
+      const width = canvas.value.width
+      const height = canvas.value.height
       const halfWidth = Math.floor(width / 2)
-      const leftData = ctx.getImageData(x, y, halfWidth, height)
-      const rightData = ctx.getImageData(x + halfWidth, y, width - halfWidth, height)
+
+      const leftData = ctx.getImageData(0, 0, halfWidth, height)
+      const rightData = ctx.getImageData(halfWidth, 0, width - halfWidth, height)
 
       const brightnessLeft = await getAverageBrightness(leftData)
       const brightnessRight = await getAverageBrightness(rightData)
 
       const brightnessDiff = Math.abs(brightnessLeft - brightnessRight)
-      return brightnessDiff > THRESHOLD_LIGHT ? false : true
+      return brightnessDiff <= THRESHOLD_LIGHT
     }
 
     const getFaceAngle = async (face) => {
@@ -270,6 +291,19 @@ const useFaceIDStore = defineStore('faceID', () => {
       return !(result[0] > 0.6)
     }
 
+    const isSpoofing = async () => {
+      const input = tf.browser
+        .fromPixels(canvas.value)
+        .resizeNearestNeighbor([224, 224])
+        .toFloat()
+        .div(255)
+        .expandDims()
+      const result = await antispoofModel.predict(input).data()
+      input.dispose()
+      console.log(result)
+      return !(result[0] > 0.6)
+    }
+
     const captureFace = () => {
       dataImage.value = canvas.value.toDataURL('image/png')
     }
@@ -309,7 +343,6 @@ const useFaceIDStore = defineStore('faceID', () => {
       lstDescriptor.value.push(descriptor)
 
       if (max !== lstDescriptor.value.length) {
-        console.group(max, lstDescriptor.value.length)
         step.value = 0
         return clearDescriptor()
       }
@@ -324,10 +357,11 @@ const useFaceIDStore = defineStore('faceID', () => {
         cosineSimilarity(
           lstDescriptor.value[0],
           lstDescriptor.value[lstDescriptor.value.length - 1],
-        ) < 0.9
+        ) < 0.85
       ) {
         return rollback()
       }
+      renderTextStep('Xác minh hoàn tất')
       captureFace()
       stopVideo()
       typeof onSuccess == 'function' && onSuccess(toRaw(lstDescriptor.value))
@@ -348,25 +382,43 @@ const useFaceIDStore = defineStore('faceID', () => {
       return dot / (Math.sqrt(normA) * Math.sqrt(normB))
     }
 
-    const getBestEmbedding = async () => {
-      let prevEmbedding = null
+    const isInsideCenter = (faceBoxRaw) => {
+      const [xRaw, yRaw, wRaw, hRaw] = faceBoxRaw
 
+      const centerX = xRaw + wRaw / 2
+      const centerY = yRaw + hRaw / 2
+
+      const margin_y = 0.1
+      const margin_x = 0.2
+      const insideCenter =
+        centerX > 0.5 - margin_x &&
+        centerX < 0.5 + margin_x &&
+        centerY > 0.5 - margin_y &&
+        centerY < 0.5 + margin_y
+      return insideCenter
+    }
+
+    const getBestEmbedding = async () => {
       while (true) {
         const result = await human.detect(video.value)
         const face = result.face?.[0]
 
-        if (!face?.embedding) {
+        if (!face) {
           return []
         }
 
-        if (prevEmbedding) {
-          const similarity = cosineSimilarity(face.embedding, prevEmbedding)
-          if (similarity > 0.95) {
-            return face.embedding
-          }
+        if (!cropFace(face) || !isInsideCenter(face.boxRaw)) {
+          continue
         }
-        prevEmbedding = face.embedding
+
         await delay(500)
+        const result2 = await human.detect(canvas.value)
+        const face2 = result2.face?.[0]
+
+        if (!face2) {
+          return []
+        }
+        return face2.embedding
       }
     }
 
@@ -422,6 +474,47 @@ const useFaceIDStore = defineStore('faceID', () => {
       )
     }
 
+    const cropFace = (face) => {
+      const mesh = face.mesh
+      if (!mesh || mesh.length < 468) {
+        return false
+      }
+
+      const leftCheek = mesh[234]
+      const rightCheek = mesh[454]
+      const topEye = Math.min(mesh[159][1], mesh[386][1])
+      const bottomLip = Math.max(mesh[14][1], mesh[17][1])
+
+      let sx = leftCheek[0]
+      let ex = rightCheek[0]
+      let sy = topEye
+      let ey = bottomLip
+
+      const padding = 0
+      sx -= padding
+      ex += padding
+      sy -= padding
+      ey += padding
+
+      const width = ex - sx
+      const height = ey - sy
+      const size = Math.max(width, height)
+
+      if (size <= 100 || size >= 200) {
+        return false
+      }
+
+      const centerX = (sx + ex) / 2
+      const centerY = (sy + ey) / 2
+      sx = centerX - size / 2
+      sy = centerY - size / 2
+
+      canvas.value.width = video.value.videoWidth
+      canvas.value.height = video.value.videoHeight
+      ctx.drawImage(video.value, sx, sy, size, size, 0, 0, canvas.value.width, canvas.value.height)
+      return true
+    }
+
     let error = 0
     let antispoof = 0
     let is_fake = false
@@ -469,6 +562,10 @@ const useFaceIDStore = defineStore('faceID', () => {
       const faceBoxRaw = detection.boxRaw
       const gestures = Object.values(human.result.gesture).map((g) => g.gesture)
 
+      if (!cropFace(detection)) {
+        return
+      }
+
       updateHistories(detection, gestures)
 
       if (!isRealHuman(detection)) {
@@ -480,28 +577,11 @@ const useFaceIDStore = defineStore('faceID', () => {
 
       antispoof = 0
 
-      canvas.value.width = video.value.videoWidth
-      canvas.value.height = video.value.videoHeight
-      ctx.drawImage(video.value, 0, 0, canvas.value.width, canvas.value.height)
-
       if (detection?.tensor) {
         human.tf.dispose(detection?.tensor)
       }
 
       const angle = await getFaceAngle(detection)
-
-      const [xRaw, yRaw, wRaw, hRaw] = faceBoxRaw
-
-      const centerX = xRaw + wRaw / 2
-      const centerY = yRaw + hRaw / 2
-
-      const margin_y = 0.1
-      const margin_x = 0.2
-      const insideCenter =
-        centerX > 0.5 - margin_x &&
-        centerX < 0.5 + margin_x &&
-        centerY > 0.5 - margin_y &&
-        centerY < 0.5 + margin_y
 
       if (angle === 0) {
         if (human.result.gesture.some((o) => o.gesture.includes('head up'))) {
@@ -513,7 +593,7 @@ const useFaceIDStore = defineStore('faceID', () => {
         }
       }
 
-      if (!insideCenter) {
+      if (!isInsideCenter(faceBoxRaw)) {
         return renderTextStep('Vui lòng căn chỉnh khuôn mặt vào giữa')
       }
 
@@ -527,18 +607,11 @@ const useFaceIDStore = defineStore('faceID', () => {
         return
       }
 
-      const [x, y, width, height] = faceBox
-
-      const canvasFacebox = document.createElement('canvas')
-      const ctxFacebox = canvasFacebox.getContext('2d')
-      canvasFacebox.width = width
-      canvasFacebox.height = height
-
-      ctxFacebox.drawImage(video.value, x, y, width, height, 0, 0, width, height)
-
-      const faceImageData = ctxFacebox.getImageData(0, 0, width, height)
-
+      const faceImageData = ctx.getImageData(0, 0, canvas.value.width, canvas.value.height)
       const avgBrightness = await getAverageBrightness(faceImageData)
+      if (avgBrightness === 0) {
+        return
+      }
 
       if (avgBrightness < MIN_BRIGHTNESS) {
         return renderTextStep('Camera quá tối, Vui lòng tăng độ sáng')
@@ -550,6 +623,11 @@ const useFaceIDStore = defineStore('faceID', () => {
 
       if (!(await isLightBalance(faceBox))) {
         return renderTextStep('Ánh sáng không đều. Vui lòng thử lại')
+      }
+
+      if (await isSpoofing()) {
+        step.value = 0
+        return renderTextStep('Không thể nhận diện khuôn mặt')
       }
 
       if (
@@ -582,6 +660,7 @@ const useFaceIDStore = defineStore('faceID', () => {
 
         renderTextStep()
 
+        await delay(800)
         if (isFullStep) {
           if (step.value === 0 && angle === 0) {
             clearDescriptor()
