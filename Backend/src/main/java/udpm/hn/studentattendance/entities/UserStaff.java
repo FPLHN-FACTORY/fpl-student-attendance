@@ -66,7 +66,14 @@ public class UserStaff extends PrimaryEntity implements UserDetails {
 
     @Override
     public String getUsername() {
-        return null;
+        return code;
+    }
+
+    public String getEmail() {
+        if (emailFe != null && !emailFe.trim().isEmpty()) {
+            return emailFe;
+        }
+        return emailFpt;
     }
 
 }
