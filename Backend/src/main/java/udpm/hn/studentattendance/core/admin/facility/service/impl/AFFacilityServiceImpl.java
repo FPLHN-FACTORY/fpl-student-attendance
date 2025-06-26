@@ -22,6 +22,7 @@ import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.common.repositories.CommonUserStudentRepository;
 import udpm.hn.studentattendance.infrastructure.config.mailer.model.MailerDefaultRequest;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
+import udpm.hn.studentattendance.infrastructure.redis.service.RedisService;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -44,13 +45,27 @@ public class AFFacilityServiceImpl implements AFFacilityService {
 
     private final UserActivityLogHelper userActivityLogHelper;
 
+    private final RedisService redisService;
+
+    @Value("${spring.cache.redis.time-to-live:3600}")
+    private long redisTTL;
+
     @Value("${app.config.app-name}")
     private String appName;
 
     @Override
     public ResponseEntity<?> getAllFacility(AFFacilitySearchRequest request) {
+        String cacheKey = "admin:facility:" + request.toString();
+        Object cachedData = redisService.get(cacheKey);
+        if (cachedData != null){
+            return RouterHelper.responseSuccess("Lấy danh sách cơ sở thành công (cached)", cachedData);
+        }
+
         Pageable pageable = PaginationHelper.createPageable(request, "createdAt");
         PageableObject facilities = PageableObject.of(facilityRepository.getAllFacility(pageable, request));
+
+        redisService.set(cacheKey, facilities, redisTTL);
+
         return RouterHelper.responseSuccess("Lấy tất cả cơ sở thành công", facilities);
     }
 

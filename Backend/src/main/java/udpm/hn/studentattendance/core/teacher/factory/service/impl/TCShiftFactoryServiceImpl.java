@@ -34,7 +34,8 @@ public class TCShiftFactoryServiceImpl implements TCShiftFactoryService {
 
     @Override
     public ResponseEntity<?> getDetail(String idFactory) {
-        Optional<TCPlanFactoryResponse> data = tcPlanFactoryRepository.getDetail(idFactory, sessionHelper.getFacilityId());
+        Optional<TCPlanFactoryResponse> data = tcPlanFactoryRepository.getDetail(idFactory,
+                sessionHelper.getFacilityId());
         return data
                 .map(response -> RouterHelper.responseSuccess("Get dữ liệu thành công", response))
                 .orElseGet(() -> RouterHelper.responseError("Không tìm thấy kế hoạch"));
@@ -44,7 +45,8 @@ public class TCShiftFactoryServiceImpl implements TCShiftFactoryService {
     public ResponseEntity<?> getAllList(TCFilterShiftFactoryRequest request) {
         request.setIdFacility(sessionHelper.getFacilityId());
         Pageable pageable = PaginationHelper.createPageable(request);
-        PageableObject<TCPlanDateResponse> data = PageableObject.of(tcPlanDateRepository.getAllByFilter(pageable, request));
+        PageableObject<TCPlanDateResponse> data = PageableObject
+                .of(tcPlanDateRepository.getAllByFilter(pageable, request));
         return RouterHelper.responseSuccess("Lấy danh sách dữ liệu thành công", data);
     }
 

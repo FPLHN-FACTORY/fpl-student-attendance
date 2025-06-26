@@ -214,6 +214,12 @@ const handleAddSemester = () => {
 }
 
 const handleUpdateSemester = (record) => {
+  // Kiểm tra xem có thể chỉnh sửa học kỳ không
+  if (!canEditSemester(record)) {
+    message.warning('Không thể chỉnh sửa học kỳ đã kết thúc')
+    return
+  }
+
   loadingStore.show()
   requestAPI
     .get(`${API_ROUTES_ADMIN.FETCH_DATA_SEMESTER}/${record.id}`)
@@ -298,6 +304,16 @@ const updateSemester = () => {
 }
 
 const handleChangeStatusSemester = (record) => {
+  // Kiểm tra xem có thể thay đổi trạng thái không
+  if (!canChangeStatus(record)) {
+    if (isSemesterInProgress(record)) {
+      message.warning('Không thể thay đổi trạng thái của học kỳ đang diễn ra')
+    } else if (isSemesterEnded(record)) {
+      message.warning('Không thể thay đổi trạng thái của học kỳ đã kết thúc')
+    }
+    return
+  }
+
   Modal.confirm({
     title: 'Xác nhận thay đổi trạng thái',
     content: `Bạn có chắc muốn thay đổi trạng thái của học kỳ ${record.semesterCode}?`,
@@ -341,6 +357,33 @@ const handleClearFilter = () => {
 const isStartDateBeforeToday = (startDate) => {
   if (!startDate) return false
   return dayjs().startOf('day') > dayjs(startDate).startOf('day')
+}
+
+// Kiểm tra học kỳ có đang diễn ra không (đã bắt đầu nhưng chưa kết thúc)
+const isSemesterInProgress = (semester) => {
+  if (!semester.startDate || !semester.endDate) return false
+  const today = dayjs().startOf('day')
+  const startDate = dayjs(semester.startDate).startOf('day')
+  const endDate = dayjs(semester.endDate).startOf('day')
+  return today >= startDate && today <= endDate
+}
+
+// Kiểm tra học kỳ đã kết thúc chưa (ngày hiện tại > ngày kết thúc)
+const isSemesterEnded = (semester) => {
+  if (!semester.endDate) return false
+  const today = dayjs().startOf('day')
+  const endDate = dayjs(semester.endDate).startOf('day')
+  return today > endDate
+}
+
+// Kiểm tra có thể thay đổi trạng thái học kỳ không (không được khi đang diễn ra hoặc đã kết thúc)
+const canChangeStatus = (semester) => {
+  return !isSemesterInProgress(semester) && !isSemesterEnded(semester)
+}
+
+// Kiểm tra có thể chỉnh sửa học kỳ không (chỉ không được khi đã kết thúc)
+const canEditSemester = (semester) => {
+  return !isSemesterEnded(semester)
 }
 
 // Hàm để check xem có được phép sửa ngày bắt đầu không
@@ -470,6 +513,7 @@ onMounted(() => {
                   <a-switch
                     class="me-2"
                     :checked="record.semesterStatus === 'ACTIVE' || record.semesterStatus === 1"
+                    :disabled="!canChangeStatus(record)"
                     @change="handleChangeStatusSemester(record)"
                   />
 
@@ -491,11 +535,15 @@ onMounted(() => {
               <!-- Các chức năng: Sửa & Đổi trạng thái -->
               <template v-else-if="column.key === 'actions'">
                 <a-space>
-                  <a-tooltip title="Sửa thông tin học kỳ">
+                  <a-tooltip 
+                    :title="canEditSemester(record) ? 'Sửa thông tin học kỳ' : 'Không thể sửa học kỳ đã kết thúc'"
+                  >
                     <a-button
                       @click="handleUpdateSemester(record)"
                       type="text"
-                      class="btn-outline-info me-2"
+                      :class="['btn-outline-info', 'me-2', { 'disabled': !canEditSemester(record) }]"
+                      :disabled="!canEditSemester(record)"
+                      :style="!canEditSemester(record) ? { opacity: 0.5, cursor: 'not-allowed' } : {}"
                     >
                       <EditFilled />
                     </a-button>

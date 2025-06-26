@@ -1,6 +1,7 @@
 package udpm.hn.studentattendance.core.admin.statistics.controller;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.repository.query.Param;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -17,8 +18,8 @@ public class ADStatisticsRestController {
     private final ADStatisticsService adStatisticsService;
 
     @GetMapping
-    public ResponseEntity<?> getAllListStatistics(ADStatisticRequest request){
-        return adStatisticsService.getAllListStats(request);
+    public ResponseEntity<?> getAllListStatistics(ADStatisticRequest request, @Param("pageNumber") int pageNumber){
+        return adStatisticsService.getAllListStats(request, pageNumber);
     }
 
 }

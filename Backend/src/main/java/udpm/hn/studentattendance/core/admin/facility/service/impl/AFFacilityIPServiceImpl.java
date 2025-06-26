@@ -1,6 +1,7 @@
 package udpm.hn.studentattendance.core.admin.facility.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -20,6 +21,7 @@ import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.IPType;
 import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
+import udpm.hn.studentattendance.infrastructure.redis.service.RedisService;
 
 @Service
 @RequiredArgsConstructor
@@ -30,6 +32,11 @@ public class AFFacilityIPServiceImpl implements AFFacilityIPService {
     private final AFFacilityIPRepository afFacilityIPRepository;
 
     private final UserActivityLogHelper userActivityLogHelper;
+
+    private final RedisService redisService;
+
+    @Value("${REDIS_TTL}")
+    private long redisTTL;
 
     private ResponseEntity<ApiResponse> checkIP(IPType type, String ip) {
         if (type == IPType.DNSSUFFIX) {
@@ -62,9 +69,17 @@ public class AFFacilityIPServiceImpl implements AFFacilityIPService {
 
     @Override
     public ResponseEntity<?> getAllList(AFFilterFacilityIPRequest request) {
+        String cachedKey = "admin:facility-ip-list";
+        Object cachedData = redisService.get(cachedKey);
+        if (cachedData != null) {
+            return RouterHelper.responseSuccess("Lấy danh sách dữ liệu thành công (cached)", cachedData);
+        }
+
         Pageable pageable = PaginationHelper.createPageable(request);
         PageableObject<AFFacilityIPResponse> data = PageableObject
                 .of(afFacilityIPRepository.getAllByFilter(pageable, request));
+
+        redisService.set(cachedKey, data, redisTTL);
         return RouterHelper.responseSuccess("Lấy danh sách dữ liệu thành công", data);
     }
 

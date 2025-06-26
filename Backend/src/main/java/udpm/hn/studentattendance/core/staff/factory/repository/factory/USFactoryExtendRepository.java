@@ -25,7 +25,8 @@ public interface USFactoryExtendRepository extends FactoryRepository {
                 CONCAT(p.name, ' - ', lp.name) AS projectName,
                 sub.code AS subjectCode,
                 CONCAT(us.code, ' - ', us.name) AS staffName,
-                ft.description AS factoryDescription
+                ft.description AS factoryDescription,
+                p.id as projectId
             FROM factory ft
             LEFT JOIN project p ON p.id = ft.id_project
             LEFT JOIN level_project lp ON lp.id = p.id_level_project

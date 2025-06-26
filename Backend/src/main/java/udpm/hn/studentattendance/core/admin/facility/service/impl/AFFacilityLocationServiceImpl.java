@@ -1,6 +1,7 @@
 package udpm.hn.studentattendance.core.admin.facility.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -17,6 +18,7 @@ import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
+import udpm.hn.studentattendance.infrastructure.redis.service.RedisService;
 
 @Service
 @RequiredArgsConstructor
@@ -27,11 +29,23 @@ public class AFFacilityLocationServiceImpl implements AFFacilityLocationService 
 
     private final UserActivityLogHelper userActivityLogHelper;
 
+    private final RedisService redisService;
+
+    @Value("${REDIS_TTL}")
+    private long redisTTL;
+
     @Override
     public ResponseEntity<?> getAllList(AFFilterFacilityLocationRequest request) {
+        String cachedKey = "admin:facilityLocation:list";
+        Object cachedValue = redisService.get(cachedKey);
+        if (cachedValue != null) {
+            return RouterHelper.responseSuccess("Lấy danh sách dữ liệu thành công (cached)", cachedValue);
+        }
         Pageable pageable = PaginationHelper.createPageable(request);
         PageableObject<AFFacilityLocationResponse> data = PageableObject
                 .of(afFacilityLocationRepository.getAllByFilter(pageable, request));
+
+        redisService.set(cachedKey, data, redisTTL);
         return RouterHelper.responseSuccess("Lấy danh sách dữ liệu thành công", data);
     }
 

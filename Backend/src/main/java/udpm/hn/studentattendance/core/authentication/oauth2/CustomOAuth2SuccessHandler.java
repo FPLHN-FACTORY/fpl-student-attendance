@@ -46,12 +46,12 @@ public class CustomOAuth2SuccessHandler implements AuthenticationSuccessHandler 
         String jsonToken = mapper.writeValueAsString(authenticationToken);
         String redirect_uri = (String) httpSession.getAttribute(SessionConstant.LOGIN_REDIRECT);
 
-        if (!ValidateHelper.isValidURL(redirect_uri)) {
-            response.setContentType("application/json");
-            response.setCharacterEncoding("UTF-8");
-            response.getWriter().write(jsonToken);
-            return;
-        }
+//        if (!ValidateHelper.isValidURL(redirect_uri)) {
+//            response.setContentType("application/json");
+//            response.setCharacterEncoding("UTF-8");
+//            response.getWriter().write(jsonToken);
+//            return;
+//        }
 
         String data = Base64.getEncoder().encodeToString(jsonToken.getBytes(StandardCharsets.UTF_8));
         response.sendRedirect(redirect_uri + "?" + RouteAuthenticationConstant.PARAM_ROUTE_ROLE + "=" + role + "&"
