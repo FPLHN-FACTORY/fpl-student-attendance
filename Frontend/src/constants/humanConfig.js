@@ -14,8 +14,6 @@ export default {
       minConfidence: 0.3,
       square: true,
     },
-    // mobilefacenet: { enabled: true, modelPath: 'mobilefacenet.json' },
-    // insightface: { enabled: true, modelPath: 'insightface-mobilenet-swish.json' },
     iris: { enabled: false },
     description: { enabled: true },
     embedding: { enabled: true },
