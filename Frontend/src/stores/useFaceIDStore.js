@@ -300,8 +300,7 @@ const useFaceIDStore = defineStore('faceID', () => {
         .expandDims()
       const result = await antispoofModel.predict(input).data()
       input.dispose()
-      console.log(result)
-      return !(result[0] > 0.6)
+      return result[0] < 0.99999999
     }
 
     const captureFace = () => {
@@ -396,6 +395,26 @@ const useFaceIDStore = defineStore('faceID', () => {
         centerY > 0.5 - margin_y &&
         centerY < 0.5 + margin_y
       return insideCenter
+    }
+
+    const isLiveness = async () => {
+      let lst_spoofing = []
+      while (lst_spoofing.length < 10) {
+        const result = await human.detect(video.value)
+        const face = result?.face?.[0]
+
+        if (!face) {
+          return false
+        }
+
+        if (!cropFace(face) || !isInsideCenter(face.boxRaw)) {
+          continue
+        }
+
+        const checking = await isSpoofing()
+        lst_spoofing.push(checking)
+      }
+      return lst_spoofing.filter((o) => o).length < 3
     }
 
     const getBestEmbedding = async () => {
@@ -576,21 +595,8 @@ const useFaceIDStore = defineStore('faceID', () => {
       }
 
       antispoof = 0
-
       if (detection?.tensor) {
         human.tf.dispose(detection?.tensor)
-      }
-
-      const angle = await getFaceAngle(detection)
-
-      if (angle === 0) {
-        if (human.result.gesture.some((o) => o.gesture.includes('head up'))) {
-          return renderTextStep('Vui lòng không ngẩng mặt')
-        }
-
-        if (human.result.gesture.some((o) => o.gesture.includes('head down'))) {
-          return renderTextStep('Vui lòng không cúi mặt')
-        }
       }
 
       if (!isInsideCenter(faceBoxRaw)) {
@@ -613,6 +619,12 @@ const useFaceIDStore = defineStore('faceID', () => {
         return
       }
 
+      if (!(!isFullStep && (step.value === 1 || step.value === 2))) {
+        if (!(await isLiveness())) {
+          return
+        }
+      }
+
       if (avgBrightness < MIN_BRIGHTNESS) {
         return renderTextStep('Camera quá tối, Vui lòng tăng độ sáng')
       }
@@ -625,22 +637,28 @@ const useFaceIDStore = defineStore('faceID', () => {
         return renderTextStep('Ánh sáng không đều. Vui lòng thử lại')
       }
 
-      if (await isSpoofing()) {
-        step.value = 0
-        return renderTextStep('Không thể nhận diện khuôn mặt')
-      }
+      const angle = await getFaceAngle(detection)
 
-      if (
-        emotions.some(
-          (e) =>
-            ['happy', 'angry', 'surprise', 'disgust'].includes(e.emotion) &&
-            e.score > THRESHOLD_EMOTIONS,
-        )
-      ) {
-        return renderTextStep('Vui lòng không biểu cảm')
+      if (angle === 0) {
+        if (human.result.gesture.some((o) => o.gesture.includes('head up'))) {
+          return renderTextStep('Vui lòng không ngẩng mặt')
+        }
+
+        if (human.result.gesture.some((o) => o.gesture.includes('head down'))) {
+          return renderTextStep('Vui lòng không cúi mặt')
+        }
       }
 
       if (!isFullStep) {
+        if (
+          emotions.some(
+            (e) =>
+              ['happy', 'angry', 'surprise', 'disgust'].includes(e.emotion) &&
+              e.score > THRESHOLD_EMOTIONS,
+          )
+        ) {
+          return renderTextStep('Vui lòng không biểu cảm')
+        }
         if (await isWithGlasses()) {
           step.value = 0
           return renderTextStep('Vui lòng không nhắm mắt hoặc đeo kính')
