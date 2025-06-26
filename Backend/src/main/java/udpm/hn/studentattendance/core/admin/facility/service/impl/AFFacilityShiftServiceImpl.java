@@ -25,6 +25,7 @@ import udpm.hn.studentattendance.helpers.ShiftHelper;
 import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
+import udpm.hn.studentattendance.infrastructure.redis.service.RedisService;
 
 @Service
 @RequiredArgsConstructor
@@ -36,14 +37,27 @@ public class AFFacilityShiftServiceImpl implements AFFacilityShiftService {
 
     private final UserActivityLogHelper userActivityLogHelper;
 
+    private final RedisService redisService;
+
+    @Value("${REDIS_TTL}")
+    private long redisTTL;
+
     @Value("${app.config.shift.min-diff}")
     private int MIN_DIFF_SHIFT;
 
     @Override
     public ResponseEntity<?> getAllList(AFFilterFacilityShiftRequest request) {
+        String cachedKey = "admin:facility-shift-list" + request.toString();
+        Object cachedData = redisService.get(cachedKey);
+        if (cachedData != null) {
+            return RouterHelper.responseSuccess("Lấy tất cả ca học của cơ sở thành công (cached)", cachedData);
+        }
+
         Pageable pageable = PaginationHelper.createPageable(request);
         PageableObject<AFFacilityShiftResponse> data = PageableObject
                 .of(afFacilityShiftRepository.getAllByFilter(pageable, request));
+
+        redisService.set(cachedKey, data, redisTTL);
         return RouterHelper.responseSuccess("Lấy danh sách dữ liệu thành công", data);
     }
 

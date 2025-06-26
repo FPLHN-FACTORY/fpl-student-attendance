@@ -8,5 +8,7 @@ public interface ADStatisticsStatResponse {
 
     Integer getAdmin();
 
-    Integer getLogActivity();
+    Integer getSubject();
+
+    Integer getTotalProject();
 }

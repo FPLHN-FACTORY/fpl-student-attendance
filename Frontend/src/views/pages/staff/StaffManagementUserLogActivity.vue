@@ -31,13 +31,13 @@ const columns = ref(
   autoAddColumnWidth([
     { title: '#', dataIndex: 'rowNumber', key: 'rowNumber', width: 80 },
     {
-      title: 'Mã giảng viên',
+      title: 'Mã người dùng',
       dataIndex: 'userCode',
       key: 'userCode',
       width: 150,
     },
     {
-      title: 'Tên giảng viên',
+      title: 'Tên người dùng',
       dataIndex: 'userName',
       key: 'userName',
       width: 200,

@@ -42,6 +42,8 @@ public class MailerHelper {
 
     public final static String TEMPLATE_STATISTICS_TEACHER = "statistics-teacher.html";
 
+    public final static String TEMPLATE_STATISTICS_DAILY = "statistics-staff.html";
+
     public final static String HEADER_DEFAULT = "";
 
     public final static String FOOTER_DEFAULT = """

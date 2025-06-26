@@ -13,12 +13,7 @@ import udpm.hn.studentattendance.core.staff.statistics.model.dto.SSListUserDto;
 import udpm.hn.studentattendance.core.staff.statistics.model.request.SSFilterFactoryStatsRequest;
 import udpm.hn.studentattendance.core.staff.statistics.model.request.SSSendMailStatsRequest;
 import udpm.hn.studentattendance.core.staff.statistics.model.response.*;
-import udpm.hn.studentattendance.core.staff.statistics.repositories.SSFactoryRepository;
-import udpm.hn.studentattendance.core.staff.statistics.repositories.SSLevelProjectRepository;
-import udpm.hn.studentattendance.core.staff.statistics.repositories.SSSemesterRepository;
-import udpm.hn.studentattendance.core.staff.statistics.repositories.SSSubjectFacilityRepository;
-import udpm.hn.studentattendance.core.staff.statistics.repositories.SSUserAdminRepository;
-import udpm.hn.studentattendance.core.staff.statistics.repositories.SSUserStaffRepository;
+import udpm.hn.studentattendance.core.staff.statistics.repositories.*;
 import udpm.hn.studentattendance.core.staff.statistics.services.SSStatisticsService;
 import udpm.hn.studentattendance.entities.Facility;
 import udpm.hn.studentattendance.entities.Factory;
@@ -40,13 +35,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -107,6 +96,7 @@ public class SSStatisticsServiceImpl implements SSStatisticsService {
         List<SSUserResponse> lstAdmin = ssUserAdminRepository.getAllList(sessionHelper.getUserEmail());
         List<SSUserResponse> lstStaff = ssUserStaffRepository.getAllListStaff(sessionHelper.getFacilityId(), sessionHelper.getUserEmail());
         List<SSUserResponse> lstTeacher = ssUserStaffRepository.getAllListTeacher(sessionHelper.getFacilityId(), idSemester, sessionHelper.getUserEmail());
+
         SSListUserDto data =  new SSListUserDto();
         data.setAdmin(lstAdmin);
         data.setStaff(lstStaff);
