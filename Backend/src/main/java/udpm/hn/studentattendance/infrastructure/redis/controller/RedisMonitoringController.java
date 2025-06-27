@@ -14,10 +14,7 @@ import udpm.hn.studentattendance.infrastructure.redis.service.RedisService;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * Controller để quản lý và theo dõi Redis
- * Chỉ admin mới có quyền truy cập
- */
+
 @RestController
 @RequestMapping(RouteAdminConstant.URL_API_REDIS)
 @PreAuthorize("hasAuthority('ADMIN')")
@@ -30,11 +27,7 @@ public class RedisMonitoringController {
 
     private final UserActivityLogHelper userActivityLogHelper;
 
-    /**
-     * Lấy thông tin tổng quan về Redis
-     *
-     * @return Thông tin Redis
-     */
+
     @GetMapping("/info")
     public ResponseEntity<?> getRedisInfo() {
         Map<String, Object> result = new HashMap<>();
@@ -45,11 +38,6 @@ public class RedisMonitoringController {
         return RouterHelper.responseSuccess("Lấy thông tin Redis thành công", result);
     }
 
-    /**
-     * Xóa tất cả cache
-     *
-     * @return Kết quả xóa cache
-     */
     @DeleteMapping("/cache/all")
     public ResponseEntity<?> clearAllCache() {
         redisService.deletePattern("*");
@@ -57,12 +45,7 @@ public class RedisMonitoringController {
         return RouterHelper.responseSuccess("Xóa tất cả cache thành công");
     }
 
-    /**
-     * Xóa cache theo pattern
-     *
-     * @param pattern Pattern để tìm keys
-     * @return Kết quả xóa cache
-     */
+
     @DeleteMapping("/cache")
     public ResponseEntity<?> clearCacheByPattern(@RequestParam String pattern) {
         long countBefore = redisMonitoringService.getKeyCount(pattern);
@@ -78,11 +61,8 @@ public class RedisMonitoringController {
         return RouterHelper.responseSuccess("Xóa cache theo pattern thành công", result);
     }
 
-    /**
-     * Xóa cache cũ
-     *
-     * @return Kết quả xóa cache
-     */
+
+
     @DeleteMapping("/cache/expired")
     public ResponseEntity<?> clearExpiredCache() {
         long count = redisMonitoringService.cleanupExpiredKeys();
@@ -95,11 +75,7 @@ public class RedisMonitoringController {
         return RouterHelper.responseSuccess("Xóa cache hết hạn thành công", result);
     }
 
-    /**
-     * Reset thống kê cache
-     *
-     * @return Kết quả reset
-     */
+
     @PostMapping("/stats/reset")
     public ResponseEntity<?> resetCacheStats() {
         redisMonitoringService.resetStats();
@@ -108,12 +84,7 @@ public class RedisMonitoringController {
         return RouterHelper.responseSuccess("Reset thống kê cache thành công");
     }
 
-    /**
-     * Lấy giá trị của một key
-     *
-     * @param key Key cần lấy giá trị
-     * @return Giá trị của key
-     */
+
     @GetMapping("/key")
     public ResponseEntity<?> getKeyValue(@RequestParam String key) {
         Object value = redisService.get(key);
@@ -132,12 +103,7 @@ public class RedisMonitoringController {
         return RouterHelper.responseSuccess("Lấy giá trị key thành công", result);
     }
 
-    /**
-     * Xóa một key
-     *
-     * @param key Key cần xóa
-     * @return Kết quả xóa key
-     */
+
     @DeleteMapping("/key")
     public ResponseEntity<?> deleteKey(@RequestParam String key) {
         boolean exists = redisService.hasKey(key);
@@ -152,13 +118,7 @@ public class RedisMonitoringController {
         return RouterHelper.responseSuccess("Xóa key thành công");
     }
 
-    /**
-     * Cập nhật TTL của một key
-     *
-     * @param key Key cần cập nhật
-     * @param ttl TTL mới (giây)
-     * @return Kết quả cập nhật TTL
-     */
+
     @PutMapping("/key/ttl")
     public ResponseEntity<?> updateKeyTTL(@RequestParam String key, @RequestParam long ttl) {
         boolean exists = redisService.hasKey(key);
