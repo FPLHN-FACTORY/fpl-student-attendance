@@ -58,10 +58,13 @@ dependencies {
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
     implementation 'org.springframework.boot:spring-boot-starter-data-redis'
-    developmentOnly("org.springframework.boot:spring-boot-docker-compose")
 }
 
 
 tasks.named('test') {
     useJUnitPlatform()
+}
+
+configurations.configureEach {
+    exclude group: 'commons-logging', module: 'commons-logging'
 }
