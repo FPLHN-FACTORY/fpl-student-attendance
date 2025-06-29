@@ -23,6 +23,7 @@ import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
 import udpm.hn.studentattendance.helpers.ValidateHelper;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
+import udpm.hn.studentattendance.infrastructure.constants.RedisPrefixConstant;
 import udpm.hn.studentattendance.infrastructure.redis.service.RedisService;
 
 import java.util.*;
@@ -48,52 +49,71 @@ public class STStudentServiceImpl implements STStudentService {
     @Value("${app.config.disabled-check-email-fpt}")
     private String isDisableCheckEmailFpt;
 
-    @Value("${spring.cache.redis.time-to-live:3600}")
+    @Value("${spring.cache.redis.time-to-live}")
     private long redisTTL;
+
+    public PageableObject<?> getCachedStudentList(USStudentRequest studentRequest) {
+        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_STUDENT + "list_" + sessionHelper.getFacilityId() + "_"
+                + studentRequest.toString();
+
+        Object cachedData = redisService.get(cacheKey);
+        if (cachedData != null) {
+            try {
+                return redisService.getObject(cacheKey, PageableObject.class);
+            } catch (Exception e) {
+                redisService.delete(cacheKey);
+            }
+        }
+
+        Pageable pageable = PaginationHelper.createPageable(studentRequest);
+        PageableObject<?> pageableObject = PageableObject.of(studentExtendRepository
+                .getAllStudentByFacility(pageable, studentRequest, sessionHelper.getFacilityId()));
+
+        try {
+            redisService.set(cacheKey, pageableObject, redisTTL);
+        } catch (Exception ignored) {
+        }
+
+        return pageableObject;
+    }
 
     @Override
     public ResponseEntity<?> getAllStudentByFacility(USStudentRequest studentRequest) {
-        // Tạo cache key dựa trên thông tin request và facility
-        String cacheKey = "student:list:" + sessionHelper.getFacilityId() + ":" + studentRequest.toString();
+        PageableObject<?> pageableObject = getCachedStudentList(studentRequest);
+        return RouterHelper.responseSuccess("Lấy danh sách sinh viên thành công", pageableObject);
+    }
 
-        // Thử lấy từ cache
+    public UserStudent getCachedStudentDetail(String studentId) {
+        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_STUDENT + studentId;
+
         Object cachedData = redisService.get(cacheKey);
         if (cachedData != null) {
-            return RouterHelper.responseSuccess("Lấy danh sách sinh viên thành công (cached)", cachedData);
+            try {
+                return redisService.getObject(cacheKey, UserStudent.class);
+            } catch (Exception e) {
+                redisService.delete(cacheKey);
+            }
         }
 
-        // Nếu không có trong cache, truy vấn từ database
-        Pageable pageable = PaginationHelper.createPageable(studentRequest);
-        PageableObject pageableObject = PageableObject.of(studentExtendRepository
-                .getAllStudentByFacility(pageable, studentRequest, sessionHelper.getFacilityId()));
+        Optional<UserStudent> userStudent = studentExtendRepository.findById(studentId);
 
-        // Lưu vào cache
-        redisService.set(cacheKey, pageableObject, redisTTL);
+        UserStudent result = userStudent.orElse(null);
+        if (result != null) {
+            try {
+                redisService.set(cacheKey, result, redisTTL);
+            } catch (Exception ignored) {
+            }
+        }
 
-        return RouterHelper.responseSuccess("Lấy danh sách sinh viên thành công", pageableObject);
+        return result;
     }
 
     @Override
     public ResponseEntity<?> getDetailStudent(String studentId) {
-        // Tạo cache key
-        String cacheKey = "student:detail:" + studentId;
-
-        // Thử lấy từ cache
-        Object cachedData = redisService.get(cacheKey);
-        if (cachedData != null) {
-            return RouterHelper.responseSuccess("Hiện thị chi tiết sinh viên thành công (cached)", cachedData);
-        }
-
-        // Nếu không có trong cache, truy vấn từ database
-        Optional<UserStudent> userStudent = studentExtendRepository.findById(studentId);
-
-        if (userStudent.isPresent()) {
-            // Lưu vào cache
-            redisService.set(cacheKey, userStudent.get(), redisTTL * 2); // Cache lâu hơn vì thông tin chi tiết ít thay
-                                                                         // đổi
+        UserStudent userStudent = getCachedStudentDetail(studentId);
+        if (userStudent != null) {
             return RouterHelper.responseSuccess("Hiện thị chi tiết sinh viên thành công", userStudent);
         }
-
         return RouterHelper.responseError("Sinh viên không tồn tại");
     }
 
@@ -268,22 +288,25 @@ public class STStudentServiceImpl implements STStudentService {
             // Xóa cache liên quan đến sinh viên này
             invalidateStudentCache(studentId);
             // Xóa cache trạng thái face
-            redisService.delete("student:face:status:" + sessionHelper.getFacilityId());
+            invalidateFaceStatusCache();
 
             return RouterHelper.responseSuccess("Cấp quyền thay đổi mặt sinh viên thành công", userStudent);
         }
         return RouterHelper.responseError("Sinh viên không tồn tại");
     }
 
-    @Override
-    public ResponseEntity<?> isExistFace() {
+    public Map<String, Boolean> getCachedFaceStatus() {
         // Tạo cache key
-        String cacheKey = "student:face:status:" + sessionHelper.getFacilityId();
+        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_STUDENT + "face_status_" + sessionHelper.getFacilityId();
 
         // Thử lấy từ cache
         Object cachedData = redisService.get(cacheKey);
         if (cachedData != null) {
-            return RouterHelper.responseSuccess("Lấy trạng thái face của sinh viên thành công (cached)", cachedData);
+            try {
+                return redisService.getObject(cacheKey, Map.class);
+            } catch (Exception e) {
+                redisService.delete(cacheKey);
+            }
         }
 
         // Nếu không có trong cache, truy vấn từ database
@@ -295,9 +318,25 @@ public class STStudentServiceImpl implements STStudentService {
                         m -> ((Number) m.get("hasFace")).intValue() == 1));
 
         // Lưu vào cache
-        redisService.set(cacheKey, studentFaceMap, redisTTL);
+        try {
+            redisService.set(cacheKey, studentFaceMap, redisTTL);
+        } catch (Exception ignored) {
+        }
 
+        return studentFaceMap;
+    }
+
+    @Override
+    public ResponseEntity<?> isExistFace() {
+        Map<String, Boolean> studentFaceMap = getCachedFaceStatus();
         return RouterHelper.responseSuccess("Lấy trạng thái face của sinh viên thành công", studentFaceMap);
+    }
+
+    /**
+     * Xóa cache trạng thái face
+     */
+    private void invalidateFaceStatusCache() {
+        redisService.delete(RedisPrefixConstant.REDIS_PREFIX_STUDENT + "face_status_" + sessionHelper.getFacilityId());
     }
 
     /**
@@ -305,15 +344,18 @@ public class STStudentServiceImpl implements STStudentService {
      */
     private void invalidateStudentCache(String studentId) {
         // Xóa cache chi tiết sinh viên
-        redisService.delete("student:detail:" + studentId);
+        redisService.delete(RedisPrefixConstant.REDIS_PREFIX_STUDENT + studentId);
         // Xóa cache danh sách sinh viên
         invalidateStudentListCache();
+        // Xóa cache trạng thái face
+        invalidateFaceStatusCache();
     }
 
     /**
      * Xóa cache danh sách sinh viên
      */
     private void invalidateStudentListCache() {
-        redisService.deletePattern("student:list:" + sessionHelper.getFacilityId() + ":*");
+        redisService.deletePattern(
+                RedisPrefixConstant.REDIS_PREFIX_STUDENT + "list_" + sessionHelper.getFacilityId() + "_*");
     }
 }

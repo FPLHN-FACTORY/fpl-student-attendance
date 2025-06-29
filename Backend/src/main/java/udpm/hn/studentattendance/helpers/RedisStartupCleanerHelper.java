@@ -9,7 +9,6 @@ import org.springframework.stereotype.Component;
 import udpm.hn.studentattendance.infrastructure.redis.service.QueryCacheService;
 import udpm.hn.studentattendance.infrastructure.redis.service.RedisService;
 
-
 @Component
 public class RedisStartupCleanerHelper {
 
@@ -33,7 +32,7 @@ public class RedisStartupCleanerHelper {
 
             queryCacheService.clearAllCaches();
 
-            redisService.flushAll();
+            redisService.deletePattern("*");
 
             logger.info("Redis cache cleaned successfully");
         } catch (Exception e) {

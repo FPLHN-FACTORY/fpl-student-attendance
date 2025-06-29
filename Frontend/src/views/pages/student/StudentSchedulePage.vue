@@ -11,7 +11,7 @@ import { Modal, message } from 'ant-design-vue'
 import ExcelJS from 'exceljs'
 import { saveAs } from 'file-saver'
 import { autoAddColumnWidth, dayOfWeek, formatDate } from '@/utils/utils'
-import { CloudDownloadOutlined, FilePdfFilled, FilePdfOutlined, FilterFilled, UnorderedListOutlined } from '@ant-design/icons-vue'
+import { CloudDownloadOutlined, FilePdfOutlined, FilterFilled, UnorderedListOutlined } from '@ant-design/icons-vue'
 
 const breadcrumbStore = useBreadcrumbStore()
 
@@ -241,7 +241,6 @@ onMounted(() => {
                   <a-select
                     v-model:value="filter.plan"
                     placeholder="Chọn khoảng thời gian"
-                    allowClear
                     class="w-100"
                     @change="fetchAttendanceList"
                   >
@@ -325,7 +324,7 @@ onMounted(() => {
                 </a-tag>
               </template>
               <template v-if="column.dataIndex === 'description'">
-                <a-typography-link 
+                <a-typography-link
                   v-if="record.description"
                   @click="handleShowDescription(record.description)"
                   >Chi tiết</a-typography-link

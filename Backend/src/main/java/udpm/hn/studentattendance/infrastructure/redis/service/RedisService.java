@@ -1,159 +1,49 @@
 package udpm.hn.studentattendance.infrastructure.redis.service;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.stereotype.Service;
-
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 
-@Service
-public class RedisService {
+public interface RedisService {
 
-    private static final Logger logger = LoggerFactory.getLogger(RedisService.class);
-    private final RedisTemplate<String, Object> redisTemplate;
+    void set(String key, String value);
 
-    public RedisService(RedisTemplate<String, Object> redisTemplate) {
-        this.redisTemplate = redisTemplate;
-    }
+    /**
+     * Lưu đối tượng vào Redis dưới dạng JSON
+     */
+    void setObject(String key, Object value);
 
-    public void set(String key, Object value, long ttl) {
-        try {
-            redisTemplate.opsForValue().set(key, value, ttl, TimeUnit.SECONDS);
-        } catch (Exception e) {
-            logger.warn("Unable to set Redis key {}: {}", key, e.getMessage());
-        }
-    }
+    /**
+     * Lấy đối tượng từ Redis và chuyển đổi từ JSON sang kiểu T
+     */
+    <T> T getObject(String key, Class<T> clazz);
 
-    public Object get(String key) {
-        try {
-            return redisTemplate.opsForValue().get(key);
-        } catch (Exception e) {
-            logger.warn("Unable to get Redis key {}: {}", key, e.getMessage());
-            return null;
-        }
-    }
+    void setTimeToLive(String key, long timeoutInDay);
 
-    public void delete(String key) {
-        try {
-            redisTemplate.delete(key);
-        } catch (Exception e) {
-            logger.warn("Unable to delete Redis key {}: {}", key, e.getMessage());
-        }
-    }
+    void hashSet(String key, String field, Object value);
 
-    public boolean hasKey(String key) {
-        try {
-            return Boolean.TRUE.equals(redisTemplate.hasKey(key));
-        } catch (Exception e) {
-            logger.warn("Unable to check Redis key {}: {}", key, e.getMessage());
-            return false;
-        }
-    }
+    boolean hashExist(String key, String field);
 
-    public void deletePattern(String pattern) {
-        try {
-            Set<String> keys = redisTemplate.keys(pattern);
-            if (keys != null && !keys.isEmpty()) {
-                redisTemplate.delete(keys);
-            }
-        } catch (Exception e) {
-            logger.warn("Unable to delete pattern {}: {}", pattern, e.getMessage());
-        }
-    }
+    Object get(String key);
 
-    public void setHash(String key, String hashKey, Object value) {
-        try {
-            redisTemplate.opsForHash().put(key, hashKey, value);
-        } catch (Exception e) {
-            logger.warn("Unable to set Redis hash {}.{}: {}", key, hashKey, e.getMessage());
-        }
-    }
+    Map<String, Object> getField(String key);
 
-    public void setHashAll(String key, Map<String, Object> map) {
-        try {
-            redisTemplate.opsForHash().putAll(key, map);
-        } catch (Exception e) {
-            logger.warn("Unable to set Redis hash {}: {}", key, e.getMessage());
-        }
-    }
+    Object hashGet(String key, String field);
 
-    public void expire(String key, long ttl) {
-        try {
-            redisTemplate.expire(key, ttl, TimeUnit.SECONDS);
-        } catch (Exception e) {
-            logger.warn("Unable to set expiration for key {}: {}", key, e.getMessage());
-        }
-    }
+    List<Object> hashGetByFieldPrefix(String key, String fieldPrefix);
 
-    public Object getHash(String key, String hashKey) {
-        try {
-            return redisTemplate.opsForHash().get(key, hashKey);
-        } catch (Exception e) {
-            logger.warn("Unable to get Redis hash {}.{}: {}", key, hashKey, e.getMessage());
-            return null;
-        }
-    }
+    Set<String> getFieldPrefixes(String key);
 
-    public Map<Object, Object> getHashAll(String key) {
-        try {
-            return redisTemplate.opsForHash().entries(key);
-        } catch (Exception e) {
-            logger.warn("Unable to get all Redis hash {}: {}", key, e.getMessage());
-            return Map.of();
-        }
-    }
+    void delete(String key);
 
-    public List<String> getAllKeys(String pattern) {
-        try {
-            Set<String> keys = redisTemplate.keys(pattern);
-            return keys != null ? new ArrayList<>(keys) : new ArrayList<>();
-        } catch (Exception e) {
-            logger.warn("Unable to get keys for pattern {}: {}", pattern, e.getMessage());
-            return new ArrayList<>();
-        }
-    }
+    void delete(String key, String field);
 
-    public Long increment(String key) {
-        try {
-            return redisTemplate.opsForValue().increment(key);
-        } catch (Exception e) {
-            logger.warn("Unable to increment counter {}: {}", key, e.getMessage());
-            return null;
-        }
-    }
+    void delete(String key, List<String> fields);
 
-    public void addToList(String key, Object value) {
-        try {
-            redisTemplate.opsForList().rightPush(key, value);
-        } catch (Exception e) {
-            logger.warn("Unable to add to list {}: {}", key, e.getMessage());
-        }
-    }
+    /**
+     * Legacy methods for backward compatibility
+     */
+    void set(String key, Object value, long ttl);
 
-    public List<Object> getList(String key) {
-        try {
-            Long size = redisTemplate.opsForList().size(key);
-            return size != null ? redisTemplate.opsForList().range(key, 0, size - 1) : new ArrayList<>();
-        } catch (Exception e) {
-            logger.warn("Unable to get list {}: {}", key, e.getMessage());
-            return new ArrayList<>();
-        }
-    }
-
-    public void flushAll() {
-        try {
-            Set<String> keys = redisTemplate.keys("*");
-            if (keys != null && !keys.isEmpty()) {
-                redisTemplate.delete(keys);
-            }
-            logger.info("Flushed all Redis data");
-        } catch (Exception e) {
-            logger.warn("Unable to flush all Redis data: {}", e.getMessage());
-        }
-    }
+    void deletePattern(String pattern);
 }

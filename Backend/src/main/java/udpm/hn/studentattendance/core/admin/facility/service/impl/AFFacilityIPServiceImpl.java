@@ -20,6 +20,7 @@ import udpm.hn.studentattendance.infrastructure.common.ApiResponse;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.IPType;
+import udpm.hn.studentattendance.infrastructure.constants.RedisPrefixConstant;
 import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
 import udpm.hn.studentattendance.infrastructure.redis.service.RedisService;
 
@@ -37,6 +38,41 @@ public class AFFacilityIPServiceImpl implements AFFacilityIPService {
 
     @Value("${REDIS_TTL}")
     private long redisTTL;
+
+    public PageableObject<AFFacilityIPResponse> getIPList(AFFilterFacilityIPRequest request) {
+        // Tạo cache key thủ công
+        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_FACILITY_IP + "list_" +
+                "page=" + request.getPage() +
+                "_size=" + request.getSize() +
+                "_orderBy=" + request.getOrderBy() +
+                "_sortBy=" + request.getSortBy() +
+                "_q=" + (request.getQ() != null ? request.getQ() : "");
+
+        // Kiểm tra cache
+        Object cachedData = redisService.get(cacheKey);
+        if (cachedData != null) {
+            try {
+                // Thử lấy dữ liệu từ cache sử dụng getObject
+                return redisService.getObject(cacheKey, PageableObject.class);
+            } catch (Exception e) {
+                // Nếu lỗi, xóa cache entry và tiếp tục lấy dữ liệu mới
+                redisService.delete(cacheKey);
+            }
+        }
+
+        // Cache miss - fetch from database
+        Pageable pageable = PaginationHelper.createPageable(request);
+        PageableObject<AFFacilityIPResponse> data = PageableObject.of(
+                afFacilityIPRepository.getAllByFilter(pageable, request));
+
+        // Store in cache - sử dụng set với thời gian sống cụ thể
+        try {
+            redisService.set(cacheKey, data, redisTTL);
+        } catch (Exception ignored) {
+        }
+
+        return data;
+    }
 
     private ResponseEntity<ApiResponse> checkIP(IPType type, String ip) {
         if (type == IPType.DNSSUFFIX) {
@@ -69,17 +105,7 @@ public class AFFacilityIPServiceImpl implements AFFacilityIPService {
 
     @Override
     public ResponseEntity<?> getAllList(AFFilterFacilityIPRequest request) {
-        String cachedKey = "admin:facility-ip-list";
-        Object cachedData = redisService.get(cachedKey);
-        if (cachedData != null) {
-            return RouterHelper.responseSuccess("Lấy danh sách dữ liệu thành công (cached)", cachedData);
-        }
-
-        Pageable pageable = PaginationHelper.createPageable(request);
-        PageableObject<AFFacilityIPResponse> data = PageableObject
-                .of(afFacilityIPRepository.getAllByFilter(pageable, request));
-
-        redisService.set(cachedKey, data, redisTTL);
+        PageableObject<AFFacilityIPResponse> data = getIPList(request);
         return RouterHelper.responseSuccess("Lấy danh sách dữ liệu thành công", data);
     }
 
@@ -114,9 +140,15 @@ public class AFFacilityIPServiceImpl implements AFFacilityIPService {
         facilityIP.setType(type);
         userActivityLogHelper.saveLog("vừa thêm " + (isDnsSuffix ? "DNS Suffix " : "IP ") + request.getIp()
                 + " cho cơ sở " + facility.getName());
+
+        FacilityIP savedIP = afFacilityIPRepository.save(facilityIP);
+
+        // Invalidate related caches
+        invalidateIPCaches();
+
         return RouterHelper.responseSuccess(
                 "Thêm mới " + (isDnsSuffix ? "DNS Suffix " : "IP ") + request.getIp() + " thành công",
-                afFacilityIPRepository.save(facilityIP));
+                savedIP);
     }
 
     @Override
@@ -153,8 +185,14 @@ public class AFFacilityIPServiceImpl implements AFFacilityIPService {
         facilityIP.setType(type);
         userActivityLogHelper.saveLog("vừa cập nhật " + (isDnsSuffix ? "DNS Suffix " : "IP ") + request.getIp()
                 + " của cơ sở " + facility.getName());
+
+        FacilityIP savedIP = afFacilityIPRepository.save(facilityIP);
+
+        // Invalidate related caches
+        invalidateIPCaches();
+
         return RouterHelper.responseSuccess("Cập nhật " + (isDnsSuffix ? "DNS Suffix" : "IP") + " thành công",
-                afFacilityIPRepository.save(facilityIP));
+                savedIP);
     }
 
     @Override
@@ -167,6 +205,10 @@ public class AFFacilityIPServiceImpl implements AFFacilityIPService {
         afFacilityIPRepository.delete(facilityIP);
         userActivityLogHelper.saveLog("vừa xóa " + (facilityIP.getType() == IPType.DNSSUFFIX ? "DNS Suffix " : "IP ")
                 + facilityIP.getIp() + " của cơ sở " + facilityIP.getFacility().getName());
+
+        // Invalidate related caches
+        invalidateIPCaches();
+
         return RouterHelper.responseSuccess("Xoá thành công IP/DNS Suffix: " + facilityIP.getIp());
     }
 
@@ -190,8 +232,19 @@ public class AFFacilityIPServiceImpl implements AFFacilityIPService {
         userActivityLogHelper.saveLog(
                 "vừa thay đổi trạng thái " + (isDnsSuffix ? "DNS Suffix " : "IP ") + facilityIP.getIp() + " của cơ sở "
                         + facilityIP.getFacility().getName() + " thành " + updatedIP.getStatus().name());
+
+        // Invalidate related caches
+        invalidateIPCaches();
+
         return RouterHelper.responseSuccess(
                 "Thay đổi trạng thái " + (isDnsSuffix ? "DNS Suffix" : "IP") + " thành công", updatedIP);
+    }
+
+    /**
+     * Xóa cache liên quan đến IP/DNS
+     */
+    private void invalidateIPCaches() {
+        redisService.deletePattern(RedisPrefixConstant.REDIS_PREFIX_FACILITY_IP + "list_*");
     }
 
 }
