@@ -8,10 +8,11 @@ export default {
     enabled: true,
     detector: {
       rotation: true,
-      inputSize: 256,
+      inputSize: 448,
       maxDetected: 1,
       iouThreshold: 0.3,
-      minConfidence: 0.6,
+      minConfidence: 0.3,
+      square: true,
     },
     iris: { enabled: false },
     description: { enabled: true },

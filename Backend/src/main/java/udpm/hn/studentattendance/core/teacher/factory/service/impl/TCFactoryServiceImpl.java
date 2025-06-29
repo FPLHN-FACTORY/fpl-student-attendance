@@ -1,7 +1,6 @@
 package udpm.hn.studentattendance.core.teacher.factory.service.impl;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -18,6 +17,7 @@ import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.helpers.SessionHelper;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
+import udpm.hn.studentattendance.infrastructure.constants.RedisPrefixConstant;
 import udpm.hn.studentattendance.infrastructure.redis.service.RedisService;
 
 import java.util.List;
@@ -37,13 +37,11 @@ public class TCFactoryServiceImpl implements TCFactoryService {
 
         private final RedisService redisService;
 
-        @Value("${spring.cache.redis.time-to-live:3600}")
-        private long redisTTL;
-
         @Override
         public ResponseEntity<?> getAllFactoryByTeacher(TCFactoryRequest teacherStudentRequest) {
-                String cacheKey = "teacher:factory:" + sessionHelper.getUserCode() + ":" + sessionHelper.getFacilityId()
-                                + ":" + teacherStudentRequest.toString();
+                String cacheKey = RedisPrefixConstant.REDIS_PREFIX_TEACHER_FACTORY + "factory_" + sessionHelper.getUserCode()
+                                + "_" + sessionHelper.getFacilityId()
+                                + "_" + teacherStudentRequest.toString();
 
                 Object cachedData = redisService.get(cacheKey);
                 if (cachedData != null) {
@@ -59,7 +57,7 @@ public class TCFactoryServiceImpl implements TCFactoryService {
                                                 sessionHelper.getFacilityId(), sessionHelper.getUserCode(),
                                                 teacherStudentRequest));
 
-                redisService.set(cacheKey, listFactoryByTeacher, redisTTL);
+                redisService.setObject(cacheKey, listFactoryByTeacher);
 
                 return RouterHelper.responseSuccess("Lấy tất cả nhóm xưởng do giảng viên " + sessionHelper.getUserCode()
                                 + " thành công", listFactoryByTeacher);
@@ -67,7 +65,8 @@ public class TCFactoryServiceImpl implements TCFactoryService {
 
         @Override
         public ResponseEntity<?> getAllProjectByFacility() {
-                String cacheKey = "teacher:projects:" + sessionHelper.getFacilityId();
+                String cacheKey = RedisPrefixConstant.REDIS_PREFIX_TEACHER_FACTORY + "projects_"
+                                + sessionHelper.getFacilityId();
 
                 Object cachedData = redisService.get(cacheKey);
                 if (cachedData != null) {
@@ -78,8 +77,7 @@ public class TCFactoryServiceImpl implements TCFactoryService {
                 List<Project> projects = teacherStudentProjectExtendRepository
                                 .getAllProjectName(sessionHelper.getFacilityId());
 
-                redisService.set(cacheKey, projects, redisTTL * 2); // Cache for longer since projects don't change
-                                                                    // often
+                redisService.setObject(cacheKey, projects);
 
                 return RouterHelper.responseSuccess("Lấy tất cả dự án theo cơ sở thành công", projects);
         }
@@ -91,7 +89,7 @@ public class TCFactoryServiceImpl implements TCFactoryService {
 
         @Override
         public ResponseEntity<?> getAllSemester() {
-                String cacheKey = "teacher:semesters:active";
+                String cacheKey = RedisPrefixConstant.REDIS_PREFIX_TEACHER_FACTORY + "semesters_active";
 
                 Object cachedData = redisService.get(cacheKey);
                 if (cachedData != null) {
@@ -100,8 +98,7 @@ public class TCFactoryServiceImpl implements TCFactoryService {
 
                 List<Semester> semesters = semesterExtendRepository.getAllSemester(EntityStatus.ACTIVE);
 
-                redisService.set(cacheKey, semesters, redisTTL * 4); // Cache for longer since semesters don't change
-                                                                     // often
+                redisService.setObject(cacheKey, semesters);
 
                 return RouterHelper.responseSuccess("Lấy tất cả học kỳ thành công", semesters);
         }
@@ -115,7 +112,8 @@ public class TCFactoryServiceImpl implements TCFactoryService {
                 String facilityId = sessionHelper.getFacilityId();
 
                 // Delete all factory lists for this teacher
-                redisService.deletePattern("teacher:factory:" + teacherCode + ":" + facilityId + ":*");
+                redisService.deletePattern(RedisPrefixConstant.REDIS_PREFIX_TEACHER_FACTORY + "factory_" + teacherCode + "_"
+                                + facilityId + "_*");
         }
 
         /**
@@ -125,6 +123,6 @@ public class TCFactoryServiceImpl implements TCFactoryService {
                 String facilityId = sessionHelper.getFacilityId();
 
                 // Delete all project lists for this facility
-                redisService.deletePattern("teacher:projects:" + facilityId);
+                redisService.deletePattern(RedisPrefixConstant.REDIS_PREFIX_TEACHER_FACTORY + "projects_" + facilityId);
         }
 }

@@ -16,6 +16,7 @@ import udpm.hn.studentattendance.core.admin.statistics.model.response.ADSTotalPr
 import udpm.hn.studentattendance.core.admin.statistics.repository.*;
 import udpm.hn.studentattendance.core.admin.statistics.service.ADStatisticsService;
 import udpm.hn.studentattendance.helpers.RouterHelper;
+import udpm.hn.studentattendance.infrastructure.constants.RedisPrefixConstant;
 import udpm.hn.studentattendance.infrastructure.redis.service.RedisService;
 
 import java.util.List;
@@ -32,23 +33,28 @@ public class ADStatisticsServiceImpl implements ADStatisticsService {
 
     private final RedisService redisService;
 
-    @Value("${spring.cache.redis.time-to-live:3600}")
+    @Value("${spring.cache.redis.time-to-live}")
     private long redisTTL;
 
-    @Override
-    public ResponseEntity<?> getAllListStats(ADStatisticRequest request, int pageNumber) {
-        String cacheKey = "admin:statistics:" + request.toString() + ":" + pageNumber;
+    public ADSAllStartsAndChartDTO getCachedStatistics(ADStatisticRequest request, int pageNumber) {
+        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_STATISTICS + "admin_" +
+                "request=" + request.toString() +
+                "_page=" + pageNumber;
 
         Object cachedData = redisService.get(cacheKey);
         if (cachedData != null) {
-            return RouterHelper.responseSuccess("Lấy dữ liệu thống kê thành công (cached)", cachedData);
+            try {
+                return redisService.getObject(cacheKey, ADSAllStartsAndChartDTO.class);
+            } catch (Exception e) {
+                redisService.delete(cacheKey);
+            }
         }
 
         ADStatisticsStatResponse statResponse = statisticsRepository.getAllStatistics(request).orElse(null);
         ADSTotalProjectAndSubjectResponse totalProjectAndSubjectResponse = statisticsRepository
                 .getTotalProjectAndSubject().orElse(null);
         if (statResponse == null || totalProjectAndSubjectResponse == null) {
-            return RouterHelper.responseError("Không thể lấy dữ liệu thống kê");
+            return null;
         }
 
         List<ADSSubjectFacilityChartResponse> subjectFacilityChartResponseList = subjectFacilityExtendRepository
@@ -63,14 +69,32 @@ public class ADStatisticsServiceImpl implements ADStatisticsService {
         adsAllStartsAndChartDTO.setProjectSubjectFacilityResponses(projectSubjectFacilityResponseList);
         adsAllStartsAndChartDTO.setTotalProjectAndSubjectResponse(totalProjectAndSubjectResponse);
 
-        redisService.set(cacheKey, adsAllStartsAndChartDTO, redisTTL * 3);
-        return RouterHelper.responseSuccess("Lấy dữ liệu thống kê thành công", adsAllStartsAndChartDTO);
+        try {
+            redisService.set(cacheKey, adsAllStartsAndChartDTO, redisTTL);
+        } catch (Exception ignored) {
+        }
+
+        return adsAllStartsAndChartDTO;
     }
 
-    /**
-     * Xóa cache thống kê admin
-     */
-    public void invalidateAdminStatisticsCache() {
-        redisService.deletePattern("admin:statistics:*");
+    @Override
+    public ResponseEntity<?> getAllListStats(ADStatisticRequest request, int pageNumber) {
+        ADSAllStartsAndChartDTO data = getCachedStatistics(request, pageNumber);
+        if (data == null) {
+            return RouterHelper.responseError("Không thể lấy dữ liệu thống kê");
+        }
+
+        return RouterHelper.responseSuccess("Lấy dữ liệu thống kê thành công", data);
+    }
+
+    public void invalidateStatisticsCache(String requestId, int pageNumber) {
+        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_STATISTICS + "admin_" +
+                "request=" + requestId +
+                "_page=" + pageNumber;
+        redisService.delete(cacheKey);
+    }
+
+    public void invalidateAllStatisticsCaches() {
+        redisService.deletePattern(RedisPrefixConstant.REDIS_PREFIX_STATISTICS + "admin_*");
     }
 }
