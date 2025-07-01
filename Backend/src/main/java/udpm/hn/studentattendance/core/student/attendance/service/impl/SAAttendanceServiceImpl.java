@@ -76,8 +76,6 @@ public class SAAttendanceServiceImpl implements SAAttendanceService {
         request.setIdFacility(sessionHelper.getFacilityId());
         request.setIdUserStudent(sessionHelper.getUserId());
 
-        // Không cache dữ liệu điểm danh vì cần độ chính xác cao và thay đổi thường
-        // xuyên
         Pageable pageable = PaginationHelper.createPageable(request);
         PageableObject<SAAttendanceResponse> data = PageableObject
                 .of(attendanceRepository.getAllByFilter(pageable, request));
@@ -259,4 +257,5 @@ public class SAAttendanceServiceImpl implements SAAttendanceService {
         attendanceMessage.setUserStudentId(userStudent.getId());
         messagingTemplate.convertAndSend(RouteWebsocketConstant.TOPIC_ATTENDANCE, attendanceMessage);
     }
+
 }
