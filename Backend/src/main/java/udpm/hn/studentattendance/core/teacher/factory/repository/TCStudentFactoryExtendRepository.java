@@ -48,8 +48,8 @@ public interface TCStudentFactoryExtendRepository extends UserStudentFactoryRepo
                             a.id_user_student = usf.id_user_student
                     )
                 ) AS totalAbsentShift,
-                (SELECT COUNT(*) FROM plan_date WHERE id_plan_factory = pf.id) / 100 * COALESCE(p.max_late_arrival, 0)  AS totalLateAttendance,
-                (
+                COALESCE((SELECT COUNT(*) FROM plan_date WHERE id_plan_factory = pf.id) / 100 * COALESCE(p.max_late_arrival, 0), 0)  AS totalLateAttendance,
+                COALESCE((
                   SELECT
                       SUM(
                           CASE
@@ -64,7 +64,7 @@ public interface TCStudentFactoryExtendRepository extends UserStudentFactoryRepo
                     pd2.status = 1 AND
                     a2.id_user_student = usf.id_user_student AND
                     pd2.id_plan_factory = pf.id
-                ) AS currentLateAttendance,
+                ), 0) AS currentLateAttendance,
                 ROW_NUMBER() OVER (ORDER BY usf.created_at DESC) AS rowNumber
             FROM user_student_factory usf
             JOIN factory ft ON ft.id = usf.id_factory
