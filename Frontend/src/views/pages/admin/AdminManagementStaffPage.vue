@@ -28,7 +28,7 @@ const breadcrumb = ref([
   },
   {
     name: ROUTE_NAMES.MANAGEMENT_STAFF,
-    breadcrumbName: 'Quản lý giảng viên/ phụ trách xưởng',
+    breadcrumbName: 'Quản lý nhân sự',
   },
 ])
 
@@ -228,7 +228,8 @@ const handleAddStaff = () => {
           modalAddLoading.value = false
           loadingStore.hide()
         })
-    },    })
+    },
+  })
 }
 
 // Hàm lấy chi tiết phụ trách / giảng viên để cập nhật
@@ -471,9 +472,9 @@ onMounted(() => {
           <template #title> <UnorderedListOutlined /> Danh sách giảng viên </template>
           <div class="d-flex justify-content-end flex-wrap gap-3 mb-2">
             <ExcelUploadButton v-bind="configImportExcel" />
-              <a-button type="primary" @click="handleShowModalAdd">
-                <PlusOutlined /> Thêm giảng viên
-              </a-button>
+            <a-button type="primary" @click="handleShowModalAdd">
+              <PlusOutlined /> Thêm giảng viên
+            </a-button>
           </div>
 
           <a-table
@@ -508,10 +509,8 @@ onMounted(() => {
                 </span>
               </template>
               <template v-else-if="column.dataIndex === 'roleCode'">
-                  <a-badge
-                    status="processing"
-                  />
-                  {{ convertRole(record.roleCode) }}
+                <a-badge status="processing" />
+                {{ convertRole(record.roleCode) }}
               </template>
               <template v-else-if="column.dataIndex === 'facilityName'">
                 <a-tag>
