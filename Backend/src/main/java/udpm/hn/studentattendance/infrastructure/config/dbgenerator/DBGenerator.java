@@ -55,10 +55,12 @@ public class DBGenerator {
     @PostConstruct
     public void init() {
         if (isGenerated.equals("true")) {
-            generateFacility();
+            if (StringUtils.hasText(facilityName)) {
+                generateFacility();
+            }
             generateUserAdmin();
-            generateUserStaff();
-            generateUserStudent();
+            //generateUserStaff();
+            //generateUserStudent();
         }
     }
 
