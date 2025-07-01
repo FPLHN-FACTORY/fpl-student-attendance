@@ -1,6 +1,7 @@
 package udpm.hn.studentattendance.core.admin.subjectfacility.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -21,6 +22,8 @@ import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.common.repositories.CommonUserStudentRepository;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
+import udpm.hn.studentattendance.infrastructure.constants.RedisPrefixConstant;
+import udpm.hn.studentattendance.infrastructure.redis.service.RedisService;
 import udpm.hn.studentattendance.repositories.FacilityRepository;
 import udpm.hn.studentattendance.repositories.SubjectRepository;
 
@@ -38,9 +41,84 @@ public class ADSubjectFacilityServiceImpl implements ADSubjectFacilityService {
 
     private final UserActivityLogHelper userActivityLogHelper;
 
-    public ResponseEntity<?> getListSubjectFacility(ADSubjectFacilitySearchRequest request) {
+    private final RedisService redisService;
+
+    @Value("${spring.cache.redis.time-to-live}")
+    private long redisTTL;
+
+    /**
+     * Lấy danh sách bộ môn cơ sở từ cache hoặc DB
+     */
+    public PageableObject<ADSubjectFacilityResponse> getSubjectFacilityList(ADSubjectFacilitySearchRequest request) {
+        // Tạo cache key thủ công
+        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_SUBJECT_FACILITY + "list_" +
+                "page=" + request.getPage() +
+                "_size=" + request.getSize() +
+                "_orderBy=" + request.getOrderBy() +
+                "_sortBy=" + request.getSortBy() +
+                "_q=" + (request.getQ() != null ? request.getQ() : "") +
+                "_name=" + (request.getName() != null ? request.getName() : "") +
+                "_facilityId=" + (request.getFacilityId() != null ? request.getFacilityId() : "") +
+                "_subjectId=" + (request.getSubjectId() != null ? request.getSubjectId() : "") +
+                "_status=" + (request.getStatus() != null ? request.getStatus() : "");
+
+        // Kiểm tra cache
+        Object cachedData = redisService.get(cacheKey);
+        if (cachedData != null) {
+            try {
+                return redisService.getObject(cacheKey, PageableObject.class);
+            } catch (Exception e) {
+                redisService.delete(cacheKey);
+            }
+        }
+
+        // Cache miss - fetch from database
         Pageable pageable = PaginationHelper.createPageable(request, "id");
-        return RouterHelper.responseSuccess("Lây danh sách bộ môn cơ sở thành công", PageableObject.of(repository.getAll(pageable, request)));
+        PageableObject<ADSubjectFacilityResponse> result = PageableObject.of(repository.getAll(pageable, request));
+
+        // Store in cache
+        try {
+            redisService.set(cacheKey, result, redisTTL);
+        } catch (Exception ignored) {
+        }
+
+        return result;
+    }
+
+    /**
+     * Lấy thông tin chi tiết bộ môn cơ sở từ cache hoặc DB
+     */
+    public ADSubjectFacilityResponse getSubjectFacilityDetail(String id) {
+        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_SUBJECT_FACILITY + id;
+
+        // Kiểm tra cache
+        Object cachedData = redisService.get(cacheKey);
+        if (cachedData != null) {
+            try {
+                return redisService.getObject(cacheKey, ADSubjectFacilityResponse.class);
+            } catch (Exception e) {
+                redisService.delete(cacheKey);
+            }
+        }
+
+        // Cache miss - fetch from database
+        ADSubjectFacilityResponse result = repository.getOneById(id).orElse(null);
+
+        // Store in cache if found
+        if (result != null) {
+            try {
+                redisService.set(cacheKey, result, redisTTL);
+            } catch (Exception ignored) {
+            }
+        }
+
+        return result;
+    }
+
+    @Override
+    public ResponseEntity<?> getListSubjectFacility(ADSubjectFacilitySearchRequest request) {
+        PageableObject<ADSubjectFacilityResponse> result = getSubjectFacilityList(request);
+        return RouterHelper.responseSuccess("Lây danh sách bộ môn cơ sở thành công", result);
     }
 
     @Override
@@ -63,7 +141,12 @@ public class ADSubjectFacilityServiceImpl implements ADSubjectFacilityService {
         subjectFacility.setSubject(subject);
 
         SubjectFacility savedSubjectFacility = repository.save(subjectFacility);
-        userActivityLogHelper.saveLog("vừa thêm mới bộ môn cơ sở : " + subject.getName() + " tại cơ sở " + facility.getName());
+        userActivityLogHelper
+                .saveLog("vừa thêm mới bộ môn cơ sở : " + subject.getName() + " tại cơ sở " + facility.getName());
+
+        // Invalidate related caches
+        invalidateSubjectFacilityCaches();
+
         return RouterHelper.responseSuccess("Thêm bộ môn cơ sở thành công", savedSubjectFacility);
     }
 
@@ -91,13 +174,18 @@ public class ADSubjectFacilityServiceImpl implements ADSubjectFacilityService {
         subjectFacility.setSubject(subject);
 
         SubjectFacility savedSubjectFacility = repository.save(subjectFacility);
-        userActivityLogHelper.saveLog("vừa cập nhật bộ môn cơ sở: " + subject.getName() + " tại cơ sở " + facility.getName());
+        userActivityLogHelper
+                .saveLog("vừa cập nhật bộ môn cơ sở: " + subject.getName() + " tại cơ sở " + facility.getName());
+
+        // Invalidate related caches
+        invalidateSubjectFacilityCache(id);
+
         return RouterHelper.responseSuccess("Cập nhật bộ môn cơ sở thành công", savedSubjectFacility);
     }
 
     @Override
     public ResponseEntity<?> detailSubjectFacility(String id) {
-        ADSubjectFacilityResponse subjectFacility = repository.getOneById(id).orElse(null);
+        ADSubjectFacilityResponse subjectFacility = getSubjectFacilityDetail(id);
         if (subjectFacility == null) {
             return RouterHelper.responseError("Không tìm thấy bộ môn cơ sở");
         }
@@ -110,7 +198,8 @@ public class ADSubjectFacilityServiceImpl implements ADSubjectFacilityService {
         if (subjectFacility == null) {
             return RouterHelper.responseError("Không tìm thấy bộ môn cơ sở");
         }
-        subjectFacility.setStatus(subjectFacility.getStatus() == EntityStatus.ACTIVE ? EntityStatus.INACTIVE : EntityStatus.ACTIVE);
+        subjectFacility.setStatus(
+                subjectFacility.getStatus() == EntityStatus.ACTIVE ? EntityStatus.INACTIVE : EntityStatus.ACTIVE);
 
         SubjectFacility newEntity = repository.save(subjectFacility);
 
@@ -118,8 +207,27 @@ public class ADSubjectFacilityServiceImpl implements ADSubjectFacilityService {
             commonUserStudentRepository.disableAllStudentDuplicateShiftByIdSubjectFacility(subjectFacility.getId());
         }
         String statusText = newEntity.getStatus() == EntityStatus.ACTIVE ? "Hoạt động" : "Không hoạt động";
-        userActivityLogHelper.saveLog("vừa thay đổi trạng thái bộ môn cơ sở: " + newEntity.getSubject().getName() + " tại cơ sở " + newEntity.getFacility().getName() + " thành " + statusText);
+        userActivityLogHelper.saveLog("vừa thay đổi trạng thái bộ môn cơ sở: " + newEntity.getSubject().getName()
+                + " tại cơ sở " + newEntity.getFacility().getName() + " thành " + statusText);
+
+        // Invalidate related caches
+        invalidateSubjectFacilityCache(id);
+
         return RouterHelper.responseSuccess("Thay đổi trạng thái thành công", newEntity);
     }
 
+    /**
+     * Xóa cache liên quan đến một bộ môn cơ sở cụ thể
+     */
+    private void invalidateSubjectFacilityCache(String id) {
+        redisService.delete(RedisPrefixConstant.REDIS_PREFIX_SUBJECT_FACILITY + id);
+        invalidateSubjectFacilityCaches();
+    }
+
+    /**
+     * Xóa cache danh sách bộ môn cơ sở
+     */
+    private void invalidateSubjectFacilityCaches() {
+        redisService.deletePattern(RedisPrefixConstant.REDIS_PREFIX_SUBJECT_FACILITY + "list_*");
+    }
 }

@@ -29,8 +29,10 @@ import udpm.hn.studentattendance.helpers.ValidateHelper;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.config.mailer.model.MailerDefaultRequest;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
+import udpm.hn.studentattendance.infrastructure.constants.RedisPrefixConstant;
 import udpm.hn.studentattendance.infrastructure.constants.ShiftType;
 import udpm.hn.studentattendance.infrastructure.constants.StatusType;
+import udpm.hn.studentattendance.infrastructure.redis.service.RedisService;
 import udpm.hn.studentattendance.repositories.UserStudentFactoryRepository;
 
 import java.awt.*;
@@ -63,50 +65,171 @@ public class TCTeachingScheduleServiceImpl implements TCTeachingScheduleService 
 
         private final SessionHelper sessionHelper;
 
+        private final RedisService redisService;
+
         @Value("${app.config.app-name}")
         private String appName;
 
         @Value("${app.config.shift.max-late-arrival}")
         private int MAX_LATE_ARRIVAL;
 
+        @Value("${spring.cache.redis.time-to-live}")
+        private long redisTTL;
+
+        public PageableObject<?> getCachedTeachingSchedule(TCTeachingScheduleRequest request) {
+                String cacheKey = RedisPrefixConstant.REDIS_PREFIX_SCHEDULE_TEACHER + "list_"
+                                + sessionHelper.getUserId() + "_"
+                                + request.toString();
+
+                Object cachedData = redisService.get(cacheKey);
+                if (cachedData != null) {
+                        try {
+                                return redisService.getObject(cacheKey, PageableObject.class);
+                        } catch (Exception e) {
+                                redisService.delete(cacheKey);
+                        }
+                }
+
+                Pageable pageable = PaginationHelper.createPageable(request);
+                PageableObject<?> list = PageableObject
+                                .of(teacherTeachingScheduleExtendRepository.getAllTeachingScheduleByStaff(
+                                                sessionHelper.getUserId(), pageable, request));
+
+                try {
+                        redisService.set(cacheKey, list, redisTTL);
+                } catch (Exception ignored) {
+                }
+
+                return list;
+        }
+
         @Override
         public ResponseEntity<?> getAllTeachingScheduleByStaff(
                         TCTeachingScheduleRequest teachingScheduleRequest) {
-                Pageable pageable = PaginationHelper.createPageable(teachingScheduleRequest);
-                PageableObject list = PageableObject
-                                .of(teacherTeachingScheduleExtendRepository.getAllTeachingScheduleByStaff(
-                                                sessionHelper.getUserId(), pageable, teachingScheduleRequest));
+                PageableObject<?> list = getCachedTeachingSchedule(teachingScheduleRequest);
                 return RouterHelper.responseSuccess(
-                                "Lấy tất cả lịch dạy của " + sessionHelper.getUserId() + "thành công", list);
+                                "Lấy tất cả lịch dạy của " + sessionHelper.getUserId() + " thành công", list);
+        }
+
+        public List<Factory> getCachedFactories() {
+                String cacheKey = RedisPrefixConstant.REDIS_PREFIX_SCHEDULE_TEACHER + "factories_"
+                                + sessionHelper.getUserId();
+
+                Object cachedData = redisService.get(cacheKey);
+                if (cachedData != null) {
+                        try {
+                                return redisService.getObject(cacheKey, List.class);
+                        } catch (Exception e) {
+                                redisService.delete(cacheKey);
+                        }
+                }
+
+                List<Factory> factories = teacherTsFactoryExtendRepository
+                                .getAllFactoryByStaff(sessionHelper.getUserId(), EntityStatus.ACTIVE);
+
+                try {
+                        redisService.set(cacheKey, factories, redisTTL);
+                } catch (Exception ignored) {
+                }
+
+                return factories;
         }
 
         @Override
         public ResponseEntity<?> getAllFactoryByStaff() {
-                List<Factory> factories = teacherTsFactoryExtendRepository
-                                .getAllFactoryByStaff(sessionHelper.getUserId(), EntityStatus.ACTIVE);
+                List<Factory> factories = getCachedFactories();
                 return RouterHelper.responseSuccess(
                                 "Lấy tất cả nhóm xửng của " + sessionHelper.getUserId() + " dạy thành công", factories);
         }
 
-        @Override
-        public ResponseEntity<?> getAllProjectByStaff() {
+        public List<Project> getCachedProjects() {
+                String cacheKey = RedisPrefixConstant.REDIS_PREFIX_SCHEDULE_TEACHER + "projects_"
+                                + sessionHelper.getUserId();
+
+                Object cachedData = redisService.get(cacheKey);
+                if (cachedData != null) {
+                        try {
+                                return redisService.getObject(cacheKey, List.class);
+                        } catch (Exception e) {
+                                redisService.delete(cacheKey);
+                        }
+                }
+
                 List<Project> projects = teacherTsProjectExtendRepository.getAllProject(sessionHelper.getUserId(),
                                 EntityStatus.ACTIVE);
+
+                try {
+                        redisService.set(cacheKey, projects, redisTTL);
+                } catch (Exception ignored) {
+                }
+
+                return projects;
+        }
+
+        @Override
+        public ResponseEntity<?> getAllProjectByStaff() {
+                List<Project> projects = getCachedProjects();
                 return RouterHelper.responseSuccess(
                                 "Lấy tất cả dự án đang dạy của " + sessionHelper.getUserId() + " thành công", projects);
         }
 
-        @Override
-        public ResponseEntity<?> getAllSubjectByStaff() {
+        public List<Subject> getCachedSubjects() {
+                String cacheKey = RedisPrefixConstant.REDIS_PREFIX_SCHEDULE_TEACHER + "subjects_"
+                                + sessionHelper.getUserId();
+
+                Object cachedData = redisService.get(cacheKey);
+                if (cachedData != null) {
+                        try {
+                                return redisService.getObject(cacheKey, List.class);
+                        } catch (Exception e) {
+                                redisService.delete(cacheKey);
+                        }
+                }
+
                 List<Subject> subjects = teacherTsSubjectExtendRepository
                                 .getAllSubjectByStaff(sessionHelper.getUserId(), EntityStatus.ACTIVE);
+
+                try {
+                        redisService.set(cacheKey, subjects, redisTTL);
+                } catch (Exception ignored) {
+                }
+
+                return subjects;
+        }
+
+        @Override
+        public ResponseEntity<?> getAllSubjectByStaff() {
+                List<Subject> subjects = getCachedSubjects();
                 return RouterHelper.responseSuccess(
                                 "Lấy tất cả môn học của " + sessionHelper.getUserId() + " thành công", subjects);
         }
 
+        public List<PlanDate> getCachedTypes() {
+                String cacheKey = RedisPrefixConstant.REDIS_PREFIX_SCHEDULE_TEACHER + "types";
+
+                Object cachedData = redisService.get(cacheKey);
+                if (cachedData != null) {
+                        try {
+                                return redisService.getObject(cacheKey, List.class);
+                        } catch (Exception e) {
+                                redisService.delete(cacheKey);
+                        }
+                }
+
+                List<PlanDate> shifts = teacherTeachingScheduleExtendRepository.getAllType();
+
+                try {
+                        redisService.set(cacheKey, shifts, redisTTL * 24); // Cache for a day since this doesn't change
+                                                                           // often
+                } catch (Exception ignored) {
+                }
+
+                return shifts;
+        }
+
         @Override
         public ResponseEntity<?> getAllType() {
-                List<PlanDate> shifts = teacherTeachingScheduleExtendRepository.getAllType();
+                List<PlanDate> shifts = getCachedTypes();
                 return RouterHelper.responseSuccess("Lấy tất cả hình thức học thành công", shifts);
         }
 
@@ -234,6 +357,41 @@ public class TCTeachingScheduleServiceImpl implements TCTeachingScheduleService 
                 cell.setBorderColor(new Color(200, 200, 200));
         }
 
+        public TCTSDetailPlanDateResponse getCachedPlanDateDetail(String planDateId) {
+                String cacheKey = RedisPrefixConstant.REDIS_PREFIX_SCHEDULE_TEACHER + "plan_date_" + planDateId;
+
+                Object cachedData = redisService.get(cacheKey);
+                if (cachedData != null) {
+                        try {
+                                return redisService.getObject(cacheKey, TCTSDetailPlanDateResponse.class);
+                        } catch (Exception e) {
+                                redisService.delete(cacheKey);
+                        }
+                }
+
+                Optional<TCTSDetailPlanDateResponse> getDetailPlanDateResponse = teacherTeachingScheduleExtendRepository
+                                .getPlanDateById(planDateId);
+
+                TCTSDetailPlanDateResponse result = getDetailPlanDateResponse.orElse(null);
+                if (result != null) {
+                        try {
+                                redisService.set(cacheKey, result, redisTTL);
+                        } catch (Exception ignored) {
+                        }
+                }
+
+                return result;
+        }
+
+        @Override
+        public ResponseEntity<?> getDetailPlanDate(String planDateId) {
+                TCTSDetailPlanDateResponse detail = getCachedPlanDateDetail(planDateId);
+                if (detail != null) {
+                        return RouterHelper.responseSuccess("Lấy chi tiết kế hoạch thành công", detail);
+                }
+                return RouterHelper.responseSuccess("Lấy chi tiết lịch dạy thành công", null);
+        }
+
         @Override
         public ResponseEntity<?> updatePlanDate(TCTSPlanDateUpdateRequest planDateUpdateRequest) {
                 Optional<PlanDate> existPlanDate = teacherTeachingScheduleExtendRepository
@@ -285,6 +443,9 @@ public class TCTeachingScheduleServiceImpl implements TCTeachingScheduleService 
                                         "Thông báo cập nhật lịch học",
                                         "Thông tin lịch học đã được cập nhật");
                 }
+
+                // Invalidate related caches
+                invalidatePlanDateCache(planDateUpdateRequest.getIdPlanDate());
 
                 return RouterHelper.responseSuccess("Cập nhật thông tin buổi học thành công", savedPlanDate);
         }
@@ -366,25 +527,38 @@ public class TCTeachingScheduleServiceImpl implements TCTeachingScheduleService 
                 }
         }
 
-        @Override
-        public ResponseEntity<?> getDetailPlanDate(String planDateId) {
-                Optional<TCTSDetailPlanDateResponse> getDetailPlanDateResponse = teacherTeachingScheduleExtendRepository
-                                .getPlanDateById(planDateId);
+        public PageableObject<?> getCachedCurrentTeachingSchedule(TCTeachingScheduleRequest request) {
+                String cacheKey = RedisPrefixConstant.REDIS_PREFIX_SCHEDULE_TEACHER + "current_"
+                                + sessionHelper.getUserId() + "_"
+                                + request.toString();
 
-                if (getDetailPlanDateResponse.isPresent()) {
-                        return RouterHelper.responseSuccess("Lấy chi tiết kế hoạch thành công",
-                                        getDetailPlanDateResponse);
+                Object cachedData = redisService.get(cacheKey);
+                if (cachedData != null) {
+                        try {
+                                return redisService.getObject(cacheKey, PageableObject.class);
+                        } catch (Exception e) {
+                                redisService.delete(cacheKey);
+                        }
                 }
-                return RouterHelper.responseSuccess("Lấy chi tiết lịch dạy thành công", null);
+
+                Pageable pageable = PaginationHelper.createPageable(request);
+                PageableObject<?> list = PageableObject
+                                .of(teacherTeachingScheduleExtendRepository.getAllTeachingSchedulePresent(
+                                                sessionHelper.getUserId(), pageable, request));
+
+                try {
+                        redisService.set(cacheKey, list, redisTTL / 2); // Shorter TTL for current schedules as they
+                                                                        // change more often
+                } catch (Exception ignored) {
+                }
+
+                return list;
         }
 
         @Override
         public ResponseEntity<?> getAllTeachingSchedulePresent(
                         TCTeachingScheduleRequest teachingScheduleRequest) {
-                Pageable pageable = PaginationHelper.createPageable(teachingScheduleRequest);
-                PageableObject list = PageableObject
-                                .of(teacherTeachingScheduleExtendRepository.getAllTeachingSchedulePresent(
-                                                sessionHelper.getUserId(), pageable, teachingScheduleRequest));
+                PageableObject<?> list = getCachedCurrentTeachingSchedule(teachingScheduleRequest);
                 return RouterHelper.responseSuccess("Lấy tất cả lịch dạy hiện tại thành công", list);
         }
 
@@ -426,6 +600,34 @@ public class TCTeachingScheduleServiceImpl implements TCTeachingScheduleService 
                                 "Thông báo thay đổi hình thức học",
                                 notificationType);
 
+                // Invalidate related caches
+                invalidatePlanDateCache(planDateId);
+
                 return RouterHelper.responseSuccess("Thay đổi hình thức học thành công", savedPlanDate);
+        }
+
+        /**
+         * Xóa cache liên quan đến một kế hoạch cụ thể
+         */
+        private void invalidatePlanDateCache(String planDateId) {
+                // Xóa cache chi tiết kế hoạch
+                redisService.delete(RedisPrefixConstant.REDIS_PREFIX_SCHEDULE_TEACHER + "plan_date_" + planDateId);
+
+                // Xóa cache danh sách kế hoạch (cả hiện tại và tất cả)
+                invalidateTeachingScheduleCaches();
+
+                // Xóa cache lịch học sinh viên vì việc thay đổi này ảnh hưởng đến lịch học của
+                // sinh viên
+                redisService.deletePattern(RedisPrefixConstant.REDIS_PREFIX_SCHEDULE_STUDENT + "list_*");
+        }
+
+        /**
+         * Xóa tất cả cache lịch dạy
+         */
+        private void invalidateTeachingScheduleCaches() {
+                String userId = sessionHelper.getUserId();
+                redisService.deletePattern(RedisPrefixConstant.REDIS_PREFIX_SCHEDULE_TEACHER + "list_" + userId + "_*");
+                redisService.deletePattern(
+                                RedisPrefixConstant.REDIS_PREFIX_SCHEDULE_TEACHER + "current_" + userId + "_*");
         }
 }

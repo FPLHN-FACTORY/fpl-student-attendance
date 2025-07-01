@@ -1,4 +1,4 @@
-package udpm.hn.studentattendance.infrastructure.redis;
+package udpm.hn.studentattendance.helpers;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -9,20 +9,16 @@ import org.springframework.stereotype.Component;
 import udpm.hn.studentattendance.infrastructure.redis.service.QueryCacheService;
 import udpm.hn.studentattendance.infrastructure.redis.service.RedisService;
 
-/**
- * Component to clean Redis cache on application startup
- * Prevents issues with old data format after application updates
- */
 @Component
-public class RedisStartupCleaner {
+public class RedisStartupCleanerHelper {
 
-    private static final Logger logger = LoggerFactory.getLogger(RedisStartupCleaner.class);
+    private static final Logger logger = LoggerFactory.getLogger(RedisStartupCleanerHelper.class);
 
     private final QueryCacheService queryCacheService;
     private final RedisService redisService;
 
     @Autowired
-    public RedisStartupCleaner(
+    public RedisStartupCleanerHelper(
             QueryCacheService queryCacheService,
             RedisService redisService) {
         this.queryCacheService = queryCacheService;
@@ -34,11 +30,9 @@ public class RedisStartupCleaner {
         try {
             logger.info("Cleaning Redis cache on application startup");
 
-            // Clean query cache data
             queryCacheService.clearAllCaches();
 
-            // Clean any other unhandled data
-            redisService.flushAll();
+            redisService.deletePattern("*");
 
             logger.info("Redis cache cleaned successfully");
         } catch (Exception e) {

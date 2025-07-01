@@ -20,6 +20,7 @@ import udpm.hn.studentattendance.helpers.*;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.config.mailer.model.MailerDefaultRequest;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
+import udpm.hn.studentattendance.infrastructure.constants.RedisPrefixConstant;
 import udpm.hn.studentattendance.infrastructure.redis.service.RedisService;
 
 import java.util.HashMap;
@@ -51,52 +52,118 @@ public class ADUserAdminServiceImpl implements ADUserAdminService {
         @Value("${app.config.disabled-check-email-fpt}")
         private String isDisableCheckEmailFpt;
 
-        @Value("${spring.cache.redis.time-to-live:3600}")
+        @Value("${spring.cache.redis.time-to-live}")
         private long redisTTL;
 
-        @Override
-        public ResponseEntity<?> getAllUserAdmin(ADUserAdminRequest request) {
-                // Create cache key based on request parameters
-                String cacheKey = "admin:useradmin:all:" + request.toString();
+        /**
+         * Lấy danh sách admin từ cache hoặc DB
+         */
+        public PageableObject getUserAdminList(ADUserAdminRequest request) {
+                // Tạo cache key thủ công
+                String cacheKey = RedisPrefixConstant.REDIS_PREFIX_ADMIN + "list_" +
+                                "page=" + request.getPage() +
+                                "_size=" + request.getSize() +
+                                "_orderBy=" + request.getOrderBy() +
+                                "_sortBy=" + request.getSortBy() +
+                                "_q=" + (request.getQ() != null ? request.getQ() : "") +
+                                "_searchQuery=" + (request.getSearchQuery() != null ? request.getSearchQuery() : "") +
+                                "_status=" + (request.getStatus() != null ? request.getStatus() : "");
 
-                // Try to get from cache
+                // Kiểm tra cache
                 Object cachedData = redisService.get(cacheKey);
                 if (cachedData != null) {
-                        return RouterHelper.responseSuccess("Lấy thành công tất cả tài khoản admin (cached)",
-                                        cachedData);
+                        try {
+                                return redisService.getObject(cacheKey, PageableObject.class);
+                        } catch (Exception e) {
+                                redisService.delete(cacheKey);
+                        }
                 }
 
-                // If not in cache, query from database
+                // Cache miss - fetch from database
                 Pageable pageable = PaginationHelper.createPageable(request);
                 PageableObject list = PageableObject.of(userAdminExtendRepository.getAllUserAdmin(pageable, request));
 
-                // Save to cache
-                redisService.set(cacheKey, list, redisTTL);
+                // Store in cache
+                try {
+                        redisService.set(cacheKey, list, redisTTL);
+                } catch (Exception ignored) {
+                }
 
+                return list;
+        }
+
+        /**
+         * Lấy thông tin chi tiết admin từ cache hoặc DB
+         */
+        public UserAdmin getCachedUserAdminById(String id) {
+                String cacheKey = RedisPrefixConstant.REDIS_PREFIX_ADMIN + id;
+
+                // Kiểm tra cache
+                Object cachedData = redisService.get(cacheKey);
+                if (cachedData != null) {
+                        try {
+                                return redisService.getObject(cacheKey, UserAdmin.class);
+                        } catch (Exception e) {
+                                redisService.delete(cacheKey);
+                        }
+                }
+
+                // Cache miss - fetch from database
+                Optional<UserAdmin> optionalUserAdmin = userAdminExtendRepository.findById(id);
+                UserAdmin userAdmin = optionalUserAdmin.orElse(null);
+
+                // Store in cache if found
+                if (userAdmin != null) {
+                        try {
+                                redisService.set(cacheKey, userAdmin, redisTTL);
+                        } catch (Exception ignored) {
+                        }
+                }
+
+                return userAdmin;
+        }
+
+        /**
+         * Lấy danh sách nhân viên từ cache hoặc DB
+         */
+        public List<UserStaff> getAllUserStaffList() {
+                String cacheKey = RedisPrefixConstant.REDIS_PREFIX_ADMIN + "staff_list";
+
+                // Kiểm tra cache
+                Object cachedData = redisService.get(cacheKey);
+                if (cachedData != null) {
+                        try {
+                                return redisService.getObject(cacheKey, List.class);
+                        } catch (Exception e) {
+                                redisService.delete(cacheKey);
+                        }
+                }
+
+                // Cache miss - fetch from database
+                List<UserStaff> userStaffList = userAdminStaffExtendRepository.getAllUserStaff();
+
+                // Store in cache
+                try {
+                        redisService.set(cacheKey, userStaffList, redisTTL);
+                } catch (Exception ignored) {
+                }
+
+                return userStaffList;
+        }
+
+        @Override
+        public ResponseEntity<?> getAllUserAdmin(ADUserAdminRequest request) {
+                PageableObject list = getUserAdminList(request);
                 return RouterHelper.responseSuccess("Lấy thành công tất cả tài khoản admin", list);
         }
 
         @Override
         public ResponseEntity<?> getUserAdminById(String id) {
-                // Create cache key
-                String cacheKey = "admin:useradmin:" + id;
-
-                // Try to get from cache
-                Object cachedData = redisService.get(cacheKey);
-                if (cachedData != null) {
-                        return RouterHelper.responseSuccess("Lấy thành công tài khoản admin (cached)", cachedData);
-                }
-
-                // If not in cache, query from database
-                Optional<UserAdmin> optionalUserAdmin = userAdminExtendRepository.findById(id);
-                if (optionalUserAdmin.isEmpty()) {
+                UserAdmin userAdmin = getCachedUserAdminById(id);
+                if (userAdmin == null) {
                         return RouterHelper.responseError("Admin không tồn tại");
                 }
-
-                // Save to cache
-                redisService.set(cacheKey, optionalUserAdmin.get(), redisTTL);
-
-                return RouterHelper.responseSuccess("Lấy thành công tài khoản admin", optionalUserAdmin);
+                return RouterHelper.responseSuccess("Lấy thành công tài khoản admin", userAdmin);
         }
 
         @Override
@@ -155,7 +222,7 @@ public class ADUserAdminServiceImpl implements ADUserAdminService {
                 userActivityLogHelper.saveLog("vừa thêm 1 tài khoản admin mới: " + userAdmin.getCode() + " - "
                                 + userAdmin.getName());
 
-                // Clear related caches
+                // Invalidate related caches
                 invalidateAdminCaches();
 
                 return RouterHelper.responseSuccess("Thêm admin mới thành công", userAdmin);
@@ -228,9 +295,7 @@ public class ADUserAdminServiceImpl implements ADUserAdminService {
                                 + userAdmin.getName());
 
                 // Invalidate specific cache for this admin
-                redisService.delete("admin:useradmin:" + id);
-                // Clear related caches
-                invalidateAdminCaches();
+                invalidateAdminCache(id);
 
                 return RouterHelper.responseSuccess("Cập nhật admin thành công", userAdmin);
         }
@@ -269,9 +334,7 @@ public class ADUserAdminServiceImpl implements ADUserAdminService {
                                         + " - " + saveAdmin.getName() + " từ " + oldStatus + " thành " + newStatus);
 
                         // Invalidate specific cache for this admin
-                        redisService.delete("admin:useradmin:" + id);
-                        // Clear related caches
-                        invalidateAdminCaches();
+                        invalidateAdminCache(id);
 
                         return RouterHelper.responseSuccess("Thay đổi trạng thái thành công", saveAdmin);
                 }
@@ -318,10 +381,10 @@ public class ADUserAdminServiceImpl implements ADUserAdminService {
                         userActivityLogHelper.saveLog("vừa chuyển quyền admin từ " + oldAdminName + " sang "
                                         + userAdmin.getName() + " (" + userAdmin.getCode() + ")");
 
-                        // Clear related caches
+                        // Invalidate related caches
                         invalidateAdminCaches();
                         if (oldAdmin != null) {
-                                redisService.delete("admin:useradmin:" + oldAdmin.getId());
+                                redisService.delete(RedisPrefixConstant.REDIS_PREFIX_ADMIN + oldAdmin.getId());
                         }
 
                         return RouterHelper.responseSuccess("Kiểm tra thành công", userAdmin);
@@ -331,21 +394,7 @@ public class ADUserAdminServiceImpl implements ADUserAdminService {
 
         @Override
         public ResponseEntity<?> getAllUserStaff() {
-                // Create cache key
-                String cacheKey = "admin:userstaff:all";
-
-                // Try to get from cache
-                Object cachedData = redisService.get(cacheKey);
-                if (cachedData != null) {
-                        return RouterHelper.responseSuccess("Lấy thành công danh sách nhân viên (cached)", cachedData);
-                }
-
-                // If not in cache, query from database
-                List<UserStaff> userStaffList = userAdminStaffExtendRepository.getAllUserStaff();
-
-                // Save to cache
-                redisService.set(cacheKey, userStaffList, redisTTL);
-
+                List<UserStaff> userStaffList = getAllUserStaffList();
                 return RouterHelper.responseSuccess("Lấy thành công danh sách nhân viên", userStaffList);
         }
 
@@ -374,18 +423,25 @@ public class ADUserAdminServiceImpl implements ADUserAdminService {
                                 + adminToDelete.getName());
 
                 // Invalidate specific cache for this admin
-                redisService.delete("admin:useradmin:" + userAdminId);
-                // Clear related caches
-                invalidateAdminCaches();
+                invalidateAdminCache(userAdminId);
 
                 return RouterHelper.responseSuccess("Xóa tài khoản admin thành công", userAdminId);
         }
 
         /**
-         * Helper method to invalidate admin-related caches
+         * Xóa cache liên quan đến một admin cụ thể
+         */
+        private void invalidateAdminCache(String adminId) {
+                redisService.delete(RedisPrefixConstant.REDIS_PREFIX_ADMIN + adminId);
+                invalidateAdminCaches();
+        }
+
+        /**
+         * Xóa cache liên quan đến admin
          */
         private void invalidateAdminCaches() {
                 // Invalidate all admin user-related cache using pattern matching
-                redisService.deletePattern("admin:useradmin:all:*");
+                redisService.deletePattern(RedisPrefixConstant.REDIS_PREFIX_ADMIN + "list_*");
+                redisService.delete(RedisPrefixConstant.REDIS_PREFIX_ADMIN + "staff_list");
         }
 }
