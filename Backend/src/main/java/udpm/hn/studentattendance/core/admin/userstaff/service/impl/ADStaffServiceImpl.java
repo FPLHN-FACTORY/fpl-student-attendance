@@ -30,6 +30,7 @@ import udpm.hn.studentattendance.helpers.ValidateHelper;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 
+import udpm.hn.studentattendance.infrastructure.constants.RedisPrefixConstant;
 import udpm.hn.studentattendance.infrastructure.constants.RoleConstant;
 import udpm.hn.studentattendance.infrastructure.redis.service.RedisService;
 
@@ -58,26 +59,141 @@ public class ADStaffServiceImpl implements ADStaffService {
     @Value("${app.config.disabled-check-email-fpt}")
     private String isDisableCheckEmailFpt;
 
-    @Value("${spring.cache.redis.time-to-live:3600}")
+    @Value("${spring.cache.redis.time-to-live}")
     private long redisTTL;
 
     @PersistenceContext
     private EntityManager entityManager;
 
-    @Override
-    public ResponseEntity<?> getAllStaffByFilter(ADStaffRequest adStaffRequest) {
-        String cacheKey = "staff:list:" + adStaffRequest.toString();
+    /**
+     * Lấy danh sách nhân viên từ cache hoặc DB
+     */
+    public PageableObject getStaffList(ADStaffRequest request) {
+        // Tạo cache key thủ công
+        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_STAFF + "list_" +
+                "page=" + request.getPage() +
+                "_size=" + request.getSize() +
+                "_orderBy=" + request.getOrderBy() +
+                "_sortBy=" + request.getSortBy() +
+                "_q=" + (request.getQ() != null ? request.getQ() : "") +
+                "_searchQuery=" + (request.getSearchQuery() != null ? request.getSearchQuery() : "") +
+                "_idFacility=" + (request.getIdFacility() != null ? request.getIdFacility() : "") +
+                "_status=" + (request.getStatus() != null ? request.getStatus() : "") +
+                "_roleCodeFilter=" + (request.getRoleCodeFilter() != null ? request.getRoleCodeFilter() : "");
 
+        // Kiểm tra cache
         Object cachedData = redisService.get(cacheKey);
         if (cachedData != null) {
-            return RouterHelper.responseSuccess("Lấy tất cả giảng viên thành công (cached)", cachedData);
+            try {
+                return redisService.getObject(cacheKey, PageableObject.class);
+            } catch (Exception e) {
+                redisService.delete(cacheKey);
+            }
         }
 
-        Pageable pageable = PaginationHelper.createPageable(adStaffRequest, "createdAt");
-        PageableObject staffs = PageableObject.of(adStaffRepository.getAllStaff(pageable, adStaffRequest));
+        // Cache miss - fetch from database
+        Pageable pageable = PaginationHelper.createPageable(request, "createdAt");
+        PageableObject staffs = PageableObject.of(adStaffRepository.getAllStaff(pageable, request));
 
-        redisService.set(cacheKey, staffs, redisTTL);
+        // Store in cache
+        try {
+            redisService.set(cacheKey, staffs, redisTTL);
+        } catch (Exception ignored) {
+        }
 
+        return staffs;
+    }
+
+    /**
+     * Lấy chi tiết nhân viên từ cache hoặc DB
+     */
+    public ADStaffDetailResponse getStaffDetail(String id) {
+        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_STAFF + "detail_" + id;
+
+        // Kiểm tra cache
+        Object cachedData = redisService.get(cacheKey);
+        if (cachedData != null) {
+            try {
+                return redisService.getObject(cacheKey, ADStaffDetailResponse.class);
+            } catch (Exception e) {
+                redisService.delete(cacheKey);
+            }
+        }
+
+        // Cache miss - fetch from database
+        Optional<ADStaffDetailResponse> staffDetail = adStaffRepository.getDetailStaff(id);
+        ADStaffDetailResponse result = staffDetail.orElse(null);
+
+        // Store in cache if found
+        if (result != null) {
+            try {
+                redisService.set(cacheKey, result, redisTTL);
+            } catch (Exception ignored) {
+            }
+        }
+
+        return result;
+    }
+
+    /**
+     * Lấy danh sách vai trò từ cache hoặc DB
+     */
+    public List<Role> getAllRoleList() {
+        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_STAFF + "roles";
+
+        // Kiểm tra cache
+        Object cachedData = redisService.get(cacheKey);
+        if (cachedData != null) {
+            try {
+                return redisService.getObject(cacheKey, List.class);
+            } catch (Exception e) {
+                redisService.delete(cacheKey);
+            }
+        }
+
+        // Cache miss - fetch from database
+        List<Role> roles = adStaffRoleRepository.getAllRole();
+
+        // Store in cache
+        try {
+            redisService.set(cacheKey, roles, redisTTL * 4);
+        } catch (Exception ignored) {
+        }
+
+        return roles;
+    }
+
+    /**
+     * Lấy danh sách cơ sở từ cache hoặc DB
+     */
+    public List<Facility> getAllActiveFacilities() {
+        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_STAFF + "facilities";
+
+        // Kiểm tra cache
+        Object cachedData = redisService.get(cacheKey);
+        if (cachedData != null) {
+            try {
+                return redisService.getObject(cacheKey, List.class);
+            } catch (Exception e) {
+                redisService.delete(cacheKey);
+            }
+        }
+
+        // Cache miss - fetch from database
+        List<Facility> facilities = adminStaffFacilityRepository.getFacility(EntityStatus.ACTIVE);
+
+        // Store in cache
+        try {
+            redisService.set(cacheKey, facilities, redisTTL * 4);
+        } catch (Exception ignored) {
+        }
+
+        return facilities;
+    }
+
+    @Override
+    public ResponseEntity<?> getAllStaffByFilter(ADStaffRequest adStaffRequest) {
+        PageableObject staffs = getStaffList(adStaffRequest);
         return RouterHelper.responseSuccess("Lấy tất cả giảng viên thành công", staffs);
     }
 
@@ -297,9 +413,7 @@ public class ADStaffServiceImpl implements ADStaffService {
         userActivityLogHelper.saveLog("vừa cập nhật nhân viên: " + staff.getName() + " (" + staff.getCode() + ")");
 
         // Invalidate specific cache for this staff
-        redisService.delete("staff:detail:" + id);
-        // Invalidate related caches
-        invalidateStaffCaches();
+        invalidateStaffCache(id);
 
         return RouterHelper.responseSuccess("Cập nhật nhân viên thành công");
     }
@@ -325,60 +439,30 @@ public class ADStaffServiceImpl implements ADStaffService {
                 + ") từ " + oldStatus + " thành " + newStatus);
 
         // Invalidate specific cache for this staff
-        redisService.delete("staff:detail:" + staffId);
-        // Invalidate related caches
-        invalidateStaffCaches();
+        invalidateStaffCache(staffId);
 
         return RouterHelper.responseSuccess("Thay đổi trạng thái giảng viên thành công");
     }
 
     @Override
     public ResponseEntity<?> getStaffById(String staffId) {
-        String cacheKey = "staff:detail:" + staffId;
-
-        Object cachedData = redisService.get(cacheKey);
-        if (cachedData != null) {
-            return RouterHelper.responseSuccess("Xem chi tiết giảng viên thành công (cached)", cachedData);
-        }
-
-        Optional<ADStaffDetailResponse> existStaff = adStaffRepository.getDetailStaff(staffId);
-        if (existStaff.isPresent()) {
-            redisService.set(cacheKey, existStaff.get(), redisTTL);
-            return RouterHelper.responseSuccess("Xem chi tiết giảng viên thành công", existStaff);
+        ADStaffDetailResponse staffDetail = getStaffDetail(staffId);
+        if (staffDetail != null) {
+            return RouterHelper.responseSuccess("Xem chi tiết giảng viên thành công", staffDetail);
         }
         return RouterHelper.responseError("Giảng viên không tồn tại");
     }
 
     @Override
     public ResponseEntity<?> getAllRole() {
-        String cacheKey = "staff:roles:all";
-
-        Object cachedData = redisService.get(cacheKey);
-        if (cachedData != null) {
-            return RouterHelper.responseSuccess("Lấy tất cả vai trò thành công (cached)", cachedData);
-        }
-
-        List<Role> getAllRole = adStaffRoleRepository.getAllRole();
-
-        redisService.set(cacheKey, getAllRole, redisTTL * 4);
-
-        return RouterHelper.responseSuccess("Lấy tất cả vai trò thành công", getAllRole);
+        List<Role> roles = getAllRoleList();
+        return RouterHelper.responseSuccess("Lấy tất cả vai trò thành công", roles);
     }
 
     @Override
     public ResponseEntity<?> getAllFacility() {
-        String cacheKey = "staff:facilities:active";
-
-        Object cachedData = redisService.get(cacheKey);
-        if (cachedData != null) {
-            return RouterHelper.responseSuccess("Lấy tất cả cơ sở thành công (cached)", cachedData);
-        }
-
-        List<Facility> getAllFacility = adminStaffFacilityRepository.getFacility(EntityStatus.ACTIVE);
-
-        redisService.set(cacheKey, getAllFacility, redisTTL * 4);
-
-        return RouterHelper.responseSuccess("Lấy tất cả cơ sở thành công", getAllFacility);
+        List<Facility> facilities = getAllActiveFacilities();
+        return RouterHelper.responseSuccess("Lấy tất cả cơ sở thành công", facilities);
     }
 
     private UserStaff isStaffExist(
@@ -400,9 +484,17 @@ public class ADStaffServiceImpl implements ADStaffService {
     }
 
     /**
-     * Helper method to invalidate staff-related caches
+     * Xóa cache liên quan đến một nhân viên cụ thể
+     */
+    private void invalidateStaffCache(String staffId) {
+        redisService.delete(RedisPrefixConstant.REDIS_PREFIX_STAFF + "detail_" + staffId);
+        invalidateStaffCaches();
+    }
+
+    /**
+     * Xóa cache liên quan đến nhân viên
      */
     private void invalidateStaffCaches() {
-        redisService.deletePattern("staff:list:*");
+        redisService.deletePattern(RedisPrefixConstant.REDIS_PREFIX_STAFF + "list_*");
     }
 }

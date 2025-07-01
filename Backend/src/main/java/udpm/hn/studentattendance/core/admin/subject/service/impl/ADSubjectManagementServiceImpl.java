@@ -18,6 +18,7 @@ import udpm.hn.studentattendance.helpers.ValidateHelper;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.common.repositories.CommonUserStudentRepository;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
+import udpm.hn.studentattendance.infrastructure.constants.RedisPrefixConstant;
 import udpm.hn.studentattendance.infrastructure.redis.service.RedisService;
 
 @Service
@@ -32,23 +33,74 @@ public class ADSubjectManagementServiceImpl implements ADSubjectManagementServic
 
     private final RedisService redisService;
 
-    @Value("${spring.cache.redis.time-to-live:3600}")
+    @Value("${spring.cache.redis.time-to-live}")
     private long redisTTL;
 
-    @Override
-    public ResponseEntity<?> getListSubject(ADSubjectSearchRequest request) {
-        String cacheKey = "admin:subject:list:" + request.toString();
+    // Phương thức helper để lấy danh sách bộ môn từ cache hoặc DB
+    public PageableObject getSubjects(ADSubjectSearchRequest request) {
+        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_SUBJECT + "list_" +
+                "page=" + request.getPage() +
+                "_size=" + request.getSize() +
+                "_orderBy=" + request.getOrderBy() +
+                "_sortBy=" + request.getSortBy() +
+                "_q=" + (request.getQ() != null ? request.getQ() : "") +
+                "_name=" + (request.getName() != null ? request.getName() : "") +
+                "_status=" + (request.getStatus() != null ? request.getStatus() : "");
 
+        // Kiểm tra cache
         Object cachedData = redisService.get(cacheKey);
         if (cachedData != null) {
-            return RouterHelper.responseSuccess("Lấy danh sách bộ môn thành công (cached)", cachedData);
+            try {
+                return redisService.getObject(cacheKey, PageableObject.class);
+            } catch (Exception e) {
+                redisService.delete(cacheKey);
+            }
         }
 
+        // Cache miss - fetch from database
         Pageable pageable = PaginationHelper.createPageable(request, "id");
         PageableObject result = PageableObject.of(adminSubjectRepository.getAll(pageable, request));
 
-        redisService.set(cacheKey, result, redisTTL * 2); // Cache lâu hơn vì danh sách bộ môn ít thay đổi
+        // Store in cache
+        try {
+            redisService.set(cacheKey, result, redisTTL);
+        } catch (Exception ignored) {
+        }
 
+        return result;
+    }
+
+    // Phương thức helper để lấy thông tin chi tiết bộ môn từ cache hoặc DB
+    public Subject getSubjectById(String id) {
+        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_SUBJECT + id;
+
+        // Kiểm tra cache
+        Object cachedData = redisService.get(cacheKey);
+        if (cachedData != null) {
+            try {
+                return redisService.getObject(cacheKey, Subject.class);
+            } catch (Exception e) {
+                redisService.delete(cacheKey);
+            }
+        }
+
+        // Cache miss - fetch from database
+        Subject subject = adminSubjectRepository.findById(id).orElse(null);
+
+        if (subject != null) {
+            // Store in cache
+            try {
+                redisService.set(cacheKey, subject, redisTTL);
+            } catch (Exception ignored) {
+            }
+        }
+
+        return subject;
+    }
+
+    @Override
+    public ResponseEntity<?> getListSubject(ADSubjectSearchRequest request) {
+        PageableObject result = getSubjects(request);
         return RouterHelper.responseSuccess("Lấy danh sách bộ môn thành công", result);
     }
 
@@ -114,21 +166,12 @@ public class ADSubjectManagementServiceImpl implements ADSubjectManagementServic
 
     @Override
     public ResponseEntity<?> detailSubject(String id) {
-        String cacheKey = "admin:subject:detail:" + id;
-
-        Object cachedData = redisService.get(cacheKey);
-        if (cachedData != null) {
-            return RouterHelper.responseSuccess("Lấy thông tin bộ môn thành công (cached)", cachedData);
-        }
-
-        Subject s = adminSubjectRepository.findById(id).orElse(null);
-        if (s == null) {
+        Subject subject = getSubjectById(id);
+        if (subject == null) {
             return RouterHelper.responseError("Không tìm thấy bộ môn");
         }
 
-        redisService.set(cacheKey, s, redisTTL * 3); // Cache lâu hơn vì thông tin bộ môn ít thay đổi
-
-        return RouterHelper.responseSuccess("Lấy thông tin bộ môn thành công", s);
+        return RouterHelper.responseSuccess("Lấy thông tin bộ môn thành công", subject);
     }
 
     @Override
@@ -156,7 +199,7 @@ public class ADSubjectManagementServiceImpl implements ADSubjectManagementServic
      * Xóa cache liên quan đến một bộ môn cụ thể
      */
     private void invalidateSubjectCache(String subjectId) {
-        redisService.delete("admin:subject:detail:" + subjectId);
+        redisService.delete(RedisPrefixConstant.REDIS_PREFIX_SUBJECT + subjectId);
         invalidateSubjectListCache();
     }
 
@@ -164,6 +207,6 @@ public class ADSubjectManagementServiceImpl implements ADSubjectManagementServic
      * Xóa cache danh sách bộ môn
      */
     private void invalidateSubjectListCache() {
-        redisService.deletePattern("admin:subject:list:*");
+        redisService.deletePattern(RedisPrefixConstant.REDIS_PREFIX_SUBJECT + "list_*");
     }
 }

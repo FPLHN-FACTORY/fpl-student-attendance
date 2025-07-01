@@ -175,7 +175,7 @@ class ADStatisticsServiceImplTest {
     @DisplayName("Test invalidateAdminStatisticsCache should delete cached statistics")
     void testInvalidateAdminStatisticsCache() {
         // When
-        adStatisticsService.invalidateAdminStatisticsCache();
+        adStatisticsService.invalidateAllStatisticsCaches();
 
         // Then
         verify(redisService).deletePattern("admin:statistics:*");
