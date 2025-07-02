@@ -22,4 +22,6 @@ public interface SPDPlanDateService {
 
     ResponseEntity<?> updateLinkMeet(SPDUpdateLinkMeetRequest request);
 
+    ResponseEntity<?> sendMail(String idPlanFactory);
+
 }

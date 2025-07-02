@@ -11,6 +11,7 @@ import {
   ExclamationCircleOutlined,
   LinkOutlined,
   InfoCircleFilled,
+  MailOutlined,
 } from '@ant-design/icons-vue'
 import { message, Modal } from 'ant-design-vue'
 import requestAPI from '@/services/requestApiService'
@@ -381,6 +382,21 @@ const fetchUpdateLink = () => {
     })
 }
 
+const fetchSendMail = () => {
+  loadingStore.show()
+  requestAPI
+    .post(`${API_ROUTES_STAFF.FETCH_DATA_PLAN_DATE}/${_detail.value.id}/send-mail`)
+    .then(({ data: response }) => {
+      message.success(response.message)
+    })
+    .catch((error) => {
+      message.error(error?.response?.data?.message || 'Không thể gửi thông báo lịch học')
+    })
+    .finally(() => {
+      loadingStore.hide()
+    })
+}
+
 const handleClearFilter = () => {
   Object.assign(dataFilter, {
     keyword: null,
@@ -631,6 +647,19 @@ const handleUpdateTimeRange = () => {
   } else {
     formData.timeRange = []
   }
+}
+
+const handleSendMail = () => {
+  Modal.confirm({
+    title: 'Xác nhận gửi mail thông báo lịch học',
+    type: 'info',
+    content: `Một mail chứa tệp Excel lịch học sẽ được gửi tới giảng viên và sinh viên trong nhóm.`,
+    okText: 'Tiếp tục',
+    cancelText: 'Hủy bỏ',
+    onOk() {
+      fetchSendMail()
+    },
+  })
 }
 
 const selectedRowKeys = ref([])
@@ -1006,6 +1035,9 @@ watch(
             <ExcelUploadButton v-bind="configImportExcel" />
             <a-button class="btn btn-gray" @click="handleShowUpdateLink">
               <LinkOutlined /> Update link online
+            </a-button>
+            <a-button class="btn btn-outline-warning" @click="handleSendMail">
+              <MailOutlined /> Gửi mail thông báo
             </a-button>
             <a-button type="primary" @click="handleShowAdd"> <PlusOutlined /> Thêm mới </a-button>
           </div>
