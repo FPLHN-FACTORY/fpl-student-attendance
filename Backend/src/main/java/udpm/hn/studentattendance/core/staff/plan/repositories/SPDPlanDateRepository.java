@@ -181,5 +181,15 @@ public interface SPDPlanDateRepository extends PlanDateRepository {
     """, nativeQuery = true)
     boolean isExistsTeacherOnShift(String idUserStaff, Long startDate, Long endDate);
 
+    @Transactional
+    @Modifying
+    @Query(value = """
+        UPDATE plan_date
+        SET link = :link
+        WHERE
+            id_plan_factory = :idPlanFactory AND
+            type = 1
+    """, nativeQuery = true)
+    Integer updateAllLinkMeet(String idPlanFactory, String link);
 
 }
