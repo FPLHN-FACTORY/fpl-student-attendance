@@ -26,7 +26,15 @@ import {
   SHIFT,
   STATUS_PLAN_DATE_DETAIL,
 } from '@/constants'
-import { autoAddColumnWidth, dayOfWeek, debounce, formatDate, rowSelectTable } from '@/utils/utils'
+import {
+  autoAddColumnWidth,
+  dayOfWeek,
+  debounce,
+  formatDate,
+  getShiftTimeEnd,
+  getShiftTimeStart,
+  rowSelectTable,
+} from '@/utils/utils'
 import dayjs from 'dayjs'
 import ExcelUploadButton from '@/components/excel/ExcelUploadButton.vue'
 
@@ -135,7 +143,9 @@ const formData = reactive({
   requiredCheckin: STATUS_TYPE.ENABLE,
   requiredCheckout: STATUS_TYPE.ENABLE,
   startDate: null,
+  endDate: null,
   lateArrival: DEFAULT_LATE_ARRIVAL,
+  timeRange: [],
 })
 
 const formDataUpdateLink = reactive({
@@ -264,6 +274,21 @@ const fetchAddItem = () => {
     .post(`${API_ROUTES_STAFF.FETCH_DATA_PLAN_DATE}/${_detail.value.id}/add`, {
       ...formData,
       startDate: Date.parse(formData.startDate),
+      customTime:
+        formData.timeRange?.length > 0
+          ? [
+              getShiftTimeStart(
+                Date.parse(formData.startDate),
+                formData.timeRange[0].hour(),
+                formData.timeRange[0].minute(),
+              ),
+              getShiftTimeEnd(
+                Date.parse(formData.startDate),
+                formData.timeRange[1].hour(),
+                formData.timeRange[1].minute(),
+              ),
+            ]
+          : null,
     })
     .then(({ data: response }) => {
       message.success(response.message)
@@ -284,6 +309,21 @@ const fetchUpdateItem = () => {
     .put(`${API_ROUTES_STAFF.FETCH_DATA_PLAN_DATE}/${_detail.value.id}/update`, {
       ...formData,
       startDate: Date.parse(formData.startDate),
+      customTime:
+        formData.timeRange?.length > 0
+          ? [
+              getShiftTimeStart(
+                Date.parse(formData.startDate),
+                formData.timeRange[0].hour(),
+                formData.timeRange[0].minute(),
+              ),
+              getShiftTimeEnd(
+                Date.parse(formData.startDate),
+                formData.timeRange[1].hour(),
+                formData.timeRange[1].minute(),
+              ),
+            ]
+          : null,
     })
     .then(({ data: response }) => {
       message.success(response.message)
@@ -365,6 +405,7 @@ const handleShowAdd = () => {
   formData.requiredCheckout = STATUS_TYPE.ENABLE
   formData.lateArrival = DEFAULT_LATE_ARRIVAL
   formData.description = null
+  formData.timeRange = []
 }
 
 const handleShowUpdate = (item) => {
@@ -382,6 +423,7 @@ const handleShowUpdate = (item) => {
 
   formData.id = item.id
   formData.startDate = dayjs(item.startDate)
+  formData.endDate = dayjs(item.endDate)
   formData.shift = item.shift.split(',').map((o) => Number(o))
   formData.link = item.link
   formData.room = item.room
@@ -392,6 +434,8 @@ const handleShowUpdate = (item) => {
   formData.requiredCheckout = item.requiredCheckout || STATUS_TYPE.DISABLE
   formData.lateArrival = item.lateArrival
   formData.description = item.description
+
+  handleUpdateTimeRange()
 }
 
 const handleSubmitAdd = async () => {
@@ -535,6 +579,32 @@ const handleChangeShift = (newValues) => {
   formData.shift = Array.from(updated).sort((a, b) => a - b)
 }
 
+const handleUpdateTimeRange = () => {
+  if (formData.shift.length < 1) {
+    return (formData.timeRange = [])
+  }
+
+  const startTime = formData.startDate
+  const endTime = formData.endDate
+
+  const firstShift = lstShift.value.find((o) => o.shift == formData.shift[0])
+  const lastShift = lstShift.value.find((o) => o.shift == formData.shift[formData.shift.length - 1])
+
+  if (
+    startTime.hour() != firstShift.fromHour ||
+    startTime.minute() != firstShift.fromMinute ||
+    endTime.hour() != lastShift.toHour ||
+    endTime.minute() != lastShift.toMinute
+  ) {
+    formData.timeRange = [
+      dayjs(startTime.hour() + ':' + startTime.minute(), 'HH:mm'),
+      dayjs(endTime.hour() + ':' + endTime.minute(), 'HH:mm'),
+    ]
+  } else {
+    formData.timeRange = []
+  }
+}
+
 const selectedRowKeys = ref([])
 
 const isDisabledSelectTable = (key) => {
@@ -598,9 +668,10 @@ watch(
           @keyup.enter="modalAddOrUpdate.onOk"
         />
       </a-form-item>
-      <a-form-item class="col-sm-12" label="Ca học" name="shift" :rules="formRules.shift">
+      <a-form-item class="col-sm-8" label="Ca học" name="shift" :rules="formRules.shift">
         <a-select
           class="w-100"
+          placeholder="Chọn nhiều ca cùng lúc để gộp lại thành 1 ca"
           v-model:value="formData.shift"
           :disabled="modalAddOrUpdate.isLoading"
           @change="handleChangeShift"
@@ -614,6 +685,17 @@ watch(
             }})
           </a-select-option>
         </a-select>
+      </a-form-item>
+
+      <a-form-item class="col-sm-4" label="Tuỳ chỉnh thời gian ca học" name="timeRange">
+        <a-range-picker
+          class="w-100"
+          v-model:value="formData.timeRange"
+          :show-time="{ format: 'HH:mm' }"
+          format="HH:mm"
+          picker="time"
+          :placeholder="['Bắt đầu', 'Kết thúc']"
+        />
       </a-form-item>
 
       <a-form-item class="col-sm-5" label="Hình thức học" name="type" :rules="formRules.type">
@@ -638,6 +720,7 @@ watch(
       >
         <a-input-number
           class="w-100"
+          placeholder="0"
           v-model:value="formData.lateArrival"
           :min="0"
           :step="1"
@@ -651,6 +734,7 @@ watch(
         <a-textarea
           :rows="4"
           class="w-100"
+          placeholder="Mô tả nội dung buổi học"
           v-model:value="formData.description"
           :disabled="modalAddOrUpdate.isLoading"
           allowClear

@@ -197,7 +197,7 @@ public class SPDPlanFactoryServiceImpl implements SPDPlanFactoryService {
 
                     if (spdPlanDateRepository.isExistsShiftInFactory(planFactory.getId(), null, startDate, endDate)) {
                         spdPlanFactoryRepository.delete(planFactory);
-                        return RouterHelper.responseError("Đã tồn tại ca " + request.getShift() + " trong ngày "
+                        return RouterHelper.responseError("Đã tồn tại ca học diễn ra trong khoảng thời gian từ " + DateTimeUtils.convertMillisToDate(startDate, "HH:mm") + " đến " + DateTimeUtils.convertMillisToDate(endDate, "HH:mm") + " của ngày "
                                 + DateTimeUtils.convertMillisToDate(startDate));
                     }
                     if (spdPlanDateRepository.isExistsTeacherOnShift(factory.getUserStaff().getId(), startDate,

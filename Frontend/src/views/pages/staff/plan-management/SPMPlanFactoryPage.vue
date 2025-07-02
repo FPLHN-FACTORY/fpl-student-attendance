@@ -320,7 +320,6 @@ const handleDelete = (id) => {
 onMounted(() => {
   breadcrumbStore.setRoutes(breadcrumb.value)
   fetchDataDetail()
-  fetchDataList()
   fetchDataShift()
 })
 

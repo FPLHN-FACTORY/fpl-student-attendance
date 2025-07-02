@@ -165,10 +165,17 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
             return RouterHelper.responseError("Hình thức học không hợp lệ");
         }
 
-        Long startDate = ShiftHelper.getShiftTimeStart(request.getStartDate(),
-                LocalTime.of(shiftStart.getFromHour(), shiftStart.getFromMinute()));
-        Long endDate = startDate + ShiftHelper.getDiffTime(shiftStart.getFromHour(), shiftStart.getFromMinute(),
-                shiftEnd.getToHour(), shiftEnd.getToMinute());
+        Long startDate;
+        Long endDate;
+        if (request.getCustomTime() != null && request.getCustomTime().size() == 2) {
+            startDate = request.getCustomTime().get(0);
+            endDate = request.getCustomTime().get(1);
+        } else {
+            startDate = ShiftHelper.getShiftTimeStart(request.getStartDate(),
+                    LocalTime.of(shiftStart.getFromHour(), shiftStart.getFromMinute()));
+            endDate = startDate + ShiftHelper.getDiffTime(shiftStart.getFromHour(), shiftStart.getFromMinute(),
+                    shiftEnd.getToHour(), shiftEnd.getToMinute());
+        }
 
         if (startDate < DateTimeUtils.getCurrentTimeMillis()) {
             return RouterHelper.responseError("Thời gian diễn ra phải lớn hơn hoặc bằng ngày hiện tại");
@@ -185,7 +192,7 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
 
         if (spdPlanDateRepository.isExistsShiftInFactory(planDate.getPlanFactory().getId(), planDate.getId(), startDate,
                 endDate)) {
-            return RouterHelper.responseError("Đã tồn tại ca " + request.getShift() + " trong ngày "
+            return RouterHelper.responseError("Đã tồn tại ca học diễn ra trong khoảng thời gian từ " + DateTimeUtils.convertMillisToDate(startDate, "HH:mm") + " đến " + DateTimeUtils.convertMillisToDate(endDate, "HH:mm") + " của ngày "
                     + DateTimeUtils.convertMillisToDate(startDate));
         }
 
@@ -289,10 +296,17 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
             return RouterHelper.responseError("Hình thức học không hợp lệ");
         }
 
-        Long startDate = ShiftHelper.getShiftTimeStart(request.getStartDate(),
-                LocalTime.of(shiftStart.getFromHour(), shiftStart.getFromMinute()));
-        Long endDate = startDate + ShiftHelper.getDiffTime(shiftStart.getFromHour(), shiftStart.getFromMinute(),
-                shiftEnd.getToHour(), shiftEnd.getToMinute());
+        Long startDate;
+        Long endDate;
+        if (request.getCustomTime() != null && request.getCustomTime().size() == 2) {
+            startDate = request.getCustomTime().get(0);
+            endDate = request.getCustomTime().get(1);
+        } else {
+            startDate = ShiftHelper.getShiftTimeStart(request.getStartDate(),
+                    LocalTime.of(shiftStart.getFromHour(), shiftStart.getFromMinute()));
+            endDate = startDate + ShiftHelper.getDiffTime(shiftStart.getFromHour(), shiftStart.getFromMinute(),
+                    shiftEnd.getToHour(), shiftEnd.getToMinute());
+        }
 
         if (startDate < DateTimeUtils.getCurrentTimeMillis()) {
             return RouterHelper.responseError("Thời gian diễn ra phải lớn hơn hoặc bằng ngày hiện tại");
@@ -305,7 +319,7 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
         }
 
         if (spdPlanDateRepository.isExistsShiftInFactory(planFactory.getId(), null, startDate, endDate)) {
-            return RouterHelper.responseError("Đã tồn tại ca " + request.getShift() + " trong ngày "
+            return RouterHelper.responseError("Đã tồn tại ca học diễn ra trong khoảng thời gian từ " + DateTimeUtils.convertMillisToDate(startDate, "HH:mm") + " đến " + DateTimeUtils.convertMillisToDate(endDate, "HH:mm") + " của ngày "
                     + DateTimeUtils.convertMillisToDate(startDate));
         }
 
