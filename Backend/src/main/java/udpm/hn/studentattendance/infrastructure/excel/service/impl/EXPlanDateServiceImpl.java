@@ -177,40 +177,40 @@ public class EXPlanDateServiceImpl implements EXPlanDateService {
             if(!StringUtils.hasText(checkIp)) {
                 throw new RuntimeException();
             }
-            boolean isCheckIp = Boolean.parseBoolean(checkIp);
+            boolean isCheckIp = checkIp.equalsIgnoreCase("có");
             addOrUpdatePlanDateRequest.setRequiredIp(isCheckIp ? StatusType.ENABLE.getKey() : StatusType.DISABLE.getKey());
         } catch (Exception e) {
-            return error("Check IP không hợp lệ (TRUE / FALSE)", checkIp, request);
+            return error("Check IP không hợp lệ (Có / Không)", checkIp, request);
         }
 
         try {
             if(!StringUtils.hasText(checkDiaDiem)) {
                 throw new RuntimeException();
             }
-            boolean isCheckLocation = Boolean.parseBoolean(checkDiaDiem);
+            boolean isCheckLocation = checkDiaDiem.equalsIgnoreCase("có");
             addOrUpdatePlanDateRequest.setRequiredLocation(isCheckLocation ? StatusType.ENABLE.getKey() : StatusType.DISABLE.getKey());
         } catch (Exception e) {
-            return error("Check địa điểm không hợp lệ (TRUE / FALSE)", checkDiaDiem, request);
+            return error("Check địa điểm không hợp lệ (Có / Không)", checkDiaDiem, request);
         }
 
         try {
             if(!StringUtils.hasText(yeuCauCheckin)) {
                 throw new RuntimeException();
             }
-            boolean isRequiredCheckin = Boolean.parseBoolean(yeuCauCheckin);
+            boolean isRequiredCheckin = yeuCauCheckin.equalsIgnoreCase("có");
             addOrUpdatePlanDateRequest.setRequiredCheckin(isRequiredCheckin ? StatusType.ENABLE.getKey() : StatusType.DISABLE.getKey());
         } catch (Exception e) {
-            return error("Yêu cầu checkin không hợp lệ (TRUE / FALSE)", yeuCauCheckin, request);
+            return error("Yêu cầu checkin không hợp lệ (Có / Không)", yeuCauCheckin, request);
         }
 
         try {
             if(!StringUtils.hasText(yeuCauCheckout)) {
                 throw new RuntimeException();
             }
-            boolean isRequiredCheckout = Boolean.parseBoolean(yeuCauCheckout);
+            boolean isRequiredCheckout = yeuCauCheckout.equalsIgnoreCase("có");
             addOrUpdatePlanDateRequest.setRequiredCheckout(isRequiredCheckout ? StatusType.ENABLE.getKey() : StatusType.DISABLE.getKey());
         } catch (Exception e) {
-            return error("Yêu cầu checkout không hợp lệ (TRUE / FALSE)", yeuCauCheckout, request);
+            return error("Yêu cầu checkout không hợp lệ (Có / Không)", yeuCauCheckout, request);
         }
 
         addOrUpdatePlanDateRequest.setRoom(phongHoc);
@@ -268,10 +268,10 @@ public class EXPlanDateServiceImpl implements EXPlanDateService {
             ExcelUtils.addListValidation(templateSheet, firstRow, lastRow, 1, lstShiftType);
             ExcelUtils.addListValidation(templateSheet, firstRow, lastRow, 2, lstShift);
             ExcelUtils.addListValidation(templateSheet, firstRow, lastRow, 3, lstShift);
-            ExcelUtils.addListValidation(templateSheet, firstRow, lastRow, 8, List.of(true, false));
-            ExcelUtils.addListValidation(templateSheet, firstRow, lastRow, 9, List.of(true, false));
-            ExcelUtils.addListValidation(templateSheet, firstRow, lastRow, 10, List.of(true, false));
-            ExcelUtils.addListValidation(templateSheet, firstRow, lastRow, 11, List.of(true, false));
+            ExcelUtils.addListValidation(templateSheet, firstRow, lastRow, 8, List.of("Có", "Không"));
+            ExcelUtils.addListValidation(templateSheet, firstRow, lastRow, 9, List.of("Có", "Không"));
+            ExcelUtils.addListValidation(templateSheet, firstRow, lastRow, 10, List.of("Có", "Không"));
+            ExcelUtils.addListValidation(templateSheet, firstRow, lastRow, 11, List.of("Có", "Không"));
             workbook.write(data);
 
             HttpHeaders headersHttp = new HttpHeaders();
