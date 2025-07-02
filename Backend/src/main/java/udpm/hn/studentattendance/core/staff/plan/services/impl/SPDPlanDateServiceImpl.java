@@ -11,6 +11,7 @@ import org.springframework.util.StringUtils;
 import udpm.hn.studentattendance.core.staff.plan.model.request.SPDAddOrUpdatePlanDateRequest;
 import udpm.hn.studentattendance.core.staff.plan.model.request.SPDDeletePlanDateRequest;
 import udpm.hn.studentattendance.core.staff.plan.model.request.SPDFilterPlanDateRequest;
+import udpm.hn.studentattendance.core.staff.plan.model.request.SPDUpdateLinkMeetRequest;
 import udpm.hn.studentattendance.core.staff.plan.model.response.SPDPlanDateResponse;
 import udpm.hn.studentattendance.core.staff.plan.model.response.SPDPlanFactoryResponse;
 import udpm.hn.studentattendance.core.staff.plan.repositories.SPDFacilityShiftRepository;
@@ -351,6 +352,19 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
         userActivityLogHelper.saveLog(
                 "vừa thêm kế hoạch chi tiết ngày " + DateTimeUtils.convertMillisToDate(newEntity.getStartDate()));
         return RouterHelper.responseSuccess("Thêm kế hoạch thành công", newEntity);
+    }
+
+    @Override
+    public ResponseEntity<?> updateLinkMeet(SPDUpdateLinkMeetRequest request) {
+        if (!ValidateHelper.isValidURL(request.getLink())) {
+            return RouterHelper.responseError("Link học online không hợp lệ");
+        }
+        PlanFactory planFactory = spdPlanFactoryRepository.findById(request.getIdPlanFactory()).orElse(null);
+        if (planFactory == null || !planFactory.getPlan().getProject().getSubjectFacility().getFacility().getId().equals(sessionHelper.getFacilityId())) {
+            return RouterHelper.responseError("Không tìm thấy nhóm kế hoạch");
+        }
+        spdPlanDateRepository.updateAllLinkMeet(planFactory.getId(), request.getLink());
+        return RouterHelper.responseSuccess("Cập nhật link học online thành công");
     }
 
 }
