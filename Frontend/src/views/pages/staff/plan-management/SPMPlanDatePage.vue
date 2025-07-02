@@ -22,7 +22,6 @@ import { useRoute, useRouter } from 'vue-router'
 import {
   DEFAULT_DATE_FORMAT,
   DEFAULT_LATE_ARRIVAL,
-  DEFAULT_MAX_LATE_ARRIVAL,
   SHIFT,
   STATUS_PLAN_DATE_DETAIL,
 } from '@/constants'
@@ -570,7 +569,6 @@ watch(
           class="w-100"
           v-model:value="formData.lateArrival"
           :min="0"
-          :max="DEFAULT_MAX_LATE_ARRIVAL"
           :step="1"
           :disabled="modalAddOrUpdate.isLoading"
           allowClear

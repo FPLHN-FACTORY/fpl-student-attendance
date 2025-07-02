@@ -11,6 +11,8 @@ import org.springframework.web.bind.annotation.RestController;
 import udpm.hn.studentattendance.core.authentication.model.request.AuthenticationStudentRegisterRequest;
 import udpm.hn.studentattendance.core.authentication.model.request.AuthenticationStudentUpdateFaceIDRequest;
 import udpm.hn.studentattendance.core.authentication.model.request.AuthenticationToken;
+import udpm.hn.studentattendance.infrastructure.constants.SettingKeys;
+import udpm.hn.studentattendance.infrastructure.constants.router.RouteAdminConstant;
 import udpm.hn.studentattendance.infrastructure.constants.router.RouteAuthenticationConstant;
 import udpm.hn.studentattendance.core.authentication.services.AuthenticationService;
 import udpm.hn.studentattendance.infrastructure.constants.RoutesConstant;
@@ -32,6 +34,16 @@ public class AuthenticationRestController {
     @PostMapping(RouteAuthenticationConstant.API_CONVERT_IMAGE_TO_BASE64)
     public ResponseEntity<?> getAvatar(@RequestBody Map<String, String> requestBody) {
         return authenticationService.getAvatar(requestBody.get("url_image"));
+    }
+
+    @GetMapping(RouteAuthenticationConstant.API_SETTINGS)
+    public ResponseEntity<?> getSettings() {
+        return authenticationService.getSettings();
+    }
+
+    @PutMapping(RouteAdminConstant.URL_API_SETTINGS)
+    public ResponseEntity<?> saveSettings(@RequestBody Map<SettingKeys, String> requestBody) {
+        return authenticationService.saveSettings(requestBody);
     }
 
     @GetMapping(RouteAuthenticationConstant.API_GET_ALL_FACILITY)

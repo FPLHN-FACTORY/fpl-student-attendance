@@ -1,5 +1,6 @@
 package udpm.hn.studentattendance.core.staff.plan.services.impl;
 
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Pageable;
@@ -24,11 +25,13 @@ import udpm.hn.studentattendance.entities.PlanFactory;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
 import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.helpers.SessionHelper;
+import udpm.hn.studentattendance.helpers.SettingHelper;
 import udpm.hn.studentattendance.helpers.ShiftHelper;
 import udpm.hn.studentattendance.helpers.ValidateHelper;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.common.repositories.CommonUserStudentRepository;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
+import udpm.hn.studentattendance.infrastructure.constants.SettingKeys;
 import udpm.hn.studentattendance.infrastructure.constants.ShiftType;
 import udpm.hn.studentattendance.infrastructure.constants.StatusType;
 import udpm.hn.studentattendance.utils.DateTimeUtils;
@@ -61,10 +64,16 @@ public class SPDPlanFactoryServiceImpl implements SPDPlanFactoryService {
 
     private final SessionHelper sessionHelper;
 
+    private final SettingHelper settingHelper;
+
     private final UserActivityLogHelper userActivityLogHelper;
 
-    @Value("${app.config.shift.max-late-arrival}")
     private int MAX_LATE_ARRIVAL;
+
+    @PostConstruct
+    public void init() {
+        this.MAX_LATE_ARRIVAL = settingHelper.getSetting(SettingKeys.SHIFT_MAX_LATE_ARRIVAL, Integer.class);
+    }
 
     @Override
     public ResponseEntity<?> getAllList(SPDFilterPlanFactoryRequest request) {

@@ -3,6 +3,7 @@ package udpm.hn.studentattendance.core.teacher.teachingschedule.service.impl;
 import com.lowagie.text.*;
 import com.lowagie.text.Font;
 import com.lowagie.text.pdf.*;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Pageable;
@@ -24,12 +25,14 @@ import udpm.hn.studentattendance.helpers.MailerHelper;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
 import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.helpers.SessionHelper;
+import udpm.hn.studentattendance.helpers.SettingHelper;
 import udpm.hn.studentattendance.helpers.ShiftHelper;
 import udpm.hn.studentattendance.helpers.ValidateHelper;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.config.mailer.model.MailerDefaultRequest;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.RedisPrefixConstant;
+import udpm.hn.studentattendance.infrastructure.constants.SettingKeys;
 import udpm.hn.studentattendance.infrastructure.constants.ShiftType;
 import udpm.hn.studentattendance.infrastructure.constants.StatusType;
 import udpm.hn.studentattendance.infrastructure.redis.service.RedisService;
@@ -65,16 +68,22 @@ public class TCTeachingScheduleServiceImpl implements TCTeachingScheduleService 
 
         private final SessionHelper sessionHelper;
 
+        private final SettingHelper settingHelper;
+
         private final RedisService redisService;
 
         @Value("${app.config.app-name}")
         private String appName;
 
-        @Value("${app.config.shift.max-late-arrival}")
         private int MAX_LATE_ARRIVAL;
 
         @Value("${spring.cache.redis.time-to-live}")
         private long redisTTL;
+
+        @PostConstruct
+        public void init() {
+                this.MAX_LATE_ARRIVAL = settingHelper.getSetting(SettingKeys.SHIFT_MAX_LATE_ARRIVAL, Integer.class);
+        }
 
         public PageableObject<?> getCachedTeachingSchedule(TCTeachingScheduleRequest request) {
                 String cacheKey = RedisPrefixConstant.REDIS_PREFIX_SCHEDULE_TEACHER + "list_"

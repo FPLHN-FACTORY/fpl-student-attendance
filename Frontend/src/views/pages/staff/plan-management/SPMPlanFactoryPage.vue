@@ -16,13 +16,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { ROUTE_NAMES } from '@/router/staffRoute'
 import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
 import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
-import {
-  DAY_OF_WEEK,
-  DEFAULT_DATE_FORMAT,
-  DEFAULT_LATE_ARRIVAL,
-  DEFAULT_MAX_LATE_ARRIVAL,
-  SHIFT,
-} from '@/constants'
+import { DAY_OF_WEEK, DEFAULT_DATE_FORMAT, DEFAULT_LATE_ARRIVAL, SHIFT } from '@/constants'
 import { autoAddColumnWidth, debounce, formatDate } from '@/utils/utils'
 import useLoadingStore from '@/stores/useLoadingStore'
 
@@ -427,7 +421,6 @@ watch(
           class="w-100"
           v-model:value="formDataAdd.lateArrival"
           :min="0"
-          :max="DEFAULT_MAX_LATE_ARRIVAL"
           :step="1"
           :disabled="modalAdd.isLoading"
           allowClear

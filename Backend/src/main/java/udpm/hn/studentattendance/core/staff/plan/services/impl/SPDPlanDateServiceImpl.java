@@ -1,5 +1,6 @@
 package udpm.hn.studentattendance.core.staff.plan.services.impl;
 
+import jakarta.annotation.PostConstruct;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -15,6 +16,7 @@ import udpm.hn.studentattendance.core.staff.plan.model.response.SPDPlanFactoryRe
 import udpm.hn.studentattendance.core.staff.plan.repositories.SPDFacilityShiftRepository;
 import udpm.hn.studentattendance.core.staff.plan.repositories.SPDPlanDateRepository;
 import udpm.hn.studentattendance.core.staff.plan.repositories.SPDPlanFactoryRepository;
+import udpm.hn.studentattendance.helpers.SettingHelper;
 import udpm.hn.studentattendance.infrastructure.common.repositories.CommonUserStudentRepository;
 import udpm.hn.studentattendance.core.staff.plan.services.SPDPlanDateService;
 import udpm.hn.studentattendance.entities.FacilityShift;
@@ -28,6 +30,7 @@ import udpm.hn.studentattendance.helpers.SessionHelper;
 import udpm.hn.studentattendance.helpers.ShiftHelper;
 import udpm.hn.studentattendance.helpers.ValidateHelper;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
+import udpm.hn.studentattendance.infrastructure.constants.SettingKeys;
 import udpm.hn.studentattendance.infrastructure.constants.ShiftType;
 import udpm.hn.studentattendance.infrastructure.constants.StatusType;
 import udpm.hn.studentattendance.utils.DateTimeUtils;
@@ -52,10 +55,16 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
 
     private final SessionHelper sessionHelper;
 
+    private final SettingHelper settingHelper;
+
     private final UserActivityLogHelper userActivityLogHelper;
 
-    @Value("${app.config.shift.max-late-arrival}")
     private int MAX_LATE_ARRIVAL;
+
+    @PostConstruct
+    public void init() {
+        this.MAX_LATE_ARRIVAL = settingHelper.getSetting(SettingKeys.SHIFT_MAX_LATE_ARRIVAL, Integer.class);
+    }
 
     @Override
     public ResponseEntity<?> getDetail(String idPlanFactory) {
