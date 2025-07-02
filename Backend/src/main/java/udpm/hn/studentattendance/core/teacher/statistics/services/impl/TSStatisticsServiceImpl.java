@@ -249,7 +249,7 @@ public class TSStatisticsServiceImpl implements TSStatisticsService {
                     }
 
                     dataCell.add(total_absent + "/" + lstPlanDate.size());
-                    dataCell.add(Math.round(total_absent / lstPlanDate.size() * 1000) / 10.0 + "%");
+                    dataCell.add((total_absent > 0 ? Math.round(total_absent / lstPlanDate.size() * 1000) / 10.0 : 0) + "%");
                     dataCell.add(total_recovery);
 
                     ExcelUtils.insertRow(sheet, row, dataCell, colorMap);

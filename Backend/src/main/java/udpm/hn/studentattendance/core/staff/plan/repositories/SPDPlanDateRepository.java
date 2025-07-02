@@ -103,6 +103,44 @@ public interface SPDPlanDateRepository extends PlanDateRepository {
 
     @Query(value = """
         SELECT 
+            ROW_NUMBER() OVER (ORDER BY pd.start_date ASC) as orderNumber,
+            pd.id,
+            pd.start_date,
+            pd.end_date,
+            pd.shift,
+            pd.type,
+            pd.late_arrival,
+            pd.description,
+            pd.link,
+            pd.room,
+            pd.required_location,
+            pd.required_ip,
+            pd.required_checkin,
+            pd.required_checkout,
+            CASE
+                WHEN UNIX_TIMESTAMP(NOW()) * 1000 > pd.start_date
+                THEN 'DA_DIEN_RA'
+                ELSE 'CHUA_DIEN_RA'
+            END AS status
+        FROM plan_date pd
+        JOIN plan_factory pf ON pd.id_plan_factory = pf.id
+        JOIN factory f ON f.id = pf.id_factory
+        JOIN project p ON p.id = f.id_project
+        JOIN subject_facility sf ON sf.id = p.id_subject_facility
+        JOIN facility f2 ON sf.id_facility = f2.id
+        WHERE 
+            f.status = 1 AND
+            p.status = 1 AND
+            sf.status = 1 AND
+            f2.status = 1 AND
+            pf.id = :idPlanFactory AND
+            pd.start_date > UNIX_TIMESTAMP(NOW()) * 1000 
+        ORDER BY pd.start_date ASC
+    """, nativeQuery = true)
+    List<SPDPlanDateResponse> getAllListNotRunning(String idPlanFactory);
+
+    @Query(value = """
+        SELECT 
             1 as orderNumber,
             pd.id,
             pd.start_date,

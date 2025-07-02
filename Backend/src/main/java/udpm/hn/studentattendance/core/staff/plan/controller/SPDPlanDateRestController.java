@@ -56,14 +56,19 @@ public class SPDPlanDateRestController {
         return spdPlanDateService.addPlanDate(request);
     }
 
-    @PutMapping("/{idFactory}/update")
+    @PutMapping("/{idPlanFactory}/update")
     public ResponseEntity<?> updatePlanDate(@Valid @RequestBody SPDAddOrUpdatePlanDateRequest request) {
         return spdPlanDateService.updatePlanDate(request);
     }
 
-    @PutMapping("/{idFactory}/update-link")
+    @PutMapping("/{idPlanFactory}/update-link")
     public ResponseEntity<?> updateLinkMeet(@Valid @RequestBody SPDUpdateLinkMeetRequest request) {
         return spdPlanDateService.updateLinkMeet(request);
+    }
+
+    @PostMapping("/{idPlanFactory}/send-mail")
+    public ResponseEntity<?> sendMail(@PathVariable String idPlanFactory) {
+        return spdPlanDateService.sendMail(idPlanFactory);
     }
 
 }
