@@ -6,21 +6,16 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import udpm.hn.studentattendance.core.admin.facility.model.request.AFAddOrUpdateFacilityLocationRequest;
 import udpm.hn.studentattendance.core.admin.facility.model.request.AFAddOrUpdateFacilityShiftRequest;
-import udpm.hn.studentattendance.core.admin.facility.model.request.AFFilterFacilityLocationRequest;
 import udpm.hn.studentattendance.core.admin.facility.model.request.AFFilterFacilityShiftRequest;
-import udpm.hn.studentattendance.core.admin.facility.model.response.AFFacilityLocationResponse;
 import udpm.hn.studentattendance.core.admin.facility.model.response.AFFacilityShiftResponse;
 import udpm.hn.studentattendance.core.admin.facility.repository.AFFacilityExtendRepository;
-import udpm.hn.studentattendance.core.admin.facility.repository.AFFacilityLocationRepository;
 import udpm.hn.studentattendance.core.admin.facility.repository.AFFacilityShiftRepository;
-import udpm.hn.studentattendance.core.admin.facility.service.AFFacilityLocationService;
 import udpm.hn.studentattendance.core.admin.facility.service.AFFacilityShiftService;
 import udpm.hn.studentattendance.entities.Facility;
-import udpm.hn.studentattendance.entities.FacilityLocation;
 import udpm.hn.studentattendance.entities.FacilityShift;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
+import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
 import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.helpers.SettingHelper;
 import udpm.hn.studentattendance.helpers.ShiftHelper;
@@ -44,6 +39,8 @@ public class AFFacilityShiftServiceImpl implements AFFacilityShiftService {
     private final SettingHelper settingHelper;
 
     private final RedisService redisService;
+
+    private final RedisInvalidationHelper redisInvalidationHelper;
 
     @Value("${spring.cache.redis.time-to-live}")
     private long redisTTL;
@@ -134,8 +131,8 @@ public class AFFacilityShiftServiceImpl implements AFFacilityShiftService {
                 + request.getFromMinute() +
                 " - " + request.getToHour() + ":" + request.getToMinute() + ") tại cơ sở " + facility.getName());
 
-        // Invalidate cache
-        invalidateShiftCaches();
+        // Invalidate all caches
+        redisInvalidationHelper.invalidateAllCaches();
 
         return RouterHelper.responseSuccess("Tạo mới ca học thành công", saveFacilityShift);
     }
@@ -188,8 +185,8 @@ public class AFFacilityShiftServiceImpl implements AFFacilityShiftService {
                 + request.getToMinute() +
                 ") tại cơ sở " + facility.getName());
 
-        // Invalidate cache
-        invalidateShiftCaches();
+        // Invalidate all caches
+        redisInvalidationHelper.invalidateAllCaches();
 
         return RouterHelper.responseSuccess("Cập nhật ca học thành công", saveFacilityShift);
     }
@@ -210,8 +207,8 @@ public class AFFacilityShiftServiceImpl implements AFFacilityShiftService {
         // Log user activity
         userActivityLogHelper.saveLog("Xóa ca học: " + shiftInfo + " tại cơ sở " + facilityName);
 
-        // Invalidate cache
-        invalidateShiftCaches();
+        // Invalidate all caches
+        redisInvalidationHelper.invalidateAllCaches();
 
         return RouterHelper.responseSuccess("Xoá thành công ca học: " + facilityShift.getShift());
     }
@@ -239,16 +236,16 @@ public class AFFacilityShiftServiceImpl implements AFFacilityShiftService {
                 facilityShift.getToHour() + ":" + facilityShift.getToMinute() + ") tại cơ sở "
                 + facilityShift.getFacility().getName());
 
-        // Invalidate cache
-        invalidateShiftCaches();
+        // Invalidate all caches
+        redisInvalidationHelper.invalidateAllCaches();
 
         return RouterHelper.responseSuccess("Thay đổi trạng thái ca học thành công", savedShift);
     }
 
     /**
-     * Xóa cache liên quan đến ca học
+     * @deprecated Use redisInvalidationHelper.invalidateAllCaches() instead
      */
     private void invalidateShiftCaches() {
-        redisService.deletePattern(RedisPrefixConstant.REDIS_PREFIX_FACILITY_SHIFT + "list_*");
+        redisInvalidationHelper.invalidateAllCaches();
     }
 }

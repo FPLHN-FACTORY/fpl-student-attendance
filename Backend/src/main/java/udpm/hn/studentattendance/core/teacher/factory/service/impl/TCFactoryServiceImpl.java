@@ -13,6 +13,7 @@ import udpm.hn.studentattendance.core.teacher.factory.service.TCFactoryService;
 import udpm.hn.studentattendance.entities.Project;
 import udpm.hn.studentattendance.entities.Semester;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
+import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
 import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.helpers.SessionHelper;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
@@ -37,9 +38,12 @@ public class TCFactoryServiceImpl implements TCFactoryService {
 
         private final RedisService redisService;
 
+        private final RedisInvalidationHelper redisInvalidationHelper;
+
         @Override
         public ResponseEntity<?> getAllFactoryByTeacher(TCFactoryRequest teacherStudentRequest) {
-                String cacheKey = RedisPrefixConstant.REDIS_PREFIX_TEACHER_FACTORY + "factory_" + sessionHelper.getUserCode()
+                String cacheKey = RedisPrefixConstant.REDIS_PREFIX_TEACHER_FACTORY + "factory_"
+                                + sessionHelper.getUserCode()
                                 + "_" + sessionHelper.getFacilityId()
                                 + "_" + teacherStudentRequest.toString();
 
@@ -103,26 +107,8 @@ public class TCFactoryServiceImpl implements TCFactoryService {
                 return RouterHelper.responseSuccess("Lấy tất cả học kỳ thành công", semesters);
         }
 
-        /**
-         * Helper method to invalidate teacher factory-related caches for a specific
-         * teacher
-         */
         public void invalidateTeacherFactoryCaches() {
-                String teacherCode = sessionHelper.getUserCode();
-                String facilityId = sessionHelper.getFacilityId();
-
-                // Delete all factory lists for this teacher
-                redisService.deletePattern(RedisPrefixConstant.REDIS_PREFIX_TEACHER_FACTORY + "factory_" + teacherCode + "_"
-                                + facilityId + "_*");
+                redisInvalidationHelper.invalidateAllCaches();
         }
 
-        /**
-         * Helper method to invalidate project-related caches for a specific facility
-         */
-        public void invalidateProjectCaches() {
-                String facilityId = sessionHelper.getFacilityId();
-
-                // Delete all project lists for this facility
-                redisService.deletePattern(RedisPrefixConstant.REDIS_PREFIX_TEACHER_FACTORY + "projects_" + facilityId);
-        }
 }
