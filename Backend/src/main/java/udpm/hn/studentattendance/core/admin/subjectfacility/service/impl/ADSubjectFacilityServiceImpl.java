@@ -17,6 +17,7 @@ import udpm.hn.studentattendance.entities.Facility;
 import udpm.hn.studentattendance.entities.Subject;
 import udpm.hn.studentattendance.entities.SubjectFacility;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
+import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
 import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
@@ -43,14 +44,12 @@ public class ADSubjectFacilityServiceImpl implements ADSubjectFacilityService {
 
     private final RedisService redisService;
 
+    private final RedisInvalidationHelper redisInvalidationHelper;
+
     @Value("${spring.cache.redis.time-to-live}")
     private long redisTTL;
 
-    /**
-     * Lấy danh sách bộ môn cơ sở từ cache hoặc DB
-     */
     public PageableObject<ADSubjectFacilityResponse> getSubjectFacilityList(ADSubjectFacilitySearchRequest request) {
-        // Tạo cache key thủ công
         String cacheKey = RedisPrefixConstant.REDIS_PREFIX_SUBJECT_FACILITY + "list_" +
                 "page=" + request.getPage() +
                 "_size=" + request.getSize() +
@@ -144,8 +143,8 @@ public class ADSubjectFacilityServiceImpl implements ADSubjectFacilityService {
         userActivityLogHelper
                 .saveLog("vừa thêm mới bộ môn cơ sở : " + subject.getName() + " tại cơ sở " + facility.getName());
 
-        // Invalidate related caches
-        invalidateSubjectFacilityCaches();
+        // Invalidate all caches
+        redisInvalidationHelper.invalidateAllCaches();
 
         return RouterHelper.responseSuccess("Thêm bộ môn cơ sở thành công", savedSubjectFacility);
     }
@@ -177,8 +176,8 @@ public class ADSubjectFacilityServiceImpl implements ADSubjectFacilityService {
         userActivityLogHelper
                 .saveLog("vừa cập nhật bộ môn cơ sở: " + subject.getName() + " tại cơ sở " + facility.getName());
 
-        // Invalidate related caches
-        invalidateSubjectFacilityCache(id);
+        // Invalidate all caches
+        redisInvalidationHelper.invalidateAllCaches();
 
         return RouterHelper.responseSuccess("Cập nhật bộ môn cơ sở thành công", savedSubjectFacility);
     }
@@ -210,24 +209,23 @@ public class ADSubjectFacilityServiceImpl implements ADSubjectFacilityService {
         userActivityLogHelper.saveLog("vừa thay đổi trạng thái bộ môn cơ sở: " + newEntity.getSubject().getName()
                 + " tại cơ sở " + newEntity.getFacility().getName() + " thành " + statusText);
 
-        // Invalidate related caches
-        invalidateSubjectFacilityCache(id);
+        // Invalidate all caches
+        redisInvalidationHelper.invalidateAllCaches();
 
         return RouterHelper.responseSuccess("Thay đổi trạng thái thành công", newEntity);
     }
 
     /**
-     * Xóa cache liên quan đến một bộ môn cơ sở cụ thể
+     * @deprecated Use redisInvalidationHelper.invalidateAllCaches() instead
      */
     private void invalidateSubjectFacilityCache(String id) {
-        redisService.delete(RedisPrefixConstant.REDIS_PREFIX_SUBJECT_FACILITY + id);
-        invalidateSubjectFacilityCaches();
+        redisInvalidationHelper.invalidateAllCaches();
     }
 
     /**
-     * Xóa cache danh sách bộ môn cơ sở
+     * @deprecated Use redisInvalidationHelper.invalidateAllCaches() instead
      */
     private void invalidateSubjectFacilityCaches() {
-        redisService.deletePattern(RedisPrefixConstant.REDIS_PREFIX_SUBJECT_FACILITY + "list_*");
+        redisInvalidationHelper.invalidateAllCaches();
     }
 }

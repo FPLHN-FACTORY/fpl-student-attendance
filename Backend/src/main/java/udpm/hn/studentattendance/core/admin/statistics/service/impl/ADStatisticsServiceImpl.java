@@ -15,6 +15,7 @@ import udpm.hn.studentattendance.core.admin.statistics.model.response.ADStatisti
 import udpm.hn.studentattendance.core.admin.statistics.model.response.ADSTotalProjectAndSubjectResponse;
 import udpm.hn.studentattendance.core.admin.statistics.repository.*;
 import udpm.hn.studentattendance.core.admin.statistics.service.ADStatisticsService;
+import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
 import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.infrastructure.constants.RedisPrefixConstant;
 import udpm.hn.studentattendance.infrastructure.redis.service.RedisService;
@@ -32,6 +33,8 @@ public class ADStatisticsServiceImpl implements ADStatisticsService {
     private final ADSProjectSubjectFacilityRepository projectSubjectFacilityRepository;
 
     private final RedisService redisService;
+
+    private final RedisInvalidationHelper redisInvalidationHelper;
 
     @Value("${spring.cache.redis.time-to-live}")
     private long redisTTL;
@@ -92,9 +95,10 @@ public class ADStatisticsServiceImpl implements ADStatisticsService {
                 "request=" + requestId +
                 "_page=" + pageNumber;
         redisService.delete(cacheKey);
+        invalidateAllStatisticsCaches();
     }
 
     public void invalidateAllStatisticsCaches() {
-        redisService.deletePattern(RedisPrefixConstant.REDIS_PREFIX_STATISTICS + "admin_*");
+        redisInvalidationHelper.invalidateAllCaches();
     }
 }

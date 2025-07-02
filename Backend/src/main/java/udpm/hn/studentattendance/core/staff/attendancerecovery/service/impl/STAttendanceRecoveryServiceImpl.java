@@ -13,6 +13,7 @@ import udpm.hn.studentattendance.core.staff.attendancerecovery.repository.*;
 import udpm.hn.studentattendance.core.staff.attendancerecovery.service.STAttendanceRecoveryService;
 import udpm.hn.studentattendance.entities.*;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
+import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
 import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.helpers.SessionHelper;
 import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
@@ -58,6 +59,8 @@ public class STAttendanceRecoveryServiceImpl implements STAttendanceRecoveryServ
     private final UserActivityLogHelper userActivityLogHelper;
 
     private final RedisService redisService;
+
+    private final RedisInvalidationHelper redisInvalidationHelper;
 
     @Value("${spring.cache.redis.time-to-live}")
     private long redisTTL;
@@ -115,8 +118,8 @@ public class STAttendanceRecoveryServiceImpl implements STAttendanceRecoveryServ
                     "vừa xóa sự kiện khôi phục điểm danh: " + attendanceRecoveryOptional.get().getName());
             attendanceRecoveryRepository.deleteById(attendanceRecoveryOptional.get().getId());
 
-            // Invalidate related caches
-            invalidateAttendanceRecoveryCaches();
+            // Invalidate all caches
+            redisInvalidationHelper.invalidateAllCaches();
 
             return RouterHelper.responseSuccess("Xóa sự kiện khôi phục điểm danh sinh viên thành công", null);
         } else {
@@ -167,8 +170,8 @@ public class STAttendanceRecoveryServiceImpl implements STAttendanceRecoveryServ
 
         userActivityLogHelper.saveLog("vừa thêm sự kiện khôi phục điểm danh mới: " + attendanceRecoverySave.getName());
 
-        // Invalidate related caches
-        invalidateAttendanceRecoveryCaches();
+        // Invalidate all caches
+        redisInvalidationHelper.invalidateAllCaches();
 
         return RouterHelper.responseSuccess("Thêm sự kiện khôi phục điểm danh mới thành công", attendanceRecoverySave);
     }
@@ -222,8 +225,8 @@ public class STAttendanceRecoveryServiceImpl implements STAttendanceRecoveryServ
             userActivityLogHelper.saveLog(
                     "vừa cập nhật sự kiện khôi phục điểm danh: " + oldName + " → " + attendanceRecovery.getName());
 
-            // Invalidate related caches
-            invalidateAttendanceRecoveryCache(id);
+            // Invalidate all caches
+            redisInvalidationHelper.invalidateAllCaches();
 
             return RouterHelper.responseSuccess("Cập nhật sự kiện khôi phục điểm danh thành công", attendanceRecovery);
         }
@@ -283,8 +286,8 @@ public class STAttendanceRecoveryServiceImpl implements STAttendanceRecoveryServ
                         null);
             }
 
-            // Invalidate related caches after successful import
-            invalidateAttendanceRecoveryCache(request.getAttendanceRecoveryId());
+            // Invalidate all caches
+            redisInvalidationHelper.invalidateAllCaches();
 
             return RouterHelper.responseSuccess(
                     String.format(
@@ -600,8 +603,8 @@ public class STAttendanceRecoveryServiceImpl implements STAttendanceRecoveryServ
             userActivityLogHelper
                     .saveLog("đã xóa dữ liệu điểm danh của sự kiện khôi phục: " + attendanceRecovery.getName());
 
-            // Invalidate related caches
-            invalidateAttendanceRecoveryCache(idAttendanceRecovery);
+            // Invalidate all caches
+            redisInvalidationHelper.invalidateAllCaches();
 
             return RouterHelper.responseSuccess("Xóa dữ liệu điểm danh thành công", null);
         }
@@ -609,26 +612,16 @@ public class STAttendanceRecoveryServiceImpl implements STAttendanceRecoveryServ
     }
 
     /**
-     * Helper method to invalidate caches related to a specific attendance recovery
-     * event
+     * @deprecated Use redisInvalidationHelper.invalidateAllCaches() instead
      */
     private void invalidateAttendanceRecoveryCache(String attendanceRecoveryId) {
-        redisService.delete(RedisPrefixConstant.REDIS_PREFIX_ATTENDANCE_RECOVERY + attendanceRecoveryId);
-        redisService
-                .delete(RedisPrefixConstant.REDIS_PREFIX_ATTENDANCE_RECOVERY + "has_students_" + attendanceRecoveryId);
-
-        // Also invalidate lists and history logs as they might contain this event
-        invalidateAttendanceRecoveryCaches();
+        redisInvalidationHelper.invalidateAllCaches();
     }
 
     /**
-     * Helper method to invalidate all attendance recovery related caches
+     * @deprecated Use redisInvalidationHelper.invalidateAllCaches() instead
      */
     private void invalidateAttendanceRecoveryCaches() {
-        String facilityId = sessionHelper.getFacilityId();
-        redisService.deletePattern(RedisPrefixConstant.REDIS_PREFIX_ATTENDANCE_RECOVERY + "list_" + facilityId + "_*");
-        redisService.deletePattern(RedisPrefixConstant.REDIS_PREFIX_ATTENDANCE_RECOVERY + "history_log_*");
-        redisService.deletePattern(RedisPrefixConstant.REDIS_PREFIX_ATTENDANCE_RECOVERY + "history_log_detail_*");
-        redisService.deletePattern(RedisPrefixConstant.REDIS_PREFIX_ATTENDANCE_RECOVERY + "import_success_*");
+        redisInvalidationHelper.invalidateAllCaches();
     }
 }

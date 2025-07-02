@@ -14,6 +14,7 @@ import udpm.hn.studentattendance.core.admin.facility.service.AFFacilityLocationS
 import udpm.hn.studentattendance.entities.Facility;
 import udpm.hn.studentattendance.entities.FacilityLocation;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
+import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
 import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
@@ -31,6 +32,8 @@ public class AFFacilityLocationServiceImpl implements AFFacilityLocationService 
     private final UserActivityLogHelper userActivityLogHelper;
 
     private final RedisService redisService;
+
+    private final RedisInvalidationHelper redisInvalidationHelper;
 
     @Value("${spring.cache.redis.time-to-live}")
     private long redisTTL;
@@ -103,8 +106,8 @@ public class AFFacilityLocationServiceImpl implements AFFacilityLocationService 
         userActivityLogHelper
                 .saveLog("vừa thêm địa điểm mới: " + savedLocation.getName() + " tại cơ sở " + facility.getName());
 
-        // Invalidate related caches
-        invalidateLocationCaches();
+        // Invalidate all caches
+        redisInvalidationHelper.invalidateAllCaches();
 
         return RouterHelper.responseSuccess("Tạo mới địa điểm thành công", savedLocation);
     }
@@ -136,8 +139,8 @@ public class AFFacilityLocationServiceImpl implements AFFacilityLocationService 
         userActivityLogHelper.saveLog("vừa cập nhật địa điểm: " + savedLocation.getName() + " tại cơ sở "
                 + savedLocation.getFacility().getName());
 
-        // Invalidate related caches
-        invalidateLocationCaches();
+        // Invalidate all caches
+        redisInvalidationHelper.invalidateAllCaches();
 
         return RouterHelper.responseSuccess("Cập nhật địa điểm thành công", savedLocation);
     }
@@ -154,8 +157,8 @@ public class AFFacilityLocationServiceImpl implements AFFacilityLocationService 
         afFacilityLocationRepository.delete(facilityLocation);
         userActivityLogHelper.saveLog("vừa xóa địa điểm: " + locationName + " tại cơ sở " + facilityName);
 
-        // Invalidate related caches
-        invalidateLocationCaches();
+        // Invalidate all caches
+        redisInvalidationHelper.invalidateAllCaches();
 
         return RouterHelper.responseSuccess("Xoá thành công địa điểm: " + facilityLocation.getName());
     }
@@ -181,17 +184,16 @@ public class AFFacilityLocationServiceImpl implements AFFacilityLocationService 
         userActivityLogHelper.saveLog("vừa thay đổi trạng thái địa điểm: " + savedLocation.getName() +
                 " tại cơ sở " + savedLocation.getFacility().getName() + " thành " + statusText);
 
-        // Invalidate related caches
-        invalidateLocationCaches();
+        // Invalidate all caches
+        redisInvalidationHelper.invalidateAllCaches();
 
         return RouterHelper.responseSuccess("Thay đổi trạng thái địa điểm thành công", savedLocation);
     }
 
     /**
-     * Xóa cache liên quan đến địa điểm
+     * @deprecated Use redisInvalidationHelper.invalidateAllCaches() instead
      */
     private void invalidateLocationCaches() {
-        redisService.deletePattern(RedisPrefixConstant.REDIS_PREFIX_FACILITY_LOCATION + "list_*");
+        redisInvalidationHelper.invalidateAllCaches();
     }
-
 }
