@@ -233,6 +233,7 @@ const handleStudentCheckboxChange = (student, checked) => {
       })
       .catch((error) => {
         message.error(error.response?.data?.message || 'Lỗi khi thêm sinh viên vào nhóm xưởng')
+        selectedStudents[student.id] = false
       })
       .finally(() => {
         loadingStore.hide()
@@ -508,9 +509,9 @@ onMounted(() => {
           <template #title> <UnorderedListOutlined /> Danh sách sinh viên </template>
           <div class="d-flex justify-content-end flex-wrap gap-3 mb-2">
             <ExcelUploadButton v-bind="configImportExcel" />
-              <a-button type="primary" @click="isAddStudentModalVisible = true">
-                <PlusOutlined /> Thêm sinh viên
-              </a-button>
+            <a-button type="primary" @click="isAddStudentModalVisible = true">
+              <PlusOutlined /> Thêm sinh viên
+            </a-button>
           </div>
 
           <a-table
@@ -635,7 +636,7 @@ onMounted(() => {
         </a-descriptions-item>
       </a-descriptions>
     </a-modal>
-    
+
     <a-modal
       v-model:open="shiftModalVisible"
       title="Chi tiết ca học"
@@ -794,9 +795,9 @@ onMounted(() => {
           </template>
         </template>
       </a-table>
-      
+
       <!-- Custom footer -->
-      <div style="text-align: right; margin-top: 16px;">
+      <div style="text-align: right; margin-top: 16px">
         <a-button @click="resetStudentModal">Đóng</a-button>
       </div>
     </a-modal>
