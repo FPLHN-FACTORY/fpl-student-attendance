@@ -21,6 +21,7 @@ import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.config.mailer.model.MailerDefaultRequest;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.RedisPrefixConstant;
+import udpm.hn.studentattendance.infrastructure.constants.SettingKeys;
 import udpm.hn.studentattendance.infrastructure.redis.service.RedisService;
 
 import java.util.HashMap;
@@ -44,13 +45,13 @@ public class ADUserAdminServiceImpl implements ADUserAdminService {
         private final MailerHelper mailerHelper;
 
         private final UserActivityLogHelper userActivityLogHelper;
+
         private final RedisService redisService;
+
+        private final SettingHelper settingHelper;
 
         @Value("${app.config.app-name}")
         private String appName;
-
-        @Value("${app.config.disabled-check-email-fpt}")
-        private String isDisableCheckEmailFpt;
 
         @Value("${spring.cache.redis.time-to-live}")
         private long redisTTL;
@@ -192,7 +193,7 @@ public class ADUserAdminServiceImpl implements ADUserAdminService {
                                         .responseError("Email phải có định dạng @gmail.com hoặc kết thúc bằng edu.vn");
                 }
 
-                if (!isDisableCheckEmailFpt.equalsIgnoreCase("true")) {
+                if (!settingHelper.getSetting(SettingKeys.DISABLED_CHECK_EMAIL_FPT_STAFF, Boolean.class)) {
                         if (!ValidateHelper.isValidEmailFE(email) && !ValidateHelper.isValidEmailFPT(email)) {
                                 return RouterHelper.responseError("Email phải kết thúc bằng edu.vn");
                         }
@@ -265,7 +266,7 @@ public class ADUserAdminServiceImpl implements ADUserAdminService {
                                         .responseError("Email phải có định dạng @gmail.com hoặc kết thúc bằng edu.vn");
                 }
 
-                if (!isDisableCheckEmailFpt.equalsIgnoreCase("true")) {
+                if (!settingHelper.getSetting(SettingKeys.DISABLED_CHECK_EMAIL_FPT_STAFF, Boolean.class)) {
                         if (!ValidateHelper.isValidEmailFE(email) && !ValidateHelper.isValidEmailFPT(email)) {
                                 return RouterHelper.responseError("Email phải kết thúc bằng edu.vn");
                         }

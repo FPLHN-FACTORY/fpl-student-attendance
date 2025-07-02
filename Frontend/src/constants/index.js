@@ -2,10 +2,6 @@ export const DEFAULT_DATE_FORMAT = 'DD/MM/YYYY'
 
 export const DEFAULT_LATE_ARRIVAL = 15
 
-export const DEFAULT_EARLY_MINUTE_CHECKIN = 10
-
-export const DEFAULT_MAX_LATE_ARRIVAL = 90
-
 export const PAGINATION_SIZE = 10
 
 export const DEFAULT_PAGINATION = {

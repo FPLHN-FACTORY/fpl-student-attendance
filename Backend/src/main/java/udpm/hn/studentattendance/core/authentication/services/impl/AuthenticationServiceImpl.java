@@ -1,12 +1,12 @@
 package udpm.hn.studentattendance.core.authentication.services.impl;
 
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
+import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.util.RouteMatcher;
 import org.springframework.util.StringUtils;
 import org.springframework.web.servlet.view.RedirectView;
 import udpm.hn.studentattendance.core.authentication.model.request.AuthenticationToken;
@@ -27,8 +27,10 @@ import udpm.hn.studentattendance.entities.UserStudent;
 import udpm.hn.studentattendance.helpers.NotificationHelper;
 import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.helpers.SessionHelper;
+import udpm.hn.studentattendance.helpers.SettingHelper;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.RoleConstant;
+import udpm.hn.studentattendance.infrastructure.constants.SettingKeys;
 import udpm.hn.studentattendance.infrastructure.constants.router.RouteAuthenticationConstant;
 import udpm.hn.studentattendance.core.authentication.services.AuthenticationService;
 import udpm.hn.studentattendance.entities.Facility;
@@ -38,6 +40,7 @@ import udpm.hn.studentattendance.utils.FaceRecognitionUtils;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -45,12 +48,11 @@ import java.util.Set;
 @RequiredArgsConstructor
 public class AuthenticationServiceImpl implements AuthenticationService {
 
-    @PersistenceContext
-    private EntityManager entityManager;
-
     private final HttpSession httpSession;
 
     private final SessionHelper sessionHelper;
+
+    private final SettingHelper settingHelper;
 
     private final JwtUtil jwtUtil;
 
@@ -66,8 +68,12 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
     private final AuthenticationUserStudentRepository authenticationUserStudentRepository;
 
-    @Value("${app.config.face.threshold_register}")
     private double threshold_register;
+
+    @PostConstruct
+    public void init() {
+        this.threshold_register = settingHelper.getSetting(SettingKeys.FACE_THRESHOLD_REGISTER, Double.class);
+    }
 
     @Override
     public RedirectView authorSwitch(String role, String redirectUri, String facilityId) {
@@ -86,6 +92,56 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     @Override
     public ResponseEntity<?> getAllSemester() {
         return RouterHelper.responseSuccess("Tải dữ liệu danh sách học kỳ thành công", authenticationSemesterRepository.findAllByStatusOrderByFromDateDesc(EntityStatus.ACTIVE));
+    }
+
+    @Override
+    public ResponseEntity<?> getSettings() {
+        return RouterHelper.responseSuccess("Lấy dữ liệu cài đặt thành công", settingHelper.getAllSettings());
+    }
+
+    @Override
+    public ResponseEntity<?> saveSettings(Map<SettingKeys, String> settings) {
+        Boolean disableCheckEmailFPTStaff = (Boolean) SettingHelper.parseValue(settings.get(SettingKeys.DISABLED_CHECK_EMAIL_FPT_STAFF));
+        Boolean disableCheckEmailFPTStudent = (Boolean) SettingHelper.parseValue(settings.get(SettingKeys.DISABLED_CHECK_EMAIL_FPT_STUDENT));
+        Integer shiftMinDiff = (Integer) SettingHelper.parseValue(settings.get(SettingKeys.SHIFT_MIN_DIFF));
+        Integer shiftMaxLateArrival = (Integer) SettingHelper.parseValue(settings.get(SettingKeys.SHIFT_MAX_LATE_ARRIVAL));
+        Integer attendanceEarlyCheckin = (Integer) SettingHelper.parseValue(settings.get(SettingKeys.ATTENDANCE_EARLY_CHECKIN));
+        Integer expirationMinuteLogin = (Integer) SettingHelper.parseValue(settings.get(SettingKeys.EXPIRATION_MINUTE_LOGIN));
+        Double faceThresholdCheckin = (Double) SettingHelper.parseValue(settings.get(SettingKeys.FACE_THRESHOLD_CHECKIN));
+        Double faceThresholdRegister = (Double) SettingHelper.parseValue(settings.get(SettingKeys.FACE_THRESHOLD_REGISTER));
+
+        if (disableCheckEmailFPTStaff == null || disableCheckEmailFPTStudent == null || shiftMinDiff == null || shiftMaxLateArrival == null || attendanceEarlyCheckin == null || expirationMinuteLogin == null || faceThresholdCheckin == null || faceThresholdRegister == null) {
+            return RouterHelper.responseError("Vui lòng nhập đầy đủ các trường bắt buộc");
+        }
+
+        if (shiftMinDiff < 1 || shiftMinDiff > 480) {
+            return RouterHelper.responseError("Thời gian diễn ra ca học tối thiểu không hợp lệ");
+        }
+
+        if (shiftMaxLateArrival < 5 || shiftMaxLateArrival > 90) {
+            return RouterHelper.responseError("Thời gian điểm danh muộn nhất không hợp lệ");
+        }
+
+        if (attendanceEarlyCheckin < 0 || attendanceEarlyCheckin > 30) {
+            return RouterHelper.responseError("Thời gian cho phép checkin sớm không hợp lệ");
+        }
+
+        if (expirationMinuteLogin < 60) {
+            return RouterHelper.responseError("Thời hạn phiên đăng nhập không hợp lệ");
+        }
+
+        if (faceThresholdCheckin == 0 || faceThresholdCheckin > 1) {
+            return RouterHelper.responseError("Độ khắt khe checkin/checkout không hợp lệ");
+        }
+
+        if (faceThresholdRegister == 0 || faceThresholdRegister > 1) {
+            return RouterHelper.responseError("Độ khắt khe đăng ký mặt không hợp lệ");
+        }
+
+        for (Map.Entry<SettingKeys, String> entry : settings.entrySet()) {
+            settingHelper.save(entry.getKey(), entry.getValue());
+        }
+        return RouterHelper.responseSuccess("Lưu lại cài đặt thành công");
     }
 
     @Override

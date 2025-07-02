@@ -1,7 +1,6 @@
 <script setup>
 import {
   ATTENDANCE_STATUS,
-  DEFAULT_EARLY_MINUTE_CHECKIN,
   DEFAULT_PAGINATION,
   STATUS_REQUIRED_ATTENDANCE,
   TYPE_SHIFT,
@@ -40,6 +39,8 @@ const lstData = ref([])
 
 const isShowLocation = ref(false)
 const isShowCamera = ref(false)
+
+const DEFAULT_EARLY_MINUTE_CHECKIN = ref(0)
 
 const mapRef = ref(null)
 const mapCenter = ref([0, 0])
@@ -94,6 +95,17 @@ const dataFilter = reactive({
   status: null,
   type: null,
 })
+
+const fetchDataSettings = () => {
+  requestAPI
+    .get(`${ROUTE_NAMES_API.FETCH_DATA_SETTINGS}`)
+    .then(({ data: response }) => {
+      DEFAULT_EARLY_MINUTE_CHECKIN.value = response.data?.['ATTENDANCE_EARLY_CHECKIN'] || 0
+    })
+    .catch((error) => {
+      message.error(error?.response?.data?.message || 'Không thể tải dữ liệu cài đặt')
+    })
+}
 
 const fetchDataList = () => {
   if (isLoading.value === true) {
@@ -265,6 +277,7 @@ onMounted(async () => {
   breadcrumbStore.setRoutes(breadcrumb.value)
   loadingPage.show()
   fetchDataStudentInfo()
+  fetchDataSettings()
   fetchDataList()
   faceIDStore.loadModels()
   await getCurrentLocation()

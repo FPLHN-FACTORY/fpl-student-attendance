@@ -1,5 +1,6 @@
 package udpm.hn.studentattendance.core.student.attendance.service.impl;
 
+import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -26,10 +27,12 @@ import udpm.hn.studentattendance.entities.UserStudentFactory;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
 import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.helpers.SessionHelper;
+import udpm.hn.studentattendance.helpers.SettingHelper;
 import udpm.hn.studentattendance.helpers.ValidateHelper;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.config.websocket.model.message.AttendanceMessage;
 import udpm.hn.studentattendance.infrastructure.constants.AttendanceStatus;
+import udpm.hn.studentattendance.infrastructure.constants.SettingKeys;
 import udpm.hn.studentattendance.infrastructure.constants.ShiftType;
 import udpm.hn.studentattendance.infrastructure.constants.StatusType;
 import udpm.hn.studentattendance.infrastructure.constants.router.RouteWebsocketConstant;
@@ -64,12 +67,17 @@ public class SAAttendanceServiceImpl implements SAAttendanceService {
 
     private final SimpMessagingTemplate messagingTemplate;
 
+    private final SettingHelper settingHelper;
 
-    @Value("${app.config.attendance.early-checkin}")
     private int EARLY_CHECKIN;
 
-    @Value("${app.config.face.threshold_checkin}")
     private double threshold_checkin;
+
+    @PostConstruct
+    public void init() {
+        this.EARLY_CHECKIN = settingHelper.getSetting(SettingKeys.ATTENDANCE_EARLY_CHECKIN, Integer.class);
+        this.threshold_checkin = settingHelper.getSetting(SettingKeys.FACE_THRESHOLD_CHECKIN, Double.class);
+    }
 
     @Override
     public ResponseEntity<?> getAllList(SAFilterAttendanceRequest request) {
