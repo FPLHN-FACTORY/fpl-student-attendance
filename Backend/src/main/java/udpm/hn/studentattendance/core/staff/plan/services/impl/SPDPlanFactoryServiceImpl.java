@@ -70,6 +70,9 @@ public class SPDPlanFactoryServiceImpl implements SPDPlanFactoryService {
 
     private int MAX_LATE_ARRIVAL;
 
+    @Value("${app.config.allows-one-teacher-to-teach-multiple-classes}")
+    private boolean isDisableCheckExistsTeacherOnShift;
+
     @PostConstruct
     public void init() {
         this.MAX_LATE_ARRIVAL = settingHelper.getSetting(SettingKeys.SHIFT_MAX_LATE_ARRIVAL, Integer.class);
@@ -118,6 +121,10 @@ public class SPDPlanFactoryServiceImpl implements SPDPlanFactoryService {
                 || !Objects.equals(factory.getProject().getSubjectFacility().getFacility().getId(),
                         sessionHelper.getFacilityId())) {
             return RouterHelper.responseError("Không tìm thấy nhóm xưởng");
+        }
+
+        if (spdFactoryRepository.getCountTotalStudentInFactory(factory.getId()) > 0) {
+            return RouterHelper.responseError("Chỉ có thể thêm nhóm xưởng khi chưa có sinh viên nào");
         }
 
         List<List<Integer>> lstConsecutiveShift = ShiftHelper.findConsecutiveShift(request.getShift());
@@ -200,12 +207,15 @@ public class SPDPlanFactoryServiceImpl implements SPDPlanFactoryService {
                         return RouterHelper.responseError("Đã tồn tại ca học diễn ra trong khoảng thời gian từ " + DateTimeUtils.convertMillisToDate(startDate, "HH:mm") + " đến " + DateTimeUtils.convertMillisToDate(endDate, "HH:mm") + " của ngày "
                                 + DateTimeUtils.convertMillisToDate(startDate));
                     }
-                    if (spdPlanDateRepository.isExistsTeacherOnShift(factory.getUserStaff().getId(), startDate,
-                            endDate)) {
-                        spdPlanFactoryRepository.delete(planFactory);
-                        return RouterHelper.responseError("Giảng viên " + factory.getUserStaff().getName() + " - "
-                                + factory.getUserStaff().getCode() + " đã đứng lớp tại ca " + request.getShift()
-                                + " trong ngày " + DateTimeUtils.convertMillisToDate(startDate));
+
+                    if (!isDisableCheckExistsTeacherOnShift) {
+                        if (spdPlanDateRepository.isExistsTeacherOnShift(factory.getUserStaff().getId(), startDate,
+                                endDate, null)) {
+                            spdPlanFactoryRepository.delete(planFactory);
+                            return RouterHelper.responseError("Giảng viên " + factory.getUserStaff().getName() + " - "
+                                    + factory.getUserStaff().getCode() + " đã đứng lớp tại ca " + request.getShift()
+                                    + " trong ngày " + DateTimeUtils.convertMillisToDate(startDate));
+                        }
                     }
 
                     String link = StringUtils.hasText(request.getLink()) ? request.getLink().trim() : null;

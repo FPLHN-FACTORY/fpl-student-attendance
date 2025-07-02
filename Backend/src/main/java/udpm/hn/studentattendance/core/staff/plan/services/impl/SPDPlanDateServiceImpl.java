@@ -14,6 +14,7 @@ import udpm.hn.studentattendance.core.staff.plan.model.request.SPDFilterPlanDate
 import udpm.hn.studentattendance.core.staff.plan.model.request.SPDUpdateLinkMeetRequest;
 import udpm.hn.studentattendance.core.staff.plan.model.response.SPDPlanDateResponse;
 import udpm.hn.studentattendance.core.staff.plan.model.response.SPDPlanFactoryResponse;
+import udpm.hn.studentattendance.core.staff.plan.model.response.SPDUserStudentResponse;
 import udpm.hn.studentattendance.core.staff.plan.repositories.SPDFacilityShiftRepository;
 import udpm.hn.studentattendance.core.staff.plan.repositories.SPDPlanDateRepository;
 import udpm.hn.studentattendance.core.staff.plan.repositories.SPDPlanFactoryRepository;
@@ -61,6 +62,9 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
     private final UserActivityLogHelper userActivityLogHelper;
 
     private int MAX_LATE_ARRIVAL;
+
+    @Value("${app.config.allows-one-teacher-to-teach-multiple-classes}")
+    private boolean isDisableCheckExistsTeacherOnShift;
 
     @PostConstruct
     public void init() {
@@ -196,10 +200,12 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
                     + DateTimeUtils.convertMillisToDate(startDate));
         }
 
-        if (spdPlanDateRepository.isExistsTeacherOnShift(factory.getUserStaff().getId(), startDate, endDate)) {
-            return RouterHelper.responseError("Giảng viên " + factory.getUserStaff().getName() + " - "
-                    + factory.getUserStaff().getCode() + " đã đứng lớp tại ca " + request.getShift() + " trong ngày "
-                    + DateTimeUtils.convertMillisToDate(startDate));
+        if (!isDisableCheckExistsTeacherOnShift) {
+            if (spdPlanDateRepository.isExistsTeacherOnShift(factory.getUserStaff().getId(), startDate, endDate, planDate.getId())) {
+                return RouterHelper.responseError("Giảng viên " + factory.getUserStaff().getName() + " - "
+                        + factory.getUserStaff().getCode() + " đã đứng lớp tại ca " + request.getShift() + " trong ngày "
+                        + DateTimeUtils.convertMillisToDate(startDate));
+            }
         }
 
         if (StringUtils.hasText(request.getLink()) && !ValidateHelper.isValidURL(request.getLink())) {
@@ -212,6 +218,11 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
         StatusType requiredCheckout = StatusType.fromKey(request.getRequiredCheckout());
         if (requiredIp == null || requiredLocation == null || requiredCheckin == null || requiredCheckout == null) {
             return RouterHelper.responseError("Điều kiện điểm danh không hợp lệ");
+        }
+
+        List<SPDUserStudentResponse> lstStudentExists = spdPlanDateRepository.getListExistsStudentOnShift(planDate.getPlanFactory().getFactory().getId(), startDate, endDate, null);
+        if (!lstStudentExists.isEmpty()) {
+            return RouterHelper.responseError("Không thể tạo ca học do có sinh viên đang thuộc nhóm xưởng khác có cùng thời gian học", lstStudentExists);
         }
 
         String link = StringUtils.hasText(request.getLink()) ? request.getLink().trim() : null;
@@ -323,10 +334,12 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
                     + DateTimeUtils.convertMillisToDate(startDate));
         }
 
-        if (spdPlanDateRepository.isExistsTeacherOnShift(factory.getUserStaff().getId(), startDate, endDate)) {
-            return RouterHelper.responseError("Giảng viên " + factory.getUserStaff().getName() + " - "
-                    + factory.getUserStaff().getCode() + " đã đứng lớp tại ca " + request.getShift() + " trong ngày "
-                    + DateTimeUtils.convertMillisToDate(startDate));
+        if (!isDisableCheckExistsTeacherOnShift) {
+            if (spdPlanDateRepository.isExistsTeacherOnShift(factory.getUserStaff().getId(), startDate, endDate, null)) {
+                return RouterHelper.responseError("Giảng viên " + factory.getUserStaff().getName() + " - "
+                        + factory.getUserStaff().getCode() + " đã đứng lớp tại ca " + request.getShift() + " trong ngày "
+                        + DateTimeUtils.convertMillisToDate(startDate));
+            }
         }
 
         if (StringUtils.hasText(request.getLink()) && !ValidateHelper.isValidURL(request.getLink())) {
@@ -339,6 +352,11 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
         StatusType requiredCheckout = StatusType.fromKey(request.getRequiredCheckout());
         if (requiredIp == null || requiredLocation == null || requiredCheckin == null || requiredCheckout == null) {
             return RouterHelper.responseError("Điều kiện điểm danh không hợp lệ");
+        }
+
+        List<SPDUserStudentResponse> lstStudentExists = spdPlanDateRepository.getListExistsStudentOnShift(planFactory.getFactory().getId(), startDate, endDate, null);
+        if (!lstStudentExists.isEmpty()) {
+            return RouterHelper.responseError("Không thể tạo ca học do có sinh viên đang thuộc nhóm xưởng khác có cùng thời gian học", lstStudentExists);
         }
 
         String link = StringUtils.hasText(request.getLink()) ? request.getLink().trim() : null;

@@ -10,6 +10,7 @@ import {
   EyeFilled,
   ExclamationCircleOutlined,
   LinkOutlined,
+  InfoCircleFilled,
 } from '@ant-design/icons-vue'
 import { message, Modal } from 'ant-design-vue'
 import requestAPI from '@/services/requestApiService'
@@ -45,6 +46,8 @@ const breadcrumbStore = useBreadcrumbStore()
 const loadingStore = useLoadingStore()
 
 const isLoading = ref(false)
+const isShowListStudentExists = ref(false)
+const lstStudentExists = ref([])
 
 const configImportExcel = {
   fetchUrl: API_ROUTES_EXCEL.FETCH_IMPORT_PLAN_DATE,
@@ -103,6 +106,16 @@ const columns = ref(
     },
     { title: 'Trạng thái', dataIndex: 'status', key: 'status' },
     { title: '', key: 'actions' },
+  ]),
+)
+
+const columns_student = ref(
+  autoAddColumnWidth([
+    { title: 'Mã sinh viên', dataIndex: 'code', key: 'code' },
+    { title: 'Tên sinh viên', dataIndex: 'name', key: 'name' },
+    { title: 'Email', dataIndex: 'email', key: 'email' },
+    { title: 'Nhóm xưởng', dataIndex: 'factoryName', key: 'factoryName' },
+    { title: 'Kế hoạch', dataIndex: 'planName', key: 'planName' },
   ]),
 )
 
@@ -296,6 +309,11 @@ const fetchAddItem = () => {
       fetchDataList()
     })
     .catch((error) => {
+      const data = error?.response?.data?.data
+      if (data) {
+        handleShowListStudentExists(data)
+        return message.error(error?.response?.data?.message || 'Không thể cập nhật mục này')
+      }
       message.error(error?.response?.data?.message || 'Không thể thêm mới mục này')
     })
     .finally(() => {
@@ -331,6 +349,11 @@ const fetchUpdateItem = () => {
       fetchDataList()
     })
     .catch((error) => {
+      const data = error?.response?.data?.data
+      if (data) {
+        handleShowListStudentExists(data)
+        return message.error(error?.response?.data?.message || 'Không thể cập nhật mục này')
+      }
       message.error(error?.response?.data?.message || 'Không thể cập nhật mục này')
     })
     .finally(() => {
@@ -577,6 +600,11 @@ const handleChangeShift = (newValues) => {
   }
 
   formData.shift = Array.from(updated).sort((a, b) => a - b)
+}
+
+const handleShowListStudentExists = (data) => {
+  lstStudentExists.value = data || []
+  isShowListStudentExists.value = true
 }
 
 const handleUpdateTimeRange = () => {
@@ -848,6 +876,25 @@ watch(
         />
       </a-form-item>
     </a-form>
+  </a-modal>
+
+  <a-modal v-model:open="isShowListStudentExists" :width="1000" :footer="null">
+    <template #title
+      ><InfoCircleFilled class="text-primary" /> Danh sách sinh viên bị trùng ca học
+    </template>
+    <div class="row g-2">
+      <div class="col-12">
+        <a-table
+          rowKey="id"
+          class="nowrap"
+          :dataSource="lstStudentExists"
+          :columns="columns_student"
+          :pagination="false"
+          :scroll="{ x: 'auto' }"
+        >
+        </a-table>
+      </div>
+    </div>
   </a-modal>
 
   <div class="container-fluid">
