@@ -47,6 +47,7 @@ public class ADUserAdminServiceImpl implements ADUserAdminService {
         private final UserActivityLogHelper userActivityLogHelper;
 
         private final RedisService redisService;
+        private final RedisInvalidationHelper redisInvalidationHelper;
 
         private final SettingHelper settingHelper;
 
@@ -223,8 +224,8 @@ public class ADUserAdminServiceImpl implements ADUserAdminService {
                 userActivityLogHelper.saveLog("vừa thêm 1 tài khoản admin mới: " + userAdmin.getCode() + " - "
                                 + userAdmin.getName());
 
-                // Invalidate related caches
-                invalidateAdminCaches();
+                // Invalidate all caches
+                redisInvalidationHelper.invalidateAllCaches();
 
                 return RouterHelper.responseSuccess("Thêm admin mới thành công", userAdmin);
         }
@@ -295,8 +296,8 @@ public class ADUserAdminServiceImpl implements ADUserAdminService {
                 userActivityLogHelper.saveLog("vừa cập nhật tài khoản admin: " + userAdmin.getCode() + " - "
                                 + userAdmin.getName());
 
-                // Invalidate specific cache for this admin
-                invalidateAdminCache(id);
+                // Invalidate all caches
+                redisInvalidationHelper.invalidateAllCaches();
 
                 return RouterHelper.responseSuccess("Cập nhật admin thành công", userAdmin);
         }
@@ -334,8 +335,8 @@ public class ADUserAdminServiceImpl implements ADUserAdminService {
                         userActivityLogHelper.saveLog("vừa thay đổi trạng thái tài khoản admin " + saveAdmin.getCode()
                                         + " - " + saveAdmin.getName() + " từ " + oldStatus + " thành " + newStatus);
 
-                        // Invalidate specific cache for this admin
-                        invalidateAdminCache(id);
+                        // Invalidate all caches
+                        redisInvalidationHelper.invalidateAllCaches();
 
                         return RouterHelper.responseSuccess("Thay đổi trạng thái thành công", saveAdmin);
                 }
@@ -382,11 +383,8 @@ public class ADUserAdminServiceImpl implements ADUserAdminService {
                         userActivityLogHelper.saveLog("vừa chuyển quyền admin từ " + oldAdminName + " sang "
                                         + userAdmin.getName() + " (" + userAdmin.getCode() + ")");
 
-                        // Invalidate related caches
-                        invalidateAdminCaches();
-                        if (oldAdmin != null) {
-                                redisService.delete(RedisPrefixConstant.REDIS_PREFIX_ADMIN + oldAdmin.getId());
-                        }
+                        // Invalidate all caches
+                        redisInvalidationHelper.invalidateAllCaches();
 
                         return RouterHelper.responseSuccess("Kiểm tra thành công", userAdmin);
                 }
@@ -423,26 +421,17 @@ public class ADUserAdminServiceImpl implements ADUserAdminService {
                 userActivityLogHelper.saveLog("vừa xóa tài khoản admin: " + adminToDelete.getCode() + " - "
                                 + adminToDelete.getName());
 
-                // Invalidate specific cache for this admin
-                invalidateAdminCache(userAdminId);
+                // Invalidate all caches
+                redisInvalidationHelper.invalidateAllCaches();
 
                 return RouterHelper.responseSuccess("Xóa tài khoản admin thành công", userAdminId);
         }
 
-        /**
-         * Xóa cache liên quan đến một admin cụ thể
-         */
         private void invalidateAdminCache(String adminId) {
-                redisService.delete(RedisPrefixConstant.REDIS_PREFIX_ADMIN + adminId);
-                invalidateAdminCaches();
+                redisInvalidationHelper.invalidateAllCaches();
         }
 
-        /**
-         * Xóa cache liên quan đến admin
-         */
         private void invalidateAdminCaches() {
-                // Invalidate all admin user-related cache using pattern matching
-                redisService.deletePattern(RedisPrefixConstant.REDIS_PREFIX_ADMIN + "list_*");
-                redisService.delete(RedisPrefixConstant.REDIS_PREFIX_ADMIN + "staff_list");
+                redisInvalidationHelper.invalidateAllCaches();
         }
 }

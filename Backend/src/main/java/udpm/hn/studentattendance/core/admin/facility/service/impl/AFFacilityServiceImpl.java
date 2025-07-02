@@ -1,10 +1,8 @@
 package udpm.hn.studentattendance.core.admin.facility.service.impl;
 
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
@@ -17,6 +15,7 @@ import udpm.hn.studentattendance.entities.Facility;
 import udpm.hn.studentattendance.helpers.GenerateNameHelper;
 import udpm.hn.studentattendance.helpers.MailerHelper;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
+import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
 import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
@@ -32,7 +31,6 @@ import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -48,6 +46,8 @@ public class AFFacilityServiceImpl implements AFFacilityService {
     private final UserActivityLogHelper userActivityLogHelper;
 
     private final RedisService redisService;
+
+    private final RedisInvalidationHelper redisInvalidationHelper;
 
     @Value("${app.config.app-name}")
     private String appName;
@@ -109,8 +109,8 @@ public class AFFacilityServiceImpl implements AFFacilityService {
         facilityRepository.save(facility);
         userActivityLogHelper.saveLog("vừa thêm 1 cơ sở mới: " + facility.getName());
 
-        // Invalidate all facility caches
-        invalidateFacilityCaches();
+        // Invalidate all caches
+        redisInvalidationHelper.invalidateAllCaches();
 
         return RouterHelper.responseSuccess("Thêm cơ sở mới thành công", null);
     }
@@ -134,8 +134,8 @@ public class AFFacilityServiceImpl implements AFFacilityService {
         Facility savedFacility = facilityRepository.save(facility);
         userActivityLogHelper.saveLog("vừa cập nhật cơ sở: " + oldName + " → " + savedFacility.getName());
 
-        // Invalidate facility caches
-        invalidateFacilityCache(facilityId);
+        // Invalidate all caches
+        redisInvalidationHelper.invalidateAllCaches();
 
         return RouterHelper.responseSuccess("Cập nhật cơ sở thành công", savedFacility);
     }
@@ -159,7 +159,10 @@ public class AFFacilityServiceImpl implements AFFacilityService {
         if (lastUpdatedDate.isEqual(today) && facility.getStatus() == EntityStatus.ACTIVE) {
             return RouterHelper.responseError("Chỉ được đổi trạng thái cơ sở ngừng hoạt động 1 lần mỗi ngày");
         }
-        // ---------------------------------------------------------------
+
+        if (facilityRepository.countFacility() < 2) {
+            return RouterHelper.responseError("Không thể thay đổi trạng thái cơ sở cuối cùng còn hoạt động");
+        }
 
         String oldStatus = facility.getStatus() == EntityStatus.ACTIVE ? "Hoạt động" : "Không hoạt động";
         facility.setStatus(facility.getStatus() == EntityStatus.ACTIVE ? EntityStatus.INACTIVE : EntityStatus.ACTIVE);
@@ -189,8 +192,8 @@ public class AFFacilityServiceImpl implements AFFacilityService {
         userActivityLogHelper.saveLog(
                 "vừa thay đổi trạng thái cơ sở " + facility.getName() + " từ " + oldStatus + " thành " + newStatus);
 
-        // Invalidate facility caches
-        invalidateFacilityCache(facilityId);
+        // Invalidate all caches
+        redisInvalidationHelper.invalidateAllCaches();
 
         return RouterHelper.responseSuccess("Thay đổi trạng thái cơ sở thành công", entity);
     }
@@ -246,8 +249,8 @@ public class AFFacilityServiceImpl implements AFFacilityService {
         facilityRepository.updatePositionPreUp(facility.getPosition(), facilityId);
         Facility updated = facilityRepository.save(facility);
 
-        // Invalidate facility caches
-        invalidateFacilityCaches();
+        // Invalidate all caches
+        redisInvalidationHelper.invalidateAllCaches();
 
         return RouterHelper.responseSuccess("Tăng mức ưu tiên hiển thị thành công", updated);
     }
@@ -267,24 +270,27 @@ public class AFFacilityServiceImpl implements AFFacilityService {
         facilityRepository.updatePositionNextDown(facility.getPosition(), facilityId);
         Facility updated = facilityRepository.save(facility);
 
-        // Invalidate facility caches
-        invalidateFacilityCaches();
+        // Invalidate all caches
+        redisInvalidationHelper.invalidateAllCaches();
 
         return RouterHelper.responseSuccess("Giảm mức ưu tiên hiển thị thành công", updated);
     }
 
     /**
      * Xóa toàn bộ cache liên quan đến cơ sở
+     * 
+     * @deprecated Use redisInvalidationHelper.invalidateAllCaches() instead
      */
     private void invalidateFacilityCaches() {
-        redisService.deletePattern(RedisPrefixConstant.REDIS_PREFIX_FACILITY + "list_*");
+        redisInvalidationHelper.invalidateAllCaches();
     }
 
     /**
      * Xóa cache của cơ sở cụ thể và danh sách cơ sở
+     * 
+     * @deprecated Use redisInvalidationHelper.invalidateAllCaches() instead
      */
     private void invalidateFacilityCache(String facilityId) {
-        redisService.delete(RedisPrefixConstant.REDIS_PREFIX_FACILITY + facilityId);
-        invalidateFacilityCaches();
+        redisInvalidationHelper.invalidateAllCaches();
     }
 }

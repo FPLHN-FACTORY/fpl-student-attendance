@@ -25,6 +25,7 @@ import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.common.repositories.CommonUserStudentRepository;
 import udpm.hn.studentattendance.infrastructure.constants.*;
 import udpm.hn.studentattendance.infrastructure.redis.service.RedisService;
+import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
 
 import java.util.Date;
 import java.util.HashMap;
@@ -61,12 +62,12 @@ public class USFactoryServiceImpl implements USFactoryService {
 
     private final RedisService redisService;
 
+    private final RedisInvalidationHelper redisInvalidationHelper;
+
     @Value("${spring.cache.redis.time-to-live}")
     private long redisTTL;
 
-    // private final USFactoryPlanDateExtendRepository planDateExtendRepository;
-    //
-    // private final USFactoryAttendanceExtendRepository attendanceExtendRepository;
+
 
     public PageableObject<USFactoryResponse> getCachedFactories(USFactoryRequest factoryRequest) {
         String cacheKey = RedisPrefixConstant.REDIS_PREFIX_FACTORY + "list_" +
@@ -467,15 +468,13 @@ public class USFactoryServiceImpl implements USFactoryService {
      * Xóa toàn bộ cache liên quan đến nhóm xưởng
      */
     private void invalidateFactoryCaches() {
-        redisService.deletePattern(RedisPrefixConstant.REDIS_PREFIX_FACTORY + "list_*");
-        redisService.deletePattern(RedisPrefixConstant.REDIS_PREFIX_FACTORY + "projects_*");
+        redisInvalidationHelper.invalidateAllCaches();
     }
 
     /**
      * Xóa cache của nhóm xưởng cụ thể và danh sách nhóm xưởng
      */
     private void invalidateFactoryCache(String factoryId) {
-        redisService.delete(RedisPrefixConstant.REDIS_PREFIX_FACTORY + factoryId);
-        invalidateFactoryCaches();
+        redisInvalidationHelper.invalidateAllCaches();
     }
 }
