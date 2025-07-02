@@ -12,6 +12,7 @@ import udpm.hn.studentattendance.core.admin.subject.repository.ADSubjectExtendRe
 import udpm.hn.studentattendance.core.admin.subject.service.ADSubjectManagementService;
 import udpm.hn.studentattendance.entities.Subject;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
+import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
 import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
 import udpm.hn.studentattendance.helpers.ValidateHelper;
@@ -32,6 +33,8 @@ public class ADSubjectManagementServiceImpl implements ADSubjectManagementServic
     private final UserActivityLogHelper userActivityLogHelper;
 
     private final RedisService redisService;
+    
+    private final RedisInvalidationHelper redisInvalidationHelper;
 
     @Value("${spring.cache.redis.time-to-live}")
     private long redisTTL;
@@ -87,8 +90,8 @@ public class ADSubjectManagementServiceImpl implements ADSubjectManagementServic
         // Cache miss - fetch from database
         Subject subject = adminSubjectRepository.findById(id).orElse(null);
 
+        // Store in cache if found
         if (subject != null) {
-            // Store in cache
             try {
                 redisService.set(cacheKey, subject, redisTTL);
             } catch (Exception ignored) {
@@ -126,7 +129,8 @@ public class ADSubjectManagementServiceImpl implements ADSubjectManagementServic
         userActivityLogHelper
                 .saveLog("vừa thêm 1 bộ môn mới: " + saveSubject.getCode() + " - " + saveSubject.getName());
 
-        invalidateSubjectListCache();
+        // Invalidate all caches
+        redisInvalidationHelper.invalidateAllCaches();
 
         return RouterHelper.responseSuccess("Thêm mới bộ môn thành công", saveSubject);
     }
@@ -159,7 +163,8 @@ public class ADSubjectManagementServiceImpl implements ADSubjectManagementServic
         userActivityLogHelper
                 .saveLog("vừa cập nhật 1 bộ môn: " + saveSubject.getCode() + " - " + saveSubject.getName());
 
-        invalidateSubjectCache(id);
+        // Invalidate all caches
+        redisInvalidationHelper.invalidateAllCaches();
 
         return RouterHelper.responseSuccess("Cập nhật bộ môn thành công", saveSubject);
     }
@@ -190,23 +195,23 @@ public class ADSubjectManagementServiceImpl implements ADSubjectManagementServic
         userActivityLogHelper
                 .saveLog("vừa thay đổi trạng thái 1 bộ môn : " + newEntity.getCode() + " - " + newEntity.getName());
 
-        invalidateSubjectCache(id);
+        // Invalidate all caches
+        redisInvalidationHelper.invalidateAllCaches();
 
         return RouterHelper.responseSuccess("Đổi trạng thái bộ môn thành công", newEntity);
     }
 
     /**
-     * Xóa cache liên quan đến một bộ môn cụ thể
+     * @deprecated Use redisInvalidationHelper.invalidateAllCaches() instead
      */
     private void invalidateSubjectCache(String subjectId) {
-        redisService.delete(RedisPrefixConstant.REDIS_PREFIX_SUBJECT + subjectId);
-        invalidateSubjectListCache();
+        redisInvalidationHelper.invalidateAllCaches();
     }
 
     /**
-     * Xóa cache danh sách bộ môn
+     * @deprecated Use redisInvalidationHelper.invalidateAllCaches() instead
      */
     private void invalidateSubjectListCache() {
-        redisService.deletePattern(RedisPrefixConstant.REDIS_PREFIX_SUBJECT + "list_*");
+        redisInvalidationHelper.invalidateAllCaches();
     }
 }

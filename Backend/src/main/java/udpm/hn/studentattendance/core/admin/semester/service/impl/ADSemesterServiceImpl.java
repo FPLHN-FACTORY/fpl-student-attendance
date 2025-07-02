@@ -2,6 +2,7 @@ package udpm.hn.studentattendance.core.admin.semester.service.impl;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -12,12 +13,15 @@ import udpm.hn.studentattendance.core.admin.semester.repository.ADSemesterReposi
 import udpm.hn.studentattendance.core.admin.semester.service.ADSemesterService;
 import udpm.hn.studentattendance.entities.Semester;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
+import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
 import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.common.repositories.CommonUserStudentRepository;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
+import udpm.hn.studentattendance.infrastructure.constants.RedisPrefixConstant;
 import udpm.hn.studentattendance.infrastructure.constants.SemesterName;
+import udpm.hn.studentattendance.infrastructure.redis.service.RedisService;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -37,6 +41,13 @@ public class ADSemesterServiceImpl implements ADSemesterService {
     private final CommonUserStudentRepository commonUserStudentRepository;
 
     private final UserActivityLogHelper userActivityLogHelper;
+
+    private final RedisService redisService;
+
+    private final RedisInvalidationHelper redisInvalidationHelper;
+
+    @Value("${spring.cache.redis.time-to-live}")
+    private long redisTTL;
 
     @Override
     public ResponseEntity<?> getAllSemester(ADSemesterRequest request) {
@@ -102,6 +113,10 @@ public class ADSemesterServiceImpl implements ADSemesterService {
 
             Semester semesterSave = adSemesterRepository.save(semester);
             userActivityLogHelper.saveLog("vừa thêm 1 học kỳ mới: " + semesterSave.getCode());
+
+            // Invalidate all caches
+            redisInvalidationHelper.invalidateAllCaches();
+
             return RouterHelper.responseSuccess("Created semester successfully", semesterSave);
         } catch (Exception e) {
             e.printStackTrace();
@@ -192,6 +207,10 @@ public class ADSemesterServiceImpl implements ADSemesterService {
         semester.setToDate(toTimeSemester);
         Semester semesterSave = adSemesterRepository.save(semester);
         userActivityLogHelper.saveLog("vừa cập nhật học kỳ: " + oldCode + " → " + semesterSave.getCode());
+
+        // Invalidate all caches
+        redisInvalidationHelper.invalidateAllCaches();
+
         return RouterHelper.responseSuccess("Cập nhật thành công", semesterSave);
     }
 
@@ -218,6 +237,10 @@ public class ADSemesterServiceImpl implements ADSemesterService {
 
             userActivityLogHelper.saveLog("vừa thay đổi trạng thái học kỳ " + semester.getCode() + " từ "
                     + oldStatus + " thành " + newStatus);
+
+            // Invalidate all caches
+            redisInvalidationHelper.invalidateAllCaches();
+
             return RouterHelper.responseSuccess("Thay đổi trạng thái học kỳ thành công");
         }
         return RouterHelper.responseError("Học kỳ không tồn tại");

@@ -14,6 +14,7 @@ import udpm.hn.studentattendance.core.admin.facility.service.AFFacilityIPService
 import udpm.hn.studentattendance.entities.Facility;
 import udpm.hn.studentattendance.entities.FacilityIP;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
+import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
 import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.helpers.ValidateHelper;
 import udpm.hn.studentattendance.infrastructure.common.ApiResponse;
@@ -35,6 +36,8 @@ public class AFFacilityIPServiceImpl implements AFFacilityIPService {
     private final UserActivityLogHelper userActivityLogHelper;
 
     private final RedisService redisService;
+
+    private final RedisInvalidationHelper redisInvalidationHelper;
 
     @Value("${REDIS_TTL}")
     private long redisTTL;
@@ -143,8 +146,8 @@ public class AFFacilityIPServiceImpl implements AFFacilityIPService {
 
         FacilityIP savedIP = afFacilityIPRepository.save(facilityIP);
 
-        // Invalidate related caches
-        invalidateIPCaches();
+        // Invalidate all caches
+        redisInvalidationHelper.invalidateAllCaches();
 
         return RouterHelper.responseSuccess(
                 "Thêm mới " + (isDnsSuffix ? "DNS Suffix " : "IP ") + request.getIp() + " thành công",
@@ -188,8 +191,8 @@ public class AFFacilityIPServiceImpl implements AFFacilityIPService {
 
         FacilityIP savedIP = afFacilityIPRepository.save(facilityIP);
 
-        // Invalidate related caches
-        invalidateIPCaches();
+        // Invalidate all caches
+        redisInvalidationHelper.invalidateAllCaches();
 
         return RouterHelper.responseSuccess("Cập nhật " + (isDnsSuffix ? "DNS Suffix" : "IP") + " thành công",
                 savedIP);
@@ -206,8 +209,8 @@ public class AFFacilityIPServiceImpl implements AFFacilityIPService {
         userActivityLogHelper.saveLog("vừa xóa " + (facilityIP.getType() == IPType.DNSSUFFIX ? "DNS Suffix " : "IP ")
                 + facilityIP.getIp() + " của cơ sở " + facilityIP.getFacility().getName());
 
-        // Invalidate related caches
-        invalidateIPCaches();
+        // Invalidate all caches
+        redisInvalidationHelper.invalidateAllCaches();
 
         return RouterHelper.responseSuccess("Xoá thành công IP/DNS Suffix: " + facilityIP.getIp());
     }
@@ -233,18 +236,11 @@ public class AFFacilityIPServiceImpl implements AFFacilityIPService {
                 "vừa thay đổi trạng thái " + (isDnsSuffix ? "DNS Suffix " : "IP ") + facilityIP.getIp() + " của cơ sở "
                         + facilityIP.getFacility().getName() + " thành " + updatedIP.getStatus().name());
 
-        // Invalidate related caches
-        invalidateIPCaches();
+        // Invalidate all caches
+        redisInvalidationHelper.invalidateAllCaches();
 
         return RouterHelper.responseSuccess(
                 "Thay đổi trạng thái " + (isDnsSuffix ? "DNS Suffix" : "IP") + " thành công", updatedIP);
-    }
-
-    /**
-     * Xóa cache liên quan đến IP/DNS
-     */
-    private void invalidateIPCaches() {
-        redisService.deletePattern(RedisPrefixConstant.REDIS_PREFIX_FACILITY_IP + "list_*");
     }
 
 }

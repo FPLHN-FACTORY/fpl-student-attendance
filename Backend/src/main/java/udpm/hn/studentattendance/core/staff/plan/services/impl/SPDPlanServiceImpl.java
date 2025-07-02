@@ -23,6 +23,7 @@ import udpm.hn.studentattendance.entities.Plan;
 import udpm.hn.studentattendance.entities.Project;
 import udpm.hn.studentattendance.entities.Semester;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
+import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
 import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.helpers.SessionHelper;
 import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
@@ -62,11 +63,14 @@ public class SPDPlanServiceImpl implements SPDPlanService {
 
     private final RedisService redisService;
 
+    private final RedisInvalidationHelper redisInvalidationHelper;
+
     @Value("${spring.cache.redis.time-to-live}")
     private long redisTTL;
 
     public List<SPDSubjectResponse> getCachedSubjects() {
-        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_PLAN + "subjects_" + sessionHelper.getFacilityId();
+        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_PLAN + "subjects_" + "facility="
+                + sessionHelper.getFacilityId();
 
         Object cachedData = redisService.get(cacheKey);
         if (cachedData != null) {
@@ -182,8 +186,13 @@ public class SPDPlanServiceImpl implements SPDPlanService {
     public PageableObject<SPDPlanResponse> getCachedPlans(SPDFilterPlanRequest request) {
         request.setIdFacility(sessionHelper.getFacilityId());
 
-        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_PLAN + "list_" + sessionHelper.getFacilityId() + "_"
-                + request.toString();
+        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_PLAN + "list_" +
+                "facility=" + sessionHelper.getFacilityId() +
+                "_page=" + request.getPage() +
+                "_size=" + request.getSize() +
+                "_orderBy=" + request.getOrderBy() +
+                "_sortBy=" + request.getSortBy() +
+                "_q=" + (request.getQ() != null ? request.getQ() : "");
 
         Object cachedData = redisService.get(cacheKey);
         if (cachedData != null) {
@@ -212,7 +221,7 @@ public class SPDPlanServiceImpl implements SPDPlanService {
     }
 
     public SPDPlanResponse getCachedPlanById(String idPlan) {
-        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_PLAN + idPlan + "_" + sessionHelper.getFacilityId();
+        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_PLAN + idPlan + "_facility=" + sessionHelper.getFacilityId();
 
         Object cachedData = redisService.get(cacheKey);
         if (cachedData != null) {
@@ -249,8 +258,8 @@ public class SPDPlanServiceImpl implements SPDPlanService {
     public List<SPDProjectResponse> getCachedProjects(SPDFilterCreatePlanRequest request) {
         request.setIdFacility(sessionHelper.getFacilityId());
 
-        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_PLAN + "projects_" + sessionHelper.getFacilityId() + "_"
-                + request.toString();
+        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_PLAN + "projects_" +
+                "facility=" + sessionHelper.getFacilityId() + "_" + request.toString();
 
         Object cachedData = redisService.get(cacheKey);
         if (cachedData != null) {
@@ -439,23 +448,11 @@ public class SPDPlanServiceImpl implements SPDPlanService {
         return RouterHelper.responseSuccess("Cập nhật kế hoạch thành công", updatePlan);
     }
 
-    /**
-     * Helper method to invalidate a specific plan cache and related caches
-     */
     private void invalidatePlanCache(String planId) {
-        String facilityId = sessionHelper.getFacilityId();
-        redisService.delete(RedisPrefixConstant.REDIS_PREFIX_PLAN + planId + "_" + facilityId);
-        invalidatePlanCaches();
+        redisInvalidationHelper.invalidateAllCaches();
     }
 
-    /**
-     * Helper method to invalidate plan-related caches
-     */
     private void invalidatePlanCaches() {
-        String facilityId = sessionHelper.getFacilityId();
-        redisService.deletePattern(RedisPrefixConstant.REDIS_PREFIX_PLAN + "list_" + facilityId + "_*");
-        redisService.deletePattern(RedisPrefixConstant.REDIS_PREFIX_PLAN + "projects_" + facilityId + "_*");
-        // Also invalidate related caches that might be affected
-        redisService.deletePattern(RedisPrefixConstant.REDIS_PREFIX_PLAN + "factory_*");
+        redisInvalidationHelper.invalidateAllCaches();
     }
 }

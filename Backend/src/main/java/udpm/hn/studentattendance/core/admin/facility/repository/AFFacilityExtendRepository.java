@@ -118,4 +118,10 @@ public interface AFFacilityExtendRepository extends FacilityRepository {
             """, nativeQuery = true)
     boolean isExistsByName(String name, String idFacility);
 
+    @Query(value = """
+            SELECT COUNT(*)
+            FROM facility f
+            WHERE f.status = 1
+            """, nativeQuery = true)
+    Integer countFacility();
 }

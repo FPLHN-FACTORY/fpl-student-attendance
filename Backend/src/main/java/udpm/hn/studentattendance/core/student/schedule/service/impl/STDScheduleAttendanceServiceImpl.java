@@ -22,6 +22,7 @@ import udpm.hn.studentattendance.helpers.SessionHelper;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.constants.RedisPrefixConstant;
 import udpm.hn.studentattendance.infrastructure.redis.service.RedisService;
+import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
 
 import java.awt.*;
 import java.io.ByteArrayInputStream;
@@ -42,6 +43,8 @@ public class STDScheduleAttendanceServiceImpl implements STDScheduleAttendanceSe
         private final SessionHelper sessionHelper;
 
         private final RedisService redisService;
+
+        private final RedisInvalidationHelper redisInvalidationHelper;
 
         @Value("${spring.cache.redis.time-to-live}")
         private long redisTTL;
@@ -226,14 +229,13 @@ public class STDScheduleAttendanceServiceImpl implements STDScheduleAttendanceSe
          * Xóa cache lịch học của một user
          */
         public void invalidateScheduleCache(String userId) {
-                String cachePattern = RedisPrefixConstant.REDIS_PREFIX_SCHEDULE_STUDENT + "list_" + userId + "_*";
-                redisService.deletePattern(cachePattern);
+                redisInvalidationHelper.invalidateAllCaches();
         }
 
         /**
          * Xóa tất cả các cache lịch học
          */
         public void invalidateAllScheduleCaches() {
-                redisService.deletePattern(RedisPrefixConstant.REDIS_PREFIX_SCHEDULE_STUDENT + "list_*");
+                redisInvalidationHelper.invalidateAllCaches();
         }
 }

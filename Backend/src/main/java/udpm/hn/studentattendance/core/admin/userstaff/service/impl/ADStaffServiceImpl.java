@@ -22,6 +22,7 @@ import udpm.hn.studentattendance.entities.Role;
 import udpm.hn.studentattendance.entities.UserStaff;
 import udpm.hn.studentattendance.helpers.NotificationHelper;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
+import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
 import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.helpers.SessionHelper;
 import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
@@ -54,7 +55,10 @@ public class ADStaffServiceImpl implements ADStaffService {
     private final SessionHelper sessionHelper;
 
     private final UserActivityLogHelper userActivityLogHelper;
+
     private final RedisService redisService;
+
+    private final RedisInvalidationHelper redisInvalidationHelper;
 
     @Value("${app.config.disabled-check-email-fpt}")
     private String isDisableCheckEmailFpt;
@@ -280,8 +284,8 @@ public class ADStaffServiceImpl implements ADStaffService {
 
         userActivityLogHelper.saveLog("vừa thêm 1 nhân viên mới: " + staff.getName() + " (" + staff.getCode() + ")");
 
-        // Invalidate staff-related caches
-        invalidateStaffCaches();
+        // Invalidate all caches
+        redisInvalidationHelper.invalidateAllCaches();
 
         return RouterHelper.responseSuccess("Thêm nhân viên mới thành công");
     }
@@ -412,8 +416,8 @@ public class ADStaffServiceImpl implements ADStaffService {
 
         userActivityLogHelper.saveLog("vừa cập nhật nhân viên: " + staff.getName() + " (" + staff.getCode() + ")");
 
-        // Invalidate specific cache for this staff
-        invalidateStaffCache(id);
+        // Invalidate all caches
+        redisInvalidationHelper.invalidateAllCaches();
 
         return RouterHelper.responseSuccess("Cập nhật nhân viên thành công");
     }
@@ -438,8 +442,8 @@ public class ADStaffServiceImpl implements ADStaffService {
         userActivityLogHelper.saveLog("vừa thay đổi trạng thái nhân viên " + staff.getName() + " (" + staff.getCode()
                 + ") từ " + oldStatus + " thành " + newStatus);
 
-        // Invalidate specific cache for this staff
-        invalidateStaffCache(staffId);
+        // Invalidate all caches
+        redisInvalidationHelper.invalidateAllCaches();
 
         return RouterHelper.responseSuccess("Thay đổi trạng thái giảng viên thành công");
     }
@@ -484,17 +488,16 @@ public class ADStaffServiceImpl implements ADStaffService {
     }
 
     /**
-     * Xóa cache liên quan đến một nhân viên cụ thể
+     * @deprecated Use redisInvalidationHelper.invalidateAllCaches() instead
      */
     private void invalidateStaffCache(String staffId) {
-        redisService.delete(RedisPrefixConstant.REDIS_PREFIX_STAFF + "detail_" + staffId);
-        invalidateStaffCaches();
+        redisInvalidationHelper.invalidateAllCaches();
     }
 
     /**
-     * Xóa cache liên quan đến nhân viên
+     * @deprecated Use redisInvalidationHelper.invalidateAllCaches() instead
      */
     private void invalidateStaffCaches() {
-        redisService.deletePattern(RedisPrefixConstant.REDIS_PREFIX_STAFF + "list_*");
+        redisInvalidationHelper.invalidateAllCaches();
     }
 }

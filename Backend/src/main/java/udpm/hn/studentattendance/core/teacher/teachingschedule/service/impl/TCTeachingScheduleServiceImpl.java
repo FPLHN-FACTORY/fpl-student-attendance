@@ -20,12 +20,7 @@ import udpm.hn.studentattendance.core.teacher.teachingschedule.repository.TCTSSu
 import udpm.hn.studentattendance.core.teacher.teachingschedule.repository.TCTeachingScheduleExtendRepository;
 import udpm.hn.studentattendance.core.teacher.teachingschedule.service.TCTeachingScheduleService;
 import udpm.hn.studentattendance.entities.*;
-import udpm.hn.studentattendance.helpers.MailerHelper;
-import udpm.hn.studentattendance.helpers.PaginationHelper;
-import udpm.hn.studentattendance.helpers.RouterHelper;
-import udpm.hn.studentattendance.helpers.SessionHelper;
-import udpm.hn.studentattendance.helpers.ShiftHelper;
-import udpm.hn.studentattendance.helpers.ValidateHelper;
+import udpm.hn.studentattendance.helpers.*;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.config.mailer.model.MailerDefaultRequest;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
@@ -66,6 +61,8 @@ public class TCTeachingScheduleServiceImpl implements TCTeachingScheduleService 
         private final SessionHelper sessionHelper;
 
         private final RedisService redisService;
+
+        private final RedisInvalidationHelper redisInvalidationHelper;
 
         @Value("${app.config.app-name}")
         private String appName;
@@ -606,28 +603,7 @@ public class TCTeachingScheduleServiceImpl implements TCTeachingScheduleService 
                 return RouterHelper.responseSuccess("Thay đổi hình thức học thành công", savedPlanDate);
         }
 
-        /**
-         * Xóa cache liên quan đến một kế hoạch cụ thể
-         */
         private void invalidatePlanDateCache(String planDateId) {
-                // Xóa cache chi tiết kế hoạch
-                redisService.delete(RedisPrefixConstant.REDIS_PREFIX_SCHEDULE_TEACHER + "plan_date_" + planDateId);
-
-                // Xóa cache danh sách kế hoạch (cả hiện tại và tất cả)
-                invalidateTeachingScheduleCaches();
-
-                // Xóa cache lịch học sinh viên vì việc thay đổi này ảnh hưởng đến lịch học của
-                // sinh viên
-                redisService.deletePattern(RedisPrefixConstant.REDIS_PREFIX_SCHEDULE_STUDENT + "list_*");
-        }
-
-        /**
-         * Xóa tất cả cache lịch dạy
-         */
-        private void invalidateTeachingScheduleCaches() {
-                String userId = sessionHelper.getUserId();
-                redisService.deletePattern(RedisPrefixConstant.REDIS_PREFIX_SCHEDULE_TEACHER + "list_" + userId + "_*");
-                redisService.deletePattern(
-                                RedisPrefixConstant.REDIS_PREFIX_SCHEDULE_TEACHER + "current_" + userId + "_*");
+                redisInvalidationHelper.invalidateAllCaches();
         }
 }
