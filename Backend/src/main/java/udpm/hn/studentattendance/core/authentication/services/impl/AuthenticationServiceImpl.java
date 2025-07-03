@@ -1,12 +1,9 @@
 package udpm.hn.studentattendance.core.authentication.services.impl;
 
-import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.util.RouteMatcher;
 import org.springframework.util.StringUtils;
 import org.springframework.web.servlet.view.RedirectView;
 import udpm.hn.studentattendance.core.authentication.model.request.AuthenticationToken;
@@ -67,13 +64,6 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     private final AuthenticationUserStaffRepository authenticationUserStaffRepository;
 
     private final AuthenticationUserStudentRepository authenticationUserStudentRepository;
-
-    private double threshold_register;
-
-    @PostConstruct
-    public void init() {
-        this.threshold_register = settingHelper.getSetting(SettingKeys.FACE_THRESHOLD_REGISTER, Double.class);
-    }
 
     @Override
     public RedirectView authorSwitch(String role, String redirectUri, String facilityId) {
@@ -303,6 +293,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
         double[] firstFace = embeddings.get(0);
         double[] lastFace = embeddings.get(embeddings.size() - 1);
+
+        double threshold_register = settingHelper.getSetting(SettingKeys.FACE_THRESHOLD_REGISTER, Double.class);
 
         double[] resultFace = FaceRecognitionUtils.isSameFaceAndResult(lstFaceEmbeddings, lastFace, threshold_register);
 

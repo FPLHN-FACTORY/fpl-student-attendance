@@ -3,7 +3,6 @@ package udpm.hn.studentattendance.core.teacher.teachingschedule.service.impl;
 import com.lowagie.text.*;
 import com.lowagie.text.Font;
 import com.lowagie.text.pdf.*;
-import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Pageable;
@@ -78,15 +77,8 @@ public class TCTeachingScheduleServiceImpl implements TCTeachingScheduleService 
         @Value("${app.config.app-name}")
         private String appName;
 
-        private int MAX_LATE_ARRIVAL;
-
         @Value("${spring.cache.redis.time-to-live}")
         private long redisTTL;
-
-        @PostConstruct
-        public void init() {
-                this.MAX_LATE_ARRIVAL = settingHelper.getSetting(SettingKeys.SHIFT_MAX_LATE_ARRIVAL, Integer.class);
-        }
 
         public PageableObject<?> getCachedTeachingSchedule(TCTeachingScheduleRequest request) {
                 String cacheKey = RedisPrefixConstant.REDIS_PREFIX_SCHEDULE_TEACHER + "list_"
@@ -423,6 +415,8 @@ public class TCTeachingScheduleServiceImpl implements TCTeachingScheduleService 
                 if (isOutOfTime) {
                         return RouterHelper.responseError("Đã quá giờ cập nhật ca dạy");
                 }
+
+                int MAX_LATE_ARRIVAL = settingHelper.getSetting(SettingKeys.SHIFT_MAX_LATE_ARRIVAL, Integer.class);
 
                 if (planDateUpdateRequest.getLateArrival() > MAX_LATE_ARRIVAL) {
                         return RouterHelper.responseError(
