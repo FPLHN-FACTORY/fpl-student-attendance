@@ -1,6 +1,5 @@
 package udpm.hn.studentattendance.core.staff.plan.services.impl;
 
-import jakarta.annotation.PostConstruct;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -22,7 +21,6 @@ import udpm.hn.studentattendance.core.staff.plan.repositories.SPDFacilityShiftRe
 import udpm.hn.studentattendance.core.staff.plan.repositories.SPDPlanDateRepository;
 import udpm.hn.studentattendance.core.staff.plan.repositories.SPDPlanFactoryRepository;
 import udpm.hn.studentattendance.core.staff.plan.repositories.SPDUserStudentRepository;
-import udpm.hn.studentattendance.core.staff.statistics.model.response.SSPlanDateStudentFactoryResponse;
 import udpm.hn.studentattendance.helpers.MailerHelper;
 import udpm.hn.studentattendance.helpers.SettingHelper;
 import udpm.hn.studentattendance.infrastructure.common.repositories.CommonUserStudentRepository;
@@ -39,30 +37,23 @@ import udpm.hn.studentattendance.helpers.ShiftHelper;
 import udpm.hn.studentattendance.helpers.ValidateHelper;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.config.mailer.model.MailerDefaultRequest;
-import udpm.hn.studentattendance.infrastructure.constants.AttendanceStatus;
 import udpm.hn.studentattendance.infrastructure.constants.SettingKeys;
 import udpm.hn.studentattendance.infrastructure.constants.ShiftType;
 import udpm.hn.studentattendance.infrastructure.constants.StatusType;
-import udpm.hn.studentattendance.infrastructure.excel.model.dto.ExStudentModel;
 import udpm.hn.studentattendance.utils.DateTimeUtils;
 import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
 import udpm.hn.studentattendance.utils.ExcelUtils;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.time.LocalDate;
 import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.HashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -87,18 +78,11 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
 
     private final UserActivityLogHelper userActivityLogHelper;
 
-    private int MAX_LATE_ARRIVAL;
-
     @Value("${app.config.app-name}")
     private String appName;
 
     @Value("${app.config.allows-one-teacher-to-teach-multiple-classes}")
     private boolean isDisableCheckExistsTeacherOnShift;
-
-    @PostConstruct
-    public void init() {
-        this.MAX_LATE_ARRIVAL = settingHelper.getSetting(SettingKeys.SHIFT_MAX_LATE_ARRIVAL, Integer.class);
-    }
 
     @Override
     public ResponseEntity<?> getDetail(String idPlanFactory) {
@@ -153,6 +137,7 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
     @Override
     public ResponseEntity<?> updatePlanDate(SPDAddOrUpdatePlanDateRequest request) {
         request.setIdFacility(sessionHelper.getFacilityId());
+        int MAX_LATE_ARRIVAL = settingHelper.getSetting(SettingKeys.SHIFT_MAX_LATE_ARRIVAL, Integer.class);
 
         if (request.getLateArrival() > MAX_LATE_ARRIVAL) {
             return RouterHelper.responseError("Thời gian điểm danh muộn nhất không quá " + MAX_LATE_ARRIVAL + " phút");
@@ -282,6 +267,8 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
     @Override
     public ResponseEntity<?> addPlanDate(SPDAddOrUpdatePlanDateRequest request) {
         request.setIdFacility(sessionHelper.getFacilityId());
+
+        int MAX_LATE_ARRIVAL = settingHelper.getSetting(SettingKeys.SHIFT_MAX_LATE_ARRIVAL, Integer.class);
 
         if (request.getLateArrival() > MAX_LATE_ARRIVAL) {
             return RouterHelper.responseError("Thời gian điểm danh muộn nhất không quá " + MAX_LATE_ARRIVAL + " phút");

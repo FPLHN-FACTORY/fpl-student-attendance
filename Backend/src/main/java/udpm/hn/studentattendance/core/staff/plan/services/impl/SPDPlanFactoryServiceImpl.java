@@ -1,6 +1,5 @@
 package udpm.hn.studentattendance.core.staff.plan.services.impl;
 
-import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Pageable;
@@ -68,15 +67,8 @@ public class SPDPlanFactoryServiceImpl implements SPDPlanFactoryService {
 
     private final UserActivityLogHelper userActivityLogHelper;
 
-    private int MAX_LATE_ARRIVAL;
-
     @Value("${app.config.allows-one-teacher-to-teach-multiple-classes}")
     private boolean isDisableCheckExistsTeacherOnShift;
-
-    @PostConstruct
-    public void init() {
-        this.MAX_LATE_ARRIVAL = settingHelper.getSetting(SettingKeys.SHIFT_MAX_LATE_ARRIVAL, Integer.class);
-    }
 
     @Override
     public ResponseEntity<?> getAllList(SPDFilterPlanFactoryRequest request) {
@@ -102,6 +94,8 @@ public class SPDPlanFactoryServiceImpl implements SPDPlanFactoryService {
 
     @Override
     public ResponseEntity<?> createPlanFactory(SPDAddPlanFactoryRequest request) {
+
+        int MAX_LATE_ARRIVAL = settingHelper.getSetting(SettingKeys.SHIFT_MAX_LATE_ARRIVAL, Integer.class);
 
         if (request.getLateArrival() > MAX_LATE_ARRIVAL) {
             return RouterHelper.responseError("Thời gian điểm danh muộn nhất không quá " + MAX_LATE_ARRIVAL + " phút");
