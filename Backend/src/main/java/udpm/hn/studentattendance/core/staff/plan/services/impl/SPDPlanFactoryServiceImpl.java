@@ -43,6 +43,7 @@ import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -294,7 +295,9 @@ public class SPDPlanFactoryServiceImpl implements SPDPlanFactoryService {
             return RouterHelper.responseError("Không tìm thấy nhóm xưởng trong kế hoạch này");
         }
 
-        if (planFactory.getStatus() != EntityStatus.INACTIVE) {
+        SPDPlanFactoryResponse planFactoryResponse = spdPlanFactoryRepository.getDetail(planFactory.getId(), sessionHelper.getFacilityId()).orElse(null);
+
+        if (planFactoryResponse != null && planFactoryResponse.getStatus() != EntityStatus.INACTIVE.ordinal()) {
             return RouterHelper.responseError("Không thể xoá nhóm xưởng đang triển khai trong kế hoạch này");
         }
 

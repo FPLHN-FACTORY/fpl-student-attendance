@@ -351,7 +351,7 @@ public class SPDPlanServiceImpl implements SPDPlanService {
                 .orElse(null);
 
         if (planResponse == null || planResponse.getStatus() != plan.getStatus().ordinal()) {
-            return RouterHelper.responseError("Không thể thay đổi trạng thái kế hoạch này");
+            return RouterHelper.responseError("Không thể thay đổi trạng thái kế hoạch này. Vui lòng kiểm tra lại trạng thái dự án, cấp độ dự án, ...");
         }
 
         if (plan.getStatus() == EntityStatus.INACTIVE
@@ -380,7 +380,10 @@ public class SPDPlanServiceImpl implements SPDPlanService {
             return RouterHelper.responseError("Không tìm thấy kế hoạch");
         }
 
-        if (plan.getStatus() != EntityStatus.INACTIVE) {
+        SPDPlanResponse planResponse = spdPlanRepository.getByIdPlan(plan.getId(), sessionHelper.getFacilityId())
+                .orElse(null);
+
+        if (planResponse != null && planResponse.getStatus() != EntityStatus.INACTIVE.ordinal()) {
             return RouterHelper.responseError("Không thể xoá kế hoạch đang triển khai");
         }
 

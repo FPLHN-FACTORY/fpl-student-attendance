@@ -50,7 +50,13 @@ const isLoading = ref(false)
 const isShowListStudentExists = ref(false)
 const lstStudentExists = ref([])
 
-const configImportExcel = {
+const _detail = ref(null)
+const lstData = ref([])
+const lstShift = ref([])
+
+const isActive = computed(() => _detail.value?.status === STATUS_TYPE.ENABLE)
+
+const configImportExcel = reactive({
   fetchUrl: API_ROUTES_EXCEL.FETCH_IMPORT_PLAN_DATE,
   onSuccess: () => {
     fetchDataList()
@@ -59,12 +65,13 @@ const configImportExcel = {
     message.error('Không thể xử lý file excel')
   },
   data: { idPlanFactory: route.params?.id },
-  showDownloadTemplate: true,
+  showDownloadTemplate: isActive,
   showHistoryLog: true,
+  showImport: isActive,
   showExport: true,
   btnImport: 'Import ca học',
   btnExport: 'Export điểm danh',
-}
+})
 
 const modalAddOrUpdate = reactive({
   isShow: false,
@@ -85,10 +92,6 @@ const modalUpdateLink = reactive({
   onOk: null,
   width: 800,
 })
-
-const _detail = ref(null)
-const lstData = ref([])
-const lstShift = ref([])
 
 const columns = ref(
   autoAddColumnWidth([
@@ -1033,13 +1036,15 @@ watch(
               ><DeleteFilled /> Xoá mục đã chọn</a-button
             >
             <ExcelUploadButton v-bind="configImportExcel" />
-            <a-button class="btn btn-gray" @click="handleShowUpdateLink">
-              <LinkOutlined /> Update link online
-            </a-button>
-            <a-button class="btn btn-outline-warning" @click="handleSendMail">
-              <MailOutlined /> Gửi mail thông báo
-            </a-button>
-            <a-button type="primary" @click="handleShowAdd"> <PlusOutlined /> Thêm mới </a-button>
+            <template v-if="isActive">
+              <a-button class="btn btn-gray" @click="handleShowUpdateLink">
+                <LinkOutlined /> Update link online
+              </a-button>
+              <a-button class="btn btn-outline-warning" @click="handleSendMail">
+                <MailOutlined /> Gửi mail thông báo
+              </a-button>
+              <a-button type="primary" @click="handleShowAdd"> <PlusOutlined /> Thêm mới </a-button>
+            </template>
           </div>
 
           <div>

@@ -18,7 +18,7 @@ import java.util.Optional;
 public interface SPDPlanDateRepository extends PlanDateRepository {
 
     @Query(value = """
-        SELECT 
+        SELECT
             ROW_NUMBER() OVER (ORDER BY pd.start_date ASC) as orderNumber,
             pd.id,
             pd.start_date,
@@ -44,10 +44,8 @@ public interface SPDPlanDateRepository extends PlanDateRepository {
         JOIN project p ON p.id = f.id_project
         JOIN subject_facility sf ON sf.id = p.id_subject_facility
         JOIN facility f2 ON sf.id_facility = f2.id
-        WHERE 
-            f.status = 1 AND
-            p.status = 1 AND
-            sf.status = 1 AND
+        WHERE
+            pd.status = 1 AND
             f2.status = 1 AND
             sf.id_facility = :#{#request.idFacility} AND
             pf.id = :#{#request.idPlanFactory} AND
@@ -68,7 +66,7 @@ public interface SPDPlanDateRepository extends PlanDateRepository {
             ) = :#{#request.status})
         ORDER BY pd.start_date ASC
     """, countQuery = """
-        SELECT 
+        SELECT
             COUNT(pd.id)
         FROM plan_date pd
         JOIN plan_factory pf ON pd.id_plan_factory = pf.id
@@ -76,11 +74,9 @@ public interface SPDPlanDateRepository extends PlanDateRepository {
         JOIN project p ON p.id = f.id_project
         JOIN subject_facility sf ON sf.id = p.id_subject_facility
         JOIN facility f2 ON sf.id_facility = f2.id
-        WHERE 
-            f.status = 1 AND
-            p.status = 1 AND
-            sf.status = 1 AND
-            f2.status = 1 AND 
+        WHERE
+            pd.status = 1 AND
+            f2.status = 1 AND
             sf.id_facility = :#{#request.idFacility} AND
             pf.id = :#{#request.idPlanFactory} AND
             (NULLIF(TRIM(:#{#request.keyword}), '') IS NULL OR pd.description LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%')) AND
@@ -167,10 +163,8 @@ public interface SPDPlanDateRepository extends PlanDateRepository {
         JOIN project p ON p.id = f.id_project
         JOIN subject_facility sf ON sf.id = p.id_subject_facility
         JOIN facility f2 ON sf.id_facility = f2.id
-        WHERE 
-            f.status = 1 AND
-            p.status = 1 AND
-            sf.status = 1 AND
+        WHERE
+            pd.status = 1 AND
             f2.status = 1 AND
             sf.id_facility = :idFacility AND
             pd.id = :idPlanDate
