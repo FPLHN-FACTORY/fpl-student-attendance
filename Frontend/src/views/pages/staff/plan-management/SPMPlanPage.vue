@@ -11,7 +11,7 @@ import {
 } from '@ant-design/icons-vue'
 import { message, Modal } from 'ant-design-vue'
 import requestAPI from '@/services/requestApiService'
-import { DEFAULT_DATE_FORMAT, DEFAULT_PAGINATION } from '@/constants'
+import { DEFAULT_DATE_FORMAT, DEFAULT_PAGINATION, STATUS_TYPE } from '@/constants'
 import { API_ROUTES_STAFF } from '@/constants/staffConstant'
 import { useRouter } from 'vue-router'
 import { ROUTE_NAMES } from '@/router/staffRoute'
@@ -775,8 +775,8 @@ watch(
           >
             <template #bodyCell="{ column, record }">
               <template v-if="column.dataIndex === 'description'">
-                <a-typography-link 
-                  v-if="record.description" 
+                <a-typography-link
+                  v-if="record.description"
                   @click="handleShowDescription(record.description)"
                   >Chi tiết</a-typography-link
                 >
@@ -803,7 +803,8 @@ watch(
               <template v-if="column.dataIndex === 'status'">
                 <a-switch
                   class="me-2"
-                  :checked="record.status === 1"
+                  :checked="record.status === STATUS_TYPE.ENABLE"
+                  :disabled="record.status !== record.currentStatus"
                   @change="handleChangeStatus(record.id)"
                 />
                 <a-tag :color="record.status === 1 ? 'green' : 'red'">{{
@@ -813,15 +814,15 @@ watch(
               <template v-if="column.key === 'actions'">
                 <a-tooltip title="Phân công nhóm xưởng">
                   <a-button
-                    class="btn-outline-primary border-0 me-2"
+                    class="btn-outline-primary border-0"
                     @click="handleShowDetail(record.id)"
                   >
                     <AlignLeftOutlined />
                   </a-button>
                 </a-tooltip>
-                <a-tooltip title="Chỉnh sửa kế hoạch">
+                <a-tooltip v-if="record.status === 1" title="Chỉnh sửa kế hoạch">
                   <a-button
-                    class="btn-outline-info border-0"
+                    class="btn-outline-info border-0 ms-2"
                     @click="handleShowModalUpdate(record)"
                   >
                     <EditFilled />

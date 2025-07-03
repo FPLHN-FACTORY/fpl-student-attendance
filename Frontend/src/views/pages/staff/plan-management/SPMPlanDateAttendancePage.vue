@@ -1,9 +1,14 @@
 <script setup>
-import { ref, onMounted, watch, reactive } from 'vue'
+import { ref, onMounted, watch, reactive, computed } from 'vue'
 import { FilterFilled, SearchOutlined, UnorderedListOutlined } from '@ant-design/icons-vue'
 import { message, Modal } from 'ant-design-vue'
 import requestAPI from '@/services/requestApiService'
-import { ATTENDANCE_STATUS, DEFAULT_PAGINATION, STATUS_REQUIRED_ATTENDANCE } from '@/constants'
+import {
+  ATTENDANCE_STATUS,
+  DEFAULT_PAGINATION,
+  STATUS_REQUIRED_ATTENDANCE,
+  STATUS_TYPE,
+} from '@/constants'
 import { API_ROUTES_STAFF } from '@/constants/staffConstant'
 import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
 import { API_ROUTES_EXCEL, GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
@@ -23,6 +28,8 @@ const isLoading = ref(false)
 
 const _detail = ref(null)
 const lstData = ref([])
+
+const isActive = computed(() => _detail.value?.status === STATUS_TYPE.ENABLE)
 
 const configImportExcel = {
   fetchUrl: API_ROUTES_EXCEL.FETCH_IMPORT_PLAN_DATE,
@@ -302,6 +309,7 @@ watch(
                       <a-switch
                         class="me-2"
                         checked="false"
+                        :disabled="!isActive"
                         @change="handleSubmitCheckin(record)"
                       />
                       <a-badge status="error" /> Chưa checkin
@@ -329,7 +337,9 @@ watch(
                         class="me-2"
                         checked="false"
                         :disabled="
-                          record.status !== ATTENDANCE_STATUS.CHECKIN.id && _detail.requiredCheckin
+                          !isActive ||
+                          (record.status !== ATTENDANCE_STATUS.CHECKIN.id &&
+                            _detail.requiredCheckin)
                         "
                         @change="handleSubmitCheckout(record)"
                       />
@@ -352,7 +362,7 @@ watch(
                   <a-switch
                     class="me-2"
                     :checked="record.status === ATTENDANCE_STATUS.PRESENT.id"
-                    :disabled="record.status === ATTENDANCE_STATUS.PRESENT.id"
+                    :disabled="!isActive || record.status === ATTENDANCE_STATUS.PRESENT.id"
                     @change="handleSubmitAttendance(record)"
                   />
                   <a-tag color="green" v-if="record.status === ATTENDANCE_STATUS.PRESENT.id">

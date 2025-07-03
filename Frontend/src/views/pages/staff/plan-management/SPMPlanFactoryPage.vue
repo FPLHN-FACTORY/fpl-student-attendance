@@ -582,7 +582,11 @@ watch(
         <a-card :bordered="false" class="cart">
           <template #title> <UnorderedListOutlined /> Danh sách phân công nhóm xưởng </template>
           <div class="d-flex justify-content-end gap-3 mb-2">
-            <a-button type="primary" @click="handleShowModalAdd">
+            <a-button
+              type="primary"
+              @click="handleShowModalAdd"
+              v-if="_detail?.status === STATUS_TYPE.ENABLE"
+            >
               <PlusOutlined /> Phân công nhóm xưởng
             </a-button>
           </div>
@@ -626,8 +630,8 @@ watch(
               <template v-if="column.dataIndex === 'status'">
                 <a-switch
                   class="me-2"
-                  :checked="record.status === 1"
-                  :disabled="_detail.status !== 1"
+                  :checked="record.status === STATUS_TYPE.ENABLE"
+                  :disabled="record.status !== record.currentStatus"
                   @change="handleChangeStatus(record.id)"
                 />
                 <a-tag :color="record.status === 1 && _detail.status === 1 ? 'green' : 'red'">{{
