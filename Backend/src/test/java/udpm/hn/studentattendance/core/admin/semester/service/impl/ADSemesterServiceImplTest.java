@@ -1,5 +1,6 @@
 package udpm.hn.studentattendance.core.admin.semester.service.impl;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -11,22 +12,23 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.test.util.ReflectionTestUtils;
 import udpm.hn.studentattendance.core.admin.semester.model.request.ADCreateUpdateSemesterRequest;
 import udpm.hn.studentattendance.core.admin.semester.model.request.ADSemesterRequest;
 import udpm.hn.studentattendance.core.admin.semester.model.response.ADSemesterResponse;
 import udpm.hn.studentattendance.core.admin.semester.repository.ADSemesterRepository;
 import udpm.hn.studentattendance.entities.Semester;
+import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
 import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
 import udpm.hn.studentattendance.infrastructure.common.ApiResponse;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.common.repositories.CommonUserStudentRepository;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.SemesterName;
+import udpm.hn.studentattendance.infrastructure.redis.service.RedisService;
 
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.time.ZoneOffset;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -48,8 +50,19 @@ class ADSemesterServiceImplTest {
     @Mock
     private UserActivityLogHelper userActivityLogHelper;
 
+    @Mock
+    private RedisService redisService;
+
+    @Mock
+    private RedisInvalidationHelper redisInvalidationHelper;
+
     @InjectMocks
     private ADSemesterServiceImpl adSemesterService;
+
+    @BeforeEach
+    void setUp() {
+        ReflectionTestUtils.setField(adSemesterService, "redisTTL", 3600L);
+    }
 
     @Test
     @DisplayName("Test getAllSemester should return paginated semesters")
@@ -59,8 +72,6 @@ class ADSemesterServiceImplTest {
         List<ADSemesterResponse> semesters = new ArrayList<>();
 
         ADSemesterResponse semesterResponse = mock(ADSemesterResponse.class);
-        when(semesterResponse.getId()).thenReturn("semester-1");
-        when(semesterResponse.getSemesterCode()).thenReturn("SPRING-2023");
         semesters.add(semesterResponse);
 
         Page<ADSemesterResponse> page = new PageImpl<>(semesters);
@@ -124,24 +135,39 @@ class ADSemesterServiceImplTest {
     @DisplayName("Test createSemester should create semester successfully")
     void testCreateSemesterSuccess() {
         // Given
-        ADCreateUpdateSemesterRequest request = spy(new ADCreateUpdateSemesterRequest());
+        ADCreateUpdateSemesterRequest request = new ADCreateUpdateSemesterRequest();
         request.setSemesterName("SPRING");
 
         // Set dates to future (3 months apart)
         LocalDateTime fromDate = LocalDateTime.now().plusDays(1);
         LocalDateTime toDate = fromDate.plusMonths(4);
 
-        request.setFromDate(fromDate.toInstant(ZoneOffset.UTC).toEpochMilli());
-        request.setToDate(toDate.toInstant(ZoneOffset.UTC).toEpochMilli());
+        Long fromDateEpoch = fromDate.toInstant(ZoneOffset.UTC).toEpochMilli();
+        Long toDateEpoch = toDate.toInstant(ZoneOffset.UTC).toEpochMilli();
 
-        // Mock the getStartTimeCustom and getEndTimeCustom methods
-        when(request.getStartTimeCustom()).thenReturn(request.getFromDate());
-        when(request.getEndTimeCustom()).thenReturn(request.getToDate());
+        request.setFromDate(fromDateEpoch);
+        request.setToDate(toDateEpoch);
+
+        // Create real instances for the custom time methods
+        final ADCreateUpdateSemesterRequest finalRequest = request;
+        ADCreateUpdateSemesterRequest spyRequest = spy(new ADCreateUpdateSemesterRequest() {
+            @Override
+            public Long getStartTimeCustom() {
+                return finalRequest.getFromDate();
+            }
+
+            @Override
+            public Long getEndTimeCustom() {
+                return finalRequest.getToDate();
+            }
+        });
+        spyRequest.setFromDate(fromDateEpoch);
+        spyRequest.setToDate(toDateEpoch);
+        spyRequest.setSemesterName("SPRING");
 
         when(adSemesterRepository.checkConflictTime(anyLong(), anyLong())).thenReturn(Collections.emptyList());
         when(adSemesterRepository.checkSemesterExistNameAndYear(anyString(), anyInt(), any(EntityStatus.class),
-                isNull()))
-                .thenReturn(Optional.empty());
+                isNull())).thenReturn(Optional.empty());
 
         Semester savedSemester = new Semester();
         savedSemester.setId("new-semester-id");
@@ -152,7 +178,7 @@ class ADSemesterServiceImplTest {
         when(adSemesterRepository.save(any(Semester.class))).thenReturn(savedSemester);
 
         // When
-        ResponseEntity<?> response = adSemesterService.createSemester(request);
+        ResponseEntity<?> response = adSemesterService.createSemester(spyRequest);
 
         // Then
         assertEquals(HttpStatus.OK, response.getStatusCode());
@@ -162,36 +188,52 @@ class ADSemesterServiceImplTest {
 
         verify(adSemesterRepository).save(any(Semester.class));
         verify(userActivityLogHelper).saveLog(contains("vừa thêm 1 học kỳ mới"));
+        verify(redisInvalidationHelper).invalidateAllCaches();
     }
 
     @Test
     @DisplayName("Test createSemester should return error when semester already exists")
     void testCreateSemesterAlreadyExists() {
         // Given
-        ADCreateUpdateSemesterRequest request = spy(new ADCreateUpdateSemesterRequest());
+        ADCreateUpdateSemesterRequest request = new ADCreateUpdateSemesterRequest();
         request.setSemesterName("SPRING");
 
         // Set dates to future (3 months apart)
         LocalDateTime fromDate = LocalDateTime.now().plusDays(1);
         LocalDateTime toDate = fromDate.plusMonths(4);
 
-        request.setFromDate(fromDate.toInstant(ZoneOffset.UTC).toEpochMilli());
-        request.setToDate(toDate.toInstant(ZoneOffset.UTC).toEpochMilli());
+        Long fromDateEpoch = fromDate.toInstant(ZoneOffset.UTC).toEpochMilli();
+        Long toDateEpoch = toDate.toInstant(ZoneOffset.UTC).toEpochMilli();
 
-        // Mock the getStartTimeCustom and getEndTimeCustom methods
-        when(request.getStartTimeCustom()).thenReturn(request.getFromDate());
-        when(request.getEndTimeCustom()).thenReturn(request.getToDate());
+        request.setFromDate(fromDateEpoch);
+        request.setToDate(toDateEpoch);
+
+        // Create real instances for the custom time methods
+        final ADCreateUpdateSemesterRequest finalRequest = request;
+        ADCreateUpdateSemesterRequest spyRequest = spy(new ADCreateUpdateSemesterRequest() {
+            @Override
+            public Long getStartTimeCustom() {
+                return finalRequest.getFromDate();
+            }
+
+            @Override
+            public Long getEndTimeCustom() {
+                return finalRequest.getToDate();
+            }
+        });
+        spyRequest.setFromDate(fromDateEpoch);
+        spyRequest.setToDate(toDateEpoch);
+        spyRequest.setSemesterName("SPRING");
 
         when(adSemesterRepository.checkConflictTime(anyLong(), anyLong())).thenReturn(Collections.emptyList());
 
         Semester existingSemester = new Semester();
         existingSemester.setId("existing-semester");
         when(adSemesterRepository.checkSemesterExistNameAndYear(anyString(), anyInt(), any(EntityStatus.class),
-                isNull()))
-                .thenReturn(Optional.of(existingSemester));
+                isNull())).thenReturn(Optional.of(existingSemester));
 
         // When
-        ResponseEntity<?> response = adSemesterService.createSemester(request);
+        ResponseEntity<?> response = adSemesterService.createSemester(spyRequest);
 
         // Then
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
@@ -200,32 +242,49 @@ class ADSemesterServiceImplTest {
         assertEquals("Học kỳ đã tồn tại", apiResponse.getMessage());
 
         verify(adSemesterRepository, never()).save(any(Semester.class));
+        verify(redisInvalidationHelper, never()).invalidateAllCaches();
     }
 
     @Test
     @DisplayName("Test createSemester should return error when time conflict exists")
     void testCreateSemesterTimeConflict() {
         // Given
-        ADCreateUpdateSemesterRequest request = spy(new ADCreateUpdateSemesterRequest());
+        ADCreateUpdateSemesterRequest request = new ADCreateUpdateSemesterRequest();
         request.setSemesterName("SPRING");
 
         // Set dates to future (3 months apart)
         LocalDateTime fromDate = LocalDateTime.now().plusDays(1);
         LocalDateTime toDate = fromDate.plusMonths(4);
 
-        request.setFromDate(fromDate.toInstant(ZoneOffset.UTC).toEpochMilli());
-        request.setToDate(toDate.toInstant(ZoneOffset.UTC).toEpochMilli());
+        Long fromDateEpoch = fromDate.toInstant(ZoneOffset.UTC).toEpochMilli();
+        Long toDateEpoch = toDate.toInstant(ZoneOffset.UTC).toEpochMilli();
 
-        // Mock the getStartTimeCustom and getEndTimeCustom methods
-        when(request.getStartTimeCustom()).thenReturn(request.getFromDate());
-        when(request.getEndTimeCustom()).thenReturn(request.getToDate());
+        request.setFromDate(fromDateEpoch);
+        request.setToDate(toDateEpoch);
+
+        // Create real instances for the custom time methods
+        final ADCreateUpdateSemesterRequest finalRequest = request;
+        ADCreateUpdateSemesterRequest spyRequest = spy(new ADCreateUpdateSemesterRequest() {
+            @Override
+            public Long getStartTimeCustom() {
+                return finalRequest.getFromDate();
+            }
+
+            @Override
+            public Long getEndTimeCustom() {
+                return finalRequest.getToDate();
+            }
+        });
+        spyRequest.setFromDate(fromDateEpoch);
+        spyRequest.setToDate(toDateEpoch);
+        spyRequest.setSemesterName("SPRING");
 
         List<Semester> conflictingSemesters = new ArrayList<>();
         conflictingSemesters.add(new Semester());
         when(adSemesterRepository.checkConflictTime(anyLong(), anyLong())).thenReturn(conflictingSemesters);
 
         // When
-        ResponseEntity<?> response = adSemesterService.createSemester(request);
+        ResponseEntity<?> response = adSemesterService.createSemester(spyRequest);
 
         // Then
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
@@ -234,6 +293,7 @@ class ADSemesterServiceImplTest {
         assertEquals("Đã có học kỳ trong khoảng thời gian này!", apiResponse.getMessage());
 
         verify(adSemesterRepository, never()).save(any(Semester.class));
+        verify(redisInvalidationHelper, never()).invalidateAllCaches();
     }
 
     @Test
@@ -241,7 +301,7 @@ class ADSemesterServiceImplTest {
     void testUpdateSemesterSuccess() {
         // Given
         String semesterId = "semester-1";
-        ADCreateUpdateSemesterRequest request = spy(new ADCreateUpdateSemesterRequest());
+        ADCreateUpdateSemesterRequest request = new ADCreateUpdateSemesterRequest();
         request.setSemesterId(semesterId);
         request.setSemesterName("SUMMER");
 
@@ -249,12 +309,29 @@ class ADSemesterServiceImplTest {
         LocalDateTime fromDate = LocalDateTime.now().plusDays(1);
         LocalDateTime toDate = fromDate.plusMonths(4);
 
-        request.setFromDate(fromDate.toInstant(ZoneOffset.UTC).toEpochMilli());
-        request.setToDate(toDate.toInstant(ZoneOffset.UTC).toEpochMilli());
+        Long fromDateEpoch = fromDate.toInstant(ZoneOffset.UTC).toEpochMilli();
+        Long toDateEpoch = toDate.toInstant(ZoneOffset.UTC).toEpochMilli();
 
-        // Mock the getStartTimeCustom and getEndTimeCustom methods
-        when(request.getStartTimeCustom()).thenReturn(request.getFromDate());
-        when(request.getEndTimeCustom()).thenReturn(request.getToDate());
+        request.setFromDate(fromDateEpoch);
+        request.setToDate(toDateEpoch);
+
+        // Create real instances for the custom time methods
+        final ADCreateUpdateSemesterRequest finalRequest = request;
+        ADCreateUpdateSemesterRequest spyRequest = spy(new ADCreateUpdateSemesterRequest() {
+            @Override
+            public Long getStartTimeCustom() {
+                return finalRequest.getFromDate();
+            }
+
+            @Override
+            public Long getEndTimeCustom() {
+                return finalRequest.getToDate();
+            }
+        });
+        spyRequest.setSemesterId(semesterId);
+        spyRequest.setFromDate(fromDateEpoch);
+        spyRequest.setToDate(toDateEpoch);
+        spyRequest.setSemesterName("SUMMER");
 
         Semester existingSemester = new Semester();
         existingSemester.setId(semesterId);
@@ -266,8 +343,7 @@ class ADSemesterServiceImplTest {
 
         when(adSemesterRepository.findById(semesterId)).thenReturn(Optional.of(existingSemester));
         when(adSemesterRepository.checkSemesterExistNameAndYear(anyString(), anyInt(), any(EntityStatus.class),
-                eq(semesterId)))
-                .thenReturn(Optional.empty());
+                eq(semesterId))).thenReturn(Optional.empty());
         when(adSemesterRepository.checkConflictTime(anyLong(), anyLong())).thenReturn(Collections.emptyList());
 
         Semester updatedSemester = new Semester();
@@ -279,7 +355,7 @@ class ADSemesterServiceImplTest {
         when(adSemesterRepository.save(any(Semester.class))).thenReturn(updatedSemester);
 
         // When
-        ResponseEntity<?> response = adSemesterService.updateSemester(request);
+        ResponseEntity<?> response = adSemesterService.updateSemester(spyRequest);
 
         // Then
         assertEquals(HttpStatus.OK, response.getStatusCode());
@@ -289,6 +365,7 @@ class ADSemesterServiceImplTest {
 
         verify(adSemesterRepository).save(any(Semester.class));
         verify(userActivityLogHelper).saveLog(contains("vừa cập nhật học kỳ"));
+        verify(redisInvalidationHelper).invalidateAllCaches();
     }
 
     @Test
@@ -316,6 +393,7 @@ class ADSemesterServiceImplTest {
 
         verify(adSemesterRepository).save(any(Semester.class));
         verify(userActivityLogHelper).saveLog(contains("vừa thay đổi trạng thái học kỳ"));
+        verify(redisInvalidationHelper).invalidateAllCaches();
 
         // Verify status was changed from ACTIVE to INACTIVE
         assertEquals(EntityStatus.INACTIVE, existingSemester.getStatus());
@@ -338,5 +416,6 @@ class ADSemesterServiceImplTest {
         assertEquals("Học kỳ không tồn tại", apiResponse.getMessage());
 
         verify(adSemesterRepository, never()).save(any(Semester.class));
+        verify(redisInvalidationHelper, never()).invalidateAllCaches();
     }
 }

@@ -22,7 +22,9 @@ import udpm.hn.studentattendance.core.admin.statistics.model.response.ADSTotalPr
 import udpm.hn.studentattendance.core.admin.statistics.repository.ADSProjectSubjectFacilityRepository;
 import udpm.hn.studentattendance.core.admin.statistics.repository.ADSSubjectFacilityExtendRepository;
 import udpm.hn.studentattendance.core.admin.statistics.repository.ADStatisticsRepository;
+import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
 import udpm.hn.studentattendance.infrastructure.common.ApiResponse;
+import udpm.hn.studentattendance.infrastructure.constants.RedisPrefixConstant;
 import udpm.hn.studentattendance.infrastructure.constants.RestApiStatus;
 import udpm.hn.studentattendance.infrastructure.redis.service.RedisService;
 
@@ -49,6 +51,9 @@ class ADStatisticsServiceImplTest {
     @Mock
     private RedisService redisService;
 
+    @Mock
+    private RedisInvalidationHelper redisInvalidationHelper;
+
     @InjectMocks
     private ADStatisticsServiceImpl adStatisticsService;
 
@@ -63,11 +68,14 @@ class ADStatisticsServiceImplTest {
         // Given
         ADStatisticRequest request = new ADStatisticRequest();
         int pageNumber = 0;
-        String cacheKey = "admin:statistics:" + request.toString() + ":" + pageNumber;
+        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_STATISTICS + "admin_" +
+                "request=" + request.toString() +
+                "_page=" + pageNumber;
 
         ADSAllStartsAndChartDTO cachedData = new ADSAllStartsAndChartDTO();
 
         when(redisService.get(cacheKey)).thenReturn(cachedData);
+        when(redisService.getObject(cacheKey, ADSAllStartsAndChartDTO.class)).thenReturn(cachedData);
 
         // When
         ResponseEntity<?> response = adStatisticsService.getAllListStats(request, pageNumber);
@@ -77,7 +85,7 @@ class ADStatisticsServiceImplTest {
         ApiResponse apiResponse = (ApiResponse) response.getBody();
         assertNotNull(apiResponse);
         assertEquals(RestApiStatus.SUCCESS, apiResponse.getStatus());
-        assertEquals("Lấy dữ liệu thống kê thành công (cached)", apiResponse.getMessage());
+        assertEquals("Lấy dữ liệu thống kê thành công", apiResponse.getMessage());
         assertEquals(cachedData, apiResponse.getData());
 
         // Verify that repositories were not called
@@ -92,7 +100,9 @@ class ADStatisticsServiceImplTest {
         // Given
         ADStatisticRequest request = new ADStatisticRequest();
         int pageNumber = 0;
-        String cacheKey = "admin:statistics:" + request.toString() + ":" + pageNumber;
+        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_STATISTICS + "admin_" +
+                "request=" + request.toString() +
+                "_page=" + pageNumber;
 
         when(redisService.get(cacheKey)).thenReturn(null);
         when(statisticsRepository.getAllStatistics(request)).thenReturn(Optional.empty());
@@ -119,16 +129,13 @@ class ADStatisticsServiceImplTest {
         // Given
         ADStatisticRequest request = new ADStatisticRequest();
         int pageNumber = 0;
-        String cacheKey = "admin:statistics:" + request.toString() + ":" + pageNumber;
+        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_STATISTICS + "admin_" +
+                "request=" + request.toString() +
+                "_page=" + pageNumber;
 
         ADStatisticsStatResponse statResponse = mock(ADStatisticsStatResponse.class);
-        when(statResponse.getTotalProject()).thenReturn(10);
-        when(statResponse.getSubject()).thenReturn(5);
-
         ADSTotalProjectAndSubjectResponse totalProjectAndSubjectResponse = mock(
                 ADSTotalProjectAndSubjectResponse.class);
-        when(totalProjectAndSubjectResponse.getTotalProject()).thenReturn(8);
-        when(totalProjectAndSubjectResponse.getTotalSubject()).thenReturn(2);
 
         List<ADSSubjectFacilityChartResponse> subjectFacilityChartResponses = new ArrayList<>();
         ADSSubjectFacilityChartResponse chartResponse = mock(ADSSubjectFacilityChartResponse.class);
@@ -168,16 +175,34 @@ class ADStatisticsServiceImplTest {
         verify(statisticsRepository).getTotalProjectAndSubject();
         verify(subjectFacilityExtendRepository).getSubjectByFacility();
         verify(projectSubjectFacilityRepository).getProjectSubjectFacilityResponses(any(PageRequest.class));
-        verify(redisService).set(eq(cacheKey), any(ADSAllStartsAndChartDTO.class), eq(3600L * 3));
+        verify(redisService).set(eq(cacheKey), any(ADSAllStartsAndChartDTO.class), eq(3600L));
     }
 
     @Test
-    @DisplayName("Test invalidateAdminStatisticsCache should delete cached statistics")
-    void testInvalidateAdminStatisticsCache() {
+    @DisplayName("Test invalidateAllStatisticsCaches should delete cached statistics")
+    void testInvalidateAllStatisticsCaches() {
         // When
         adStatisticsService.invalidateAllStatisticsCaches();
 
         // Then
-        verify(redisService).deletePattern("admin:statistics:*");
+        verify(redisInvalidationHelper).invalidateAllCaches();
+    }
+
+    @Test
+    @DisplayName("Test invalidateStatisticsCache should delete specific cache")
+    void testInvalidateStatisticsCache() {
+        // Given
+        String requestId = "test-request";
+        int pageNumber = 1;
+        String expectedCacheKey = RedisPrefixConstant.REDIS_PREFIX_STATISTICS + "admin_" +
+                "request=" + requestId +
+                "_page=" + pageNumber;
+
+        // When
+        adStatisticsService.invalidateStatisticsCache(requestId, pageNumber);
+
+        // Then
+        verify(redisService).delete(expectedCacheKey);
+        verify(redisInvalidationHelper).invalidateAllCaches();
     }
 }

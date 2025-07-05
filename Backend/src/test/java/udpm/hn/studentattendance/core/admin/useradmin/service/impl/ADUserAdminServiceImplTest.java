@@ -26,12 +26,14 @@ import udpm.hn.studentattendance.entities.UserAdmin;
 import udpm.hn.studentattendance.entities.UserStaff;
 import udpm.hn.studentattendance.helpers.MailerHelper;
 import udpm.hn.studentattendance.helpers.NotificationHelper;
+import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
 import udpm.hn.studentattendance.helpers.SessionHelper;
 import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
 import udpm.hn.studentattendance.infrastructure.common.ApiResponse;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.config.mailer.model.MailerDefaultRequest;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
+import udpm.hn.studentattendance.infrastructure.constants.RedisPrefixConstant;
 import udpm.hn.studentattendance.infrastructure.redis.service.RedisService;
 
 import java.util.ArrayList;
@@ -67,6 +69,9 @@ class ADUserAdminServiceImplTest {
     @Mock
     private RedisService redisService;
 
+    @Mock
+    private RedisInvalidationHelper redisInvalidationHelper;
+
     @InjectMocks
     private ADUserAdminServiceImpl userAdminService;
 
@@ -82,10 +87,19 @@ class ADUserAdminServiceImplTest {
     void testGetAllUserAdminFromCache() {
         // Given
         ADUserAdminRequest request = new ADUserAdminRequest();
-        String cacheKey = "admin:useradmin:all:" + request.toString();
-        PageableObject mockData = mock(PageableObject.class);
+        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_ADMIN + "list_" +
+                "page=" + request.getPage() +
+                "_size=" + request.getSize() +
+                "_orderBy=" + request.getOrderBy() +
+                "_sortBy=" + request.getSortBy() +
+                "_q=" +
+                "_searchQuery=" +
+                "_status=";
+
+        PageableObject<ADUserAdminResponse> mockData = mock(PageableObject.class);
 
         when(redisService.get(cacheKey)).thenReturn(mockData);
+        when(redisService.getObject(eq(cacheKey), eq(PageableObject.class))).thenReturn(mockData);
 
         // When
         ResponseEntity<?> response = userAdminService.getAllUserAdmin(request);
@@ -94,7 +108,7 @@ class ADUserAdminServiceImplTest {
         assertEquals(HttpStatus.OK, response.getStatusCode());
         ApiResponse apiResponse = (ApiResponse) response.getBody();
         assertNotNull(apiResponse);
-        assertEquals("Lấy thành công tất cả tài khoản admin (cached)", apiResponse.getMessage());
+        assertEquals("Lấy thành công tất cả tài khoản admin", apiResponse.getMessage());
         assertEquals(mockData, apiResponse.getData());
 
         // Verify repository was not called
@@ -106,16 +120,18 @@ class ADUserAdminServiceImplTest {
     void testGetAllUserAdminFromRepository() {
         // Given
         ADUserAdminRequest request = new ADUserAdminRequest();
-        String cacheKey = "admin:useradmin:all:" + request.toString();
+        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_ADMIN + "list_" +
+                "page=" + request.getPage() +
+                "_size=" + request.getSize() +
+                "_orderBy=" + request.getOrderBy() +
+                "_sortBy=" + request.getSortBy() +
+                "_q=" +
+                "_searchQuery=" +
+                "_status=";
 
         // Create a Page with a mocked ADUserAdminResponse
         List<ADUserAdminResponse> responses = new ArrayList<>();
         ADUserAdminResponse mockResponse = mock(ADUserAdminResponse.class);
-        when(mockResponse.getUserAdminId()).thenReturn("admin-1");
-        when(mockResponse.getUserAdminCode()).thenReturn("AD001");
-        when(mockResponse.getUserAdminName()).thenReturn("Admin User");
-        when(mockResponse.getUserAdminEmail()).thenReturn("admin@example.com");
-        when(mockResponse.getUserAdminStatus()).thenReturn(1);
         responses.add(mockResponse);
 
         Page<ADUserAdminResponse> page = new PageImpl<>(responses);
@@ -142,11 +158,12 @@ class ADUserAdminServiceImplTest {
     void testGetUserAdminByIdFromCache() {
         // Given
         String adminId = "admin-1";
-        String cacheKey = "admin:useradmin:" + adminId;
+        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_ADMIN + adminId;
         UserAdmin cachedAdmin = new UserAdmin();
         cachedAdmin.setId(adminId);
 
         when(redisService.get(cacheKey)).thenReturn(cachedAdmin);
+        when(redisService.getObject(eq(cacheKey), eq(UserAdmin.class))).thenReturn(cachedAdmin);
 
         // When
         ResponseEntity<?> response = userAdminService.getUserAdminById(adminId);
@@ -155,7 +172,7 @@ class ADUserAdminServiceImplTest {
         assertEquals(HttpStatus.OK, response.getStatusCode());
         ApiResponse apiResponse = (ApiResponse) response.getBody();
         assertNotNull(apiResponse);
-        assertEquals("Lấy thành công tài khoản admin (cached)", apiResponse.getMessage());
+        assertEquals("Lấy thành công tài khoản admin", apiResponse.getMessage());
         assertEquals(cachedAdmin, apiResponse.getData());
 
         // Verify repository was not called
@@ -167,7 +184,7 @@ class ADUserAdminServiceImplTest {
     void testGetUserAdminByIdFromRepository() {
         // Given
         String adminId = "admin-1";
-        String cacheKey = "admin:useradmin:" + adminId;
+        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_ADMIN + adminId;
 
         UserAdmin admin = new UserAdmin();
         admin.setId(adminId);
@@ -196,7 +213,7 @@ class ADUserAdminServiceImplTest {
     void testGetUserAdminByIdNotFound() {
         // Given
         String adminId = "non-existent-id";
-        String cacheKey = "admin:useradmin:" + adminId;
+        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_ADMIN + adminId;
 
         when(redisService.get(cacheKey)).thenReturn(null);
         when(userAdminExtendRepository.findById(adminId)).thenReturn(Optional.empty());
@@ -250,7 +267,7 @@ class ADUserAdminServiceImplTest {
         verify(userAdminExtendRepository).save(any(UserAdmin.class));
         verify(notificationService).add(any(NotificationAddRequest.class));
         verify(userActivityLogHelper).saveLog(contains("vừa thêm 1 tài khoản admin mới"));
-        verify(redisService).deletePattern("admin:useradmin:all:*");
+        verify(redisInvalidationHelper).invalidateAllCaches();
     }
 
     @Test
@@ -273,6 +290,7 @@ class ADUserAdminServiceImplTest {
 
         // Verify repository was not called
         verify(userAdminExtendRepository, never()).save(any(UserAdmin.class));
+        verify(redisInvalidationHelper, never()).invalidateAllCaches();
     }
 
     @Test
@@ -295,6 +313,7 @@ class ADUserAdminServiceImplTest {
 
         // Verify repository was not called
         verify(userAdminExtendRepository, never()).save(any(UserAdmin.class));
+        verify(redisInvalidationHelper, never()).invalidateAllCaches();
     }
 
     @Test
@@ -334,8 +353,7 @@ class ADUserAdminServiceImplTest {
         verify(userAdminExtendRepository).save(any(UserAdmin.class));
         verify(notificationService).add(any(NotificationAddRequest.class));
         verify(userActivityLogHelper).saveLog(contains("vừa cập nhật tài khoản admin"));
-        verify(redisService).delete("admin:useradmin:" + adminId);
-        verify(redisService).deletePattern("admin:useradmin:all:*");
+        verify(redisInvalidationHelper).invalidateAllCaches();
     }
 
     @Test
@@ -374,8 +392,7 @@ class ADUserAdminServiceImplTest {
         verify(userAdminExtendRepository).save(admin);
         verify(mailerHelper).send(any(MailerDefaultRequest.class));
         verify(userActivityLogHelper).saveLog(contains("vừa thay đổi trạng thái tài khoản admin"));
-        verify(redisService).delete("admin:useradmin:" + adminId);
-        verify(redisService).deletePattern("admin:useradmin:all:*");
+        verify(redisInvalidationHelper).invalidateAllCaches();
     }
 
     @Test
@@ -404,6 +421,7 @@ class ADUserAdminServiceImplTest {
 
         // Verify repository was not called
         verify(userAdminExtendRepository, never()).save(any(UserAdmin.class));
+        verify(redisInvalidationHelper, never()).invalidateAllCaches();
     }
 
     @Test
@@ -450,10 +468,11 @@ class ADUserAdminServiceImplTest {
     @DisplayName("Test getAllUserStaff should return staff from cache if available")
     void testGetAllUserStaffFromCache() {
         // Given
-        String cacheKey = "admin:userstaff:all";
+        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_ADMIN + "staff_list";
         List<UserStaff> cachedStaff = new ArrayList<>();
 
         when(redisService.get(cacheKey)).thenReturn(cachedStaff);
+        when(redisService.getObject(eq(cacheKey), eq(List.class))).thenReturn(cachedStaff);
 
         // When
         ResponseEntity<?> response = userAdminService.getAllUserStaff();
@@ -462,7 +481,7 @@ class ADUserAdminServiceImplTest {
         assertEquals(HttpStatus.OK, response.getStatusCode());
         ApiResponse apiResponse = (ApiResponse) response.getBody();
         assertNotNull(apiResponse);
-        assertEquals("Lấy thành công danh sách nhân viên (cached)", apiResponse.getMessage());
+        assertEquals("Lấy thành công danh sách nhân viên", apiResponse.getMessage());
         assertEquals(cachedStaff, apiResponse.getData());
 
         // Verify repository was not called
@@ -473,7 +492,7 @@ class ADUserAdminServiceImplTest {
     @DisplayName("Test getAllUserStaff should fetch and cache data if not in cache")
     void testGetAllUserStaffFromRepository() {
         // Given
-        String cacheKey = "admin:userstaff:all";
+        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_ADMIN + "staff_list";
         List<UserStaff> staffList = new ArrayList<>();
         UserStaff staff = new UserStaff();
         staff.setId("staff-1");
@@ -529,8 +548,7 @@ class ADUserAdminServiceImplTest {
         verify(userAdminExtendRepository).deleteById(adminId);
         verify(mailerHelper).send(any(MailerDefaultRequest.class));
         verify(userActivityLogHelper).saveLog(contains("vừa xóa tài khoản admin"));
-        verify(redisService).delete("admin:useradmin:" + adminId);
-        verify(redisService).deletePattern("admin:useradmin:all:*");
+        verify(redisInvalidationHelper).invalidateAllCaches();
     }
 
     @Test
@@ -552,5 +570,6 @@ class ADUserAdminServiceImplTest {
 
         // Verify repository was not called to delete
         verify(userAdminExtendRepository, never()).deleteById(anyString());
+        verify(redisInvalidationHelper, never()).invalidateAllCaches();
     }
 }

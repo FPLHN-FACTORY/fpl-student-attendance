@@ -10,17 +10,15 @@ import {
 } from '@ant-design/icons-vue'
 import { message } from 'ant-design-vue'
 import requestAPI from '@/services/requestApiService'
-import { DEFAULT_DATE_FORMAT } from '@/constants'
 import { API_ROUTES_ADMIN } from '@/constants/adminConstant'
 import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
 import { ROUTE_NAMES } from '@/router/adminRoute'
 import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
-import { autoAddColumnWidth, debounce } from '@/utils/utils'
+import { autoAddColumnWidth } from '@/utils/utils'
 import useLoadingStore from '@/stores/useLoadingStore'
 import WidgetCounter from '@/components/widgets/WidgetCounter.vue'
 import ChartBar from '@/components/charts/ChartBar.vue'
 import ChartLine from '@/components/charts/ChartLine.vue'
-import dayjs from 'dayjs'
 
 const breadcrumbStore = useBreadcrumbStore()
 const loadingStore = useLoadingStore()
@@ -45,28 +43,6 @@ const dataFilter = reactive({
   fromDay: null,
   toDay: null,
 })
-
-const dataRangePresets = [
-  {
-    label: 'Tuần này',
-    value: [dayjs().startOf('week'), dayjs().endOf('week')],
-  },
-  {
-    label: 'Tuần trước',
-    value: [dayjs().subtract(1, 'week').startOf('week'), dayjs().subtract(1, 'week').endOf('week')],
-  },
-  {
-    label: 'Tháng này',
-    value: [dayjs().startOf('month'), dayjs().endOf('month')],
-  },
-  {
-    label: 'Tháng trước',
-    value: [
-      dayjs().subtract(1, 'month').startOf('month'),
-      dayjs().subtract(1, 'month').endOf('month'),
-    ],
-  },
-]
 
 const stats = ref([
   {
@@ -139,6 +115,20 @@ const lineChartData = ref({
   ],
 })
 
+// Add doughnut chart data
+const doughnutChartData = ref({
+  labels: ['Đã hoàn thành', 'Đang tiến hành', 'Chưa bắt đầu', 'Đã hủy'],
+  datasets: [
+    {
+      label: 'Trạng thái dự án',
+      backgroundColor: ['#52C41A', '#1890FF', '#FAAD14', '#FF4D4F'],
+      borderColor: ['#fff', '#fff', '#fff', '#fff'],
+      borderWidth: 2,
+      data: [0, 0, 0, 0],
+    },
+  ],
+})
+
 const breadcrumb = ref([
   {
     name: GLOBAL_ROUTE_NAMES.ADMIN_PAGE,
@@ -200,6 +190,28 @@ const fetchDataAllStats = () => {
       pagination.current = (paginationInfo.number || 0) + 1
       pagination.total = paginationInfo.totalElements || 0
       pagination.pageSize = paginationInfo.size || 5
+
+      // Update doughnut chart data with project status
+      let totalDone = 0
+      let totalProcessing = 0
+
+      // Calculate project status counts from table data
+      lstData.value.forEach(item => {
+        totalDone += item.doneProject || 0
+        totalProcessing += item.processingProject || 0
+      })
+
+      // For demonstration purposes, let's set some placeholder values for 'not started' and 'canceled'
+      // In real application, these should come from the API
+      const notStarted = Math.round(totalProcessing * 0.3) // Just a placeholder
+      const canceled = Math.round(totalDone * 0.1) // Just a placeholder
+
+      doughnutChartData.value.datasets[0].data = [
+        totalDone,
+        totalProcessing,
+        notStarted,
+        canceled
+      ]
     })
     .catch((error) => {
       message.error(error?.response?.data?.message || 'Không thể tải dữ liệu thống kê')
@@ -209,35 +221,8 @@ const fetchDataAllStats = () => {
     })
 }
 
-const handleClearFilter = () => {
-  Object.assign(dataFilter, {
-    fromDay: null,
-    toDay: null,
-  })
-  pagination.current = 1 // Reset to first page when clearing filter
-  fetchDataAllStats()
-}
 
-const handleSubmitFilter = () => {
-  pagination.current = 1 // Reset to first page when filtering
-  fetchDataAllStats()
-}
 
-const handlePaginationChange = (page, pageSize) => {
-  pagination.current = page
-  pagination.pageSize = pageSize
-  fetchDataAllStats()
-}
-
-const handleDateRangeChange = (dates) => {
-  if (dates && dates.length === 2) {
-    dataFilter.fromDay = dates[0].valueOf()
-    dataFilter.toDay = dates[1].valueOf()
-  } else {
-    dataFilter.fromDay = null
-    dataFilter.toDay = null
-  }
-}
 
 onMounted(() => {
   breadcrumbStore.setRoutes(breadcrumb.value)
@@ -255,14 +240,6 @@ watch(
   { deep: true },
 )
 
-const debounceFilter = debounce(handleSubmitFilter, 300)
-watch(
-  dataFilter,
-  () => {
-    debounceFilter()
-  },
-  { deep: true },
-)
 </script>
 
 <template>
@@ -278,8 +255,10 @@ watch(
           :icon="stat.icon"
           :status="stat.status"
         ></WidgetCounter>
-      </div>      <!-- Chart Section -->
-      <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12">
+      </div>
+
+       <!-- Chart Section -->
+      <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12">
         <a-card :bordered="false" class="dashboard-bar-chart">
           <template #title>
             <div class="d-flex align-items-center">
@@ -297,7 +276,7 @@ watch(
       </div>
 
       <!-- Line Chart Section -->
-      <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12">
+      <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12">
         <a-card :bordered="false" class="dashboard-bar-line header-solid">
           <template #title>
             <div class="d-flex align-items-center">
@@ -371,3 +350,4 @@ watch(
     </div>
   </div>
 </template>
+

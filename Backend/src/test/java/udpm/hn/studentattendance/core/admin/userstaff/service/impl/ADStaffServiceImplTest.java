@@ -8,6 +8,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -27,11 +29,13 @@ import udpm.hn.studentattendance.entities.Facility;
 import udpm.hn.studentattendance.entities.Notification;
 import udpm.hn.studentattendance.entities.Role;
 import udpm.hn.studentattendance.entities.UserStaff;
+import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
 import udpm.hn.studentattendance.helpers.SessionHelper;
 import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
 import udpm.hn.studentattendance.infrastructure.common.ApiResponse;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
+import udpm.hn.studentattendance.infrastructure.constants.RedisPrefixConstant;
 import udpm.hn.studentattendance.infrastructure.constants.RoleConstant;
 import udpm.hn.studentattendance.infrastructure.redis.service.RedisService;
 
@@ -45,6 +49,7 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class ADStaffServiceImplTest {
 
     @Mock
@@ -69,6 +74,9 @@ class ADStaffServiceImplTest {
     private RedisService redisService;
 
     @Mock
+    private RedisInvalidationHelper redisInvalidationHelper;
+
+    @Mock
     private EntityManager entityManager;
 
     @InjectMocks
@@ -78,6 +86,9 @@ class ADStaffServiceImplTest {
     void setUp() {
         ReflectionTestUtils.setField(adStaffService, "isDisableCheckEmailFpt", "false");
         ReflectionTestUtils.setField(adStaffService, "redisTTL", 3600L);
+
+        // Make sure entityManager is properly injected
+        ReflectionTestUtils.setField(adStaffService, "entityManager", entityManager);
     }
 
     @Test
@@ -85,10 +96,21 @@ class ADStaffServiceImplTest {
     void testGetAllStaffByFilterFromCache() {
         // Given
         ADStaffRequest request = new ADStaffRequest();
-        String cacheKey = "staff:list:" + request.toString();
-        PageableObject mockData = mock(PageableObject.class);
+        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_STAFF + "list_" +
+                "page=" + request.getPage() +
+                "_size=" + request.getSize() +
+                "_orderBy=" + request.getOrderBy() +
+                "_sortBy=" + request.getSortBy() +
+                "_q=" +
+                "_searchQuery=" +
+                "_idFacility=" +
+                "_status=" +
+                "_roleCodeFilter=";
+
+        PageableObject<ADStaffResponse> mockData = mock(PageableObject.class);
 
         when(redisService.get(cacheKey)).thenReturn(mockData);
+        when(redisService.getObject(eq(cacheKey), eq(PageableObject.class))).thenReturn(mockData);
 
         // When
         ResponseEntity<?> response = adStaffService.getAllStaffByFilter(request);
@@ -97,7 +119,7 @@ class ADStaffServiceImplTest {
         assertEquals(HttpStatus.OK, response.getStatusCode());
         ApiResponse apiResponse = (ApiResponse) response.getBody();
         assertNotNull(apiResponse);
-        assertEquals("Lấy tất cả giảng viên thành công (cached)", apiResponse.getMessage());
+        assertEquals("Lấy tất cả giảng viên thành công", apiResponse.getMessage());
         assertEquals(mockData, apiResponse.getData());
 
         // Verify repository was not called
@@ -109,7 +131,16 @@ class ADStaffServiceImplTest {
     void testGetAllStaffByFilterFromRepository() {
         // Given
         ADStaffRequest request = new ADStaffRequest();
-        String cacheKey = "staff:list:" + request.toString();
+        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_STAFF + "list_" +
+                "page=" + request.getPage() +
+                "_size=" + request.getSize() +
+                "_orderBy=" + request.getOrderBy() +
+                "_sortBy=" + request.getSortBy() +
+                "_q=" +
+                "_searchQuery=" +
+                "_idFacility=" +
+                "_status=" +
+                "_roleCodeFilter=";
 
         List<ADStaffResponse> staffList = new ArrayList<>();
         ADStaffResponse staff = mock(ADStaffResponse.class);
@@ -185,7 +216,7 @@ class ADStaffServiceImplTest {
         verify(adStaffRoleRepository, times(2)).save(any(Role.class));
         verify(notificationService, times(2)).add(any(NotificationAddRequest.class));
         verify(userActivityLogHelper).saveLog(contains("vừa thêm 1 nhân viên mới"));
-        verify(redisService).deletePattern("staff:list:*");
+        verify(redisInvalidationHelper).invalidateAllCaches();
     }
 
     @Test
@@ -194,9 +225,6 @@ class ADStaffServiceImplTest {
         // Given
         ADCreateUpdateStaffRequest request = mock(ADCreateUpdateStaffRequest.class);
         when(request.getStaffCode()).thenReturn("ST 001"); // Invalid code with space
-        when(request.getName()).thenReturn("Nguyen Van Staff");
-        when(request.getEmailFe()).thenReturn("staff@fe.edu.vn");
-        when(request.getEmailFpt()).thenReturn("staff@fpt.edu.vn");
 
         // When
         ResponseEntity<?> response = adStaffService.createStaff(request);
@@ -209,6 +237,7 @@ class ADStaffServiceImplTest {
 
         // Verify repository was not called
         verify(adStaffRepository, never()).save(any(UserStaff.class));
+        verify(redisInvalidationHelper, never()).invalidateAllCaches();
     }
 
     @Test
@@ -218,8 +247,6 @@ class ADStaffServiceImplTest {
         ADCreateUpdateStaffRequest request = mock(ADCreateUpdateStaffRequest.class);
         when(request.getStaffCode()).thenReturn("ST001");
         when(request.getName()).thenReturn("Staff123"); // Invalid name with numbers
-        when(request.getEmailFe()).thenReturn("staff@fe.edu.vn");
-        when(request.getEmailFpt()).thenReturn("staff@fpt.edu.vn");
 
         // When
         ResponseEntity<?> response = adStaffService.createStaff(request);
@@ -232,6 +259,7 @@ class ADStaffServiceImplTest {
 
         // Verify repository was not called
         verify(adStaffRepository, never()).save(any(UserStaff.class));
+        verify(redisInvalidationHelper, never()).invalidateAllCaches();
     }
 
     @Test
@@ -242,7 +270,6 @@ class ADStaffServiceImplTest {
         when(request.getStaffCode()).thenReturn("ST001");
         when(request.getName()).thenReturn("Nguyen Van Staff");
         when(request.getEmailFe()).thenReturn("staff@gmail.com"); // Invalid FE email
-        when(request.getEmailFpt()).thenReturn("staff@fpt.edu.vn");
 
         // When
         ResponseEntity<?> response = adStaffService.createStaff(request);
@@ -255,6 +282,7 @@ class ADStaffServiceImplTest {
 
         // Verify repository was not called
         verify(adStaffRepository, never()).save(any(UserStaff.class));
+        verify(redisInvalidationHelper, never()).invalidateAllCaches();
     }
 
     @Test
@@ -262,10 +290,11 @@ class ADStaffServiceImplTest {
     void testGetStaffByIdFromCache() {
         // Given
         String staffId = "staff-1";
-        String cacheKey = "staff:detail:" + staffId;
+        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_STAFF + "detail_" + staffId;
         ADStaffDetailResponse cachedStaff = mock(ADStaffDetailResponse.class);
 
         when(redisService.get(cacheKey)).thenReturn(cachedStaff);
+        when(redisService.getObject(eq(cacheKey), eq(ADStaffDetailResponse.class))).thenReturn(cachedStaff);
 
         // When
         ResponseEntity<?> response = adStaffService.getStaffById(staffId);
@@ -274,7 +303,7 @@ class ADStaffServiceImplTest {
         assertEquals(HttpStatus.OK, response.getStatusCode());
         ApiResponse apiResponse = (ApiResponse) response.getBody();
         assertNotNull(apiResponse);
-        assertEquals("Xem chi tiết giảng viên thành công (cached)", apiResponse.getMessage());
+        assertEquals("Xem chi tiết giảng viên thành công", apiResponse.getMessage());
         assertEquals(cachedStaff, apiResponse.getData());
 
         // Verify repository was not called
@@ -286,7 +315,7 @@ class ADStaffServiceImplTest {
     void testGetStaffByIdFromRepository() {
         // Given
         String staffId = "staff-1";
-        String cacheKey = "staff:detail:" + staffId;
+        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_STAFF + "detail_" + staffId;
 
         ADStaffDetailResponse staffDetail = mock(ADStaffDetailResponse.class);
 
@@ -312,7 +341,7 @@ class ADStaffServiceImplTest {
     void testGetStaffByIdNotFound() {
         // Given
         String staffId = "non-existent-id";
-        String cacheKey = "staff:detail:" + staffId;
+        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_STAFF + "detail_" + staffId;
 
         when(redisService.get(cacheKey)).thenReturn(null);
         when(adStaffRepository.getDetailStaff(staffId)).thenReturn(Optional.empty());
@@ -367,8 +396,7 @@ class ADStaffServiceImplTest {
         verify(adStaffRepository).save(staff);
         verify(adStaffRoleRepository).saveAll(anyList());
         verify(userActivityLogHelper).saveLog(contains("vừa thay đổi trạng thái nhân viên"));
-        verify(redisService).delete("staff:detail:" + staffId);
-        verify(redisService).deletePattern("staff:list:*");
+        verify(redisInvalidationHelper).invalidateAllCaches();
     }
 
     @Test
@@ -390,16 +418,18 @@ class ADStaffServiceImplTest {
 
         // Verify repository was not called to save
         verify(adStaffRepository, never()).save(any(UserStaff.class));
+        verify(redisInvalidationHelper, never()).invalidateAllCaches();
     }
 
     @Test
     @DisplayName("Test getAllRole should return roles from cache if available")
     void testGetAllRoleFromCache() {
         // Given
-        String cacheKey = "staff:roles:all";
+        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_STAFF + "roles";
         List<Role> cachedRoles = new ArrayList<>();
 
         when(redisService.get(cacheKey)).thenReturn(cachedRoles);
+        when(redisService.getObject(eq(cacheKey), eq(List.class))).thenReturn(cachedRoles);
 
         // When
         ResponseEntity<?> response = adStaffService.getAllRole();
@@ -408,7 +438,7 @@ class ADStaffServiceImplTest {
         assertEquals(HttpStatus.OK, response.getStatusCode());
         ApiResponse apiResponse = (ApiResponse) response.getBody();
         assertNotNull(apiResponse);
-        assertEquals("Lấy tất cả vai trò thành công (cached)", apiResponse.getMessage());
+        assertEquals("Lấy tất cả vai trò thành công", apiResponse.getMessage());
         assertEquals(cachedRoles, apiResponse.getData());
 
         // Verify repository was not called
@@ -419,7 +449,7 @@ class ADStaffServiceImplTest {
     @DisplayName("Test getAllRole should fetch and cache data if not in cache")
     void testGetAllRoleFromRepository() {
         // Given
-        String cacheKey = "staff:roles:all";
+        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_STAFF + "roles";
         List<Role> roles = new ArrayList<>();
         Role role = new Role();
         role.setId("role-1");
@@ -448,10 +478,11 @@ class ADStaffServiceImplTest {
     @DisplayName("Test getAllFacility should return facilities from cache if available")
     void testGetAllFacilityFromCache() {
         // Given
-        String cacheKey = "staff:facilities:active";
+        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_STAFF + "facilities";
         List<Facility> cachedFacilities = new ArrayList<>();
 
         when(redisService.get(cacheKey)).thenReturn(cachedFacilities);
+        when(redisService.getObject(eq(cacheKey), eq(List.class))).thenReturn(cachedFacilities);
 
         // When
         ResponseEntity<?> response = adStaffService.getAllFacility();
@@ -460,7 +491,7 @@ class ADStaffServiceImplTest {
         assertEquals(HttpStatus.OK, response.getStatusCode());
         ApiResponse apiResponse = (ApiResponse) response.getBody();
         assertNotNull(apiResponse);
-        assertEquals("Lấy tất cả cơ sở thành công (cached)", apiResponse.getMessage());
+        assertEquals("Lấy tất cả cơ sở thành công", apiResponse.getMessage());
         assertEquals(cachedFacilities, apiResponse.getData());
 
         // Verify repository was not called
@@ -471,7 +502,7 @@ class ADStaffServiceImplTest {
     @DisplayName("Test getAllFacility should fetch and cache data if not in cache")
     void testGetAllFacilityFromRepository() {
         // Given
-        String cacheKey = "staff:facilities:active";
+        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_STAFF + "facilities";
         List<Facility> facilities = new ArrayList<>();
         Facility facility = new Facility();
         facility.setId("facility-1");

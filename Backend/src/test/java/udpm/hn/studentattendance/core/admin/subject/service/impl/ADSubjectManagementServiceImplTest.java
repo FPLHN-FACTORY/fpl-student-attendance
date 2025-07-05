@@ -19,11 +19,13 @@ import udpm.hn.studentattendance.core.admin.subject.model.request.ADSubjectUpdat
 import udpm.hn.studentattendance.core.admin.subject.model.response.ADSubjectResponse;
 import udpm.hn.studentattendance.core.admin.subject.repository.ADSubjectExtendRepository;
 import udpm.hn.studentattendance.entities.Subject;
+import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
 import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
 import udpm.hn.studentattendance.infrastructure.common.ApiResponse;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.common.repositories.CommonUserStudentRepository;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
+import udpm.hn.studentattendance.infrastructure.constants.RedisPrefixConstant;
 import udpm.hn.studentattendance.infrastructure.redis.service.RedisService;
 
 import java.util.ArrayList;
@@ -49,6 +51,9 @@ class ADSubjectManagementServiceImplTest {
     @Mock
     private RedisService redisService;
 
+    @Mock
+    private RedisInvalidationHelper redisInvalidationHelper;
+
     @InjectMocks
     private ADSubjectManagementServiceImpl subjectService;
 
@@ -62,10 +67,18 @@ class ADSubjectManagementServiceImplTest {
     void testGetListSubjectFromCache() {
         // Given
         ADSubjectSearchRequest request = new ADSubjectSearchRequest();
-        String cacheKey = "admin:subject:list:" + request.toString();
+        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_SUBJECT + "list_" +
+                "page=" + request.getPage() +
+                "_size=" + request.getSize() +
+                "_orderBy=" + request.getOrderBy() +
+                "_sortBy=" + request.getSortBy() +
+                "_q=" +
+                "_name=" +
+                "_status=";
         PageableObject mockData = mock(PageableObject.class);
 
         when(redisService.get(cacheKey)).thenReturn(mockData);
+        when(redisService.getObject(cacheKey, PageableObject.class)).thenReturn(mockData);
 
         // When
         ResponseEntity<?> response = subjectService.getListSubject(request);
@@ -74,7 +87,7 @@ class ADSubjectManagementServiceImplTest {
         assertEquals(HttpStatus.OK, response.getStatusCode());
         ApiResponse apiResponse = (ApiResponse) response.getBody();
         assertNotNull(apiResponse);
-        assertEquals("Lấy danh sách bộ môn thành công (cached)", apiResponse.getMessage());
+        assertEquals("Lấy danh sách bộ môn thành công", apiResponse.getMessage());
         assertEquals(mockData, apiResponse.getData());
 
         // Verify repository was not called
@@ -86,7 +99,14 @@ class ADSubjectManagementServiceImplTest {
     void testGetListSubjectFromRepository() {
         // Given
         ADSubjectSearchRequest request = new ADSubjectSearchRequest();
-        String cacheKey = "admin:subject:list:" + request.toString();
+        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_SUBJECT + "list_" +
+                "page=" + request.getPage() +
+                "_size=" + request.getSize() +
+                "_orderBy=" + request.getOrderBy() +
+                "_sortBy=" + request.getSortBy() +
+                "_q=" +
+                "_name=" +
+                "_status=";
 
         List<ADSubjectResponse> subjects = new ArrayList<>();
         ADSubjectResponse subject = mock(ADSubjectResponse.class);
@@ -107,7 +127,7 @@ class ADSubjectManagementServiceImplTest {
 
         // Verify repository was called and cache was updated
         verify(adminSubjectRepository).getAll(any(Pageable.class), eq(request));
-        verify(redisService).set(eq(cacheKey), any(PageableObject.class), eq(3600L * 2));
+        verify(redisService).set(eq(cacheKey), any(PageableObject.class), eq(3600L));
     }
 
     @Test
@@ -142,7 +162,7 @@ class ADSubjectManagementServiceImplTest {
         // Verify repository was called
         verify(adminSubjectRepository).save(any(Subject.class));
         verify(userActivityLogHelper).saveLog(contains("vừa thêm 1 bộ môn mới"));
-        verify(redisService).deletePattern("admin:subject:list:*");
+        verify(redisInvalidationHelper).invalidateAllCaches();
     }
 
     @Test
@@ -150,7 +170,7 @@ class ADSubjectManagementServiceImplTest {
     void testCreateSubjectInvalidCode() {
         // Given
         ADSubjectCreateRequest request = mock(ADSubjectCreateRequest.class);
-        when(request.getName()).thenReturn("Java Programming");
+        // Only stub the code since that's what's being validated first
         when(request.getCode()).thenReturn("JAVA@123"); // Invalid code with special character
 
         // When
@@ -164,6 +184,7 @@ class ADSubjectManagementServiceImplTest {
 
         // Verify repository was not called
         verify(adminSubjectRepository, never()).save(any(Subject.class));
+        verify(redisInvalidationHelper, never()).invalidateAllCaches();
     }
 
     @Test
@@ -187,6 +208,7 @@ class ADSubjectManagementServiceImplTest {
 
         // Verify repository was not called to save
         verify(adminSubjectRepository, never()).save(any(Subject.class));
+        verify(redisInvalidationHelper, never()).invalidateAllCaches();
     }
 
     @Test
@@ -211,6 +233,7 @@ class ADSubjectManagementServiceImplTest {
 
         // Verify repository was not called to save
         verify(adminSubjectRepository, never()).save(any(Subject.class));
+        verify(redisInvalidationHelper, never()).invalidateAllCaches();
     }
 
     @Test
@@ -249,8 +272,7 @@ class ADSubjectManagementServiceImplTest {
         // Verify repository was called
         verify(adminSubjectRepository).save(existingSubject);
         verify(userActivityLogHelper).saveLog(contains("vừa cập nhật 1 bộ môn"));
-        verify(redisService).delete("admin:subject:detail:" + subjectId);
-        verify(redisService).deletePattern("admin:subject:list:*");
+        verify(redisInvalidationHelper).invalidateAllCaches();
     }
 
     @Test
@@ -259,8 +281,6 @@ class ADSubjectManagementServiceImplTest {
         // Given
         String subjectId = "non-existent-id";
         ADSubjectUpdateRequest request = mock(ADSubjectUpdateRequest.class);
-        when(request.getName()).thenReturn("Java Programming Updated");
-        when(request.getCode()).thenReturn("JAVA_UPDATED");
 
         when(adminSubjectRepository.findById(subjectId)).thenReturn(Optional.empty());
 
@@ -275,6 +295,7 @@ class ADSubjectManagementServiceImplTest {
 
         // Verify repository was not called to save
         verify(adminSubjectRepository, never()).save(any(Subject.class));
+        verify(redisInvalidationHelper, never()).invalidateAllCaches();
     }
 
     @Test
@@ -282,11 +303,12 @@ class ADSubjectManagementServiceImplTest {
     void testDetailSubjectFromCache() {
         // Given
         String subjectId = "subject-1";
-        String cacheKey = "admin:subject:detail:" + subjectId;
+        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_SUBJECT + subjectId;
         Subject cachedSubject = new Subject();
         cachedSubject.setId(subjectId);
 
         when(redisService.get(cacheKey)).thenReturn(cachedSubject);
+        when(redisService.getObject(cacheKey, Subject.class)).thenReturn(cachedSubject);
 
         // When
         ResponseEntity<?> response = subjectService.detailSubject(subjectId);
@@ -295,7 +317,7 @@ class ADSubjectManagementServiceImplTest {
         assertEquals(HttpStatus.OK, response.getStatusCode());
         ApiResponse apiResponse = (ApiResponse) response.getBody();
         assertNotNull(apiResponse);
-        assertEquals("Lấy thông tin bộ môn thành công (cached)", apiResponse.getMessage());
+        assertEquals("Lấy thông tin bộ môn thành công", apiResponse.getMessage());
         assertEquals(cachedSubject, apiResponse.getData());
 
         // Verify repository was not called
@@ -307,7 +329,7 @@ class ADSubjectManagementServiceImplTest {
     void testDetailSubjectFromRepository() {
         // Given
         String subjectId = "subject-1";
-        String cacheKey = "admin:subject:detail:" + subjectId;
+        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_SUBJECT + subjectId;
 
         Subject subject = new Subject();
         subject.setId(subjectId);
@@ -330,7 +352,7 @@ class ADSubjectManagementServiceImplTest {
 
         // Verify repository was called and cache was updated
         verify(adminSubjectRepository).findById(subjectId);
-        verify(redisService).set(eq(cacheKey), eq(subject), eq(3600L * 3));
+        verify(redisService).set(eq(cacheKey), eq(subject), eq(3600L));
     }
 
     @Test
@@ -338,7 +360,7 @@ class ADSubjectManagementServiceImplTest {
     void testDetailSubjectNotFound() {
         // Given
         String subjectId = "non-existent-id";
-        String cacheKey = "admin:subject:detail:" + subjectId;
+        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_SUBJECT + subjectId;
 
         when(redisService.get(cacheKey)).thenReturn(null);
         when(adminSubjectRepository.findById(subjectId)).thenReturn(Optional.empty());
@@ -383,8 +405,7 @@ class ADSubjectManagementServiceImplTest {
         // Verify repository was called
         verify(adminSubjectRepository).save(subject);
         verify(userActivityLogHelper).saveLog(contains("vừa thay đổi trạng thái 1 bộ môn"));
-        verify(redisService).delete("admin:subject:detail:" + subjectId);
-        verify(redisService).deletePattern("admin:subject:list:*");
+        verify(redisInvalidationHelper).invalidateAllCaches();
     }
 
     @Test
@@ -413,6 +434,7 @@ class ADSubjectManagementServiceImplTest {
 
         // Verify disableAllStudentDuplicateShiftByIdSubject was called
         verify(commonUserStudentRepository).disableAllStudentDuplicateShiftByIdSubject(subjectId);
+        verify(redisInvalidationHelper).invalidateAllCaches();
     }
 
     @Test
@@ -434,5 +456,6 @@ class ADSubjectManagementServiceImplTest {
 
         // Verify repository was not called to save
         verify(adminSubjectRepository, never()).save(any(Subject.class));
+        verify(redisInvalidationHelper, never()).invalidateAllCaches();
     }
 }

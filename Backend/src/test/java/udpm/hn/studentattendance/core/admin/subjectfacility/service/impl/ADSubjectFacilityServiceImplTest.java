@@ -1,5 +1,6 @@
 package udpm.hn.studentattendance.core.admin.subjectfacility.service.impl;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -11,6 +12,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.test.util.ReflectionTestUtils;
 import udpm.hn.studentattendance.core.admin.subjectfacility.model.request.ADSubjectFacilityCreateRequest;
 import udpm.hn.studentattendance.core.admin.subjectfacility.model.request.ADSubjectFacilitySearchRequest;
 import udpm.hn.studentattendance.core.admin.subjectfacility.model.request.ADSubjectFacilityUpdateRequest;
@@ -21,11 +23,14 @@ import udpm.hn.studentattendance.core.admin.subjectfacility.repository.ADSubject
 import udpm.hn.studentattendance.entities.Facility;
 import udpm.hn.studentattendance.entities.Subject;
 import udpm.hn.studentattendance.entities.SubjectFacility;
+import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
 import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
 import udpm.hn.studentattendance.infrastructure.common.ApiResponse;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.common.repositories.CommonUserStudentRepository;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
+import udpm.hn.studentattendance.infrastructure.constants.RedisPrefixConstant;
+import udpm.hn.studentattendance.infrastructure.redis.service.RedisService;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -53,20 +58,42 @@ class ADSubjectFacilityServiceImplTest {
     @Mock
     private UserActivityLogHelper userActivityLogHelper;
 
+    @Mock
+    private RedisService redisService;
+
+    @Mock
+    private RedisInvalidationHelper redisInvalidationHelper;
+
     @InjectMocks
     private ADSubjectFacilityServiceImpl subjectFacilityService;
+
+    @BeforeEach
+    void setUp() {
+        ReflectionTestUtils.setField(subjectFacilityService, "redisTTL", 3600L);
+    }
 
     @Test
     @DisplayName("Test getListSubjectFacility should return data successfully")
     void testGetListSubjectFacility() {
         // Given
         ADSubjectFacilitySearchRequest request = new ADSubjectFacilitySearchRequest();
+        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_SUBJECT_FACILITY + "list_" +
+                "page=" + request.getPage() +
+                "_size=" + request.getSize() +
+                "_orderBy=" + request.getOrderBy() +
+                "_sortBy=" + request.getSortBy() +
+                "_q=" +
+                "_name=" +
+                "_facilityId=" +
+                "_subjectId=" +
+                "_status=";
 
         List<ADSubjectFacilityResponse> subjectFacilities = new ArrayList<>();
         ADSubjectFacilityResponse response = mock(ADSubjectFacilityResponse.class);
         subjectFacilities.add(response);
         Page<ADSubjectFacilityResponse> page = new PageImpl<>(subjectFacilities);
 
+        when(redisService.get(cacheKey)).thenReturn(null);
         when(repository.getAll(any(Pageable.class), eq(request))).thenReturn(page);
 
         // When
@@ -78,8 +105,9 @@ class ADSubjectFacilityServiceImplTest {
         assertNotNull(apiResponse);
         assertEquals("Lây danh sách bộ môn cơ sở thành công", apiResponse.getMessage());
 
-        // Verify repository was called
+        // Verify repository was called and cache was updated
         verify(repository).getAll(any(Pageable.class), eq(request));
+        verify(redisService).set(eq(cacheKey), any(PageableObject.class), eq(3600L));
     }
 
     @Test
@@ -125,6 +153,7 @@ class ADSubjectFacilityServiceImplTest {
         // Verify repository was called
         verify(repository).save(any(SubjectFacility.class));
         verify(userActivityLogHelper).saveLog(contains("vừa thêm mới bộ môn cơ sở"));
+        verify(redisInvalidationHelper).invalidateAllCaches();
     }
 
     @Test
@@ -148,6 +177,7 @@ class ADSubjectFacilityServiceImplTest {
 
         // Verify repository was not called
         verify(repository, never()).save(any(SubjectFacility.class));
+        verify(redisInvalidationHelper, never()).invalidateAllCaches();
     }
 
     @Test
@@ -177,6 +207,7 @@ class ADSubjectFacilityServiceImplTest {
 
         // Verify repository was not called
         verify(repository, never()).save(any(SubjectFacility.class));
+        verify(redisInvalidationHelper, never()).invalidateAllCaches();
     }
 
     @Test
@@ -212,6 +243,7 @@ class ADSubjectFacilityServiceImplTest {
 
         // Verify repository was not called
         verify(repository, never()).save(any(SubjectFacility.class));
+        verify(redisInvalidationHelper, never()).invalidateAllCaches();
     }
 
     @Test
@@ -273,6 +305,7 @@ class ADSubjectFacilityServiceImplTest {
         // Verify repository was called
         verify(repository).save(any(SubjectFacility.class));
         verify(userActivityLogHelper).saveLog(contains("vừa cập nhật bộ môn cơ sở"));
+        verify(redisInvalidationHelper).invalidateAllCaches();
     }
 
     @Test
@@ -280,8 +313,10 @@ class ADSubjectFacilityServiceImplTest {
     void testDetailSubjectFacilitySuccess() {
         // Given
         String id = "subject-facility-1";
+        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_SUBJECT_FACILITY + id;
         ADSubjectFacilityResponse response = mock(ADSubjectFacilityResponse.class);
 
+        when(redisService.get(cacheKey)).thenReturn(null);
         when(repository.getOneById(id)).thenReturn(Optional.of(response));
 
         // When
@@ -293,6 +328,9 @@ class ADSubjectFacilityServiceImplTest {
         assertNotNull(apiResponse);
         assertEquals("Lấy thông tin bộ môn cơ sở thành công", apiResponse.getMessage());
         assertEquals(response, apiResponse.getData());
+
+        // Verify cache was updated
+        verify(redisService).set(eq(cacheKey), eq(response), eq(3600L));
     }
 
     @Test
@@ -300,7 +338,9 @@ class ADSubjectFacilityServiceImplTest {
     void testDetailSubjectFacilityNotFound() {
         // Given
         String id = "non-existent-id";
+        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_SUBJECT_FACILITY + id;
 
+        when(redisService.get(cacheKey)).thenReturn(null);
         when(repository.getOneById(id)).thenReturn(Optional.empty());
 
         // When
@@ -351,6 +391,7 @@ class ADSubjectFacilityServiceImplTest {
         // Verify repository was called
         verify(repository).save(subjectFacility);
         verify(userActivityLogHelper).saveLog(contains("vừa thay đổi trạng thái bộ môn cơ sở"));
+        verify(redisInvalidationHelper).invalidateAllCaches();
     }
 
     @Test
@@ -387,6 +428,7 @@ class ADSubjectFacilityServiceImplTest {
 
         // Verify disableAllStudentDuplicateShiftByIdSubjectFacility was called
         verify(commonUserStudentRepository).disableAllStudentDuplicateShiftByIdSubjectFacility(id);
+        verify(redisInvalidationHelper).invalidateAllCaches();
     }
 
     @Test
@@ -408,5 +450,6 @@ class ADSubjectFacilityServiceImplTest {
 
         // Verify repository was not called to save
         verify(repository, never()).save(any(SubjectFacility.class));
+        verify(redisInvalidationHelper, never()).invalidateAllCaches();
     }
 }

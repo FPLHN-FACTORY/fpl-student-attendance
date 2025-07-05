@@ -7,7 +7,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -23,28 +26,23 @@ import udpm.hn.studentattendance.core.student.attendance.repositories.SAFacility
 import udpm.hn.studentattendance.core.student.attendance.repositories.SAFacilityLocationRepository;
 import udpm.hn.studentattendance.core.student.attendance.repositories.SAPlanDateRepository;
 import udpm.hn.studentattendance.core.student.attendance.repositories.SAUserStudentFactoryRepository;
-import udpm.hn.studentattendance.entities.Attendance;
 import udpm.hn.studentattendance.entities.Facility;
-import udpm.hn.studentattendance.entities.FacilityLocation;
 import udpm.hn.studentattendance.entities.Factory;
-import udpm.hn.studentattendance.entities.Plan;
 import udpm.hn.studentattendance.entities.PlanDate;
 import udpm.hn.studentattendance.entities.PlanFactory;
 import udpm.hn.studentattendance.entities.Project;
 import udpm.hn.studentattendance.entities.SubjectFacility;
 import udpm.hn.studentattendance.entities.UserStudent;
 import udpm.hn.studentattendance.entities.UserStudentFactory;
+import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
 import udpm.hn.studentattendance.helpers.SessionHelper;
 import udpm.hn.studentattendance.infrastructure.common.ApiResponse;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
-import udpm.hn.studentattendance.infrastructure.constants.AttendanceStatus;
 import udpm.hn.studentattendance.infrastructure.constants.RestApiStatus;
 import udpm.hn.studentattendance.infrastructure.constants.ShiftType;
 import udpm.hn.studentattendance.infrastructure.constants.StatusType;
+import udpm.hn.studentattendance.infrastructure.redis.service.RedisService;
 import udpm.hn.studentattendance.utils.AppUtils;
-import udpm.hn.studentattendance.utils.DateTimeUtils;
-import udpm.hn.studentattendance.utils.FaceRecognitionUtils;
-import udpm.hn.studentattendance.utils.GeoUtils;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -57,6 +55,7 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class SAAttendanceServiceImplTest {
 
     @Mock
@@ -83,6 +82,12 @@ class SAAttendanceServiceImplTest {
     @Mock
     private SimpMessagingTemplate messagingTemplate;
 
+    @Mock
+    private RedisService redisService;
+
+    @Mock
+    private RedisInvalidationHelper redisInvalidationHelper;
+
     @InjectMocks
     private SAAttendanceServiceImpl attendanceService;
 
@@ -90,9 +95,6 @@ class SAAttendanceServiceImplTest {
     void setUp() {
         ReflectionTestUtils.setField(attendanceService, "EARLY_CHECKIN", 15);
         ReflectionTestUtils.setField(attendanceService, "threshold_checkin", 0.7);
-
-        // We can't directly mock static methods without additional libraries
-        // In a real test, you would use PowerMockito or a similar library
     }
 
     @Test
@@ -235,34 +237,21 @@ class SAAttendanceServiceImplTest {
         when(planDateRepository.findById(planDateId)).thenReturn(Optional.of(planDate));
         when(userStudentFactoryRepository.findByUserStudent_IdAndFactory_Id(userId, factoryId))
                 .thenReturn(Optional.of(userStudentFactory));
-
-        // Mock AppUtils static method
-        mockStatic(AppUtils.class, clientIp);
-
         when(facilityIPRepository.getAllIP(facilityId)).thenReturn(allowedIps);
+        when(httpServletRequest.getRemoteAddr()).thenReturn(clientIp);
 
-        // When
-        ResponseEntity<?> response = attendanceService.checkin(request);
+        try (MockedStatic<AppUtils> appUtilsMock = mockStatic(AppUtils.class)) {
+            appUtilsMock.when(() -> AppUtils.getClientIP(any())).thenReturn(clientIp);
 
-        // Then
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        ApiResponse apiResponse = (ApiResponse) response.getBody();
-        assertNotNull(apiResponse);
-        assertEquals(RestApiStatus.ERROR, apiResponse.getStatus());
-        assertEquals("Vui lòng kết nối bằng mạng trường để tiếp tục checkin/checkout", apiResponse.getMessage());
-    }
+            // When
+            ResponseEntity<?> response = attendanceService.checkin(request);
 
-    // Helper method to mock static methods
-    private void mockStatic(Class<?> clazz, String clientIp) {
-        try {
-            // This is a dummy implementation since we can't mock static methods directly
-            // In a real test, you would use PowerMockito or similar
-            if (clazz == AppUtils.class) {
-                // Simulate AppUtils.getClientIP behavior
-                when(AppUtils.getClientIP(any())).thenReturn(clientIp);
-            }
-        } catch (Exception e) {
-            // We can't mock static methods without additional libraries
+            // Then
+            assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+            ApiResponse apiResponse = (ApiResponse) response.getBody();
+            assertNotNull(apiResponse);
+            assertEquals(RestApiStatus.ERROR, apiResponse.getStatus());
+            assertEquals("Vui lòng kết nối bằng mạng trường để tiếp tục checkin/checkout", apiResponse.getMessage());
         }
     }
 

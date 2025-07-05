@@ -8,6 +8,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -35,8 +37,10 @@ import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.RoleConstant;
 import udpm.hn.studentattendance.infrastructure.constants.SessionConstant;
 import udpm.hn.studentattendance.infrastructure.constants.RestApiStatus;
+import udpm.hn.studentattendance.utils.FaceRecognitionUtils;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -211,54 +215,77 @@ class AuthenticationServiceImplTest {
     @Test
     @DisplayName("Test studentRegister should successfully register a student")
     void testStudentRegisterSuccessfully() {
-        // Given
-        String studentId = "student-123";
-        String facilityId = "facility-123";
-        String email = "student@example.com";
+        try (MockedStatic<FaceRecognitionUtils> faceRecognitionUtilsMocked = Mockito
+                .mockStatic(FaceRecognitionUtils.class)) {
+            // Given
+            String studentId = "student-123";
+            String facilityId = "facility-123";
+            String email = "student@example.com";
+            String faceEmbeddingStr = "[0.1, 0.2, 0.3]";
 
-        UserStudent student = new UserStudent();
-        student.setId(studentId);
-        student.setEmail(email);
+            double[] faceEmbedding = new double[] { 0.1, 0.2, 0.3 };
+            List<double[]> faceEmbeddings = List.of(faceEmbedding);
 
-        Facility facility = new Facility();
-        facility.setId(facilityId);
-        facility.setName("FPT HCM");
+            UserStudent student = new UserStudent();
+            student.setId(studentId);
+            student.setEmail(email);
 
-        AuthenticationStudentRegisterRequest request = new AuthenticationStudentRegisterRequest();
-        request.setIdFacility(facilityId);
-        request.setCode("SE12345");
-        request.setName("Student Name");
-        request.setFaceEmbedding("[0.1, 0.2, 0.3]"); // Simplified embedding
+            Facility facility = new Facility();
+            facility.setId(facilityId);
+            facility.setName("FPT HCM");
 
-        AuthUser authUser = new AuthUser();
-        authUser.setId(studentId);
-        authUser.setEmail(email);
+            AuthenticationStudentRegisterRequest request = new AuthenticationStudentRegisterRequest();
+            request.setIdFacility(facilityId);
+            request.setCode("SE12345");
+            request.setName("Student Name");
+            request.setFaceEmbedding(faceEmbeddingStr);
 
-        when(sessionHelper.getUserId()).thenReturn(studentId);
-        when(authenticationUserStudentRepository.findById(studentId)).thenReturn(Optional.of(student));
-        when(authenticationFacilityRepository.findById(facilityId)).thenReturn(Optional.of(facility));
-        when(authenticationUserStudentRepository.isExistsCode(request.getCode(), studentId, facilityId))
-                .thenReturn(false);
-        when(authenticationUserStudentRepository.getAllFaceEmbedding(facilityId)).thenReturn(new ArrayList<>());
-        when(sessionHelper.buildAuthUser(any(UserStudent.class), anySet(), anyString())).thenReturn(authUser);
-        when(jwtUtil.generateToken(anyString(), any(AuthUser.class))).thenReturn("access-token");
-        when(jwtUtil.generateRefreshToken(anyString())).thenReturn("refresh-token");
+            AuthUser authUser = new AuthUser();
+            authUser.setId(studentId);
+            authUser.setEmail(email);
 
-        // When
-        ResponseEntity<?> response = authenticationService.studentRegister(request);
+            // Mock face recognition utils
+            faceRecognitionUtilsMocked.when(() -> FaceRecognitionUtils.parseEmbeddings(faceEmbeddingStr))
+                    .thenReturn(faceEmbeddings);
+            faceRecognitionUtilsMocked
+                    .when(() -> FaceRecognitionUtils.isSameFaceAndResult(anyList(), any(double[].class), anyDouble()))
+                    .thenReturn(null);
+            faceRecognitionUtilsMocked
+                    .when(() -> FaceRecognitionUtils.isSameFace(any(double[].class), any(double[].class), anyDouble()))
+                    .thenReturn(false);
 
-        // Then
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        ApiResponse apiResponse = (ApiResponse) response.getBody();
-        assertNotNull(apiResponse);
-        assertEquals(RestApiStatus.SUCCESS, apiResponse.getStatus());
-        assertEquals("Đăng ký thông tin sinh viên thành công", apiResponse.getMessage());
+            // Mock repository methods
+            when(sessionHelper.getUserId()).thenReturn(studentId);
+            when(authenticationUserStudentRepository.findById(studentId)).thenReturn(Optional.of(student));
+            when(authenticationFacilityRepository.findById(facilityId)).thenReturn(Optional.of(facility));
+            when(authenticationUserStudentRepository.isExistsCode(request.getCode(), studentId, facilityId))
+                    .thenReturn(false);
+            when(authenticationUserStudentRepository.getAllFaceEmbedding(facilityId)).thenReturn(new ArrayList<>());
+            when(sessionHelper.buildAuthUser(any(UserStudent.class), anySet(), anyString())).thenReturn(authUser);
+            when(jwtUtil.generateToken(anyString(), any(AuthUser.class))).thenReturn("access-token");
+            when(jwtUtil.generateRefreshToken(anyString())).thenReturn("refresh-token");
+            when(authenticationUserStudentRepository.save(any(UserStudent.class))).thenAnswer(invocation -> {
+                UserStudent savedStudent = invocation.getArgument(0);
+                savedStudent.setId(studentId);
+                return savedStudent;
+            });
 
-        AuthenticationToken token = (AuthenticationToken) apiResponse.getData();
-        assertEquals("access-token", token.getAccessToken());
-        assertEquals("refresh-token", token.getRefreshToken());
+            // When
+            ResponseEntity<?> response = authenticationService.studentRegister(request);
 
-        verify(authenticationUserStudentRepository).save(student);
+            // Then
+            assertEquals(HttpStatus.OK, response.getStatusCode());
+            ApiResponse apiResponse = (ApiResponse) response.getBody();
+            assertNotNull(apiResponse);
+            assertEquals(RestApiStatus.SUCCESS, apiResponse.getStatus());
+            assertEquals("Đăng ký thông tin sinh viên thành công", apiResponse.getMessage());
+
+            AuthenticationToken token = (AuthenticationToken) apiResponse.getData();
+            assertEquals("access-token", token.getAccessToken());
+            assertEquals("refresh-token", token.getRefreshToken());
+
+            verify(authenticationUserStudentRepository).save(student);
+        }
     }
 
     @Test
@@ -297,34 +324,59 @@ class AuthenticationServiceImplTest {
     @Test
     @DisplayName("Test studentUpdateFaceID should update student's face ID")
     void testStudentUpdateFaceID() {
-        // Given
-        String studentId = "student-123";
-        String facilityId = "facility-123";
+        try (MockedStatic<FaceRecognitionUtils> faceRecognitionUtilsMocked = Mockito
+                .mockStatic(FaceRecognitionUtils.class)) {
+            // Given
+            String studentId = "student-123";
+            String facilityId = "facility-123";
+            String faceEmbeddingStr = "[0.1, 0.2, 0.3]";
 
-        UserStudent student = new UserStudent();
-        student.setId(studentId);
+            double[] faceEmbedding = new double[] { 0.1, 0.2, 0.3 };
+            List<double[]> faceEmbeddings = List.of(faceEmbedding);
 
-        AuthenticationStudentUpdateFaceIDRequest request = new AuthenticationStudentUpdateFaceIDRequest();
-        request.setFaceEmbedding("[0.1, 0.2, 0.3]"); // Simplified embedding
+            UserStudent student = new UserStudent();
+            student.setId(studentId);
+            // Ensure face embedding is null to pass the hasText check
+            student.setFaceEmbedding(null);
 
-        when(sessionHelper.getUserId()).thenReturn(studentId);
-        when(sessionHelper.getFacilityId()).thenReturn(facilityId);
-        when(authenticationUserStudentRepository.findById(studentId)).thenReturn(Optional.of(student));
-        when(authenticationUserStudentRepository.getAllFaceEmbedding(facilityId)).thenReturn(new ArrayList<>());
-        when(authenticationUserStudentRepository.save(student)).thenReturn(student);
+            AuthenticationStudentUpdateFaceIDRequest request = new AuthenticationStudentUpdateFaceIDRequest();
+            request.setFaceEmbedding(faceEmbeddingStr);
 
-        // When
-        ResponseEntity<?> response = authenticationService.studentUpdateFaceID(request);
+            // Mock face recognition utils
+            faceRecognitionUtilsMocked.when(() -> FaceRecognitionUtils.parseEmbeddings(faceEmbeddingStr))
+                    .thenReturn(faceEmbeddings);
+            faceRecognitionUtilsMocked.when(() -> FaceRecognitionUtils.parseEmbedding(anyString()))
+                    .thenReturn(faceEmbedding);
+            faceRecognitionUtilsMocked
+                    .when(() -> FaceRecognitionUtils.isSameFaceAndResult(anyList(), any(double[].class), anyDouble()))
+                    .thenReturn(null);
+            faceRecognitionUtilsMocked
+                    .when(() -> FaceRecognitionUtils.isSameFace(any(double[].class), any(double[].class), anyDouble()))
+                    .thenReturn(false);
 
-        // Then
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        ApiResponse apiResponse = (ApiResponse) response.getBody();
-        assertNotNull(apiResponse);
-        assertEquals(RestApiStatus.SUCCESS, apiResponse.getStatus());
-        assertEquals("Cập nhật khuôn mặt thành công", apiResponse.getMessage());
+            when(sessionHelper.getUserId()).thenReturn(studentId);
+            when(sessionHelper.getFacilityId()).thenReturn(facilityId);
+            when(authenticationUserStudentRepository.findById(studentId)).thenReturn(Optional.of(student));
 
-        verify(notificationService).add(any());
-        verify(authenticationUserStudentRepository).save(student);
+            // Mock getAllFaceEmbedding to return a list with at least one element
+            List<String> faceEmbeddingsStr = List.of("[0.4, 0.5, 0.6]");
+            when(authenticationUserStudentRepository.getAllFaceEmbedding(facilityId)).thenReturn(faceEmbeddingsStr);
+
+            when(authenticationUserStudentRepository.save(student)).thenReturn(student);
+
+            // When
+            ResponseEntity<?> response = authenticationService.studentUpdateFaceID(request);
+
+            // Then
+            assertEquals(HttpStatus.OK, response.getStatusCode());
+            ApiResponse apiResponse = (ApiResponse) response.getBody();
+            assertNotNull(apiResponse);
+            assertEquals(RestApiStatus.SUCCESS, apiResponse.getStatus());
+            assertEquals("Cập nhật khuôn mặt thành công", apiResponse.getMessage());
+
+            verify(notificationService).add(any());
+            verify(authenticationUserStudentRepository).save(student);
+        }
     }
 
     @Test

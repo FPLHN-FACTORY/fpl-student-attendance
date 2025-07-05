@@ -7,6 +7,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -31,11 +33,14 @@ import udpm.hn.studentattendance.core.teacher.statistics.repositories.TSUserStaf
 import udpm.hn.studentattendance.entities.Facility;
 import udpm.hn.studentattendance.entities.Semester;
 import udpm.hn.studentattendance.helpers.MailerHelper;
+import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
 import udpm.hn.studentattendance.helpers.SessionHelper;
 import udpm.hn.studentattendance.infrastructure.common.ApiResponse;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.config.mailer.model.MailerDefaultRequest;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
+import udpm.hn.studentattendance.infrastructure.constants.RestApiStatus;
+import udpm.hn.studentattendance.infrastructure.redis.service.RedisService;
 import udpm.hn.studentattendance.repositories.FacilityRepository;
 
 import java.util.ArrayList;
@@ -50,6 +55,7 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class TSStatisticsServiceImplTest {
 
     @Mock
@@ -79,12 +85,19 @@ class TSStatisticsServiceImplTest {
     @Mock
     private MailerHelper mailerHelper;
 
+    @Mock
+    private RedisService redisService;
+
+    @Mock
+    private RedisInvalidationHelper redisInvalidationHelper;
+
     @InjectMocks
     private TSStatisticsServiceImpl statisticsService;
 
     @BeforeEach
     void setUp() {
         ReflectionTestUtils.setField(statisticsService, "appName", "Student Attendance");
+        ReflectionTestUtils.setField(statisticsService, "redisTTL", 3600L);
     }
 
     @Test
@@ -97,6 +110,7 @@ class TSStatisticsServiceImplTest {
 
         when(sessionHelper.getFacilityId()).thenReturn(facilityId);
         when(sessionHelper.getUserId()).thenReturn(userId);
+        when(redisService.get(anyString())).thenReturn(null);
 
         TSAllStatsResponse mockStats = mock(TSAllStatsResponse.class);
         when(semesterRepository.getAllStats(semesterId, facilityId, userId))
@@ -120,6 +134,7 @@ class TSStatisticsServiceImplTest {
         assertEquals(HttpStatus.OK, response.getStatusCode());
         ApiResponse apiResponse = (ApiResponse) response.getBody();
         assertNotNull(apiResponse);
+        assertEquals(RestApiStatus.SUCCESS, apiResponse.getStatus());
         assertEquals("Lấy dữ liệu thành công", apiResponse.getMessage());
 
         TSAllStatsAndChartDto data = (TSAllStatsAndChartDto) apiResponse.getData();
@@ -143,6 +158,7 @@ class TSStatisticsServiceImplTest {
 
         when(sessionHelper.getFacilityId()).thenReturn(facilityId);
         when(sessionHelper.getUserId()).thenReturn(userId);
+        when(redisService.get(anyString())).thenReturn(null);
 
         when(semesterRepository.getAllStats(semesterId, facilityId, userId))
                 .thenReturn(Optional.empty());
@@ -154,6 +170,7 @@ class TSStatisticsServiceImplTest {
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         ApiResponse apiResponse = (ApiResponse) response.getBody();
         assertNotNull(apiResponse);
+        assertEquals(RestApiStatus.ERROR, apiResponse.getStatus());
         assertEquals("Không thể lấy dữ liệu thống kê", apiResponse.getMessage());
 
         verify(levelProjectRepository, never()).getStats(anyString(), anyString(), anyString());
@@ -182,6 +199,7 @@ class TSStatisticsServiceImplTest {
         assertEquals(HttpStatus.OK, response.getStatusCode());
         ApiResponse apiResponse = (ApiResponse) response.getBody();
         assertNotNull(apiResponse);
+        assertEquals(RestApiStatus.SUCCESS, apiResponse.getStatus());
         assertEquals("Lấy danh sách dữ liệu thành công", apiResponse.getMessage());
 
         assertEquals(facilityId, request.getIdFacility());
@@ -199,6 +217,7 @@ class TSStatisticsServiceImplTest {
 
         when(sessionHelper.getFacilityId()).thenReturn(facilityId);
         when(sessionHelper.getUserEmail()).thenReturn(userEmail);
+        when(redisService.get(anyString())).thenReturn(null);
 
         List<TSUserResponse> adminUsers = Arrays.asList(
                 mock(TSUserResponse.class),
@@ -216,6 +235,7 @@ class TSStatisticsServiceImplTest {
         assertEquals(HttpStatus.OK, response.getStatusCode());
         ApiResponse apiResponse = (ApiResponse) response.getBody();
         assertNotNull(apiResponse);
+        assertEquals(RestApiStatus.SUCCESS, apiResponse.getStatus());
         assertEquals("Lấy dữ liệu thành công", apiResponse.getMessage());
 
         TSListUserDto data = (TSListUserDto) apiResponse.getData();
@@ -281,6 +301,7 @@ class TSStatisticsServiceImplTest {
         assertEquals(HttpStatus.OK, response.getStatusCode());
         ApiResponse apiResponse = (ApiResponse) response.getBody();
         assertNotNull(apiResponse);
+        assertEquals(RestApiStatus.SUCCESS, apiResponse.getStatus());
         assertEquals("Gửi báo cáo thống kê thành công", apiResponse.getMessage());
 
         verify(mailerHelper).send(any(MailerDefaultRequest.class));
@@ -304,6 +325,7 @@ class TSStatisticsServiceImplTest {
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         ApiResponse apiResponse = (ApiResponse) response.getBody();
         assertNotNull(apiResponse);
+        assertEquals(RestApiStatus.ERROR, apiResponse.getStatus());
         assertEquals("Không tìm thấy học kỳ", apiResponse.getMessage());
 
         verify(mailerHelper, never()).send(any(MailerDefaultRequest.class));
@@ -336,6 +358,7 @@ class TSStatisticsServiceImplTest {
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         ApiResponse apiResponse = (ApiResponse) response.getBody();
         assertNotNull(apiResponse);
+        assertEquals(RestApiStatus.ERROR, apiResponse.getStatus());
         assertEquals("Cơ sở không tồn tại hoặc đã ngừng hoạt động", apiResponse.getMessage());
 
         verify(mailerHelper, never()).send(any(MailerDefaultRequest.class));
