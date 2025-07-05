@@ -258,7 +258,7 @@ watch(
       </div>
 
        <!-- Chart Section -->
-      <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12">
+      <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12">
         <a-card :bordered="false" class="dashboard-bar-chart">
           <template #title>
             <div class="d-flex align-items-center">
@@ -276,7 +276,7 @@ watch(
       </div>
 
       <!-- Line Chart Section -->
-      <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12">
+      <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12">
         <a-card :bordered="false" class="dashboard-bar-line header-solid">
           <template #title>
             <div class="d-flex align-items-center">
