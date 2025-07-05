@@ -1,7 +1,6 @@
 <script setup>
 import {
   ATTENDANCE_STATUS,
-  DEFAULT_EARLY_MINUTE_CHECKIN,
   DEFAULT_PAGINATION,
   STATUS_REQUIRED_ATTENDANCE,
   TYPE_SHIFT,
@@ -13,6 +12,7 @@ import requestAPI from '@/services/requestApiService'
 import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
 import { debounce, formatDate, autoAddColumnWidth } from '@/utils/utils'
 import {
+  AimOutlined,
   CheckOutlined,
   ExclamationCircleOutlined,
   FilterFilled,
@@ -25,6 +25,9 @@ import useLoadingStore from '@/stores/useLoadingStore'
 import useFaceIDStore from '@/stores/useFaceIDStore'
 import { ROUTE_NAMES_API } from '@/router/authenticationRoute'
 import useApplicationStore from '@/stores/useApplicationStore'
+import { LMap, LMarker, LTileLayer } from '@vue-leaflet/vue-leaflet'
+
+import 'leaflet/dist/leaflet.css'
 
 const applicationStore = useApplicationStore()
 const faceIDStore = useFaceIDStore()
@@ -34,7 +37,13 @@ const isLoading = ref(false)
 
 const lstData = ref([])
 
+const isShowLocation = ref(false)
 const isShowCamera = ref(false)
+
+const DEFAULT_EARLY_MINUTE_CHECKIN = ref(0)
+
+const mapRef = ref(null)
+const mapCenter = ref([0, 0])
 
 const video = ref(null)
 const canvas = ref(null)
@@ -86,6 +95,17 @@ const dataFilter = reactive({
   status: null,
   type: null,
 })
+
+const fetchDataSettings = () => {
+  requestAPI
+    .get(`${ROUTE_NAMES_API.FETCH_DATA_SETTINGS}`)
+    .then(({ data: response }) => {
+      DEFAULT_EARLY_MINUTE_CHECKIN.value = response.data?.['ATTENDANCE_EARLY_CHECKIN'] || 0
+    })
+    .catch((error) => {
+      message.error(error?.response?.data?.message || 'Không thể tải dữ liệu cài đặt')
+    })
+}
 
 const fetchDataList = () => {
   if (isLoading.value === true) {
@@ -226,6 +246,7 @@ const getCurrentLocation = async () => {
       const { latitude, longitude } = position.coords || {}
       formData.latitude = latitude
       formData.longitude = longitude
+      mapCenter.value = [latitude, longitude]
     },
     () => {
       Modal.confirm({
@@ -242,10 +263,21 @@ const getCurrentLocation = async () => {
   )
 }
 
+const handleShowLocation = async () => {
+  if (!mapCenter.value[0] || !mapCenter.value[1]) {
+    return message.error(
+      'Vui lòng bật quyền truy cập vị trí để có thể xem thông tin vị trí hiện tại',
+    )
+  }
+
+  isShowLocation.value = true
+}
+
 onMounted(async () => {
   breadcrumbStore.setRoutes(breadcrumb.value)
   loadingPage.show()
   fetchDataStudentInfo()
+  fetchDataSettings()
   fetchDataList()
   faceIDStore.loadModels()
   await getCurrentLocation()
@@ -263,6 +295,17 @@ watch(
 </script>
 
 <template>
+  <a-modal v-model:open="isShowLocation" title="Vị trí hiện tại">
+    <div class="row">
+      <div class="col-md-12">
+        <LMap ref="mapRef" style="height: 400px" zoom="15" :center="mapCenter">
+          <LTileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution="" />
+          <LMarker v-if="mapCenter" :lat-lng="mapCenter" />
+        </LMap>
+      </div>
+    </div>
+  </a-modal>
+
   <a-modal
     v-model:open="isShowCamera"
     title="Xác nhận khuôn mặt"
@@ -401,7 +444,11 @@ watch(
       <div class="col-12">
         <a-card :bordered="false" class="cart">
           <template #title> <UnorderedListOutlined /> Danh sách ca học hôm nay</template>
-
+          <template #extra>
+            <a-tooltip title="Vị trí hiện tại">
+              <AimOutlined @click="handleShowLocation" />
+            </a-tooltip>
+          </template>
           <a-table
             rowKey="id"
             class="nowrap mt-2"

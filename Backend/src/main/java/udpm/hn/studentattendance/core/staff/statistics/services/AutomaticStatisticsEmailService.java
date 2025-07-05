@@ -4,6 +4,8 @@ import lombok.RequiredArgsConstructor;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -35,6 +37,8 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class AutomaticStatisticsEmailService {
 
+    private static final Logger logger = LoggerFactory.getLogger(AutomaticStatisticsEmailService.class);
+
     private final SSUserAdminRepository ssUserAdminRepository;
 
     private final SSSemesterRepository ssSemesterRepository;
@@ -51,14 +55,11 @@ public class AutomaticStatisticsEmailService {
     @Value("${app.config.email.statistics.enabled:true}")
     private boolean statisticsEmailEnabled;
 
-
     @Scheduled(cron = "${app.config.cron.statistics-email}")
     public void sendDailyStatisticsEmail() {
         if (!statisticsEmailEnabled) {
-            System.out.println("Daily statistics email is disabled");
             return;
         }
-
 
         Optional<Semester> currentSemester = ssSemesterRepository.findAll().stream()
                 .filter(s -> s.getStatus() == EntityStatus.ACTIVE)
@@ -69,7 +70,7 @@ public class AutomaticStatisticsEmailService {
                 .findFirst();
 
         if (currentSemester.isEmpty()) {
-            System.out.println("No active semester found");
+            logger.info("No active semester found");
             return;
         }
 
@@ -79,16 +80,15 @@ public class AutomaticStatisticsEmailService {
 
         List<String> adminEmails = ssUserAdminRepository.getAllUserAdmin();
         if (adminEmails.isEmpty()) {
-            System.out.println("No admin emails found");
+            logger.info("No admin emails found");
             return;
         }
-        System.out.println(adminEmails);
         List<Facility> facilities = facilityRepository.findAll().stream()
                 .filter(f -> f.getStatus() == EntityStatus.ACTIVE)
                 .toList();
 
         if (facilities.isEmpty()) {
-            System.out.println("No active facilities found");
+            logger.info("No active facilities found");
             return;
         }
 
@@ -97,7 +97,7 @@ public class AutomaticStatisticsEmailService {
                 adminEmails.subList(1, adminEmails.size()).toArray(new String[0]) :
                 new String[0];
 
-        System.out.println("Sending daily statistics for " + facilities.size() + " facilities");
+        logger.info("Sending daily statistics for " + facilities.size() + " facilities");
 
         for (Facility facility : facilities) {
             try {
@@ -108,7 +108,7 @@ public class AutomaticStatisticsEmailService {
                         facility.getId());
 
                 if (file == null || file.length == 0) {
-                    System.out.println("No data found for facility: " + facility.getName());
+                    logger.info("No data found for facility: " + facility.getName());
                     continue;
                 }
 
@@ -140,11 +140,10 @@ public class AutomaticStatisticsEmailService {
                 mailerRequest.setContent(MailerHelper.loadTemplate(MailerHelper.TEMPLATE_STATISTICS_STAFF, dataMail));
 
                 mailerHelper.send(mailerRequest);
-                System.out.println("Sent daily statistics email for facility: " + facility.getName());
+                logger.info("Sent daily statistics email for facility: " + facility.getName());
 
             } catch (Exception e) {
-                System.err.println("Error sending daily statistics email for facility: " + facility.getName());
-                e.printStackTrace();
+                logger.error("Error sending daily statistics email for facility: " + facility.getName());
             }
         }
     }
@@ -153,7 +152,7 @@ public class AutomaticStatisticsEmailService {
         List<Factory> lstFactory = ssFactoryRepository.getAllFactoryBySemester(idSemester, facilityId);
 
         if (lstFactory.isEmpty()) {
-            System.out.println("No factories found for facility: " + facilityId);
+            logger.info("No factories found for facility: " + facilityId);
             return null;
         }
 
@@ -170,7 +169,7 @@ public class AutomaticStatisticsEmailService {
                                 DateTimeUtils.toEndOfDay(endDate));
 
                 if (lstData.isEmpty()) {
-                    System.out.println("No attendance data found for factory: " + factory.getName());
+                    logger.info("No attendance data found for factory: " + factory.getName());
                     continue;
                 }
 
@@ -189,7 +188,7 @@ public class AutomaticStatisticsEmailService {
                                 return LocalDate.parse(datePart,
                                         DateTimeFormatter.ofPattern(DateTimeUtils.DATE_FORMAT.replace('/', '-')));
                             } catch (Exception e) {
-                                System.err.println("Error parsing date: " + s);
+                                logger.error("Error parsing date: " + s);
                                 return LocalDate.MIN;
                             }
                         }))
@@ -275,17 +274,16 @@ public class AutomaticStatisticsEmailService {
             }
 
             if (!hasData) {
-                System.out.println("No data found for any factory in facility: " + facilityId);
+                logger.info("No data found for any factory in facility: " + facilityId);
                 return null;
             }
 
             workbook.write(data);
-            System.out.println("Created Excel file with size: " + data.size() + " bytes");
+            logger.info("Created Excel file with size: " + data.size() + " bytes");
             return data.toByteArray();
 
         } catch (IOException e) {
-            System.err.println("Error creating Excel file for facility: " + facilityId);
-            e.printStackTrace();
+            logger.error("Error creating Excel file for facility: " + facilityId);
             return null;
         }
     }
@@ -295,8 +293,7 @@ public class AutomaticStatisticsEmailService {
             return DateTimeUtils.convertMillisToDate(o.getStartDate(), DateTimeUtils.DATE_FORMAT.replace('/', '-'))
                     + " - Ca " + o.getShift();
         } catch (Exception e) {
-            System.err.println("Error building cell plan date for response: " + o);
-            e.printStackTrace();
+            logger.error("Error building cell plan date for response: " + o);
             return "Invalid Date - Ca " + o.getShift();
         }
     }

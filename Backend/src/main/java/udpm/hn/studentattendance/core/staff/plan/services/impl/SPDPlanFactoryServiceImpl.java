@@ -24,11 +24,13 @@ import udpm.hn.studentattendance.entities.PlanFactory;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
 import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.helpers.SessionHelper;
+import udpm.hn.studentattendance.helpers.SettingHelper;
 import udpm.hn.studentattendance.helpers.ShiftHelper;
 import udpm.hn.studentattendance.helpers.ValidateHelper;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.common.repositories.CommonUserStudentRepository;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
+import udpm.hn.studentattendance.infrastructure.constants.SettingKeys;
 import udpm.hn.studentattendance.infrastructure.constants.ShiftType;
 import udpm.hn.studentattendance.infrastructure.constants.StatusType;
 import udpm.hn.studentattendance.utils.DateTimeUtils;
@@ -61,10 +63,12 @@ public class SPDPlanFactoryServiceImpl implements SPDPlanFactoryService {
 
     private final SessionHelper sessionHelper;
 
+    private final SettingHelper settingHelper;
+
     private final UserActivityLogHelper userActivityLogHelper;
 
-    @Value("${app.config.shift.max-late-arrival}")
-    private int MAX_LATE_ARRIVAL;
+    @Value("${app.config.allows-one-teacher-to-teach-multiple-classes}")
+    private boolean isDisableCheckExistsTeacherOnShift;
 
     @Override
     public ResponseEntity<?> getAllList(SPDFilterPlanFactoryRequest request) {
@@ -91,6 +95,8 @@ public class SPDPlanFactoryServiceImpl implements SPDPlanFactoryService {
     @Override
     public ResponseEntity<?> createPlanFactory(SPDAddPlanFactoryRequest request) {
 
+        int MAX_LATE_ARRIVAL = settingHelper.getSetting(SettingKeys.SHIFT_MAX_LATE_ARRIVAL, Integer.class);
+
         if (request.getLateArrival() > MAX_LATE_ARRIVAL) {
             return RouterHelper.responseError("Thời gian điểm danh muộn nhất không quá " + MAX_LATE_ARRIVAL + " phút");
         }
@@ -109,6 +115,10 @@ public class SPDPlanFactoryServiceImpl implements SPDPlanFactoryService {
                 || !Objects.equals(factory.getProject().getSubjectFacility().getFacility().getId(),
                         sessionHelper.getFacilityId())) {
             return RouterHelper.responseError("Không tìm thấy nhóm xưởng");
+        }
+
+        if (spdFactoryRepository.getCountTotalStudentInFactory(factory.getId()) > 0) {
+            return RouterHelper.responseError("Chỉ có thể thêm nhóm xưởng khi chưa có sinh viên nào");
         }
 
         List<List<Integer>> lstConsecutiveShift = ShiftHelper.findConsecutiveShift(request.getShift());
@@ -188,15 +198,18 @@ public class SPDPlanFactoryServiceImpl implements SPDPlanFactoryService {
 
                     if (spdPlanDateRepository.isExistsShiftInFactory(planFactory.getId(), null, startDate, endDate)) {
                         spdPlanFactoryRepository.delete(planFactory);
-                        return RouterHelper.responseError("Đã tồn tại ca " + request.getShift() + " trong ngày "
+                        return RouterHelper.responseError("Đã tồn tại ca học diễn ra trong khoảng thời gian từ " + DateTimeUtils.convertMillisToDate(startDate, "HH:mm") + " đến " + DateTimeUtils.convertMillisToDate(endDate, "HH:mm") + " của ngày "
                                 + DateTimeUtils.convertMillisToDate(startDate));
                     }
-                    if (spdPlanDateRepository.isExistsTeacherOnShift(factory.getUserStaff().getId(), startDate,
-                            endDate)) {
-                        spdPlanFactoryRepository.delete(planFactory);
-                        return RouterHelper.responseError("Giảng viên " + factory.getUserStaff().getName() + " - "
-                                + factory.getUserStaff().getCode() + " đã đứng lớp tại ca " + request.getShift()
-                                + " trong ngày " + DateTimeUtils.convertMillisToDate(startDate));
+
+                    if (!isDisableCheckExistsTeacherOnShift) {
+                        if (spdPlanDateRepository.isExistsTeacherOnShift(factory.getUserStaff().getId(), startDate,
+                                endDate, null)) {
+                            spdPlanFactoryRepository.delete(planFactory);
+                            return RouterHelper.responseError("Giảng viên " + factory.getUserStaff().getName() + " - "
+                                    + factory.getUserStaff().getCode() + " đã đứng lớp tại ca " + request.getShift()
+                                    + " trong ngày " + DateTimeUtils.convertMillisToDate(startDate));
+                        }
                     }
 
                     String link = StringUtils.hasText(request.getLink()) ? request.getLink().trim() : null;

@@ -9,6 +9,9 @@ import {
   DeleteFilled,
   EyeFilled,
   ExclamationCircleOutlined,
+  LinkOutlined,
+  InfoCircleFilled,
+  MailOutlined,
 } from '@ant-design/icons-vue'
 import { message, Modal } from 'ant-design-vue'
 import requestAPI from '@/services/requestApiService'
@@ -22,11 +25,18 @@ import { useRoute, useRouter } from 'vue-router'
 import {
   DEFAULT_DATE_FORMAT,
   DEFAULT_LATE_ARRIVAL,
-  DEFAULT_MAX_LATE_ARRIVAL,
   SHIFT,
   STATUS_PLAN_DATE_DETAIL,
 } from '@/constants'
-import { autoAddColumnWidth, dayOfWeek, debounce, formatDate, rowSelectTable } from '@/utils/utils'
+import {
+  autoAddColumnWidth,
+  dayOfWeek,
+  debounce,
+  formatDate,
+  getShiftTimeEnd,
+  getShiftTimeStart,
+  rowSelectTable,
+} from '@/utils/utils'
 import dayjs from 'dayjs'
 import ExcelUploadButton from '@/components/excel/ExcelUploadButton.vue'
 
@@ -37,6 +47,8 @@ const breadcrumbStore = useBreadcrumbStore()
 const loadingStore = useLoadingStore()
 
 const isLoading = ref(false)
+const isShowListStudentExists = ref(false)
+const lstStudentExists = ref([])
 
 const configImportExcel = {
   fetchUrl: API_ROUTES_EXCEL.FETCH_IMPORT_PLAN_DATE,
@@ -55,6 +67,16 @@ const configImportExcel = {
 }
 
 const modalAddOrUpdate = reactive({
+  isShow: false,
+  isLoading: false,
+  title: null,
+  cancelText: 'Hủy bỏ',
+  okText: 'Xác nhận',
+  onOk: null,
+  width: 800,
+})
+
+const modalUpdateLink = reactive({
   isShow: false,
   isLoading: false,
   title: null,
@@ -88,6 +110,16 @@ const columns = ref(
   ]),
 )
 
+const columns_student = ref(
+  autoAddColumnWidth([
+    { title: 'Mã sinh viên', dataIndex: 'code', key: 'code' },
+    { title: 'Tên sinh viên', dataIndex: 'name', key: 'name' },
+    { title: 'Email', dataIndex: 'email', key: 'email' },
+    { title: 'Nhóm xưởng', dataIndex: 'factoryName', key: 'factoryName' },
+    { title: 'Kế hoạch', dataIndex: 'planName', key: 'planName' },
+  ]),
+)
+
 const breadcrumb = ref([
   {
     name: GLOBAL_ROUTE_NAMES.STAFF_PAGE,
@@ -110,6 +142,7 @@ const dataFilter = reactive({
 })
 
 const formRefAddOrUpdate = ref(null)
+const formRefUpdateLink = ref(null)
 
 const formData = reactive({
   id: null,
@@ -124,13 +157,21 @@ const formData = reactive({
   requiredCheckin: STATUS_TYPE.ENABLE,
   requiredCheckout: STATUS_TYPE.ENABLE,
   startDate: null,
+  endDate: null,
   lateArrival: DEFAULT_LATE_ARRIVAL,
+  timeRange: [],
+})
+
+const formDataUpdateLink = reactive({
+  idPlanFactory: null,
+  link: null,
 })
 
 const formRules = reactive({
   startDate: [{ required: true, message: 'Vui lòng chọn ngày học diễn ra!' }],
   shift: [{ required: true, message: 'Vui lòng chọn ca học!' }],
   type: [{ required: true, message: 'Vui lòng chọn hình thức học!' }],
+  link: [{ required: true, message: 'Vui lòng nhập link học online!' }],
   lateArrival: [{ required: true, message: 'Vui lòng nhập thời gian điểm danh muộn tối đa!' }],
 })
 
@@ -247,6 +288,21 @@ const fetchAddItem = () => {
     .post(`${API_ROUTES_STAFF.FETCH_DATA_PLAN_DATE}/${_detail.value.id}/add`, {
       ...formData,
       startDate: Date.parse(formData.startDate),
+      customTime:
+        formData.timeRange?.length > 0
+          ? [
+              getShiftTimeStart(
+                Date.parse(formData.startDate),
+                formData.timeRange[0].hour(),
+                formData.timeRange[0].minute(),
+              ),
+              getShiftTimeEnd(
+                Date.parse(formData.startDate),
+                formData.timeRange[1].hour(),
+                formData.timeRange[1].minute(),
+              ),
+            ]
+          : null,
     })
     .then(({ data: response }) => {
       message.success(response.message)
@@ -254,6 +310,11 @@ const fetchAddItem = () => {
       fetchDataList()
     })
     .catch((error) => {
+      const data = error?.response?.data?.data
+      if (data) {
+        handleShowListStudentExists(data)
+        return message.error(error?.response?.data?.message || 'Không thể cập nhật mục này')
+      }
       message.error(error?.response?.data?.message || 'Không thể thêm mới mục này')
     })
     .finally(() => {
@@ -267,6 +328,21 @@ const fetchUpdateItem = () => {
     .put(`${API_ROUTES_STAFF.FETCH_DATA_PLAN_DATE}/${_detail.value.id}/update`, {
       ...formData,
       startDate: Date.parse(formData.startDate),
+      customTime:
+        formData.timeRange?.length > 0
+          ? [
+              getShiftTimeStart(
+                Date.parse(formData.startDate),
+                formData.timeRange[0].hour(),
+                formData.timeRange[0].minute(),
+              ),
+              getShiftTimeEnd(
+                Date.parse(formData.startDate),
+                formData.timeRange[1].hour(),
+                formData.timeRange[1].minute(),
+              ),
+            ]
+          : null,
     })
     .then(({ data: response }) => {
       message.success(response.message)
@@ -274,10 +350,50 @@ const fetchUpdateItem = () => {
       fetchDataList()
     })
     .catch((error) => {
+      const data = error?.response?.data?.data
+      if (data) {
+        handleShowListStudentExists(data)
+        return message.error(error?.response?.data?.message || 'Không thể cập nhật mục này')
+      }
       message.error(error?.response?.data?.message || 'Không thể cập nhật mục này')
     })
     .finally(() => {
       modalAddOrUpdate.isLoading = false
+    })
+}
+
+const fetchUpdateLink = () => {
+  modalUpdateLink.isLoading = true
+  requestAPI
+    .put(
+      `${API_ROUTES_STAFF.FETCH_DATA_PLAN_DATE}/${_detail.value.id}/update-link`,
+      formDataUpdateLink,
+    )
+    .then(({ data: response }) => {
+      message.success(response.message)
+      modalUpdateLink.isShow = false
+      fetchDataList()
+    })
+    .catch((error) => {
+      message.error(error?.response?.data?.message || 'Không thể cập nhật mục này')
+    })
+    .finally(() => {
+      modalUpdateLink.isLoading = false
+    })
+}
+
+const fetchSendMail = () => {
+  loadingStore.show()
+  requestAPI
+    .post(`${API_ROUTES_STAFF.FETCH_DATA_PLAN_DATE}/${_detail.value.id}/send-mail`)
+    .then(({ data: response }) => {
+      message.success(response.message)
+    })
+    .catch((error) => {
+      message.error(error?.response?.data?.message || 'Không thể gửi thông báo lịch học')
+    })
+    .finally(() => {
+      loadingStore.hide()
     })
 }
 
@@ -328,6 +444,7 @@ const handleShowAdd = () => {
   formData.requiredCheckout = STATUS_TYPE.ENABLE
   formData.lateArrival = DEFAULT_LATE_ARRIVAL
   formData.description = null
+  formData.timeRange = []
 }
 
 const handleShowUpdate = (item) => {
@@ -345,6 +462,7 @@ const handleShowUpdate = (item) => {
 
   formData.id = item.id
   formData.startDate = dayjs(item.startDate)
+  formData.endDate = dayjs(item.endDate)
   formData.shift = item.shift.split(',').map((o) => Number(o))
   formData.link = item.link
   formData.room = item.room
@@ -355,6 +473,8 @@ const handleShowUpdate = (item) => {
   formData.requiredCheckout = item.requiredCheckout || STATUS_TYPE.DISABLE
   formData.lateArrival = item.lateArrival
   formData.description = item.description
+
+  handleUpdateTimeRange()
 }
 
 const handleSubmitAdd = async () => {
@@ -384,6 +504,22 @@ const handleSubmitUpdate = async () => {
       cancelText: 'Hủy bỏ',
       onOk() {
         fetchUpdateItem()
+      },
+    })
+  } catch (error) {}
+}
+
+const handleSubmitUpdateLink = async () => {
+  try {
+    await formRefUpdateLink.value.validate()
+    Modal.confirm({
+      title: `Xác nhận cập nhật link`,
+      type: 'info',
+      content: `Tất cả ca học online sẽ bị ảnh hưởng. Bạn có chắc muốn tiếp tục?`,
+      okText: 'Tiếp tục',
+      cancelText: 'Hủy bỏ',
+      onOk() {
+        fetchUpdateLink()
       },
     })
   } catch (error) {}
@@ -446,6 +582,23 @@ const handleShowAttendance = (id) => {
   })
 }
 
+const handleShowUpdateLink = () => {
+  if (formRefUpdateLink.value) {
+    formRefUpdateLink.value.clearValidate()
+  }
+  modalUpdateLink.isShow = true
+  modalUpdateLink.isLoading = false
+  modalUpdateLink.title = h('span', [
+    h(LinkOutlined, { class: 'me-2 text-primary' }),
+    'Cập nhật link học online',
+  ])
+  modalUpdateLink.okText = 'Lưu lại'
+  modalUpdateLink.onOk = () => handleSubmitUpdateLink()
+
+  formDataUpdateLink.idPlanFactory = _detail.value.id
+  formDataUpdateLink.link = null
+}
+
 const handleChangeShift = (newValues) => {
   const updated = new Set(newValues)
 
@@ -463,6 +616,50 @@ const handleChangeShift = (newValues) => {
   }
 
   formData.shift = Array.from(updated).sort((a, b) => a - b)
+}
+
+const handleShowListStudentExists = (data) => {
+  lstStudentExists.value = data || []
+  isShowListStudentExists.value = true
+}
+
+const handleUpdateTimeRange = () => {
+  if (formData.shift.length < 1) {
+    return (formData.timeRange = [])
+  }
+
+  const startTime = formData.startDate
+  const endTime = formData.endDate
+
+  const firstShift = lstShift.value.find((o) => o.shift == formData.shift[0])
+  const lastShift = lstShift.value.find((o) => o.shift == formData.shift[formData.shift.length - 1])
+
+  if (
+    startTime.hour() != firstShift.fromHour ||
+    startTime.minute() != firstShift.fromMinute ||
+    endTime.hour() != lastShift.toHour ||
+    endTime.minute() != lastShift.toMinute
+  ) {
+    formData.timeRange = [
+      dayjs(startTime.hour() + ':' + startTime.minute(), 'HH:mm'),
+      dayjs(endTime.hour() + ':' + endTime.minute(), 'HH:mm'),
+    ]
+  } else {
+    formData.timeRange = []
+  }
+}
+
+const handleSendMail = () => {
+  Modal.confirm({
+    title: 'Xác nhận gửi mail thông báo lịch học',
+    type: 'info',
+    content: `Một mail chứa tệp Excel lịch học sẽ được gửi tới giảng viên và sinh viên trong nhóm.`,
+    okText: 'Tiếp tục',
+    cancelText: 'Hủy bỏ',
+    onOk() {
+      fetchSendMail()
+    },
+  })
 }
 
 const selectedRowKeys = ref([])
@@ -528,9 +725,10 @@ watch(
           @keyup.enter="modalAddOrUpdate.onOk"
         />
       </a-form-item>
-      <a-form-item class="col-sm-12" label="Ca học" name="shift" :rules="formRules.shift">
+      <a-form-item class="col-sm-8" label="Ca học" name="shift" :rules="formRules.shift">
         <a-select
           class="w-100"
+          placeholder="Chọn nhiều ca cùng lúc để gộp lại thành 1 ca"
           v-model:value="formData.shift"
           :disabled="modalAddOrUpdate.isLoading"
           @change="handleChangeShift"
@@ -544,6 +742,17 @@ watch(
             }})
           </a-select-option>
         </a-select>
+      </a-form-item>
+
+      <a-form-item class="col-sm-4" label="Tuỳ chỉnh thời gian ca học" name="timeRange">
+        <a-range-picker
+          class="w-100"
+          v-model:value="formData.timeRange"
+          :show-time="{ format: 'HH:mm' }"
+          format="HH:mm"
+          picker="time"
+          :placeholder="['Bắt đầu', 'Kết thúc']"
+        />
       </a-form-item>
 
       <a-form-item class="col-sm-5" label="Hình thức học" name="type" :rules="formRules.type">
@@ -568,9 +777,9 @@ watch(
       >
         <a-input-number
           class="w-100"
+          placeholder="0"
           v-model:value="formData.lateArrival"
           :min="0"
-          :max="DEFAULT_MAX_LATE_ARRIVAL"
           :step="1"
           :disabled="modalAddOrUpdate.isLoading"
           allowClear
@@ -582,6 +791,7 @@ watch(
         <a-textarea
           :rows="4"
           class="w-100"
+          placeholder="Mô tả nội dung buổi học"
           v-model:value="formData.description"
           :disabled="modalAddOrUpdate.isLoading"
           allowClear
@@ -670,6 +880,50 @@ watch(
         </div>
       </a-form-item>
     </a-form>
+  </a-modal>
+
+  <a-modal
+    v-model:open="modalUpdateLink.isShow"
+    v-bind="modalUpdateLink"
+    :okButtonProps="{ loading: modalUpdateLink.isLoading }"
+  >
+    <a-form
+      ref="formRefUpdateLink"
+      class="row mt-3"
+      layout="vertical"
+      autocomplete="off"
+      :model="formDataUpdateLink"
+    >
+      <a-form-item class="col-sm-12" label="Link học online:" name="link" :rules="formRules.link">
+        <a-input
+          class="w-100"
+          v-model:value="formDataUpdateLink.link"
+          placeholder="https://"
+          :disabled="modalUpdateLink.isLoading"
+          allowClear
+          @keyup.enter="modalUpdateLink.onOk"
+        />
+      </a-form-item>
+    </a-form>
+  </a-modal>
+
+  <a-modal v-model:open="isShowListStudentExists" :width="1000" :footer="null">
+    <template #title
+      ><InfoCircleFilled class="text-primary" /> Danh sách sinh viên bị trùng ca học
+    </template>
+    <div class="row g-2">
+      <div class="col-12">
+        <a-table
+          rowKey="id"
+          class="nowrap"
+          :dataSource="lstStudentExists"
+          :columns="columns_student"
+          :pagination="false"
+          :scroll="{ x: 'auto' }"
+        >
+        </a-table>
+      </div>
+    </div>
   </a-modal>
 
   <div class="container-fluid">
@@ -779,6 +1033,12 @@ watch(
               ><DeleteFilled /> Xoá mục đã chọn</a-button
             >
             <ExcelUploadButton v-bind="configImportExcel" />
+            <a-button class="btn btn-gray" @click="handleShowUpdateLink">
+              <LinkOutlined /> Update link online
+            </a-button>
+            <a-button class="btn btn-outline-warning" @click="handleSendMail">
+              <MailOutlined /> Gửi mail thông báo
+            </a-button>
             <a-button type="primary" @click="handleShowAdd"> <PlusOutlined /> Thêm mới </a-button>
           </div>
 

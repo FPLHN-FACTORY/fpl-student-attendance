@@ -2,7 +2,6 @@ package udpm.hn.studentattendance.core.student.attendance.service.impl;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -26,10 +25,12 @@ import udpm.hn.studentattendance.entities.UserStudentFactory;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
 import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.helpers.SessionHelper;
+import udpm.hn.studentattendance.helpers.SettingHelper;
 import udpm.hn.studentattendance.helpers.ValidateHelper;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.config.websocket.model.message.AttendanceMessage;
 import udpm.hn.studentattendance.infrastructure.constants.AttendanceStatus;
+import udpm.hn.studentattendance.infrastructure.constants.SettingKeys;
 import udpm.hn.studentattendance.infrastructure.constants.ShiftType;
 import udpm.hn.studentattendance.infrastructure.constants.StatusType;
 import udpm.hn.studentattendance.infrastructure.constants.router.RouteWebsocketConstant;
@@ -64,20 +65,13 @@ public class SAAttendanceServiceImpl implements SAAttendanceService {
 
     private final SimpMessagingTemplate messagingTemplate;
 
-
-    @Value("${app.config.attendance.early-checkin}")
-    private int EARLY_CHECKIN;
-
-    @Value("${app.config.face.threshold_checkin}")
-    private double threshold_checkin;
+    private final SettingHelper settingHelper;
 
     @Override
     public ResponseEntity<?> getAllList(SAFilterAttendanceRequest request) {
         request.setIdFacility(sessionHelper.getFacilityId());
         request.setIdUserStudent(sessionHelper.getUserId());
 
-        // Không cache dữ liệu điểm danh vì cần độ chính xác cao và thay đổi thường
-        // xuyên
         Pageable pageable = PaginationHelper.createPageable(request);
         PageableObject<SAAttendanceResponse> data = PageableObject
                 .of(attendanceRepository.getAllByFilter(pageable, request));
@@ -155,6 +149,8 @@ public class SAAttendanceServiceImpl implements SAAttendanceService {
         Long lateCheckin = null;
         Long lateCheckout = null;
 
+        int EARLY_CHECKIN = settingHelper.getSetting(SettingKeys.ATTENDANCE_EARLY_CHECKIN, Integer.class);
+
         if (attendance == null || attendance.getAttendanceStatus() == AttendanceStatus.NOTCHECKIN) {
             if (isEnableCheckin || !isEnableCheckout) {
                 if (DateTimeUtils.getCurrentTimeMillis() <= planDate.getStartDate()
@@ -208,6 +204,9 @@ public class SAAttendanceServiceImpl implements SAAttendanceService {
 
         List<double[]> inputEmbedding = FaceRecognitionUtils.parseEmbeddings(request.getFaceEmbedding());
         double[] storedEmbedding = FaceRecognitionUtils.parseEmbedding(userStudent.getFaceEmbedding());
+
+        double threshold_checkin = settingHelper.getSetting(SettingKeys.FACE_THRESHOLD_CHECKIN, Double.class);
+
         boolean isMatch = FaceRecognitionUtils.isSameFaces(inputEmbedding, storedEmbedding, threshold_checkin);
         if (!isMatch) {
             return RouterHelper.responseError("Xác thực khuôn mặt thất bại");
@@ -259,4 +258,5 @@ public class SAAttendanceServiceImpl implements SAAttendanceService {
         attendanceMessage.setUserStudentId(userStudent.getId());
         messagingTemplate.convertAndSend(RouteWebsocketConstant.TOPIC_ATTENDANCE, attendanceMessage);
     }
+
 }

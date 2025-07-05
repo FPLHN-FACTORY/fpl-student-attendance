@@ -2,6 +2,9 @@ package udpm.hn.studentattendance.core.staff.plan.services.impl;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
@@ -10,11 +13,16 @@ import org.springframework.util.StringUtils;
 import udpm.hn.studentattendance.core.staff.plan.model.request.SPDAddOrUpdatePlanDateRequest;
 import udpm.hn.studentattendance.core.staff.plan.model.request.SPDDeletePlanDateRequest;
 import udpm.hn.studentattendance.core.staff.plan.model.request.SPDFilterPlanDateRequest;
+import udpm.hn.studentattendance.core.staff.plan.model.request.SPDUpdateLinkMeetRequest;
 import udpm.hn.studentattendance.core.staff.plan.model.response.SPDPlanDateResponse;
 import udpm.hn.studentattendance.core.staff.plan.model.response.SPDPlanFactoryResponse;
+import udpm.hn.studentattendance.core.staff.plan.model.response.SPDUserStudentResponse;
 import udpm.hn.studentattendance.core.staff.plan.repositories.SPDFacilityShiftRepository;
 import udpm.hn.studentattendance.core.staff.plan.repositories.SPDPlanDateRepository;
 import udpm.hn.studentattendance.core.staff.plan.repositories.SPDPlanFactoryRepository;
+import udpm.hn.studentattendance.core.staff.plan.repositories.SPDUserStudentRepository;
+import udpm.hn.studentattendance.helpers.MailerHelper;
+import udpm.hn.studentattendance.helpers.SettingHelper;
 import udpm.hn.studentattendance.infrastructure.common.repositories.CommonUserStudentRepository;
 import udpm.hn.studentattendance.core.staff.plan.services.SPDPlanDateService;
 import udpm.hn.studentattendance.entities.FacilityShift;
@@ -28,15 +36,25 @@ import udpm.hn.studentattendance.helpers.SessionHelper;
 import udpm.hn.studentattendance.helpers.ShiftHelper;
 import udpm.hn.studentattendance.helpers.ValidateHelper;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
+import udpm.hn.studentattendance.infrastructure.config.mailer.model.MailerDefaultRequest;
+import udpm.hn.studentattendance.infrastructure.constants.SettingKeys;
 import udpm.hn.studentattendance.infrastructure.constants.ShiftType;
 import udpm.hn.studentattendance.infrastructure.constants.StatusType;
 import udpm.hn.studentattendance.utils.DateTimeUtils;
 import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
+import udpm.hn.studentattendance.utils.ExcelUtils;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -48,14 +66,23 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
 
     private final SPDFacilityShiftRepository spdFacilityShiftRepository;
 
+    private final SPDUserStudentRepository spdUserStudentRepository;
+
     private final CommonUserStudentRepository commonUserStudentRepository;
 
     private final SessionHelper sessionHelper;
 
+    private final SettingHelper settingHelper;
+
+    private final MailerHelper mailerHelper;
+
     private final UserActivityLogHelper userActivityLogHelper;
 
-    @Value("${app.config.shift.max-late-arrival}")
-    private int MAX_LATE_ARRIVAL;
+    @Value("${app.config.app-name}")
+    private String appName;
+
+    @Value("${app.config.allows-one-teacher-to-teach-multiple-classes}")
+    private boolean isDisableCheckExistsTeacherOnShift;
 
     @Override
     public ResponseEntity<?> getDetail(String idPlanFactory) {
@@ -110,6 +137,7 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
     @Override
     public ResponseEntity<?> updatePlanDate(SPDAddOrUpdatePlanDateRequest request) {
         request.setIdFacility(sessionHelper.getFacilityId());
+        int MAX_LATE_ARRIVAL = settingHelper.getSetting(SettingKeys.SHIFT_MAX_LATE_ARRIVAL, Integer.class);
 
         if (request.getLateArrival() > MAX_LATE_ARRIVAL) {
             return RouterHelper.responseError("Thời gian điểm danh muộn nhất không quá " + MAX_LATE_ARRIVAL + " phút");
@@ -155,10 +183,17 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
             return RouterHelper.responseError("Hình thức học không hợp lệ");
         }
 
-        Long startDate = ShiftHelper.getShiftTimeStart(request.getStartDate(),
-                LocalTime.of(shiftStart.getFromHour(), shiftStart.getFromMinute()));
-        Long endDate = startDate + ShiftHelper.getDiffTime(shiftStart.getFromHour(), shiftStart.getFromMinute(),
-                shiftEnd.getToHour(), shiftEnd.getToMinute());
+        Long startDate;
+        Long endDate;
+        if (request.getCustomTime() != null && request.getCustomTime().size() == 2) {
+            startDate = request.getCustomTime().get(0);
+            endDate = request.getCustomTime().get(1);
+        } else {
+            startDate = ShiftHelper.getShiftTimeStart(request.getStartDate(),
+                    LocalTime.of(shiftStart.getFromHour(), shiftStart.getFromMinute()));
+            endDate = startDate + ShiftHelper.getDiffTime(shiftStart.getFromHour(), shiftStart.getFromMinute(),
+                    shiftEnd.getToHour(), shiftEnd.getToMinute());
+        }
 
         if (startDate < DateTimeUtils.getCurrentTimeMillis()) {
             return RouterHelper.responseError("Thời gian diễn ra phải lớn hơn hoặc bằng ngày hiện tại");
@@ -175,14 +210,16 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
 
         if (spdPlanDateRepository.isExistsShiftInFactory(planDate.getPlanFactory().getId(), planDate.getId(), startDate,
                 endDate)) {
-            return RouterHelper.responseError("Đã tồn tại ca " + request.getShift() + " trong ngày "
+            return RouterHelper.responseError("Đã tồn tại ca học diễn ra trong khoảng thời gian từ " + DateTimeUtils.convertMillisToDate(startDate, "HH:mm") + " đến " + DateTimeUtils.convertMillisToDate(endDate, "HH:mm") + " của ngày "
                     + DateTimeUtils.convertMillisToDate(startDate));
         }
 
-        if (spdPlanDateRepository.isExistsTeacherOnShift(factory.getUserStaff().getId(), startDate, endDate)) {
-            return RouterHelper.responseError("Giảng viên " + factory.getUserStaff().getName() + " - "
-                    + factory.getUserStaff().getCode() + " đã đứng lớp tại ca " + request.getShift() + " trong ngày "
-                    + DateTimeUtils.convertMillisToDate(startDate));
+        if (!isDisableCheckExistsTeacherOnShift) {
+            if (spdPlanDateRepository.isExistsTeacherOnShift(factory.getUserStaff().getId(), startDate, endDate, planDate.getId())) {
+                return RouterHelper.responseError("Giảng viên " + factory.getUserStaff().getName() + " - "
+                        + factory.getUserStaff().getCode() + " đã đứng lớp tại ca " + request.getShift() + " trong ngày "
+                        + DateTimeUtils.convertMillisToDate(startDate));
+            }
         }
 
         if (StringUtils.hasText(request.getLink()) && !ValidateHelper.isValidURL(request.getLink())) {
@@ -195,6 +232,11 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
         StatusType requiredCheckout = StatusType.fromKey(request.getRequiredCheckout());
         if (requiredIp == null || requiredLocation == null || requiredCheckin == null || requiredCheckout == null) {
             return RouterHelper.responseError("Điều kiện điểm danh không hợp lệ");
+        }
+
+        List<SPDUserStudentResponse> lstStudentExists = spdPlanDateRepository.getListExistsStudentOnShift(planDate.getPlanFactory().getFactory().getId(), startDate, endDate, null);
+        if (!lstStudentExists.isEmpty()) {
+            return RouterHelper.responseError("Không thể tạo ca học do có sinh viên đang thuộc nhóm xưởng khác có cùng thời gian học", lstStudentExists);
         }
 
         String link = StringUtils.hasText(request.getLink()) ? request.getLink().trim() : null;
@@ -225,6 +267,8 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
     @Override
     public ResponseEntity<?> addPlanDate(SPDAddOrUpdatePlanDateRequest request) {
         request.setIdFacility(sessionHelper.getFacilityId());
+
+        int MAX_LATE_ARRIVAL = settingHelper.getSetting(SettingKeys.SHIFT_MAX_LATE_ARRIVAL, Integer.class);
 
         if (request.getLateArrival() > MAX_LATE_ARRIVAL) {
             return RouterHelper.responseError("Thời gian điểm danh muộn nhất không quá " + MAX_LATE_ARRIVAL + " phút");
@@ -279,10 +323,17 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
             return RouterHelper.responseError("Hình thức học không hợp lệ");
         }
 
-        Long startDate = ShiftHelper.getShiftTimeStart(request.getStartDate(),
-                LocalTime.of(shiftStart.getFromHour(), shiftStart.getFromMinute()));
-        Long endDate = startDate + ShiftHelper.getDiffTime(shiftStart.getFromHour(), shiftStart.getFromMinute(),
-                shiftEnd.getToHour(), shiftEnd.getToMinute());
+        Long startDate;
+        Long endDate;
+        if (request.getCustomTime() != null && request.getCustomTime().size() == 2) {
+            startDate = request.getCustomTime().get(0);
+            endDate = request.getCustomTime().get(1);
+        } else {
+            startDate = ShiftHelper.getShiftTimeStart(request.getStartDate(),
+                    LocalTime.of(shiftStart.getFromHour(), shiftStart.getFromMinute()));
+            endDate = startDate + ShiftHelper.getDiffTime(shiftStart.getFromHour(), shiftStart.getFromMinute(),
+                    shiftEnd.getToHour(), shiftEnd.getToMinute());
+        }
 
         if (startDate < DateTimeUtils.getCurrentTimeMillis()) {
             return RouterHelper.responseError("Thời gian diễn ra phải lớn hơn hoặc bằng ngày hiện tại");
@@ -295,14 +346,16 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
         }
 
         if (spdPlanDateRepository.isExistsShiftInFactory(planFactory.getId(), null, startDate, endDate)) {
-            return RouterHelper.responseError("Đã tồn tại ca " + request.getShift() + " trong ngày "
+            return RouterHelper.responseError("Đã tồn tại ca học diễn ra trong khoảng thời gian từ " + DateTimeUtils.convertMillisToDate(startDate, "HH:mm") + " đến " + DateTimeUtils.convertMillisToDate(endDate, "HH:mm") + " của ngày "
                     + DateTimeUtils.convertMillisToDate(startDate));
         }
 
-        if (spdPlanDateRepository.isExistsTeacherOnShift(factory.getUserStaff().getId(), startDate, endDate)) {
-            return RouterHelper.responseError("Giảng viên " + factory.getUserStaff().getName() + " - "
-                    + factory.getUserStaff().getCode() + " đã đứng lớp tại ca " + request.getShift() + " trong ngày "
-                    + DateTimeUtils.convertMillisToDate(startDate));
+        if (!isDisableCheckExistsTeacherOnShift) {
+            if (spdPlanDateRepository.isExistsTeacherOnShift(factory.getUserStaff().getId(), startDate, endDate, null)) {
+                return RouterHelper.responseError("Giảng viên " + factory.getUserStaff().getName() + " - "
+                        + factory.getUserStaff().getCode() + " đã đứng lớp tại ca " + request.getShift() + " trong ngày "
+                        + DateTimeUtils.convertMillisToDate(startDate));
+            }
         }
 
         if (StringUtils.hasText(request.getLink()) && !ValidateHelper.isValidURL(request.getLink())) {
@@ -315,6 +368,11 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
         StatusType requiredCheckout = StatusType.fromKey(request.getRequiredCheckout());
         if (requiredIp == null || requiredLocation == null || requiredCheckin == null || requiredCheckout == null) {
             return RouterHelper.responseError("Điều kiện điểm danh không hợp lệ");
+        }
+
+        List<SPDUserStudentResponse> lstStudentExists = spdPlanDateRepository.getListExistsStudentOnShift(planFactory.getFactory().getId(), startDate, endDate, null);
+        if (!lstStudentExists.isEmpty()) {
+            return RouterHelper.responseError("Không thể tạo ca học do có sinh viên đang thuộc nhóm xưởng khác có cùng thời gian học", lstStudentExists);
         }
 
         String link = StringUtils.hasText(request.getLink()) ? request.getLink().trim() : null;
@@ -342,6 +400,99 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
         userActivityLogHelper.saveLog(
                 "vừa thêm kế hoạch chi tiết ngày " + DateTimeUtils.convertMillisToDate(newEntity.getStartDate()));
         return RouterHelper.responseSuccess("Thêm kế hoạch thành công", newEntity);
+    }
+
+    @Override
+    public ResponseEntity<?> updateLinkMeet(SPDUpdateLinkMeetRequest request) {
+        if (!ValidateHelper.isValidURL(request.getLink())) {
+            return RouterHelper.responseError("Link học online không hợp lệ");
+        }
+        PlanFactory planFactory = spdPlanFactoryRepository.findById(request.getIdPlanFactory()).orElse(null);
+        if (planFactory == null || !planFactory.getPlan().getProject().getSubjectFacility().getFacility().getId().equals(sessionHelper.getFacilityId())) {
+            return RouterHelper.responseError("Không tìm thấy nhóm kế hoạch");
+        }
+        spdPlanDateRepository.updateAllLinkMeet(planFactory.getId(), request.getLink());
+        return RouterHelper.responseSuccess("Cập nhật link học online thành công");
+    }
+
+    @Override
+    public ResponseEntity<?> sendMail(String idPlanFactory) {
+        Optional<SPDPlanFactoryResponse> planFactoryResponseOptional = spdPlanFactoryRepository.getDetail(idPlanFactory,
+                sessionHelper.getFacilityId());
+        if (planFactoryResponseOptional.isEmpty()) {
+            return RouterHelper.responseError("Không tìm thấy nhóm xưởng");
+        }
+
+        PlanFactory planFactory = spdPlanFactoryRepository.findById(idPlanFactory).orElse(null);
+        if (planFactory == null) {
+            return RouterHelper.responseError("Không tìm thấy nhóm xưởng");
+        }
+
+        List<SPDPlanDateResponse> lstPlanDate = spdPlanDateRepository.getAllListNotRunning(idPlanFactory);
+        if (lstPlanDate.isEmpty()) {
+            return RouterHelper.responseError("Không có ca học nào sắp diễn ra");
+        }
+
+        byte[] file = createFileMail(lstPlanDate);
+        if (file == null) {
+            return RouterHelper.responseError("Không thể tạo tệp tin lịch học");
+        }
+
+        MailerDefaultRequest mailerDefaultRequest = new MailerDefaultRequest();
+        mailerDefaultRequest.setTemplate(null);
+        mailerDefaultRequest.setTo(planFactory.getFactory().getUserStaff().getEmail());
+        mailerDefaultRequest.setTitle("Thông báo lịch học sắp tới - " + planFactory.getFactory().getName() + " - " + appName);
+
+        List<String> lstEmails = spdUserStudentRepository.getAllEmail(planFactory.getFactory().getId());
+
+        if (!lstEmails.isEmpty()) {
+            mailerDefaultRequest.setBcc(lstEmails.toArray(new String[0]));
+        }
+
+        Map<String, Object> dataMail = new HashMap<>();
+        dataMail.put("STAFF_NAME", sessionHelper.getUserCode() + " - " + sessionHelper.getUserName());
+
+        Map<String, byte[]> filesMail = new HashMap<>();
+        filesMail.put("lich-hoc-sap-toi.xlsx", file);
+
+        mailerDefaultRequest.setAttachments(filesMail);
+        mailerDefaultRequest.setContent(MailerHelper.loadTemplate(MailerHelper.TEMPLATE_UPCOMING_SCHEDULE_PLAN_DATE, dataMail));
+        mailerHelper.send(mailerDefaultRequest);
+
+        return RouterHelper.responseSuccess("Gửi mail thông báo ca học sắp diễn ra thành công");
+    }
+
+    private byte[] createFileMail(List<SPDPlanDateResponse> lstPlanDate) {
+        try (Workbook workbook = new XSSFWorkbook();
+             ByteArrayOutputStream data = new ByteArrayOutputStream()) {
+
+            List<String> headers = new ArrayList<>(List.of("Ngày học", "Thời gian", "Ca học", "Phòng học", "Link online"));
+            Sheet sheet = ExcelUtils.createTemplate(workbook, "Lịch học", headers, new ArrayList<>());
+            int row = 1;
+            for (SPDPlanDateResponse planDateResponse: lstPlanDate) {
+                List<Object> dataCell = new ArrayList<>();
+                dataCell.add(DateTimeUtils.convertMillisToDate(planDateResponse.getStartDate()));
+                dataCell.add(DateTimeUtils.convertMillisToDate(planDateResponse.getStartDate(), "HH:mm") + " - " + DateTimeUtils.convertMillisToDate(planDateResponse.getEndDate(), "HH:mm"));
+
+                String shiftFormatted = Arrays.stream(planDateResponse.getShift().split(","))
+                        .map(String::trim)
+                        .map(Integer::valueOf)
+                        .map(String::valueOf)
+                        .collect(Collectors.joining(", "));
+
+                dataCell.add("Ca " + shiftFormatted + " - " + ShiftType.fromKey(planDateResponse.getType()));
+                dataCell.add(planDateResponse.getRoom());
+                dataCell.add(planDateResponse.getLink());
+                ExcelUtils.insertRow(sheet, row, dataCell);
+                row++;
+            }
+
+            workbook.write(data);
+            return data.toByteArray();
+        } catch (IOException e) {
+            return null;
+        }
+
     }
 
 }
