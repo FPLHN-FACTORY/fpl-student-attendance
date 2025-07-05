@@ -1,13 +1,17 @@
 package udpm.hn.studentattendance.core.teacher.studentattendance.service.impl;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.test.util.ReflectionTestUtils;
 import udpm.hn.studentattendance.core.teacher.studentattendance.model.request.TeacherModifyStudentAttendanceRequest;
 import udpm.hn.studentattendance.core.teacher.studentattendance.model.request.TeacherStudentAttendanceRequest;
 import udpm.hn.studentattendance.core.teacher.studentattendance.model.response.TeacherStudentAttendanceResponse;
@@ -18,9 +22,12 @@ import udpm.hn.studentattendance.entities.UserStaff;
 import udpm.hn.studentattendance.entities.UserStudent;
 import udpm.hn.studentattendance.entities.Factory;
 import udpm.hn.studentattendance.entities.PlanFactory;
+import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
 import udpm.hn.studentattendance.helpers.SessionHelper;
 import udpm.hn.studentattendance.infrastructure.common.ApiResponse;
 import udpm.hn.studentattendance.infrastructure.constants.AttendanceStatus;
+import udpm.hn.studentattendance.infrastructure.constants.RestApiStatus;
+import udpm.hn.studentattendance.infrastructure.redis.service.RedisService;
 import udpm.hn.studentattendance.repositories.PlanDateRepository;
 import udpm.hn.studentattendance.repositories.UserStudentRepository;
 
@@ -34,6 +41,7 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class TeacherStudentAttendanceServiceImplTest {
 
     @Mock
@@ -48,8 +56,19 @@ class TeacherStudentAttendanceServiceImplTest {
     @Mock
     private SessionHelper sessionHelper;
 
+    @Mock
+    private RedisService redisService;
+
+    @Mock
+    private RedisInvalidationHelper redisInvalidationHelper;
+
     @InjectMocks
     private TeacherStudentAttendanceServiceImpl attendanceService;
+
+    @BeforeEach
+    void setUp() {
+        ReflectionTestUtils.setField(attendanceService, "redisTTL", 3600L);
+    }
 
     @Test
     @DisplayName("createAttendance should create attendance entries for students")
@@ -88,6 +107,7 @@ class TeacherStudentAttendanceServiceImplTest {
         assertEquals(HttpStatus.OK, response.getStatusCode());
         ApiResponse apiResponse = (ApiResponse) response.getBody();
         assertNotNull(apiResponse);
+        assertEquals(RestApiStatus.SUCCESS, apiResponse.getStatus());
         assertEquals("Tạo điểm danh sinh viên thành công", apiResponse.getMessage());
 
         @SuppressWarnings("unchecked")
@@ -117,6 +137,7 @@ class TeacherStudentAttendanceServiceImplTest {
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         ApiResponse apiResponse = (ApiResponse) response.getBody();
         assertNotNull(apiResponse);
+        assertEquals(RestApiStatus.ERROR, apiResponse.getStatus());
         assertEquals("Không tìm thấy sinh viên cho ngày điểm danh", apiResponse.getMessage());
 
         verify(attendanceRepository, never()).save(any(Attendance.class));
@@ -144,6 +165,7 @@ class TeacherStudentAttendanceServiceImplTest {
         assertEquals(HttpStatus.OK, response.getStatusCode());
         ApiResponse apiResponse = (ApiResponse) response.getBody();
         assertNotNull(apiResponse);
+        assertEquals(RestApiStatus.SUCCESS, apiResponse.getStatus());
         assertEquals("Lấy tất cả sinh viên nhóm xưởng", apiResponse.getMessage());
         assertEquals(mockResponses, apiResponse.getData());
 
@@ -211,6 +233,7 @@ class TeacherStudentAttendanceServiceImplTest {
         assertEquals(HttpStatus.OK, response.getStatusCode());
         ApiResponse apiResponse = (ApiResponse) response.getBody();
         assertNotNull(apiResponse);
+        assertEquals(RestApiStatus.SUCCESS, apiResponse.getStatus());
         assertEquals("Cập nhật trạng thái điểm danh thành công", apiResponse.getMessage());
 
         verify(attendanceRepository).saveAllAndFlush(anyList());
@@ -236,6 +259,7 @@ class TeacherStudentAttendanceServiceImplTest {
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         ApiResponse apiResponse = (ApiResponse) response.getBody();
         assertNotNull(apiResponse);
+        assertEquals(RestApiStatus.ERROR, apiResponse.getStatus());
         assertEquals("Không có thay đổi nào", apiResponse.getMessage());
 
         verify(attendanceRepository, never()).saveAllAndFlush(anyList());

@@ -1,16 +1,20 @@
 package udpm.hn.studentattendance.core.staff.factory.service.impl;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.test.util.ReflectionTestUtils;
 import udpm.hn.studentattendance.core.notification.model.request.NotificationAddRequest;
 import udpm.hn.studentattendance.core.notification.service.NotificationService;
 import udpm.hn.studentattendance.core.staff.factory.model.request.USFactoryCreateUpdateRequest;
@@ -20,6 +24,7 @@ import udpm.hn.studentattendance.core.staff.factory.model.response.USFactoryResp
 import udpm.hn.studentattendance.core.staff.factory.model.response.USProjectFactoryResponse;
 import udpm.hn.studentattendance.core.staff.factory.repository.factory.*;
 import udpm.hn.studentattendance.entities.*;
+import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
 import udpm.hn.studentattendance.helpers.SessionHelper;
 import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
 import udpm.hn.studentattendance.infrastructure.common.ApiResponse;
@@ -28,6 +33,7 @@ import udpm.hn.studentattendance.infrastructure.common.repositories.CommonUserSt
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.RestApiStatus;
 import udpm.hn.studentattendance.infrastructure.constants.RoleConstant;
+import udpm.hn.studentattendance.infrastructure.redis.service.RedisService;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -41,287 +47,332 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class USFactoryServiceImplTest {
 
-    @Mock
-    private USFactoryExtendRepository factoryRepository;
+        @Mock
+        private USFactoryExtendRepository factoryRepository;
 
-    @Mock
-    private USProjectFactoryExtendRepository projectFactoryExtendRepository;
+        @Mock
+        private USProjectFactoryExtendRepository projectFactoryExtendRepository;
 
-    @Mock
-    private USStaffFactoryExtendRepository staffFactoryExtendRepository;
+        @Mock
+        private USStaffFactoryExtendRepository staffFactoryExtendRepository;
 
-    @Mock
-    private USSubjectFacilityFactoryExtendRepository subjectFacilityFactoryExtendRepository;
+        @Mock
+        private USSubjectFacilityFactoryExtendRepository subjectFacilityFactoryExtendRepository;
 
-    @Mock
-    private USFactoryPlanExtendRepository factoryPlanExtendRepository;
+        @Mock
+        private USFactoryPlanExtendRepository factoryPlanExtendRepository;
 
-    @Mock
-    private USFactorySemesterExtendRepository semesterRepository;
+        @Mock
+        private USFactorySemesterExtendRepository semesterRepository;
 
-    @Mock
-    private NotificationService notificationService;
+        @Mock
+        private NotificationService notificationService;
 
-    @Mock
-    private CommonUserStudentRepository commonUserStudentRepository;
+        @Mock
+        private CommonUserStudentRepository commonUserStudentRepository;
 
-    @Mock
-    private SessionHelper sessionHelper;
+        @Mock
+        private SessionHelper sessionHelper;
 
-    @Mock
-    private USFactoryProjectPlanExtendRepository projectPlanExtendRepository;
+        @Mock
+        private USFactoryProjectPlanExtendRepository projectPlanExtendRepository;
 
-    @Mock
-    private UserActivityLogHelper userActivityLogHelper;
+        @Mock
+        private UserActivityLogHelper userActivityLogHelper;
 
-    @InjectMocks
-    private USFactoryServiceImpl factoryService;
+        @Mock
+        private RedisService redisService;
 
-    @Test
-    @DisplayName("getAllFactory should return paginated factory list")
-    void testGetAllFactory() {
-        // Arrange
-        String facilityId = "facility-1";
-        USFactoryRequest request = new USFactoryRequest();
+        @Mock
+        private RedisInvalidationHelper redisInvalidationHelper;
 
-        when(sessionHelper.getFacilityId()).thenReturn(facilityId);
+        @InjectMocks
+        private USFactoryServiceImpl factoryService;
 
-        Page<USFactoryResponse> page = new PageImpl<>(new ArrayList<>());
-        when(factoryRepository.getAllFactory(any(Pageable.class), eq(facilityId), eq(request)))
-                .thenReturn(page);
+        @BeforeEach
+        void setUp() {
+                // Set Redis TTL value
+                ReflectionTestUtils.setField(factoryService, "redisTTL", 3600L);
+        }
 
-        // Act
-        ResponseEntity<?> response = factoryService.getAllFactory(request);
+        @Test
+        @DisplayName("getAllFactory should return paginated factory list")
+        void testGetAllFactory() {
+                // Arrange
+                String facilityId = "facility-1";
+                USFactoryRequest request = new USFactoryRequest();
 
-        // Assert
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        ApiResponse apiResponse = (ApiResponse) response.getBody();
-        assertNotNull(apiResponse);
-        assertEquals(RestApiStatus.SUCCESS, apiResponse.getStatus());
-        assertEquals("Hiển thị tất cả nhóm xưởng thành công", apiResponse.getMessage());
+                when(sessionHelper.getFacilityId()).thenReturn(facilityId);
 
-        verify(factoryRepository).getAllFactory(any(Pageable.class), eq(facilityId), eq(request));
-    }
+                Page<USFactoryResponse> page = new PageImpl<>(new ArrayList<>());
+                when(factoryRepository.getAllFactory(any(Pageable.class), eq(facilityId), eq(request)))
+                                .thenReturn(page);
 
-    @Test
-    @DisplayName("getAllProject should return project list by facility")
-    void testGetAllProject() {
-        // Arrange
-        String facilityId = "facility-1";
-        when(sessionHelper.getFacilityId()).thenReturn(facilityId);
+                // Mock Redis cache miss
+                when(redisService.get(anyString())).thenReturn(null);
 
-        List<USProjectFactoryResponse> mockProjects = Arrays.asList(
-                mock(USProjectFactoryResponse.class),
-                mock(USProjectFactoryResponse.class));
+                // Act
+                ResponseEntity<?> response = factoryService.getAllFactory(request);
 
-        when(projectFactoryExtendRepository.getAllProject(facilityId)).thenReturn(mockProjects);
+                // Assert
+                assertEquals(HttpStatus.OK, response.getStatusCode());
+                ApiResponse apiResponse = (ApiResponse) response.getBody();
+                assertNotNull(apiResponse);
+                assertEquals(RestApiStatus.SUCCESS, apiResponse.getStatus());
+                assertEquals("Hiển thị tất cả nhóm xưởng thành công", apiResponse.getMessage());
 
-        // Act
-        ResponseEntity<?> response = factoryService.getAllProject();
+                verify(factoryRepository).getAllFactory(any(Pageable.class), eq(facilityId), eq(request));
+                verify(redisService).set(anyString(), any(), eq(3600L));
+        }
 
-        // Assert
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        ApiResponse apiResponse = (ApiResponse) response.getBody();
-        assertNotNull(apiResponse);
-        assertEquals(RestApiStatus.SUCCESS, apiResponse.getStatus());
-        assertEquals("Lấy tất cả dự án theo cơ sở thành công", apiResponse.getMessage());
-        assertEquals(mockProjects, apiResponse.getData());
+        @Test
+        @DisplayName("getAllProject should return project list by facility")
+        void testGetAllProject() {
+                // Arrange
+                String facilityId = "facility-1";
+                when(sessionHelper.getFacilityId()).thenReturn(facilityId);
 
-        verify(projectFactoryExtendRepository).getAllProject(facilityId);
-    }
+                List<USProjectFactoryResponse> mockProjects = Arrays.asList(
+                                mock(USProjectFactoryResponse.class),
+                                mock(USProjectFactoryResponse.class));
 
-    @Test
-    @DisplayName("getAllSubjectFacility should return subject facilities by facility")
-    void testGetAllSubjectFacility() {
-        // Arrange
-        String facilityId = "facility-1";
-        when(sessionHelper.getFacilityId()).thenReturn(facilityId);
+                when(projectFactoryExtendRepository.getAllProject(facilityId)).thenReturn(mockProjects);
 
-        List<SubjectFacility> mockSubjectFacilities = Arrays.asList(
-                mock(SubjectFacility.class),
-                mock(SubjectFacility.class));
+                // Mock Redis cache miss
+                when(redisService.get(anyString())).thenReturn(null);
 
-        when(subjectFacilityFactoryExtendRepository.getAllSubjectFacility(
-                EntityStatus.ACTIVE,
-                EntityStatus.ACTIVE,
-                facilityId))
-                .thenReturn(mockSubjectFacilities);
+                // Act
+                ResponseEntity<?> response = factoryService.getAllProject();
 
-        // Act
-        ResponseEntity<?> response = factoryService.getAllSubjectFacility();
+                // Assert
+                assertEquals(HttpStatus.OK, response.getStatusCode());
+                ApiResponse apiResponse = (ApiResponse) response.getBody();
+                assertNotNull(apiResponse);
+                assertEquals(RestApiStatus.SUCCESS, apiResponse.getStatus());
+                assertEquals("Lấy tất cả dự án theo cơ sở thành công", apiResponse.getMessage());
+                assertEquals(mockProjects, apiResponse.getData());
 
-        // Assert
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        ApiResponse apiResponse = (ApiResponse) response.getBody();
-        assertNotNull(apiResponse);
-        assertEquals(RestApiStatus.SUCCESS, apiResponse.getStatus());
-        assertEquals("Lấy tất cả bộ môn cơ sở thành công", apiResponse.getMessage());
-        assertEquals(mockSubjectFacilities, apiResponse.getData());
+                verify(projectFactoryExtendRepository).getAllProject(facilityId);
+                verify(redisService).set(anyString(), any(), eq(3600L));
+        }
 
-        verify(subjectFacilityFactoryExtendRepository).getAllSubjectFacility(
-                EntityStatus.ACTIVE,
-                EntityStatus.ACTIVE,
-                facilityId);
-    }
+        @Test
+        @DisplayName("getAllSubjectFacility should return subject facilities by facility")
+        void testGetAllSubjectFacility() {
+                // Arrange
+                String facilityId = "facility-1";
+                when(sessionHelper.getFacilityId()).thenReturn(facilityId);
 
-    @Test
-    @DisplayName("getAllStaff should return staff list by facility")
-    void testGetAllStaff() {
-        // Arrange
-        String facilityId = "facility-1";
-        when(sessionHelper.getFacilityId()).thenReturn(facilityId);
+                List<SubjectFacility> mockSubjectFacilities = Arrays.asList(
+                                mock(SubjectFacility.class),
+                                mock(SubjectFacility.class));
 
-        List<UserStaff> mockStaffs = Arrays.asList(
-                mock(UserStaff.class),
-                mock(UserStaff.class));
+                when(subjectFacilityFactoryExtendRepository.getAllSubjectFacility(
+                                EntityStatus.ACTIVE,
+                                EntityStatus.ACTIVE,
+                                facilityId))
+                                .thenReturn(mockSubjectFacilities);
 
-        when(staffFactoryExtendRepository.getListUserStaff(
-                EntityStatus.ACTIVE,
-                EntityStatus.ACTIVE,
-                facilityId,
-                RoleConstant.TEACHER))
-                .thenReturn(mockStaffs);
+                // Mock Redis cache miss
+                when(redisService.get(anyString())).thenReturn(null);
 
-        // Act
-        ResponseEntity<?> response = factoryService.getAllStaff();
+                // Act
+                ResponseEntity<?> response = factoryService.getAllSubjectFacility();
 
-        // Assert
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        ApiResponse apiResponse = (ApiResponse) response.getBody();
-        assertNotNull(apiResponse);
-        assertEquals(RestApiStatus.SUCCESS, apiResponse.getStatus());
-        assertEquals("Lấy tất cả giảng viên theo cơ sở thành công", apiResponse.getMessage());
-        assertEquals(mockStaffs, apiResponse.getData());
+                // Assert
+                assertEquals(HttpStatus.OK, response.getStatusCode());
+                ApiResponse apiResponse = (ApiResponse) response.getBody();
+                assertNotNull(apiResponse);
+                assertEquals(RestApiStatus.SUCCESS, apiResponse.getStatus());
+                assertEquals("Lấy tất cả bộ môn cơ sở thành công", apiResponse.getMessage());
+                assertEquals(mockSubjectFacilities, apiResponse.getData());
 
-        verify(staffFactoryExtendRepository).getListUserStaff(
-                EntityStatus.ACTIVE,
-                EntityStatus.ACTIVE,
-                facilityId,
-                RoleConstant.TEACHER);
-    }
+                verify(subjectFacilityFactoryExtendRepository).getAllSubjectFacility(
+                                EntityStatus.ACTIVE,
+                                EntityStatus.ACTIVE,
+                                facilityId);
+                verify(redisService).set(anyString(), any(), eq(3600L));
+        }
 
-    @Test
-    @DisplayName("getDetailFactory should return factory details when factory exists")
-    void testGetDetailFactory_Success() {
-        // Arrange
-        String factoryId = "factory-1";
-        USDetailFactoryResponse mockResponse = mock(USDetailFactoryResponse.class);
+        @Test
+        @DisplayName("getAllStaff should return staff list by facility")
+        void testGetAllStaff() {
+                // Arrange
+                String facilityId = "facility-1";
+                when(sessionHelper.getFacilityId()).thenReturn(facilityId);
 
-        when(factoryRepository.getFactoryById(factoryId)).thenReturn(Optional.of(mockResponse));
+                List<UserStaff> mockStaffs = Arrays.asList(
+                                mock(UserStaff.class),
+                                mock(UserStaff.class));
 
-        // Act
-        ResponseEntity<?> response = factoryService.getDetailFactory(factoryId);
+                when(staffFactoryExtendRepository.getListUserStaff(
+                                EntityStatus.ACTIVE,
+                                EntityStatus.ACTIVE,
+                                facilityId,
+                                RoleConstant.TEACHER))
+                                .thenReturn(mockStaffs);
 
-        // Assert
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        ApiResponse apiResponse = (ApiResponse) response.getBody();
-        assertNotNull(apiResponse);
-        assertEquals(RestApiStatus.SUCCESS, apiResponse.getStatus());
-        assertEquals("Xem chi tiết nhóm xưởng thành công", apiResponse.getMessage());
+                // Mock Redis cache miss
+                when(redisService.get(anyString())).thenReturn(null);
 
-        verify(factoryRepository).getFactoryById(factoryId);
-    }
+                // Act
+                ResponseEntity<?> response = factoryService.getAllStaff();
 
-    @Test
-    @DisplayName("getDetailFactory should return error when factory does not exist")
-    void testGetDetailFactory_NotFound() {
-        // Arrange
-        String factoryId = "non-existent-factory";
+                // Assert
+                assertEquals(HttpStatus.OK, response.getStatusCode());
+                ApiResponse apiResponse = (ApiResponse) response.getBody();
+                assertNotNull(apiResponse);
+                assertEquals(RestApiStatus.SUCCESS, apiResponse.getStatus());
+                assertEquals("Lấy tất cả giảng viên theo cơ sở thành công", apiResponse.getMessage());
+                assertEquals(mockStaffs, apiResponse.getData());
 
-        when(factoryRepository.getFactoryById(factoryId)).thenReturn(Optional.empty());
+                verify(staffFactoryExtendRepository).getListUserStaff(
+                                EntityStatus.ACTIVE,
+                                EntityStatus.ACTIVE,
+                                facilityId,
+                                RoleConstant.TEACHER);
+                verify(redisService).set(anyString(), any(), eq(3600L));
+        }
 
-        // Act
-        ResponseEntity<?> response = factoryService.getDetailFactory(factoryId);
+        @Test
+        @DisplayName("getDetailFactory should return factory details when factory exists")
+        void testGetDetailFactory_Success() {
+                // Arrange
+                String factoryId = "factory-1";
+                USDetailFactoryResponse mockResponse = mock(USDetailFactoryResponse.class);
 
-        // Assert
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        ApiResponse apiResponse = (ApiResponse) response.getBody();
-        assertNotNull(apiResponse);
-        assertEquals(RestApiStatus.ERROR, apiResponse.getStatus());
-        assertEquals("Nhóm xưởng không tồn tại", apiResponse.getMessage());
+                when(factoryRepository.getFactoryById(factoryId)).thenReturn(Optional.of(mockResponse));
 
-        verify(factoryRepository).getFactoryById(factoryId);
-    }
+                // Mock Redis cache miss
+                when(redisService.get(anyString())).thenReturn(null);
 
-    @Test
-    @DisplayName("createFactory should create new factory successfully")
-    void testCreateFactory_Success() {
-        // Arrange
-        String facilityId = "facility-1";
-        when(sessionHelper.getFacilityId()).thenReturn(facilityId);
-        when(sessionHelper.getUserCode()).thenReturn("USER123");
-        when(sessionHelper.getUserName()).thenReturn("Test User");
+                // Act
+                ResponseEntity<?> response = factoryService.getDetailFactory(factoryId);
 
-        USFactoryCreateUpdateRequest request = new USFactoryCreateUpdateRequest();
-        request.setFactoryName("Test Factory");
-        request.setFactoryDescription("Test Description");
-        request.setIdUserStaff("staff-1");
-        request.setIdProject("project-1");
+                // Assert
+                assertEquals(HttpStatus.OK, response.getStatusCode());
+                ApiResponse apiResponse = (ApiResponse) response.getBody();
+                assertNotNull(apiResponse);
+                assertEquals(RestApiStatus.SUCCESS, apiResponse.getStatus());
+                assertEquals("Xem chi tiết nhóm xưởng thành công", apiResponse.getMessage());
 
-        UserStaff mockStaff = mock(UserStaff.class);
-        when(mockStaff.getId()).thenReturn("staff-1");
+                verify(factoryRepository).getFactoryById(factoryId);
+                verify(redisService).set(anyString(), any(), eq(3600L));
+        }
 
-        Project mockProject = mock(Project.class);
-        when(mockProject.getId()).thenReturn("project-1");
-        when(mockProject.getName()).thenReturn("Test Project");
+        @Test
+        @DisplayName("getDetailFactory should return error when factory does not exist")
+        void testGetDetailFactory_NotFound() {
+                // Arrange
+                String factoryId = "non-existent-factory";
 
-        when(staffFactoryExtendRepository.findById("staff-1")).thenReturn(Optional.of(mockStaff));
-        when(projectFactoryExtendRepository.findById("project-1")).thenReturn(Optional.of(mockProject));
-        when(factoryRepository.isExistNameAndProject(request.getFactoryName(), request.getIdProject(), null))
-                .thenReturn(false);
+                when(factoryRepository.getFactoryById(factoryId)).thenReturn(Optional.empty());
 
-        Factory savedFactory = new Factory();
-        savedFactory.setId("new-factory-id");
-        savedFactory.setName(request.getFactoryName());
-        when(factoryRepository.save(any(Factory.class))).thenReturn(savedFactory);
+                // Mock Redis cache miss
+                when(redisService.get(anyString())).thenReturn(null);
 
-        doNothing().when(notificationService).add(any(NotificationAddRequest.class));
-        doNothing().when(userActivityLogHelper).saveLog(anyString());
+                // Act
+                ResponseEntity<?> response = factoryService.getDetailFactory(factoryId);
 
-        // Act
-        ResponseEntity<?> response = factoryService.createFactory(request);
+                // Assert
+                assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+                ApiResponse apiResponse = (ApiResponse) response.getBody();
+                assertNotNull(apiResponse);
+                assertEquals(RestApiStatus.ERROR, apiResponse.getStatus());
+                assertEquals("Nhóm xưởng không tồn tại", apiResponse.getMessage());
 
-        // Assert
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        ApiResponse apiResponse = (ApiResponse) response.getBody();
-        assertNotNull(apiResponse);
-        assertEquals(RestApiStatus.SUCCESS, apiResponse.getStatus());
-        assertEquals("Thêm nhóm xưởng mới thành công", apiResponse.getMessage());
+                verify(factoryRepository).getFactoryById(factoryId);
+                verify(redisService, never()).set(anyString(), any(), anyLong());
+        }
 
-        verify(factoryRepository).save(any(Factory.class));
-        verify(notificationService).add(any(NotificationAddRequest.class));
-        verify(userActivityLogHelper).saveLog(contains("vừa thêm 1 nhóm xưởng mới"));
-    }
+        @Test
+        @DisplayName("createFactory should create new factory successfully")
+        void testCreateFactory_Success() {
+                // Arrange
+                String facilityId = "facility-1";
+                when(sessionHelper.getFacilityId()).thenReturn(facilityId);
+                when(sessionHelper.getUserCode()).thenReturn("USER123");
+                when(sessionHelper.getUserName()).thenReturn("Test User");
 
-    @Test
-    @DisplayName("createFactory should return error when factory already exists")
-    void testCreateFactory_AlreadyExists() {
-        // Arrange
-        USFactoryCreateUpdateRequest request = new USFactoryCreateUpdateRequest();
-        request.setFactoryName("Existing Factory");
-        request.setIdUserStaff("staff-1");
-        request.setIdProject("project-1");
+                USFactoryCreateUpdateRequest request = new USFactoryCreateUpdateRequest();
+                request.setFactoryName("Test Factory");
+                request.setFactoryDescription("Test Description");
+                request.setIdUserStaff("staff-1");
+                request.setIdProject("project-1");
 
-        UserStaff mockStaff = mock(UserStaff.class);
-        Project mockProject = mock(Project.class);
+                UserStaff mockStaff = mock(UserStaff.class);
+                when(mockStaff.getId()).thenReturn("staff-1");
 
-        when(staffFactoryExtendRepository.findById("staff-1")).thenReturn(Optional.of(mockStaff));
-        when(projectFactoryExtendRepository.findById("project-1")).thenReturn(Optional.of(mockProject));
-        when(factoryRepository.isExistNameAndProject(request.getFactoryName(), request.getIdProject(), null))
-                .thenReturn(true);
+                Project mockProject = mock(Project.class);
+                when(mockProject.getId()).thenReturn("project-1");
+                when(mockProject.getName()).thenReturn("Test Project");
 
-        // Act
-        ResponseEntity<?> response = factoryService.createFactory(request);
+                when(staffFactoryExtendRepository.findById("staff-1")).thenReturn(Optional.of(mockStaff));
+                when(projectFactoryExtendRepository.findById("project-1")).thenReturn(Optional.of(mockProject));
+                when(factoryRepository.isExistNameAndProject(anyString(), anyString(), isNull()))
+                                .thenReturn(false);
 
-        // Assert
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        ApiResponse apiResponse = (ApiResponse) response.getBody();
-        assertNotNull(apiResponse);
-        assertEquals(RestApiStatus.ERROR, apiResponse.getStatus());
-        assertEquals("Nhóm xưởng đã tồn tại trong dự án này", apiResponse.getMessage());
+                Factory savedFactory = new Factory();
+                savedFactory.setId("new-factory-id");
+                savedFactory.setName(request.getFactoryName());
+                when(factoryRepository.save(any(Factory.class))).thenReturn(savedFactory);
 
-        verify(factoryRepository, never()).save(any(Factory.class));
-    }
+                // Mock notification service
+                doAnswer(invocation -> {
+                        NotificationAddRequest notificationRequest = invocation.getArgument(0);
+                        return null; // Return value doesn't matter for void methods
+                }).when(notificationService).add(any(NotificationAddRequest.class));
+
+                doNothing().when(userActivityLogHelper).saveLog(anyString());
+                doNothing().when(redisInvalidationHelper).invalidateAllCaches();
+
+                // Act
+                ResponseEntity<?> response = factoryService.createFactory(request);
+
+                // Assert
+                assertEquals(HttpStatus.OK, response.getStatusCode());
+                ApiResponse apiResponse = (ApiResponse) response.getBody();
+                assertNotNull(apiResponse);
+                assertEquals(RestApiStatus.SUCCESS, apiResponse.getStatus());
+                assertEquals("Thêm nhóm xưởng mới thành công", apiResponse.getMessage());
+
+                verify(factoryRepository).save(any(Factory.class));
+                verify(notificationService).add(any(NotificationAddRequest.class));
+                verify(userActivityLogHelper).saveLog(contains("vừa thêm 1 nhóm xưởng mới"));
+                verify(redisInvalidationHelper).invalidateAllCaches();
+        }
+
+        @Test
+        @DisplayName("createFactory should return error when factory already exists")
+        void testCreateFactory_AlreadyExists() {
+                // Arrange
+                USFactoryCreateUpdateRequest request = new USFactoryCreateUpdateRequest();
+                request.setFactoryName("Existing Factory");
+                request.setIdUserStaff("staff-1");
+                request.setIdProject("project-1");
+
+                UserStaff mockStaff = mock(UserStaff.class);
+                Project mockProject = mock(Project.class);
+
+                when(staffFactoryExtendRepository.findById("staff-1")).thenReturn(Optional.of(mockStaff));
+                when(projectFactoryExtendRepository.findById("project-1")).thenReturn(Optional.of(mockProject));
+                when(factoryRepository.isExistNameAndProject(request.getFactoryName(), request.getIdProject(), null))
+                                .thenReturn(true);
+
+                // Act
+                ResponseEntity<?> response = factoryService.createFactory(request);
+
+                // Assert
+                assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+                ApiResponse apiResponse = (ApiResponse) response.getBody();
+                assertNotNull(apiResponse);
+                assertEquals(RestApiStatus.ERROR, apiResponse.getStatus());
+                assertEquals("Nhóm xưởng đã tồn tại trong dự án này", apiResponse.getMessage());
+
+                verify(factoryRepository, never()).save(any(Factory.class));
+                verify(redisInvalidationHelper, never()).invalidateAllCaches();
+        }
 }

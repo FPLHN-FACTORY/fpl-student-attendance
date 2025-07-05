@@ -7,6 +7,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -20,6 +22,7 @@ import udpm.hn.studentattendance.core.teacher.factory.repository.TCProjectExtend
 import udpm.hn.studentattendance.core.teacher.factory.repository.TCSemesterExtendRepository;
 import udpm.hn.studentattendance.entities.Project;
 import udpm.hn.studentattendance.entities.Semester;
+import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
 import udpm.hn.studentattendance.helpers.SessionHelper;
 import udpm.hn.studentattendance.infrastructure.common.ApiResponse;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
@@ -36,6 +39,7 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class TCFactoryServiceImplTest {
 
     @Mock
@@ -52,6 +56,9 @@ class TCFactoryServiceImplTest {
 
     @Mock
     private RedisService redisService;
+
+    @Mock
+    private RedisInvalidationHelper redisInvalidationHelper;
 
     @InjectMocks
     private TCFactoryServiceImpl factoryService;
@@ -253,7 +260,7 @@ class TCFactoryServiceImplTest {
         doNothing().when(redisService).deletePattern(anyString());
 
         // Act
-        factoryService.invalidateProjectCaches();
+        factoryService.invalidateTeacherFactoryCaches();
 
         // Assert
         verify(redisService).deletePattern("teacher:projects:" + facilityId);

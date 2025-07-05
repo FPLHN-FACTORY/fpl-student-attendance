@@ -15,6 +15,7 @@ public class USFactoryRequest extends PageableRequest {
     private String idStaff;
 
     private String idFacility;
+
     @Size(max = EntityProperties.LENGTH_NAME, message = "Tên nhóm xưởng không được vượt quá 255 ký tự")
     private String factoryName; // dùng thay cho searchQuery
 

@@ -13,11 +13,10 @@ import udpm.hn.studentattendance.core.staff.statistics.model.dto.SSListUserDto;
 import udpm.hn.studentattendance.core.staff.statistics.model.request.SSFilterFactoryStatsRequest;
 import udpm.hn.studentattendance.core.staff.statistics.model.response.*;
 import udpm.hn.studentattendance.core.staff.statistics.repositories.*;
+import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
 import udpm.hn.studentattendance.helpers.SessionHelper;
 import udpm.hn.studentattendance.infrastructure.common.ApiResponse;
 import udpm.hn.studentattendance.infrastructure.constants.RestApiStatus;
-
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -49,6 +48,9 @@ class SSStatisticsServiceImplTest {
 
     @Mock
     private SessionHelper sessionHelper;
+
+    @Mock
+    private RedisInvalidationHelper redisInvalidationHelper;
 
     @InjectMocks
     private SSStatisticsServiceImpl ssStatisticsService;

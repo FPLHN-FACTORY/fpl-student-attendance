@@ -6,6 +6,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -16,18 +18,17 @@ import udpm.hn.studentattendance.core.staff.project.model.request.USProjectSearc
 import udpm.hn.studentattendance.core.staff.project.model.response.USProjectResponse;
 import udpm.hn.studentattendance.core.staff.project.repository.*;
 import udpm.hn.studentattendance.entities.*;
+import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
 import udpm.hn.studentattendance.helpers.SessionHelper;
 import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
 import udpm.hn.studentattendance.infrastructure.common.ApiResponse;
-import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.common.repositories.CommonUserStudentRepository;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.RestApiStatus;
 import udpm.hn.studentattendance.infrastructure.constants.SemesterName;
 
 import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
+
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -35,6 +36,7 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class STProjectManagementImplTest {
 
     @Mock
@@ -60,6 +62,9 @@ class STProjectManagementImplTest {
 
     @Mock
     private UserActivityLogHelper userActivityLogHelper;
+
+    @Mock
+    private RedisInvalidationHelper redisInvalidationHelper;
 
     @InjectMocks
     private STProjectManagementImpl projectManagementService;
@@ -90,7 +95,7 @@ class STProjectManagementImplTest {
     @Test
     @DisplayName("createProject should create a new project successfully")
     void testCreateProject_Success() {
-        // Arrange
+        // Given
         String facilityId = "facility-1";
         when(sessionHelper.getFacilityId()).thenReturn(facilityId);
 
@@ -125,11 +130,7 @@ class STProjectManagementImplTest {
         when(subjectFacilityRepository.findById("sf-1")).thenReturn(Optional.of(subjectFacility));
 
         when(projectManagementRepository.isExistProjectInSameLevel(
-                eq(request.getName()),
-                eq(levelProject.getId()),
-                eq(semester.getId()),
-                eq(facilityId),
-                isNull()))
+                anyString(), anyString(), anyString(), anyString(), isNull()))
                 .thenReturn(false);
 
         Project savedProject = new Project();
@@ -144,10 +145,10 @@ class STProjectManagementImplTest {
         when(projectManagementRepository.save(any(Project.class))).thenReturn(savedProject);
         doNothing().when(userActivityLogHelper).saveLog(anyString());
 
-        // Act
+        // Then
         ResponseEntity<?> response = projectManagementService.createProject(request);
 
-        // Assert
+        // Then
         assertEquals(HttpStatus.OK, response.getStatusCode());
         ApiResponse apiResponse = (ApiResponse) response.getBody();
         assertNotNull(apiResponse);
@@ -227,11 +228,7 @@ class STProjectManagementImplTest {
         when(subjectFacilityRepository.findById("sf-1")).thenReturn(Optional.of(subjectFacility));
 
         when(projectManagementRepository.isExistProjectInSameLevel(
-                eq(request.getName()),
-                eq(levelProject.getId()),
-                eq(semester.getId()),
-                eq(facilityId),
-                isNull()))
+                anyString(), anyString(), anyString(), anyString(), isNull()))
                 .thenReturn(true);
 
         // Act

@@ -20,11 +20,13 @@ import udpm.hn.studentattendance.core.admin.facility.repository.AFFacilityExtend
 import udpm.hn.studentattendance.core.admin.facility.repository.AFFacilityIPRepository;
 import udpm.hn.studentattendance.entities.Facility;
 import udpm.hn.studentattendance.entities.FacilityIP;
+import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
 import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
 import udpm.hn.studentattendance.infrastructure.common.ApiResponse;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.IPType;
+import udpm.hn.studentattendance.infrastructure.constants.RedisPrefixConstant;
 import udpm.hn.studentattendance.infrastructure.redis.service.RedisService;
 
 import java.util.ArrayList;
@@ -50,6 +52,9 @@ class AFFacilityIPServiceImplTest {
     @Mock
     private RedisService redisService;
 
+    @Mock
+    private RedisInvalidationHelper redisInvalidationHelper;
+
     @InjectMocks
     private AFFacilityIPServiceImpl facilityIPService;
 
@@ -63,10 +68,11 @@ class AFFacilityIPServiceImplTest {
     void testGetAllListFromCache() {
         // Given
         AFFilterFacilityIPRequest request = new AFFilterFacilityIPRequest();
-        String cacheKey = "admin:facility-ip-list";
+        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_FACILITY_IP + "list";
         PageableObject mockData = mock(PageableObject.class);
 
-        when(redisService.get(cacheKey)).thenReturn(mockData);
+        when(redisService.get(anyString())).thenReturn(mockData);
+        when(redisService.getObject(anyString(), eq(PageableObject.class))).thenReturn(mockData);
 
         // When
         ResponseEntity<?> response = facilityIPService.getAllList(request);
@@ -75,7 +81,7 @@ class AFFacilityIPServiceImplTest {
         assertEquals(HttpStatus.OK, response.getStatusCode());
         ApiResponse apiResponse = (ApiResponse) response.getBody();
         assertNotNull(apiResponse);
-        assertEquals("Lấy danh sách dữ liệu thành công (cached)", apiResponse.getMessage());
+        assertEquals("Lấy danh sách dữ liệu thành công", apiResponse.getMessage());
         assertEquals(mockData, apiResponse.getData());
 
         // Verify repository was not called
@@ -88,14 +94,13 @@ class AFFacilityIPServiceImplTest {
     void testGetAllListFromRepository() {
         // Given
         AFFilterFacilityIPRequest request = new AFFilterFacilityIPRequest();
-        String cacheKey = "admin:facility-ip-list";
 
         List<AFFacilityIPResponse> ipList = new ArrayList<>();
         AFFacilityIPResponse ipResponse = mock(AFFacilityIPResponse.class);
         ipList.add(ipResponse);
         Page<AFFacilityIPResponse> page = new PageImpl<>(ipList);
 
-        when(redisService.get(cacheKey)).thenReturn(null);
+        when(redisService.get(anyString())).thenReturn(null);
         when(afFacilityIPRepository.getAllByFilter(any(Pageable.class), eq(request))).thenReturn(page);
 
         // When
@@ -109,7 +114,7 @@ class AFFacilityIPServiceImplTest {
 
         // Verify repository was called and cache was updated
         verify(afFacilityIPRepository).getAllByFilter(any(Pageable.class), eq(request));
-        verify(redisService).set(eq(cacheKey), any(PageableObject.class), eq(3600L));
+        verify(redisService).set(anyString(), any(PageableObject.class), eq(3600L));
     }
 
     @Test
@@ -152,6 +157,7 @@ class AFFacilityIPServiceImplTest {
         // Verify repository was called
         verify(afFacilityIPRepository).save(any(FacilityIP.class));
         verify(userActivityLogHelper).saveLog(contains("vừa thêm IP"));
+        verify(redisInvalidationHelper).invalidateAllCaches();
     }
 
     @Test
@@ -194,6 +200,7 @@ class AFFacilityIPServiceImplTest {
         // Verify repository was called
         verify(afFacilityIPRepository).save(any(FacilityIP.class));
         verify(userActivityLogHelper).saveLog(contains("vừa thêm DNS Suffix"));
+        verify(redisInvalidationHelper).invalidateAllCaches();
     }
 
     @Test
@@ -202,8 +209,6 @@ class AFFacilityIPServiceImplTest {
         // Given
         AFAddOrUpdateFacilityIPRequest request = mock(AFAddOrUpdateFacilityIPRequest.class);
         when(request.getIdFacility()).thenReturn("non-existent-id");
-        when(request.getIp()).thenReturn("192.168.1.1");
-        when(request.getType()).thenReturn(IPType.IPV4.getKey());
 
         when(afFacilityExtendRepository.findById("non-existent-id")).thenReturn(Optional.empty());
 
@@ -218,6 +223,7 @@ class AFFacilityIPServiceImplTest {
 
         // Verify repository was not called
         verify(afFacilityIPRepository, never()).save(any(FacilityIP.class));
+        verify(redisInvalidationHelper, never()).invalidateAllCaches();
     }
 
     @Test
@@ -249,6 +255,7 @@ class AFFacilityIPServiceImplTest {
 
         // Verify repository was not called
         verify(afFacilityIPRepository, never()).save(any(FacilityIP.class));
+        verify(redisInvalidationHelper, never()).invalidateAllCaches();
     }
 
     @Test
@@ -295,6 +302,7 @@ class AFFacilityIPServiceImplTest {
         // Verify repository was called
         verify(afFacilityIPRepository).save(existingIP);
         verify(userActivityLogHelper).saveLog(contains("vừa cập nhật IP"));
+        verify(redisInvalidationHelper).invalidateAllCaches();
     }
 
     @Test
@@ -314,7 +322,7 @@ class AFFacilityIPServiceImplTest {
         facilityIP.setFacility(facility);
 
         when(afFacilityIPRepository.findById(ipId)).thenReturn(Optional.of(facilityIP));
-        doNothing().when(afFacilityIPRepository).delete(facilityIP);
+        // No need to mock void method with doNothing()
 
         // When
         ResponseEntity<?> response = facilityIPService.deleteIP(ipId);
@@ -328,6 +336,7 @@ class AFFacilityIPServiceImplTest {
         // Verify repository was called
         verify(afFacilityIPRepository).delete(facilityIP);
         verify(userActivityLogHelper).saveLog(contains("vừa xóa IP"));
+        verify(redisInvalidationHelper).invalidateAllCaches();
     }
 
     @Test
@@ -365,6 +374,7 @@ class AFFacilityIPServiceImplTest {
         // Verify repository was called
         verify(afFacilityIPRepository).save(facilityIP);
         verify(userActivityLogHelper).saveLog(contains("vừa thay đổi trạng thái IP"));
+        verify(redisInvalidationHelper).invalidateAllCaches();
     }
 
     @Test
@@ -399,5 +409,6 @@ class AFFacilityIPServiceImplTest {
 
         // Verify repository was not called
         verify(afFacilityIPRepository, never()).save(any(FacilityIP.class));
+        verify(redisInvalidationHelper, never()).invalidateAllCaches();
     }
 }

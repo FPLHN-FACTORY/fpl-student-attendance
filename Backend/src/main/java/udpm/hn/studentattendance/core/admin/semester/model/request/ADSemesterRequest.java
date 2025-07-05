@@ -10,7 +10,7 @@ import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 @Getter
 @Setter
 public class ADSemesterRequest extends PageableRequest {
-    @Size(max = EntityProperties.LENGTH_NAME, message = "Tên học kỳ không được quá:" + EntityProperties.LENGTH_NAME)
+    @Size(max = EntityProperties.LENGTH_NAME, message = "Từ khóa không được quá:" + EntityProperties.LENGTH_NAME)
     private String semesterCode;
 
     private Long fromDateSemester;

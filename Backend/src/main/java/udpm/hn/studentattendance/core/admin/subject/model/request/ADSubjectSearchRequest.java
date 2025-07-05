@@ -10,7 +10,7 @@ import udpm.hn.studentattendance.infrastructure.constants.EntityProperties;
 @Setter
 public class ADSubjectSearchRequest extends PageableRequest {
 
-    @Size(max = EntityProperties.LENGTH_NAME, message = "Tên bộ môn không được quá:" + EntityProperties.LENGTH_NAME)
+    @Size(max = EntityProperties.LENGTH_NAME, message = "Từ khóa không được quá:" + EntityProperties.LENGTH_NAME)
     private String name;
 
     private Integer status;
