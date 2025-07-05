@@ -175,3 +175,7 @@ task testFixed(type: Test) {
     include '**/admin/useradmin/service/impl/ADUserAdminServiceImplTest*'
     include '**/admin/userstaff/service/impl/ADStaffServiceImplTest*'
 }
+
+configurations.configureEach {
+    exclude group: 'commons-logging', module: 'commons-logging'
+}

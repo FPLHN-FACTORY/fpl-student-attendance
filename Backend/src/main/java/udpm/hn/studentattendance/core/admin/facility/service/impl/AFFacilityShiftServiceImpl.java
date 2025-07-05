@@ -1,5 +1,6 @@
 package udpm.hn.studentattendance.core.admin.facility.service.impl;
 
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Pageable;
@@ -16,11 +17,13 @@ import udpm.hn.studentattendance.entities.FacilityShift;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
 import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
 import udpm.hn.studentattendance.helpers.RouterHelper;
+import udpm.hn.studentattendance.helpers.SettingHelper;
 import udpm.hn.studentattendance.helpers.ShiftHelper;
 import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.RedisPrefixConstant;
+import udpm.hn.studentattendance.infrastructure.constants.SettingKeys;
 import udpm.hn.studentattendance.infrastructure.redis.service.RedisService;
 
 @Service
@@ -33,6 +36,8 @@ public class AFFacilityShiftServiceImpl implements AFFacilityShiftService {
 
     private final UserActivityLogHelper userActivityLogHelper;
 
+    private final SettingHelper settingHelper;
+
     private final RedisService redisService;
 
     private final RedisInvalidationHelper redisInvalidationHelper;
@@ -40,8 +45,12 @@ public class AFFacilityShiftServiceImpl implements AFFacilityShiftService {
     @Value("${spring.cache.redis.time-to-live}")
     private long redisTTL;
 
-    @Value("${app.config.shift.min-diff}")
     private int MIN_DIFF_SHIFT;
+
+    @PostConstruct
+    public void init() {
+        this.MIN_DIFF_SHIFT = settingHelper.getSetting(SettingKeys.SHIFT_MIN_DIFF, Integer.class);
+    }
 
     public PageableObject<AFFacilityShiftResponse> getShiftList(AFFilterFacilityShiftRequest request) {
         String cacheKey = RedisPrefixConstant.REDIS_PREFIX_FACILITY_SHIFT + "list_" +

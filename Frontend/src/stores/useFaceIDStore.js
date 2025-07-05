@@ -417,6 +417,70 @@ const useFaceIDStore = defineStore('faceID', () => {
       return lst_spoofing.filter((o) => o).length < 3
     }
 
+    const isReaction = async () => {
+      let progress = []
+      while (progress.length < 3) {
+        const result = await human.detect(video.value)
+        const face = result?.face?.[0]
+
+        if (!face) {
+          return false
+        }
+
+        if (!cropFace(face) || !isInsideCenter(face.boxRaw)) {
+          continue
+        }
+
+        const checking = face.emotion.some(
+          (e) =>
+            ['happy', 'angry', 'surprise', 'disgust'].includes(e.emotion) &&
+            e.score > THRESHOLD_EMOTIONS,
+        )
+        progress.push(checking)
+      }
+      return progress.filter((o) => o).length > 1
+    }
+
+    const isCheckingGlasses = async () => {
+      let progress = []
+      while (progress.length < 3) {
+        const result = await human.detect(video.value)
+        const face = result?.face?.[0]
+
+        if (!face) {
+          return false
+        }
+
+        if (!cropFace(face) || !isInsideCenter(face.boxRaw)) {
+          continue
+        }
+
+        const checking = await isWithGlasses()
+        progress.push(checking)
+      }
+      return progress.filter((o) => o).length > 1
+    }
+
+    const isCheckingMask = async () => {
+      let progress = []
+      while (progress.length < 3) {
+        const result = await human.detect(video.value)
+        const face = result?.face?.[0]
+
+        if (!face) {
+          return false
+        }
+
+        if (!cropFace(face) || !isInsideCenter(face.boxRaw)) {
+          continue
+        }
+
+        const checking = await isWithMask()
+        progress.push(checking)
+      }
+      return progress.filter((o) => o).length > 1
+    }
+
     const getBestEmbedding = async () => {
       while (true) {
         const result = await human.detect(video.value)
@@ -576,7 +640,6 @@ const useFaceIDStore = defineStore('faceID', () => {
 
       error = 0
       const detection = detections.face?.[0]
-      const emotions = detection.emotion || []
       const faceBox = detection.box
       const faceBoxRaw = detection.boxRaw
       const gestures = Object.values(human.result.gesture).map((g) => g.gesture)
@@ -650,21 +713,16 @@ const useFaceIDStore = defineStore('faceID', () => {
       }
 
       if (!isFullStep) {
-        if (
-          emotions.some(
-            (e) =>
-              ['happy', 'angry', 'surprise', 'disgust'].includes(e.emotion) &&
-              e.score > THRESHOLD_EMOTIONS,
-          )
-        ) {
+        if (await isReaction()) {
           return renderTextStep('Vui lòng không biểu cảm')
         }
-        if (await isWithGlasses()) {
+
+        if (await isCheckingGlasses()) {
           step.value = 0
           return renderTextStep('Vui lòng không nhắm mắt hoặc đeo kính')
         }
 
-        if (await isWithMask()) {
+        if (await isCheckingMask()) {
           step.value = 0
           return renderTextStep('Vui lòng không đeo khẩu trang')
         }

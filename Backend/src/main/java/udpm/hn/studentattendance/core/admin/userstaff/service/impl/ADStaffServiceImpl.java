@@ -25,6 +25,7 @@ import udpm.hn.studentattendance.helpers.PaginationHelper;
 import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
 import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.helpers.SessionHelper;
+import udpm.hn.studentattendance.helpers.SettingHelper;
 import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
 import udpm.hn.studentattendance.helpers.ValidateHelper;
 
@@ -33,6 +34,7 @@ import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 
 import udpm.hn.studentattendance.infrastructure.constants.RedisPrefixConstant;
 import udpm.hn.studentattendance.infrastructure.constants.RoleConstant;
+import udpm.hn.studentattendance.infrastructure.constants.SettingKeys;
 import udpm.hn.studentattendance.infrastructure.redis.service.RedisService;
 
 import java.util.HashMap;
@@ -44,6 +46,7 @@ import java.util.Optional;
 @RequiredArgsConstructor
 @Validated
 public class ADStaffServiceImpl implements ADStaffService {
+
     private final ADStaffExtendRepository adStaffRepository;
 
     private final ADStaffRoleExtendRepository adStaffRoleRepository;
@@ -60,8 +63,7 @@ public class ADStaffServiceImpl implements ADStaffService {
 
     private final RedisInvalidationHelper redisInvalidationHelper;
 
-    @Value("${app.config.disabled-check-email-fpt}")
-    private String isDisableCheckEmailFpt;
+    private final SettingHelper settingHelper;
 
     @Value("${spring.cache.redis.time-to-live}")
     private long redisTTL;
@@ -214,7 +216,7 @@ public class ADStaffServiceImpl implements ADStaffService {
                     "Tên nhân viên không hợp lệ: Tối thiểu 2 từ, cách nhau bởi khoảng trắng và Chỉ gồm ký tự chữ không chứa số hay ký tự đặc biệt.");
         }
 
-        if (!isDisableCheckEmailFpt.equalsIgnoreCase("true")) {
+        if (!settingHelper.getSetting(SettingKeys.DISABLED_CHECK_EMAIL_FPT_STAFF, Boolean.class)) {
             if (!ValidateHelper.isValidEmailFE(adCreateUpdateStaffRequest.getEmailFe().trim())) {
                 return RouterHelper
                         .responseError("Email FE không được chứa khoảng trắng và phải kết thúc bằng @fe.edu.vn");
@@ -324,7 +326,7 @@ public class ADStaffServiceImpl implements ADStaffService {
         }
 
         // Kiểm tra định dạng email
-        if (!isDisableCheckEmailFpt.equalsIgnoreCase("true")) {
+        if (!settingHelper.getSetting(SettingKeys.DISABLED_CHECK_EMAIL_FPT_STAFF, Boolean.class)) {
             if (!ValidateHelper.isValidEmailFE(adCreateUpdateStaffRequest.getEmailFe().trim())) {
                 return RouterHelper.responseError("Không chứa khoảng trắng và kết thúc bằng @fe.edu.vn");
             }

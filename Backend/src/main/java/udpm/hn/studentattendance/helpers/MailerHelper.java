@@ -3,6 +3,8 @@ package udpm.hn.studentattendance.helpers;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.ClassPathResource;
@@ -16,7 +18,6 @@ import udpm.hn.studentattendance.infrastructure.constants.ExecutorConstants;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
@@ -24,6 +25,8 @@ import java.util.concurrent.CompletableFuture;
 @Component
 @RequiredArgsConstructor
 public class MailerHelper {
+
+    private static final Logger logger = LoggerFactory.getLogger(MailerHelper.class);
 
     private final JavaMailSender mailSender;
 
@@ -41,6 +44,8 @@ public class MailerHelper {
     public final static String TEMPLATE_STATISTICS_STAFF = "statistics-staff.html";
 
     public final static String TEMPLATE_STATISTICS_TEACHER = "statistics-teacher.html";
+
+    public final static String TEMPLATE_UPCOMING_SCHEDULE_PLAN_DATE = "upcoming-schedule-plandate.html";
 
     public final static String TEMPLATE_STATISTICS_DAILY = "statistics-staff.html";
 
@@ -102,8 +107,10 @@ public class MailerHelper {
 
             mailSender.send(mimeMessage);
         } catch (MessagingException e) {
+            logger.warn(e.getMessage());
             return CompletableFuture.completedFuture(false);
         }
+        logger.info("Gửi email thành công: " + request.getTitle());
         return CompletableFuture.completedFuture(true);
     }
 
@@ -115,6 +122,7 @@ public class MailerHelper {
                 return new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
             }
         } catch (IOException e) {
+            logger.error("Không thể tải template: " + template_name);
             return "";
         }
     }

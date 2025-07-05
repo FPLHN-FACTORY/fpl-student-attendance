@@ -51,4 +51,6 @@ public class SPDAddOrUpdatePlanDateRequest {
 
     private String description;
 
+    private List<Long> customTime;
+
 }

@@ -20,11 +20,19 @@ import udpm.hn.studentattendance.core.teacher.teachingschedule.repository.TCTSSu
 import udpm.hn.studentattendance.core.teacher.teachingschedule.repository.TCTeachingScheduleExtendRepository;
 import udpm.hn.studentattendance.core.teacher.teachingschedule.service.TCTeachingScheduleService;
 import udpm.hn.studentattendance.entities.*;
-import udpm.hn.studentattendance.helpers.*;
+import udpm.hn.studentattendance.helpers.MailerHelper;
+import udpm.hn.studentattendance.helpers.PaginationHelper;
+import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
+import udpm.hn.studentattendance.helpers.RouterHelper;
+import udpm.hn.studentattendance.helpers.SessionHelper;
+import udpm.hn.studentattendance.helpers.SettingHelper;
+import udpm.hn.studentattendance.helpers.ShiftHelper;
+import udpm.hn.studentattendance.helpers.ValidateHelper;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.config.mailer.model.MailerDefaultRequest;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.RedisPrefixConstant;
+import udpm.hn.studentattendance.infrastructure.constants.SettingKeys;
 import udpm.hn.studentattendance.infrastructure.constants.ShiftType;
 import udpm.hn.studentattendance.infrastructure.constants.StatusType;
 import udpm.hn.studentattendance.infrastructure.redis.service.RedisService;
@@ -60,15 +68,14 @@ public class TCTeachingScheduleServiceImpl implements TCTeachingScheduleService 
 
         private final SessionHelper sessionHelper;
 
+        private final SettingHelper settingHelper;
+
         private final RedisService redisService;
 
         private final RedisInvalidationHelper redisInvalidationHelper;
 
         @Value("${app.config.app-name}")
         private String appName;
-
-        @Value("${app.config.shift.max-late-arrival}")
-        private int MAX_LATE_ARRIVAL;
 
         @Value("${spring.cache.redis.time-to-live}")
         private long redisTTL;
@@ -408,6 +415,8 @@ public class TCTeachingScheduleServiceImpl implements TCTeachingScheduleService 
                 if (isOutOfTime) {
                         return RouterHelper.responseError("Đã quá giờ cập nhật ca dạy");
                 }
+
+                int MAX_LATE_ARRIVAL = settingHelper.getSetting(SettingKeys.SHIFT_MAX_LATE_ARRIVAL, Integer.class);
 
                 if (planDateUpdateRequest.getLateArrival() > MAX_LATE_ARRIVAL) {
                         return RouterHelper.responseError(
