@@ -54,7 +54,7 @@ const columns = ref(
     { title: 'Tên dự án', dataIndex: 'projectName', key: 'projectName' },
     { title: 'Nội dung', dataIndex: 'description', key: 'description' },
     { title: 'Bộ môn', dataIndex: 'subjectName', key: 'subjectName' },
-    { title: 'Cấp độ', dataIndex: 'level', key: 'level' },
+    { title: 'Nhóm dự án', dataIndex: 'level', key: 'level' },
     { title: 'Ngày diễn ra', dataIndex: 'semesterName', key: 'semesterName' },
     {
       title: 'Checkin/checkout muộn',
@@ -134,7 +134,7 @@ const fetchDataLevel = () => {
       optLevel.value = response.data
     })
     .catch((error) => {
-      message.error(error?.response?.data?.message || 'Lỗi khi lấy dữ liệu cấp độ dự án')
+      message.error(error?.response?.data?.message || 'Lỗi khi lấy dữ liệu nhóm dự án')
     })
 }
 
@@ -553,7 +553,7 @@ watch(
           v-model:value="dataFilterAdd.level"
           class="w-100"
           :dropdownMatchSelectWidth="false"
-          placeholder="-- Chọn 1 cấp độ --"
+          placeholder="-- Chọn 1 nhóm dự án --"
           allowClear
           :disabled="modalAddOrUpdate.isLoading"
         >
@@ -696,7 +696,7 @@ watch(
                   </a-select>
                 </div>
                 <div class="col-xxl-2 col-md-4 col-sm-6">
-                  <div class="label-title">Cấp độ dự án:</div>
+                  <div class="label-title">Nhóm dự án:</div>
                   <a-select
                     v-model:value="dataFilter.level"
                     class="w-100"
@@ -775,8 +775,8 @@ watch(
           >
             <template #bodyCell="{ column, record }">
               <template v-if="column.dataIndex === 'description'">
-                <a-typography-link 
-                  v-if="record.description" 
+                <a-typography-link
+                  v-if="record.description"
                   @click="handleShowDescription(record.description)"
                   >Chi tiết</a-typography-link
                 >

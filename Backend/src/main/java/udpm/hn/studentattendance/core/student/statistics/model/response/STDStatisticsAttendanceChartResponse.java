@@ -2,9 +2,9 @@ package udpm.hn.studentattendance.core.student.statistics.model.response;
 
 public interface STDStatisticsAttendanceChartResponse {
 
-    Integer getTotalShift();
+    Integer getTotalPresent();
 
     Integer getTotalAbsent();
 
-    String getFactoryName();
+    Integer getTotalShift();
 }

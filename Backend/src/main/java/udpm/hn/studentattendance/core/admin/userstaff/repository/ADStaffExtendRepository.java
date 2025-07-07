@@ -19,7 +19,7 @@ public interface ADStaffExtendRepository extends UserStaffRepository {
 
     @Query(value = """
             SELECT
-              ROW_NUMBER() OVER (ORDER BY s.created_at DESC) AS orderNumber,
+              ROW_NUMBER() OVER (ORDER BY s.status DESC, s.created_at DESC) AS orderNumber,
               s.id AS id,
               s.name AS staffName,
               s.code AS staffCode,

@@ -21,11 +21,11 @@ public interface ADStatisticsRepository extends UserActivityLogRepository {
             (SELECT COUNT(DISTINCT sb.id) FROM subject sb WHERE sb.status = 1) AS subject,
             (SELECT COUNT(DISTINCT p.id) 
             FROM project p JOIN semester s ON p.id_semester = s.id
-            WHERE s.to_date < UNIX_TIMESTAMP(CURDATE()) AND
+            WHERE
             s.status = 1 AND
             p.status = 1) AS totalProject
            """, nativeQuery = true)
-    Optional<ADStatisticsStatResponse> getAllStatistics(ADStatisticRequest request);
+    Optional<ADStatisticsStatResponse> getAllStatistics();
 
     @Query(value = """
                     SELECT 

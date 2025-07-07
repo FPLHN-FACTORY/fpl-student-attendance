@@ -32,28 +32,9 @@ public class ADStatisticsServiceImpl implements ADStatisticsService {
 
     private final ADSProjectSubjectFacilityRepository projectSubjectFacilityRepository;
 
-    private final RedisService redisService;
+    public ADSAllStartsAndChartDTO getCachedStatistics() {
 
-    private final RedisInvalidationHelper redisInvalidationHelper;
-
-    @Value("${spring.cache.redis.time-to-live}")
-    private long redisTTL;
-
-    public ADSAllStartsAndChartDTO getCachedStatistics(ADStatisticRequest request, int pageNumber) {
-        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_STATISTICS + "admin_" +
-                "request=" + request.toString() +
-                "_page=" + pageNumber;
-
-        Object cachedData = redisService.get(cacheKey);
-        if (cachedData != null) {
-            try {
-                return redisService.getObject(cacheKey, ADSAllStartsAndChartDTO.class);
-            } catch (Exception e) {
-                redisService.delete(cacheKey);
-            }
-        }
-
-        ADStatisticsStatResponse statResponse = statisticsRepository.getAllStatistics(request).orElse(null);
+        ADStatisticsStatResponse statResponse = statisticsRepository.getAllStatistics().orElse(null);
         ADSTotalProjectAndSubjectResponse totalProjectAndSubjectResponse = statisticsRepository
                 .getTotalProjectAndSubject().orElse(null);
         if (statResponse == null || totalProjectAndSubjectResponse == null) {
@@ -62,27 +43,20 @@ public class ADStatisticsServiceImpl implements ADStatisticsService {
 
         List<ADSSubjectFacilityChartResponse> subjectFacilityChartResponseList = subjectFacilityExtendRepository
                 .getSubjectByFacility();
-        Pageable pageable = PageRequest.of(pageNumber, 5);
-        Page<ADSProjectSubjectFacilityResponse> projectSubjectFacilityResponseList = projectSubjectFacilityRepository
-                .getProjectSubjectFacilityResponses(pageable);
+
 
         ADSAllStartsAndChartDTO adsAllStartsAndChartDTO = new ADSAllStartsAndChartDTO();
         adsAllStartsAndChartDTO.setStatisticsStatResponse(statResponse);
         adsAllStartsAndChartDTO.setSubjectFacilityChartResponse(subjectFacilityChartResponseList);
-        adsAllStartsAndChartDTO.setProjectSubjectFacilityResponses(projectSubjectFacilityResponseList);
         adsAllStartsAndChartDTO.setTotalProjectAndSubjectResponse(totalProjectAndSubjectResponse);
 
-        try {
-            redisService.set(cacheKey, adsAllStartsAndChartDTO, redisTTL);
-        } catch (Exception ignored) {
-        }
 
         return adsAllStartsAndChartDTO;
     }
 
     @Override
-    public ResponseEntity<?> getAllListStats(ADStatisticRequest request, int pageNumber) {
-        ADSAllStartsAndChartDTO data = getCachedStatistics(request, pageNumber);
+    public ResponseEntity<?> getAllListStats() {
+        ADSAllStartsAndChartDTO data = getCachedStatistics();
         if (data == null) {
             return RouterHelper.responseError("Không thể lấy dữ liệu thống kê");
         }
@@ -90,15 +64,10 @@ public class ADStatisticsServiceImpl implements ADStatisticsService {
         return RouterHelper.responseSuccess("Lấy dữ liệu thống kê thành công", data);
     }
 
-    public void invalidateStatisticsCache(String requestId, int pageNumber) {
-        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_STATISTICS + "admin_" +
-                "request=" + requestId +
-                "_page=" + pageNumber;
-        redisService.delete(cacheKey);
-        invalidateAllStatisticsCaches();
+    @Override
+    public ResponseEntity<?> getLineChartStats(int year) {
+        List<ADSProjectSubjectFacilityResponse> list = projectSubjectFacilityRepository.getProjectSubjectFacilityResponses(year);
+        return RouterHelper.responseSuccess(" Lấy thống kê năm " + year + " thành công", list);
     }
 
-    public void invalidateAllStatisticsCaches() {
-        redisInvalidationHelper.invalidateAllCaches();
-    }
 }

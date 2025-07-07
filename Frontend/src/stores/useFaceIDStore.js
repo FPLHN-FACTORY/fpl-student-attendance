@@ -388,7 +388,7 @@ const useFaceIDStore = defineStore('faceID', () => {
       const centerY = yRaw + hRaw / 2
 
       const margin_y = 0.1
-      const margin_x = 0.2
+      const margin_x = 0.1
       const insideCenter =
         centerX > 0.5 - margin_x &&
         centerX < 0.5 + margin_x &&

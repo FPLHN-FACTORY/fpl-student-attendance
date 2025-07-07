@@ -57,7 +57,7 @@ const detailSubject = reactive({
 
 const columns = ref(
   autoAddColumnWidth([
-    { title: '#', dataIndex: 'orderNumber', key: 'orderNumber' },
+    { title: '#', key: 'rowNumber' },
     { title: 'Tên bộ môn', dataIndex: 'name', key: 'name' },
     { title: 'Mã bộ môn', dataIndex: 'code', key: 'code' },
     {
@@ -354,8 +354,11 @@ onMounted(() => {
             :loading="loadingStore.isLoading"
             :scroll="{ x: 'auto' }"
           >
-            <template #bodyCell="{ column, record }">
-              <template v-if="column.dataIndex === 'name'">
+            <template #bodyCell="{ column, record, index }">
+              <template v-if="column.key === 'rowNumber'">
+                {{ (pagination.current - 1) * pagination.pageSize + index + 1 }}
+              </template>
+              <template v-else-if="column.dataIndex === 'name'">
                 <a @click="handleAddSubjectFacility(record)">{{ record.name }}</a>
               </template>
               <template v-else-if="column.dataIndex === 'status'">

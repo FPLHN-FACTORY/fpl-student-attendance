@@ -76,7 +76,7 @@ const columns = ref(
   autoAddColumnWidth([
     { title: '#', dataIndex: 'indexs', key: 'indexs' },
     { title: 'Tên', dataIndex: 'name', key: 'name' },
-    { title: 'Cấp dự án', dataIndex: 'nameLevelProject', key: 'nameLevelProject' },
+    { title: 'Nhóm dự án', dataIndex: 'nameLevelProject', key: 'nameLevelProject' },
     { title: 'Học kỳ', dataIndex: 'nameSemester', key: 'nameSemester' },
     { title: 'Môn học', dataIndex: 'nameSubject', key: 'nameSubject' },
     { title: 'Mô tả', dataIndex: 'description', key: 'description' },
@@ -124,7 +124,7 @@ const fetchLevelCombobox = () => {
       levels.value = response.data
     })
     .catch((error) => {
-      message.error(error.response?.data?.message || 'Lỗi khi lấy dữ liệu combobox cấp dự án')
+      message.error(error.response?.data?.message || 'Lỗi khi lấy dữ liệu combobox nhóm dự án')
     })
 }
 
@@ -208,7 +208,7 @@ const handleAddProject = () => {
     return
   }
   if (!newProject.levelProjectId) {
-    message.error('Phải chọn cấp dự án')
+    message.error('Phải chọn nhóm dự án')
     return
   }
   if (!newProject.semesterId) {
@@ -270,7 +270,7 @@ const handleUpdateProject = () => {
     return
   }
   if (!detailProject.levelProjectId) {
-    message.error('Phải chọn cấp dự án')
+    message.error('Phải chọn nhóm dự án')
     return
   }
   if (!detailProject.semesterId) {
@@ -402,10 +402,10 @@ onMounted(() => {
                   </a-input>
                 </div>
                 <div class="col-lg-3 col-md-6 col-sm-6">
-                  <div class="label-title">Cấp dự án:</div>
+                  <div class="label-title">Nhóm dự án:</div>
                   <a-select
                     v-model:value="filter.levelProjectId"
-                    placeholder="Cấp dự án"
+                    placeholder="Nhóm dự án"
                     allowClear
                     show-search
                     class="filter-select w-100"
@@ -416,7 +416,7 @@ onMounted(() => {
                         (option.label || '').toLowerCase().includes(input.toLowerCase())
                     "
                   >
-                    <a-select-option :value="null" label="Tất cả cấp dự án">Tất cả cấp dự án</a-select-option>
+                    <a-select-option :value="null" label="Tất cả nhóm dự án">Tất cả nhóm dự án</a-select-option>
                     <a-select-option v-for="level in levels" :key="level.id" :value="level.id" :label="level.name">
                       {{ level.name }}
                     </a-select-option>
@@ -601,10 +601,10 @@ onMounted(() => {
         <a-form-item label="Mô tả">
           <a-textarea v-model:value="newProject.description" placeholder="Nhập mô tả" />
         </a-form-item>
-        <a-form-item label="Cấp dự án" required>
+        <a-form-item label="Nhóm dự án" required>
           <a-select
             v-model:value="newProject.levelProjectId"
-            placeholder="Chọn cấp dự án"
+            placeholder="Chọn nhóm dự án"
             allowClear
             show-search
             :filter-option="
@@ -620,9 +620,9 @@ onMounted(() => {
           </a-select>
         </a-form-item>
         <a-form-item label="Học kỳ" required>
-          <a-select 
-            v-model:value="newProject.semesterId" 
-            placeholder="Chọn học kỳ" 
+          <a-select
+            v-model:value="newProject.semesterId"
+            placeholder="Chọn học kỳ"
             allowClear
             show-search
             :filter-option="
@@ -661,7 +661,7 @@ onMounted(() => {
     <!-- Modal xem chi tiết dự án -->
     <a-modal v-model:open="modalDetail" title="Chi tiết dự án" footer="">
       <p><strong>Tên:</strong> {{ detailProject.name }}</p>
-      <p><strong>Cấp dự án:</strong> {{ detailProject.nameLevelProject }}</p>
+      <p><strong>Nhóm dự án:</strong> {{ detailProject.nameLevelProject }}</p>
       <p><strong>Học kỳ:</strong> {{ detailProject.nameSemester }}</p>
       <p><strong>Môn học:</strong> {{ detailProject.nameSubject }}</p>
       <p><strong>Mô tả:</strong> {{ detailProject.description }}</p>
@@ -701,10 +701,10 @@ onMounted(() => {
         <a-form-item label="Mô tả">
           <a-textarea v-model:value="detailProject.description" placeholder="Nhập mô tả" />
         </a-form-item>
-        <a-form-item label="Cấp dự án" required>
+        <a-form-item label="Nhóm dự án" required>
           <a-select
             v-model:value="detailProject.levelProjectId"
-            placeholder="Chọn cấp dự án"
+            placeholder="Chọn nhóm dự án"
             allowClear
             show-search
             :filter-option="
@@ -720,9 +720,9 @@ onMounted(() => {
           </a-select>
         </a-form-item>
         <a-form-item label="Học kỳ" required>
-          <a-select 
-            v-model:value="detailProject.semesterId" 
-            placeholder="Chọn học kỳ" 
+          <a-select
+            v-model:value="detailProject.semesterId"
+            placeholder="Chọn học kỳ"
             allowClear
             show-search
             :filter-option="

@@ -2,12 +2,17 @@ package udpm.hn.studentattendance.core.admin.statistics.model.response;
 
 public interface ADSProjectSubjectFacilityResponse {
 
-    Integer getRowNumber();
+    String getCode();
 
-    String getSubjectName();
+    Integer getTotalFactory();
 
-    Integer getDoneProject();
+    Integer getTotalStudentFactory();
 
-    Integer getProcessingProject();
+    Float getAttendancePercentage();
 
+//    Integer getTotalCurrentShift();
+//
+//    Integer getTotalAttendance();
+//
+//    Integer getTotalPossibleAttendance();
 }
