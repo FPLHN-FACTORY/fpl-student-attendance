@@ -87,7 +87,7 @@ const detailSemester = ref({})
 // Cấu hình cột cho bảng
 const columns = ref(
   autoAddColumnWidth([
-    { title: '#', dataIndex: 'semesterIndex', key: 'semesterIndex' },
+    { title: '#', key: 'rowNumber' },
     { title: 'Mã học kỳ', dataIndex: 'semesterCode', key: 'semesterCode' },
     { title: 'Tên học kỳ', dataIndex: 'semesterName', key: 'semesterName' },
     { title: 'Ngày bắt đầu', dataIndex: 'startDate', key: 'startDate' },
@@ -257,7 +257,7 @@ const updateSemester = () => {
 
   // Kiểm tra trường hợp start date đã qua và đã bị thay đổi
   const originalFromDate = dayjs(detailSemester.value.originalFromDate)
-  if (isStartDateBeforeToday(originalFromDate) && 
+  if (isStartDateBeforeToday(originalFromDate) &&
       !originalFromDate.isSame(detailSemester.value.fromDate, 'day')) {
     message.error('Không thể thay đổi ngày bắt đầu của học kỳ đã qua')
     return
@@ -390,18 +390,18 @@ const canEditSemester = (semester) => {
 const shouldDisableStartDate = (current) => {
   // Nếu không có current (ngày đang kiểm tra), trả về false
   if (!current) return false
-  
+
   // Kiểm tra nếu học kỳ đang sửa có ngày bắt đầu trước ngày hiện tại
   if (detailSemester.value && detailSemester.value.fromDate) {
     const originalDate = dayjs(detailSemester.value.originalFromDate || detailSemester.value.fromDate)
-    
+
     // Nếu ngày bắt đầu gốc đã qua (trước ngày hiện tại)
     if (isStartDateBeforeToday(originalDate)) {
       // Không cho phép chọn bất kỳ ngày nào khác ngoài ngày ban đầu
       return !current.isSame(originalDate, 'day')
     }
   }
-  
+
   // Mặc định: không cho phép chọn các ngày trong quá khứ
   return current < dayjs().startOf('day')
 }
@@ -498,9 +498,12 @@ onMounted(() => {
             :scroll="{ x: 'auto' }"
             @change="handleTableChange"
           >
-            <template #bodyCell="{ column, record }">
+            <template #bodyCell="{ column, record, index }">
+              <template v-if="column.key === 'rowNumber'">
+                {{ (pagination.current - 1) * pagination.pageSize + index + 1 }}
+              </template>
               <!-- Hiển thị ngày bắt đầu -->
-              <template v-if="column.dataIndex === 'startDate'">
+              <template v-else-if="column.dataIndex === 'startDate'">
                 {{ formatEpochToDate(record.startDate) }}
               </template>
               <!-- Hiển thị ngày kết thúc -->
@@ -535,7 +538,7 @@ onMounted(() => {
               <!-- Các chức năng: Sửa & Đổi trạng thái -->
               <template v-else-if="column.key === 'actions'">
                 <a-space>
-                  <a-tooltip 
+                  <a-tooltip
                     :title="canEditSemester(record) ? 'Sửa thông tin học kỳ' : 'Không thể sửa học kỳ đã kết thúc'"
                   >
                     <a-button

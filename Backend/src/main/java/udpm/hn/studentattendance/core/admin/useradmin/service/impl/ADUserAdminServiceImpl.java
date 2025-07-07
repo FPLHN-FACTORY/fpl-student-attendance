@@ -194,11 +194,11 @@ public class ADUserAdminServiceImpl implements ADUserAdminService {
                                         .responseError("Email phải có định dạng @gmail.com hoặc kết thúc bằng edu.vn");
                 }
 
-                if (!settingHelper.getSetting(SettingKeys.DISABLED_CHECK_EMAIL_FPT_STAFF, Boolean.class)) {
-                        if (!ValidateHelper.isValidEmailFE(email) && !ValidateHelper.isValidEmailFPT(email)) {
-                                return RouterHelper.responseError("Email phải kết thúc bằng edu.vn");
-                        }
-                }
+//                if (!settingHelper.getSetting(SettingKeys.DISABLED_CHECK_EMAIL_FPT_STAFF, Boolean.class)) {
+//                        if (!ValidateHelper.isValidEmailFE(email) && !ValidateHelper.isValidEmailFPT(email)) {
+//                                return RouterHelper.responseError("Email phải kết thúc bằng edu.vn");
+//                        }
+//                }
 
                 if (existUserAdmin.isPresent()) {
                         return RouterHelper.responseError("Mã của admin đã tồn tại");
@@ -267,11 +267,11 @@ public class ADUserAdminServiceImpl implements ADUserAdminService {
                                         .responseError("Email phải có định dạng @gmail.com hoặc kết thúc bằng edu.vn");
                 }
 
-                if (!settingHelper.getSetting(SettingKeys.DISABLED_CHECK_EMAIL_FPT_STAFF, Boolean.class)) {
-                        if (!ValidateHelper.isValidEmailFE(email) && !ValidateHelper.isValidEmailFPT(email)) {
-                                return RouterHelper.responseError("Email phải kết thúc bằng edu.vn");
-                        }
-                }
+//                if (!settingHelper.getSetting(SettingKeys.DISABLED_CHECK_EMAIL_FPT_STAFF, Boolean.class)) {
+//                        if (!ValidateHelper.isValidEmailFE(email) && !ValidateHelper.isValidEmailFPT(email)) {
+//                                return RouterHelper.responseError("Email phải kết thúc bằng edu.vn");
+//                        }
+//                }
 
                 if (!ValidateHelper.isValidCode(createOrUpdateRequest.getStaffCode())) {
                         return RouterHelper.responseError(

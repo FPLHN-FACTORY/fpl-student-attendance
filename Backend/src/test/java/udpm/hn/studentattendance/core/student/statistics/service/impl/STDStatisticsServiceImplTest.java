@@ -98,20 +98,18 @@ class STDStatisticsServiceImplTest {
                 when(factoryChartResponse.getAttendancePercentage()).thenReturn(85.5f);
                 factoryChartResponses.add(factoryChartResponse);
 
-                List<STDStatisticsAttendanceChartResponse> attendanceChartResponses = new ArrayList<>();
+                STDStatisticsAttendanceChartResponse attendanceChartResponses = mock(STDStatisticsAttendanceChartResponse.class) ;
                 STDStatisticsAttendanceChartResponse attendanceChartResponse = mock(
                                 STDStatisticsAttendanceChartResponse.class);
-                when(attendanceChartResponse.getFactoryName()).thenReturn("Factory 1");
                 when(attendanceChartResponse.getTotalShift()).thenReturn(20);
                 when(attendanceChartResponse.getTotalAbsent()).thenReturn(3);
-                attendanceChartResponses.add(attendanceChartResponse);
 
                 when(stdStatisticsSemesterRepository.getAllStatisticBySemester(facilityId, userId, semesterId))
                                 .thenReturn(Optional.of(statResponse));
                 when(factoryLineChartRepository.getAttendancePercentage(facilityId, userId, semesterId))
                                 .thenReturn(factoryChartResponses);
                 when(attendanceBarChartRepository.getAttendanceBarChart(userId, semesterId))
-                                .thenReturn(attendanceChartResponses);
+                                .thenReturn(Optional.of(attendanceChartResponses));
 
                 // Act
                 ResponseEntity<?> response = stdStatisticsService.getStatistics(semesterId);

@@ -59,80 +59,41 @@ class ADStatisticsServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        ReflectionTestUtils.setField(adStatisticsService, "redisTTL", 3600L);
+        // No need to set redisTTL as Redis caching is no longer used in the service
     }
 
     @Test
-    @DisplayName("Test getAllListStats should return cached data if available")
-    void testGetAllListStatsFromCache() {
+    @DisplayName("Test getCachedStatistics should return null when statistics data is not available")
+    void testGetCachedStatisticsWithNoData() {
         // Given
-        ADStatisticRequest request = new ADStatisticRequest();
-        int pageNumber = 0;
-        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_STATISTICS + "admin_" +
-                "request=" + request.toString() +
-                "_page=" + pageNumber;
-
-        ADSAllStartsAndChartDTO cachedData = new ADSAllStartsAndChartDTO();
-
-        when(redisService.get(cacheKey)).thenReturn(cachedData);
-        when(redisService.getObject(cacheKey, ADSAllStartsAndChartDTO.class)).thenReturn(cachedData);
+        when(statisticsRepository.getAllStatistics()).thenReturn(Optional.empty());
 
         // When
-        ResponseEntity<?> response = adStatisticsService.getAllListStats(request, pageNumber);
+        ADSAllStartsAndChartDTO result = adStatisticsService.getCachedStatistics();
 
         // Then
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        ApiResponse apiResponse = (ApiResponse) response.getBody();
-        assertNotNull(apiResponse);
-        assertEquals(RestApiStatus.SUCCESS, apiResponse.getStatus());
-        assertEquals("Lấy dữ liệu thống kê thành công", apiResponse.getMessage());
-        assertEquals(cachedData, apiResponse.getData());
-
-        // Verify that repositories were not called
-        verifyNoInteractions(statisticsRepository);
-        verifyNoInteractions(subjectFacilityExtendRepository);
-        verifyNoInteractions(projectSubjectFacilityRepository);
+        assertNull(result);
     }
 
     @Test
-    @DisplayName("Test getAllListStats should return error when statistics data is not available")
-    void testGetAllListStatsWithNoStatisticsData() {
+    @DisplayName("Test getCachedStatistics should return null when total project and subject data is not available")
+    void testGetCachedStatisticsWithNoProjectData() {
         // Given
-        ADStatisticRequest request = new ADStatisticRequest();
-        int pageNumber = 0;
-        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_STATISTICS + "admin_" +
-                "request=" + request.toString() +
-                "_page=" + pageNumber;
-
-        when(redisService.get(cacheKey)).thenReturn(null);
-        when(statisticsRepository.getAllStatistics(request)).thenReturn(Optional.empty());
+        ADStatisticsStatResponse statResponse = mock(ADStatisticsStatResponse.class);
+        when(statisticsRepository.getAllStatistics()).thenReturn(Optional.of(statResponse));
+        when(statisticsRepository.getTotalProjectAndSubject()).thenReturn(Optional.empty());
 
         // When
-        ResponseEntity<?> response = adStatisticsService.getAllListStats(request, pageNumber);
+        ADSAllStartsAndChartDTO result = adStatisticsService.getCachedStatistics();
 
         // Then
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        ApiResponse apiResponse = (ApiResponse) response.getBody();
-        assertNotNull(apiResponse);
-        assertEquals(RestApiStatus.ERROR, apiResponse.getStatus());
-        assertEquals("Không thể lấy dữ liệu thống kê", apiResponse.getMessage());
-
-        // Verify repository calls
-        verify(statisticsRepository).getAllStatistics(request);
-        verifyNoInteractions(subjectFacilityExtendRepository);
-        verifyNoInteractions(projectSubjectFacilityRepository);
+        assertNull(result);
     }
 
     @Test
-    @DisplayName("Test getAllListStats should fetch and cache data if not in cache")
-    void testGetAllListStatsFromRepository() {
+    @DisplayName("Test getCachedStatistics should return data correctly when all data is available")
+    void testGetCachedStatisticsWithAllData() {
         // Given
-        ADStatisticRequest request = new ADStatisticRequest();
-        int pageNumber = 0;
-        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_STATISTICS + "admin_" +
-                "request=" + request.toString() +
-                "_page=" + pageNumber;
-
         ADStatisticsStatResponse statResponse = mock(ADStatisticsStatResponse.class);
         ADSTotalProjectAndSubjectResponse totalProjectAndSubjectResponse = mock(
                 ADSTotalProjectAndSubjectResponse.class);
@@ -141,20 +102,52 @@ class ADStatisticsServiceImplTest {
         ADSSubjectFacilityChartResponse chartResponse = mock(ADSSubjectFacilityChartResponse.class);
         subjectFacilityChartResponses.add(chartResponse);
 
-        List<ADSProjectSubjectFacilityResponse> projectResponses = new ArrayList<>();
-        ADSProjectSubjectFacilityResponse projectResponse = mock(ADSProjectSubjectFacilityResponse.class);
-        projectResponses.add(projectResponse);
-        Page<ADSProjectSubjectFacilityResponse> projectPage = new PageImpl<>(projectResponses);
-
-        when(redisService.get(cacheKey)).thenReturn(null);
-        when(statisticsRepository.getAllStatistics(request)).thenReturn(Optional.of(statResponse));
+        when(statisticsRepository.getAllStatistics()).thenReturn(Optional.of(statResponse));
         when(statisticsRepository.getTotalProjectAndSubject()).thenReturn(Optional.of(totalProjectAndSubjectResponse));
         when(subjectFacilityExtendRepository.getSubjectByFacility()).thenReturn(subjectFacilityChartResponses);
-        when(projectSubjectFacilityRepository.getProjectSubjectFacilityResponses(any(PageRequest.class)))
-                .thenReturn(projectPage);
 
         // When
-        ResponseEntity<?> response = adStatisticsService.getAllListStats(request, pageNumber);
+        ADSAllStartsAndChartDTO result = adStatisticsService.getCachedStatistics();
+
+        // Then
+        assertNotNull(result);
+        assertEquals(statResponse, result.getStatisticsStatResponse());
+        assertEquals(subjectFacilityChartResponses, result.getSubjectFacilityChartResponse());
+        assertEquals(totalProjectAndSubjectResponse, result.getTotalProjectAndSubjectResponse());
+    }
+
+    @Test
+    @DisplayName("Test getAllListStats should return error when statistics data is not available")
+    void testGetAllListStatsWithNoData() {
+        // Mock the getCachedStatistics method to return null
+        ADStatisticsServiceImpl spyService = spy(adStatisticsService);
+        doReturn(null).when(spyService).getCachedStatistics();
+
+        // When
+        ResponseEntity<?> response = spyService.getAllListStats();
+
+        // Then
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        ApiResponse apiResponse = (ApiResponse) response.getBody();
+        assertNotNull(apiResponse);
+        assertEquals(RestApiStatus.ERROR, apiResponse.getStatus());
+        assertEquals("Không thể lấy dữ liệu thống kê", apiResponse.getMessage());
+    }
+
+    @Test
+    @DisplayName("Test getAllListStats should return data successfully")
+    void testGetAllListStatsSuccess() {
+        // Given
+        ADSAllStartsAndChartDTO cachedData = new ADSAllStartsAndChartDTO();
+        ADStatisticsStatResponse statResponse = mock(ADStatisticsStatResponse.class);
+        cachedData.setStatisticsStatResponse(statResponse);
+
+        // Mock the getCachedStatistics method
+        ADStatisticsServiceImpl spyService = spy(adStatisticsService);
+        doReturn(cachedData).when(spyService).getCachedStatistics();
+
+        // When
+        ResponseEntity<?> response = spyService.getAllListStats();
 
         // Then
         assertEquals(HttpStatus.OK, response.getStatusCode());
@@ -162,47 +155,52 @@ class ADStatisticsServiceImplTest {
         assertNotNull(apiResponse);
         assertEquals(RestApiStatus.SUCCESS, apiResponse.getStatus());
         assertEquals("Lấy dữ liệu thống kê thành công", apiResponse.getMessage());
-
-        ADSAllStartsAndChartDTO result = (ADSAllStartsAndChartDTO) apiResponse.getData();
-        assertNotNull(result);
-        assertEquals(statResponse, result.getStatisticsStatResponse());
-        assertEquals(subjectFacilityChartResponses, result.getSubjectFacilityChartResponse());
-        assertEquals(projectPage, result.getProjectSubjectFacilityResponses());
-        assertEquals(totalProjectAndSubjectResponse, result.getTotalProjectAndSubjectResponse());
-
-        // Verify repository and cache calls
-        verify(statisticsRepository).getAllStatistics(request);
-        verify(statisticsRepository).getTotalProjectAndSubject();
-        verify(subjectFacilityExtendRepository).getSubjectByFacility();
-        verify(projectSubjectFacilityRepository).getProjectSubjectFacilityResponses(any(PageRequest.class));
-        verify(redisService).set(eq(cacheKey), any(ADSAllStartsAndChartDTO.class), eq(3600L));
+        assertEquals(cachedData, apiResponse.getData());
     }
 
     @Test
-    @DisplayName("Test invalidateAllStatisticsCaches should delete cached statistics")
-    void testInvalidateAllStatisticsCaches() {
-        // When
-        adStatisticsService.invalidateAllStatisticsCaches();
-
-        // Then
-        verify(redisInvalidationHelper).invalidateAllCaches();
-    }
-
-    @Test
-    @DisplayName("Test invalidateStatisticsCache should delete specific cache")
-    void testInvalidateStatisticsCache() {
+    @DisplayName("Test getLineChartStats should return chart data correctly for specified year")
+    void testGetLineChartStats() {
         // Given
-        String requestId = "test-request";
-        int pageNumber = 1;
-        String expectedCacheKey = RedisPrefixConstant.REDIS_PREFIX_STATISTICS + "admin_" +
-                "request=" + requestId +
-                "_page=" + pageNumber;
+        int testYear = 2023;
+        List<ADSProjectSubjectFacilityResponse> mockResponses = new ArrayList<>();
+        ADSProjectSubjectFacilityResponse response1 = mock(ADSProjectSubjectFacilityResponse.class);
+        ADSProjectSubjectFacilityResponse response2 = mock(ADSProjectSubjectFacilityResponse.class);
+        mockResponses.add(response1);
+        mockResponses.add(response2);
+
+        when(projectSubjectFacilityRepository.getProjectSubjectFacilityResponses(testYear)).thenReturn(mockResponses);
 
         // When
-        adStatisticsService.invalidateStatisticsCache(requestId, pageNumber);
+        ResponseEntity<?> result = adStatisticsService.getLineChartStats(testYear);
 
         // Then
-        verify(redisService).delete(expectedCacheKey);
-        verify(redisInvalidationHelper).invalidateAllCaches();
+        assertEquals(HttpStatus.OK, result.getStatusCode());
+        ApiResponse apiResponse = (ApiResponse) result.getBody();
+        assertNotNull(apiResponse);
+        assertEquals(RestApiStatus.SUCCESS, apiResponse.getStatus());
+        assertEquals(" Lấy thống kê năm " + testYear + " thành công", apiResponse.getMessage());
+        assertEquals(mockResponses, apiResponse.getData());
+    }
+
+    @Test
+    @DisplayName("Test getLineChartStats should return empty list when no data for specified year")
+    void testGetLineChartStatsWithEmptyData() {
+        // Given
+        int testYear = 2024;
+        List<ADSProjectSubjectFacilityResponse> emptyList = new ArrayList<>();
+
+        when(projectSubjectFacilityRepository.getProjectSubjectFacilityResponses(testYear)).thenReturn(emptyList);
+
+        // When
+        ResponseEntity<?> result = adStatisticsService.getLineChartStats(testYear);
+
+        // Then
+        assertEquals(HttpStatus.OK, result.getStatusCode());
+        ApiResponse apiResponse = (ApiResponse) result.getBody();
+        assertNotNull(apiResponse);
+        assertEquals(RestApiStatus.SUCCESS, apiResponse.getStatus());
+        assertEquals(" Lấy thống kê năm " + testYear + " thành công", apiResponse.getMessage());
+        assertEquals(emptyList, apiResponse.getData());
     }
 }

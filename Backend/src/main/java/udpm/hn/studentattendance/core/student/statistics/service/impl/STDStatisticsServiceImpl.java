@@ -15,6 +15,7 @@ import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.helpers.SessionHelper;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -42,8 +43,8 @@ public class STDStatisticsServiceImpl implements STDStatisticsService {
                         sessionHelper.getUserId(),
                         idSemester);
 
-        List<STDStatisticsAttendanceChartResponse> attendanceChartResponses =
-                attendanceBarChartRepository.getAttendanceBarChart(sessionHelper.getUserId(), idSemester);
+        STDStatisticsAttendanceChartResponse attendanceChartResponses =
+                attendanceBarChartRepository.getAttendanceBarChart(sessionHelper.getUserId(), idSemester).orElse(null);
 
         STDStatisticDto statisticDto = new STDStatisticDto();
         statisticDto.setStdStatisticsStatResponse(statisticsStatResponse);

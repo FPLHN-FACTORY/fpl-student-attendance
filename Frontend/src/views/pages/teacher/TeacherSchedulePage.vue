@@ -262,16 +262,24 @@ const formUpdateRules = {
     { required: true, message: 'Vui lòng nhập thời gian điểm danh muộn', trigger: 'change' },
   ],
 }
+
 const handleShowDescription = (record) => {
+  // Sử dụng record.id hoặc record.idPlanDate, ưu tiên record.id
+  const planDateId = record.id || record.idPlanDate
+  if (!planDateId) {
+    message.error('Không tìm thấy ID của buổi học')
+    return
+  }
+
   requestAPI
-    .get(`${API_ROUTES_TEACHER.FETCH_DATA_SCHEDULE}/${record.idPlanDate}`)
+    .get(`${API_ROUTES_TEACHER.FETCH_DATA_SCHEDULE}/${planDateId}`)
     .then((res) => {
       const d = res.data.data
       detailModalContent.value = d.description
       detailLateArrival.value = d.lateArrival
       detailLink.value = d.link
       detailRoom.value = d.room || ''
-      currentPlanDateId.value = d.planDateId
+      currentPlanDateId.value = d.planDateId || planDateId
       handleShowUpdate()
     })
     .catch((error) => {
@@ -354,7 +362,12 @@ const durationOptions = [
 // --- MỞ ĐẦU: thêm hàm để gọi endpoint PUT /change-type/{id}
 function handleChangeType(record, room = '') {
   loadingStore.show()
-  const id = record.idPlanDate
+  const id = record.id || record.idPlanDate
+  if (!id) {
+    message.error('Không tìm thấy ID của buổi học')
+    loadingStore.hide()
+    return
+  }
   requestAPI
     .put(`${API_ROUTES_TEACHER.FETCH_DATA_SCHEDULE}/change-type/${id}`, null, { params: { room } })
     .then(({ data: response }) => {
@@ -415,9 +428,15 @@ function confirmLinkModal() {
   showLinkModal.value = false
   loadingStore.show()
   // 1) Cập nhật link
+  const planDateId = pendingRecord.value.id || pendingRecord.value.idPlanDate
+  if (!planDateId) {
+    message.error('Không tìm thấy ID của buổi học')
+    loadingStore.hide()
+    return
+  }
   requestAPI
     .put(API_ROUTES_TEACHER.FETCH_DATA_SCHEDULE, {
-      idPlanDate: pendingRecord.value.idPlanDate,
+      idPlanDate: planDateId,
       link: linkInput.value,
       description: pendingRecord.value.description,
       lateArrival: pendingRecord.value.lateArrival,
@@ -529,12 +548,12 @@ onMounted(() => {
                   }}</a-typography-link>
                 </template>
                 <template v-else-if="column.dataIndex === 'description'">
-                  <a-tooltip v-if="record.description" title="Xem, sửa chi tiết buổi dạy">
+                  <a-tooltip  title="Xem, sửa chi tiết buổi dạy">
                     <a-typography-link @click="handleShowDescription(record)"
                       >Chi tiết</a-typography-link
                     >
                   </a-tooltip>
-                  <span v-else>Không có mô tả</span>
+
                 </template>
               </template>
               <!-- Cột action -->
@@ -683,12 +702,11 @@ onMounted(() => {
                   </a-tag>
                 </template>
                 <template v-else-if="column.dataIndex === 'description'">
-                  <a-tooltip v-if="record.description" title="Xem, sửa chi tiết buổi dạy">
+                  <a-tooltip title="Xem, sửa chi tiết buổi dạy">
                     <a-typography-link @click="handleShowDescription(record)"
                       >Chi tiết</a-typography-link
                     >
                   </a-tooltip>
-                  <span v-else>Không có mô tả</span>
                 </template>
                 <template v-else-if="column.dataIndex === 'factoryName'">
                   <a-typography-link @click="handleShowFactory(record)">{{

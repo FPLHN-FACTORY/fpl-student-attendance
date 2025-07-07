@@ -41,20 +41,11 @@ const lstData = ref([])
 
 const columns = ref(
   autoAddColumnWidth([
-    { title: '#', dataIndex: 'orderNumber', key: 'orderNumber' },
-    { title: 'Ca học', dataIndex: 'shift', key: 'shift' },
-    {
-      title: 'Thời gian bắt đầu',
-      dataIndex: 'startTime',
-      key: 'startTime',
-      align: 'center',
-    },
-    {
-      title: 'Thời gian kết thúc',
-      dataIndex: 'endTime',
-      key: 'endTime',
-      align: 'center',
-    },
+    { title: '#', key: 'rowNumber' },
+    { title: 'Tên ca', dataIndex: 'name', key: 'name' },
+    { title: 'Mô tả', dataIndex: 'description', key: 'description' },
+    { title: 'Thời gian bắt đầu', dataIndex: 'startTime', key: 'startTime' },
+    { title: 'Thời gian kết thúc', dataIndex: 'endTime', key: 'endTime' },
     { title: 'Trạng thái', dataIndex: 'status', key: 'status' },
     { title: 'Chức năng', key: 'actions' },
   ]),
@@ -485,11 +476,14 @@ watch(
               :scroll="{ x: 'auto' }"
               @change="handleTableChange"
             >
-              <template #bodyCell="{ column, record }">
-                <template v-if="column.dataIndex === 'shift'">
+              <template #bodyCell="{ column, record, index }">
+                <template v-if="column.key === 'rowNumber'">
+                  {{ (pagination.value.current - 1) * pagination.value.pageSize + index + 1 }}
+                </template>
+                <template v-else-if="column.dataIndex === 'shift'">
                   <a-tag color="purple"> Ca {{ record.shift }} </a-tag>
                 </template>
-                <template v-if="column.dataIndex === 'status'">
+                <template v-else-if="column.dataIndex === 'status'">
                   <a-switch
                     class="me-2"
                     :checked="record.status === 1"
@@ -499,7 +493,7 @@ watch(
                     record.status === 1 ? 'Đang áp dụng' : 'Không áp dụng'
                   }}</a-tag>
                 </template>
-                <template v-if="column.key === 'actions'">
+                <template v-else-if="column.key === 'actions'">
                   <a-tooltip title="Chỉnh sửa ca học">
                     <a-button class="btn-outline-info border-0" @click="handleShowUpdate(record)">
                       <EditFilled />

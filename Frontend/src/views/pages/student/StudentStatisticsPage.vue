@@ -20,7 +20,7 @@ import { debounce, getCurrentSemester } from '@/utils/utils'
 import useLoadingStore from '@/stores/useLoadingStore'
 import WidgetCounter from '@/components/widgets/WidgetCounter.vue'
 import ChartLine from '@/components/charts/ChartLine.vue'
-import ChartBar from '@/components/charts/ChartBar.vue'
+import PieChart from '@/components/charts/PieChart.vue'
 
 const breadcrumbStore = useBreadcrumbStore()
 const loadingStore = useLoadingStore()
@@ -75,7 +75,7 @@ const lineChartData = ref({
       borderColor: '#52c41a',
       backgroundColor: 'rgba(82, 196, 26, 0.1)',
       fill: true,
-      tension: 0.4,
+      tension: 0.2,
       borderWidth: 3,
       pointBackgroundColor: '#52c41a',
       pointBorderColor: '#fff',
@@ -89,7 +89,7 @@ const lineChartData = ref({
       borderColor: '#ff4d4f',
       backgroundColor: 'rgba(255, 77, 79, 0.1)',
       fill: true,
-      tension: 0.4,
+      tension: 0.2,
       borderWidth: 3,
       pointBackgroundColor: '#ff4d4f',
       pointBorderColor: '#fff',
@@ -101,22 +101,13 @@ const lineChartData = ref({
   ],
 })
 
-const barChartData = ref({
+const pieChartData = ref({
   labels: [],
   datasets: [
     {
-      label: 'Điểm danh',
-      backgroundColor: '#52c41a',
+      backgroundColor: ['#52c41a', '#ff4d4f'],
       data: [],
       borderWidth: 0,
-      borderRadius: 4,
-    },
-    {
-      label: 'Vắng mặt',
-      backgroundColor: '#ff4d4f',
-      data: [],
-      borderWidth: 0,
-      borderRadius: 4,
     }
   ],
 })
@@ -147,15 +138,16 @@ const fetchDataAllStats = () => {
       }      // Update chart data from factoryChartResponse
 
 
-      // Update bar chart data from attendanceChartResponses
-      const factoryAttendanceData = response.data.attendanceChartResponses || []
-      barChartData.value.labels = factoryAttendanceData.map((o) => o.factoryName)
-      barChartData.value.datasets[0].data = factoryAttendanceData.map((o) => o.totalShift - o.totalAbsent)
-      barChartData.value.datasets[1].data = factoryAttendanceData.map((o) => o.totalAbsent)
+      // Update pie chart data from attendanceChartResponses
+      const attendanceData = response.data.attendanceChartResponses || { totalPresent: 0, totalAbsent: 0, totalShift: 0 }
 
       // Calculate semester totals for attendance and absence
-      dataStats.totalAttendance = factoryAttendanceData.reduce((sum, item) => sum + (item.totalShift - item.totalAbsent), 0)
-      dataStats.totalAbsent = factoryAttendanceData.reduce((sum, item) => sum + item.totalAbsent, 0)
+      dataStats.totalAttendance = attendanceData.totalPresent || (attendanceData.totalShift - attendanceData.totalAbsent) || 0
+      dataStats.totalAbsent = attendanceData.totalAbsent || 0
+      dataStats.totalShift = attendanceData.totalShift || 0
+      // Update pie chart with total attendance and absence data
+      pieChartData.value.labels = ['Điểm danh', 'Vắng mặt']
+      pieChartData.value.datasets[0].data = [dataStats.totalAttendance, dataStats.totalAbsent]
 
       const factoryChartData = response.data.factoryChartResponse
       lineChartData.value.labels = ['-', factoryChartData.map((o) => o.factoryName), '-']
@@ -172,6 +164,7 @@ const fetchDataAllStats = () => {
     })
     .catch((error) => {
       message.error(error?.response?.data?.message || 'Không thể tải dữ liệu thống kê')
+      console.error('Error fetching statistics:', error)
     })
     .finally(() => {
       loadingStore.hide()
@@ -291,27 +284,27 @@ watch(
           :status="stat.status"
         ></WidgetCounter>
       </div>
+    </div>
 
-      <!-- Bar Chart Section -->
-      <div class="col-md-12 col-sm-12">
-          <a-card :bordered="false" class="dashboard-bar-line header-solid">
+    <div class="row g-3 mt-3">
+      <!-- Pie Chart Section -->
+      <div class="col-md-6 col-sm-12">
+        <a-card :bordered="false" class="dashboard-bar-line header-solid">
           <template #title>
-            <h6><ProjectOutlined class="me-2" /> Thống kê điểm danh theo nhóm xưởng</h6>
+            <h6><ProjectOutlined class="me-2" /> Thống kê điểm danh</h6>
           </template>
           <template #extra>
             <div class="mt-2">
-              <a-tag color="blue">Nhóm xưởng: {{ barChartData.labels.length }}</a-tag>
-              <a-tag color="success">Điểm danh: {{ dataStats.totalAttendance }}</a-tag>
-              <a-tag color="error">Vắng mặt: {{ dataStats.totalAbsent }}</a-tag>
+              <a-tag color="blue">Tổng số buổi: {{ dataStats.totalShift }}</a-tag>
             </div>
           </template>
 
-          <ChartBar :height="310" :data="barChartData"></ChartBar>
+          <PieChart :height="310" :data="pieChartData"></PieChart>
         </a-card>
       </div>
 
       <!-- Line Chart Section -->
-      <div class="col-md-12 col-sm-12">
+      <div class="col-md-6 col-sm-12">
         <a-card :bordered="false" class="dashboard-bar-line header-solid">
           <template #title>
             <h6><BookOutlined class="me-2" /> Biểu đồ tỷ lệ điểm danh / vắng</h6>
