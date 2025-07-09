@@ -411,4 +411,340 @@ class AFFacilityIPServiceImplTest {
         verify(afFacilityIPRepository, never()).save(any(FacilityIP.class));
         verify(redisInvalidationHelper, never()).invalidateAllCaches();
     }
+
+    @Test
+    @DisplayName("Test getIPList should handle cache deserialization error")
+    void testGetIPListWithCacheError() {
+        AFFilterFacilityIPRequest request = new AFFilterFacilityIPRequest();
+        Page<AFFacilityIPResponse> mockData = mock(Page.class);
+        when(redisService.get(anyString())).thenReturn("cached");
+        when(redisService.getObject(anyString(), eq(PageableObject.class)))
+                .thenThrow(new RuntimeException("Deserialization error"));
+        when(afFacilityIPRepository.getAllByFilter(any(), eq(request))).thenReturn(mockData);
+
+        PageableObject<AFFacilityIPResponse> result = facilityIPService.getIPList(request);
+
+        assertNotNull(result);
+        verify(redisService).delete(anyString());
+    }
+
+    @Test
+    @DisplayName("Test getIPList should handle redis set exception")
+    void testGetIPListWithRedisSetError() {
+        AFFilterFacilityIPRequest request = new AFFilterFacilityIPRequest();
+        Page<AFFacilityIPResponse> mockData = mock(Page.class);
+        when(redisService.get(anyString())).thenReturn(null);
+        when(afFacilityIPRepository.getAllByFilter(any(), eq(request))).thenReturn(mockData);
+        doThrow(new RuntimeException("Redis error")).when(redisService).set(anyString(), any(), anyLong());
+
+        PageableObject<AFFacilityIPResponse> result = facilityIPService.getIPList(request);
+
+        assertNotNull(result);
+        // Should not throw exception, just ignore redis error
+    }
+
+    @Test
+    @DisplayName("Test addIP should return error when facility is inactive")
+    void testAddIPFacilityInactive() {
+        AFAddOrUpdateFacilityIPRequest request = mock(AFAddOrUpdateFacilityIPRequest.class);
+        when(request.getIdFacility()).thenReturn("facility-1");
+        Facility facility = new Facility();
+        facility.setId("facility-1");
+        facility.setStatus(EntityStatus.INACTIVE);
+        when(afFacilityExtendRepository.findById("facility-1")).thenReturn(Optional.of(facility));
+
+        ResponseEntity<?> response = facilityIPService.addIP(request);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        verify(afFacilityIPRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Test addIP should return error for invalid IPv4")
+    void testAddIPInvalidIPv4() {
+        AFAddOrUpdateFacilityIPRequest request = mock(AFAddOrUpdateFacilityIPRequest.class);
+        when(request.getIdFacility()).thenReturn("facility-1");
+        when(request.getIp()).thenReturn("256.256.256.256"); // Invalid IP
+        when(request.getType()).thenReturn(IPType.IPV4.getKey());
+
+        Facility facility = new Facility();
+        facility.setId("facility-1");
+        facility.setStatus(EntityStatus.ACTIVE);
+        when(afFacilityExtendRepository.findById("facility-1")).thenReturn(Optional.of(facility));
+        when(afFacilityIPRepository.isExistsIP(anyString(), anyInt(), anyString(), isNull())).thenReturn(false);
+
+        ResponseEntity<?> response = facilityIPService.addIP(request);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        verify(afFacilityIPRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Test addIP should return error for invalid IPv4 CIDR")
+    void testAddIPInvalidIPv4CIDR() {
+        AFAddOrUpdateFacilityIPRequest request = mock(AFAddOrUpdateFacilityIPRequest.class);
+        when(request.getIdFacility()).thenReturn("facility-1");
+        when(request.getIp()).thenReturn("192.168.1.0/33"); // Invalid CIDR
+        when(request.getType()).thenReturn(IPType.IPV4.getKey());
+
+        Facility facility = new Facility();
+        facility.setId("facility-1");
+        facility.setStatus(EntityStatus.ACTIVE);
+        when(afFacilityExtendRepository.findById("facility-1")).thenReturn(Optional.of(facility));
+        when(afFacilityIPRepository.isExistsIP(anyString(), anyInt(), anyString(), isNull())).thenReturn(false);
+
+        ResponseEntity<?> response = facilityIPService.addIP(request);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        verify(afFacilityIPRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Test addIP should return error for invalid IPv6")
+    void testAddIPInvalidIPv6() {
+        AFAddOrUpdateFacilityIPRequest request = mock(AFAddOrUpdateFacilityIPRequest.class);
+        when(request.getIdFacility()).thenReturn("facility-1");
+        when(request.getIp()).thenReturn("2001:db8::1:2:3:4:5:6:7:8:9"); // Invalid IPv6
+        when(request.getType()).thenReturn(IPType.IPV6.getKey());
+
+        Facility facility = new Facility();
+        facility.setId("facility-1");
+        facility.setStatus(EntityStatus.ACTIVE);
+        when(afFacilityExtendRepository.findById("facility-1")).thenReturn(Optional.of(facility));
+        when(afFacilityIPRepository.isExistsIP(anyString(), anyInt(), anyString(), isNull())).thenReturn(false);
+
+        ResponseEntity<?> response = facilityIPService.addIP(request);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        verify(afFacilityIPRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Test addIP should return error for invalid DNS suffix")
+    void testAddIPInvalidDNSSuffix() {
+        AFAddOrUpdateFacilityIPRequest request = mock(AFAddOrUpdateFacilityIPRequest.class);
+        when(request.getIdFacility()).thenReturn("facility-1");
+        when(request.getIp()).thenReturn("invalid..domain"); // Invalid DNS suffix
+        when(request.getType()).thenReturn(IPType.DNSSUFFIX.getKey());
+
+        Facility facility = new Facility();
+        facility.setId("facility-1");
+        facility.setStatus(EntityStatus.ACTIVE);
+        when(afFacilityExtendRepository.findById("facility-1")).thenReturn(Optional.of(facility));
+        when(afFacilityIPRepository.isExistsIP(anyString(), anyInt(), anyString(), isNull())).thenReturn(false);
+
+        ResponseEntity<?> response = facilityIPService.addIP(request);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        verify(afFacilityIPRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Test updateIP should return error if IP not found")
+    void testUpdateIPNotFound() {
+        AFAddOrUpdateFacilityIPRequest request = mock(AFAddOrUpdateFacilityIPRequest.class);
+        when(request.getId()).thenReturn("ip-1");
+        when(afFacilityIPRepository.findById("ip-1")).thenReturn(Optional.empty());
+
+        ResponseEntity<?> response = facilityIPService.updateIP(request);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+    }
+
+    @Test
+    @DisplayName("Test updateIP should return error when facility not found")
+    void testUpdateIPFacilityNotFound() {
+        AFAddOrUpdateFacilityIPRequest request = mock(AFAddOrUpdateFacilityIPRequest.class);
+        when(request.getId()).thenReturn("ip-1");
+        when(request.getIdFacility()).thenReturn("facility-1");
+        FacilityIP existingIP = new FacilityIP();
+        existingIP.setId("ip-1");
+        when(afFacilityIPRepository.findById("ip-1")).thenReturn(Optional.of(existingIP));
+        when(afFacilityExtendRepository.findById("facility-1")).thenReturn(Optional.empty());
+
+        ResponseEntity<?> response = facilityIPService.updateIP(request);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        verify(afFacilityIPRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Test updateIP should return error when facility is inactive")
+    void testUpdateIPFacilityInactive() {
+        AFAddOrUpdateFacilityIPRequest request = mock(AFAddOrUpdateFacilityIPRequest.class);
+        when(request.getId()).thenReturn("ip-1");
+        when(request.getIdFacility()).thenReturn("facility-1");
+        FacilityIP existingIP = new FacilityIP();
+        existingIP.setId("ip-1");
+        when(afFacilityIPRepository.findById("ip-1")).thenReturn(Optional.of(existingIP));
+        Facility facility = new Facility();
+        facility.setId("facility-1");
+        facility.setStatus(EntityStatus.INACTIVE);
+        when(afFacilityExtendRepository.findById("facility-1")).thenReturn(Optional.of(facility));
+
+        ResponseEntity<?> response = facilityIPService.updateIP(request);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        verify(afFacilityIPRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Test updateIP should return error when IP already exists")
+    void testUpdateIPAlreadyExists() {
+        AFAddOrUpdateFacilityIPRequest request = mock(AFAddOrUpdateFacilityIPRequest.class);
+        when(request.getId()).thenReturn("ip-1");
+        when(request.getIdFacility()).thenReturn("facility-1");
+        when(request.getIp()).thenReturn("192.168.1.1");
+        when(request.getType()).thenReturn(IPType.IPV4.getKey());
+        FacilityIP existingIP = new FacilityIP();
+        existingIP.setId("ip-1");
+        when(afFacilityIPRepository.findById("ip-1")).thenReturn(Optional.of(existingIP));
+        Facility facility = new Facility();
+        facility.setId("facility-1");
+        facility.setName("FPT HCM");
+        facility.setStatus(EntityStatus.ACTIVE);
+        when(afFacilityExtendRepository.findById("facility-1")).thenReturn(Optional.of(facility));
+        when(afFacilityIPRepository.isExistsIP("192.168.1.1", IPType.IPV4.getKey(), "facility-1", "ip-1"))
+                .thenReturn(true);
+
+        ResponseEntity<?> response = facilityIPService.updateIP(request);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        verify(afFacilityIPRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Test updateIP should return error for invalid IPv4")
+    void testUpdateIPInvalidIPv4() {
+        AFAddOrUpdateFacilityIPRequest request = mock(AFAddOrUpdateFacilityIPRequest.class);
+        when(request.getId()).thenReturn("ip-1");
+        when(request.getIdFacility()).thenReturn("facility-1");
+        when(request.getIp()).thenReturn("256.256.256.256"); // Invalid IP
+        when(request.getType()).thenReturn(IPType.IPV4.getKey());
+        FacilityIP existingIP = new FacilityIP();
+        existingIP.setId("ip-1");
+        when(afFacilityIPRepository.findById("ip-1")).thenReturn(Optional.of(existingIP));
+        Facility facility = new Facility();
+        facility.setId("facility-1");
+        facility.setStatus(EntityStatus.ACTIVE);
+        when(afFacilityExtendRepository.findById("facility-1")).thenReturn(Optional.of(facility));
+        when(afFacilityIPRepository.isExistsIP(anyString(), anyInt(), anyString(), anyString())).thenReturn(false);
+
+        ResponseEntity<?> response = facilityIPService.updateIP(request);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        verify(afFacilityIPRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Test deleteIP should return error if IP not found")
+    void testDeleteIPNotFound() {
+        when(afFacilityIPRepository.findById("ip-1")).thenReturn(Optional.empty());
+
+        ResponseEntity<?> response = facilityIPService.deleteIP("ip-1");
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+    }
+
+    @Test
+    @DisplayName("Test changeStatus should return error if IP not found")
+    void testChangeStatusNotFound() {
+        when(afFacilityIPRepository.findById("ip-1")).thenReturn(Optional.empty());
+
+        ResponseEntity<?> response = facilityIPService.changeStatus("ip-1");
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+    }
+
+    @Test
+    @DisplayName("Test changeStatus should return error when activating inactive IP that already exists")
+    void testChangeStatusActivateExistingIP() {
+        FacilityIP facilityIP = new FacilityIP();
+        facilityIP.setId("ip-1");
+        facilityIP.setIp("192.168.1.1");
+        facilityIP.setType(IPType.IPV4);
+        facilityIP.setStatus(EntityStatus.INACTIVE);
+        Facility facility = new Facility();
+        facility.setId("facility-1");
+        facilityIP.setFacility(facility);
+        when(afFacilityIPRepository.findById("ip-1")).thenReturn(Optional.of(facilityIP));
+        when(afFacilityIPRepository.isExistsIP("192.168.1.1", IPType.IPV4.getKey(), "facility-1", "ip-1"))
+                .thenReturn(true);
+
+        ResponseEntity<?> response = facilityIPService.changeStatus("ip-1");
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        verify(afFacilityIPRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Test changeStatus should activate IP successfully")
+    void testChangeStatusActivateSuccess() {
+        FacilityIP facilityIP = new FacilityIP();
+        facilityIP.setId("ip-1");
+        facilityIP.setIp("192.168.1.1");
+        facilityIP.setType(IPType.IPV4);
+        facilityIP.setStatus(EntityStatus.INACTIVE);
+        Facility facility = new Facility();
+        facility.setId("facility-1");
+        facility.setName("FPT HCM");
+        facilityIP.setFacility(facility);
+        when(afFacilityIPRepository.findById("ip-1")).thenReturn(Optional.of(facilityIP));
+        when(afFacilityIPRepository.isExistsIP("192.168.1.1", IPType.IPV4.getKey(), "facility-1", "ip-1"))
+                .thenReturn(false);
+        when(afFacilityIPRepository.save(any(FacilityIP.class))).thenReturn(facilityIP);
+
+        ResponseEntity<?> response = facilityIPService.changeStatus("ip-1");
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        verify(afFacilityIPRepository).save(any(FacilityIP.class));
+        verify(userActivityLogHelper).saveLog(contains("vừa thay đổi trạng thái IP"));
+        verify(redisInvalidationHelper).invalidateAllCaches();
+    }
+
+    @Test
+    @DisplayName("Test changeStatus should deactivate IP successfully")
+    void testChangeStatusDeactivateSuccess() {
+        FacilityIP facilityIP = new FacilityIP();
+        facilityIP.setId("ip-1");
+        facilityIP.setIp("192.168.1.1");
+        facilityIP.setType(IPType.IPV4);
+        facilityIP.setStatus(EntityStatus.ACTIVE);
+        Facility facility = new Facility();
+        facility.setId("facility-1");
+        facility.setName("FPT HCM");
+        facilityIP.setFacility(facility);
+        when(afFacilityIPRepository.findById("ip-1")).thenReturn(Optional.of(facilityIP));
+        when(afFacilityIPRepository.save(any(FacilityIP.class))).thenReturn(facilityIP);
+
+        ResponseEntity<?> response = facilityIPService.changeStatus("ip-1");
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        verify(afFacilityIPRepository).save(any(FacilityIP.class));
+        verify(userActivityLogHelper).saveLog(contains("vừa thay đổi trạng thái IP"));
+        verify(redisInvalidationHelper).invalidateAllCaches();
+    }
+
+    @Test
+    @DisplayName("Test changeStatus should handle DNS suffix type")
+    void testChangeStatusDNSSuffix() {
+        FacilityIP facilityIP = new FacilityIP();
+        facilityIP.setId("ip-1");
+        facilityIP.setIp("example.com");
+        facilityIP.setType(IPType.DNSSUFFIX);
+        facilityIP.setStatus(EntityStatus.ACTIVE);
+        Facility facility = new Facility();
+        facility.setId("facility-1");
+        facility.setName("FPT HCM");
+        facilityIP.setFacility(facility);
+        when(afFacilityIPRepository.findById("ip-1")).thenReturn(Optional.of(facilityIP));
+        when(afFacilityIPRepository.save(any(FacilityIP.class))).thenReturn(facilityIP);
+
+        ResponseEntity<?> response = facilityIPService.changeStatus("ip-1");
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        verify(afFacilityIPRepository).save(any(FacilityIP.class));
+        verify(userActivityLogHelper).saveLog(contains("vừa thay đổi trạng thái DNS Suffix"));
+        verify(redisInvalidationHelper).invalidateAllCaches();
+    }
 }

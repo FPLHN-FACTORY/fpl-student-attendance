@@ -31,6 +31,7 @@ import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.RestApiStatus;
 import udpm.hn.studentattendance.infrastructure.redis.service.RedisService;
+import udpm.hn.studentattendance.helpers.SettingHelper;
 
 import java.util.*;
 
@@ -60,16 +61,21 @@ public class STStudentServiceImplTest {
     @Mock
     private RedisService redisService;
 
+    @Mock
+    private SettingHelper settingHelper;
+
     @InjectMocks
     private STStudentServiceImpl studentService;
 
     @BeforeEach
     public void setUp() {
         ReflectionTestUtils.setField(studentService, "redisTTL", 3600L);
-        ReflectionTestUtils.setField(studentService, "isDisableCheckEmailFpt", "false");
 
         // Default behavior for session helper
         when(sessionHelper.getFacilityId()).thenReturn("facility-1");
+
+        // Default behavior for setting helper
+        when(settingHelper.getSetting(any(), any(Class.class))).thenReturn(false);
 
         // Default behavior for Redis
         when(redisService.getObject(anyString(), any(Class.class))).thenAnswer(invocation -> invocation.getArgument(0));
@@ -86,6 +92,7 @@ public class STStudentServiceImplTest {
         PageableObject<USStudentResponse> cachedData = PageableObject.of(emptyPage);
 
         when(redisService.get(anyString())).thenReturn(cachedData);
+        when(redisService.getObject(anyString(), eq(PageableObject.class))).thenReturn(cachedData);
 
         // Act
         ResponseEntity<?> response = studentService.getAllStudentByFacility(request);
@@ -133,6 +140,7 @@ public class STStudentServiceImplTest {
         UserStudent cachedStudent = new UserStudent();
         cachedStudent.setId(studentId);
         when(redisService.get(anyString())).thenReturn(cachedStudent);
+        when(redisService.getObject(anyString(), eq(UserStudent.class))).thenReturn(cachedStudent);
 
         // Act
         ResponseEntity<?> response = studentService.getDetailStudent(studentId);
@@ -172,7 +180,7 @@ public class STStudentServiceImplTest {
         USStudentCreateUpdateRequest request = new USStudentCreateUpdateRequest();
         request.setCode("ST001");
         request.setName("Nguyen Van A");
-        request.setEmail("nguyenvana@fe.edu.vn");
+        request.setEmail("nguyenvana@fpt.edu.vn");
 
         Facility facility = new Facility();
         facility.setId("facility-1");
@@ -211,7 +219,7 @@ public class STStudentServiceImplTest {
         USStudentCreateUpdateRequest request = new USStudentCreateUpdateRequest();
         request.setCode("ST 001"); // Invalid code with space
         request.setName("Nguyen Van A");
-        request.setEmail("nguyenvana@fe.edu.vn");
+        request.setEmail("nguyenvana@fpt.edu.vn");
 
         // Act
         ResponseEntity<?> response = studentService.createStudent(request);
@@ -232,7 +240,7 @@ public class STStudentServiceImplTest {
         USStudentCreateUpdateRequest request = new USStudentCreateUpdateRequest();
         request.setCode("ST001");
         request.setName("Nguyen Van A");
-        request.setEmail("nguyenvana@fe.edu.vn");
+        request.setEmail("nguyenvana@fpt.edu.vn");
 
         when(studentExtendRepository.getUserStudentByCode(request.getCode()))
                 .thenReturn(Optional.of(new UserStudent()));
@@ -255,12 +263,12 @@ public class STStudentServiceImplTest {
         request.setId("student-1");
         request.setCode("ST002");
         request.setName("Nguyen Van B");
-        request.setEmail("nguyenvanb@fe.edu.vn");
+        request.setEmail("nguyenvanb@fpt.edu.vn");
 
         UserStudent existingStudent = new UserStudent();
         existingStudent.setId("student-1");
         existingStudent.setCode("ST001");
-        existingStudent.setEmail("old@fe.edu.vn");
+        existingStudent.setEmail("old@fpt.edu.vn");
 
         when(studentExtendRepository.getStudentById(request.getId())).thenReturn(Optional.of(existingStudent));
         when(studentExtendRepository.isExistCodeUpdate(request.getCode(), existingStudent.getCode()))
@@ -358,6 +366,7 @@ public class STStudentServiceImplTest {
         cachedFaceStatus.put("student-1", true);
         cachedFaceStatus.put("student-2", false);
         when(redisService.get(anyString())).thenReturn(cachedFaceStatus);
+        when(redisService.getObject(anyString(), eq(Map.class))).thenReturn(cachedFaceStatus);
 
         // Act
         ResponseEntity<?> response = studentService.isExistFace();
@@ -401,4 +410,422 @@ public class STStudentServiceImplTest {
         verify(studentExtendRepository).existFaceForAllStudents(anyString());
         verify(redisService).set(anyString(), any(Map.class), eq(3600L));
     }
+
+    @Test
+    @DisplayName("Test getCachedStudentList should handle cache deserialization error")
+    void testGetCachedStudentListWithCacheError() {
+        USStudentRequest request = new USStudentRequest();
+        Page<USStudentResponse> mockData = mock(Page.class);
+        when(redisService.get(anyString())).thenReturn("cached");
+        when(redisService.getObject(anyString(), eq(PageableObject.class)))
+                .thenThrow(new RuntimeException("Deserialization error"));
+        when(studentExtendRepository.getAllStudentByFacility(any(), eq(request), anyString())).thenReturn(mockData);
+
+        PageableObject<?> result = studentService.getCachedStudentList(request);
+
+        assertNotNull(result);
+        verify(redisService).delete(anyString());
+    }
+
+    @Test
+    @DisplayName("Test getCachedStudentList should handle redis set exception")
+    void testGetCachedStudentListWithRedisSetError() {
+        USStudentRequest request = new USStudentRequest();
+        Page<USStudentResponse> mockData = mock(Page.class);
+        when(redisService.get(anyString())).thenReturn(null);
+        when(studentExtendRepository.getAllStudentByFacility(any(), eq(request), anyString())).thenReturn(mockData);
+        doThrow(new RuntimeException("Redis error")).when(redisService).set(anyString(), any(), anyLong());
+
+        PageableObject<?> result = studentService.getCachedStudentList(request);
+
+        assertNotNull(result);
+        // Should not throw exception, just ignore redis error
+    }
+
+    @Test
+    @DisplayName("Test getCachedStudentDetail should handle cache deserialization error")
+    void testGetCachedStudentDetailWithCacheError() {
+        String studentId = "student-1";
+        UserStudent student = new UserStudent();
+        student.setId(studentId);
+        when(redisService.get(anyString())).thenReturn("cached");
+        when(redisService.getObject(anyString(), eq(UserStudent.class)))
+                .thenThrow(new RuntimeException("Deserialization error"));
+        when(studentExtendRepository.findById(studentId)).thenReturn(Optional.of(student));
+
+        UserStudent result = studentService.getCachedStudentDetail(studentId);
+
+        assertNotNull(result);
+        verify(redisService).delete(anyString());
+    }
+
+    @Test
+    @DisplayName("Test getCachedStudentDetail should handle redis set exception")
+    void testGetCachedStudentDetailWithRedisSetError() {
+        String studentId = "student-1";
+        UserStudent student = new UserStudent();
+        student.setId(studentId);
+        when(redisService.get(anyString())).thenReturn(null);
+        when(studentExtendRepository.findById(studentId)).thenReturn(Optional.of(student));
+        doThrow(new RuntimeException("Redis error")).when(redisService).set(anyString(), any(), anyLong());
+
+        UserStudent result = studentService.getCachedStudentDetail(studentId);
+
+        assertNotNull(result);
+        // Should not throw exception, just ignore redis error
+    }
+
+    @Test
+    @DisplayName("Test createStudent should return error for invalid code with spaces")
+    void testCreateStudentInvalidCodeWithSpaces() {
+        USStudentCreateUpdateRequest request = new USStudentCreateUpdateRequest();
+        request.setCode("ST 001"); // Contains space
+        request.setName("Nguyen Van A");
+        request.setEmail("nguyenvana@fpt.edu.vn");
+
+        ResponseEntity<?> response = studentService.createStudent(request);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        verify(studentExtendRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Test createStudent should return error for invalid code with special characters")
+    void testCreateStudentInvalidCodeWithSpecialChars() {
+        USStudentCreateUpdateRequest request = new USStudentCreateUpdateRequest();
+        request.setCode("ST@001"); // Contains special character
+        request.setName("Nguyen Van A");
+        request.setEmail("nguyenvana@fpt.edu.vn");
+
+        ResponseEntity<?> response = studentService.createStudent(request);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        verify(studentExtendRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Test createStudent should return error for invalid name with numbers")
+    void testCreateStudentInvalidNameWithNumbers() {
+        USStudentCreateUpdateRequest request = new USStudentCreateUpdateRequest();
+        request.setCode("ST001");
+        request.setName("Nguyen123 Van A"); // Contains numbers
+        request.setEmail("nguyenvana@fpt.edu.vn");
+
+        ResponseEntity<?> response = studentService.createStudent(request);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        verify(studentExtendRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Test createStudent should return error for invalid name with special characters")
+    void testCreateStudentInvalidNameWithSpecialChars() {
+        USStudentCreateUpdateRequest request = new USStudentCreateUpdateRequest();
+        request.setCode("ST001");
+        request.setName("Nguyen@Van A"); // Contains special characters
+        request.setEmail("nguyenvana@fpt.edu.vn");
+
+        ResponseEntity<?> response = studentService.createStudent(request);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        verify(studentExtendRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Test createStudent should return error for single word name")
+    void testCreateStudentSingleWordName() {
+        USStudentCreateUpdateRequest request = new USStudentCreateUpdateRequest();
+        request.setCode("ST001");
+        request.setName("Nguyen"); // Single word
+        request.setEmail("nguyenvana@fpt.edu.vn");
+
+        ResponseEntity<?> response = studentService.createStudent(request);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        verify(studentExtendRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Test createStudent should return error for invalid email format")
+    void testCreateStudentInvalidEmailFormat() {
+        USStudentCreateUpdateRequest request = new USStudentCreateUpdateRequest();
+        request.setCode("ST001");
+        request.setName("Nguyen Van A");
+        request.setEmail("invalid-email"); // Invalid email format
+
+        ResponseEntity<?> response = studentService.createStudent(request);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        verify(studentExtendRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Test createStudent should return error for email without @gmail.com or .edu.vn")
+    void testCreateStudentInvalidEmailDomain() {
+        USStudentCreateUpdateRequest request = new USStudentCreateUpdateRequest();
+        request.setCode("ST001");
+        request.setName("Nguyen Van A");
+        request.setEmail("nguyenvana@yahoo.com"); // Invalid domain
+
+        ResponseEntity<?> response = studentService.createStudent(request);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        verify(studentExtendRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Test createStudent should return error when email already exists")
+    void testCreateStudentEmailExists() {
+        USStudentCreateUpdateRequest request = new USStudentCreateUpdateRequest();
+        request.setCode("ST001");
+        request.setName("Nguyen Van A");
+        request.setEmail("nguyenvana@fpt.edu.vn");
+
+        when(studentExtendRepository.getUserStudentByCode("ST001")).thenReturn(Optional.empty());
+        when(studentExtendRepository.getUserStudentByEmail("nguyenvana@fpt.edu.vn"))
+                .thenReturn(Optional.of(new UserStudent()));
+
+        ResponseEntity<?> response = studentService.createStudent(request);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        verify(studentExtendRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Test createStudent should return error when facility not found")
+    void testCreateStudentFacilityNotFound() {
+        USStudentCreateUpdateRequest request = new USStudentCreateUpdateRequest();
+        request.setCode("ST001");
+        request.setName("Nguyen Van A");
+        request.setEmail("nguyenvana@fpt.edu.vn");
+
+        when(studentExtendRepository.getUserStudentByCode("ST001")).thenReturn(Optional.empty());
+        when(studentExtendRepository.getUserStudentByEmail("nguyenvana@fpt.edu.vn")).thenReturn(Optional.empty());
+        when(facilityRepository.findById("facility-1")).thenReturn(Optional.empty());
+
+        ResponseEntity<?> response = studentService.createStudent(request);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        verify(studentExtendRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Test updateStudent should return error for invalid code with spaces")
+    void testUpdateStudentInvalidCodeWithSpaces() {
+        USStudentCreateUpdateRequest request = new USStudentCreateUpdateRequest();
+        request.setCode("ST 001"); // Contains space
+        request.setName("Nguyen Van A");
+        request.setEmail("nguyenvana@fpt.edu.vn");
+
+        ResponseEntity<?> response = studentService.updateStudent(request);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        verify(studentExtendRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Test updateStudent should return error for invalid code with special characters")
+    void testUpdateStudentInvalidCodeWithSpecialChars() {
+        USStudentCreateUpdateRequest request = new USStudentCreateUpdateRequest();
+        request.setCode("ST@001"); // Contains special character
+        request.setName("Nguyen Van A");
+        request.setEmail("nguyenvana@fpt.edu.vn");
+
+        ResponseEntity<?> response = studentService.updateStudent(request);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        verify(studentExtendRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Test updateStudent should return error for invalid name with numbers")
+    void testUpdateStudentInvalidNameWithNumbers() {
+        USStudentCreateUpdateRequest request = new USStudentCreateUpdateRequest();
+        request.setCode("ST001");
+        request.setName("Nguyen123 Van A"); // Contains numbers
+        request.setEmail("nguyenvana@fpt.edu.vn");
+
+        ResponseEntity<?> response = studentService.updateStudent(request);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        verify(studentExtendRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Test updateStudent should return error for invalid name with special characters")
+    void testUpdateStudentInvalidNameWithSpecialChars() {
+        USStudentCreateUpdateRequest request = new USStudentCreateUpdateRequest();
+        request.setCode("ST001");
+        request.setName("Nguyen@Van A"); // Contains special characters
+        request.setEmail("nguyenvana@fpt.edu.vn");
+
+        ResponseEntity<?> response = studentService.updateStudent(request);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        verify(studentExtendRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Test updateStudent should return error for single word name")
+    void testUpdateStudentSingleWordName() {
+        USStudentCreateUpdateRequest request = new USStudentCreateUpdateRequest();
+        request.setCode("ST001");
+        request.setName("Nguyen"); // Single word
+        request.setEmail("nguyenvana@fpt.edu.vn");
+
+        ResponseEntity<?> response = studentService.updateStudent(request);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        verify(studentExtendRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Test updateStudent should return error for invalid email format")
+    void testUpdateStudentInvalidEmailFormat() {
+        USStudentCreateUpdateRequest request = new USStudentCreateUpdateRequest();
+        request.setCode("ST001");
+        request.setName("Nguyen Van A");
+        request.setEmail("invalid-email"); // Invalid email format
+
+        ResponseEntity<?> response = studentService.updateStudent(request);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        verify(studentExtendRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Test updateStudent should return error for email without @gmail.com or .edu.vn")
+    void testUpdateStudentInvalidEmailDomain() {
+        USStudentCreateUpdateRequest request = new USStudentCreateUpdateRequest();
+        request.setCode("ST001");
+        request.setName("Nguyen Van A");
+        request.setEmail("nguyenvana@yahoo.com"); // Invalid domain
+
+        ResponseEntity<?> response = studentService.updateStudent(request);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        verify(studentExtendRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Test updateStudent should return error when student not found")
+    void testUpdateStudentNotFound() {
+        USStudentCreateUpdateRequest request = new USStudentCreateUpdateRequest();
+        request.setCode("ST001");
+        request.setName("Nguyen Van A");
+        request.setEmail("nguyenvana@fpt.edu.vn");
+
+        when(studentExtendRepository.findById("student-1")).thenReturn(Optional.empty());
+
+        ResponseEntity<?> response = studentService.updateStudent(request);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        verify(studentExtendRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Test updateStudent should return error when student code already exists for different student")
+    void testUpdateStudentCodeExistsForDifferentStudent() {
+        USStudentCreateUpdateRequest request = new USStudentCreateUpdateRequest();
+        request.setCode("ST001");
+        request.setName("Nguyen Van A");
+        request.setEmail("nguyenvana@fpt.edu.vn");
+
+        UserStudent existingStudent = new UserStudent();
+        existingStudent.setId("student-1");
+        existingStudent.setCode("ST002");
+
+        UserStudent conflictingStudent = new UserStudent();
+        conflictingStudent.setId("student-2");
+        conflictingStudent.setCode("ST001");
+
+        when(studentExtendRepository.findById("student-1")).thenReturn(Optional.of(existingStudent));
+        when(studentExtendRepository.getUserStudentByCode("ST001")).thenReturn(Optional.of(conflictingStudent));
+
+        ResponseEntity<?> response = studentService.updateStudent(request);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        verify(studentExtendRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Test updateStudent should return error when email already exists for different student")
+    void testUpdateStudentEmailExistsForDifferentStudent() {
+        USStudentCreateUpdateRequest request = new USStudentCreateUpdateRequest();
+        request.setCode("ST001");
+        request.setName("Nguyen Van A");
+        request.setEmail("nguyenvana@fpt.edu.vn");
+
+        UserStudent existingStudent = new UserStudent();
+        existingStudent.setId("student-1");
+        existingStudent.setCode("ST001");
+        existingStudent.setEmail("old.email@fpt.edu.vn");
+
+        UserStudent conflictingStudent = new UserStudent();
+        conflictingStudent.setId("student-2");
+        conflictingStudent.setEmail("nguyenvana@fpt.edu.vn");
+
+        when(studentExtendRepository.findById("student-1")).thenReturn(Optional.of(existingStudent));
+        when(studentExtendRepository.getUserStudentByCode("ST001")).thenReturn(Optional.of(existingStudent));
+        when(studentExtendRepository.getUserStudentByEmail("nguyenvana@fpt.edu.vn"))
+                .thenReturn(Optional.of(conflictingStudent));
+
+        ResponseEntity<?> response = studentService.updateStudent(request);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        verify(studentExtendRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Test changeStatusStudent should return error when student not found")
+    void testChangeStatusStudentNotFound() {
+        when(studentExtendRepository.findById("student-1")).thenReturn(Optional.empty());
+
+        ResponseEntity<?> response = studentService.changeStatusStudent("student-1");
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        verify(studentExtendRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Test deleteFaceStudentFactory should return error when student not found")
+    void testDeleteFaceStudentFactoryNotFound() {
+        when(studentExtendRepository.findById("student-1")).thenReturn(Optional.empty());
+
+        ResponseEntity<?> response = studentService.deleteFaceStudentFactory("student-1");
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        verify(studentExtendRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Test getCachedFaceStatus should handle cache deserialization error")
+    void testGetCachedFaceStatusWithCacheError() {
+        Map<String, Boolean> faceStatus = new HashMap<>();
+        when(redisService.get(anyString())).thenReturn("cached");
+        when(redisService.getObject(anyString(), eq(Map.class)))
+                .thenThrow(new RuntimeException("Deserialization error"));
+        when(studentExtendRepository.getAllStudentByFacility(any(), any(), anyString())).thenReturn(mock(Page.class));
+
+        Map<String, Boolean> result = studentService.getCachedFaceStatus();
+
+        assertNotNull(result);
+        verify(redisService).delete(anyString());
+    }
+
+    @Test
+    @DisplayName("Test getCachedFaceStatus should handle redis set exception")
+    void testGetCachedFaceStatusWithRedisSetError() {
+        Map<String, Boolean> faceStatus = new HashMap<>();
+        when(redisService.get(anyString())).thenReturn(null);
+        when(studentExtendRepository.getAllStudentByFacility(any(), any(), anyString())).thenReturn(mock(Page.class));
+        doThrow(new RuntimeException("Redis error")).when(redisService).set(anyString(), any(), anyLong());
+
+        Map<String, Boolean> result = studentService.getCachedFaceStatus();
+
+        assertNotNull(result);
+        // Should not throw exception, just ignore redis error
+    }
+
+
 }

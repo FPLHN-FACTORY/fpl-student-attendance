@@ -59,7 +59,7 @@ class TCStudentFactoryServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        ReflectionTestUtils.setField(studentFactoryService, "redisTTL", 3600L);
+        // No fields to set for this service
     }
 
     @Test

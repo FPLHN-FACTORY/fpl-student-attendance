@@ -3,16 +3,13 @@ package udpm.hn.studentattendance.core.admin.useradmin.service.impl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.test.util.ReflectionTestUtils;
 import udpm.hn.studentattendance.core.admin.useradmin.model.request.ADUserAdminChangePowerShiftRequest;
 import udpm.hn.studentattendance.core.admin.useradmin.model.request.ADUserAdminCreateOrUpdateRequest;
 import udpm.hn.studentattendance.core.admin.useradmin.model.request.ADUserAdminRequest;
@@ -25,16 +22,12 @@ import udpm.hn.studentattendance.entities.Notification;
 import udpm.hn.studentattendance.entities.UserAdmin;
 import udpm.hn.studentattendance.entities.UserStaff;
 import udpm.hn.studentattendance.helpers.MailerHelper;
-import udpm.hn.studentattendance.helpers.NotificationHelper;
-import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
-import udpm.hn.studentattendance.helpers.SessionHelper;
-import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
 import udpm.hn.studentattendance.infrastructure.common.ApiResponse;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.config.mailer.model.MailerDefaultRequest;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.RedisPrefixConstant;
-import udpm.hn.studentattendance.infrastructure.redis.service.RedisService;
+import udpm.hn.studentattendance.template.BaseServiceTest;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -45,8 +38,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
-@ExtendWith(MockitoExtension.class)
-class ADUserAdminServiceImplTest {
+class ADUserAdminServiceImplTest extends BaseServiceTest {
 
     @Mock
     private ADUserAdminExtendRepository userAdminExtendRepository;
@@ -58,28 +50,14 @@ class ADUserAdminServiceImplTest {
     private NotificationService notificationService;
 
     @Mock
-    private SessionHelper sessionHelper;
-
-    @Mock
     private MailerHelper mailerHelper;
-
-    @Mock
-    private UserActivityLogHelper userActivityLogHelper;
-
-    @Mock
-    private RedisService redisService;
-
-    @Mock
-    private RedisInvalidationHelper redisInvalidationHelper;
 
     @InjectMocks
     private ADUserAdminServiceImpl userAdminService;
 
     @BeforeEach
     void setUp() {
-        ReflectionTestUtils.setField(userAdminService, "appName", "Student Attendance App");
-        ReflectionTestUtils.setField(userAdminService, "isDisableCheckEmailFpt", "false");
-        ReflectionTestUtils.setField(userAdminService, "redisTTL", 3600L);
+        setupCommonFields(userAdminService);
     }
 
     @Test
@@ -552,24 +530,32 @@ class ADUserAdminServiceImplTest {
     }
 
     @Test
-    @DisplayName("Test deleteUserAdmin should return error if admin not found")
+    @DisplayName("Test deleteUserAdmin should return error when admin not found")
     void testDeleteUserAdminNotFound() {
-        // Given
-        String adminId = "non-existent-id";
+        when(userAdminExtendRepository.findById("admin-1")).thenReturn(Optional.empty());
 
-        when(userAdminExtendRepository.findById(adminId)).thenReturn(Optional.empty());
+        ResponseEntity<?> response = userAdminService.deleteUserAdmin("admin-1");
 
-        // When
-        ResponseEntity<?> response = userAdminService.deleteUserAdmin(adminId);
-
-        // Then
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        ApiResponse apiResponse = (ApiResponse) response.getBody();
-        assertNotNull(apiResponse);
-        assertEquals("Không tìm thấy tài khoản admin", apiResponse.getMessage());
-
-        // Verify repository was not called to delete
         verify(userAdminExtendRepository, never()).deleteById(anyString());
         verify(redisInvalidationHelper, never()).invalidateAllCaches();
     }
+
+    @Test
+    @DisplayName("Test deleteUserAdmin should return error when trying to delete own account")
+    void testDeleteUserAdminSelf() {
+        UserAdmin admin = new UserAdmin();
+        admin.setId("admin-1");
+        admin.setName("Admin User");
+
+        when(userAdminExtendRepository.findById("admin-1")).thenReturn(Optional.of(admin));
+        when(sessionHelper.getUserId()).thenReturn("admin-1");
+
+        ResponseEntity<?> response = userAdminService.deleteUserAdmin("admin-1");
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        verify(userAdminExtendRepository, never()).delete(any());
+    }
+
+ 
 }

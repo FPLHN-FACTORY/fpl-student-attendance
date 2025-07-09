@@ -42,19 +42,19 @@ class TCPlanDateAttendanceServiceImplTest {
 
     @Mock
     private SessionHelper sessionHelper;
-    
+
     @Mock
     private RedisService redisService;
-    
+
     @Mock
     private RedisInvalidationHelper redisInvalidationHelper;
 
     @InjectMocks
     private TCPlanDateAttendanceServiceImpl planDateAttendanceService;
-    
+
     @BeforeEach
     void setUp() {
-        ReflectionTestUtils.setField(planDateAttendanceService, "redisTTL", 3600L);
+        // No setup needed for this service
     }
 
     @Test

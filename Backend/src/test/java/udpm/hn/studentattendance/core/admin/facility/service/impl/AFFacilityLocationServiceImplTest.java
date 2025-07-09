@@ -50,7 +50,7 @@ class AFFacilityLocationServiceImplTest {
 
     @Mock
     private RedisService redisService;
-    
+
     @Mock
     private RedisInvalidationHelper redisInvalidationHelper;
 
@@ -116,6 +116,37 @@ class AFFacilityLocationServiceImplTest {
     }
 
     @Test
+    @DisplayName("Test getLocationList should handle cache deserialization error")
+    void testGetLocationListWithCacheError() {
+        AFFilterFacilityLocationRequest request = new AFFilterFacilityLocationRequest();
+        Page<AFFacilityLocationResponse> mockData = mock(Page.class);
+        when(redisService.get(anyString())).thenReturn("cached");
+        when(redisService.getObject(anyString(), eq(PageableObject.class)))
+                .thenThrow(new RuntimeException("Deserialization error"));
+        when(facilityLocationRepository.getAllByFilter(any(), eq(request))).thenReturn(mockData);
+
+        PageableObject<AFFacilityLocationResponse> result = facilityLocationService.getLocationList(request);
+
+        assertNotNull(result);
+        verify(redisService).delete(anyString());
+    }
+
+    @Test
+    @DisplayName("Test getLocationList should handle redis set exception")
+    void testGetLocationListWithRedisSetError() {
+        AFFilterFacilityLocationRequest request = new AFFilterFacilityLocationRequest();
+        Page<AFFacilityLocationResponse> mockData = mock(Page.class);
+        when(redisService.get(anyString())).thenReturn(null);
+        when(facilityLocationRepository.getAllByFilter(any(), eq(request))).thenReturn(mockData);
+        doThrow(new RuntimeException("Redis error")).when(redisService).set(anyString(), any(), anyLong());
+
+        PageableObject<AFFacilityLocationResponse> result = facilityLocationService.getLocationList(request);
+
+        assertNotNull(result);
+        // Should not throw exception, just ignore redis error
+    }
+
+    @Test
     @DisplayName("Test addLocation should add location successfully")
     void testAddLocationSuccess() {
         // Given
@@ -164,6 +195,266 @@ class AFFacilityLocationServiceImplTest {
         // Verify repository was called
         verify(facilityLocationRepository).save(any(FacilityLocation.class));
         verify(userActivityLogHelper).saveLog(contains("vừa thêm địa điểm mới"));
+        verify(redisInvalidationHelper).invalidateAllCaches();
+    }
+
+    @Test
+    @DisplayName("Test addLocation should return error when facility not found")
+    void testAddLocationFacilityNotFound() {
+        AFAddOrUpdateFacilityLocationRequest request = new AFAddOrUpdateFacilityLocationRequest();
+        request.setIdFacility("facility-1");
+        when(facilityRepository.findById("facility-1")).thenReturn(Optional.empty());
+
+        ResponseEntity<?> response = facilityLocationService.addLocation(request);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        verify(facilityLocationRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Test addLocation should return error when facility is inactive")
+    void testAddLocationFacilityInactive() {
+        AFAddOrUpdateFacilityLocationRequest request = new AFAddOrUpdateFacilityLocationRequest();
+        request.setIdFacility("facility-1");
+        Facility facility = new Facility();
+        facility.setId("facility-1");
+        facility.setStatus(EntityStatus.INACTIVE);
+        when(facilityRepository.findById("facility-1")).thenReturn(Optional.of(facility));
+
+        ResponseEntity<?> response = facilityLocationService.addLocation(request);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        verify(facilityLocationRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Test addLocation should return error when location already exists")
+    void testAddLocationAlreadyExists() {
+        AFAddOrUpdateFacilityLocationRequest request = new AFAddOrUpdateFacilityLocationRequest();
+        request.setIdFacility("facility-1");
+        request.setName("FPT Building");
+        Facility facility = new Facility();
+        facility.setId("facility-1");
+        facility.setName("FPT HCM");
+        facility.setStatus(EntityStatus.ACTIVE);
+        when(facilityRepository.findById("facility-1")).thenReturn(Optional.of(facility));
+        when(facilityLocationRepository.isExistsLocation(eq("FPT Building"), eq("facility-1"), isNull()))
+                .thenReturn(true);
+
+        ResponseEntity<?> response = facilityLocationService.addLocation(request);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        verify(facilityLocationRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Test updateLocation should return error if location not found")
+    void testUpdateLocationNotFound() {
+        AFAddOrUpdateFacilityLocationRequest request = new AFAddOrUpdateFacilityLocationRequest();
+        request.setId("location-1");
+        when(facilityLocationRepository.findById("location-1")).thenReturn(Optional.empty());
+
+        ResponseEntity<?> response = facilityLocationService.updateLocation(request);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+    }
+
+    @Test
+    @DisplayName("Test updateLocation should return error when facility not found")
+    void testUpdateLocationFacilityNotFound() {
+        AFAddOrUpdateFacilityLocationRequest request = new AFAddOrUpdateFacilityLocationRequest();
+        request.setId("location-1");
+        request.setIdFacility("facility-1");
+        FacilityLocation existingLocation = new FacilityLocation();
+        existingLocation.setId("location-1");
+        when(facilityLocationRepository.findById("location-1")).thenReturn(Optional.of(existingLocation));
+        when(facilityRepository.findById("facility-1")).thenReturn(Optional.empty());
+
+        ResponseEntity<?> response = facilityLocationService.updateLocation(request);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        verify(facilityLocationRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Test updateLocation should return error when facility is inactive")
+    void testUpdateLocationFacilityInactive() {
+        AFAddOrUpdateFacilityLocationRequest request = new AFAddOrUpdateFacilityLocationRequest();
+        request.setId("location-1");
+        request.setIdFacility("facility-1");
+        FacilityLocation existingLocation = new FacilityLocation();
+        existingLocation.setId("location-1");
+        when(facilityLocationRepository.findById("location-1")).thenReturn(Optional.of(existingLocation));
+        Facility facility = new Facility();
+        facility.setId("facility-1");
+        facility.setStatus(EntityStatus.INACTIVE);
+        when(facilityRepository.findById("facility-1")).thenReturn(Optional.of(facility));
+
+        ResponseEntity<?> response = facilityLocationService.updateLocation(request);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        verify(facilityLocationRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Test updateLocation should return error when location name already exists")
+    void testUpdateLocationNameAlreadyExists() {
+        AFAddOrUpdateFacilityLocationRequest request = new AFAddOrUpdateFacilityLocationRequest();
+        request.setId("location-1");
+        request.setIdFacility("facility-1");
+        request.setName("FPT Building");
+        FacilityLocation existingLocation = new FacilityLocation();
+        existingLocation.setId("location-1");
+        when(facilityLocationRepository.findById("location-1")).thenReturn(Optional.of(existingLocation));
+        Facility facility = new Facility();
+        facility.setId("facility-1");
+        facility.setName("FPT HCM");
+        facility.setStatus(EntityStatus.ACTIVE);
+        when(facilityRepository.findById("facility-1")).thenReturn(Optional.of(facility));
+        when(facilityLocationRepository.isExistsLocation(eq("FPT Building"), eq("facility-1"), eq("location-1")))
+                .thenReturn(true);
+
+        ResponseEntity<?> response = facilityLocationService.updateLocation(request);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        verify(facilityLocationRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Test updateLocation should update location successfully")
+    void testUpdateLocationSuccess() {
+        AFAddOrUpdateFacilityLocationRequest request = new AFAddOrUpdateFacilityLocationRequest();
+        request.setId("location-1");
+        request.setIdFacility("facility-1");
+        request.setName("Updated FPT Building");
+        request.setLatitude(21.028511);
+        request.setLongitude(105.804817);
+        request.setRadius(150);
+
+        FacilityLocation existingLocation = new FacilityLocation();
+        existingLocation.setId("location-1");
+        existingLocation.setName("Old Name");
+        when(facilityLocationRepository.findById("location-1")).thenReturn(Optional.of(existingLocation));
+
+        Facility facility = new Facility();
+        facility.setId("facility-1");
+        facility.setName("FPT HCM");
+        facility.setStatus(EntityStatus.ACTIVE);
+        when(facilityRepository.findById("facility-1")).thenReturn(Optional.of(facility));
+        when(facilityLocationRepository.isExistsLocation(eq("Updated FPT Building"), eq("facility-1"),
+                eq("location-1"))).thenReturn(false);
+        when(facilityLocationRepository.save(any(FacilityLocation.class))).thenReturn(existingLocation);
+
+        ResponseEntity<?> response = facilityLocationService.updateLocation(request);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        verify(facilityLocationRepository).save(any(FacilityLocation.class));
+        verify(userActivityLogHelper).saveLog(contains("vừa cập nhật địa điểm"));
+        verify(redisInvalidationHelper).invalidateAllCaches();
+    }
+
+    @Test
+    @DisplayName("Test deleteLocation should return error if location not found")
+    void testDeleteLocationNotFound() {
+        when(facilityLocationRepository.findById("location-1")).thenReturn(Optional.empty());
+
+        ResponseEntity<?> response = facilityLocationService.deleteLocation("location-1");
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+    }
+
+    @Test
+    @DisplayName("Test deleteLocation should delete location successfully")
+    void testDeleteLocationSuccess() {
+        FacilityLocation facilityLocation = new FacilityLocation();
+        facilityLocation.setId("location-1");
+        facilityLocation.setName("FPT Building");
+        Facility facility = new Facility();
+        facility.setName("FPT HCM");
+        facilityLocation.setFacility(facility);
+        when(facilityLocationRepository.findById("location-1")).thenReturn(Optional.of(facilityLocation));
+
+        ResponseEntity<?> response = facilityLocationService.deleteLocation("location-1");
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        verify(facilityLocationRepository).delete(facilityLocation);
+        verify(userActivityLogHelper).saveLog(contains("vừa xóa địa điểm"));
+        verify(redisInvalidationHelper).invalidateAllCaches();
+    }
+
+    @Test
+    @DisplayName("Test changeStatus should return error if location not found")
+    void testChangeStatusNotFound() {
+        when(facilityLocationRepository.findById("location-1")).thenReturn(Optional.empty());
+
+        ResponseEntity<?> response = facilityLocationService.changeStatus("location-1");
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+    }
+
+    @Test
+    @DisplayName("Test changeStatus should return error when activating inactive location that already exists")
+    void testChangeStatusActivateExistingLocation() {
+        FacilityLocation facilityLocation = new FacilityLocation();
+        facilityLocation.setId("location-1");
+        facilityLocation.setName("FPT Building");
+        facilityLocation.setStatus(EntityStatus.INACTIVE);
+        Facility facility = new Facility();
+        facility.setId("facility-1");
+        facilityLocation.setFacility(facility);
+        when(facilityLocationRepository.findById("location-1")).thenReturn(Optional.of(facilityLocation));
+        when(facilityLocationRepository.isExistsLocation(eq("FPT Building"), eq("facility-1"), eq("location-1")))
+                .thenReturn(true);
+
+        ResponseEntity<?> response = facilityLocationService.changeStatus("location-1");
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        verify(facilityLocationRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Test changeStatus should activate location successfully")
+    void testChangeStatusActivateSuccess() {
+        FacilityLocation facilityLocation = new FacilityLocation();
+        facilityLocation.setId("location-1");
+        facilityLocation.setName("FPT Building");
+        facilityLocation.setStatus(EntityStatus.INACTIVE);
+        Facility facility = new Facility();
+        facility.setId("facility-1");
+        facility.setName("FPT HCM");
+        facilityLocation.setFacility(facility);
+        when(facilityLocationRepository.findById("location-1")).thenReturn(Optional.of(facilityLocation));
+        when(facilityLocationRepository.isExistsLocation(eq("FPT Building"), eq("facility-1"), eq("location-1")))
+                .thenReturn(false);
+        when(facilityLocationRepository.save(any(FacilityLocation.class))).thenReturn(facilityLocation);
+
+        ResponseEntity<?> response = facilityLocationService.changeStatus("location-1");
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        verify(facilityLocationRepository).save(any(FacilityLocation.class));
+        verify(userActivityLogHelper).saveLog(contains("vừa thay đổi trạng thái địa điểm"));
+        verify(redisInvalidationHelper).invalidateAllCaches();
+    }
+
+    @Test
+    @DisplayName("Test changeStatus should deactivate location successfully")
+    void testChangeStatusDeactivateSuccess() {
+        FacilityLocation facilityLocation = new FacilityLocation();
+        facilityLocation.setId("location-1");
+        facilityLocation.setName("FPT Building");
+        facilityLocation.setStatus(EntityStatus.ACTIVE);
+        Facility facility = new Facility();
+        facility.setId("facility-1");
+        facility.setName("FPT HCM");
+        facilityLocation.setFacility(facility);
+        when(facilityLocationRepository.findById("location-1")).thenReturn(Optional.of(facilityLocation));
+        when(facilityLocationRepository.save(any(FacilityLocation.class))).thenReturn(facilityLocation);
+
+        ResponseEntity<?> response = facilityLocationService.changeStatus("location-1");
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        verify(facilityLocationRepository).save(any(FacilityLocation.class));
+        verify(userActivityLogHelper).saveLog(contains("vừa thay đổi trạng thái địa điểm"));
         verify(redisInvalidationHelper).invalidateAllCaches();
     }
 }

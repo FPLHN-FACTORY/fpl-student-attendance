@@ -1,0 +1,26 @@
+package udpm.hn.studentattendance.core.student.attendance.repositories;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.test.context.ActiveProfiles;
+import static org.assertj.core.api.Assertions.*;
+
+@DataJpaTest
+@ActiveProfiles("test")
+class SAPlanDateRepositoryTest {
+    @Autowired
+    SAPlanDateRepository repository;
+
+    @Test
+    void contextLoads() {
+        assertThat(repository).isNotNull();
+    }
+
+    // Thêm test cho custom method nếu có
+    // @Test
+    // void testCustomQuery() {
+    // // repository.save(...);
+    // // assertThat(repository.customMethod(...)).isPresent();
+    // }
+}

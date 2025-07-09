@@ -49,6 +49,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -97,7 +98,6 @@ class TSStatisticsServiceImplTest {
     @BeforeEach
     void setUp() {
         ReflectionTestUtils.setField(statisticsService, "appName", "Student Attendance");
-        ReflectionTestUtils.setField(statisticsService, "redisTTL", 3600L);
     }
 
     @Test
@@ -292,7 +292,7 @@ class TSStatisticsServiceImplTest {
         when(facilityRepository.findById(facilityId)).thenReturn(Optional.of(facility));
 
         // Mock email sending
-        doNothing().when(mailerHelper).send(any(MailerDefaultRequest.class));
+        when(mailerHelper.send(any(MailerDefaultRequest.class))).thenReturn(CompletableFuture.completedFuture(true));
 
         // Act
         ResponseEntity<?> response = statisticsService.sendMailStats(request);

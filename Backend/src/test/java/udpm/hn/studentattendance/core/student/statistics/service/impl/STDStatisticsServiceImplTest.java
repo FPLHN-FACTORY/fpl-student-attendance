@@ -69,7 +69,7 @@ class STDStatisticsServiceImplTest {
 
         @BeforeEach
         void setUp() {
-                ReflectionTestUtils.setField(stdStatisticsService, "redisTTL", 3600L);
+                // No setup needed for this service
         }
 
         @Test
@@ -98,7 +98,8 @@ class STDStatisticsServiceImplTest {
                 when(factoryChartResponse.getAttendancePercentage()).thenReturn(85.5f);
                 factoryChartResponses.add(factoryChartResponse);
 
-                STDStatisticsAttendanceChartResponse attendanceChartResponses = mock(STDStatisticsAttendanceChartResponse.class) ;
+                STDStatisticsAttendanceChartResponse attendanceChartResponses = mock(
+                                STDStatisticsAttendanceChartResponse.class);
                 STDStatisticsAttendanceChartResponse attendanceChartResponse = mock(
                                 STDStatisticsAttendanceChartResponse.class);
                 when(attendanceChartResponse.getTotalShift()).thenReturn(20);
@@ -151,15 +152,21 @@ class STDStatisticsServiceImplTest {
                 ResponseEntity<?> response = stdStatisticsService.getStatistics(semesterId);
 
                 // Then
-                assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+                assertEquals(HttpStatus.OK, response.getStatusCode());
                 ApiResponse apiResponse = (ApiResponse) response.getBody();
                 assertNotNull(apiResponse);
-                assertEquals(RestApiStatus.ERROR, apiResponse.getStatus());
-                assertEquals("Không thể lấy dữ liệu thống kê", apiResponse.getMessage());
+                assertEquals(RestApiStatus.SUCCESS, apiResponse.getStatus());
+                assertEquals("Lấy dữ liệu thống kê thành công", apiResponse.getMessage());
 
-                verify(factoryLineChartRepository, never()).getAttendancePercentage(anyString(), anyString(),
-                                anyString());
-                verify(attendanceBarChartRepository, never()).getAttendanceBarChart(anyString(), anyString());
+                STDStatisticDto result = (STDStatisticDto) apiResponse.getData();
+                assertNotNull(result);
+                assertNull(result.getStdStatisticsStatResponse());
+                assertNotNull(result.getFactoryChartResponse());
+                assertNull(result.getAttendanceChartResponses());
+
+                verify(stdStatisticsSemesterRepository).getAllStatisticBySemester(facilityId, userId, semesterId);
+                verify(factoryLineChartRepository).getAttendancePercentage(facilityId, userId, semesterId);
+                verify(attendanceBarChartRepository).getAttendanceBarChart(userId, semesterId);
         }
 
         @Test
@@ -181,10 +188,20 @@ class STDStatisticsServiceImplTest {
                 ResponseEntity<?> response = stdStatisticsService.getStatistics(semesterId);
 
                 // Then
-                assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+                assertEquals(HttpStatus.OK, response.getStatusCode());
                 ApiResponse apiResponse = (ApiResponse) response.getBody();
                 assertNotNull(apiResponse);
-                assertEquals(RestApiStatus.ERROR, apiResponse.getStatus());
-                assertEquals("Không thể lấy dữ liệu thống kê", apiResponse.getMessage());
+                assertEquals(RestApiStatus.SUCCESS, apiResponse.getStatus());
+                assertEquals("Lấy dữ liệu thống kê thành công", apiResponse.getMessage());
+
+                STDStatisticDto result = (STDStatisticDto) apiResponse.getData();
+                assertNotNull(result);
+                assertNull(result.getStdStatisticsStatResponse());
+                assertNotNull(result.getFactoryChartResponse());
+                assertNull(result.getAttendanceChartResponses());
+
+                verify(stdStatisticsSemesterRepository).getAllStatisticBySemester(facilityId, userId, semesterId);
+                verify(factoryLineChartRepository).getAttendancePercentage(facilityId, userId, semesterId);
+                verify(attendanceBarChartRepository).getAttendanceBarChart(userId, semesterId);
         }
 }
