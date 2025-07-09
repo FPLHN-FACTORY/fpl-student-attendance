@@ -65,7 +65,7 @@ class TCShiftFactoryServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        ReflectionTestUtils.setField(shiftFactoryService, "redisTTL", 3600L);
+        // No setup needed for this service
     }
 
     @Test

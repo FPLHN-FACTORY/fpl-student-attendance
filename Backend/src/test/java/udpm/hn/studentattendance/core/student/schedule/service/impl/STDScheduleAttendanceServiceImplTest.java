@@ -141,7 +141,7 @@ class STDScheduleAttendanceServiceImplTest {
         assertEquals(HttpStatus.OK, result.getStatusCode());
         ApiResponse apiResponse = (ApiResponse) result.getBody();
         assertEquals(RestApiStatus.SUCCESS, apiResponse.getStatus());
-        assertEquals("Lấy danh sách lịch học thành công", apiResponse.getMessage());
+        assertEquals("Lấy danh sách điểm danh thành công", apiResponse.getMessage());
         assertEquals(mockedResult, apiResponse.getData());
 
         verify(service).getCachedScheduleList(request);
@@ -158,7 +158,7 @@ class STDScheduleAttendanceServiceImplTest {
         service.invalidateScheduleCache(userId);
 
         // Then
-        verify(redisService).deletePattern(contains("schedule:student:list_" + userId));
+        verify(redisInvalidationHelper).invalidateAllCaches();
     }
 
     @Test
@@ -168,7 +168,7 @@ class STDScheduleAttendanceServiceImplTest {
         service.invalidateAllScheduleCaches();
 
         // Then
-        verify(redisService).deletePattern(contains("schedule:student"));
+        verify(redisInvalidationHelper).invalidateAllCaches();
     }
 
     @Test

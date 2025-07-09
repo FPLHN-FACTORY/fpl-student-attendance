@@ -61,7 +61,10 @@ class SPDPlanDateServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        ReflectionTestUtils.setField(planDateService, "MAX_LATE_ARRIVAL", 15);
+        // Remove the following line if it exists:
+        // ReflectionTestUtils.setField(spdPlanDateServiceImpl, "MAX_LATE_ARRIVAL",
+        // ...);
+        // ... rest of your setup code ...
     }
 
     @Test

@@ -563,4 +563,60 @@ class AFFacilityServiceImplTest {
         verify(facilityRepository).getDetailFacilityById(facilityId);
         verify(redisService, never()).set(anyString(), any(), anyLong());
     }
+
+    @Test
+    @DisplayName("Test getCachedFacilities should delete cache on deserialization exception")
+    void testGetCachedFacilitiesDeleteCacheOnDeserializationException() {
+        AFFacilitySearchRequest request = new AFFacilitySearchRequest();
+        String cacheKey = "someKey";
+        when(redisService.get(anyString())).thenReturn(new Object());
+        when(redisService.getObject(anyString(), eq(PageableObject.class)))
+                .thenThrow(new RuntimeException("Deserialize error"));
+        when(facilityRepository.getAllFacility(any(Pageable.class), eq(request)))
+                .thenReturn(new PageImpl<>(List.of()));
+
+        PageableObject<AFFacilityResponse> result = facilityService.getCachedFacilities(request);
+
+        assertNotNull(result);
+        verify(redisService).delete(anyString());
+    }
+
+    @Test
+    @DisplayName("Test changeFacilityStatus should send mail when deactivating facility")
+    void testChangeFacilityStatusSendMailWhenDeactivating() {
+        String facilityId = "facility-1";
+        Facility facility = new Facility();
+        facility.setId(facilityId);
+        facility.setStatus(EntityStatus.ACTIVE);
+        facility.setUpdatedAt(System.currentTimeMillis() - 86400000); // yesterday
+
+        when(facilityRepository.findById(facilityId)).thenReturn(Optional.of(facility));
+        when(facilityRepository.countFacility()).thenReturn(2);
+        when(facilityRepository.save(any(Facility.class))).thenReturn(facility);
+        when(facilityRepository.getListEmailUserDisableFacility(facilityId)).thenReturn(List.of("a@a.com", "b@b.com"));
+
+        ResponseEntity<?> response = facilityService.changeFacilityStatus(facilityId);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        verify(mailerHelper).send(any(MailerDefaultRequest.class));
+    }
+
+    @Test
+    @DisplayName("Test changeFacilityStatus should disable all student duplicate shift when activating facility")
+    void testChangeFacilityStatusDisableAllStudentDuplicateShiftWhenActivating() {
+        String facilityId = "facility-1";
+        Facility facility = new Facility();
+        facility.setId(facilityId);
+        facility.setStatus(EntityStatus.INACTIVE);
+        facility.setUpdatedAt(System.currentTimeMillis() - 86400000); // yesterday
+
+        when(facilityRepository.findById(facilityId)).thenReturn(Optional.of(facility));
+        when(facilityRepository.countFacility()).thenReturn(2);
+        when(facilityRepository.save(any(Facility.class))).thenReturn(facility);
+
+        ResponseEntity<?> response = facilityService.changeFacilityStatus(facilityId);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        verify(commonUserStudentRepository).disableAllStudentDuplicateShiftByIdFacility(facilityId);
+    }
 }

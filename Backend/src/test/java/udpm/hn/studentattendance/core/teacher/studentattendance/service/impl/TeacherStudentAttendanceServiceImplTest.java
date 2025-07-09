@@ -67,7 +67,7 @@ class TeacherStudentAttendanceServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        ReflectionTestUtils.setField(attendanceService, "redisTTL", 3600L);
+        // No fields to set for this service
     }
 
     @Test

@@ -95,8 +95,7 @@ class STDHistoryAttendanceImplTest {
         when(sessionHelper.getUserName()).thenReturn("Test User");
         when(sessionHelper.getFacilityId()).thenReturn("facility123");
 
-        // Setup Redis TTL
-        ReflectionTestUtils.setField(service, "redisTTL", 3600L);
+        // No Redis TTL setup needed for this service
 
         // Setup test data
         setupTestData();
@@ -109,11 +108,7 @@ class STDHistoryAttendanceImplTest {
         STDHistoryAttendanceRequest request = new STDHistoryAttendanceRequest();
         request.setPage(1);
         request.setSize(10);
-
-        // Mock current date to fall within semester1
-        long now = new Date().getTime();
-        when(historyAttendanceSemesterExtendRepository.getAllSemestersByStatus(EntityStatus.ACTIVE))
-                .thenReturn(semesters);
+        // No semesterId provided, should use current semester
 
         Page<STDHistoryAttendanceResponse> page = new PageImpl<>(attendanceResponses);
         when(historyAttendanceExtendRepository.getAllFactoryAttendance(
@@ -128,7 +123,7 @@ class STDHistoryAttendanceImplTest {
         assertEquals(HttpStatus.OK, result.getStatusCode());
         ApiResponse apiResponse = (ApiResponse) result.getBody();
         assertNotNull(apiResponse);
-        assertEquals("Lấy danh sách điểm danh thành công", apiResponse.getMessage());
+        assertEquals("Lấy tất cả lịch sử điểm danh của sinh viên HE123456 thành công", apiResponse.getMessage());
     }
 
     @Test
@@ -153,7 +148,7 @@ class STDHistoryAttendanceImplTest {
         assertEquals(HttpStatus.OK, result.getStatusCode());
         ApiResponse apiResponse = (ApiResponse) result.getBody();
         assertNotNull(apiResponse);
-        assertEquals("Lấy danh sách điểm danh thành công", apiResponse.getMessage());
+        assertEquals("Lấy tất cả lịch sử điểm danh của sinh viên HE123456 thành công", apiResponse.getMessage());
         // Verify that the semester ID was preserved
         assertEquals("semester2", request.getSemesterId());
     }
@@ -195,7 +190,7 @@ class STDHistoryAttendanceImplTest {
         assertEquals(HttpStatus.OK, result.getStatusCode());
         ApiResponse apiResponse = (ApiResponse) result.getBody();
         assertNotNull(apiResponse);
-        assertEquals("Lấy tất cả xưởng thành công", apiResponse.getMessage());
+        assertEquals("Lấy tất cả nhóm xưởng của sinh viên HE123456 thành công", apiResponse.getMessage());
         assertEquals(factories, apiResponse.getData());
     }
 
@@ -235,7 +230,7 @@ class STDHistoryAttendanceImplTest {
         assertEquals(HttpStatus.OK, result.getStatusCode());
         ApiResponse apiResponse = (ApiResponse) result.getBody();
         assertNotNull(apiResponse);
-        assertEquals("Lấy chi tiết lịch học thành công", apiResponse.getMessage());
+        assertEquals("Lấy tất cả chi tiết ca học của sinh viên thành công", apiResponse.getMessage());
         assertEquals(planDateResponses, apiResponse.getData());
     }
 
