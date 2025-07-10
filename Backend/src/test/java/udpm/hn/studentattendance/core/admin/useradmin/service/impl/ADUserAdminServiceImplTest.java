@@ -547,6 +547,7 @@ class ADUserAdminServiceImplTest extends BaseServiceTest {
         UserAdmin admin = new UserAdmin();
         admin.setId("admin-1");
         admin.setName("Admin User");
+        admin.setStatus(EntityStatus.ACTIVE);
 
         when(userAdminExtendRepository.findById("admin-1")).thenReturn(Optional.of(admin));
         when(sessionHelper.getUserId()).thenReturn("admin-1");
@@ -554,7 +555,11 @@ class ADUserAdminServiceImplTest extends BaseServiceTest {
         ResponseEntity<?> response = userAdminService.deleteUserAdmin("admin-1");
 
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        verify(userAdminExtendRepository, never()).delete(any());
+        ApiResponse apiResponse = (ApiResponse) response.getBody();
+        assertNotNull(apiResponse);
+        assertEquals("Không thể xóa tài khoản của chính mình", apiResponse.getMessage());
+        verify(userAdminExtendRepository, never()).deleteById(anyString());
+        verify(redisInvalidationHelper, never()).invalidateAllCaches();
     }
 
  

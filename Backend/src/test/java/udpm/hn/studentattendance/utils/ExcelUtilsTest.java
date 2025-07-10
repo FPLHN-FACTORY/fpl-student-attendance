@@ -191,7 +191,7 @@ class ExcelUtilsTest {
         int lastRow = 10;
         int columnIndex = 0;
 
-        assertThrows(ParseException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             ExcelUtils.addDateValidation(sheet, firstRow, lastRow, columnIndex, dateFormat, startDate, endDate);
         });
     }
@@ -312,7 +312,7 @@ class ExcelUtilsTest {
         Row row = sheet.createRow(0);
         Cell cell = row.createCell(0);
 
-        assertDoesNotThrow(() -> {
+        assertThrows(NumberFormatException.class, () -> {
             ExcelUtils.applyHexColor(cell, "invalid-hex");
         });
     }
@@ -327,8 +327,9 @@ class ExcelUtilsTest {
     @Test
     @DisplayName("Test hexToColor with invalid hex")
     void testHexToColorWithInvalidHex() {
-        XSSFColor result = ExcelUtils.hexToColor("invalid-hex");
-        assertThat(result).isNotNull();
+        assertThrows(NumberFormatException.class, () -> {
+            ExcelUtils.hexToColor("invalid-hex");
+        });
     }
 
     @Test

@@ -60,6 +60,7 @@ class MailerHelperTest {
 
     @Test
     void testSendWithNullRequest() throws Exception {
+        // Test với null request - mong đợi trả về false
         CompletableFuture<Boolean> result = mailerHelper.send(null);
         assertFalse(result.get());
     }
@@ -69,7 +70,7 @@ class MailerHelperTest {
         MailerDefaultRequest request = new MailerDefaultRequest();
         request.setTo("test@example.com");
         request.setTitle("Test Subject");
-        // No content set
+        // No content set - mong đợi trả về false vì content là null
 
         CompletableFuture<Boolean> result = mailerHelper.send(request);
         assertFalse(result.get());
@@ -161,7 +162,7 @@ class MailerHelperTest {
         request.setTitle("Test Subject");
         request.setContent("Test Content");
 
-        when(mailSender.createMimeMessage()).thenThrow(new MessagingException("Test exception"));
+        when(mailSender.createMimeMessage()).thenThrow(new RuntimeException("Test exception"));
 
         CompletableFuture<Boolean> result = mailerHelper.send(request);
         assertFalse(result.get());
@@ -192,8 +193,10 @@ class MailerHelperTest {
 
     @Test
     void testLoadTemplateWithNullData() {
+        // Test với null data - mong đợi trả về template gốc không thay đổi
         String result = MailerHelper.loadTemplate("default.html", null);
         assertNotNull(result);
+        // Không nên có NullPointerException
     }
 
     @Test
@@ -230,7 +233,7 @@ class MailerHelperTest {
     @Test
     void testSendWithEmptyRequest() throws Exception {
         MailerDefaultRequest request = new MailerDefaultRequest();
-        // No fields set
+        // No fields set - mong đợi trả về false vì thiếu các trường bắt buộc
 
         CompletableFuture<Boolean> result = mailerHelper.send(request);
         assertFalse(result.get());
@@ -242,7 +245,7 @@ class MailerHelperTest {
         request.setTo("test@example.com");
         request.setTitle("Test Subject");
         request.setTemplate("default.html");
-        // No content set
+        // No content set - mong đợi trả về true vì có template
 
         when(mailSender.createMimeMessage()).thenReturn(mimeMessage);
         doNothing().when(mailSender).send(any(MimeMessage.class));
