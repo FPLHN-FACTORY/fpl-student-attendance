@@ -36,6 +36,8 @@ import udpm.hn.studentattendance.infrastructure.excel.model.response.ExImportLog
 import udpm.hn.studentattendance.infrastructure.excel.repositories.EXImportLogDetailRepository;
 import udpm.hn.studentattendance.infrastructure.excel.repositories.EXImportLogRepository;
 
+import java.io.ByteArrayOutputStream;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import java.io.IOException;
 import java.util.*;
 
@@ -73,8 +75,8 @@ class EXPlanDateServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        when(sessionHelper.getUserId()).thenReturn("user-123");
-        when(sessionHelper.getFacilityId()).thenReturn("facility-123");
+        lenient().when(sessionHelper.getUserId()).thenReturn("user-123");
+        lenient().when(sessionHelper.getFacilityId()).thenReturn("facility-123");
     }
 
     @Test
@@ -96,8 +98,15 @@ class EXPlanDateServiceImplTest {
     @DisplayName("Test getDataFromFile should return error when IOException occurs")
     void testGetDataFromFileWithIOException() throws IOException {
         EXUploadRequest request = new EXUploadRequest();
+        // Tạo file Excel hợp lệ
+        XSSFWorkbook workbook = new XSSFWorkbook();
+        workbook.createSheet("Sheet1");
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        workbook.write(bos);
+        workbook.close();
+        byte[] excelBytes = bos.toByteArray();
         MockMultipartFile file = new MockMultipartFile("file", "test.xlsx",
-                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "test data".getBytes());
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", excelBytes);
         request.setFile(file);
         when(ExcelHelper.readFile(file)).thenThrow(new IOException("File read error"));
         ResponseEntity<ApiResponse> response = exPlanDateService.getDataFromFile(request);
@@ -112,8 +121,15 @@ class EXPlanDateServiceImplTest {
     @DisplayName("Test getDataFromFile should return success when file is valid")
     void testGetDataFromFileWithValidFile() throws IOException {
         EXUploadRequest request = new EXUploadRequest();
+        // Tạo file Excel hợp lệ
+        XSSFWorkbook workbook = new XSSFWorkbook();
+        workbook.createSheet("Sheet1");
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        workbook.write(bos);
+        workbook.close();
+        byte[] excelBytes = bos.toByteArray();
         MockMultipartFile file = new MockMultipartFile("file", "test.xlsx",
-                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "test data".getBytes());
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", excelBytes);
         request.setFile(file);
         List<Map<String, String>> expectedData = List.of(Map.of("NGAY_DIEN_RA", "01/01/2024"));
         when(ExcelHelper.readFile(file)).thenReturn(expectedData);

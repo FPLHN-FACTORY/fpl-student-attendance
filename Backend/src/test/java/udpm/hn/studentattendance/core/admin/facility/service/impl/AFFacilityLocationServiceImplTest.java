@@ -343,7 +343,16 @@ class AFFacilityLocationServiceImplTest {
         when(facilityRepository.findById("facility-1")).thenReturn(Optional.of(facility));
         when(facilityLocationRepository.isExistsLocation(eq("Updated FPT Building"), eq("facility-1"),
                 eq("location-1"))).thenReturn(false);
-        when(facilityLocationRepository.save(any(FacilityLocation.class))).thenReturn(existingLocation);
+        
+        // Create a saved location with the facility relationship properly set
+        FacilityLocation savedLocation = new FacilityLocation();
+        savedLocation.setId("location-1");
+        savedLocation.setName("Updated FPT Building");
+        savedLocation.setLatitude(21.028511);
+        savedLocation.setLongitude(105.804817);
+        savedLocation.setRadius(150);
+        savedLocation.setFacility(facility);
+        when(facilityLocationRepository.save(any(FacilityLocation.class))).thenReturn(savedLocation);
 
         ResponseEntity<?> response = facilityLocationService.updateLocation(request);
 

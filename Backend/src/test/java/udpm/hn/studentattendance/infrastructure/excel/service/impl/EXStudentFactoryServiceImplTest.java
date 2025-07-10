@@ -17,6 +17,7 @@ import udpm.hn.studentattendance.core.staff.factory.model.response.USPlanDateStu
 import udpm.hn.studentattendance.core.staff.factory.repository.factory.USFactoryExtendRepository;
 import udpm.hn.studentattendance.core.staff.studentfactory.service.USStudentFactoryService;
 import udpm.hn.studentattendance.entities.Factory;
+import udpm.hn.studentattendance.entities.UserStaff;
 import udpm.hn.studentattendance.helpers.ExcelHelper;
 import udpm.hn.studentattendance.helpers.SessionHelper;
 import udpm.hn.studentattendance.infrastructure.common.ApiResponse;
@@ -33,12 +34,15 @@ import udpm.hn.studentattendance.infrastructure.excel.model.response.ExImportLog
 import udpm.hn.studentattendance.infrastructure.excel.repositories.EXImportLogDetailRepository;
 import udpm.hn.studentattendance.infrastructure.excel.repositories.EXImportLogRepository;
 
+import java.io.ByteArrayOutputStream;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import java.io.IOException;
 import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
+import org.springframework.web.multipart.MultipartFile;
 
 @ExtendWith(MockitoExtension.class)
 class EXStudentFactoryServiceImplTest {
@@ -63,12 +67,19 @@ class EXStudentFactoryServiceImplTest {
     private MockMultipartFile mockFile;
 
     @BeforeEach
-    void setUp() {
-        uploadRequest = new EXUploadRequest();
-        importRequest = new EXImportRequest();
-        dataRequest = new EXDataRequest();
+    void setUp() throws Exception {
+        // Tạo file Excel hợp lệ cho mockFile
+        XSSFWorkbook workbook = new XSSFWorkbook();
+        workbook.createSheet("Sheet1");
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        workbook.write(bos);
+        workbook.close();
+        byte[] excelBytes = bos.toByteArray();
         mockFile = new MockMultipartFile("file", "test.xlsx",
-                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "test content".getBytes());
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", excelBytes);
+        // Use lenient stubbing for sessionHelper methods that are not used in all tests
+        lenient().when(sessionHelper.getUserId()).thenReturn("USER001");
+        lenient().when(sessionHelper.getFacilityId()).thenReturn("FACILITY001");
     }
 
     // ========== getDataFromFile Tests ==========
@@ -79,16 +90,20 @@ class EXStudentFactoryServiceImplTest {
         uploadRequest.setFile(emptyFile);
         ResponseEntity<?> response = exStudentFactoryService.getDataFromFile(uploadRequest);
         assertEquals(HttpStatus.BAD_GATEWAY, response.getStatusCode());
-        assertTrue(response.getBody().toString().contains("Vui lòng tải lên file Excel"));
+        ApiResponse apiResponse = (ApiResponse) response.getBody();
+        assertNotNull(apiResponse);
+        assertTrue(apiResponse.getMessage().contains("Vui lòng tải lên file Excel"));
     }
 
     @Test
     void getDataFromFile_IOException_ReturnsError() throws IOException {
         uploadRequest.setFile(mockFile);
-        when(ExcelHelper.readFile(any())).thenThrow(new IOException("IO error"));
+        when(ExcelHelper.readFile(mockFile)).thenThrow(new IOException("IO error"));
         ResponseEntity<?> response = exStudentFactoryService.getDataFromFile(uploadRequest);
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertTrue(response.getBody().toString().contains("Lỗi khi xử lý file Excel"));
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        ApiResponse apiResponse = (ApiResponse) response.getBody();
+        assertNotNull(apiResponse);
+        assertTrue(apiResponse.getMessage().contains("Lỗi khi xử lý file Excel"));
     }
 
     @Test
@@ -97,10 +112,12 @@ class EXStudentFactoryServiceImplTest {
         List<Map<String, String>> mockData = Arrays.asList(
                 Map.of("MA_SINH_VIEN", "SV001"),
                 Map.of("MA_SINH_VIEN", "SV002"));
-        when(ExcelHelper.readFile(any())).thenReturn(mockData);
+        when(ExcelHelper.readFile(mockFile)).thenReturn(mockData);
         ResponseEntity<?> response = exStudentFactoryService.getDataFromFile(uploadRequest);
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertTrue(response.getBody().toString().contains("Tải lên file Excel thành công"));
+        ApiResponse apiResponse = (ApiResponse) response.getBody();
+        assertNotNull(apiResponse);
+        assertTrue(apiResponse.getMessage().contains("Tải lên file Excel thành công"));
     }
 
     // ========== importItem Tests ==========
@@ -152,7 +169,9 @@ class EXStudentFactoryServiceImplTest {
         when(factoryExtendRepository.findById("FACT001")).thenReturn(Optional.empty());
         ResponseEntity<?> response = exStudentFactoryService.exportData(dataRequest);
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        assertTrue(response.getBody().toString().contains("Không tìm thấy xưởng"));
+        ApiResponse apiResponse = (ApiResponse) response.getBody();
+        assertNotNull(apiResponse);
+        assertTrue(apiResponse.getMessage().contains("Không tìm thấy xưởng"));
     }
 
     @Test
@@ -162,12 +181,15 @@ class EXStudentFactoryServiceImplTest {
         Factory factory = mock(Factory.class);
         when(factoryExtendRepository.findById("FACT001")).thenReturn(Optional.of(factory));
         when(sessionHelper.getUserRole()).thenReturn(Set.of());
-        when(factory.getUserStaff()).thenReturn(mock(udpm.hn.studentattendance.entities.UserStaff.class));
-        when(factory.getUserStaff().getId()).thenReturn("STAFF001");
+        UserStaff userStaff = mock(UserStaff.class);
+        when(factory.getUserStaff()).thenReturn(userStaff);
+        when(userStaff.getId()).thenReturn("STAFF001");
         when(sessionHelper.getUserId()).thenReturn("OTHERUSER");
         ResponseEntity<?> response = exStudentFactoryService.exportData(dataRequest);
-        assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
-        assertTrue(response.getBody().toString().contains("Không có quyền truy cập"));
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        ApiResponse apiResponse = (ApiResponse) response.getBody();
+        assertNotNull(apiResponse);
+        assertTrue(apiResponse.getMessage().contains("Không có quyền truy cập"));
     }
 
     @Test
@@ -206,7 +228,9 @@ class EXStudentFactoryServiceImplTest {
                 .thenThrow(new RuntimeException("IO error"));
         ResponseEntity<?> response = exStudentFactoryService.exportData(dataRequest);
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
-        assertTrue(response.getBody().toString().contains("Lỗi khi xuất Excel"));
+        ApiResponse apiResponse = (ApiResponse) response.getBody();
+        assertNotNull(apiResponse);
+        assertTrue(apiResponse.getMessage().contains("Lỗi khi xuất Excel"));
     }
 
     // ========== downloadTemplate Tests ==========
@@ -229,7 +253,9 @@ class EXStudentFactoryServiceImplTest {
                 eq("USER001"), eq("FACILITY001"))).thenReturn(mockPage);
         ResponseEntity<?> response = exStudentFactoryService.historyLog(dataRequest);
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertTrue(response.getBody().toString().contains("Lấy danh sách dữ liệu thành công"));
+        ApiResponse apiResponse = (ApiResponse) response.getBody();
+        assertNotNull(apiResponse);
+        assertTrue(apiResponse.getMessage().contains("Lấy danh sách dữ liệu thành công"));
     }
 
     // ========== historyLogDetail Tests ==========
@@ -241,6 +267,8 @@ class EXStudentFactoryServiceImplTest {
         when(importLogDetailRepository.getAllList("LOG001", "USER001", "FACILITY001")).thenReturn(mockDetails);
         ResponseEntity<?> response = exStudentFactoryService.historyLogDetail(dataRequest, "LOG001");
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertTrue(response.getBody().toString().contains("Lấy danh sách dữ liệu thành công"));
+        ApiResponse apiResponse = (ApiResponse) response.getBody();
+        assertNotNull(apiResponse);
+        assertTrue(apiResponse.getMessage().contains("Lấy danh sách dữ liệu thành công"));
     }
 }

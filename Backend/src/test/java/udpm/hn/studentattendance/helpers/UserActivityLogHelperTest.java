@@ -242,10 +242,10 @@ class UserActivityLogHelperTest {
 
             // When
             userActivityLogHelper.saveLog(message);
-
-            // Then
-            verify(sessionHelper).getLoginRole();
         }
+
+        // Then - verify tổng số lần gọi
+        verify(sessionHelper, times(4)).getLoginRole();
     }
 
     @Test
@@ -268,9 +268,9 @@ class UserActivityLogHelperTest {
 
             // When
             userActivityLogHelper.saveLog(message);
-
-            // Then
-            verify(sessionHelper).getUserId();
         }
+
+        // Then - verify tổng số lần gọi
+        verify(sessionHelper, times(4)).getUserId();
     }
 }

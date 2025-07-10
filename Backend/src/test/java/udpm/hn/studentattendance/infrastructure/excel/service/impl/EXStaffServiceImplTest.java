@@ -39,6 +39,7 @@ import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.lenient;
 
 @ExtendWith(MockitoExtension.class)
 class EXStaffServiceImplTest {
@@ -69,8 +70,8 @@ class EXStaffServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        when(sessionHelper.getUserId()).thenReturn("user-123");
-        when(sessionHelper.getFacilityId()).thenReturn("facility-123");
+        lenient().when(sessionHelper.getUserId()).thenReturn("user-123");
+        lenient().when(sessionHelper.getFacilityId()).thenReturn("facility-123");
     }
 
     @Test

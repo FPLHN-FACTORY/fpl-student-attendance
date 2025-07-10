@@ -43,15 +43,24 @@ class ADSemesterServiceTest {
     void testCreateSemesterNotConflict() {
         ADCreateUpdateSemesterRequest request = new ADCreateUpdateSemesterRequest();
         request.setSemesterName("SPRING");
-        request.setFromDate(System.currentTimeMillis() + 100000000L);
-        request.setToDate(System.currentTimeMillis() + 1000000000L);
+
+        // Set dates to future (at least 3 months apart and in the same year)
+        long currentTime = System.currentTimeMillis();
+        long fromDate = currentTime + (24 * 60 * 60 * 1000L); // Tomorrow
+        long toDate = fromDate + (4 * 30 * 24 * 60 * 60 * 1000L); // 4 months later
+
+        request.setFromDate(fromDate);
+        request.setToDate(toDate);
+
         when(adSemesterRepository.checkConflictTime(anyLong(), anyLong()))
                 .thenReturn(java.util.Collections.emptyList());
         when(adSemesterRepository.checkSemesterExistNameAndYear(anyString(), anyInt(), any(), any()))
                 .thenReturn(Optional.empty());
         Semester semester = new Semester();
         semester.setId("1");
+        semester.setCode("SPRING-2024");
         when(adSemesterRepository.save(any(Semester.class))).thenReturn(semester);
+
         ResponseEntity<?> response = adSemesterService.createSemester(request);
         assertEquals(200, response.getStatusCodeValue());
         verify(adSemesterRepository).save(any(Semester.class));

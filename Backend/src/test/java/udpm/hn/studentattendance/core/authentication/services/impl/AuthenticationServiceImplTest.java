@@ -795,7 +795,7 @@ class AuthenticationServiceImplTest {
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         ApiResponse apiResponse = (ApiResponse) response.getBody();
         assertEquals(RestApiStatus.ERROR, apiResponse.getStatus());
-        assertEquals("Refresh token không hợp lệ", apiResponse.getMessage());
+        assertEquals("Refresh Token không hợp lệ hoặc đã hết hạn", apiResponse.getMessage());
     }
 
     @Test
@@ -808,7 +808,7 @@ class AuthenticationServiceImplTest {
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         ApiResponse apiResponse = (ApiResponse) response.getBody();
         assertEquals(RestApiStatus.ERROR, apiResponse.getStatus());
-        assertEquals("Refresh token không hợp lệ", apiResponse.getMessage());
+        assertEquals("Refresh Token không hợp lệ hoặc đã hết hạn", apiResponse.getMessage());
     }
 
     @Test

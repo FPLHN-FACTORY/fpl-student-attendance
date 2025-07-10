@@ -13,6 +13,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.web.multipart.MultipartFile;
 import udpm.hn.studentattendance.core.staff.student.model.request.USStudentCreateUpdateRequest;
 import udpm.hn.studentattendance.core.staff.student.model.response.USStudentResponse;
 import udpm.hn.studentattendance.core.staff.student.repository.USStudentExtendRepository;
@@ -97,7 +98,7 @@ class EXStudentServiceImplTest {
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "test data".getBytes());
         request.setFile(file);
 
-        when(ExcelHelper.readFile(any(MockMultipartFile.class))).thenThrow(new IOException("File read error"));
+        when(ExcelHelper.readFile(file)).thenThrow(new IOException("File read error"));
 
         // When
         ResponseEntity<?> response = exStudentService.getDataFromFile(request);
@@ -122,7 +123,7 @@ class EXStudentServiceImplTest {
         List<Map<String, String>> expectedData = Arrays.asList(
                 Map.of("MA_SINH_VIEN", "ST001", "TEN_SINH_VIEN", "Nguyen Van A", "EMAIL", "nguyenvana@fpt.edu.vn"));
 
-        when(ExcelHelper.readFile(any(MockMultipartFile.class))).thenReturn(expectedData);
+        when(ExcelHelper.readFile(file)).thenReturn(expectedData);
 
         // When
         ResponseEntity<?> response = exStudentService.getDataFromFile(request);
@@ -387,7 +388,8 @@ class EXStudentServiceImplTest {
         List<USStudentResponse> students = Arrays.asList(student);
 
         when(studentExtendRepository.exportAllStudent("facility-123")).thenReturn(students);
-        when(ExcelHelper.createExcelStream(anyString(), any(), any())).thenThrow(new RuntimeException("IO Error"));
+        when(ExcelHelper.createExcelStream("Student Data", any(), any()))
+                .thenThrow(new RuntimeException("IO Error"));
 
         // When
         ResponseEntity<?> response = exStudentService.exportData(request);
@@ -402,7 +404,7 @@ class EXStudentServiceImplTest {
         // Given
         EXDataRequest request = new EXDataRequest();
 
-        when(ExcelHelper.createExcelStream(eq("student"), any(), any()))
+        when(ExcelHelper.createExcelStream("Student Template", any(), any()))
                 .thenThrow(new Exception("Template creation failed"));
 
         // When
@@ -422,7 +424,7 @@ class EXStudentServiceImplTest {
         // Given
         EXDataRequest request = new EXDataRequest();
 
-        when(ExcelHelper.createExcelStream(eq("student"), any(), any())).thenReturn(null);
+        when(ExcelHelper.createExcelStream("Student Template", any(), any())).thenReturn(null);
 
         // When
         ResponseEntity<?> response = exStudentService.downloadTemplate(request);

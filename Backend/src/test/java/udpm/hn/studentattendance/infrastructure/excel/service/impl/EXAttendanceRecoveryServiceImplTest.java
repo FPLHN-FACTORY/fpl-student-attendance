@@ -35,6 +35,7 @@ import udpm.hn.studentattendance.infrastructure.excel.repositories.EXImportLogDe
 import udpm.hn.studentattendance.infrastructure.excel.repositories.EXImportLogRepository;
 import udpm.hn.studentattendance.infrastructure.common.repositories.CommonUserActivityLogRepository;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -43,6 +44,9 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Row;
 
 @ExtendWith(MockitoExtension.class)
 class EXAttendanceRecoveryServiceImplTest {
@@ -68,8 +72,8 @@ class EXAttendanceRecoveryServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        when(sessionHelper.getUserId()).thenReturn("user-123");
-        when(sessionHelper.getFacilityId()).thenReturn("facility-123");
+        lenient().when(sessionHelper.getUserId()).thenReturn("user-123");
+        lenient().when(sessionHelper.getFacilityId()).thenReturn("facility-123");
     }
 
     @Test
@@ -91,10 +95,11 @@ class EXAttendanceRecoveryServiceImplTest {
     @DisplayName("Test getDataFromFile should return error when IOException occurs")
     void testGetDataFromFileWithIOException() throws IOException {
         EXUploadRequest request = new EXUploadRequest();
+        // Create an invalid Excel file that will cause IOException
         MockMultipartFile file = new MockMultipartFile("file", "test.xlsx",
-                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "test data".getBytes());
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "invalid excel content".getBytes());
         request.setFile(file);
-        when(ExcelHelper.readFile(file)).thenThrow(new IOException("File read error"));
+        
         ResponseEntity<?> response = exAttendanceRecoveryService.getDataFromFile(request);
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         ApiResponse apiResponse = (ApiResponse) response.getBody();
@@ -107,18 +112,47 @@ class EXAttendanceRecoveryServiceImplTest {
     @DisplayName("Test getDataFromFile should return success when file is valid")
     void testGetDataFromFileWithValidFile() throws IOException {
         EXUploadRequest request = new EXUploadRequest();
+        // Create a valid Excel file with headers
+        XSSFWorkbook workbook = new XSSFWorkbook();
+        Sheet sheet = workbook.createSheet("Sheet1");
+        
+        // Create header row
+        Row headerRow = sheet.createRow(0);
+        headerRow.createCell(0).setCellValue("Ngày điểm danh");
+        headerRow.createCell(1).setCellValue("Mã sinh viên");
+        
+        // Create data row
+        Row dataRow = sheet.createRow(1);
+        dataRow.createCell(0).setCellValue("01/01/2024");
+        dataRow.createCell(1).setCellValue("SV001");
+        
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        workbook.write(bos);
+        workbook.close();
+        byte[] excelBytes = bos.toByteArray();
+        
         MockMultipartFile file = new MockMultipartFile("file", "test.xlsx",
-                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "test data".getBytes());
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", excelBytes);
         request.setFile(file);
-        List<Map<String, String>> expectedData = List.of(Map.of("MA_SINH_VIEN", "SV001"));
-        when(ExcelHelper.readFile(file)).thenReturn(expectedData);
+        
         ResponseEntity<?> response = exAttendanceRecoveryService.getDataFromFile(request);
         assertEquals(HttpStatus.OK, response.getStatusCode());
         ApiResponse apiResponse = (ApiResponse) response.getBody();
         assertNotNull(apiResponse);
         assertEquals(RestApiStatus.SUCCESS, apiResponse.getStatus());
         assertEquals("Tải lên excel thành công", apiResponse.getMessage());
-        assertEquals(expectedData, apiResponse.getData());
+        
+        // Verify that the data contains the expected content
+        List<Map<String, String>> data = (List<Map<String, String>>) apiResponse.getData();
+        assertNotNull(data);
+        assertFalse(data.isEmpty());
+        
+        // Check that the data contains the expected structure
+        Map<String, String> firstRow = data.get(0);
+        assertNotNull(firstRow);
+        assertTrue(firstRow.containsKey("_LINE"));
+        assertTrue(firstRow.containsKey("MA_SINH_VIEN"));
+        assertEquals("SV001", firstRow.get("MA_SINH_VIEN"));
     }
 
     @Test

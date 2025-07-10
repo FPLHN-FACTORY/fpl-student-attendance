@@ -587,13 +587,14 @@ class AFFacilityServiceImplTest {
         String facilityId = "facility-1";
         Facility facility = new Facility();
         facility.setId(facilityId);
+        facility.setName("FPT HCM");
         facility.setStatus(EntityStatus.ACTIVE);
         facility.setUpdatedAt(System.currentTimeMillis() - 86400000); // yesterday
 
         when(facilityRepository.findById(facilityId)).thenReturn(Optional.of(facility));
         when(facilityRepository.countFacility()).thenReturn(2);
         when(facilityRepository.save(any(Facility.class))).thenReturn(facility);
-        when(facilityRepository.getListEmailUserDisableFacility(facilityId)).thenReturn(List.of("a@a.com", "b@b.com"));
+        when(facilityRepository.getListEmailUserDisableFacility(facilityId)).thenReturn(new ArrayList<>(Arrays.asList("a@a.com", "b@b.com")));
 
         ResponseEntity<?> response = facilityService.changeFacilityStatus(facilityId);
 

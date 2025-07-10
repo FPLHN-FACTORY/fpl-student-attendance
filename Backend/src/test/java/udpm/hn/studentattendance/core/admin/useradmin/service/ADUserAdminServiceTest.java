@@ -48,11 +48,12 @@ class ADUserAdminServiceTest {
         request.setStaffCode("A001");
         request.setEmail("admin@gmail.com");
         request.setStaffName("Nguyen Van A");
-        lenient().when(userAdminExtendRepository.getUserAdminByCode(anyString())).thenReturn(Optional.empty());
-        lenient().when(userAdminExtendRepository.getUserAdminByEmail(anyString())).thenReturn(Optional.empty());
-        when(settingHelper.getSetting(eq(SettingKeys.DISABLED_CHECK_EMAIL_FPT_STAFF), eq(Boolean.class)))
-                .thenReturn(true);
+        when(userAdminExtendRepository.getUserAdminByCode(anyString())).thenReturn(Optional.empty());
+        when(userAdminExtendRepository.getUserAdminByEmail(anyString())).thenReturn(Optional.empty());
         when(userAdminExtendRepository.save(any(UserAdmin.class))).thenReturn(new UserAdmin());
+        when(sessionHelper.getUserId()).thenReturn("current-user-id");
+        when(notificationService.add(any())).thenReturn(null);
+
         ResponseEntity<?> response = adUserAdminService.createUserAdmin(request);
         assertEquals(200, response.getStatusCodeValue());
         verify(userAdminExtendRepository).save(any(UserAdmin.class));
