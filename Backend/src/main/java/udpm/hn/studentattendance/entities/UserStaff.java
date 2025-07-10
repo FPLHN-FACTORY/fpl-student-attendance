@@ -27,11 +27,11 @@ import java.util.List;
 @DynamicUpdate
 public class UserStaff extends PrimaryEntity implements UserDetails {
 
-    @Column(name = "emailFe", length = EntityProperties.LENGTH_NAME)
+    @Column(name = "email_fe", length = EntityProperties.LENGTH_NAME)
     @Nationalized
     private String emailFe;
 
-    @Column(name = "emailFpt", length = EntityProperties.LENGTH_NAME)
+    @Column(name = "email_fpt", length = EntityProperties.LENGTH_NAME)
     @Nationalized
     private String emailFpt;
 
