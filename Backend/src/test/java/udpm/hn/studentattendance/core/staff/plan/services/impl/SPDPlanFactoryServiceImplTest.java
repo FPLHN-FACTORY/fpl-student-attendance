@@ -39,19 +39,19 @@ import static org.mockito.Mockito.lenient;
 class SPDPlanFactoryServiceImplTest {
 
     @Mock
-    private SPDPlanRepository planRepository;
+    private SPDPlanRepository spdPlanRepository;
 
     @Mock
-    private SPDPlanFactoryRepository planFactoryRepository;
+    private SPDPlanFactoryRepository spdPlanFactoryRepository;
 
     @Mock
-    private SPDFactoryRepository factoryRepository;
+    private SPDFactoryRepository spdFactoryRepository;
 
     @Mock
-    private SPDPlanDateRepository planDateRepository;
+    private SPDPlanDateRepository spdPlanDateRepository;
 
     @Mock
-    private SPDFacilityShiftRepository facilityShiftRepository;
+    private SPDFacilityShiftRepository spdFacilityShiftRepository;
 
     @Mock
     private CommonUserStudentRepository commonUserStudentRepository;
@@ -79,7 +79,7 @@ class SPDPlanFactoryServiceImplTest {
         lenient().when(sessionHelper.getFacilityId()).thenReturn(facilityId);
 
         Page<SPDPlanFactoryResponse> page = new PageImpl<>(new ArrayList<>());
-        when(planFactoryRepository.getAllByFilter(any(Pageable.class), eq(request))).thenReturn(page);
+        when(spdPlanFactoryRepository.getAllByFilter(any(Pageable.class), eq(request))).thenReturn(page);
 
         // Act
         ResponseEntity<?> response = planFactoryService.getAllList(request);
@@ -91,7 +91,7 @@ class SPDPlanFactoryServiceImplTest {
         assertEquals("Lấy danh sách dữ liệu thành công", apiResponse.getMessage());
 
         assertEquals(facilityId, request.getIdFacility());
-        verify(planFactoryRepository).getAllByFilter(any(Pageable.class), eq(request));
+        verify(spdPlanFactoryRepository).getAllByFilter(any(Pageable.class), eq(request));
     }
 
     @Test
@@ -115,12 +115,12 @@ class SPDPlanFactoryServiceImplTest {
         when(project.getSubjectFacility()).thenReturn(subjectFacility);
         when(subjectFacility.getFacility()).thenReturn(facility);
 
-        when(planRepository.findById(planId)).thenReturn(Optional.of(plan));
+        when(spdPlanRepository.findById(planId)).thenReturn(Optional.of(plan));
 
         List<SPDFactoryResponse> mockFactories = Arrays.asList(
                 mock(SPDFactoryResponse.class),
                 mock(SPDFactoryResponse.class));
-        when(planFactoryRepository.getListFactory(projectId)).thenReturn(mockFactories);
+        when(spdPlanFactoryRepository.getListFactory(projectId)).thenReturn(mockFactories);
 
         // Act
         ResponseEntity<?> response = planFactoryService.getListFactory(planId);
@@ -132,8 +132,8 @@ class SPDPlanFactoryServiceImplTest {
         assertEquals("Lấy danh sách dữ liệu thành công", apiResponse.getMessage());
         assertEquals(mockFactories, apiResponse.getData());
 
-        verify(planRepository).findById(planId);
-        verify(planFactoryRepository).getListFactory(projectId);
+        verify(spdPlanRepository).findById(planId);
+        verify(spdPlanFactoryRepository).getListFactory(projectId);
     }
 
     @Test
@@ -144,7 +144,7 @@ class SPDPlanFactoryServiceImplTest {
         String facilityId = "facility-1";
 
         lenient().when(sessionHelper.getFacilityId()).thenReturn(facilityId);
-        lenient().when(planRepository.findById(planId)).thenReturn(Optional.empty());
+        lenient().when(spdPlanRepository.findById(planId)).thenReturn(Optional.empty());
 
         // Act
         ResponseEntity<?> response = planFactoryService.getListFactory(planId);
@@ -155,7 +155,7 @@ class SPDPlanFactoryServiceImplTest {
         assertNotNull(apiResponse);
         assertEquals("Kế hoạch không tồn tại hoặc đã bị xoá", apiResponse.getMessage());
 
-        verify(planFactoryRepository, never()).getListFactory(anyString());
+        verify(spdPlanFactoryRepository, never()).getListFactory(anyString());
     }
 
     @Test
@@ -183,15 +183,16 @@ class SPDPlanFactoryServiceImplTest {
         when(planFactory.getPlan()).thenReturn(plan);
 
         // Mock the repository methods
-        when(planFactoryRepository.findById(planFactoryId)).thenReturn(Optional.of(planFactory));
+        when(spdPlanFactoryRepository.findById(planFactoryId)).thenReturn(Optional.of(planFactory));
 
         // Mock getDetail method to return valid response
         SPDPlanFactoryResponse planFactoryResponse = mock(SPDPlanFactoryResponse.class);
         when(planFactoryResponse.getStatus()).thenReturn(EntityStatus.ACTIVE.ordinal());
-        when(planFactoryRepository.getDetail(planFactoryId, facilityId)).thenReturn(Optional.of(planFactoryResponse));
+        when(spdPlanFactoryRepository.getDetail(planFactoryId, facilityId))
+                .thenReturn(Optional.of(planFactoryResponse));
 
         // Mock the save method to return the updated entity
-        when(planFactoryRepository.save(any(PlanFactory.class))).thenReturn(planFactory);
+        when(spdPlanFactoryRepository.save(any(PlanFactory.class))).thenReturn(planFactory);
 
         doNothing().when(userActivityLogHelper).saveLog(anyString());
 
@@ -205,7 +206,7 @@ class SPDPlanFactoryServiceImplTest {
         assertEquals("Thay đổi trạng thái kế hoạch thành công", apiResponse.getMessage());
 
         verify(planFactory).setStatus(EntityStatus.INACTIVE);
-        verify(planFactoryRepository).save(planFactory);
+        verify(spdPlanFactoryRepository).save(planFactory);
         verify(userActivityLogHelper).saveLog(anyString());
     }
 
@@ -230,11 +231,11 @@ class SPDPlanFactoryServiceImplTest {
         when(planFactory.getFactory()).thenReturn(factory);
         when(planFactory.getPlan()).thenReturn(plan);
 
-        when(planFactoryRepository.findById(planFactoryId)).thenReturn(Optional.of(planFactory));
+        when(spdPlanFactoryRepository.findById(planFactoryId)).thenReturn(Optional.of(planFactory));
 
-        when(planFactoryRepository.deleteAllAttendanceByIdPlanFactory(planFactoryId)).thenReturn(1);
-        when(planFactoryRepository.deleteAllPlanDateByIdPlanFactory(planFactoryId)).thenReturn(1);
-        doNothing().when(planFactoryRepository).delete(planFactory);
+        when(spdPlanFactoryRepository.deleteAllAttendanceByIdPlanFactory(planFactoryId)).thenReturn(1);
+        when(spdPlanFactoryRepository.deleteAllPlanDateByIdPlanFactory(planFactoryId)).thenReturn(1);
+        doNothing().when(spdPlanFactoryRepository).delete(planFactory);
         doNothing().when(userActivityLogHelper).saveLog(anyString());
 
         // Act
@@ -246,9 +247,9 @@ class SPDPlanFactoryServiceImplTest {
         assertNotNull(apiResponse);
         assertEquals("Xoá thành công nhóm xưởng ra khỏi kế hoạch", apiResponse.getMessage());
 
-        verify(planFactoryRepository).deleteAllAttendanceByIdPlanFactory(planFactoryId);
-        verify(planFactoryRepository).deleteAllPlanDateByIdPlanFactory(planFactoryId);
-        verify(planFactoryRepository).delete(planFactory);
+        verify(spdPlanFactoryRepository).deleteAllAttendanceByIdPlanFactory(planFactoryId);
+        verify(spdPlanFactoryRepository).deleteAllPlanDateByIdPlanFactory(planFactoryId);
+        verify(spdPlanFactoryRepository).delete(planFactory);
         verify(userActivityLogHelper).saveLog(anyString());
     }
 
@@ -261,7 +262,7 @@ class SPDPlanFactoryServiceImplTest {
         PlanFactory planFactory = mock(PlanFactory.class);
         when(planFactory.getStatus()).thenReturn(EntityStatus.ACTIVE); // Active factory
 
-        when(planFactoryRepository.findById(planFactoryId)).thenReturn(Optional.of(planFactory));
+        when(spdPlanFactoryRepository.findById(planFactoryId)).thenReturn(Optional.of(planFactory));
 
         // Act
         ResponseEntity<?> response = planFactoryService.deletePlanFactory(planFactoryId);
@@ -272,8 +273,8 @@ class SPDPlanFactoryServiceImplTest {
         assertNotNull(apiResponse);
         assertEquals("Không thể xoá nhóm xưởng đang triển khai trong kế hoạch này", apiResponse.getMessage());
 
-        verify(planFactoryRepository, never()).deleteAllAttendanceByIdPlanFactory(anyString());
-        verify(planFactoryRepository, never()).delete(any(PlanFactory.class));
+        verify(spdPlanFactoryRepository, never()).deleteAllAttendanceByIdPlanFactory(anyString());
+        verify(spdPlanFactoryRepository, never()).delete(any(PlanFactory.class));
     }
 
     @Test
@@ -287,7 +288,7 @@ class SPDPlanFactoryServiceImplTest {
                 mock(FacilityShift.class),
                 mock(FacilityShift.class));
 
-        when(facilityShiftRepository.getAllList(facilityId)).thenReturn(mockShifts);
+        when(spdFacilityShiftRepository.getAllList(facilityId)).thenReturn(mockShifts);
 
         // Act
         ResponseEntity<?> response = planFactoryService.getListShift();
@@ -299,6 +300,6 @@ class SPDPlanFactoryServiceImplTest {
         assertEquals("Lấy danh sách dữ liệu thành công", apiResponse.getMessage());
         assertEquals(mockShifts, apiResponse.getData());
 
-        verify(facilityShiftRepository).getAllList(facilityId);
+        verify(spdFacilityShiftRepository).getAllList(facilityId);
     }
 }
