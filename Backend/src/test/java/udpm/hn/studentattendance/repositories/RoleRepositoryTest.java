@@ -6,13 +6,16 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import udpm.hn.studentattendance.entities.Role;
+import udpm.hn.studentattendance.infrastructure.config.TestDatabaseConfig;
 
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
+import org.springframework.context.annotation.Import;
 
 @DataJpaTest
 @ExtendWith(SpringExtension.class)
+@Import(TestDatabaseConfig.class)
 class RoleRepositoryTest {
 
     @Autowired

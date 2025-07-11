@@ -2,10 +2,14 @@ package udpm.hn.studentattendance.repositories;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
+import udpm.hn.studentattendance.infrastructure.config.TestDatabaseConfig;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 @DataJpaTest
+@Import(TestDatabaseConfig.class)
 @ActiveProfiles("test")
 class FacilityIPRepositoryTest {
 

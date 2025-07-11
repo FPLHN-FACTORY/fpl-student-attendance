@@ -430,6 +430,7 @@ public class ADStaffServiceImpl implements ADStaffService {
         if (existStaff.isEmpty()) {
             return RouterHelper.responseError("Nhân viên không tồn tại");
         }
+
         UserStaff staff = existStaff.get();
         String oldStatus = staff.getStatus() == EntityStatus.ACTIVE ? "Hoạt động" : "Không hoạt động";
         staff.setStatus(staff.getStatus() == EntityStatus.ACTIVE ? EntityStatus.INACTIVE : EntityStatus.ACTIVE);

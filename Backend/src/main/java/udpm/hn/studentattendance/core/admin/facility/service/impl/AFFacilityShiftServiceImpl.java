@@ -49,7 +49,8 @@ public class AFFacilityShiftServiceImpl implements AFFacilityShiftService {
 
     @PostConstruct
     public void init() {
-        this.MIN_DIFF_SHIFT = settingHelper.getSetting(SettingKeys.SHIFT_MIN_DIFF, Integer.class);
+        Integer minDiff = settingHelper.getSetting(SettingKeys.SHIFT_MIN_DIFF, Integer.class);
+        this.MIN_DIFF_SHIFT = minDiff != null ? minDiff : 10; // fallback to 10 minutes
     }
 
     public PageableObject<AFFacilityShiftResponse> getShiftList(AFFilterFacilityShiftRequest request) {
