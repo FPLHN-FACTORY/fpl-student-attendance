@@ -7,6 +7,7 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.transaction.annotation.Transactional;
 import udpm.hn.studentattendance.entities.Attendance;
+import udpm.hn.studentattendance.infrastructure.config.TestDatabaseConfig;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 
 import java.util.List;

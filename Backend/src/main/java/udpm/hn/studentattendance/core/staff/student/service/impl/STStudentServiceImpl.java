@@ -162,6 +162,9 @@ public class STStudentServiceImpl implements STStudentService {
         if (existStudentEmail.isPresent()) {
             return RouterHelper.responseError("Email sinh viên đã tồn tại");
         }
+        if (facility.isEmpty()) {
+            return RouterHelper.responseError("Cơ sở không tồn tại");
+        }
 
         UserStudent userStudent = new UserStudent();
         userStudent.setCode(studentCreateUpdateRequest.getCode());

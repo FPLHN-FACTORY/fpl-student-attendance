@@ -3,13 +3,18 @@ package udpm.hn.studentattendance.core.admin.subjectfacility.repository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
 import static org.junit.jupiter.api.Assertions.*;
 import udpm.hn.studentattendance.entities.SubjectFacility;
+import udpm.hn.studentattendance.infrastructure.config.TestDatabaseConfig;
 import udpm.hn.studentattendance.entities.Facility;
+import udpm.hn.studentattendance.infrastructure.config.TestDatabaseConfig;
 import udpm.hn.studentattendance.entities.Subject;
+import udpm.hn.studentattendance.infrastructure.config.TestDatabaseConfig;
 
 @DataJpaTest
+@Import(TestDatabaseConfig.class)
 @ActiveProfiles("test")
 class ADSubjectFacilityRepositoryTest {
     @Autowired
@@ -30,11 +35,11 @@ class ADSubjectFacilityRepositoryTest {
     void testFindById() {
         Facility facility = new Facility();
         facility.setCode("FAC004");
-        facility.setName("Cơ sở 4");
+        facility.setName("CÆ¡ sá»Ÿ 4");
         facility.setPosition(4);
         Subject subject = new Subject();
         subject.setCode("SUBJ004");
-        subject.setName("Tin học đại cương");
+        subject.setName("Tin há»c Ä‘áº¡i cÆ°Æ¡ng");
         SubjectFacility subjectFacility = new SubjectFacility();
         subjectFacility.setFacility(facility);
         subjectFacility.setSubject(subject);
@@ -49,11 +54,11 @@ class ADSubjectFacilityRepositoryTest {
     void testSave() {
         Facility facility = new Facility();
         facility.setCode("FAC005");
-        facility.setName("Cơ sở 5");
+        facility.setName("CÆ¡ sá»Ÿ 5");
         facility.setPosition(5);
         Subject subject = new Subject();
         subject.setCode("SUBJ005");
-        subject.setName("Kỹ thuật lập trình");
+        subject.setName("Ká»¹ thuáº­t láº­p trÃ¬nh");
         SubjectFacility subjectFacility = new SubjectFacility();
         subjectFacility.setFacility(facility);
         subjectFacility.setSubject(subject);
@@ -67,11 +72,11 @@ class ADSubjectFacilityRepositoryTest {
     void testDelete() {
         Facility facility = new Facility();
         facility.setCode("FAC006");
-        facility.setName("Cơ sở 6");
+        facility.setName("CÆ¡ sá»Ÿ 6");
         facility.setPosition(6);
         Subject subject = new Subject();
         subject.setCode("SUBJ006");
-        subject.setName("Cơ sở dữ liệu");
+        subject.setName("CÆ¡ sá»Ÿ dá»¯ liá»‡u");
         SubjectFacility subjectFacility = new SubjectFacility();
         subjectFacility.setFacility(facility);
         subjectFacility.setSubject(subject);

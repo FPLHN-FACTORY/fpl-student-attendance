@@ -3,11 +3,14 @@ package udpm.hn.studentattendance.core.admin.subjectfacility.repository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
 import static org.junit.jupiter.api.Assertions.*;
 import udpm.hn.studentattendance.entities.Facility;
+import udpm.hn.studentattendance.infrastructure.config.TestDatabaseConfig;
 
 @DataJpaTest
+@Import(TestDatabaseConfig.class)
 @ActiveProfiles("test")
 class ADFacilityRepositoryTest {
     @Autowired
@@ -28,7 +31,7 @@ class ADFacilityRepositoryTest {
     void testFindById() {
         Facility facility = new Facility();
         facility.setCode("FAC001");
-        facility.setName("Cơ sở 1");
+        facility.setName("CÆ¡ sá»Ÿ 1");
         facility.setPosition(1);
         Facility saved = adFacilityRepository.save(facility);
         var result = adFacilityRepository.findById(saved.getId());
@@ -40,7 +43,7 @@ class ADFacilityRepositoryTest {
     void testSave() {
         Facility facility = new Facility();
         facility.setCode("FAC002");
-        facility.setName("Cơ sở 2");
+        facility.setName("CÆ¡ sá»Ÿ 2");
         facility.setPosition(2);
         Facility saved = adFacilityRepository.save(facility);
         assertNotNull(saved.getId());
@@ -51,7 +54,7 @@ class ADFacilityRepositoryTest {
     void testDelete() {
         Facility facility = new Facility();
         facility.setCode("FAC003");
-        facility.setName("Cơ sở 3");
+        facility.setName("CÆ¡ sá»Ÿ 3");
         facility.setPosition(3);
         Facility saved = adFacilityRepository.save(facility);
         adFacilityRepository.deleteById(saved.getId());

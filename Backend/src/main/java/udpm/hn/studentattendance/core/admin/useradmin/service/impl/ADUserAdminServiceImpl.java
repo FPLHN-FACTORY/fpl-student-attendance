@@ -194,11 +194,7 @@ public class ADUserAdminServiceImpl implements ADUserAdminService {
                                         .responseError("Email phải có định dạng @gmail.com hoặc kết thúc bằng edu.vn");
                 }
 
-//                if (!settingHelper.getSetting(SettingKeys.DISABLED_CHECK_EMAIL_FPT_STAFF, Boolean.class)) {
-//                        if (!ValidateHelper.isValidEmailFE(email) && !ValidateHelper.isValidEmailFPT(email)) {
-//                                return RouterHelper.responseError("Email phải kết thúc bằng edu.vn");
-//                        }
-//                }
+
 
                 if (existUserAdmin.isPresent()) {
                         return RouterHelper.responseError("Mã của admin đã tồn tại");
@@ -267,11 +263,7 @@ public class ADUserAdminServiceImpl implements ADUserAdminService {
                                         .responseError("Email phải có định dạng @gmail.com hoặc kết thúc bằng edu.vn");
                 }
 
-//                if (!settingHelper.getSetting(SettingKeys.DISABLED_CHECK_EMAIL_FPT_STAFF, Boolean.class)) {
-//                        if (!ValidateHelper.isValidEmailFE(email) && !ValidateHelper.isValidEmailFPT(email)) {
-//                                return RouterHelper.responseError("Email phải kết thúc bằng edu.vn");
-//                        }
-//                }
+
 
                 if (!ValidateHelper.isValidCode(createOrUpdateRequest.getStaffCode())) {
                         return RouterHelper.responseError(
@@ -402,6 +394,11 @@ public class ADUserAdminServiceImpl implements ADUserAdminService {
                 Optional<UserAdmin> existUserAdmin = userAdminExtendRepository.findById(userAdminId);
                 if (existUserAdmin.isEmpty()) {
                         return RouterHelper.responseError("Không tìm thấy tài khoản admin");
+                }
+
+                // Kiểm tra xem có đang cố gắng xóa chính mình hay không
+                if (userAdminId.equalsIgnoreCase(sessionHelper.getUserId())) {
+                        return RouterHelper.responseError("Không thể xóa tài khoản của chính mình");
                 }
 
                 UserAdmin adminToDelete = existUserAdmin.get();

@@ -4,8 +4,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import udpm.hn.studentattendance.entities.Facility;
+import udpm.hn.studentattendance.infrastructure.config.TestDatabaseConfig;
 
 import java.util.List;
 import java.util.Optional;
@@ -14,6 +16,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @DataJpaTest
 @ExtendWith(SpringExtension.class)
+@Import(TestDatabaseConfig.class)
 class FacilityRepositoryTest {
 
     @Autowired

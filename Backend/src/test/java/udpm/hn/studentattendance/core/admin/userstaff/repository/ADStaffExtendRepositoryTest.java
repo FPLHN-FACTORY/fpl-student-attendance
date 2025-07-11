@@ -3,11 +3,14 @@ package udpm.hn.studentattendance.core.admin.userstaff.repository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
 import static org.junit.jupiter.api.Assertions.*;
 import udpm.hn.studentattendance.entities.UserStaff;
+import udpm.hn.studentattendance.infrastructure.config.TestDatabaseConfig;
 
 @DataJpaTest
+@Import(TestDatabaseConfig.class)
 @ActiveProfiles("test")
 class ADStaffExtendRepositoryTest {
     @Autowired

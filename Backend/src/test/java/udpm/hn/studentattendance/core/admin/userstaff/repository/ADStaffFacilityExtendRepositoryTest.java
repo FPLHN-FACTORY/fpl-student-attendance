@@ -3,11 +3,14 @@ package udpm.hn.studentattendance.core.admin.userstaff.repository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
 import static org.junit.jupiter.api.Assertions.*;
 import udpm.hn.studentattendance.entities.Facility;
+import udpm.hn.studentattendance.infrastructure.config.TestDatabaseConfig;
 
 @DataJpaTest
+@Import(TestDatabaseConfig.class)
 @ActiveProfiles("test")
 class ADStaffFacilityExtendRepositoryTest {
     @Autowired
@@ -21,7 +24,7 @@ class ADStaffFacilityExtendRepositoryTest {
     @Test
     void testFindAll() {
         Facility facility = new Facility();
-        facility.setName("Cơ sở 1");
+        facility.setName("CÆ¡ sá»Ÿ 1");
         facility.setCode("CS001");
         facility.setPosition(1);
         adStaffFacilityExtendRepository.save(facility);
@@ -33,7 +36,7 @@ class ADStaffFacilityExtendRepositoryTest {
     @Test
     void testFindById() {
         Facility facility = new Facility();
-        facility.setName("Cơ sở 2");
+        facility.setName("CÆ¡ sá»Ÿ 2");
         facility.setCode("CS002");
         facility.setPosition(2);
         Facility saved = adStaffFacilityExtendRepository.save(facility);
@@ -45,7 +48,7 @@ class ADStaffFacilityExtendRepositoryTest {
     @Test
     void testSave() {
         Facility facility = new Facility();
-        facility.setName("Cơ sở 3");
+        facility.setName("CÆ¡ sá»Ÿ 3");
         facility.setCode("CS003");
         facility.setPosition(3);
         Facility saved = adStaffFacilityExtendRepository.save(facility);
@@ -56,7 +59,7 @@ class ADStaffFacilityExtendRepositoryTest {
     @Test
     void testDelete() {
         Facility facility = new Facility();
-        facility.setName("Cơ sở 4");
+        facility.setName("CÆ¡ sá»Ÿ 4");
         facility.setCode("CS004");
         facility.setPosition(4);
         Facility saved = adStaffFacilityExtendRepository.save(facility);
