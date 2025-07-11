@@ -599,6 +599,7 @@ public class STStudentServiceImplTest {
         request.setName("Nguyen Van A");
         request.setEmail("nguyenvana@fpt.edu.vn");
 
+        when(sessionHelper.getFacilityId()).thenReturn("facility-1");
         when(studentExtendRepository.getUserStudentByCode("ST001")).thenReturn(Optional.empty());
         when(studentExtendRepository.getUserStudentByEmail("nguyenvana@fpt.edu.vn")).thenReturn(Optional.empty());
         when(facilityRepository.findById("facility-1")).thenReturn(Optional.empty());
@@ -826,6 +827,5 @@ public class STStudentServiceImplTest {
         assertNotNull(result);
         // Should not throw exception, just ignore redis error
     }
-
 
 }

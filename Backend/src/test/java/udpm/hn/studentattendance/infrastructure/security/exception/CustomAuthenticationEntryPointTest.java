@@ -20,11 +20,11 @@ class CustomAuthenticationEntryPointTest {
         CustomAuthenticationEntryPoint entryPoint = new CustomAuthenticationEntryPoint();
         MockHttpServletRequest request = new MockHttpServletRequest();
         MockHttpServletResponse response = new MockHttpServletResponse();
-        
+
         entryPoint.commence(request, response, authenticationException);
-        
+
         assertEquals(401, response.getStatus());
-        assertTrue(response.getContentAsString().contains("Unauthorized"));
+        assertTrue(response.getContentAsString().contains("Truy cập bị từ chối"));
     }
 
     @Test

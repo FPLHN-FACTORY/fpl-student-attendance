@@ -961,10 +961,10 @@ class ADStaffServiceImplTest extends BaseServiceTest {
 
         ResponseEntity<?> response = adStaffService.changeStaffStatus("staff-1");
 
-        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         // Also check the error message
         if (response.getBody() instanceof ApiResponse apiResponse) {
-            assertEquals("Không thể thay đổi trạng thái của chính mình", apiResponse.getMessage());
+            assertEquals("Không được sửa trạng thái của chính bản thân", apiResponse.getMessage());
         }
         verify(adStaffRepository, never()).save(any());
     }

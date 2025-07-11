@@ -55,7 +55,7 @@ class SecurityConfigTest {
                 teacherSecurityConfig,
                 excelSecurityConfig,
                 testSecurityConfig);
-        assertNotNull(config.getClass().getMethod("filterChain", HttpSecurity.class));
+        assertNotNull(config.getClass().getDeclaredMethod("filterChain", HttpSecurity.class));
     }
 
     @Test
@@ -68,6 +68,6 @@ class SecurityConfigTest {
                 teacherSecurityConfig,
                 excelSecurityConfig,
                 testSecurityConfig);
-        assertNotNull(config.getClass().getMethod("corsConfigurationSource"));
+        assertNotNull(config.getClass().getDeclaredMethod("corsConfigurationSource"));
     }
 }

@@ -33,8 +33,18 @@ class RedisServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        when(redisTemplate.opsForValue()).thenReturn(valueOps);
-        when(redisTemplate.opsForHash()).thenReturn(hashOps);
+        // Sử dụng lenient để tránh lỗi unnecessary stubbings
+        lenient().when(redisTemplate.opsForValue()).thenReturn(valueOps);
+        lenient().when(redisTemplate.opsForHash()).thenReturn(hashOps);
+        // Manually initialize hashOperations since @PostConstruct might not be called
+        // in tests
+        try {
+            java.lang.reflect.Field hashOperationsField = RedisServiceImpl.class.getDeclaredField("hashOperations");
+            hashOperationsField.setAccessible(true);
+            hashOperationsField.set(redisService, hashOps);
+        } catch (Exception e) {
+            // If reflection fails, the test will still work if @PostConstruct is called
+        }
     }
 
     @Test
@@ -71,5 +81,6 @@ class RedisServiceImplTest {
         when(hashOps.hasKey("key", "field")).thenReturn(false);
         boolean result = redisService.hashExist("key", "field");
         assertFalse(result);
+        verify(hashOps).hasKey("key", "field");
     }
 }

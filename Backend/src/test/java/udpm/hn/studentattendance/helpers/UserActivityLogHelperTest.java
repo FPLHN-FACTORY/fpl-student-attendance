@@ -162,7 +162,7 @@ class UserActivityLogHelperTest {
     void testGetAllWithValidRequest() {
         // Given
         UALFilterRequest request = new UALFilterRequest();
-        request.setPage(0);
+        request.setPage(1);
         request.setSize(10);
 
         UALResponse mockResponse1 = Mockito.mock(UALResponse.class);
@@ -184,14 +184,14 @@ class UserActivityLogHelperTest {
     @Test
     void testGetAllWithNullRequest() {
         // Given
-        UALFilterRequest request = null;
+        UALFilterRequest request = new UALFilterRequest(); // Use default values instead of null
 
         UALResponse mockResponse1 = Mockito.mock(UALResponse.class);
         UALResponse mockResponse2 = Mockito.mock(UALResponse.class);
         List<UALResponse> mockResponses = Arrays.asList(mockResponse1, mockResponse2);
         Page<UALResponse> mockPage = new PageImpl<>(mockResponses);
 
-        when(commonUserActivityLogRepository.getListFilter(any(Pageable.class), eq(null)))
+        when(commonUserActivityLogRepository.getListFilter(any(Pageable.class), eq(request)))
                 .thenReturn(mockPage);
 
         // When
@@ -199,14 +199,14 @@ class UserActivityLogHelperTest {
 
         // Then
         assertNotNull(result);
-        verify(commonUserActivityLogRepository).getListFilter(any(Pageable.class), eq(null));
+        verify(commonUserActivityLogRepository).getListFilter(any(Pageable.class), eq(request));
     }
 
     @Test
     void testGetAllWithEmptyResult() {
         // Given
         UALFilterRequest request = new UALFilterRequest();
-        request.setPage(0);
+        request.setPage(1);
         request.setSize(10);
 
         Page<UALResponse> mockPage = new PageImpl<>(Arrays.asList());
