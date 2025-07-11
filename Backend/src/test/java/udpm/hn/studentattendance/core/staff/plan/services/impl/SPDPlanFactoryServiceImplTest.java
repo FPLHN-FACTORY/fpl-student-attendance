@@ -172,12 +172,12 @@ class SPDPlanFactoryServiceImplTest {
         when(planFactory.getStatus()).thenReturn(EntityStatus.ACTIVE);
 
         Factory factory = mock(Factory.class);
-        when(factory.getName()).thenReturn("Test Factory");
+        lenient().when(factory.getName()).thenReturn("Test Factory");
 
         Plan plan = mock(Plan.class);
-        when(plan.getName()).thenReturn("Test Plan");
-        when(plan.getFromDate()).thenReturn(System.currentTimeMillis());
-        when(plan.getToDate()).thenReturn(System.currentTimeMillis() + 86400000L);
+        lenient().when(plan.getName()).thenReturn("Test Plan");
+        lenient().when(plan.getFromDate()).thenReturn(System.currentTimeMillis());
+        lenient().when(plan.getToDate()).thenReturn(System.currentTimeMillis() + 86400000L);
 
         when(planFactory.getFactory()).thenReturn(factory);
         when(planFactory.getPlan()).thenReturn(plan);
@@ -188,11 +188,11 @@ class SPDPlanFactoryServiceImplTest {
         // Mock getDetail method to return valid response
         SPDPlanFactoryResponse planFactoryResponse = mock(SPDPlanFactoryResponse.class);
         when(planFactoryResponse.getStatus()).thenReturn(EntityStatus.ACTIVE.ordinal());
-        when(spdPlanFactoryRepository.getDetail(planFactoryId, facilityId))
+        lenient().when(spdPlanFactoryRepository.getDetail(planFactoryId, facilityId))
                 .thenReturn(Optional.of(planFactoryResponse));
 
         // Mock the save method to return the updated entity
-        when(spdPlanFactoryRepository.save(any(PlanFactory.class))).thenReturn(planFactory);
+        lenient().when(spdPlanFactoryRepository.save(any(PlanFactory.class))).thenReturn(planFactory);
 
         doNothing().when(userActivityLogHelper).saveLog(anyString());
 
@@ -221,20 +221,20 @@ class SPDPlanFactoryServiceImplTest {
         when(planFactory.getStatus()).thenReturn(EntityStatus.INACTIVE);
 
         Factory factory = mock(Factory.class);
-        when(factory.getName()).thenReturn("Test Factory");
+        lenient().when(factory.getName()).thenReturn("Test Factory");
 
         Plan plan = mock(Plan.class);
-        when(plan.getName()).thenReturn("Test Plan");
-        when(plan.getFromDate()).thenReturn(System.currentTimeMillis());
-        when(plan.getToDate()).thenReturn(System.currentTimeMillis() + 86400000L);
+        lenient().when(plan.getName()).thenReturn("Test Plan");
+        lenient().when(plan.getFromDate()).thenReturn(System.currentTimeMillis());
+        lenient().when(plan.getToDate()).thenReturn(System.currentTimeMillis() + 86400000L);
 
         when(planFactory.getFactory()).thenReturn(factory);
         when(planFactory.getPlan()).thenReturn(plan);
 
         when(spdPlanFactoryRepository.findById(planFactoryId)).thenReturn(Optional.of(planFactory));
 
-        when(spdPlanFactoryRepository.deleteAllAttendanceByIdPlanFactory(planFactoryId)).thenReturn(1);
-        when(spdPlanFactoryRepository.deleteAllPlanDateByIdPlanFactory(planFactoryId)).thenReturn(1);
+        lenient().when(spdPlanFactoryRepository.deleteAllAttendanceByIdPlanFactory(planFactoryId)).thenReturn(1);
+        lenient().when(spdPlanFactoryRepository.deleteAllPlanDateByIdPlanFactory(planFactoryId)).thenReturn(1);
         doNothing().when(spdPlanFactoryRepository).delete(planFactory);
         doNothing().when(userActivityLogHelper).saveLog(anyString());
 

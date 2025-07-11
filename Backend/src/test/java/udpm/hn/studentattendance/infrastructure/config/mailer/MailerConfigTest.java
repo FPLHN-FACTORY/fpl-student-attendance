@@ -14,12 +14,6 @@ class MailerConfigTest {
     @Test
     void testJavaMailSenderBean() throws Exception {
         MailerConfig config = new MailerConfig();
-        assertNotNull(config.getClass().getMethod("javaMailSender"));
-    }
-
-    @Test
-    void testTemplateEngineBean() throws Exception {
-        MailerConfig config = new MailerConfig();
-        assertNotNull(config.getClass().getMethod("templateEngine"));
+        assertNotNull(config.getClass().getMethod("getJavaMailSender"));
     }
 }

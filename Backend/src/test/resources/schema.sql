@@ -5,8 +5,8 @@
 CREATE TABLE IF NOT EXISTS "user_student" (
     "id" VARCHAR(255) PRIMARY KEY,
     "status" INTEGER,
-    "createdAt" BIGINT,
-    "updatedAt" BIGINT,
+    "created_at" BIGINT,
+    "updated_at" BIGINT,
     "email" VARCHAR(255),
     "name" VARCHAR(255),
     "code" VARCHAR(255),
@@ -19,8 +19,8 @@ CREATE TABLE IF NOT EXISTS "user_student" (
 CREATE TABLE IF NOT EXISTS "user_staff" (
     "id" VARCHAR(255) PRIMARY KEY,
     "status" INTEGER,
-    "createdAt" BIGINT,
-    "updatedAt" BIGINT,
+    "created_at" BIGINT,
+    "updated_at" BIGINT,
     "email_fe" VARCHAR(255),
     "email_fpt" VARCHAR(255),
     "name" VARCHAR(255),
@@ -32,8 +32,8 @@ CREATE TABLE IF NOT EXISTS "user_staff" (
 CREATE TABLE IF NOT EXISTS "user_admin" (
     "id" VARCHAR(255) PRIMARY KEY,
     "status" INTEGER,
-    "createdAt" BIGINT,
-    "updatedAt" BIGINT,
+    "created_at" BIGINT,
+    "updated_at" BIGINT,
     "email" VARCHAR(255),
     "name" VARCHAR(255),
     "code" VARCHAR(255),
@@ -44,8 +44,8 @@ CREATE TABLE IF NOT EXISTS "user_admin" (
 CREATE TABLE IF NOT EXISTS "facility" (
     "id" VARCHAR(255) PRIMARY KEY,
     "status" INTEGER,
-    "createdAt" BIGINT,
-    "updatedAt" BIGINT,
+    "created_at" BIGINT,
+    "updated_at" BIGINT,
     "code" VARCHAR(255),
     "name" VARCHAR(255),
     "position" INTEGER
@@ -55,8 +55,8 @@ CREATE TABLE IF NOT EXISTS "facility" (
 CREATE TABLE IF NOT EXISTS "role" (
     "id" VARCHAR(255) PRIMARY KEY,
     "status" INTEGER,
-    "createdAt" BIGINT,
-    "updatedAt" BIGINT,
+    "created_at" BIGINT,
+    "updated_at" BIGINT,
     "code" VARCHAR(255),
     "id_facility" VARCHAR(255),
     "id_user_staff" VARCHAR(255)
@@ -66,8 +66,8 @@ CREATE TABLE IF NOT EXISTS "role" (
 CREATE TABLE IF NOT EXISTS "subject" (
     "id" VARCHAR(255) PRIMARY KEY,
     "status" INTEGER,
-    "createdAt" BIGINT,
-    "updatedAt" BIGINT,
+    "created_at" BIGINT,
+    "updated_at" BIGINT,
     "code" VARCHAR(255),
     "name" VARCHAR(255)
 );
@@ -76,8 +76,8 @@ CREATE TABLE IF NOT EXISTS "subject" (
 CREATE TABLE IF NOT EXISTS "semester" (
     "id" VARCHAR(255) PRIMARY KEY,
     "status" INTEGER,
-    "createdAt" BIGINT,
-    "updatedAt" BIGINT,
+    "created_at" BIGINT,
+    "updated_at" BIGINT,
     "code" VARCHAR(255),
     "name" VARCHAR(255),
     "from_date" BIGINT,
@@ -89,8 +89,8 @@ CREATE TABLE IF NOT EXISTS "semester" (
 CREATE TABLE IF NOT EXISTS "project" (
     "id" VARCHAR(255) PRIMARY KEY,
     "status" INTEGER,
-    "createdAt" BIGINT,
-    "updatedAt" BIGINT,
+    "created_at" BIGINT,
+    "updated_at" BIGINT,
     "name" VARCHAR(255),
     "description" TEXT,
     "id_level_project" VARCHAR(255),
@@ -102,8 +102,8 @@ CREATE TABLE IF NOT EXISTS "project" (
 CREATE TABLE IF NOT EXISTS "plan" (
     "id" VARCHAR(255) PRIMARY KEY,
     "status" INTEGER,
-    "createdAt" BIGINT,
-    "updatedAt" BIGINT,
+    "created_at" BIGINT,
+    "updated_at" BIGINT,
     "name" VARCHAR(255),
     "description" TEXT,
     "from_date" BIGINT,
@@ -116,8 +116,8 @@ CREATE TABLE IF NOT EXISTS "plan" (
 CREATE TABLE IF NOT EXISTS "plan_date" (
     "id" VARCHAR(255) PRIMARY KEY,
     "status" INTEGER,
-    "createdAt" BIGINT,
-    "updatedAt" BIGINT,
+    "created_at" BIGINT,
+    "updated_at" BIGINT,
     "description" TEXT,
     "start_date" BIGINT,
     "end_date" BIGINT,
@@ -137,8 +137,8 @@ CREATE TABLE IF NOT EXISTS "plan_date" (
 CREATE TABLE IF NOT EXISTS "notification" (
     "id" VARCHAR(255) PRIMARY KEY,
     "status" INTEGER,
-    "createdAt" BIGINT,
-    "updatedAt" BIGINT,
+    "created_at" BIGINT,
+    "updated_at" BIGINT,
     "id_user" VARCHAR(255),
     "type" INTEGER,
     "data" TEXT
@@ -150,12 +150,22 @@ CREATE TABLE IF NOT EXISTS "settings" (
     "value" TEXT
 );
 
+-- Insert default settings
+INSERT INTO "settings" ("key", "value") VALUES ('DISABLED_CHECK_EMAIL_FPT_STAFF', 'false');
+INSERT INTO "settings" ("key", "value") VALUES ('DISABLED_CHECK_EMAIL_FPT_STUDENT', 'false');
+INSERT INTO "settings" ("key", "value") VALUES ('SHIFT_MIN_DIFF', '30');
+INSERT INTO "settings" ("key", "value") VALUES ('SHIFT_MAX_LATE_ARRIVAL', '15');
+INSERT INTO "settings" ("key", "value") VALUES ('ATTENDANCE_EARLY_CHECKIN', '5');
+INSERT INTO "settings" ("key", "value") VALUES ('EXPIRATION_MINUTE_LOGIN', '60');
+INSERT INTO "settings" ("key", "value") VALUES ('FACE_THRESHOLD_CHECKIN', '0.8');
+INSERT INTO "settings" ("key", "value") VALUES ('FACE_THRESHOLD_REGISTER', '0.9');
+
 -- Subject Facility table
 CREATE TABLE IF NOT EXISTS "subject_facility" (
     "id" VARCHAR(255) PRIMARY KEY,
     "status" INTEGER,
-    "createdAt" BIGINT,
-    "updatedAt" BIGINT,
+    "created_at" BIGINT,
+    "updated_at" BIGINT,
     "id_facility" VARCHAR(255),
     "id_subject" VARCHAR(255)
 );
@@ -164,8 +174,8 @@ CREATE TABLE IF NOT EXISTS "subject_facility" (
 CREATE TABLE IF NOT EXISTS "level_project" (
     "id" VARCHAR(255) PRIMARY KEY,
     "status" INTEGER,
-    "createdAt" BIGINT,
-    "updatedAt" BIGINT,
+    "created_at" BIGINT,
+    "updated_at" BIGINT,
     "code" VARCHAR(255),
     "name" VARCHAR(255),
     "description" TEXT
@@ -175,8 +185,8 @@ CREATE TABLE IF NOT EXISTS "level_project" (
 CREATE TABLE IF NOT EXISTS "user_student_factory" (
     "id" VARCHAR(255) PRIMARY KEY,
     "status" INTEGER,
-    "createdAt" BIGINT,
-    "updatedAt" BIGINT,
+    "created_at" BIGINT,
+    "updated_at" BIGINT,
     "id_factory" VARCHAR(255),
     "id_user_student" VARCHAR(255)
 );
@@ -185,8 +195,8 @@ CREATE TABLE IF NOT EXISTS "user_student_factory" (
 CREATE TABLE IF NOT EXISTS "user_activity_log" (
     "id" VARCHAR(255) PRIMARY KEY,
     "status" INTEGER,
-    "createdAt" BIGINT,
-    "updatedAt" BIGINT,
+    "created_at" BIGINT,
+    "updated_at" BIGINT,
     "id_user" VARCHAR(255),
     "role" VARCHAR(255),
     "message" TEXT,
@@ -197,8 +207,8 @@ CREATE TABLE IF NOT EXISTS "user_activity_log" (
 CREATE TABLE IF NOT EXISTS "import_log" (
     "id" VARCHAR(255) PRIMARY KEY,
     "status" INTEGER,
-    "createdAt" BIGINT,
-    "updatedAt" BIGINT,
+    "created_at" BIGINT,
+    "updated_at" BIGINT,
     "id_user" VARCHAR(255),
     "code" VARCHAR(255),
     "file_name" VARCHAR(255),
@@ -210,8 +220,8 @@ CREATE TABLE IF NOT EXISTS "import_log" (
 CREATE TABLE IF NOT EXISTS "import_log_detail" (
     "id" VARCHAR(255) PRIMARY KEY,
     "status" INTEGER,
-    "createdAt" BIGINT,
-    "updatedAt" BIGINT,
+    "created_at" BIGINT,
+    "updated_at" BIGINT,
     "line" INTEGER,
     "message" TEXT,
     "id_import_log" VARCHAR(255) NOT NULL
@@ -221,8 +231,8 @@ CREATE TABLE IF NOT EXISTS "import_log_detail" (
 CREATE TABLE IF NOT EXISTS "attendance" (
     "id" VARCHAR(255) PRIMARY KEY,
     "status" INTEGER,
-    "createdAt" BIGINT,
-    "updatedAt" BIGINT,
+    "created_at" BIGINT,
+    "updated_at" BIGINT,
     "id_plan_date" VARCHAR(255),
     "id_user_student" VARCHAR(255),
     "attendance_status" INTEGER,
@@ -235,8 +245,8 @@ CREATE TABLE IF NOT EXISTS "attendance" (
 CREATE TABLE IF NOT EXISTS "attendance_recovery" (
     "id" VARCHAR(255) PRIMARY KEY,
     "status" INTEGER,
-    "createdAt" BIGINT,
-    "updatedAt" BIGINT,
+    "created_at" BIGINT,
+    "updated_at" BIGINT,
     "name" VARCHAR(255),
     "description" TEXT,
     "day" BIGINT,
@@ -249,8 +259,8 @@ CREATE TABLE IF NOT EXISTS "attendance_recovery" (
 CREATE TABLE IF NOT EXISTS "facility_ip" (
     "id" VARCHAR(255) PRIMARY KEY,
     "status" INTEGER,
-    "createdAt" BIGINT,
-    "updatedAt" BIGINT,
+    "created_at" BIGINT,
+    "updated_at" BIGINT,
     "type" INTEGER,
     "ip" VARCHAR(255),
     "id_facility" VARCHAR(255) NOT NULL
@@ -260,8 +270,8 @@ CREATE TABLE IF NOT EXISTS "facility_ip" (
 CREATE TABLE IF NOT EXISTS "factory" (
     "id" VARCHAR(255) PRIMARY KEY,
     "status" INTEGER,
-    "createdAt" BIGINT,
-    "updatedAt" BIGINT,
+    "created_at" BIGINT,
+    "updated_at" BIGINT,
     "name" VARCHAR(255),
     "description" TEXT,
     "id_project" VARCHAR(255),
@@ -272,8 +282,8 @@ CREATE TABLE IF NOT EXISTS "factory" (
 CREATE TABLE IF NOT EXISTS "plan_factory" (
     "id" VARCHAR(255) PRIMARY KEY,
     "status" INTEGER,
-    "createdAt" BIGINT,
-    "updatedAt" BIGINT,
+    "created_at" BIGINT,
+    "updated_at" BIGINT,
     "id_plan" VARCHAR(255),
     "id_factory" VARCHAR(255)
 );
@@ -282,8 +292,8 @@ CREATE TABLE IF NOT EXISTS "plan_factory" (
 CREATE TABLE IF NOT EXISTS "facility_location" (
     "id" VARCHAR(255) PRIMARY KEY,
     "status" INTEGER,
-    "createdAt" BIGINT,
-    "updatedAt" BIGINT,
+    "created_at" BIGINT,
+    "updated_at" BIGINT,
     "name" VARCHAR(255),
     "latitude" DOUBLE,
     "longitude" DOUBLE,
@@ -295,12 +305,13 @@ CREATE TABLE IF NOT EXISTS "facility_location" (
 CREATE TABLE IF NOT EXISTS "facility_shift" (
     "id" VARCHAR(255) PRIMARY KEY,
     "status" INTEGER,
-    "createdAt" BIGINT,
-    "updatedAt" BIGINT,
+    "created_at" BIGINT,
+    "updated_at" BIGINT,
     "shift" INTEGER,
     "from_hour" INTEGER,
     "from_minute" INTEGER,
     "to_hour" INTEGER,
     "to_minute" INTEGER,
     "id_facility" VARCHAR(255)
-); 
+);
+

@@ -20,11 +20,11 @@ class CustomAccessDeniedHandlerTest {
         CustomAccessDeniedHandler handler = new CustomAccessDeniedHandler();
         MockHttpServletRequest request = new MockHttpServletRequest();
         MockHttpServletResponse response = new MockHttpServletResponse();
-        
+
         handler.handle(request, response, accessDeniedException);
-        
+
         assertEquals(403, response.getStatus());
-        assertTrue(response.getContentAsString().contains("Access Denied"));
+        assertTrue(response.getContentAsString().contains("Truy cập bị từ chối"));
     }
 
     @Test
