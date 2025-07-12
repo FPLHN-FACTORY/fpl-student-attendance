@@ -15,4 +15,17 @@ public class STAttendanceRecoveryRequest extends PageableRequest {
     private Long toDate;
 
     private String semesterId;
+
+    @Override
+    public String toString() {
+        return "page=" + getPage() +
+                "_size=" + getSize() +
+                "_orderBy=" + getOrderBy() +
+                "_sortBy=" + getSortBy() +
+                "_q=" + (getQ() != null ? getQ() : "") +
+                "_searchQuery=" + (searchQuery != null ? searchQuery : "") +
+                "_fromDate=" + (fromDate != null ? fromDate : "") +
+                "_toDate=" + (toDate != null ? toDate : "") +
+                "_semesterId=" + (semesterId != null ? semesterId : "");
+    }
 }

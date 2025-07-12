@@ -71,14 +71,8 @@ public class USFactoryServiceImpl implements USFactoryService {
 
     public PageableObject<USFactoryResponse> getCachedFactories(USFactoryRequest factoryRequest) {
         String cacheKey = RedisPrefixConstant.REDIS_PREFIX_FACTORY + "list_" +
-                "facility=" + sessionHelper.getFacilityId() +
-                "_name=" + (factoryRequest.getFactoryName() != null ? factoryRequest.getFactoryName() : "") +
-                "_status=" + (factoryRequest.getStatus() != null ? factoryRequest.getStatus() : "null") +
-                "_page=" + factoryRequest.getPage() +
-                "_size=" + factoryRequest.getSize() +
-                "_orderBy=" + factoryRequest.getOrderBy() +
-                "_sortBy=" + factoryRequest.getSortBy() +
-                "_q=" + (factoryRequest.getQ() != null ? factoryRequest.getQ() : "");
+                "facility=" + sessionHelper.getFacilityId() + '_' +
+                factoryRequest.toString();
 
         Object cachedData = redisService.get(cacheKey);
         if (cachedData != null) {
@@ -273,7 +267,6 @@ public class USFactoryServiceImpl implements USFactoryService {
                 .saveLog("vừa thêm 1 nhóm xưởng mới: " + saveFactory.getName() + " trong dự án "
                         + project.get().getName());
 
-        // Invalidate factory caches
         invalidateFactoryCaches();
 
         return RouterHelper.responseSuccess("Thêm nhóm xưởng mới thành công", saveFactory);
@@ -301,17 +294,14 @@ public class USFactoryServiceImpl implements USFactoryService {
             return RouterHelper.responseError("Nhóm xưởng không tồn tại");
         }
 
-        // 3. Nếu project thay đổi thì xử lý plan chỉ bằng 2 query:
         String oldProjectId = factory.getProject().getId();
         String newProjectId = newProject.getId();
         if (!oldProjectId.equals(newProjectId)) {
-            // Lấy plan cũ & plan mới chỉ trong 2 lần gọi
             Plan oldPlan = projectPlanExtendRepository.getPlanByProjectId(oldProjectId);
             Plan newPlan = projectPlanExtendRepository.getPlanByProjectId(newProjectId);
             if (newPlan == null) {
                 projectPlanExtendRepository.deleteAllAttendanceAndPlanDateAndPlanFactoryByPlan(oldPlan.getId());
             } else if (oldPlan != null && newPlan != null) {
-                // Kiểm tra xem association đã tồn tại chưa, nếu chưa thì tạo mới
                 boolean associationExists = factoryPlanExtendRepository
                         .existsByFactoryIdAndPlanId(factory.getId(), newPlan.getId());
                 if (!associationExists) {
@@ -347,8 +337,7 @@ public class USFactoryServiceImpl implements USFactoryService {
 
         userActivityLogHelper.saveLog("vừa cập nhật nhóm xưởng: " + oldName + " → " + saveFactory.getName());
 
-        // Invalidate factory caches
-        invalidateFactoryCache(factory.getId());
+        invalidateFactoryCaches();
 
         return RouterHelper.responseSuccess("Cập nhật nhóm xưởng thành công", saveFactory);
     }
@@ -370,8 +359,7 @@ public class USFactoryServiceImpl implements USFactoryService {
                     .saveLog("vừa thay đổi trạng thái nhóm xưởng " + saveFactory.getName() + " từ " + oldStatus
                             + " thành " + newStatus);
 
-            // Invalidate factory caches
-            invalidateFactoryCache(factoryId);
+            invalidateFactoryCaches();
         }
         return RouterHelper.responseSuccess("Đổi trạng thái nhóm xưởng thành công", null);
     }
@@ -424,13 +412,12 @@ public class USFactoryServiceImpl implements USFactoryService {
             }
 
             // Invalidate each factory's cache
-            invalidateFactoryCache(factory.getId());
+            invalidateFactoryCaches();
         }
 
         userActivityLogHelper.saveLog(
                 "vừa thay đổi trạng thái hàng loạt " + factories.size() + " nhóm xưởng của kỳ học đã kết thúc");
 
-        // Invalidate all factory caches
         invalidateFactoryCaches();
 
         return RouterHelper.responseSuccess("Đổi trạng thái nhóm xưởng kỳ trước thành công", factories);
@@ -464,17 +451,10 @@ public class USFactoryServiceImpl implements USFactoryService {
         return RouterHelper.responseSuccess("Lấy thành công tất cả học kỳ", semesters);
     }
 
-    /**
-     * Xóa toàn bộ cache liên quan đến nhóm xưởng
-     */
+
     private void invalidateFactoryCaches() {
         redisInvalidationHelper.invalidateAllCaches();
     }
 
-    /**
-     * Xóa cache của nhóm xưởng cụ thể và danh sách nhóm xưởng
-     */
-    private void invalidateFactoryCache(String factoryId) {
-        redisInvalidationHelper.invalidateAllCaches();
-    }
+
 }
