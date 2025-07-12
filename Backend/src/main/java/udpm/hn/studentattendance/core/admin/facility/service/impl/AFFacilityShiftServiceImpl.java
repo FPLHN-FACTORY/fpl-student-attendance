@@ -59,15 +59,7 @@ public class AFFacilityShiftServiceImpl implements AFFacilityShiftService {
     }
 
     public PageableObject<AFFacilityShiftResponse> getShiftList(AFFilterFacilityShiftRequest request) {
-        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_FACILITY_SHIFT + "list_" +
-                "page=" + request.getPage() +
-                "_size=" + request.getSize() +
-                "_orderBy=" + request.getOrderBy() +
-                "_sortBy=" + request.getSortBy() +
-                "_q=" + (request.getQ() != null ? request.getQ() : "") +
-                "_idFacility=" + (request.getIdFacility() != null ? request.getIdFacility() : "") +
-                "_shift=" + (request.getShift() != null ? request.getShift() : "") +
-                "_status=" + (request.getStatus() != null ? request.getStatus() : "");
+        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_FACILITY_SHIFT + "list_" + request.toString();
 
         Object cachedData = redisService.get(cacheKey);
         if (cachedData != null) {

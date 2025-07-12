@@ -43,32 +43,21 @@ public class AFFacilityIPServiceImpl implements AFFacilityIPService {
     private long redisTTL;
 
     public PageableObject<AFFacilityIPResponse> getIPList(AFFilterFacilityIPRequest request) {
-        // Tạo cache key thủ công
-        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_FACILITY_IP + "list_" +
-                "page=" + request.getPage() +
-                "_size=" + request.getSize() +
-                "_orderBy=" + request.getOrderBy() +
-                "_sortBy=" + request.getSortBy() +
-                "_q=" + (request.getQ() != null ? request.getQ() : "");
+        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_FACILITY_IP + "list_" + request.toString();
 
-        // Kiểm tra cache
         Object cachedData = redisService.get(cacheKey);
         if (cachedData != null) {
             try {
-                // Thử lấy dữ liệu từ cache sử dụng getObject
                 return redisService.getObject(cacheKey, PageableObject.class);
             } catch (Exception e) {
-                // Nếu lỗi, xóa cache entry và tiếp tục lấy dữ liệu mới
                 redisService.delete(cacheKey);
             }
         }
 
-        // Cache miss - fetch from database
         Pageable pageable = PaginationHelper.createPageable(request);
         PageableObject<AFFacilityIPResponse> data = PageableObject.of(
                 afFacilityIPRepository.getAllByFilter(pageable, request));
 
-        // Store in cache - sử dụng set với thời gian sống cụ thể
         try {
             redisService.set(cacheKey, data, redisTTL);
         } catch (Exception ignored) {

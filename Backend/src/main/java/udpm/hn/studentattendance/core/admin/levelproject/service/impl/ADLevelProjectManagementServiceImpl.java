@@ -40,15 +40,8 @@ public class ADLevelProjectManagementServiceImpl implements ADLevelProjectManage
     private long redisTTL;
 
     public PageableObject getLevelProjects(ADLevelProjectSearchRequest request) {
-        // Tạo cache key thủ công
-        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_LEVEL + "list_" +
-                "page=" + request.getPage() +
-                "_size=" + request.getSize() +
-                "_orderBy=" + request.getOrderBy() +
-                "_sortBy=" + request.getSortBy() +
-                "_q=" + (request.getQ() != null ? request.getQ() : "") +
-                "_name=" + (request.getName() != null ? request.getName() : "") +
-                "_status=" + (request.getStatus() != null ? request.getStatus() : "");
+        // Tạo cache key sử dụng phương thức toString
+        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_LEVEL + "list_" + request.toString();
 
         Object cachedData = redisService.get(cacheKey);
         if (cachedData != null) {

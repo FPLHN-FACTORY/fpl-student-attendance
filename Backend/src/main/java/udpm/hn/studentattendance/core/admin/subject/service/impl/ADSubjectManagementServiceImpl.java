@@ -33,7 +33,7 @@ public class ADSubjectManagementServiceImpl implements ADSubjectManagementServic
     private final UserActivityLogHelper userActivityLogHelper;
 
     private final RedisService redisService;
-    
+
     private final RedisInvalidationHelper redisInvalidationHelper;
 
     @Value("${spring.cache.redis.time-to-live}")
@@ -41,14 +41,7 @@ public class ADSubjectManagementServiceImpl implements ADSubjectManagementServic
 
     // Phương thức helper để lấy danh sách bộ môn từ cache hoặc DB
     public PageableObject getSubjects(ADSubjectSearchRequest request) {
-        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_SUBJECT + "list_" +
-                "page=" + request.getPage() +
-                "_size=" + request.getSize() +
-                "_orderBy=" + request.getOrderBy() +
-                "_sortBy=" + request.getSortBy() +
-                "_q=" + (request.getQ() != null ? request.getQ() : "") +
-                "_name=" + (request.getName() != null ? request.getName() : "") +
-                "_status=" + (request.getStatus() != null ? request.getStatus() : "");
+        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_SUBJECT + "list_" + request.toString();
 
         // Kiểm tra cache
         Object cachedData = redisService.get(cacheKey);
