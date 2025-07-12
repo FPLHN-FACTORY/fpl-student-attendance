@@ -15,4 +15,14 @@ public class AFFacilitySearchRequest extends PageableRequest {
 
     private EntityStatus status;
 
+    @Override
+    public String toString() {
+        return "page=" + getPage() +
+                "_size=" + getSize() +
+                "_orderBy=" + getOrderBy() +
+                "_sortBy=" + getSortBy() +
+                "_q=" + (getQ() != null ? getQ() : "") +
+                "_name=" + (name != null ? name : "") +
+                "_status=" + (status != null ? status : "");
+    }
 }

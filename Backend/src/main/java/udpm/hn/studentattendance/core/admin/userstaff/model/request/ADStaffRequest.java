@@ -18,4 +18,17 @@ public class ADStaffRequest extends PageableRequest {
     private EntityStatus status;
 
     private Integer roleCodeFilter;
+
+    @Override
+    public String toString() {
+        return "page=" + getPage() +
+                "_size=" + getSize() +
+                "_orderBy=" + getOrderBy() +
+                "_sortBy=" + getSortBy() +
+                "_q=" + (getQ() != null ? getQ() : "") +
+                "_searchQuery=" + (searchQuery != null ? searchQuery : "") +
+                "_idFacility=" + (idFacility != null ? idFacility : "") +
+                "_status=" + (status != null ? status : "") +
+                "_roleCodeFilter=" + (roleCodeFilter != null ? roleCodeFilter : "");
+    }
 }
