@@ -45,13 +45,16 @@ public class RouterHelper {
     }
 
     public static RoleConstant getRequiredRoleForUrl(String url) {
+        if (url == null) {
+            return null;
+        }
         if (url.startsWith(RoutesConstant.PREFIX_API_ADMIN_MANAGEMENT)) {
             return RoleConstant.ADMIN;
         } else if (url.startsWith(RoutesConstant.PREFIX_API_STAFF_MANAGEMENT)) {
             return RoleConstant.STAFF;
         } else if (url.startsWith(RoutesConstant.PREFIX_API_TEACHER_MANAGEMENT)) {
             return RoleConstant.TEACHER;
-        } else if (url.startsWith(RoutesConstant.PREFIX_API_STUDENT_MANAGEMENT)){
+        } else if (url.startsWith(RoutesConstant.PREFIX_API_STUDENT_MANAGEMENT)) {
             return RoleConstant.STUDENT;
         }
         return null;

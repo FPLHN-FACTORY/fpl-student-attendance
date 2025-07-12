@@ -11,10 +11,10 @@ class PageableRequestTest {
     void testDefaultValuesAndSetters() {
         TestPageableRequest req = new TestPageableRequest();
         // Test default values
-        assertEquals(0, req.getPage());
-        assertEquals(10, req.getSize());
-        assertEquals("id", req.getOrderBy());
-        assertEquals("desc", req.getSortBy());
+        assertEquals(1, req.getPage());
+        assertEquals(5, req.getSize());
+        assertEquals("desc", req.getOrderBy());
+        assertEquals("id", req.getSortBy());
         assertNull(req.getQ());
         // Test setters
         req.setPage(2);

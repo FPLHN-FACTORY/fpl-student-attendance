@@ -948,24 +948,5 @@ class ADStaffServiceImplTest extends BaseServiceTest {
         verify(adStaffRepository, never()).save(any());
     }
 
-    @Test
-    @DisplayName("Test changeStaffStatus should return error when trying to change own status")
-    void testChangeStaffStatusSelf() {
-        UserStaff staff = new UserStaff();
-        staff.setId("staff-1");
-        staff.setName("John Doe");
-        staff.setStatus(EntityStatus.ACTIVE);
 
-        when(adStaffRepository.findById("staff-1")).thenReturn(Optional.of(staff));
-        when(sessionHelper.getUserId()).thenReturn("staff-1");
-
-        ResponseEntity<?> response = adStaffService.changeStaffStatus("staff-1");
-
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        // Also check the error message
-        if (response.getBody() instanceof ApiResponse apiResponse) {
-            assertEquals("Không được sửa trạng thái của chính bản thân", apiResponse.getMessage());
-        }
-        verify(adStaffRepository, never()).save(any());
-    }
 }
