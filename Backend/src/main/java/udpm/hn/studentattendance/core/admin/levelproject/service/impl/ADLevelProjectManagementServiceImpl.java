@@ -46,7 +46,7 @@ public class ADLevelProjectManagementServiceImpl implements ADLevelProjectManage
         Object cachedData = redisService.get(cacheKey);
         if (cachedData != null) {
             try {
-                return (PageableObject) cachedData;
+                return redisService.getObject(cacheKey, PageableObject.class);
             } catch (Exception e) {
                 redisService.delete(cacheKey);
             }
@@ -56,7 +56,7 @@ public class ADLevelProjectManagementServiceImpl implements ADLevelProjectManage
         PageableObject result = PageableObject.of(repository.getAll(pageable, request));
 
         try {
-            redisService.set(cacheKey, result, redisTTL);
+            redisService.setObject(cacheKey, result);
         } catch (Exception ignored) {
         }
 
@@ -124,7 +124,7 @@ public class ADLevelProjectManagementServiceImpl implements ADLevelProjectManage
         Object cachedData = redisService.get(cacheKey);
         if (cachedData != null) {
             try {
-                return (LevelProject) cachedData;
+                return redisService.getObject(cacheKey, LevelProject.class);
             } catch (Exception e) {
                 redisService.delete(cacheKey);
             }
@@ -136,7 +136,7 @@ public class ADLevelProjectManagementServiceImpl implements ADLevelProjectManage
         if (lv != null) {
             // Store in cache
             try {
-                redisService.set(cacheKey, lv, redisTTL);
+                redisService.setObject(cacheKey, lv);
             } catch (Exception ignored) {
             }
         }

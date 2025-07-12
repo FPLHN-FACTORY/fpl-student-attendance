@@ -68,7 +68,7 @@ public class ADUserAdminServiceImpl implements ADUserAdminService {
                 Object cachedData = redisService.get(cacheKey);
                 if (cachedData != null) {
                         try {
-                                return (PageableObject) cachedData;
+                                return redisService.getObject(cacheKey, PageableObject.class);
                         } catch (Exception e) {
                                 redisService.delete(cacheKey);
                         }
@@ -80,7 +80,7 @@ public class ADUserAdminServiceImpl implements ADUserAdminService {
 
                 // Store in cache
                 try {
-                        redisService.set(cacheKey, list, redisTTL);
+                        redisService.setObject(cacheKey, list);
                 } catch (Exception ignored) {
                 }
 
@@ -97,7 +97,7 @@ public class ADUserAdminServiceImpl implements ADUserAdminService {
                 Object cachedData = redisService.get(cacheKey);
                 if (cachedData != null) {
                         try {
-                                return (UserAdmin) cachedData;
+                                return redisService.getObject(cacheKey, UserAdmin.class);
                         } catch (Exception e) {
                                 redisService.delete(cacheKey);
                         }
@@ -110,7 +110,7 @@ public class ADUserAdminServiceImpl implements ADUserAdminService {
                 // Store in cache if found
                 if (userAdmin != null) {
                         try {
-                                redisService.set(cacheKey, userAdmin, redisTTL);
+                                redisService.setObject(cacheKey, userAdmin);
                         } catch (Exception ignored) {
                         }
                 }
@@ -128,7 +128,7 @@ public class ADUserAdminServiceImpl implements ADUserAdminService {
                 Object cachedData = redisService.get(cacheKey);
                 if (cachedData != null) {
                         try {
-                                return (List<UserStaff>) cachedData;
+                                return redisService.getObject(cacheKey, List.class);
                         } catch (Exception e) {
                                 redisService.delete(cacheKey);
                         }
@@ -139,7 +139,7 @@ public class ADUserAdminServiceImpl implements ADUserAdminService {
 
                 // Store in cache
                 try {
-                        redisService.set(cacheKey, userStaffList, redisTTL);
+                        redisService.setObject(cacheKey, userStaffList);
                 } catch (Exception ignored) {
                 }
 
