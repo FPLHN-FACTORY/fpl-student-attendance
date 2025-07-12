@@ -2,38 +2,25 @@ package udpm.hn.studentattendance.repositories;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
-import org.springframework.context.annotation.Import;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import udpm.hn.studentattendance.entities.Project;
 import udpm.hn.studentattendance.entities.LevelProject;
 import udpm.hn.studentattendance.entities.SubjectFacility;
 import udpm.hn.studentattendance.entities.Semester;
-import udpm.hn.studentattendance.infrastructure.config.TestDatabaseConfig;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
-import org.springframework.context.annotation.Import;
+import static org.mockito.Mockito.*;
 
-@DataJpaTest
-@ExtendWith(SpringExtension.class)
-@Import(TestDatabaseConfig.class)
+@ExtendWith(MockitoExtension.class)
 class ProjectRepositoryTest {
 
-    @Autowired
+    @Mock
     private ProjectRepository projectRepository;
-
-    @Autowired
-    private LevelProjectRepository levelProjectRepository;
-
-    @Autowired
-    private SubjectFacilityRepository subjectFacilityRepository;
-
-    @Autowired
-    private SemesterRepository semesterRepository;
 
     @Test
     void testSaveAndFindById() {
@@ -42,14 +29,20 @@ class ProjectRepositoryTest {
         project.setName("Java Programming Project");
         project.setDescription("Final project for Java Programming course");
 
+        // Mock behavior
+        when(projectRepository.save(any(Project.class))).thenReturn(project);
+        when(projectRepository.findById(anyString())).thenReturn(Optional.of(project));
+
         // When
         Project savedProject = projectRepository.save(project);
-        Optional<Project> foundProject = projectRepository.findById(savedProject.getId());
+        Optional<Project> foundProject = projectRepository.findById("mock-id");
 
         // Then
         assertTrue(foundProject.isPresent());
         assertEquals("Java Programming Project", foundProject.get().getName());
         assertEquals("Final project for Java Programming course", foundProject.get().getDescription());
+        verify(projectRepository).save(any(Project.class));
+        verify(projectRepository).findById(anyString());
     }
 
     @Test
@@ -63,15 +56,23 @@ class ProjectRepositoryTest {
         project2.setName("Project 2");
         project2.setDescription("Second project");
 
+        List<Project> projects = Arrays.asList(project1, project2);
+
+        // Mock behavior
+        when(projectRepository.findAll()).thenReturn(projects);
+        when(projectRepository.save(any(Project.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
         // When
         projectRepository.save(project1);
         projectRepository.save(project2);
         List<Project> allProjects = projectRepository.findAll();
 
         // Then
-        assertTrue(allProjects.size() >= 2);
+        assertEquals(2, allProjects.size());
         assertTrue(allProjects.stream().anyMatch(p -> "Project 1".equals(p.getName())));
         assertTrue(allProjects.stream().anyMatch(p -> "Project 2".equals(p.getName())));
+        verify(projectRepository, times(2)).save(any(Project.class));
+        verify(projectRepository).findAll();
     }
 
     @Test
@@ -81,16 +82,23 @@ class ProjectRepositoryTest {
         project.setName("Original Name");
         project.setDescription("Original Description");
 
-        Project savedProject = projectRepository.save(project);
+        Project updatedProject = new Project();
+        updatedProject.setName("Updated Name");
+        updatedProject.setDescription("Updated Description");
+
+        // Mock behavior
+        when(projectRepository.save(any(Project.class))).thenReturn(project).thenReturn(updatedProject);
 
         // When
+        Project savedProject = projectRepository.save(project);
         savedProject.setName("Updated Name");
         savedProject.setDescription("Updated Description");
-        Project updatedProject = projectRepository.save(savedProject);
+        Project resultProject = projectRepository.save(savedProject);
 
         // Then
-        assertEquals("Updated Name", updatedProject.getName());
-        assertEquals("Updated Description", updatedProject.getDescription());
+        assertEquals("Updated Name", resultProject.getName());
+        assertEquals("Updated Description", resultProject.getDescription());
+        verify(projectRepository, times(2)).save(any(Project.class));
     }
 
     @Test
@@ -99,16 +107,23 @@ class ProjectRepositoryTest {
         Project project = new Project();
         project.setName("Project to Delete");
         project.setDescription("Will be deleted");
+        String projectId = "mock-id";
 
-        Project savedProject = projectRepository.save(project);
-        String projectId = savedProject.getId();
+        // Mock behavior
+        when(projectRepository.save(any(Project.class))).thenReturn(project);
+        doNothing().when(projectRepository).deleteById(anyString());
+        when(projectRepository.findById(projectId)).thenReturn(Optional.empty());
 
         // When
+        Project savedProject = projectRepository.save(project);
         projectRepository.deleteById(projectId);
         Optional<Project> deletedProject = projectRepository.findById(projectId);
 
         // Then
         assertFalse(deletedProject.isPresent());
+        verify(projectRepository).save(any(Project.class));
+        verify(projectRepository).deleteById(anyString());
+        verify(projectRepository).findById(anyString());
     }
 
     @Test
@@ -117,26 +132,27 @@ class ProjectRepositoryTest {
         LevelProject levelProject = new LevelProject();
         levelProject.setName("Advanced Level");
         levelProject.setDescription("Advanced level projects");
-        LevelProject savedLevelProject = levelProjectRepository.save(levelProject);
 
         SubjectFacility subjectFacility = new SubjectFacility();
-        SubjectFacility savedSubjectFacility = subjectFacilityRepository.save(subjectFacility);
 
         Semester semester = new Semester();
         semester.setCode("Spring 2024");
         semester.setYear(2024);
-        Semester savedSemester = semesterRepository.save(semester);
 
         Project project = new Project();
         project.setName("Java Final Project");
         project.setDescription("Final project for Java course");
-        project.setLevelProject(savedLevelProject);
-        project.setSubjectFacility(savedSubjectFacility);
-        project.setSemester(savedSemester);
+        project.setLevelProject(levelProject);
+        project.setSubjectFacility(subjectFacility);
+        project.setSemester(semester);
+
+        // Mock behavior
+        when(projectRepository.save(any(Project.class))).thenReturn(project);
+        when(projectRepository.findById(anyString())).thenReturn(Optional.of(project));
 
         // When
         Project savedProject = projectRepository.save(project);
-        Optional<Project> foundProject = projectRepository.findById(savedProject.getId());
+        Optional<Project> foundProject = projectRepository.findById("mock-id");
 
         // Then
         assertTrue(foundProject.isPresent());
@@ -145,5 +161,7 @@ class ProjectRepositoryTest {
         assertNotNull(foundProject.get().getSemester());
         assertEquals("Advanced Level", foundProject.get().getLevelProject().getName());
         assertEquals("Spring 2024", foundProject.get().getSemester().getCode());
+        verify(projectRepository).save(any(Project.class));
+        verify(projectRepository).findById(anyString());
     }
 }

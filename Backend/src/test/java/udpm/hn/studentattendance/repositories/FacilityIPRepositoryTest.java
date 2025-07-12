@@ -25,13 +25,13 @@ class FacilityIPRepositoryTest {
     }
 
     @Test
-    void testFindByIpAddress() throws Exception {
-        assertNotNull(FacilityIPRepository.class.getMethod("findByIpAddress", String.class));
+    void testFindByIp() throws Exception {
+        assertNotNull(FacilityIPRepository.class.getMethod("findByIp", String.class));
     }
 
     @Test
-    void testFindByFacilityAndIpAddress() throws Exception {
-        assertNotNull(FacilityIPRepository.class.getMethod("findByFacilityAndIpAddress",
+    void testFindByFacilityAndIp() throws Exception {
+        assertNotNull(FacilityIPRepository.class.getMethod("findByFacilityAndIp",
                 Class.forName("udpm.hn.studentattendance.entities.Facility"), String.class));
     }
 

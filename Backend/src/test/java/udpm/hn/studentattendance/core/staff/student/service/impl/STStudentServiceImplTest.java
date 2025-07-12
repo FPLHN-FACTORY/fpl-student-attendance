@@ -63,6 +63,9 @@ public class STStudentServiceImplTest {
 
     @Mock
     private SettingHelper settingHelper;
+    
+    @Mock
+    private RedisInvalidationHelper redisInvalidationHelper;
 
     @InjectMocks
     private STStudentServiceImpl studentService;
@@ -79,6 +82,9 @@ public class STStudentServiceImplTest {
 
         // Default behavior for Redis
         when(redisService.getObject(anyString(), any(Class.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        
+        // Default behavior for RedisInvalidationHelper
+        doNothing().when(redisInvalidationHelper).invalidateAllCaches();
     }
 
     @Test

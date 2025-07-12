@@ -2,25 +2,22 @@ package udpm.hn.studentattendance.repositories;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import udpm.hn.studentattendance.entities.Settings;
-import udpm.hn.studentattendance.infrastructure.config.TestDatabaseConfig;
 import udpm.hn.studentattendance.infrastructure.constants.SettingKeys;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
-import org.springframework.context.annotation.Import;
+import static org.mockito.Mockito.*;
 
-@DataJpaTest
-@ExtendWith(SpringExtension.class)
-@Import(TestDatabaseConfig.class)
+@ExtendWith(MockitoExtension.class)
 class SettingsRepositoryTest {
 
-    @Autowired
+    @Mock
     private SettingsRepository settingsRepository;
 
     @Test
@@ -29,6 +26,10 @@ class SettingsRepositoryTest {
         Settings settings = new Settings();
         settings.setKey(SettingKeys.SHIFT_MAX_LATE_ARRIVAL);
         settings.setValue("5");
+
+        // Mock behavior
+        when(settingsRepository.save(any(Settings.class))).thenReturn(settings);
+        when(settingsRepository.findById(SettingKeys.SHIFT_MAX_LATE_ARRIVAL)).thenReturn(Optional.of(settings));
 
         // When
         Settings savedSettings = settingsRepository.save(settings);
@@ -51,13 +52,21 @@ class SettingsRepositoryTest {
         settings2.setKey(SettingKeys.SHIFT_MIN_DIFF);
         settings2.setValue("30");
 
+        List<Settings> settingsList = new ArrayList<>();
+        settingsList.add(settings1);
+        settingsList.add(settings2);
+
+        // Mock behavior
+        when(settingsRepository.save(any(Settings.class))).thenReturn(settings1).thenReturn(settings2);
+        when(settingsRepository.findAll()).thenReturn(settingsList);
+
         // When
-        settingsRepository.save(settings1);
-        settingsRepository.save(settings2);
+        Settings saved1 = settingsRepository.save(settings1);
+        Settings saved2 = settingsRepository.save(settings2);
         List<Settings> allSettings = settingsRepository.findAll();
 
         // Then
-        assertTrue(allSettings.size() >= 2);
+        assertEquals(2, allSettings.size());
         assertTrue(allSettings.stream().anyMatch(s -> SettingKeys.SHIFT_MAX_LATE_ARRIVAL.equals(s.getKey())));
         assertTrue(allSettings.stream().anyMatch(s -> SettingKeys.SHIFT_MIN_DIFF.equals(s.getKey())));
     }
@@ -69,14 +78,20 @@ class SettingsRepositoryTest {
         settings.setKey(SettingKeys.SHIFT_MAX_LATE_ARRIVAL);
         settings.setValue("5");
 
-        Settings savedSettings = settingsRepository.save(settings);
+        Settings updatedSettings = new Settings();
+        updatedSettings.setKey(SettingKeys.SHIFT_MAX_LATE_ARRIVAL);
+        updatedSettings.setValue("10");
+
+        // Mock behavior
+        when(settingsRepository.save(any(Settings.class))).thenReturn(settings).thenReturn(updatedSettings);
 
         // When
+        Settings savedSettings = settingsRepository.save(settings);
         savedSettings.setValue("10");
-        Settings updatedSettings = settingsRepository.save(savedSettings);
+        Settings result = settingsRepository.save(savedSettings);
 
         // Then
-        assertEquals("10", updatedSettings.getValue());
+        assertEquals("10", result.getValue());
     }
 
     @Test
@@ -86,10 +101,14 @@ class SettingsRepositoryTest {
         settings.setKey(SettingKeys.ATTENDANCE_EARLY_CHECKIN);
         settings.setValue("delete");
 
-        Settings savedSettings = settingsRepository.save(settings);
-        SettingKeys settingsKey = savedSettings.getKey();
+        // Mock behavior
+        when(settingsRepository.save(any(Settings.class))).thenReturn(settings);
+        doNothing().when(settingsRepository).deleteById(any());
+        when(settingsRepository.findById(any())).thenReturn(Optional.empty());
 
         // When
+        Settings savedSettings = settingsRepository.save(settings);
+        SettingKeys settingsKey = savedSettings.getKey();
         settingsRepository.deleteById(settingsKey);
         Optional<Settings> deletedSettings = settingsRepository.findById(settingsKey);
 

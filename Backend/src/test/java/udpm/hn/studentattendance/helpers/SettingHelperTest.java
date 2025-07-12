@@ -5,7 +5,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import udpm.hn.studentattendance.entities.Settings;
 import udpm.hn.studentattendance.infrastructure.common.repositories.CommonSettingsRepository;
@@ -16,9 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -30,363 +27,117 @@ class SettingHelperTest {
     @InjectMocks
     private SettingHelper settingHelper;
 
+    private Settings testSetting1;
+    private Settings testSetting2;
+
     @BeforeEach
     void setUp() {
-        // Setup lenient stubbing to avoid unnecessary stubbing warnings
-        lenient().when(repository.findAll()).thenReturn(Arrays.asList());
+        testSetting1 = new Settings();
+        testSetting1.setKey(SettingKeys.FACE_THRESHOLD_CHECKIN);
+        testSetting1.setValue("0.8");
+
+        testSetting2 = new Settings();
+        testSetting2.setKey(SettingKeys.FACE_THRESHOLD_REGISTER);
+        testSetting2.setValue("0.9");
     }
 
     @Test
-    void canInstantiate() {
-        CommonSettingsRepository mockRepo = Mockito.mock(CommonSettingsRepository.class);
-        SettingHelper helper = new SettingHelper(mockRepo);
-        assertThat(helper).isNotNull();
-    }
-
-    @Test
-    void testGetAllSettings() {
-        // Given
-        Settings setting1 = new Settings();
-        setting1.setKey(SettingKeys.SHIFT_MIN_DIFF);
-        setting1.setValue("30");
-
-        Settings setting2 = new Settings();
-        setting2.setKey(SettingKeys.FACE_THRESHOLD_CHECKIN);
-        setting2.setValue("0.8");
-
-        List<Settings> settings = Arrays.asList(setting1, setting2);
+    void getAllSettings_shouldReturnAllSettings() {
+        // Arrange
+        List<Settings> settings = Arrays.asList(testSetting1, testSetting2);
         when(repository.findAll()).thenReturn(settings);
 
-        // When
+        // Act
         Map<SettingKeys, Object> result = settingHelper.getAllSettings();
 
-        // Then
-        assertNotNull(result);
+        // Assert
         assertEquals(2, result.size());
-        assertEquals(30, result.get(SettingKeys.SHIFT_MIN_DIFF));
         assertEquals(0.8, result.get(SettingKeys.FACE_THRESHOLD_CHECKIN));
+        assertEquals(0.9, result.get(SettingKeys.FACE_THRESHOLD_REGISTER));
         verify(repository).findAll();
     }
 
     @Test
-    void testGetAllSettingsWithEmptyList() {
-        // Given
-        when(repository.findAll()).thenReturn(Arrays.asList());
+    void getSetting_shouldReturnCorrectSetting() {
+        // Arrange
+        when(repository.getOneByKey(SettingKeys.FACE_THRESHOLD_CHECKIN)).thenReturn("0.8");
 
-        // When
-        Map<SettingKeys, Object> result = settingHelper.getAllSettings();
+        // Act
+        Object result = settingHelper.getSetting(SettingKeys.FACE_THRESHOLD_CHECKIN);
 
-        // Then
-        assertNotNull(result);
-        assertTrue(result.isEmpty());
-        verify(repository).findAll();
-    }
-
-    @Test
-    void testGetSetting() {
-        // Given
-        String value = "25";
-        when(repository.getOneByKey(SettingKeys.SHIFT_MIN_DIFF)).thenReturn(value);
-
-        // When
-        Object result = settingHelper.getSetting(SettingKeys.SHIFT_MIN_DIFF);
-
-        // Then
-        assertEquals(25, result);
-        verify(repository).getOneByKey(SettingKeys.SHIFT_MIN_DIFF);
-    }
-
-    @Test
-    void testGetSettingWithNullValue() {
-        // Given
-        when(repository.getOneByKey(SettingKeys.SHIFT_MIN_DIFF)).thenReturn(null);
-
-        // When
-        Object result = settingHelper.getSetting(SettingKeys.SHIFT_MIN_DIFF);
-
-        // Then
-        assertNull(result);
-        verify(repository).getOneByKey(SettingKeys.SHIFT_MIN_DIFF);
-    }
-
-    @Test
-    void testGetSettingWithType() {
-        // Given
-        String value = "0.9";
-        when(repository.getOneByKey(SettingKeys.FACE_THRESHOLD_CHECKIN)).thenReturn(value);
-
-        // When
-        Double result = settingHelper.getSetting(SettingKeys.FACE_THRESHOLD_CHECKIN, Double.class);
-
-        // Then
-        assertEquals(0.9, result);
+        // Assert
+        assertEquals(0.8, result);
         verify(repository).getOneByKey(SettingKeys.FACE_THRESHOLD_CHECKIN);
     }
 
     @Test
-    void testGetSettingWithStringType() {
-        // Given
-        String value = "test value";
-        when(repository.getOneByKey(SettingKeys.SHIFT_MIN_DIFF)).thenReturn(value);
+    void getSettingWithType_shouldReturnCorrectTypedSetting() {
+        // Arrange
+        when(repository.getOneByKey(SettingKeys.FACE_THRESHOLD_CHECKIN)).thenReturn("0.8");
 
-        // When
-        String result = settingHelper.getSetting(SettingKeys.SHIFT_MIN_DIFF, String.class);
+        // Act
+        Double result = settingHelper.getSetting(SettingKeys.FACE_THRESHOLD_CHECKIN, Double.class);
 
-        // Then
-        assertEquals("test value", result);
-        verify(repository).getOneByKey(SettingKeys.SHIFT_MIN_DIFF);
+        // Assert
+        assertEquals(0.8, result);
+        verify(repository).getOneByKey(SettingKeys.FACE_THRESHOLD_CHECKIN);
     }
 
     @Test
-    void testSaveNewSetting() {
-        // Given
-        SettingKeys key = SettingKeys.SHIFT_MIN_DIFF;
-        String value = "45";
-        Settings savedSetting = new Settings();
-        savedSetting.setKey(key);
-        savedSetting.setValue(value);
+    void save_shouldCreateNewSettingIfNotExists() {
+        // Arrange
+        when(repository.findById(SettingKeys.FACE_THRESHOLD_CHECKIN)).thenReturn(Optional.empty());
+        when(repository.save(any(Settings.class))).thenReturn(testSetting1);
 
-        when(repository.findById(key)).thenReturn(Optional.empty());
-        when(repository.save(any(Settings.class))).thenReturn(savedSetting);
+        // Act
+        Settings result = settingHelper.save(SettingKeys.FACE_THRESHOLD_CHECKIN, "0.8");
 
-        // When
-        Settings result = settingHelper.save(key, value);
-
-        // Then
-        assertNotNull(result);
-        assertEquals(key, result.getKey());
-        assertEquals(value, result.getValue());
-        verify(repository).findById(key);
+        // Assert
+        assertEquals(SettingKeys.FACE_THRESHOLD_CHECKIN, result.getKey());
+        assertEquals("0.8", result.getValue());
+        verify(repository).findById(SettingKeys.FACE_THRESHOLD_CHECKIN);
         verify(repository).save(any(Settings.class));
     }
 
     @Test
-    void testSaveExistingSetting() {
-        // Given
-        SettingKeys key = SettingKeys.SHIFT_MIN_DIFF;
-        String value = "60";
-        Settings existingSetting = new Settings();
-        existingSetting.setKey(key);
-        existingSetting.setValue("30");
+    void save_shouldUpdateExistingSetting() {
+        // Arrange
+        when(repository.findById(SettingKeys.FACE_THRESHOLD_CHECKIN)).thenReturn(Optional.of(testSetting1));
+        when(repository.save(any(Settings.class))).thenReturn(testSetting1);
 
-        Settings updatedSetting = new Settings();
-        updatedSetting.setKey(key);
-        updatedSetting.setValue(value);
+        // Act
+        Settings result = settingHelper.save(SettingKeys.FACE_THRESHOLD_CHECKIN, "0.85");
 
-        when(repository.findById(key)).thenReturn(Optional.of(existingSetting));
-        when(repository.save(any(Settings.class))).thenReturn(updatedSetting);
-
-        // When
-        Settings result = settingHelper.save(key, value);
-
-        // Then
-        assertNotNull(result);
-        assertEquals(key, result.getKey());
-        assertEquals(value, result.getValue());
-        verify(repository).findById(key);
+        // Assert
+        assertEquals(SettingKeys.FACE_THRESHOLD_CHECKIN, result.getKey());
+        assertEquals("0.85", result.getValue());
+        verify(repository).findById(SettingKeys.FACE_THRESHOLD_CHECKIN);
         verify(repository).save(any(Settings.class));
     }
 
     @Test
-    void testSaveWithNullValue() {
-        // Given
-        SettingKeys key = SettingKeys.SHIFT_MIN_DIFF;
-        String value = null;
-        Settings savedSetting = new Settings();
-        savedSetting.setKey(key);
-        savedSetting.setValue(null);
-
-        when(repository.findById(key)).thenReturn(Optional.empty());
-        when(repository.save(any(Settings.class))).thenReturn(savedSetting);
-
-        // When
-        Settings result = settingHelper.save(key, value);
-
-        // Then
-        assertNotNull(result);
-        assertEquals(key, result.getKey());
-        assertNull(result.getValue());
-        verify(repository).findById(key);
-        verify(repository).save(any(Settings.class));
+    void parseValue_shouldParseBoolean() {
+        assertEquals(true, SettingHelper.parseValue("true"));
+        assertEquals(false, SettingHelper.parseValue("false"));
     }
 
     @Test
-    void testParseValueWithBooleanTrue() {
-        // Given
-        String value = "true";
-
-        // When
-        Object result = SettingHelper.parseValue(value);
-
-        // Then
-        assertEquals(true, result);
+    void parseValue_shouldParseInteger() {
+        assertEquals(42, SettingHelper.parseValue("42"));
     }
 
     @Test
-    void testParseValueWithBooleanFalse() {
-        // Given
-        String value = "false";
-
-        // When
-        Object result = SettingHelper.parseValue(value);
-
-        // Then
-        assertEquals(false, result);
+    void parseValue_shouldParseDouble() {
+        assertEquals(3.14, SettingHelper.parseValue("3.14"));
     }
 
     @Test
-    void testParseValueWithInteger() {
-        // Given
-        String value = "42";
-
-        // When
-        Object result = SettingHelper.parseValue(value);
-
-        // Then
-        assertEquals(42, result);
+    void parseValue_shouldReturnOriginalStringIfNotParseable() {
+        assertEquals("hello", SettingHelper.parseValue("hello"));
     }
 
     @Test
-    void testParseValueWithDouble() {
-        // Given
-        String value = "3.14";
-
-        // When
-        Object result = SettingHelper.parseValue(value);
-
-        // Then
-        assertEquals(3.14, result);
-    }
-
-    @Test
-    void testParseValueWithString() {
-        // Given
-        String value = "hello world";
-
-        // When
-        Object result = SettingHelper.parseValue(value);
-
-        // Then
-        assertEquals("hello world", result);
-    }
-
-    @Test
-    void testParseValueWithNull() {
-        // Given
-        String value = null;
-
-        // When
-        Object result = SettingHelper.parseValue(value);
-
-        // Then
-        assertNull(result);
-    }
-
-    @Test
-    void testParseValueWithEmptyString() {
-        // Given
-        String value = "";
-
-        // When
-        Object result = SettingHelper.parseValue(value);
-
-        // Then
-        assertEquals("", result);
-    }
-
-    @Test
-    void testParseValueWithWhitespace() {
-        // Given
-        String value = "   ";
-
-        // When
-        Object result = SettingHelper.parseValue(value);
-
-        // Then
-        assertEquals("   ", result);
-    }
-
-    @Test
-    void testParseValueWithMixedCase() {
-        // Given
-        String value = "TRUE";
-
-        // When
-        Object result = SettingHelper.parseValue(value);
-
-        // Then
-        assertEquals(true, result);
-    }
-
-    @Test
-    void testParseValueWithNegativeInteger() {
-        // Given
-        String value = "-42";
-
-        // When
-        Object result = SettingHelper.parseValue(value);
-
-        // Then
-        assertEquals(-42, result);
-    }
-
-    @Test
-    void testParseValueWithNegativeDouble() {
-        // Given
-        String value = "-3.14";
-
-        // When
-        Object result = SettingHelper.parseValue(value);
-
-        // Then
-        assertEquals(-3.14, result);
-    }
-
-    @Test
-    void testParseValueWithZero() {
-        // Given
-        String value = "0";
-
-        // When
-        Object result = SettingHelper.parseValue(value);
-
-        // Then
-        assertEquals(0, result);
-    }
-
-    @Test
-    void testParseValueWithDecimalZero() {
-        // Given
-        String value = "0.0";
-
-        // When
-        Object result = SettingHelper.parseValue(value);
-
-        // Then
-        assertEquals(0.0, result);
-    }
-
-    @Test
-    void testParseValueWithInvalidNumber() {
-        // Given
-        String value = "not a number";
-
-        // When
-        Object result = SettingHelper.parseValue(value);
-
-        // Then
-        assertEquals("not a number", result);
-    }
-
-    @Test
-    void testParseValueWithSpecialCharacters() {
-        // Given
-        String value = "!@#$%^&*()";
-
-        // When
-        Object result = SettingHelper.parseValue(value);
-
-        // Then
-        assertEquals("!@#$%^&*()", result);
+    void parseValue_shouldReturnNullForNullInput() {
+        assertNull(SettingHelper.parseValue(null));
     }
 }

@@ -11,8 +11,8 @@ public class H2NamingStrategy extends PhysicalNamingStrategyStandardImpl {
         if (name == null) {
             return null;
         }
-        // Giữ nguyên tên bảng, không chuyển thành uppercase
-        return Identifier.toIdentifier(name.getText(), name.isQuoted());
+        // Luôn trả về tên bảng với quote để đảm bảo giữ nguyên case
+        return Identifier.toIdentifier(name.getText(), true);
     }
 
     @Override
@@ -20,7 +20,7 @@ public class H2NamingStrategy extends PhysicalNamingStrategyStandardImpl {
         if (name == null) {
             return null;
         }
-        // Giữ nguyên tên cột, không chuyển thành uppercase
-        return Identifier.toIdentifier(name.getText(), name.isQuoted());
+        // Luôn trả về tên cột với quote để đảm bảo giữ nguyên case
+        return Identifier.toIdentifier(name.getText(), true);
     }
 }

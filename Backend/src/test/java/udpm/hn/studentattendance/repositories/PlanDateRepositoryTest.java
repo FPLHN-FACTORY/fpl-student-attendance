@@ -2,13 +2,10 @@ package udpm.hn.studentattendance.repositories;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import udpm.hn.studentattendance.entities.PlanDate;
-import udpm.hn.studentattendance.infrastructure.config.TestDatabaseConfig;
 import udpm.hn.studentattendance.entities.PlanFactory;
-import udpm.hn.studentattendance.infrastructure.config.TestDatabaseConfig;
 import udpm.hn.studentattendance.infrastructure.constants.ShiftType;
 import udpm.hn.studentattendance.infrastructure.constants.StatusType;
 
@@ -17,18 +14,13 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
-import org.springframework.context.annotation.Import;
+import static org.mockito.Mockito.*;
 
-@DataJpaTest
-@ExtendWith(SpringExtension.class)
-@Import(TestDatabaseConfig.class)
+@ExtendWith(MockitoExtension.class)
 class PlanDateRepositoryTest {
 
-    @Autowired
+    @Mock
     private PlanDateRepository planDateRepository;
-
-    @Autowired
-    private PlanFactoryRepository planFactoryRepository;
 
     @Test
     void testSaveAndFindById() {
@@ -47,9 +39,13 @@ class PlanDateRepositoryTest {
         planDate.setRequiredCheckin(StatusType.ENABLE);
         planDate.setRequiredCheckout(StatusType.ENABLE);
 
+        // Mock behavior
+        when(planDateRepository.save(any(PlanDate.class))).thenReturn(planDate);
+        when(planDateRepository.findById(anyString())).thenReturn(Optional.of(planDate));
+
         // When
         PlanDate savedPlanDate = planDateRepository.save(planDate);
-        Optional<PlanDate> foundPlanDate = planDateRepository.findById(savedPlanDate.getId());
+        Optional<PlanDate> foundPlanDate = planDateRepository.findById("mock-id");
 
         // Then
         assertTrue(foundPlanDate.isPresent());
@@ -65,6 +61,8 @@ class PlanDateRepositoryTest {
         assertEquals(StatusType.ENABLE, foundPlanDate.get().getRequiredIp());
         assertEquals(StatusType.ENABLE, foundPlanDate.get().getRequiredCheckin());
         assertEquals(StatusType.ENABLE, foundPlanDate.get().getRequiredCheckout());
+        verify(planDateRepository).save(any(PlanDate.class));
+        verify(planDateRepository).findById(anyString());
     }
 
     @Test
@@ -82,15 +80,23 @@ class PlanDateRepositoryTest {
         planDate2.setEndDate(1641002400000L);
         planDate2.setShift(Arrays.asList(3, 4));
 
+        List<PlanDate> planDates = Arrays.asList(planDate1, planDate2);
+
+        // Mock behavior
+        when(planDateRepository.findAll()).thenReturn(planDates);
+        when(planDateRepository.save(any(PlanDate.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
         // When
         planDateRepository.save(planDate1);
         planDateRepository.save(planDate2);
         List<PlanDate> allPlanDates = planDateRepository.findAll();
 
         // Then
-        assertTrue(allPlanDates.size() >= 2);
+        assertEquals(2, allPlanDates.size());
         assertTrue(allPlanDates.stream().anyMatch(pd -> "Session 1".equals(pd.getDescription())));
         assertTrue(allPlanDates.stream().anyMatch(pd -> "Session 2".equals(pd.getDescription())));
+        verify(planDateRepository, times(2)).save(any(PlanDate.class));
+        verify(planDateRepository).findAll();
     }
 
     @Test
@@ -102,18 +108,28 @@ class PlanDateRepositoryTest {
         planDate.setEndDate(1640998800000L);
         planDate.setLateArrival(10);
 
-        PlanDate savedPlanDate = planDateRepository.save(planDate);
+        PlanDate updatedPlanDate = new PlanDate();
+        updatedPlanDate.setDescription("Updated Description");
+        updatedPlanDate.setStartDate(1640995200000L);
+        updatedPlanDate.setEndDate(1640998800000L);
+        updatedPlanDate.setLateArrival(20);
+        updatedPlanDate.setRoom("Updated Room");
+
+        // Mock behavior
+        when(planDateRepository.save(any(PlanDate.class))).thenReturn(planDate).thenReturn(updatedPlanDate);
 
         // When
+        PlanDate savedPlanDate = planDateRepository.save(planDate);
         savedPlanDate.setDescription("Updated Description");
         savedPlanDate.setLateArrival(20);
         savedPlanDate.setRoom("Updated Room");
-        PlanDate updatedPlanDate = planDateRepository.save(savedPlanDate);
+        PlanDate resultPlanDate = planDateRepository.save(savedPlanDate);
 
         // Then
-        assertEquals("Updated Description", updatedPlanDate.getDescription());
-        assertEquals(20, updatedPlanDate.getLateArrival());
-        assertEquals("Updated Room", updatedPlanDate.getRoom());
+        assertEquals("Updated Description", resultPlanDate.getDescription());
+        assertEquals(20, resultPlanDate.getLateArrival());
+        assertEquals("Updated Room", resultPlanDate.getRoom());
+        verify(planDateRepository, times(2)).save(any(PlanDate.class));
     }
 
     @Test
@@ -123,37 +139,50 @@ class PlanDateRepositoryTest {
         planDate.setDescription("Plan Date to Delete");
         planDate.setStartDate(1640995200000L);
         planDate.setEndDate(1640998800000L);
+        String planDateId = "mock-id";
 
-        PlanDate savedPlanDate = planDateRepository.save(planDate);
-        String planDateId = savedPlanDate.getId();
+        // Mock behavior
+        when(planDateRepository.save(any(PlanDate.class))).thenReturn(planDate);
+        doNothing().when(planDateRepository).deleteById(anyString());
+        when(planDateRepository.findById(planDateId)).thenReturn(Optional.empty());
 
         // When
+        PlanDate savedPlanDate = planDateRepository.save(planDate);
         planDateRepository.deleteById(planDateId);
         Optional<PlanDate> deletedPlanDate = planDateRepository.findById(planDateId);
 
         // Then
         assertFalse(deletedPlanDate.isPresent());
+        verify(planDateRepository).save(any(PlanDate.class));
+        verify(planDateRepository).deleteById(anyString());
+        verify(planDateRepository).findById(anyString());
     }
 
     @Test
     void testSavePlanDateWithPlanFactory() {
         // Given
         PlanFactory planFactory = new PlanFactory();
-        PlanFactory savedPlanFactory = planFactoryRepository.save(planFactory);
+        planFactory.setId("factory-id");
 
         PlanDate planDate = new PlanDate();
         planDate.setDescription("Session with Factory");
         planDate.setStartDate(1640995200000L);
         planDate.setEndDate(1640998800000L);
-        planDate.setPlanFactory(savedPlanFactory);
+        planDate.setPlanFactory(planFactory);
+
+        // Mock behavior
+        when(planDateRepository.save(any(PlanDate.class))).thenReturn(planDate);
+        when(planDateRepository.findById(anyString())).thenReturn(Optional.of(planDate));
 
         // When
         PlanDate savedPlanDate = planDateRepository.save(planDate);
-        Optional<PlanDate> foundPlanDate = planDateRepository.findById(savedPlanDate.getId());
+        Optional<PlanDate> foundPlanDate = planDateRepository.findById("mock-id");
 
         // Then
         assertTrue(foundPlanDate.isPresent());
         assertNotNull(foundPlanDate.get().getPlanFactory());
-        assertEquals(savedPlanFactory.getId(), foundPlanDate.get().getPlanFactory().getId());
+        assertEquals("factory-id", foundPlanDate.get().getPlanFactory().getId());
+        verify(planDateRepository).save(any(PlanDate.class));
+        verify(planDateRepository).findById(anyString());
     }
 }

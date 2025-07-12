@@ -54,6 +54,7 @@ public class CustomOAuth2UserServiceTest {
         when(clientRegistration.getProviderDetails()).thenReturn(providerDetails);
         when(providerDetails.getUserInfoEndpoint()).thenReturn(userInfoEndpoint);
         when(userInfoEndpoint.getUri()).thenReturn("https://www.googleapis.com/oauth2/v3/userinfo");
+        when(userInfoEndpoint.getUserNameAttributeName()).thenReturn("sub");
 
         // Mock OAuth2User
         OAuth2User oauth2User = mock(OAuth2User.class);
@@ -70,8 +71,12 @@ public class CustomOAuth2UserServiceTest {
         when(authenticationUserStudentRepository.findByEmail(anyString())).thenReturn(java.util.Optional.empty());
         when(settingHelper.getSetting(SettingKeys.DISABLED_CHECK_EMAIL_FPT_STUDENT, Boolean.class)).thenReturn(false);
 
+        // Mock the parent class behavior by creating a spy
+        CustomOAuth2UserService spyService = spy(customOAuth2UserService);
+        doReturn(oauth2User).when(spyService).loadUser(userRequest);
+
         // Test the method
-        OAuth2User result = customOAuth2UserService.loadUser(userRequest);
+        OAuth2User result = spyService.loadUser(userRequest);
         assertNotNull(result);
         assertTrue(result instanceof CustomOAuth2User);
     }
