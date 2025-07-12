@@ -72,7 +72,7 @@ public class AFFacilityServiceImpl implements AFFacilityService {
                 facilityRepository.getAllFacility(pageable, request));
 
         try {
-            redisService.setObject(cacheKey, facilities);
+            redisService.set(cacheKey, facilities, redisTTL);
         } catch (Exception ignored) {
         }
 
@@ -209,7 +209,7 @@ public class AFFacilityServiceImpl implements AFFacilityService {
         AFFacilityResponse result = facility.orElse(null);
         if (result != null) {
             try {
-                redisService.setObject(cacheKey, result);
+                redisService.set(cacheKey, result, redisTTL);
             } catch (Exception ignored) {
             }
         }

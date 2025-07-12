@@ -80,7 +80,7 @@ public class ADUserAdminServiceImpl implements ADUserAdminService {
 
                 // Store in cache
                 try {
-                        redisService.setObject(cacheKey, list);
+                        redisService.set(cacheKey, list, redisTTL);
                 } catch (Exception ignored) {
                 }
 
@@ -110,7 +110,7 @@ public class ADUserAdminServiceImpl implements ADUserAdminService {
                 // Store in cache if found
                 if (userAdmin != null) {
                         try {
-                                redisService.setObject(cacheKey, userAdmin);
+                                redisService.set(cacheKey, userAdmin, redisTTL);
                         } catch (Exception ignored) {
                         }
                 }
@@ -139,7 +139,7 @@ public class ADUserAdminServiceImpl implements ADUserAdminService {
 
                 // Store in cache
                 try {
-                        redisService.setObject(cacheKey, userStaffList);
+                        redisService.set(cacheKey, userStaffList, redisTTL);
                 } catch (Exception ignored) {
                 }
 

@@ -59,7 +59,7 @@ public class AFFacilityIPServiceImpl implements AFFacilityIPService {
                 afFacilityIPRepository.getAllByFilter(pageable, request));
 
         try {
-            redisService.setObject(cacheKey, data);
+            redisService.set(cacheKey, data, redisTTL);
         } catch (Exception ignored) {
         }
 
