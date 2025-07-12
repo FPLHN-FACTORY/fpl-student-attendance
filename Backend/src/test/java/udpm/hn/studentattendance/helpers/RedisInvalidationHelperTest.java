@@ -1,6 +1,6 @@
 package udpm.hn.studentattendance.helpers;
 
-import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -9,10 +9,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import udpm.hn.studentattendance.infrastructure.constants.RedisPrefixConstant;
 import udpm.hn.studentattendance.infrastructure.redis.service.RedisService;
 
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-class RedisInvalidationHelperTest {
+public class RedisInvalidationHelperTest {
 
     @Mock
     private RedisService redisService;
@@ -20,13 +21,18 @@ class RedisInvalidationHelperTest {
     @InjectMocks
     private RedisInvalidationHelper redisInvalidationHelper;
 
+    @BeforeEach
+    void setUp() {
+        // Setup default behavior
+        doNothing().when(redisService).deletePattern(anyString());
+    }
+
     @Test
-    @DisplayName("Test invalidateAllCaches should delete all cache patterns")
     void testInvalidateAllCaches() {
-        // When
+        // Act
         redisInvalidationHelper.invalidateAllCaches();
 
-        // Then - verify all patterns are deleted
+        // Assert - verify that all patterns are deleted
         verify(redisService).deletePattern(RedisPrefixConstant.REDIS_PREFIX_STUDENT + "*");
         verify(redisService).deletePattern(RedisPrefixConstant.REDIS_PREFIX_STAFF + "*");
         verify(redisService).deletePattern(RedisPrefixConstant.REDIS_PREFIX_TEACHER + "*");
@@ -47,4 +53,4 @@ class RedisInvalidationHelperTest {
         verify(redisService).deletePattern(RedisPrefixConstant.REDIS_PREFIX_STATISTICS + "*");
         verify(redisService).deletePattern("redis_*");
     }
-} 
+}

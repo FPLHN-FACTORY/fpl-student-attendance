@@ -3,7 +3,7 @@ package udpm.hn.studentattendance.infrastructure.constants.router;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
-class RouteAdminConstantTest {
+class AdminRouterTest {
     @Test
     void testRouteAdminConstantExists() {
         assertNotNull(RouteAdminConstant.URL_API_SUBJECT_MANAGEMENT);

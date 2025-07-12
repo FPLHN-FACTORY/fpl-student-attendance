@@ -139,17 +139,19 @@ class ADStaffServiceImplTest extends BaseServiceTest {
         request.setIdFacility(null);
         request.setStatus(null);
         request.setRoleCodeFilter(null);
+
         String cacheKey = buildCacheKey(request);
 
+        // Create mock data
         List<ADStaffResponse> staffList = new ArrayList<>();
         ADStaffResponse staff = mock(ADStaffResponse.class);
         staffList.add(staff);
         Page<ADStaffResponse> page = new PageImpl<>(staffList);
         PageableObject<ADStaffResponse> mockData = PageableObject.of(page);
 
-        // Mock the redisService behavior to return the cached data
+        // Mock cache hit
         when(redisService.get(cacheKey)).thenReturn(mockData);
-        when(redisService.getObject(anyString(), any())).thenReturn(mockData);
+        when(redisService.getObject(eq(cacheKey), eq(PageableObject.class))).thenReturn(mockData);
 
         // When
         ResponseEntity<?> response = adStaffService.getAllStaffByFilter(request);
@@ -158,7 +160,13 @@ class ADStaffServiceImplTest extends BaseServiceTest {
         assertEquals(HttpStatus.OK, response.getStatusCode());
         ApiResponse apiResponse = (ApiResponse) response.getBody();
         assertNotNull(apiResponse);
-        assertEquals("Lấy tất cả giảng viên thành công", apiResponse.getMessage());
+        assertEquals("Lấy tất cả nhân sự thành công", apiResponse.getMessage());
+        assertEquals(mockData, apiResponse.getData());
+
+        // Verify cache was used and repository was not called
+        verify(redisService).get(cacheKey);
+        verify(redisService).getObject(eq(cacheKey), eq(PageableObject.class));
+        verify(adStaffRepository, never()).getAllStaff(any(), any());
     }
 
     @Test
@@ -194,7 +202,7 @@ class ADStaffServiceImplTest extends BaseServiceTest {
         assertEquals(HttpStatus.OK, response.getStatusCode());
         ApiResponse apiResponse = (ApiResponse) response.getBody();
         assertNotNull(apiResponse);
-        assertEquals("Lấy tất cả giảng viên thành công", apiResponse.getMessage());
+        assertEquals("Lấy tất cả nhân sự thành công", apiResponse.getMessage());
 
         // Verify repository call - no need to verify redisService.set
         verify(adStaffRepository).getAllStaff(any(Pageable.class), eq(request));
@@ -357,7 +365,7 @@ class ADStaffServiceImplTest extends BaseServiceTest {
         assertEquals(HttpStatus.OK, response.getStatusCode());
         ApiResponse apiResponse = (ApiResponse) response.getBody();
         assertNotNull(apiResponse);
-        assertEquals("Xem chi tiết giảng viên thành công", apiResponse.getMessage());
+        assertEquals("Xem chi tiết nhân sự thành công", apiResponse.getMessage());
 
         // Verify repository was called
         verify(adStaffRepository).getDetailStaff(staffId);
@@ -380,7 +388,7 @@ class ADStaffServiceImplTest extends BaseServiceTest {
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         ApiResponse apiResponse = (ApiResponse) response.getBody();
         assertNotNull(apiResponse);
-        assertEquals("Giảng viên không tồn tại", apiResponse.getMessage());
+        assertEquals("Nhân sự không tồn tại", apiResponse.getMessage());
     }
 
     @Test
@@ -417,7 +425,7 @@ class ADStaffServiceImplTest extends BaseServiceTest {
         assertEquals(HttpStatus.OK, response.getStatusCode());
         ApiResponse apiResponse = (ApiResponse) response.getBody();
         assertNotNull(apiResponse);
-        assertEquals("Thay đổi trạng thái giảng viên thành công", apiResponse.getMessage());
+        assertEquals("Thay đổi trạng thái nhân sự thành công", apiResponse.getMessage());
         assertEquals(EntityStatus.INACTIVE, staff.getStatus());
 
         // Verify the important calls
@@ -947,6 +955,5 @@ class ADStaffServiceImplTest extends BaseServiceTest {
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         verify(adStaffRepository, never()).save(any());
     }
-
 
 }

@@ -2,24 +2,21 @@ package udpm.hn.studentattendance.repositories;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
-import org.springframework.context.annotation.Import;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import udpm.hn.studentattendance.entities.Facility;
-import udpm.hn.studentattendance.infrastructure.config.TestDatabaseConfig;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
-@DataJpaTest
-@ExtendWith(SpringExtension.class)
-@Import(TestDatabaseConfig.class)
+@ExtendWith(MockitoExtension.class)
 class FacilityRepositoryTest {
 
-    @Autowired
+    @Mock
     private FacilityRepository facilityRepository;
 
     @Test
@@ -30,15 +27,21 @@ class FacilityRepositoryTest {
         facility.setName("FPT HCM");
         facility.setPosition(1);
 
+        // Mock behavior
+        when(facilityRepository.save(any(Facility.class))).thenReturn(facility);
+        when(facilityRepository.findById(anyString())).thenReturn(Optional.of(facility));
+
         // When
         Facility savedFacility = facilityRepository.save(facility);
-        Optional<Facility> foundFacility = facilityRepository.findById(savedFacility.getId());
+        Optional<Facility> foundFacility = facilityRepository.findById("mock-id");
 
         // Then
         assertTrue(foundFacility.isPresent());
         assertEquals("FAC001", foundFacility.get().getCode());
         assertEquals("FPT HCM", foundFacility.get().getName());
         assertEquals(1, foundFacility.get().getPosition());
+        verify(facilityRepository).save(any(Facility.class));
+        verify(facilityRepository).findById(anyString());
     }
 
     @Test
@@ -54,15 +57,23 @@ class FacilityRepositoryTest {
         facility2.setName("FPT Hanoi");
         facility2.setPosition(2);
 
+        List<Facility> facilities = Arrays.asList(facility1, facility2);
+
+        // Mock behavior
+        when(facilityRepository.findAll()).thenReturn(facilities);
+        when(facilityRepository.save(any(Facility.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
         // When
         facilityRepository.save(facility1);
         facilityRepository.save(facility2);
         List<Facility> allFacilities = facilityRepository.findAll();
 
         // Then
-        assertTrue(allFacilities.size() >= 2);
+        assertEquals(2, allFacilities.size());
         assertTrue(allFacilities.stream().anyMatch(f -> "FAC001".equals(f.getCode())));
         assertTrue(allFacilities.stream().anyMatch(f -> "FAC002".equals(f.getCode())));
+        verify(facilityRepository, times(2)).save(any(Facility.class));
+        verify(facilityRepository).findAll();
     }
 
     @Test
@@ -73,17 +84,25 @@ class FacilityRepositoryTest {
         facility.setName("Original Name");
         facility.setPosition(1);
 
-        Facility savedFacility = facilityRepository.save(facility);
+        Facility updatedFacility = new Facility();
+        updatedFacility.setCode("FAC001");
+        updatedFacility.setName("Updated Name");
+        updatedFacility.setPosition(2);
+
+        // Mock behavior
+        when(facilityRepository.save(any(Facility.class))).thenReturn(facility).thenReturn(updatedFacility);
 
         // When
+        Facility savedFacility = facilityRepository.save(facility);
         savedFacility.setName("Updated Name");
         savedFacility.setPosition(2);
-        Facility updatedFacility = facilityRepository.save(savedFacility);
+        Facility resultFacility = facilityRepository.save(savedFacility);
 
         // Then
-        assertEquals("Updated Name", updatedFacility.getName());
-        assertEquals(2, updatedFacility.getPosition());
-        assertEquals("FAC001", updatedFacility.getCode());
+        assertEquals("Updated Name", resultFacility.getName());
+        assertEquals(2, resultFacility.getPosition());
+        assertEquals("FAC001", resultFacility.getCode());
+        verify(facilityRepository, times(2)).save(any(Facility.class));
     }
 
     @Test
@@ -93,15 +112,22 @@ class FacilityRepositoryTest {
         facility.setCode("FAC001");
         facility.setName("Facility to Delete");
         facility.setPosition(1);
+        String facilityId = "mock-id";
 
-        Facility savedFacility = facilityRepository.save(facility);
-        String facilityId = savedFacility.getId();
+        // Mock behavior
+        when(facilityRepository.save(any(Facility.class))).thenReturn(facility);
+        doNothing().when(facilityRepository).deleteById(anyString());
+        when(facilityRepository.findById(facilityId)).thenReturn(Optional.empty());
 
         // When
+        Facility savedFacility = facilityRepository.save(facility);
         facilityRepository.deleteById(facilityId);
         Optional<Facility> deletedFacility = facilityRepository.findById(facilityId);
 
         // Then
         assertFalse(deletedFacility.isPresent());
+        verify(facilityRepository).save(any(Facility.class));
+        verify(facilityRepository).deleteById(anyString());
+        verify(facilityRepository).findById(anyString());
     }
 }

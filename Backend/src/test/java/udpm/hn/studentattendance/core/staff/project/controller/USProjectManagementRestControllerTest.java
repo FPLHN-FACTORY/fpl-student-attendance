@@ -47,7 +47,14 @@ class USProjectManagementRestControllerTest {
     void testGetListProject() {
         USProjectSearchRequest req = new USProjectSearchRequest();
         when(sessionHelper.getFacilityId()).thenReturn("FAC123");
-        when(service.getListProject(req)).thenReturn((ResponseEntity) ResponseEntity.ok("list"));
+        
+        // Mock the service to simulate setting facilityId on the request
+        when(service.getListProject(any(USProjectSearchRequest.class))).thenAnswer(invocation -> {
+            USProjectSearchRequest request = invocation.getArgument(0);
+            request.setFacilityId("FAC123");
+            return ResponseEntity.ok("list");
+        });
+        
         ResponseEntity<?> res = controller.getListProject(req);
         assertEquals(200, res.getStatusCodeValue());
         assertEquals("list", res.getBody());

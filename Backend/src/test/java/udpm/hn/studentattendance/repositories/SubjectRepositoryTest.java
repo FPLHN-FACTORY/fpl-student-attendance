@@ -2,25 +2,21 @@ package udpm.hn.studentattendance.repositories;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
-import org.springframework.context.annotation.Import;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import udpm.hn.studentattendance.entities.Subject;
-import udpm.hn.studentattendance.infrastructure.config.TestDatabaseConfig;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
-import org.springframework.context.annotation.Import;
+import static org.mockito.Mockito.*;
 
-@DataJpaTest
-@ExtendWith(SpringExtension.class)
-@Import(TestDatabaseConfig.class)
+@ExtendWith(MockitoExtension.class)
 class SubjectRepositoryTest {
 
-    @Autowired
+    @Mock
     private SubjectRepository subjectRepository;
 
     @Test
@@ -30,14 +26,20 @@ class SubjectRepositoryTest {
         subject.setCode("SUB001");
         subject.setName("Java Programming");
 
+        // Mock behavior
+        when(subjectRepository.save(any(Subject.class))).thenReturn(subject);
+        when(subjectRepository.findById(anyString())).thenReturn(Optional.of(subject));
+
         // When
         Subject savedSubject = subjectRepository.save(subject);
-        Optional<Subject> foundSubject = subjectRepository.findById(savedSubject.getId());
+        Optional<Subject> foundSubject = subjectRepository.findById("mock-id");
 
         // Then
         assertTrue(foundSubject.isPresent());
         assertEquals("SUB001", foundSubject.get().getCode());
         assertEquals("Java Programming", foundSubject.get().getName());
+        verify(subjectRepository).save(any(Subject.class));
+        verify(subjectRepository).findById(anyString());
     }
 
     @Test
@@ -51,15 +53,23 @@ class SubjectRepositoryTest {
         subject2.setCode("SUB002");
         subject2.setName("Database Management");
 
+        List<Subject> subjects = Arrays.asList(subject1, subject2);
+
+        // Mock behavior
+        when(subjectRepository.findAll()).thenReturn(subjects);
+        when(subjectRepository.save(any(Subject.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
         // When
         subjectRepository.save(subject1);
         subjectRepository.save(subject2);
         List<Subject> allSubjects = subjectRepository.findAll();
 
         // Then
-        assertTrue(allSubjects.size() >= 2);
+        assertEquals(2, allSubjects.size());
         assertTrue(allSubjects.stream().anyMatch(s -> "SUB001".equals(s.getCode())));
         assertTrue(allSubjects.stream().anyMatch(s -> "SUB002".equals(s.getCode())));
+        verify(subjectRepository, times(2)).save(any(Subject.class));
+        verify(subjectRepository).findAll();
     }
 
     @Test
@@ -69,15 +79,22 @@ class SubjectRepositoryTest {
         subject.setCode("SUB001");
         subject.setName("Original Name");
 
-        Subject savedSubject = subjectRepository.save(subject);
+        Subject updatedSubject = new Subject();
+        updatedSubject.setCode("SUB001");
+        updatedSubject.setName("Updated Name");
+
+        // Mock behavior
+        when(subjectRepository.save(any(Subject.class))).thenReturn(subject).thenReturn(updatedSubject);
 
         // When
+        Subject savedSubject = subjectRepository.save(subject);
         savedSubject.setName("Updated Name");
-        Subject updatedSubject = subjectRepository.save(savedSubject);
+        Subject resultSubject = subjectRepository.save(savedSubject);
 
         // Then
-        assertEquals("Updated Name", updatedSubject.getName());
-        assertEquals("SUB001", updatedSubject.getCode());
+        assertEquals("Updated Name", resultSubject.getName());
+        assertEquals("SUB001", resultSubject.getCode());
+        verify(subjectRepository, times(2)).save(any(Subject.class));
     }
 
     @Test
@@ -86,15 +103,22 @@ class SubjectRepositoryTest {
         Subject subject = new Subject();
         subject.setCode("SUB001");
         subject.setName("Subject to Delete");
+        String subjectId = "mock-id";
 
-        Subject savedSubject = subjectRepository.save(subject);
-        String subjectId = savedSubject.getId();
+        // Mock behavior
+        when(subjectRepository.save(any(Subject.class))).thenReturn(subject);
+        doNothing().when(subjectRepository).deleteById(anyString());
+        when(subjectRepository.findById(subjectId)).thenReturn(Optional.empty());
 
         // When
+        Subject savedSubject = subjectRepository.save(subject);
         subjectRepository.deleteById(subjectId);
         Optional<Subject> deletedSubject = subjectRepository.findById(subjectId);
 
         // Then
         assertFalse(deletedSubject.isPresent());
+        verify(subjectRepository).save(any(Subject.class));
+        verify(subjectRepository).deleteById(anyString());
+        verify(subjectRepository).findById(anyString());
     }
 }

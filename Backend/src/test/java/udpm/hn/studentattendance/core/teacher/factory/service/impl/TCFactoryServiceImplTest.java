@@ -66,7 +66,8 @@ class TCFactoryServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        // No setup needed for this service
+        // Set redisTTL value
+        ReflectionTestUtils.setField(factoryService, "redisTTL", 3600L);
     }
 
     @Test
@@ -131,7 +132,7 @@ class TCFactoryServiceImplTest {
 
         verify(factoryExtendRepository).getAllFactoryByTeacher(any(Pageable.class), eq(facilityId), eq(userCode),
                 eq(request));
-        verify(redisService).setObject(anyString(), any(PageableObject.class));
+        verify(redisService).set(anyString(), any(PageableObject.class), eq(3600L));
     }
 
     @Test
@@ -183,7 +184,7 @@ class TCFactoryServiceImplTest {
         assertEquals(projects, apiResponse.getData());
 
         verify(projectExtendRepository).getAllProjectName(facilityId);
-        verify(redisService).setObject(anyString(), eq(projects));
+        verify(redisService).set(anyString(), eq(projects), eq(3600L));
     }
 
     @Test
@@ -230,7 +231,7 @@ class TCFactoryServiceImplTest {
         assertEquals(semesters, apiResponse.getData());
 
         verify(semesterExtendRepository).getAllSemester(EntityStatus.ACTIVE);
-        verify(redisService).setObject(anyString(), eq(semesters));
+        verify(redisService).set(anyString(), eq(semesters), eq(3600L));
     }
 
     @Test

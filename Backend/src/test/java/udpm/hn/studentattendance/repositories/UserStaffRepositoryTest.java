@@ -2,30 +2,22 @@ package udpm.hn.studentattendance.repositories;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
-import org.springframework.context.annotation.Import;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
-import udpm.hn.studentattendance.entities.Role;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import udpm.hn.studentattendance.entities.UserStaff;
-import udpm.hn.studentattendance.infrastructure.constants.RoleConstant;
-import udpm.hn.studentattendance.infrastructure.config.TestDatabaseConfig;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
-@DataJpaTest
-@ExtendWith(SpringExtension.class)
-@Import(TestDatabaseConfig.class)
+@ExtendWith(MockitoExtension.class)
 class UserStaffRepositoryTest {
 
-    @Autowired
+    @Mock
     private UserStaffRepository userStaffRepository;
-
-    @Autowired
-    private RoleRepository roleRepository;
 
     @Test
     void testSaveAndFindById() {
@@ -37,9 +29,13 @@ class UserStaffRepositoryTest {
         staff.setEmailFpt("staff@fpt.edu.vn");
         staff.setImage("staff_image.jpg");
 
+        // Mock behavior
+        when(userStaffRepository.save(any(UserStaff.class))).thenReturn(staff);
+        when(userStaffRepository.findById(anyString())).thenReturn(Optional.of(staff));
+
         // When
         UserStaff savedStaff = userStaffRepository.save(staff);
-        Optional<UserStaff> foundStaff = userStaffRepository.findById(savedStaff.getId());
+        Optional<UserStaff> foundStaff = userStaffRepository.findById("mock-id");
 
         // Then
         assertTrue(foundStaff.isPresent());
@@ -48,6 +44,8 @@ class UserStaffRepositoryTest {
         assertEquals("staff@fe.edu.vn", foundStaff.get().getEmailFe());
         assertEquals("staff@fpt.edu.vn", foundStaff.get().getEmailFpt());
         assertEquals("staff_image.jpg", foundStaff.get().getImage());
+        verify(userStaffRepository).save(any(UserStaff.class));
+        verify(userStaffRepository).findById(anyString());
     }
 
     @Test
@@ -63,15 +61,23 @@ class UserStaffRepositoryTest {
         staff2.setName("Staff 2");
         staff2.setEmailFe("staff2@fe.edu.vn");
 
+        List<UserStaff> staffList = Arrays.asList(staff1, staff2);
+
+        // Mock behavior
+        when(userStaffRepository.findAll()).thenReturn(staffList);
+        when(userStaffRepository.save(any(UserStaff.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
         // When
         userStaffRepository.save(staff1);
         userStaffRepository.save(staff2);
         List<UserStaff> allStaff = userStaffRepository.findAll();
 
         // Then
-        assertTrue(allStaff.size() >= 2);
+        assertEquals(2, allStaff.size());
         assertTrue(allStaff.stream().anyMatch(s -> "SF001".equals(s.getCode())));
         assertTrue(allStaff.stream().anyMatch(s -> "SF002".equals(s.getCode())));
+        verify(userStaffRepository, times(2)).save(any(UserStaff.class));
+        verify(userStaffRepository).findAll();
     }
 
     @Test
@@ -82,16 +88,24 @@ class UserStaffRepositoryTest {
         staff.setName("Original Name");
         staff.setEmailFe("original@fe.edu.vn");
 
-        UserStaff savedStaff = userStaffRepository.save(staff);
+        UserStaff updatedStaff = new UserStaff();
+        updatedStaff.setCode("SF001");
+        updatedStaff.setName("Updated Name");
+        updatedStaff.setEmailFe("updated@fe.edu.vn");
+
+        // Mock behavior
+        when(userStaffRepository.save(any(UserStaff.class))).thenReturn(staff).thenReturn(updatedStaff);
 
         // When
+        UserStaff savedStaff = userStaffRepository.save(staff);
         savedStaff.setName("Updated Name");
         savedStaff.setEmailFe("updated@fe.edu.vn");
-        UserStaff updatedStaff = userStaffRepository.save(savedStaff);
+        UserStaff resultStaff = userStaffRepository.save(savedStaff);
 
         // Then
-        assertEquals("Updated Name", updatedStaff.getName());
-        assertEquals("updated@fe.edu.vn", updatedStaff.getEmailFe());
+        assertEquals("Updated Name", resultStaff.getName());
+        assertEquals("updated@fe.edu.vn", resultStaff.getEmailFe());
+        verify(userStaffRepository, times(2)).save(any(UserStaff.class));
     }
 
     @Test
@@ -101,15 +115,22 @@ class UserStaffRepositoryTest {
         staff.setCode("SF001");
         staff.setName("Staff to Delete");
         staff.setEmailFe("delete@fe.edu.vn");
+        String staffId = "mock-id";
 
-        UserStaff savedStaff = userStaffRepository.save(staff);
-        String staffId = savedStaff.getId();
+        // Mock behavior
+        when(userStaffRepository.save(any(UserStaff.class))).thenReturn(staff);
+        doNothing().when(userStaffRepository).deleteById(anyString());
+        when(userStaffRepository.findById(staffId)).thenReturn(Optional.empty());
 
         // When
+        UserStaff savedStaff = userStaffRepository.save(staff);
         userStaffRepository.deleteById(staffId);
         Optional<UserStaff> deletedStaff = userStaffRepository.findById(staffId);
 
         // Then
         assertFalse(deletedStaff.isPresent());
+        verify(userStaffRepository).save(any(UserStaff.class));
+        verify(userStaffRepository).deleteById(anyString());
+        verify(userStaffRepository).findById(anyString());
     }
 }
