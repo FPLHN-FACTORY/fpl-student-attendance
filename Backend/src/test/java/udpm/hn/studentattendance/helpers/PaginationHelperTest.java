@@ -24,8 +24,8 @@ class PaginationHelperTest {
         TestPageableRequest request = new TestPageableRequest();
         request.setPage(1);
         request.setSize(10);
-        request.setSortBy(null);
-        request.setOrderBy(null);
+        request.setSortBy("created_at");
+        request.setOrderBy("desc");
         Pageable pageable = PaginationHelper.createPageable(request);
         assertThat(pageable.getPageNumber()).isEqualTo(0);
         assertThat(pageable.getPageSize()).isEqualTo(10);

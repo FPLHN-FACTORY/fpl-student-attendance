@@ -162,7 +162,7 @@ class MailerHelperTest {
         request.setTitle("Test Subject");
         request.setContent("Test Content");
 
-        when(mailSender.createMimeMessage()).thenThrow(new RuntimeException("Test exception"));
+        when(mailSender.createMimeMessage()).thenThrow(new jakarta.mail.MessagingException("Test exception"));
 
         CompletableFuture<Boolean> result = mailerHelper.send(request);
         assertFalse(result.get());

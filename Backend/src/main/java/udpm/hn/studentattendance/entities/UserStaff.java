@@ -52,6 +52,9 @@ public class UserStaff extends PrimaryEntity implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
+        if (roles == null) {
+            return java.util.Collections.emptyList();
+        }
         List<SimpleGrantedAuthority> authorities = new ArrayList<>();
         for (Role role : roles) {
             authorities.add(new SimpleGrantedAuthority(role.getCode().name()));
