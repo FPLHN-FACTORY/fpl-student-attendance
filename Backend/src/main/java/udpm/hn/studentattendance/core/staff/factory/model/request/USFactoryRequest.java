@@ -23,4 +23,20 @@ public class USFactoryRequest extends PageableRequest {
 
     private EntityStatus status;
 
+    @Override
+    public String toString() {
+        return "USFactoryRequest{" +
+                "idProject='" + idProject + '\'' +
+                ", idStaff='" + idStaff + '\'' +
+                ", idFacility='" + idFacility + '\'' +
+                ", factoryName='" + factoryName + '\'' +
+                ", idSemester='" + idSemester + '\'' +
+                ", status=" + status +
+                ", page=" + getPage() +
+                ", size=" + getSize() +
+                ", sortBy=" + getSortBy() +
+                ", orderBy=" + getOrderBy() +
+                ", q=" + getQ() +
+                '}';
+    }
 }
