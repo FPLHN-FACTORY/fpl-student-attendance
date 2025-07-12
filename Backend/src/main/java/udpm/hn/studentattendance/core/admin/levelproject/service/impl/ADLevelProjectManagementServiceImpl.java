@@ -46,7 +46,7 @@ public class ADLevelProjectManagementServiceImpl implements ADLevelProjectManage
         Object cachedData = redisService.get(cacheKey);
         if (cachedData != null) {
             try {
-                return redisService.getObject(cacheKey, PageableObject.class);
+                return (PageableObject) cachedData;
             } catch (Exception e) {
                 redisService.delete(cacheKey);
             }
@@ -124,7 +124,7 @@ public class ADLevelProjectManagementServiceImpl implements ADLevelProjectManage
         Object cachedData = redisService.get(cacheKey);
         if (cachedData != null) {
             try {
-                return redisService.getObject(cacheKey, LevelProject.class);
+                return (LevelProject) cachedData;
             } catch (Exception e) {
                 redisService.delete(cacheKey);
             }
