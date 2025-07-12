@@ -61,7 +61,7 @@ public class AFFacilityServiceImpl implements AFFacilityService {
         Object cachedData = redisService.get(cacheKey);
         if (cachedData != null) {
             try {
-                return (PageableObject) cachedData;
+                return redisService.getObject(cacheKey, PageableObject.class);
             } catch (Exception e) {
                 redisService.delete(cacheKey);
             }
@@ -72,7 +72,7 @@ public class AFFacilityServiceImpl implements AFFacilityService {
                 facilityRepository.getAllFacility(pageable, request));
 
         try {
-            redisService.set(cacheKey, facilities, redisTTL);
+            redisService.setObject(cacheKey, facilities);
         } catch (Exception ignored) {
         }
 
@@ -198,7 +198,7 @@ public class AFFacilityServiceImpl implements AFFacilityService {
         Object cachedData = redisService.get(cacheKey);
         if (cachedData != null) {
             try {
-                return (AFFacilityResponse) cachedData;
+                return redisService.getObject(cacheKey, AFFacilityResponse.class);
             } catch (Exception e) {
                 redisService.delete(cacheKey);
             }
@@ -209,7 +209,7 @@ public class AFFacilityServiceImpl implements AFFacilityService {
         AFFacilityResponse result = facility.orElse(null);
         if (result != null) {
             try {
-                redisService.set(cacheKey, result, redisTTL);
+                redisService.setObject(cacheKey, result);
             } catch (Exception ignored) {
             }
         }
