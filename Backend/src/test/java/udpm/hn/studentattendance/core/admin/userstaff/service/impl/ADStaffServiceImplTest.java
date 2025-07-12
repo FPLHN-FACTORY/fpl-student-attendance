@@ -149,8 +149,9 @@ class ADStaffServiceImplTest extends BaseServiceTest {
         Page<ADStaffResponse> page = new PageImpl<>(staffList);
         PageableObject<ADStaffResponse> mockData = PageableObject.of(page);
 
-        // Mock cache hit
-        when(redisService.get(cacheKey)).thenReturn(mockData);
+        // Mock cache hit - get returns any non-null, getObject returns a valid
+        // PageableObject
+        when(redisService.get(cacheKey)).thenReturn(new Object());
         when(redisService.getObject(eq(cacheKey), eq(PageableObject.class))).thenReturn(mockData);
 
         // When
