@@ -186,13 +186,7 @@ public class SPDPlanServiceImpl implements SPDPlanService {
     public PageableObject<SPDPlanResponse> getCachedPlans(SPDFilterPlanRequest request) {
         request.setIdFacility(sessionHelper.getFacilityId());
 
-        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_PLAN + "list_" +
-                "facility=" + sessionHelper.getFacilityId() +
-                "_page=" + request.getPage() +
-                "_size=" + request.getSize() +
-                "_orderBy=" + request.getOrderBy() +
-                "_sortBy=" + request.getSortBy() +
-                "_q=" + (request.getQ() != null ? request.getQ() : "");
+        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_PLAN + "list_" + request.toString();
 
         Object cachedData = redisService.get(cacheKey);
         if (cachedData != null) {

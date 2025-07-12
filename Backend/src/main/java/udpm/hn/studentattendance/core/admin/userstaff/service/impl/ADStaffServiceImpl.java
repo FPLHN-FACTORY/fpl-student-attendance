@@ -75,17 +75,8 @@ public class ADStaffServiceImpl implements ADStaffService {
      * Lấy danh sách nhân viên từ cache hoặc DB
      */
     public PageableObject getStaffList(ADStaffRequest request) {
-        // Tạo cache key thủ công
-        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_STAFF + "list_" +
-                "page=" + request.getPage() +
-                "_size=" + request.getSize() +
-                "_orderBy=" + request.getOrderBy() +
-                "_sortBy=" + request.getSortBy() +
-                "_q=" + (request.getQ() != null ? request.getQ() : "") +
-                "_searchQuery=" + (request.getSearchQuery() != null ? request.getSearchQuery() : "") +
-                "_idFacility=" + (request.getIdFacility() != null ? request.getIdFacility() : "") +
-                "_status=" + (request.getStatus() != null ? request.getStatus() : "") +
-                "_roleCodeFilter=" + (request.getRoleCodeFilter() != null ? request.getRoleCodeFilter() : "");
+        // Tạo cache key sử dụng toString()
+        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_STAFF + "list_" + request.toString();
 
         // Kiểm tra cache
         Object cachedData = redisService.get(cacheKey);
@@ -200,7 +191,7 @@ public class ADStaffServiceImpl implements ADStaffService {
     @Override
     public ResponseEntity<?> getAllStaffByFilter(ADStaffRequest adStaffRequest) {
         PageableObject staffs = getStaffList(adStaffRequest);
-        return RouterHelper.responseSuccess("Lấy tất cả giảng viên thành công", staffs);
+        return RouterHelper.responseSuccess("Lấy tất cả nhân sự thành công", staffs);
     }
 
     @Override
@@ -448,16 +439,16 @@ public class ADStaffServiceImpl implements ADStaffService {
         // Invalidate all caches
         redisInvalidationHelper.invalidateAllCaches();
 
-        return RouterHelper.responseSuccess("Thay đổi trạng thái giảng viên thành công");
+        return RouterHelper.responseSuccess("Thay đổi trạng thái nhân sự thành công");
     }
 
     @Override
     public ResponseEntity<?> getStaffById(String staffId) {
         ADStaffDetailResponse staffDetail = getStaffDetail(staffId);
         if (staffDetail != null) {
-            return RouterHelper.responseSuccess("Xem chi tiết giảng viên thành công", staffDetail);
+            return RouterHelper.responseSuccess("Xem chi tiết nhân sự thành công", staffDetail);
         }
-        return RouterHelper.responseError("Giảng viên không tồn tại");
+        return RouterHelper.responseError("Nhân sự không tồn tại");
     }
 
     @Override
@@ -490,17 +481,4 @@ public class ADStaffServiceImpl implements ADStaffService {
         return staffFpt.orElse(null);
     }
 
-    /**
-     * @deprecated Use redisInvalidationHelper.invalidateAllCaches() instead
-     */
-    private void invalidateStaffCache(String staffId) {
-        redisInvalidationHelper.invalidateAllCaches();
-    }
-
-    /**
-     * @deprecated Use redisInvalidationHelper.invalidateAllCaches() instead
-     */
-    private void invalidateStaffCaches() {
-        redisInvalidationHelper.invalidateAllCaches();
-    }
 }

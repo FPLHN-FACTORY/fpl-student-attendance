@@ -56,14 +56,7 @@ public class AFFacilityServiceImpl implements AFFacilityService {
     private long redisTTL;
 
     public PageableObject<AFFacilityResponse> getCachedFacilities(AFFacilitySearchRequest request) {
-        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_FACILITY + "list_" +
-                "name=" + (request.getName() != null ? request.getName() : "") +
-                "_status=" + (request.getStatus() != null ? request.getStatus() : "null") +
-                "_page=" + request.getPage() +
-                "_size=" + request.getSize() +
-                "_orderBy=" + request.getOrderBy() +
-                "_sortBy=" + request.getSortBy() +
-                "_q=" + (request.getQ() != null ? request.getQ() : "");
+        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_FACILITY + "list_" + request.toString();
 
         Object cachedData = redisService.get(cacheKey);
         if (cachedData != null) {

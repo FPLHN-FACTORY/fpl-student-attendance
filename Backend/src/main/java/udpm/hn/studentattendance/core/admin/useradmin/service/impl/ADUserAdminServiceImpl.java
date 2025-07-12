@@ -61,15 +61,8 @@ public class ADUserAdminServiceImpl implements ADUserAdminService {
          * Lấy danh sách admin từ cache hoặc DB
          */
         public PageableObject getUserAdminList(ADUserAdminRequest request) {
-                // Tạo cache key thủ công
-                String cacheKey = RedisPrefixConstant.REDIS_PREFIX_ADMIN + "list_" +
-                                "page=" + request.getPage() +
-                                "_size=" + request.getSize() +
-                                "_orderBy=" + request.getOrderBy() +
-                                "_sortBy=" + request.getSortBy() +
-                                "_q=" + (request.getQ() != null ? request.getQ() : "") +
-                                "_searchQuery=" + (request.getSearchQuery() != null ? request.getSearchQuery() : "") +
-                                "_status=" + (request.getStatus() != null ? request.getStatus() : "");
+                // Tạo cache key sử dụng toString()
+                String cacheKey = RedisPrefixConstant.REDIS_PREFIX_ADMIN + "list_" + request.toString();
 
                 // Kiểm tra cache
                 Object cachedData = redisService.get(cacheKey);
@@ -194,8 +187,6 @@ public class ADUserAdminServiceImpl implements ADUserAdminService {
                                         .responseError("Email phải có định dạng @gmail.com hoặc kết thúc bằng edu.vn");
                 }
 
-
-
                 if (existUserAdmin.isPresent()) {
                         return RouterHelper.responseError("Mã của admin đã tồn tại");
                 }
@@ -262,8 +253,6 @@ public class ADUserAdminServiceImpl implements ADUserAdminService {
                         return RouterHelper
                                         .responseError("Email phải có định dạng @gmail.com hoặc kết thúc bằng edu.vn");
                 }
-
-
 
                 if (!ValidateHelper.isValidCode(createOrUpdateRequest.getStaffCode())) {
                         return RouterHelper.responseError(
