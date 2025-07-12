@@ -51,17 +51,47 @@ public class ADSemesterServiceImpl implements ADSemesterService {
 
     @Override
     public ResponseEntity<?> getAllSemester(ADSemesterRequest request) {
+        // Generate cache key using request toString
+        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_SEMESTER + "all:" + request.toString();
+
+        // Try to get from cache first
+        Object cachedResponse = redisService.get(cacheKey);
+        if (cachedResponse != null) {
+            return (ResponseEntity<?>) cachedResponse;
+        }
+
+        // If not in cache, get from database
         Pageable pageable = PaginationHelper.createPageable(request, "createdAt");
         PageableObject pageableObject = PageableObject
                 .of(adSemesterRepository.getAllSemester(pageable, request));
-        return RouterHelper.responseSuccess("Get semester successfully", pageableObject);
+        ResponseEntity<?> response = RouterHelper.responseSuccess("Get semester successfully", pageableObject);
+
+        // Store in cache
+        redisService.set(cacheKey, response, redisTTL);
+
+        return response;
     }
 
     @Override
     public ResponseEntity<?> getSemesterById(String semesterId) {
-        return adSemesterRepository.findById(semesterId)
+        // Generate cache key
+        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_SEMESTER + "byId:" + semesterId;
+
+        // Try to get from cache first
+        Object cachedResponse = redisService.get(cacheKey);
+        if (cachedResponse != null) {
+            return (ResponseEntity<?>) cachedResponse;
+        }
+
+        // If not in cache, get from database
+        ResponseEntity<?> response = adSemesterRepository.findById(semesterId)
                 .map(semester -> RouterHelper.responseSuccess("Tìm học kỳ thành công", semester))
                 .orElseGet(() -> RouterHelper.responseError("Học kỳ không tồn tại"));
+
+        // Store in cache
+        redisService.set(cacheKey, response, redisTTL);
+
+        return response;
     }
 
     @Override
