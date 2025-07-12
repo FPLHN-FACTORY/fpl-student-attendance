@@ -34,9 +34,8 @@ public class USProjectManagementRestController {
 
     private final STSubjectFacilityManagementService serviceSubjectFacility;
 
-    @PostMapping("/list")
-    public ResponseEntity<?> getListProject(@Valid @RequestBody USProjectSearchRequest request) {
-        request.setFacilityId(sessionHelper.getFacilityId());
+    @GetMapping("/list")
+    public ResponseEntity<?> getListProject(USProjectSearchRequest request) {
         return service.getListProject(request);
     }
 
