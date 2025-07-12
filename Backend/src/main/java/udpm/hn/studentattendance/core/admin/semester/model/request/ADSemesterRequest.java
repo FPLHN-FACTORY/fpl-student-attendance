@@ -19,4 +19,18 @@ public class ADSemesterRequest extends PageableRequest {
 
     private EntityStatus status;
 
+    @Override
+    public String toString() {
+        return "ADSemesterRequest{" +
+                "semesterCode='" + semesterCode + '\'' +
+                ", fromDateSemester=" + fromDateSemester +
+                ", toDateSemester=" + toDateSemester +
+                ", status=" + status +
+                ", page=" + getPage() +
+                ", size=" + getSize() +
+                ", sortBy=" + getSortBy() +
+                ", orderBy=" + getOrderBy() +
+                ", q=" + getQ() +
+                '}';
+    }
 }

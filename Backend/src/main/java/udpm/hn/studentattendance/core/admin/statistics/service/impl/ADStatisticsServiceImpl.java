@@ -1,24 +1,18 @@
 package udpm.hn.studentattendance.core.admin.statistics.service.impl;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import udpm.hn.studentattendance.core.admin.statistics.model.dto.ADSAllStartsAndChartDTO;
-import udpm.hn.studentattendance.core.admin.statistics.model.request.ADStatisticRequest;
 import udpm.hn.studentattendance.core.admin.statistics.model.response.ADSProjectSubjectFacilityResponse;
 import udpm.hn.studentattendance.core.admin.statistics.model.response.ADSSubjectFacilityChartResponse;
 import udpm.hn.studentattendance.core.admin.statistics.model.response.ADStatisticsStatResponse;
 import udpm.hn.studentattendance.core.admin.statistics.model.response.ADSTotalProjectAndSubjectResponse;
 import udpm.hn.studentattendance.core.admin.statistics.repository.*;
 import udpm.hn.studentattendance.core.admin.statistics.service.ADStatisticsService;
-import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
 import udpm.hn.studentattendance.helpers.RouterHelper;
-import udpm.hn.studentattendance.infrastructure.constants.RedisPrefixConstant;
-import udpm.hn.studentattendance.infrastructure.redis.service.RedisService;
+
 
 import java.util.List;
 
