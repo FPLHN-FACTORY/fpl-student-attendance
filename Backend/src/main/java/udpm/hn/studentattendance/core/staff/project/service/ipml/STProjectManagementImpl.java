@@ -6,6 +6,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import udpm.hn.studentattendance.core.staff.project.model.request.USProjectCreateOrUpdateRequest;
 import udpm.hn.studentattendance.core.staff.project.model.request.USProjectSearchRequest;
+import udpm.hn.studentattendance.core.staff.project.model.response.USProjectResponse;
 import udpm.hn.studentattendance.core.staff.project.repository.*;
 import udpm.hn.studentattendance.core.staff.project.service.STProjectManagementService;
 import udpm.hn.studentattendance.entities.*;
@@ -42,8 +43,9 @@ public class STProjectManagementImpl implements STProjectManagementService {
 
     @Override
     public ResponseEntity<?> getListProject(USProjectSearchRequest request) {
+        request.setFacilityId(sessionHelper.getFacilityId());
         Pageable pageable = PaginationHelper.createPageable(request, "createdAt");
-        PageableObject list = PageableObject.of(projectManagementRepository.getListProject(pageable, request));
+        PageableObject<USProjectResponse> list = PageableObject.of(projectManagementRepository.getListProject(pageable, request));
         return RouterHelper.responseSuccess("Lấy danh sách dự án thành công", list);
 
     }

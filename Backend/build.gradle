@@ -146,6 +146,26 @@ task testHelpers(type: Test) {
     include '**/helpers/*Test*'
 }
 
+task testInfrastructure(type: Test) {
+    group = 'verification'
+    description = 'Run infrastructure module tests'
+    include '**/infrastructure/**/*Test*'
+
+    testLogging {
+        events "passed", "skipped", "failed"
+        exceptionFormat "full"
+        showStandardStreams = true
+    }
+
+    doLast {
+        def report = project.file("${project.buildDir}/reports/tests/testInfrastructure/index.html")
+        println "\n============== Infrastructure Test Execution Summary ================"
+        println "Detailed report: ${report}"
+        println "See test results at: ${project.buildDir}/reports/tests/testInfrastructure"
+        println "======================================================"
+    }
+}
+
 // Fixed tests task with detailed reporting
 task testFixed(type: Test) {
     group = 'verification'
@@ -167,16 +187,39 @@ task testFixed(type: Test) {
 
     // Include only fixed tests
     include '**/admin/levelproject/service/impl/ADLevelProjectManagementServiceImplTest*'
-    include '**/helpers/RedisInvalidationHelperTest*'
-    include '**/admin/facility/service/impl/AFFacilityServiceImplTest*'
-    include '**/admin/facility/service/impl/AFFacilityIPServiceImplTest*'
-    include '**/admin/facility/service/impl/AFFacilityLocationServiceImplTest*'
-    include '**/admin/semester/service/impl/ADSemesterServiceImplTest*'
-    include '**/admin/statistics/service/impl/ADStatisticsServiceImplTest*'
     include '**/admin/subject/service/impl/ADSubjectManagementServiceImplTest*'
-    include '**/admin/subjectfacility/service/impl/ADSubjectFacilityServiceImplTest*'
+    include '**/admin/subjectfacility/service/impl/ADSubjectFacilityManagementServiceImplTest*'
+    include '**/admin/facility/service/impl/ADFacilityManagementServiceImplTest*'
     include '**/admin/useradmin/service/impl/ADUserAdminServiceImplTest*'
     include '**/admin/userstaff/service/impl/ADStaffServiceImplTest*'
+    include '**/admin/semester/service/impl/ADSemesterManagementServiceImplTest*'
+    include '**/admin/statistics/service/impl/ADStatisticsServiceImplTest*'
+    include '**/admin/useractivity/service/impl/ADUserActivityServiceImplTest*'
+    include '**/authentication/controller/AuthControllerTest*'
+    include '**/authentication/oauth2/JwtTokenProviderTest*'
+    include '**/authentication/oauth2/JwtAuthenticationFilterTest*'
+    include '**/authentication/oauth2/UserPrincipalTest*'
+    include '**/authentication/services/impl/AuthServiceImplTest*'
+    include '**/infrastructure/constants/router/RouteAdminConstantTest*'
+    include '**/infrastructure/constants/router/RouteExcelConstantTest*'
+    include '**/infrastructure/constants/router/RouteTeacherConstantTest*'
+    include '**/infrastructure/constants/router/RouteWebsocketConstantTest*'
+    include '**/infrastructure/redis/service/impl/RedisInvalidationHelperTest*'
+    include '**/repositories/FacilityIPRepositoryTest*'
+    include '**/repositories/SettingsRepositoryTest*'
+    include '**/repositories/AttendanceRecoveryRepositoryTest*'
+    include '**/repositories/PlanRepositoryTest*'
+    include '**/repositories/ProjectRepositoryTest*'
+    include '**/repositories/SemesterRepositoryTest*'
+    include '**/repositories/SubjectRepositoryTest*'
+    include '**/repositories/UserAdminRepositoryTest*'
+    include '**/repositories/FacilityRepositoryTest*'
+    include '**/repositories/NotificationRepositoryTest*'
+    include '**/repositories/PlanDateRepositoryTest*'
+    include '**/repositories/UserStaffRepositoryTest*'
+    include '**/repositories/UserStudentRepositoryTest*'
+    include '**/core/teacher/factory/repository/TCProjectExtendRepositoryTest*'
+    include '**/helpers/SettingHelperTest*'
 }
 
 configurations.configureEach {
