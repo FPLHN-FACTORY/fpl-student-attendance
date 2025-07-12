@@ -56,7 +56,7 @@ public class ADLevelProjectManagementServiceImpl implements ADLevelProjectManage
         PageableObject result = PageableObject.of(repository.getAll(pageable, request));
 
         try {
-            redisService.setObject(cacheKey, result);
+            redisService.set(cacheKey, result, redisTTL);
         } catch (Exception ignored) {
         }
 
@@ -136,7 +136,7 @@ public class ADLevelProjectManagementServiceImpl implements ADLevelProjectManage
         if (lv != null) {
             // Store in cache
             try {
-                redisService.setObject(cacheKey, lv);
+                redisService.set(cacheKey, lv, redisTTL);
             } catch (Exception ignored) {
             }
         }
