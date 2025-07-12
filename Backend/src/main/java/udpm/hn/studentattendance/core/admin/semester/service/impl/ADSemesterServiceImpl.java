@@ -51,22 +51,18 @@ public class ADSemesterServiceImpl implements ADSemesterService {
 
     @Override
     public ResponseEntity<?> getAllSemester(ADSemesterRequest request) {
-        // Generate cache key using request toString
         String cacheKey = RedisPrefixConstant.REDIS_PREFIX_SEMESTER + "all:" + request.toString();
 
-        // Try to get from cache first
         Object cachedResponse = redisService.get(cacheKey);
         if (cachedResponse != null) {
             return (ResponseEntity<?>) cachedResponse;
         }
 
-        // If not in cache, get from database
         Pageable pageable = PaginationHelper.createPageable(request, "createdAt");
         PageableObject pageableObject = PageableObject
                 .of(adSemesterRepository.getAllSemester(pageable, request));
         ResponseEntity<?> response = RouterHelper.responseSuccess("Get semester successfully", pageableObject);
 
-        // Store in cache
         redisService.set(cacheKey, response, redisTTL);
 
         return response;
@@ -144,7 +140,6 @@ public class ADSemesterServiceImpl implements ADSemesterService {
             Semester semesterSave = adSemesterRepository.save(semester);
             userActivityLogHelper.saveLog("vừa thêm 1 học kỳ mới: " + semesterSave.getCode());
 
-            // Invalidate all caches
             redisInvalidationHelper.invalidateAllCaches();
 
             return RouterHelper.responseSuccess("Created semester successfully", semesterSave);
@@ -238,7 +233,6 @@ public class ADSemesterServiceImpl implements ADSemesterService {
         Semester semesterSave = adSemesterRepository.save(semester);
         userActivityLogHelper.saveLog("vừa cập nhật học kỳ: " + oldCode + " → " + semesterSave.getCode());
 
-        // Invalidate all caches
         redisInvalidationHelper.invalidateAllCaches();
 
         return RouterHelper.responseSuccess("Cập nhật thành công", semesterSave);
