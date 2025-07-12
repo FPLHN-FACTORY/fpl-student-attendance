@@ -27,6 +27,7 @@ import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.RedisPrefixConstant;
 import udpm.hn.studentattendance.infrastructure.constants.SettingKeys;
 import udpm.hn.studentattendance.infrastructure.redis.service.RedisService;
+import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -47,6 +48,8 @@ public class STStudentServiceImpl implements STStudentService {
     private final UserActivityLogHelper userActivityLogHelper;
 
     private final RedisService redisService;
+
+    private final RedisInvalidationHelper redisInvalidationHelper;
 
     private final SettingHelper settingHelper;
 
@@ -176,8 +179,8 @@ public class STStudentServiceImpl implements STStudentService {
         userActivityLogHelper
                 .saveLog("vừa thêm 1 sinh viên mới: " + saveUserStudent.getCode() + " - " + saveUserStudent.getName());
 
-        // Xóa cache liên quan đến danh sách sinh viên
-        invalidateStudentListCache();
+        // Invalidate all caches
+        redisInvalidationHelper.invalidateAllCaches();
 
         return RouterHelper.responseSuccess("Thêm sinh viên mới thành công", saveUserStudent);
     }
@@ -240,8 +243,8 @@ public class STStudentServiceImpl implements STStudentService {
         userActivityLogHelper
                 .saveLog("vừa cập nhật sinh viên: " + saveUserStudent.getCode() + " - " + saveUserStudent.getName());
 
-        // Xóa cache liên quan đến sinh viên này
-        invalidateStudentCache(saveUserStudent.getId());
+        // Invalidate all caches
+        redisInvalidationHelper.invalidateAllCaches();
 
         return RouterHelper.responseSuccess("Cập nhật sinh viên thành công", saveUserStudent);
     }
@@ -260,8 +263,8 @@ public class STStudentServiceImpl implements STStudentService {
             userActivityLogHelper.saveLog("vừa thay đổi trạng thái sinh viên " + userStudent.getCode() + " - "
                     + userStudent.getName() + " từ " + oldStatus + " thành " + newStatus);
 
-            // Xóa cache liên quan đến sinh viên này
-            invalidateStudentCache(studentId);
+            // Invalidate all caches
+            redisInvalidationHelper.invalidateAllCaches();
 
             return RouterHelper.responseSuccess("Thay đổi trạng thái sinh viên thành công", userStudent);
         } else {
@@ -289,10 +292,8 @@ public class STStudentServiceImpl implements STStudentService {
             userActivityLogHelper.saveLog("vừa xóa dữ liệu khuôn mặt của sinh viên: " + userStudent.getCode() + " - "
                     + userStudent.getName());
 
-            // Xóa cache liên quan đến sinh viên này
-            invalidateStudentCache(studentId);
-            // Xóa cache trạng thái face
-            invalidateFaceStatusCache();
+            // Invalidate all caches
+            redisInvalidationHelper.invalidateAllCaches();
 
             return RouterHelper.responseSuccess("Cấp quyền thay đổi mặt sinh viên thành công", userStudent);
         }
@@ -336,30 +337,4 @@ public class STStudentServiceImpl implements STStudentService {
         return RouterHelper.responseSuccess("Lấy trạng thái face của sinh viên thành công", studentFaceMap);
     }
 
-    /**
-     * Xóa cache trạng thái face
-     */
-    private void invalidateFaceStatusCache() {
-        redisService.delete(RedisPrefixConstant.REDIS_PREFIX_STUDENT + "face_status_" + sessionHelper.getFacilityId());
-    }
-
-    /**
-     * Xóa cache liên quan đến một sinh viên cụ thể
-     */
-    private void invalidateStudentCache(String studentId) {
-        // Xóa cache chi tiết sinh viên
-        redisService.delete(RedisPrefixConstant.REDIS_PREFIX_STUDENT + studentId);
-        // Xóa cache danh sách sinh viên
-        invalidateStudentListCache();
-        // Xóa cache trạng thái face
-        invalidateFaceStatusCache();
-    }
-
-    /**
-     * Xóa cache danh sách sinh viên
-     */
-    private void invalidateStudentListCache() {
-        redisService.deletePattern(
-                RedisPrefixConstant.REDIS_PREFIX_STUDENT + "list_" + sessionHelper.getFacilityId() + "_*");
-    }
 }

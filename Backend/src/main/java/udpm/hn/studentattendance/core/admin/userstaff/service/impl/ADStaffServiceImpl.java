@@ -71,14 +71,10 @@ public class ADStaffServiceImpl implements ADStaffService {
     @PersistenceContext
     private EntityManager entityManager;
 
-    /**
-     * Lấy danh sách nhân viên từ cache hoặc DB
-     */
+
     public PageableObject getStaffList(ADStaffRequest request) {
-        // Tạo cache key sử dụng toString()
         String cacheKey = RedisPrefixConstant.REDIS_PREFIX_STAFF + "list_" + request.toString();
 
-        // Kiểm tra cache
         Object cachedData = redisService.get(cacheKey);
         if (cachedData != null) {
             try {
@@ -88,11 +84,9 @@ public class ADStaffServiceImpl implements ADStaffService {
             }
         }
 
-        // Cache miss - fetch from database
         Pageable pageable = PaginationHelper.createPageable(request, "createdAt");
         PageableObject staffs = PageableObject.of(adStaffRepository.getAllStaff(pageable, request));
 
-        // Store in cache
         try {
             redisService.set(cacheKey, staffs, redisTTL);
         } catch (Exception ignored) {
@@ -101,44 +95,17 @@ public class ADStaffServiceImpl implements ADStaffService {
         return staffs;
     }
 
-    /**
-     * Lấy chi tiết nhân viên từ cache hoặc DB
-     */
+
     public ADStaffDetailResponse getStaffDetail(String id) {
-        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_STAFF + "detail_" + id;
-
-        // Kiểm tra cache
-        Object cachedData = redisService.get(cacheKey);
-        if (cachedData != null) {
-            try {
-                return redisService.getObject(cacheKey, ADStaffDetailResponse.class);
-            } catch (Exception e) {
-                redisService.delete(cacheKey);
-            }
-        }
-
-        // Cache miss - fetch from database
         Optional<ADStaffDetailResponse> staffDetail = adStaffRepository.getDetailStaff(id);
         ADStaffDetailResponse result = staffDetail.orElse(null);
-
-        // Store in cache if found
-        if (result != null) {
-            try {
-                redisService.set(cacheKey, result, redisTTL);
-            } catch (Exception ignored) {
-            }
-        }
-
         return result;
     }
 
-    /**
-     * Lấy danh sách vai trò từ cache hoặc DB
-     */
+
     public List<Role> getAllRoleList() {
         String cacheKey = RedisPrefixConstant.REDIS_PREFIX_STAFF + "roles";
 
-        // Kiểm tra cache
         Object cachedData = redisService.get(cacheKey);
         if (cachedData != null) {
             try {
@@ -148,10 +115,8 @@ public class ADStaffServiceImpl implements ADStaffService {
             }
         }
 
-        // Cache miss - fetch from database
         List<Role> roles = adStaffRoleRepository.getAllRole();
 
-        // Store in cache
         try {
             redisService.set(cacheKey, roles, redisTTL * 4);
         } catch (Exception ignored) {
@@ -160,13 +125,10 @@ public class ADStaffServiceImpl implements ADStaffService {
         return roles;
     }
 
-    /**
-     * Lấy danh sách cơ sở từ cache hoặc DB
-     */
+
     public List<Facility> getAllActiveFacilities() {
         String cacheKey = RedisPrefixConstant.REDIS_PREFIX_STAFF + "facilities";
 
-        // Kiểm tra cache
         Object cachedData = redisService.get(cacheKey);
         if (cachedData != null) {
             try {
@@ -176,10 +138,8 @@ public class ADStaffServiceImpl implements ADStaffService {
             }
         }
 
-        // Cache miss - fetch from database
         List<Facility> facilities = adminStaffFacilityRepository.getFacility(EntityStatus.ACTIVE);
 
-        // Store in cache
         try {
             redisService.set(cacheKey, facilities, redisTTL * 4);
         } catch (Exception ignored) {

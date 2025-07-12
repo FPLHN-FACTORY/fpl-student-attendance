@@ -70,24 +70,9 @@ public class ADSemesterServiceImpl implements ADSemesterService {
 
     @Override
     public ResponseEntity<?> getSemesterById(String semesterId) {
-        // Generate cache key
-        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_SEMESTER + "byId:" + semesterId;
-
-        // Try to get from cache first
-        Object cachedResponse = redisService.get(cacheKey);
-        if (cachedResponse != null) {
-            return (ResponseEntity<?>) cachedResponse;
-        }
-
-        // If not in cache, get from database
-        ResponseEntity<?> response = adSemesterRepository.findById(semesterId)
+        return adSemesterRepository.findById(semesterId)
                 .map(semester -> RouterHelper.responseSuccess("Tìm học kỳ thành công", semester))
                 .orElseGet(() -> RouterHelper.responseError("Học kỳ không tồn tại"));
-
-        // Store in cache
-        redisService.set(cacheKey, response, redisTTL);
-
-        return response;
     }
 
     @Override
