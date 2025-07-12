@@ -48,7 +48,7 @@ public class AFFacilityIPServiceImpl implements AFFacilityIPService {
         Object cachedData = redisService.get(cacheKey);
         if (cachedData != null) {
             try {
-                return redisService.getObject(cacheKey, PageableObject.class);
+                return (PageableObject<AFFacilityIPResponse>) cachedData;
             } catch (Exception e) {
                 redisService.delete(cacheKey);
             }

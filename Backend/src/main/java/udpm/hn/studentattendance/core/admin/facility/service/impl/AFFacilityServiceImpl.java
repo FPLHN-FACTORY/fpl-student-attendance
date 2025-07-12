@@ -61,7 +61,7 @@ public class AFFacilityServiceImpl implements AFFacilityService {
         Object cachedData = redisService.get(cacheKey);
         if (cachedData != null) {
             try {
-                return redisService.getObject(cacheKey, PageableObject.class);
+                return (PageableObject) cachedData;
             } catch (Exception e) {
                 redisService.delete(cacheKey);
             }
@@ -198,7 +198,7 @@ public class AFFacilityServiceImpl implements AFFacilityService {
         Object cachedData = redisService.get(cacheKey);
         if (cachedData != null) {
             try {
-                return redisService.getObject(cacheKey, AFFacilityResponse.class);
+                return (AFFacilityResponse) cachedData;
             } catch (Exception e) {
                 redisService.delete(cacheKey);
             }
