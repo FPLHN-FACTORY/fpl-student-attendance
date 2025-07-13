@@ -249,7 +249,7 @@ onMounted(async () => {
                     allowClear
                     @change="fetchAllAttendanceHistory"
                   >
-                    <a-select-option :value="''">Tất cả xưởng</a-select-option>
+                    <a-select-option :value="''">-- Tất cả xưởng --</a-select-option>
                     <a-select-option
                       v-for="factory in factories"
                       :key="factory.id"

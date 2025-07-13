@@ -233,23 +233,4 @@ class TCFactoryServiceImplTest {
         verify(semesterExtendRepository).getAllSemester(EntityStatus.ACTIVE);
         verify(redisService).set(anyString(), eq(semesters), eq(3600L));
     }
-
-    @Test
-    @DisplayName("invalidateTeacherFactoryCaches should delete factory cache patterns")
-    void testInvalidateTeacherFactoryCaches() {
-        // Arrange
-        String userCode = "GV001";
-        String facilityId = "facility-1";
-
-        when(sessionHelper.getUserCode()).thenReturn(userCode);
-        when(sessionHelper.getFacilityId()).thenReturn(facilityId);
-
-        doNothing().when(redisInvalidationHelper).invalidateAllCaches();
-
-        // Act
-        factoryService.invalidateTeacherFactoryCaches();
-
-        // Assert
-        verify(redisInvalidationHelper).invalidateAllCaches();
-    }
 }

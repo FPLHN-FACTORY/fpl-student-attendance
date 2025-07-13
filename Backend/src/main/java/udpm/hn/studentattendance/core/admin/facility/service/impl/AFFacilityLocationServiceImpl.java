@@ -15,6 +15,7 @@ import udpm.hn.studentattendance.entities.Facility;
 import udpm.hn.studentattendance.entities.FacilityLocation;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
 import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
+import udpm.hn.studentattendance.helpers.RequestTrimHelper;
 import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
@@ -76,6 +77,8 @@ public class AFFacilityLocationServiceImpl implements AFFacilityLocationService 
 
     @Override
     public ResponseEntity<?> addLocation(AFAddOrUpdateFacilityLocationRequest request) {
+        // Trim all string fields in the request
+        RequestTrimHelper.trimStringFields(request);
 
         Facility facility = afFacilityExtendRepository.findById(request.getIdFacility()).orElse(null);
 
@@ -106,6 +109,9 @@ public class AFFacilityLocationServiceImpl implements AFFacilityLocationService 
 
     @Override
     public ResponseEntity<?> updateLocation(AFAddOrUpdateFacilityLocationRequest request) {
+        // Trim all string fields in the request
+        RequestTrimHelper.trimStringFields(request);
+
         FacilityLocation facilityLocation = afFacilityLocationRepository.findById(request.getId()).orElse(null);
         if (facilityLocation == null) {
             return RouterHelper.responseError("Không tìm thấy địa điểm muốn cập nhật");
@@ -182,10 +188,4 @@ public class AFFacilityLocationServiceImpl implements AFFacilityLocationService 
         return RouterHelper.responseSuccess("Thay đổi trạng thái địa điểm thành công", savedLocation);
     }
 
-    /**
-     * @deprecated Use redisInvalidationHelper.invalidateAllCaches() instead
-     */
-    private void invalidateLocationCaches() {
-        redisInvalidationHelper.invalidateAllCaches();
-    }
 }

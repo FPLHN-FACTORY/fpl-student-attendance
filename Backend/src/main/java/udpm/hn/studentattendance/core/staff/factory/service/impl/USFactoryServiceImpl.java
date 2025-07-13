@@ -18,6 +18,7 @@ import udpm.hn.studentattendance.core.staff.factory.service.USFactoryService;
 import udpm.hn.studentattendance.entities.*;
 import udpm.hn.studentattendance.helpers.NotificationHelper;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
+import udpm.hn.studentattendance.helpers.RequestTrimHelper;
 import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.helpers.SessionHelper;
 import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
@@ -190,28 +191,8 @@ public class USFactoryServiceImpl implements USFactoryService {
     }
 
     public USDetailFactoryResponse getCachedFactoryById(String factoryId) {
-        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_FACTORY + factoryId;
-
-        Object cachedData = redisService.get(cacheKey);
-        if (cachedData != null) {
-            try {
-                return redisService.getObject(cacheKey, USDetailFactoryResponse.class);
-            } catch (Exception e) {
-                redisService.delete(cacheKey);
-            }
-        }
-
         Optional<USDetailFactoryResponse> factory = factoryRepository.getFactoryById(factoryId);
-
-        USDetailFactoryResponse result = factory.orElse(null);
-        if (result != null) {
-            try {
-                redisService.set(cacheKey, result, redisTTL);
-            } catch (Exception ignored) {
-            }
-        }
-
-        return result;
+        return factory.orElse(null);
     }
 
     @Override
@@ -225,10 +206,18 @@ public class USFactoryServiceImpl implements USFactoryService {
 
     @Override
     public ResponseEntity<?> createFactory(USFactoryCreateUpdateRequest factoryCreateUpdateRequest) {
+        RequestTrimHelper.trimStringFields(factoryCreateUpdateRequest);
+
         Optional<UserStaff> userStaff = staffFactoryExtendRepository
                 .findById(factoryCreateUpdateRequest.getIdUserStaff());
         Optional<Project> project = projectFactoryExtendRepository
                 .findById(factoryCreateUpdateRequest.getIdProject());
+
+        String namePattern = "^[a-zA-ZÀ-ỹ\\s_#-]+$";
+        if (!factoryCreateUpdateRequest.getFactoryName().matches(namePattern)) {
+            return RouterHelper.responseError("Tên nhóm xưởng không hợp lệ: Chỉ được chứa ký tự chữ và các ký tự đặc biệt _ - #");
+        }
+
 
         if (userStaff.isEmpty()) {
             return RouterHelper.responseError("Giảng viên không tồn tại");
@@ -265,13 +254,16 @@ public class USFactoryServiceImpl implements USFactoryService {
                 .saveLog("vừa thêm 1 nhóm xưởng mới: " + saveFactory.getName() + " trong dự án "
                         + project.get().getName());
 
-        invalidateFactoryCaches();
+        // Invalidate all caches
+        redisInvalidationHelper.invalidateAllCaches();
 
         return RouterHelper.responseSuccess("Thêm nhóm xưởng mới thành công", saveFactory);
     }
 
     @Override
     public ResponseEntity<?> updateFactory(USFactoryCreateUpdateRequest req) {
+        RequestTrimHelper.trimStringFields(req);
+
         Factory factory = factoryRepository.findById(req.getId())
                 .orElseThrow();
         UserStaff newStaff = staffFactoryExtendRepository.findById(req.getIdUserStaff())
@@ -282,6 +274,12 @@ public class USFactoryServiceImpl implements USFactoryService {
         if (factoryRepository.isExistNameAndProject(req.getFactoryName(), newProject.getId(), factory.getId())) {
             return RouterHelper.responseError("Nhóm xưởng đã tồn tại trong dự án này");
         }
+
+        String namePattern = "^[a-zA-ZÀ-ỹ\\s_#-]+$";
+        if (!req.getFactoryName().matches(namePattern)) {
+            return RouterHelper.responseError("Tên nhóm xưởng không hợp lệ: Chỉ được chứa ký tự chữ và các ký tự đặc biệt _ - #");
+        }
+
         if (newStaff == null) {
             return RouterHelper.responseError("Giảng viên không tồn tại");
         }
@@ -336,7 +334,8 @@ public class USFactoryServiceImpl implements USFactoryService {
         userActivityLogHelper.saveLog("vừa cập nhật nhóm xưởng: " + oldName + " → " + saveFactory.getName()
                 + " trong dự án " + saveFactory.getProject().getName());
 
-        invalidateFactoryCaches();
+        // Invalidate all caches
+        redisInvalidationHelper.invalidateAllCaches();
 
         return RouterHelper.responseSuccess("Cập nhật nhóm xưởng thành công", saveFactory);
     }
@@ -358,7 +357,8 @@ public class USFactoryServiceImpl implements USFactoryService {
                     .saveLog("vừa thay đổi trạng thái nhóm xưởng " + saveFactory.getName() + " từ " + oldStatus
                             + " thành " + newStatus + " trong dự án" + saveFactory.getProject().getName());
 
-            invalidateFactoryCaches();
+            // Invalidate all caches
+            redisInvalidationHelper.invalidateAllCaches();
         }
         return RouterHelper.responseSuccess("Đổi trạng thái nhóm xưởng thành công", null);
     }
@@ -411,13 +411,14 @@ public class USFactoryServiceImpl implements USFactoryService {
             }
 
             // Invalidate each factory's cache
-            invalidateFactoryCaches();
+            redisInvalidationHelper.invalidateAllCaches();
         }
 
         userActivityLogHelper.saveLog(
                 "vừa thay đổi trạng thái hàng loạt " + factories.size() + " nhóm xưởng của các kỳ học đã kết thúc");
 
-        invalidateFactoryCaches();
+        // Invalidate all caches
+        redisInvalidationHelper.invalidateAllCaches();
 
         return RouterHelper.responseSuccess("Đổi trạng thái nhóm xưởng kỳ trước thành công", factories);
     }
@@ -448,10 +449,6 @@ public class USFactoryServiceImpl implements USFactoryService {
     public ResponseEntity<?> getAllSemester() {
         List<Semester> semesters = getCachedSemesters();
         return RouterHelper.responseSuccess("Lấy thành công tất cả học kỳ", semesters);
-    }
-
-    private void invalidateFactoryCaches() {
-        redisInvalidationHelper.invalidateAllCaches();
     }
 
 }

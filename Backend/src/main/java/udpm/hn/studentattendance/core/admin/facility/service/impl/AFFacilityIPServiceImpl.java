@@ -15,6 +15,7 @@ import udpm.hn.studentattendance.entities.Facility;
 import udpm.hn.studentattendance.entities.FacilityIP;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
 import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
+import udpm.hn.studentattendance.helpers.RequestTrimHelper;
 import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.helpers.ValidateHelper;
 import udpm.hn.studentattendance.infrastructure.common.ApiResponse;
@@ -103,6 +104,8 @@ public class AFFacilityIPServiceImpl implements AFFacilityIPService {
 
     @Override
     public ResponseEntity<?> addIP(AFAddOrUpdateFacilityIPRequest request) {
+        // Trim all string fields in the request
+        RequestTrimHelper.trimStringFields(request);
 
         Facility facility = afFacilityExtendRepository.findById(request.getIdFacility()).orElse(null);
 
@@ -145,6 +148,9 @@ public class AFFacilityIPServiceImpl implements AFFacilityIPService {
 
     @Override
     public ResponseEntity<?> updateIP(AFAddOrUpdateFacilityIPRequest request) {
+        // Trim all string fields in the request
+        RequestTrimHelper.trimStringFields(request);
+        
         FacilityIP facilityIP = afFacilityIPRepository.findById(request.getId()).orElse(null);
         if (facilityIP == null) {
             return RouterHelper.responseError("Không tìm thấy IP/DNS Suffix muốn cập nhật");

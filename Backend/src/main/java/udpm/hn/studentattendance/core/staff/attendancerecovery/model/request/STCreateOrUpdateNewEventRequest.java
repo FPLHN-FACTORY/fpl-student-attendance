@@ -11,7 +11,8 @@ import udpm.hn.studentattendance.infrastructure.constants.EntityProperties;
 public class STCreateOrUpdateNewEventRequest {
 
     @NotBlank(message = "Không được để trống tên sự kiện")
-    @Size(max = EntityProperties.LENGTH_NAME, message = "Tên sụ kiện chỉ được tối đa " + EntityProperties.LENGTH_NAME + " ký tự")
+    @Size(min = 2, max = EntityProperties.LENGTH_NAME, message = "Tên sụ kiện chỉ được tối đa "
+            + EntityProperties.LENGTH_NAME + " ký tự")
     private String name;
 
     private String description;

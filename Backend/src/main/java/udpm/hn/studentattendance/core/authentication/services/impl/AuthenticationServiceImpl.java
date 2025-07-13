@@ -76,12 +76,14 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
     @Override
     public ResponseEntity<?> getAllFacility() {
-        return RouterHelper.responseSuccess("Tải dữ liệu danh sách cơ sở thành công", authenticationFacilityRepository.findAllByStatusOrderByPositionAsc(EntityStatus.ACTIVE));
+        return RouterHelper.responseSuccess("Tải dữ liệu danh sách cơ sở thành công",
+                authenticationFacilityRepository.findAllByStatusOrderByPositionAsc(EntityStatus.ACTIVE));
     }
 
     @Override
     public ResponseEntity<?> getAllSemester() {
-        return RouterHelper.responseSuccess("Tải dữ liệu danh sách học kỳ thành công", authenticationSemesterRepository.findAllByStatusOrderByFromDateDesc(EntityStatus.ACTIVE));
+        return RouterHelper.responseSuccess("Tải dữ liệu danh sách học kỳ thành công",
+                authenticationSemesterRepository.findAllByStatusOrderByFromDateDesc(EntityStatus.ACTIVE));
     }
 
     @Override
@@ -91,16 +93,25 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
     @Override
     public ResponseEntity<?> saveSettings(Map<SettingKeys, String> settings) {
-        Boolean disableCheckEmailFPTStaff = (Boolean) SettingHelper.parseValue(settings.get(SettingKeys.DISABLED_CHECK_EMAIL_FPT_STAFF));
-        Boolean disableCheckEmailFPTStudent = (Boolean) SettingHelper.parseValue(settings.get(SettingKeys.DISABLED_CHECK_EMAIL_FPT_STUDENT));
+        Boolean disableCheckEmailFPTStaff = (Boolean) SettingHelper
+                .parseValue(settings.get(SettingKeys.DISABLED_CHECK_EMAIL_FPT_STAFF));
+        Boolean disableCheckEmailFPTStudent = (Boolean) SettingHelper
+                .parseValue(settings.get(SettingKeys.DISABLED_CHECK_EMAIL_FPT_STUDENT));
         Integer shiftMinDiff = (Integer) SettingHelper.parseValue(settings.get(SettingKeys.SHIFT_MIN_DIFF));
-        Integer shiftMaxLateArrival = (Integer) SettingHelper.parseValue(settings.get(SettingKeys.SHIFT_MAX_LATE_ARRIVAL));
-        Integer attendanceEarlyCheckin = (Integer) SettingHelper.parseValue(settings.get(SettingKeys.ATTENDANCE_EARLY_CHECKIN));
-        Integer expirationMinuteLogin = (Integer) SettingHelper.parseValue(settings.get(SettingKeys.EXPIRATION_MINUTE_LOGIN));
-        Double faceThresholdCheckin = (Double) SettingHelper.parseValue(settings.get(SettingKeys.FACE_THRESHOLD_CHECKIN));
-        Double faceThresholdRegister = (Double) SettingHelper.parseValue(settings.get(SettingKeys.FACE_THRESHOLD_REGISTER));
+        Integer shiftMaxLateArrival = (Integer) SettingHelper
+                .parseValue(settings.get(SettingKeys.SHIFT_MAX_LATE_ARRIVAL));
+        Integer attendanceEarlyCheckin = (Integer) SettingHelper
+                .parseValue(settings.get(SettingKeys.ATTENDANCE_EARLY_CHECKIN));
+        Integer expirationMinuteLogin = (Integer) SettingHelper
+                .parseValue(settings.get(SettingKeys.EXPIRATION_MINUTE_LOGIN));
+        Double faceThresholdCheckin = (Double) SettingHelper
+                .parseValue(settings.get(SettingKeys.FACE_THRESHOLD_CHECKIN));
+        Double faceThresholdRegister = (Double) SettingHelper
+                .parseValue(settings.get(SettingKeys.FACE_THRESHOLD_REGISTER));
 
-        if (disableCheckEmailFPTStaff == null || disableCheckEmailFPTStudent == null || shiftMinDiff == null || shiftMaxLateArrival == null || attendanceEarlyCheckin == null || expirationMinuteLogin == null || faceThresholdCheckin == null || faceThresholdRegister == null) {
+        if (disableCheckEmailFPTStaff == null || disableCheckEmailFPTStudent == null || shiftMinDiff == null
+                || shiftMaxLateArrival == null || attendanceEarlyCheckin == null || expirationMinuteLogin == null
+                || faceThresholdCheckin == null || faceThresholdRegister == null) {
             return RouterHelper.responseError("Vui lòng nhập đầy đủ các trường bắt buộc");
         }
 
@@ -213,7 +224,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 sessionHelper.buildAuthUser(student, Set.of(RoleConstant.STUDENT), student.getFacility().getId()));
         String refreshToken = jwtUtil.generateRefreshToken(accessToken);
 
-        return RouterHelper.responseSuccess("Đăng ký thông tin sinh viên thành công", new AuthenticationToken(accessToken, refreshToken));
+        return RouterHelper.responseSuccess("Đăng ký thông tin sinh viên thành công",
+                new AuthenticationToken(accessToken, refreshToken));
     }
 
     @Override
@@ -285,7 +297,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
     private boolean isFaceExists(String idFacility, List<double[]> embeddings) {
         List<String> lstRawFaceEmbeddings = authenticationUserStudentRepository.getAllFaceEmbedding(idFacility);
-        List<double[]> lstFaceEmbeddings = lstRawFaceEmbeddings.stream().map(FaceRecognitionUtils::parseEmbedding).toList();
+        List<double[]> lstFaceEmbeddings = lstRawFaceEmbeddings.stream().map(FaceRecognitionUtils::parseEmbedding)
+                .toList();
 
         if (lstFaceEmbeddings.isEmpty()) {
             return false;
@@ -299,7 +312,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         double[] resultFace = FaceRecognitionUtils.isSameFaceAndResult(lstFaceEmbeddings, lastFace, threshold_register);
 
         if (resultFace == null) {
-            boolean isSameFirst = FaceRecognitionUtils.isSameFaceAndResult(lstFaceEmbeddings, firstFace, threshold_register) == null;
+            boolean isSameFirst = FaceRecognitionUtils.isSameFaceAndResult(lstFaceEmbeddings, firstFace,
+                    threshold_register) == null;
             return !isSameFirst;
         }
 

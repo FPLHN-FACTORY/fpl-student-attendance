@@ -24,6 +24,7 @@ import udpm.hn.studentattendance.entities.Project;
 import udpm.hn.studentattendance.entities.Semester;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
 import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
+import udpm.hn.studentattendance.helpers.RequestTrimHelper;
 import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.helpers.SessionHelper;
 import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
@@ -221,37 +222,9 @@ public class SPDPlanServiceImpl implements SPDPlanService {
         return RouterHelper.responseSuccess("Lấy danh sách dữ liệu thành công", data);
     }
 
-        public SPDPlanResponse getCachedPlanById(String idPlan) {
-        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_PLAN + idPlan + "_facility=" + sessionHelper.getFacilityId();
-
-        Object cachedData = redisService.get(cacheKey);
-        if (cachedData != null) {
-            try {
-                // Try to get as Map and convert
-                @SuppressWarnings("unchecked")
-                Map<String, Object> cachedMap = redisService.getObject(cacheKey, Map.class);
-                if (cachedMap != null) {
-                    // Convert Map back to SPDPlanResponse
-                    return convertMapToSPDPlanResponse(cachedMap);
-                }
-            } catch (Exception e) {
-                redisService.delete(cacheKey);
-            }
-        }
-
+    public SPDPlanResponse getCachedPlanById(String idPlan) {
         Optional<SPDPlanResponse> data = spdPlanRepository.getByIdPlan(idPlan, sessionHelper.getFacilityId());
-
-        SPDPlanResponse result = data.orElse(null);
-        if (result != null) {
-            try {
-                // Cache as Map instead of interface to avoid deserialization issues
-                Map<String, Object> cacheMap = convertSPDPlanResponseToMap(result);
-                redisService.set(cacheKey, cacheMap, redisTTL);
-            } catch (Exception ignored) {
-            }
-        }
-
-        return result;
+        return data.orElse(null);
     }
 
     @Override
@@ -297,6 +270,8 @@ public class SPDPlanServiceImpl implements SPDPlanService {
 
     @Override
     public ResponseEntity<?> createPlan(SPDAddOrUpdatePlanRequest request) {
+        // Trim all string fields in the request
+        RequestTrimHelper.trimStringFields(request);
 
         Project project = spdProjectRepository.findById(request.getIdProject()).orElse(null);
 
@@ -344,7 +319,7 @@ public class SPDPlanServiceImpl implements SPDPlanService {
         userActivityLogHelper.saveLog("vừa thêm 1 kế hoạch mới: " + o.getName());
 
         // Invalidate related caches
-        invalidatePlanCaches();
+        redisInvalidationHelper.invalidateAllCaches();
 
         return RouterHelper.responseSuccess("Tạo mới kế hoạch thành công", o);
     }
@@ -377,7 +352,7 @@ public class SPDPlanServiceImpl implements SPDPlanService {
         }
 
         // Invalidate specific cache for this plan
-        invalidatePlanCache(id);
+        redisInvalidationHelper.invalidateAllCaches();
 
         return RouterHelper.responseSuccess("Thay đổi trạng thái kế hoạch thành công", newEntity);
     }
@@ -400,13 +375,16 @@ public class SPDPlanServiceImpl implements SPDPlanService {
         userActivityLogHelper.saveLog("vừa xóa kế hoạch: " + plan.getName());
 
         // Invalidate specific cache for this plan
-        invalidatePlanCache(id);
+        redisInvalidationHelper.invalidateAllCaches();
 
         return RouterHelper.responseSuccess("Xoá thành công kế hoạch: " + plan.getName());
     }
 
     @Override
     public ResponseEntity<?> updatePlan(SPDAddOrUpdatePlanRequest request) {
+        // Trim all string fields in the request
+        RequestTrimHelper.trimStringFields(request);
+
         Plan plan = spdPlanRepository.findById(request.getId()).orElse(null);
         if (plan == null) {
             return RouterHelper.responseError("Không tìm thấy kế hoạch muốn cập nhật");
@@ -451,18 +429,10 @@ public class SPDPlanServiceImpl implements SPDPlanService {
 
         userActivityLogHelper.saveLog("vừa cập nhật kế hoạch: " + updatePlan.getName());
 
-        // Invalidate specific cache for this plan
-        invalidatePlanCache(request.getId());
+        // Invalidate all caches
+        redisInvalidationHelper.invalidateAllCaches();
 
         return RouterHelper.responseSuccess("Cập nhật kế hoạch thành công", updatePlan);
-    }
-
-    private void invalidatePlanCache(String planId) {
-        redisInvalidationHelper.invalidateAllCaches();
-    }
-
-    private void invalidatePlanCaches() {
-        redisInvalidationHelper.invalidateAllCaches();
     }
 
     // Helper methods to convert between Map and objects

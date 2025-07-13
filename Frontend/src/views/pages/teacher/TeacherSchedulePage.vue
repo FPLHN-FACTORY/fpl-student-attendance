@@ -73,7 +73,7 @@ const columns = autoAddColumnWidth([
     key: 'startTeaching',
   },
   { title: 'Thời gian', key: 'time' },
-  { title: 'Ca học', dataIndex: 'shift', key: 'shift' },
+  { title: 'Ca', dataIndex: 'shift', key: 'shift' },
   {
     title: 'Điểm danh muộn',
     dataIndex: 'lateArrival',
@@ -95,7 +95,7 @@ const columns = autoAddColumnWidth([
 const columnsTeachingPresent = autoAddColumnWidth([
   { title: '#', dataIndex: 'indexs', key: 'indexs' },
   { title: 'Thời gian', key: 'time' },
-  { title: 'Ca học', dataIndex: 'shift', key: 'shift' },
+  { title: 'Ca', dataIndex: 'shift', key: 'shift' },
   {
     title: 'Điểm danh muộn ',
     dataIndex: 'lateArrival',
@@ -183,9 +183,9 @@ const fetchTeachingSchedule = () => {
 }
 const handleAttendance = (record) => {
   if (Date.now() <= record.startTeaching - 10 * 60 * 1000) {
-    message.error('Chưa đến giờ điểm danh cho buổi học này')
+    message.error('Chưa đến giờ điểm danh cho ca này')
   } else if (Date.now > record.endTeaching) {
-    message.error('Đã quá giờ điểm danh cho buổi học này')
+    message.error('Đã quá giờ điểm danh cho ca này')
   } else {
     router.push({
       name: ROUTE_NAMES.MANAGEMENT_STUDENT_ATTENDANCE,
@@ -267,7 +267,7 @@ const handleShowDescription = (record) => {
   // Sử dụng record.id hoặc record.idPlanDate, ưu tiên record.id
   const planDateId = record.id || record.idPlanDate
   if (!planDateId) {
-    message.error('Không tìm thấy ID của buổi học')
+    message.error('Không tìm thấy ID của ca')
     return
   }
 
@@ -295,7 +295,7 @@ const handleShowUpdate = () => {
 }
 const handleUpdatePlanDate = () => {
   Modal.confirm({
-    title: 'Xác nhận cập nhật thông tin buổi học',
+    title: 'Xác nhận cập nhật thông tin ca',
     content: 'Bạn có chắc chắn muốn lưu những thay đổi này không?',
     okText: 'Lưu thay đổi',
     cancelText: 'Hủy',
@@ -309,12 +309,12 @@ const handleUpdatePlanDate = () => {
           room: formUpdateData.room,
         })
         .then(({ data: response }) => {
-          message.success(response.message || 'Cập nhật thông tin buổi học thành công')
+          message.success(response.message || 'Cập nhật thông tin ca thành công')
           isUpdateModalVisible.value = false
           fetchTeachingSchedule()
           fetchTeachingSchedulePresent()
         })
-        .catch((e) => message.error(e.response?.data?.message || 'Lỗi khi cập nhật thông tin buổi học'))
+        .catch((e) => message.error(e.response?.data?.message || 'Lỗi khi cập nhật thông tin ca'))
     },
   })
 }
@@ -364,14 +364,14 @@ function handleChangeType(record, room = '') {
   loadingStore.show()
   const id = record.id || record.idPlanDate
   if (!id) {
-    message.error('Không tìm thấy ID của buổi học')
+    message.error('Không tìm thấy ID của ca')
     loadingStore.hide()
     return
   }
   requestAPI
     .put(`${API_ROUTES_TEACHER.FETCH_DATA_SCHEDULE}/change-type/${id}`, null, { params: { room } })
     .then(({ data: response }) => {
-      message.success(response.message || 'Đã đổi hình thức ca học')
+      message.success(response.message || 'Đã đổi hình thức ca')
       fetchTeachingSchedule()
       fetchTeachingSchedulePresent()
     })
@@ -430,7 +430,7 @@ function confirmLinkModal() {
   // 1) Cập nhật link
   const planDateId = pendingRecord.value.id || pendingRecord.value.idPlanDate
   if (!planDateId) {
-    message.error('Không tìm thấy ID của buổi học')
+    message.error('Không tìm thấy ID của ca')
     loadingStore.hide()
     return
   }
@@ -628,7 +628,7 @@ onMounted(() => {
                     class="w-100"
                     @change="fetchTeachingSchedule"
                   >
-                    <a-select-option :value="''">Tất cả hình thức học</a-select-option>
+                    <a-select-option :value="''">-- Tất cả hình thức --</a-select-option>
                     <a-select-option value="1">Online</a-select-option>
                     <a-select-option value="0">Offline</a-select-option>
                   </a-select>
@@ -732,7 +732,7 @@ onMounted(() => {
       @cancel="isUpdateModalVisible = false"
     >
       <a-form layout="vertical" :model="formUpdateData" :rules="formUpdateRules">
-        <a-form-item label="Nội dung buổi học" name="description">
+        <a-form-item label="Nội dung ca" name="description">
           <a-textarea
             v-model:value="formUpdateData.description"
             rows="4"

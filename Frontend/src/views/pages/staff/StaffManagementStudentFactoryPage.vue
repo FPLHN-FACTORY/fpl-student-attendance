@@ -479,12 +479,11 @@ onMounted(() => {
                   <div class="label-title">Trạng thái:</div>
                   <a-select
                     v-model:value="filter.status"
-                    placeholder="Chọn trạng thái"
-                    allowClear
+                    placeholder="-- Tất cả trạng thái --"
                     class="w-100"
                     @change="fetchStudentFactories"
                   >
-                    <a-select-option :value="null">Tất cả trạng thái</a-select-option>
+                    <a-select-option :value="null">-- Tất cả trạng thái --</a-select-option>
                     <a-select-option value="1">Đang học</a-select-option>
                     <a-select-option value="0">Ngưng học</a-select-option>
                   </a-select>
@@ -657,12 +656,11 @@ onMounted(() => {
         <div class="col-md-6">
           <a-select
             v-model:value="shiftFilter.status"
-            placeholder="Chọn trạng thái"
-            allowClear
+            placeholder="-- Tất cả trạng thái --"
             class="w-100"
             @change="fetchShiftDetails"
           >
-            <a-select-option :value="''">Tất cả trạng thái</a-select-option>
+            <a-select-option :value="''">-- Tất cả trạng thái --</a-select-option>
             <a-select-option value="DA_DIEN_RA">Đã diễn ra</a-select-option>
             <a-select-option value="CHUA_DIEN_RA">Chưa diễn ra</a-select-option>
           </a-select>

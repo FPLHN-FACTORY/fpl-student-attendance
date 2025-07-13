@@ -17,6 +17,7 @@ import udpm.hn.studentattendance.entities.Facility;
 import udpm.hn.studentattendance.entities.UserStudent;
 import udpm.hn.studentattendance.helpers.NotificationHelper;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
+import udpm.hn.studentattendance.helpers.RequestTrimHelper;
 import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.helpers.SessionHelper;
 import udpm.hn.studentattendance.helpers.SettingHelper;
@@ -88,28 +89,8 @@ public class STStudentServiceImpl implements STStudentService {
     }
 
     public UserStudent getCachedStudentDetail(String studentId) {
-        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_STUDENT + studentId;
-
-        Object cachedData = redisService.get(cacheKey);
-        if (cachedData != null) {
-            try {
-                return redisService.getObject(cacheKey, UserStudent.class);
-            } catch (Exception e) {
-                redisService.delete(cacheKey);
-            }
-        }
-
         Optional<UserStudent> userStudent = studentExtendRepository.findById(studentId);
-
-        UserStudent result = userStudent.orElse(null);
-        if (result != null) {
-            try {
-                redisService.set(cacheKey, result, redisTTL);
-            } catch (Exception ignored) {
-            }
-        }
-
-        return result;
+        return userStudent.orElse(null);
     }
 
     @Override
@@ -123,6 +104,9 @@ public class STStudentServiceImpl implements STStudentService {
 
     @Override
     public ResponseEntity<?> createStudent(USStudentCreateUpdateRequest studentCreateUpdateRequest) {
+        // Trim all string fields in the request
+        RequestTrimHelper.trimStringFields(studentCreateUpdateRequest);
+
         if (!ValidateHelper.isValidCode(studentCreateUpdateRequest.getCode())) {
             return RouterHelper.responseError(
                     "Mã sinh viên không hợp lệ: không có khoảng trắng, không có ký tự đặc biệt ngoài dấu chấm . và dấu gạch dưới _.");
@@ -130,7 +114,7 @@ public class STStudentServiceImpl implements STStudentService {
 
         if (!ValidateHelper.isValidFullname(studentCreateUpdateRequest.getName())) {
             return RouterHelper.responseError(
-                    "Họ Tên admin không hợp lệ: Tối thiểu 2 từ, cách nhau bởi khoảng trắng và Chỉ gồm ký tự chữ không chứa số hay ký tự đặc biệt.");
+                    "Họ Tên sinh viên không hợp lệ: Tối thiểu 2 từ, cách nhau bởi khoảng trắng và Chỉ gồm ký tự chữ không chứa số hay ký tự đặc biệt.");
         }
 
         String email = studentCreateUpdateRequest.getEmail().trim();
@@ -187,6 +171,9 @@ public class STStudentServiceImpl implements STStudentService {
 
     @Override
     public ResponseEntity<?> updateStudent(USStudentCreateUpdateRequest studentCreateUpdateRequest) {
+        // Trim all string fields in the request
+        RequestTrimHelper.trimStringFields(studentCreateUpdateRequest);
+
         if (!ValidateHelper.isValidCode(studentCreateUpdateRequest.getCode())) {
             return RouterHelper.responseError(
                     "Mã sinh viên không hợp lệ: không có khoảng trắng, không có ký tự đặc biệt ngoài dấu chấm . và dấu gạch dưới _.");

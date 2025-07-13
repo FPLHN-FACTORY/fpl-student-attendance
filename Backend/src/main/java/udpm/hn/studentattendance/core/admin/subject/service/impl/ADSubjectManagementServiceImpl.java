@@ -13,6 +13,7 @@ import udpm.hn.studentattendance.core.admin.subject.service.ADSubjectManagementS
 import udpm.hn.studentattendance.entities.Subject;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
 import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
+import udpm.hn.studentattendance.helpers.RequestTrimHelper;
 import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
 import udpm.hn.studentattendance.helpers.ValidateHelper;
@@ -66,32 +67,8 @@ public class ADSubjectManagementServiceImpl implements ADSubjectManagementServic
         return result;
     }
 
-    // Phương thức helper để lấy thông tin chi tiết bộ môn từ cache hoặc DB
     public Subject getSubjectById(String id) {
-        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_SUBJECT + id;
-
-        // Kiểm tra cache
-        Object cachedData = redisService.get(cacheKey);
-        if (cachedData != null) {
-            try {
-                return redisService.getObject(cacheKey, Subject.class);
-            } catch (Exception e) {
-                redisService.delete(cacheKey);
-            }
-        }
-
-        // Cache miss - fetch from database
-        Subject subject = adminSubjectRepository.findById(id).orElse(null);
-
-        // Store in cache if found
-        if (subject != null) {
-            try {
-                redisService.set(cacheKey, subject, redisTTL);
-            } catch (Exception ignored) {
-            }
-        }
-
-        return subject;
+        return adminSubjectRepository.findById(id).orElse(null);
     }
 
     @Override
@@ -102,6 +79,9 @@ public class ADSubjectManagementServiceImpl implements ADSubjectManagementServic
 
     @Override
     public ResponseEntity<?> createSubject(ADSubjectCreateRequest request) {
+        // Trim all string fields in the request
+        RequestTrimHelper.trimStringFields(request);
+
         if (!ValidateHelper.isValidCode(request.getCode())) {
             return RouterHelper.responseError(
                     "Mã bộ môn không hợp lệ: không có khoảng trắng, không có ký tự đặc biệt ngoài dấu chấm . và dấu gạch dưới _.");
@@ -130,6 +110,8 @@ public class ADSubjectManagementServiceImpl implements ADSubjectManagementServic
 
     @Override
     public ResponseEntity<?> updateSubject(String id, ADSubjectUpdateRequest request) {
+        // Trim all string fields in the request
+        RequestTrimHelper.trimStringFields(request);
 
         Subject s = adminSubjectRepository.findById(id).orElse(null);
         if (s == null) {
@@ -194,17 +176,5 @@ public class ADSubjectManagementServiceImpl implements ADSubjectManagementServic
         return RouterHelper.responseSuccess("Đổi trạng thái bộ môn thành công", newEntity);
     }
 
-    /**
-     * @deprecated Use redisInvalidationHelper.invalidateAllCaches() instead
-     */
-    private void invalidateSubjectCache(String subjectId) {
-        redisInvalidationHelper.invalidateAllCaches();
-    }
-
-    /**
-     * @deprecated Use redisInvalidationHelper.invalidateAllCaches() instead
-     */
-    private void invalidateSubjectListCache() {
-        redisInvalidationHelper.invalidateAllCaches();
-    }
+   
 }

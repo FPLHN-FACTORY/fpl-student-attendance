@@ -345,12 +345,11 @@ onMounted(() => {
                   <div class="label-title">Trạng thái:</div>
                   <a-select
                     v-model:value="filter.status"
-                    placeholder="Chọn trạng thái"
-                    allowClear
+                    placeholder="-- Tất cả trạng thái --"
                     class="w-100"
                     @change="fetchLevels"
                   >
-                    <a-select-option :value="null">Tất cả trạng thái</a-select-option>
+                    <a-select-option :value="null">-- Tất cả trạng thái --</a-select-option>
                     <a-select-option value="1">Hoạt động</a-select-option>
                     <a-select-option value="0">Không hoạt động</a-select-option>
                   </a-select>

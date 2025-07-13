@@ -417,7 +417,7 @@ onMounted(() => {
                         (option.label || '').toLowerCase().includes(input.toLowerCase())
                     "
                   >
-                    <a-select-option :value="null" label="Tất cả nhóm dự án">Tất cả nhóm dự án</a-select-option>
+                    <a-select-option :value="null" label="-- Tất cả nhóm dự án --">-- Tất cả nhóm dự án --</a-select-option>
                     <a-select-option v-for="level in levels" :key="level.id" :value="level.id" :label="level.name">
                       {{ level.name }}
                     </a-select-option>
@@ -439,7 +439,7 @@ onMounted(() => {
                         (option.label || '').toLowerCase().includes(input.toLowerCase())
                     "
                   >
-                    <a-select-option :value="null" label="Tất cả học kỳ">Tất cả học kỳ</a-select-option>
+                    <a-select-option :value="null" label="-- Tất cả học kỳ --">-- Tất cả học kỳ --</a-select-option>
                     <a-select-option
                       v-for="semester in allSemesters"
                       :key="semester.id"
@@ -465,7 +465,7 @@ onMounted(() => {
                         (option.label || '').toLowerCase().includes(input.toLowerCase())
                     "
                   >
-                    <a-select-option :value="null" label="Tất cả môn">Tất cả môn</a-select-option>
+                    <a-select-option :value="null" label="-- Tất cả môn --">-- Tất cả môn --</a-select-option>
                     <a-select-option
                       v-for="subject in subjects"
                       :key="subject.id"
@@ -480,13 +480,12 @@ onMounted(() => {
                   <div class="label-title">Trạng thái:</div>
                   <a-select
                     v-model:value="filter.status"
-                    placeholder="Trạng thái"
-                    allowClear
+                    placeholder="-- Tất cả trạng thái --"
                     class="filter-select w-100"
                     :dropdownMatchSelectWidth="false"
                     @change="fetchProjects"
                   >
-                    <a-select-option :value="null">Tất cả trạng thái</a-select-option>
+                    <a-select-option :value="null">-- Tất cả trạng thái --</a-select-option>
                     <a-select-option :value="1">Đang triển khai</a-select-option>
                     <a-select-option :value="0">Không hoạt động</a-select-option>
                   </a-select>

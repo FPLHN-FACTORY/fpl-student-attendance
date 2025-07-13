@@ -18,7 +18,7 @@ public interface STProjectExtendRepository extends ProjectRepository {
 
     @Query(value = """
                     SELECT
-                        ROW_NUMBER() OVER (ORDER BY p.created_at DESC) AS indexs,
+                        ROW_NUMBER() OVER (ORDER BY p.status DESC, p.created_at DESC) AS indexs,
                         p.id AS id,
                         p.name AS name,
                         lp.name AS nameLevelProject,

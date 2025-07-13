@@ -12,6 +12,5 @@ public class STStudentAttendanceRecoveryAddRequest {
     private String studentCode;
 
     private String attendanceRecoveryId;
-    // vẽ sơ đồ
-//    private String factoryName;
+
 }

@@ -23,6 +23,7 @@ import udpm.hn.studentattendance.entities.UserStaff;
 import udpm.hn.studentattendance.helpers.NotificationHelper;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
 import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
+import udpm.hn.studentattendance.helpers.RequestTrimHelper;
 import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.helpers.SessionHelper;
 import udpm.hn.studentattendance.helpers.SettingHelper;
@@ -71,7 +72,6 @@ public class ADStaffServiceImpl implements ADStaffService {
     @PersistenceContext
     private EntityManager entityManager;
 
-
     public PageableObject getStaffList(ADStaffRequest request) {
         String cacheKey = RedisPrefixConstant.REDIS_PREFIX_STAFF + "list_" + request.toString();
 
@@ -95,13 +95,11 @@ public class ADStaffServiceImpl implements ADStaffService {
         return staffs;
     }
 
-
     public ADStaffDetailResponse getStaffDetail(String id) {
         Optional<ADStaffDetailResponse> staffDetail = adStaffRepository.getDetailStaff(id);
         ADStaffDetailResponse result = staffDetail.orElse(null);
         return result;
     }
-
 
     public List<Role> getAllRoleList() {
         String cacheKey = RedisPrefixConstant.REDIS_PREFIX_STAFF + "roles";
@@ -124,7 +122,6 @@ public class ADStaffServiceImpl implements ADStaffService {
 
         return roles;
     }
-
 
     public List<Facility> getAllActiveFacilities() {
         String cacheKey = RedisPrefixConstant.REDIS_PREFIX_STAFF + "facilities";
@@ -156,6 +153,8 @@ public class ADStaffServiceImpl implements ADStaffService {
 
     @Override
     public ResponseEntity<?> createStaff(ADCreateUpdateStaffRequest adCreateUpdateStaffRequest) {
+        // Trim all string fields in the request
+        RequestTrimHelper.trimStringFieldsWithLogging(adCreateUpdateStaffRequest);
 
         if (!ValidateHelper.isValidCode(adCreateUpdateStaffRequest.getStaffCode())) {
             return RouterHelper.responseError(
@@ -245,6 +244,8 @@ public class ADStaffServiceImpl implements ADStaffService {
 
     @Override
     public ResponseEntity<?> updateStaff(ADCreateUpdateStaffRequest adCreateUpdateStaffRequest, String id) {
+        // Trim all string fields in the request
+        RequestTrimHelper.trimStringFields(adCreateUpdateStaffRequest);
 
         if (!ValidateHelper.isValidCode(adCreateUpdateStaffRequest.getStaffCode())) {
             return RouterHelper.responseError(

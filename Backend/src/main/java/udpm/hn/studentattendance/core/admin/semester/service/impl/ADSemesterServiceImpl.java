@@ -14,6 +14,7 @@ import udpm.hn.studentattendance.core.admin.semester.service.ADSemesterService;
 import udpm.hn.studentattendance.entities.Semester;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
 import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
+import udpm.hn.studentattendance.helpers.RequestTrimHelper;
 import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
@@ -87,6 +88,9 @@ public class ADSemesterServiceImpl implements ADSemesterService {
 
     @Override
     public ResponseEntity<?> createSemester(@Valid ADCreateUpdateSemesterRequest request) {
+        // Trim all string fields in the request
+        RequestTrimHelper.trimStringFields(request);
+
         try {
 
             LocalDateTime fromDate = Instant
@@ -146,6 +150,9 @@ public class ADSemesterServiceImpl implements ADSemesterService {
 
     @Override
     public ResponseEntity<?> updateSemester(@Valid ADCreateUpdateSemesterRequest request) {
+        // Trim all string fields in the request
+        RequestTrimHelper.trimStringFields(request);
+
         Optional<Semester> existSemester = adSemesterRepository.findById(request.getSemesterId());
         if (existSemester.isEmpty()) {
             return RouterHelper.responseError("Không tìm thấy học kỳ");

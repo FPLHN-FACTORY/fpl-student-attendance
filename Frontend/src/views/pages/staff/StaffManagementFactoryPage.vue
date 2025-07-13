@@ -599,7 +599,7 @@ onMounted(() => {
                         (option.label || '').toLowerCase().includes(input.toLowerCase())
                     "
                   >
-                    <a-select-option :value="null">Tất cả giảng viên</a-select-option>
+                    <a-select-option :value="null">-- Tất cả giảng viên --</a-select-option>
                     <a-select-option
                       v-for="staff in staffs"
                       :key="staff.id"
@@ -624,7 +624,7 @@ onMounted(() => {
                         (option.label || '').toLowerCase().includes(input.toLowerCase())
                     "
                   >
-                    <a-select-option :value="null">Tất cả kỳ học</a-select-option>
+                    <a-select-option :value="null">-- Tất cả kỳ học --</a-select-option>
                     <a-select-option
                       v-for="semester in semesters"
                       :key="semester.id"

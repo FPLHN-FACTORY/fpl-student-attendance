@@ -37,6 +37,7 @@ import udpm.hn.studentattendance.infrastructure.constants.ShiftType;
 import udpm.hn.studentattendance.infrastructure.constants.StatusType;
 import udpm.hn.studentattendance.infrastructure.redis.service.RedisService;
 import udpm.hn.studentattendance.repositories.UserStudentFactoryRepository;
+import udpm.hn.studentattendance.helpers.RequestTrimHelper;
 
 import java.awt.*;
 import java.io.ByteArrayInputStream;
@@ -364,9 +365,7 @@ public class TCTeachingScheduleServiceImpl implements TCTeachingScheduleService 
     public TCTSDetailPlanDateResponse getCachedPlanDateDetail(String planDateId) {
         Optional<TCTSDetailPlanDateResponse> getDetailPlanDateResponse = teacherTeachingScheduleExtendRepository
                 .getPlanDateById(planDateId);
-
-        TCTSDetailPlanDateResponse result = getDetailPlanDateResponse.orElse(null);
-        return result;
+        return getDetailPlanDateResponse.orElse(null);
     }
 
     @Override
@@ -380,6 +379,9 @@ public class TCTeachingScheduleServiceImpl implements TCTeachingScheduleService 
 
     @Override
     public ResponseEntity<?> updatePlanDate(TCTSPlanDateUpdateRequest planDateUpdateRequest) {
+        // Trim all string fields in the request
+        RequestTrimHelper.trimStringFields(planDateUpdateRequest);
+
         Optional<PlanDate> existPlanDate = teacherTeachingScheduleExtendRepository
                 .findById(planDateUpdateRequest.getIdPlanDate());
 
@@ -433,7 +435,7 @@ public class TCTeachingScheduleServiceImpl implements TCTeachingScheduleService 
         }
 
         // Invalidate related caches
-        invalidatePlanDateCache(planDateUpdateRequest.getIdPlanDate());
+        redisInvalidationHelper.invalidateAllCaches();
 
         return RouterHelper.responseSuccess("Cập nhật thông tin buổi thành công", savedPlanDate);
     }
@@ -589,12 +591,8 @@ public class TCTeachingScheduleServiceImpl implements TCTeachingScheduleService 
                 notificationType);
 
         // Invalidate related caches
-        invalidatePlanDateCache(planDateId);
+        redisInvalidationHelper.invalidateAllCaches();
 
         return RouterHelper.responseSuccess("Thay đổi hình thức thành công", savedPlanDate);
-    }
-
-    private void invalidatePlanDateCache(String planDateId) {
-        redisInvalidationHelper.invalidateAllCaches();
     }
 }
