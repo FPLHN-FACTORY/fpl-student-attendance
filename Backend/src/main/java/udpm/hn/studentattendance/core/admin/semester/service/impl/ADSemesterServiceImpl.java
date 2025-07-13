@@ -53,19 +53,29 @@ public class ADSemesterServiceImpl implements ADSemesterService {
     public ResponseEntity<?> getAllSemester(ADSemesterRequest request) {
         String cacheKey = RedisPrefixConstant.REDIS_PREFIX_SEMESTER + "all:" + request.toString();
 
-        Object cachedResponse = redisService.get(cacheKey);
-        if (cachedResponse != null) {
-            return (ResponseEntity<?>) cachedResponse;
+        // Kiểm tra cache cho PageableObject thay vì ResponseEntity
+        Object cachedData = redisService.get(cacheKey);
+        if (cachedData != null) {
+            try {
+                PageableObject pageableObject = redisService.getObject(cacheKey, PageableObject.class);
+                return RouterHelper.responseSuccess("Lấy học kỳ từ cached thành công", pageableObject);
+            } catch (Exception e) {
+                redisService.delete(cacheKey);
+            }
         }
 
+        // Cache miss - fetch from database
         Pageable pageable = PaginationHelper.createPageable(request, "createdAt");
         PageableObject pageableObject = PageableObject
                 .of(adSemesterRepository.getAllSemester(pageable, request));
-        ResponseEntity<?> response = RouterHelper.responseSuccess("Get semester successfully", pageableObject);
 
-        redisService.set(cacheKey, response, redisTTL);
+        // Cache PageableObject thay vì ResponseEntity
+        try {
+            redisService.set(cacheKey, pageableObject, redisTTL);
+        } catch (Exception ignored) {
+        }
 
-        return response;
+        return RouterHelper.responseSuccess("Hiển thị tất cả học kỳ thành công", pageableObject);
     }
 
     @Override

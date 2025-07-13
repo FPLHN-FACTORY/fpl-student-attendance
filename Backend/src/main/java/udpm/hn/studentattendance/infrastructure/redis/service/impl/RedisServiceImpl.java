@@ -46,16 +46,32 @@ public class RedisServiceImpl implements RedisService {
     public void set(String key, String value) {
         try {
             redisTemplate.opsForValue().set(key, value, redisTimeToLive, TimeUnit.DAYS);
-        } catch (Exception ignored) {
+        } catch (Exception e) {
+            logger.error("Error setting Redis key: {} - {}", key, e.getMessage());
         }
     }
 
     @Override
     public void setObject(String key, Object value) {
         try {
-            redisTemplate.opsForValue().set(key, value, redisTimeToLive, TimeUnit.DAYS);
+            // Convert proxy objects to JSON before caching
+            Object cacheValue = value;
+            if (value != null) {
+                if (value.getClass().getName().contains("$Proxy")) {
+                    String json = objectMapper.writeValueAsString(value);
+                    cacheValue = objectMapper.readValue(json, Object.class);
+                } else if (value instanceof java.util.Collection) {
+                    String json = objectMapper.writeValueAsString(value);
+                    cacheValue = objectMapper.readValue(json, Object.class);
+                } else if (value.getClass().getSimpleName().equals("PageableObject")) {
+                    String json = objectMapper.writeValueAsString(value);
+                    cacheValue = objectMapper.readValue(json, Object.class);
+                }
+            }
+
+            redisTemplate.opsForValue().set(key, cacheValue, redisTimeToLive, TimeUnit.DAYS);
         } catch (Exception e) {
-            logger.error("Error storing object in Redis: " + e.getMessage());
+            logger.error("Error storing object in Redis: {} - {}", key, e.getMessage());
         }
     }
 
@@ -67,14 +83,30 @@ public class RedisServiceImpl implements RedisService {
                 return null;
             }
 
+            // Handle proxy objects and complex types
             if (value instanceof String) {
                 return objectMapper.readValue((String) value, clazz);
             } else {
                 // Nếu đã là đối tượng, thử chuyển đổi
+
+                // Handle proxy objects by converting to JSON first
+                if (value.getClass().getName().contains("$Proxy")) {
+                    String json = objectMapper.writeValueAsString(value);
+                    return objectMapper.readValue(json, clazz);
+                }
+
+                // Handle collections that might contain proxy objects
+                if (value instanceof java.util.Collection) {
+                    String json = objectMapper.writeValueAsString(value);
+                    return objectMapper.readValue(json, clazz);
+                }
+
                 return objectMapper.convertValue(value, clazz);
             }
         } catch (Exception e) {
-            logger.error("Error deserializing JSON to object: " + e.getMessage());
+            logger.error("Error deserializing JSON to object for key: {} - {}", key, e.getMessage());
+            // Clear cache when deserialization fails
+            clearCacheOnError(key);
             return null;
         }
     }
@@ -109,6 +141,10 @@ public class RedisServiceImpl implements RedisService {
         try {
             Object value = redisTemplate.opsForValue().get(key);
 
+            if (value == null) {
+                return null;
+            }
+
             // If the value is a string that looks like JSON, try to deserialize it
             if (value instanceof String) {
                 String strValue = (String) value;
@@ -116,13 +152,14 @@ public class RedisServiceImpl implements RedisService {
                     try {
                         return objectMapper.readValue(strValue, Object.class);
                     } catch (Exception e) {
-                        logger.error("Error deserializing JSON string: " + e.getMessage());
+                        logger.error("Error deserializing JSON string for key: {} - {}", key, e.getMessage());
                     }
                 }
             }
             // Return original value if not a JSON string or deserialization failed
             return value;
-        } catch (Exception ignored) {
+        } catch (Exception e) {
+            logger.error("Error getting Redis key: {} - {}", key, e.getMessage());
             return null;
         }
     }
@@ -173,7 +210,8 @@ public class RedisServiceImpl implements RedisService {
     public void delete(String key) {
         try {
             redisTemplate.delete(key);
-        } catch (Exception ignored) {
+        } catch (Exception e) {
+            logger.error("Error deleting Redis key: {} - {}", key, e.getMessage());
         }
     }
 
@@ -201,8 +239,24 @@ public class RedisServiceImpl implements RedisService {
     @Override
     public void set(String key, Object value, long ttl) {
         try {
-            redisTemplate.opsForValue().set(key, value, ttl, TimeUnit.SECONDS);
-        } catch (Exception ignored) {
+            // Convert proxy objects to JSON before caching
+            Object cacheValue = value;
+            if (value != null) {
+                if (value.getClass().getName().contains("$Proxy")) {
+                    String json = objectMapper.writeValueAsString(value);
+                    cacheValue = objectMapper.readValue(json, Object.class);
+                } else if (value instanceof java.util.Collection) {
+                    String json = objectMapper.writeValueAsString(value);
+                    cacheValue = objectMapper.readValue(json, Object.class);
+                } else if (value.getClass().getSimpleName().equals("PageableObject")) {
+                    String json = objectMapper.writeValueAsString(value);
+                    cacheValue = objectMapper.readValue(json, Object.class);
+                }
+            }
+
+            redisTemplate.opsForValue().set(key, cacheValue, ttl, TimeUnit.SECONDS);
+        } catch (Exception e) {
+            logger.error("Error setting Redis key: {} - {}", key, e.getMessage());
         }
     }
 
@@ -213,7 +267,33 @@ public class RedisServiceImpl implements RedisService {
             if (keys != null && !keys.isEmpty()) {
                 redisTemplate.delete(keys);
             }
-        } catch (Exception ignored) {
+        } catch (Exception e) {
+            logger.error("Error deleting Redis keys with pattern: {} - {}", pattern, e.getMessage());
+        }
+    }
+
+    /**
+     * Clear all cache when there are deserialization errors
+     */
+    public void clearAllCache() {
+        try {
+            Set<String> keys = redisTemplate.keys("*");
+            if (keys != null && !keys.isEmpty()) {
+                redisTemplate.delete(keys);
+            }
+        } catch (Exception e) {
+            logger.error("Error clearing all cache: {}", e.getMessage());
+        }
+    }
+
+    /**
+     * Clear cache when deserialization fails
+     */
+    public void clearCacheOnError(String key) {
+        try {
+            delete(key);
+        } catch (Exception e) {
+            logger.error("Error clearing cache for key: {} - {}", key, e.getMessage());
         }
     }
 }
