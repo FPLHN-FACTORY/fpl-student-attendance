@@ -1,6 +1,8 @@
 package udpm.hn.studentattendance.infrastructure.config.redis;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.jsontype.impl.LaissezFaireSubTypeValidator;
 import io.lettuce.core.ReadFrom;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -51,9 +53,27 @@ public class RedisTemplateConfig {
     }
 
     @Bean
-    public Jackson2JsonRedisSerializer<Object> jackson2JsonRedisSerializer() {
+    public ObjectMapper redisObjectMapper() {
+        ObjectMapper redisObjectMapper = objectMapper.copy();
+        redisObjectMapper.activateDefaultTyping(
+                LaissezFaireSubTypeValidator.instance,
+                ObjectMapper.DefaultTyping.NON_FINAL);
+        redisObjectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        redisObjectMapper.configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true);
+        return redisObjectMapper;
+    }
+
+    @Bean
+    public Jackson2JsonRedisSerializer<Object> jackson2JsonRedisSerializer(ObjectMapper redisObjectMapper) {
         Jackson2JsonRedisSerializer<Object> serializer = new Jackson2JsonRedisSerializer<>(Object.class);
-        serializer.setObjectMapper(objectMapper);
+        try {
+            java.lang.reflect.Field objectMapperField = Jackson2JsonRedisSerializer.class
+                    .getDeclaredField("objectMapper");
+            objectMapperField.setAccessible(true);
+            objectMapperField.set(serializer, redisObjectMapper);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to set ObjectMapper for Redis serializer", e);
+        }
         return serializer;
     }
 
@@ -63,14 +83,14 @@ public class RedisTemplateConfig {
         redisTemplate.setConnectionFactory(jedisConnectionFactory());
         redisTemplate.setKeySerializer(new StringRedisSerializer());
         redisTemplate.setHashKeySerializer(new StringRedisSerializer());
-        redisTemplate.setValueSerializer(jackson2JsonRedisSerializer());
-        redisTemplate.setHashValueSerializer(jackson2JsonRedisSerializer());
+        redisTemplate.setValueSerializer(jackson2JsonRedisSerializer(redisObjectMapper()));
+        redisTemplate.setHashValueSerializer(jackson2JsonRedisSerializer(redisObjectMapper()));
         return redisTemplate;
     }
 
     @Bean
     public RedisCacheManager cacheManager(LettuceConnectionFactory connectionFactory) {
-        Jackson2JsonRedisSerializer<Object> serializer = jackson2JsonRedisSerializer();
+        Jackson2JsonRedisSerializer<Object> serializer = jackson2JsonRedisSerializer(redisObjectMapper());
 
         RedisCacheConfiguration cacheConfig = RedisCacheConfiguration.defaultCacheConfig()
                 .entryTtl(Duration.ofSeconds(redisTTL))

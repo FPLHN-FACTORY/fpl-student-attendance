@@ -86,13 +86,13 @@ public class SAAttendanceServiceImpl implements SAAttendanceService {
                 || !Objects.equals(
                         planDate.getPlanFactory().getFactory().getProject().getSubjectFacility().getFacility().getId(),
                         sessionHelper.getFacilityId())) {
-            return RouterHelper.responseError("Không tìm thấy lịch học");
+            return RouterHelper.responseError("Không tìm thấy lịch");
         }
 
         UserStudentFactory userStudentFactory = userStudentFactoryRepository.findByUserStudent_IdAndFactory_Id(
                 sessionHelper.getUserId(), planDate.getPlanFactory().getFactory().getId()).orElse(null);
         if (userStudentFactory == null) {
-            return RouterHelper.responseError("Ca học không tồn tại");
+            return RouterHelper.responseError("Ca không tồn tại");
         }
 
         if (planDate.getType() != ShiftType.ONLINE) {
@@ -134,7 +134,7 @@ public class SAAttendanceServiceImpl implements SAAttendanceService {
 
         if (attendance != null) {
             if (attendance.getAttendanceStatus() == AttendanceStatus.PRESENT) {
-                return RouterHelper.responseError("Ca học đã được điểm danh");
+                return RouterHelper.responseError("Ca đã được điểm danh");
             }
             if (attendance.getAttendanceStatus() == AttendanceStatus.ABSENT) {
                 return RouterHelper.responseError("Bạn đã bị huỷ điểm danh.");
@@ -219,7 +219,7 @@ public class SAAttendanceServiceImpl implements SAAttendanceService {
                 response = RouterHelper.responseSuccess("Điểm danh thành công",
                         markPresent(attendance, planDate, userStudent));
             } else {
-                return RouterHelper.responseError("Không thể checkin/checkout ca học này");
+                return RouterHelper.responseError("Không thể checkin/checkout ca này");
             }
         } else if (!isEnableCheckin || !isEnableCheckout) {
             response = RouterHelper.responseSuccess("Điểm danh thành công",

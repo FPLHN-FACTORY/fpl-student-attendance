@@ -234,7 +234,7 @@ public class TCTeachingScheduleServiceImpl implements TCTeachingScheduleService 
     @Override
     public ResponseEntity<?> getAllType() {
         List<PlanDate> shifts = getCachedTypes();
-        return RouterHelper.responseSuccess("Lấy tất cả hình thức học thành công", shifts);
+        return RouterHelper.responseSuccess("Lấy tất cả hình thức thành công", shifts);
     }
 
     @Override
@@ -267,15 +267,15 @@ public class TCTeachingScheduleServiceImpl implements TCTeachingScheduleService 
             pdfTable.setWidthPercentage(100);
             pdfTable.setSpacingBefore(10f);
             pdfTable.setSpacingAfter(10f);
-            pdfTable.setWidths(new float[]{50, 30, 30, 20, 30, 30, 25, 30});
+            pdfTable.setWidths(new float[] { 50, 30, 30, 20, 30, 30, 25, 30 });
 
             Color headerColor = new Color(2, 3, 51);
 
             Color rowColor1 = new Color(255, 255, 255);
             Color rowColor2 = new Color(245, 245, 245);
 
-            Stream.of("Ngày dạy", "Ca học", "Điểm danh muộn", "Mã môn", "Xưởng", "Địa điểm", "Hình thức",
-                            "Mô tả")
+            Stream.of("Ngày", "Ca ", "Điểm danh muộn", "Mã môn", "Xưởng", "Địa điểm", "Hình thức",
+                    "Mô tả")
                     .forEach(headerTitle -> {
                         PdfPCell headerCell = new PdfPCell();
                         headerCell.setBackgroundColor(headerColor);
@@ -407,7 +407,7 @@ public class TCTeachingScheduleServiceImpl implements TCTeachingScheduleService 
 
         if (StringUtils.hasText(planDateUpdateRequest.getLink())
                 && !ValidateHelper.isValidURL(planDateUpdateRequest.getLink())) {
-            return RouterHelper.responseError("Link học online không hợp lệ");
+            return RouterHelper.responseError("Link online không hợp lệ");
         }
 
         String oldDescription = planDate.getDescription();
@@ -435,7 +435,7 @@ public class TCTeachingScheduleServiceImpl implements TCTeachingScheduleService 
         // Invalidate related caches
         invalidatePlanDateCache(planDateUpdateRequest.getIdPlanDate());
 
-        return RouterHelper.responseSuccess("Cập nhật thông tin buổi học thành công", savedPlanDate);
+        return RouterHelper.responseSuccess("Cập nhật thông tin buổi thành công", savedPlanDate);
     }
 
     private void sendUpdateNotificationToStudents(PlanDate planDate, String subject, String notificationType) {
@@ -591,7 +591,7 @@ public class TCTeachingScheduleServiceImpl implements TCTeachingScheduleService 
         // Invalidate related caches
         invalidatePlanDateCache(planDateId);
 
-        return RouterHelper.responseSuccess("Thay đổi hình thức học thành công", savedPlanDate);
+        return RouterHelper.responseSuccess("Thay đổi hình thức thành công", savedPlanDate);
     }
 
     private void invalidatePlanDateCache(String planDateId) {

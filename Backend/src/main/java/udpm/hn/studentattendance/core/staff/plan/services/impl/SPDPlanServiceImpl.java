@@ -40,6 +40,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.HashMap;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -191,7 +193,11 @@ public class SPDPlanServiceImpl implements SPDPlanService {
         Object cachedData = redisService.get(cacheKey);
         if (cachedData != null) {
             try {
-                return redisService.getObject(cacheKey, PageableObject.class);
+                @SuppressWarnings("unchecked")
+                Map<String, Object> cachedMap = redisService.getObject(cacheKey, Map.class);
+                if (cachedMap != null) {
+                    return convertMapToPageableObject(cachedMap);
+                }
             } catch (Exception e) {
                 redisService.delete(cacheKey);
             }
@@ -201,7 +207,8 @@ public class SPDPlanServiceImpl implements SPDPlanService {
         PageableObject<SPDPlanResponse> data = PageableObject.of(spdPlanRepository.getAllByFilter(pageable, request));
 
         try {
-            redisService.set(cacheKey, data, redisTTL);
+            Map<String, Object> cacheMap = convertPageableObjectToMap(data);
+            redisService.set(cacheKey, cacheMap, redisTTL);
         } catch (Exception ignored) {
         }
 
@@ -214,13 +221,19 @@ public class SPDPlanServiceImpl implements SPDPlanService {
         return RouterHelper.responseSuccess("Lấy danh sách dữ liệu thành công", data);
     }
 
-    public SPDPlanResponse getCachedPlanById(String idPlan) {
+        public SPDPlanResponse getCachedPlanById(String idPlan) {
         String cacheKey = RedisPrefixConstant.REDIS_PREFIX_PLAN + idPlan + "_facility=" + sessionHelper.getFacilityId();
 
         Object cachedData = redisService.get(cacheKey);
         if (cachedData != null) {
             try {
-                return redisService.getObject(cacheKey, SPDPlanResponse.class);
+                // Try to get as Map and convert
+                @SuppressWarnings("unchecked")
+                Map<String, Object> cachedMap = redisService.getObject(cacheKey, Map.class);
+                if (cachedMap != null) {
+                    // Convert Map back to SPDPlanResponse
+                    return convertMapToSPDPlanResponse(cachedMap);
+                }
             } catch (Exception e) {
                 redisService.delete(cacheKey);
             }
@@ -231,7 +244,9 @@ public class SPDPlanServiceImpl implements SPDPlanService {
         SPDPlanResponse result = data.orElse(null);
         if (result != null) {
             try {
-                redisService.set(cacheKey, result, redisTTL);
+                // Cache as Map instead of interface to avoid deserialization issues
+                Map<String, Object> cacheMap = convertSPDPlanResponseToMap(result);
+                redisService.set(cacheKey, cacheMap, redisTTL);
             } catch (Exception ignored) {
             }
         }
@@ -448,5 +463,136 @@ public class SPDPlanServiceImpl implements SPDPlanService {
 
     private void invalidatePlanCaches() {
         redisInvalidationHelper.invalidateAllCaches();
+    }
+
+    // Helper methods to convert between Map and objects
+    private Map<String, Object> convertPageableObjectToMap(PageableObject<SPDPlanResponse> pageableObject) {
+        Map<String, Object> map = new HashMap<>();
+        map.put("data", pageableObject.getData().stream()
+                .map(this::convertSPDPlanResponseToMap)
+                .collect(Collectors.toList()));
+        map.put("totalPages", pageableObject.getTotalPages());
+        map.put("currentPage", pageableObject.getCurrentPage());
+        return map;
+    }
+
+    private PageableObject<SPDPlanResponse> convertMapToPageableObject(Map<String, Object> map) {
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> dataMaps = (List<Map<String, Object>>) map.get("data");
+        List<SPDPlanResponse> data = dataMaps.stream()
+                .map(this::convertMapToSPDPlanResponse)
+                .collect(Collectors.toList());
+
+        return new PageableObject<>(
+                data,
+                (Long) map.get("totalPages"),
+                (Integer) map.get("currentPage"));
+    }
+
+    private Map<String, Object> convertSPDPlanResponseToMap(SPDPlanResponse response) {
+        Map<String, Object> map = new HashMap<>();
+        map.put("id", response.getId());
+        map.put("orderNumber", response.getOrderNumber());
+        map.put("planName", response.getPlanName());
+        map.put("projectId", response.getProjectId());
+        map.put("projectName", response.getProjectName());
+        map.put("level", response.getLevel());
+        map.put("semesterName", response.getSemesterName());
+        map.put("subjectName", response.getSubjectName());
+        map.put("fromDate", response.getFromDate());
+        map.put("toDate", response.getToDate());
+        map.put("fromDateSemester", response.getFromDateSemester());
+        map.put("toDateSemester", response.getToDateSemester());
+        map.put("description", response.getDescription());
+        map.put("status", response.getStatus());
+        map.put("maxLateArrival", response.getMaxLateArrival());
+        return map;
+    }
+
+    private SPDPlanResponse convertMapToSPDPlanResponse(Map<String, Object> map) {
+        // Create a simple implementation that wraps the map
+        return new SPDPlanResponse() {
+            @Override
+            public String getId() {
+                return (String) map.get("id");
+            }
+
+            @Override
+            public Long getOrderNumber() {
+                Object value = map.get("orderNumber");
+                return value instanceof Number ? ((Number) value).longValue() : null;
+            }
+
+            @Override
+            public String getPlanName() {
+                return (String) map.get("planName");
+            }
+
+            @Override
+            public String getProjectId() {
+                return (String) map.get("projectId");
+            }
+
+            @Override
+            public String getProjectName() {
+                return (String) map.get("projectName");
+            }
+
+            @Override
+            public String getLevel() {
+                return (String) map.get("level");
+            }
+
+            @Override
+            public String getSemesterName() {
+                return (String) map.get("semesterName");
+            }
+
+            @Override
+            public String getSubjectName() {
+                return (String) map.get("subjectName");
+            }
+
+            @Override
+            public Long getFromDate() {
+                Object value = map.get("fromDate");
+                return value instanceof Number ? ((Number) value).longValue() : null;
+            }
+
+            @Override
+            public Long getToDate() {
+                Object value = map.get("toDate");
+                return value instanceof Number ? ((Number) value).longValue() : null;
+            }
+
+            @Override
+            public Long getFromDateSemester() {
+                Object value = map.get("fromDateSemester");
+                return value instanceof Number ? ((Number) value).longValue() : null;
+            }
+
+            @Override
+            public Long getToDateSemester() {
+                Object value = map.get("toDateSemester");
+                return value instanceof Number ? ((Number) value).longValue() : null;
+            }
+
+            @Override
+            public String getDescription() {
+                return (String) map.get("description");
+            }
+
+            @Override
+            public Integer getStatus() {
+                Object value = map.get("status");
+                return value instanceof Number ? ((Number) value).intValue() : null;
+            }
+
+            @Override
+            public Integer getMaxLateArrival() {
+                Object value = map.get("maxLateArrival");
+                return value instanceof Number ? ((Number) value).intValue() : null;
+            }
+        };
     }
 }
