@@ -33,9 +33,6 @@ public interface STProjectExtendRepository extends ProjectRepository {
                     JOIN semester sem ON p.id_semester = sem.id
                     JOIN facility f ON sf.id_facility = f.id
                     WHERE
-                        lp.status = 1 AND
-                        sf.status = 1 AND
-                        s.status = 1 AND
                         sem.status = 1 AND
                         f.status = 1 AND
                     (
@@ -57,9 +54,6 @@ public interface STProjectExtendRepository extends ProjectRepository {
                     JOIN semester sem ON p.id_semester = sem.id
                     JOIN facility f ON sf.id_facility = f.id
                     WHERE
-                        lp.status = 1 AND
-                        sf.status = 1 AND
-                        s.status = 1 AND
                         sem.status = 1 AND
                         f.status = 1 AND
                     (
