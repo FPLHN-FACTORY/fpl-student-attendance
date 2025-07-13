@@ -45,7 +45,8 @@ public class STProjectManagementImpl implements STProjectManagementService {
     public ResponseEntity<?> getListProject(USProjectSearchRequest request) {
         request.setFacilityId(sessionHelper.getFacilityId());
         Pageable pageable = PaginationHelper.createPageable(request, "createdAt");
-        PageableObject<USProjectResponse> list = PageableObject.of(projectManagementRepository.getListProject(pageable, request));
+        PageableObject<USProjectResponse> list = PageableObject
+                .of(projectManagementRepository.getListProject(pageable, request));
         return RouterHelper.responseSuccess("Lấy danh sách dự án thành công", list);
 
     }

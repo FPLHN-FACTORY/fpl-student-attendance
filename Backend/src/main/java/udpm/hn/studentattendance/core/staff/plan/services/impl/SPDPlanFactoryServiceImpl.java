@@ -198,7 +198,9 @@ public class SPDPlanFactoryServiceImpl implements SPDPlanFactoryService {
 
                     if (spdPlanDateRepository.isExistsShiftInFactory(planFactory.getId(), null, startDate, endDate)) {
                         spdPlanFactoryRepository.delete(planFactory);
-                        return RouterHelper.responseError("Đã tồn tại ca học diễn ra trong khoảng thời gian từ " + DateTimeUtils.convertMillisToDate(startDate, "HH:mm") + " đến " + DateTimeUtils.convertMillisToDate(endDate, "HH:mm") + " của ngày "
+                        return RouterHelper.responseError("Đã tồn tại ca học diễn ra trong khoảng thời gian từ "
+                                + DateTimeUtils.convertMillisToDate(startDate, "HH:mm") + " đến "
+                                + DateTimeUtils.convertMillisToDate(endDate, "HH:mm") + " của ngày "
                                 + DateTimeUtils.convertMillisToDate(startDate));
                     }
 
@@ -242,7 +244,27 @@ public class SPDPlanFactoryServiceImpl implements SPDPlanFactoryService {
 
         commonUserStudentRepository.disableAllStudentDuplicateShiftByIdPlanFactory(planFactory.getId());
 
-        userActivityLogHelper.saveLog("vừa thêm nhóm xưởng " + factory.getName() + " vào kế hoạch " + plan.getName());
+        String firstPlanDate = lstPlanDate.isEmpty() ? "Không có"
+                : DateTimeUtils.convertMillisToDate(lstPlanDate.get(0).getStartDate(), "dd/MM/yyyy HH:mm");
+        String lastPlanDate = lstPlanDate.isEmpty() ? "Không có"
+                : DateTimeUtils.convertMillisToDate(lstPlanDate.get(lstPlanDate.size() - 1).getStartDate(),
+                        "dd/MM/yyyy HH:mm");
+
+        String logMessage = String.format(
+                "vừa thêm nhóm xưởng '%s' (ID: %s) vào kế hoạch '%s' (ID: %s) - " +
+                        "Hình thức: %s, Ca: %s, Ngày: %s, Phòng: %s, Link: %s, " +
+                        "Điều kiện IP: %s, Vị trí: %s, Checkin: %s, Checkout: %s, " +
+                        "Thời gian muộn: %d phút, Tổng số buổi: %d, " +
+                        "Thời gian từ: %s đến: %s",
+                factory.getName(), factory.getId(),
+                plan.getName(), plan.getId(),
+                type.name(), request.getShift(), request.getDays(),
+                request.getRoom() != null ? request.getRoom() : "Không có",
+                request.getLink() != null ? "Có" : "Không",
+                requiredIp.name(), requiredLocation.name(), requiredCheckin.name(), requiredCheckout.name(),
+                request.getLateArrival(), lstPlanDate.size(),
+                firstPlanDate, lastPlanDate);
+        userActivityLogHelper.saveLog(logMessage);
         return RouterHelper.responseSuccess("Tạo mới kế hoạch thành công " + lstPlanDate.size() + " kế hoạch",
                 lstEntity);
     }

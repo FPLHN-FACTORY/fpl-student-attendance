@@ -67,8 +67,6 @@ public class USFactoryServiceImpl implements USFactoryService {
     @Value("${spring.cache.redis.time-to-live}")
     private long redisTTL;
 
-
-
     public PageableObject<USFactoryResponse> getCachedFactories(USFactoryRequest factoryRequest) {
         String cacheKey = RedisPrefixConstant.REDIS_PREFIX_FACTORY + "list_" +
                 "facility=" + sessionHelper.getFacilityId() + '_' +
@@ -335,7 +333,8 @@ public class USFactoryServiceImpl implements USFactoryService {
         notificationAddRequest.setType(NotificationHelper.TYPE_ADD_TEACHER_TO_FACTORY);
         notificationService.add(notificationAddRequest);
 
-        userActivityLogHelper.saveLog("vừa cập nhật nhóm xưởng: " + oldName + " → " + saveFactory.getName());
+        userActivityLogHelper.saveLog("vừa cập nhật nhóm xưởng: " + oldName + " → " + saveFactory.getName()
+                + " trong dự án " + saveFactory.getProject().getName());
 
         invalidateFactoryCaches();
 
@@ -357,7 +356,7 @@ public class USFactoryServiceImpl implements USFactoryService {
             }
             userActivityLogHelper
                     .saveLog("vừa thay đổi trạng thái nhóm xưởng " + saveFactory.getName() + " từ " + oldStatus
-                            + " thành " + newStatus);
+                            + " thành " + newStatus + " trong dự án" + saveFactory.getProject().getName());
 
             invalidateFactoryCaches();
         }
@@ -416,7 +415,7 @@ public class USFactoryServiceImpl implements USFactoryService {
         }
 
         userActivityLogHelper.saveLog(
-                "vừa thay đổi trạng thái hàng loạt " + factories.size() + " nhóm xưởng của kỳ học đã kết thúc");
+                "vừa thay đổi trạng thái hàng loạt " + factories.size() + " nhóm xưởng của các kỳ học đã kết thúc");
 
         invalidateFactoryCaches();
 
@@ -451,10 +450,8 @@ public class USFactoryServiceImpl implements USFactoryService {
         return RouterHelper.responseSuccess("Lấy thành công tất cả học kỳ", semesters);
     }
 
-
     private void invalidateFactoryCaches() {
         redisInvalidationHelper.invalidateAllCaches();
     }
-
 
 }

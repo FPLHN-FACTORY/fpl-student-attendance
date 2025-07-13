@@ -19,6 +19,7 @@ import java.util.concurrent.CompletableFuture;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
+import org.mockito.MockedConstruction;
 
 @ExtendWith(MockitoExtension.class)
 class MailerHelperTest {
@@ -162,10 +163,17 @@ class MailerHelperTest {
         request.setTitle("Test Subject");
         request.setContent("Test Content");
 
-        when(mailSender.createMimeMessage()).thenThrow(new jakarta.mail.MessagingException("Test exception"));
+        when(mailSender.createMimeMessage()).thenReturn(mimeMessage);
+        // Mock MimeMessageHelper constructor to throw MessagingException
+        try (MockedConstruction<MimeMessageHelper> mockedConstruction = mockConstruction(MimeMessageHelper.class,
+                (mock, context) -> {
+                    when(mock.getMimeMessage()).thenReturn(mimeMessage);
+                    doThrow(new jakarta.mail.MessagingException("Test exception")).when(mock).setFrom(anyString());
+                })) {
 
-        CompletableFuture<Boolean> result = mailerHelper.send(request);
-        assertFalse(result.get());
+            CompletableFuture<Boolean> result = mailerHelper.send(request);
+            assertFalse(result.get());
+        }
     }
 
     @Test
