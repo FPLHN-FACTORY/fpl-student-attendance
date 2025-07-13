@@ -39,7 +39,7 @@ const loadingExport = reactive({})
 const columns = autoAddColumnWidth([
   { title: '#', dataIndex: 'rowNumber', key: 'rowNumber' },
   { title: 'Ngày học', dataIndex: 'planDateStartDate', key: 'planDateStartDate' },
-  { title: 'Ca học', dataIndex: 'planDateShift', key: 'planDateShift' },
+  { title: 'Ca', dataIndex: 'planDateShift', key: 'planDateShift' },
   {
     title: 'Điểm danh muộn',
     dataIndex: 'lateArrival',
@@ -98,7 +98,7 @@ const fetchAllAttendanceHistory = async () => {
 
 const handleShowDescription = (text) => {
   Modal.info({
-    title: 'Nội dung buổi học',
+    title: 'Nội dung buổi',
     type: 'info',
     content: text || 'Không có mô tả',
     okText: 'Đóng',

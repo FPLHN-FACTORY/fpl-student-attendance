@@ -78,7 +78,7 @@ const columns = ref(
     { title: 'Tên', dataIndex: 'name', key: 'name' },
     { title: 'Nhóm dự án', dataIndex: 'nameLevelProject', key: 'nameLevelProject' },
     { title: 'Học kỳ', dataIndex: 'nameSemester', key: 'nameSemester' },
-    { title: 'Môn học', dataIndex: 'nameSubject', key: 'nameSubject' },
+    { title: 'Môn', dataIndex: 'nameSubject', key: 'nameSubject' },
     { title: 'Mô tả', dataIndex: 'description', key: 'description' },
     { title: 'Trạng thái', dataIndex: 'status', key: 'status' },
     { title: 'Chức năng', key: 'actions' },
@@ -96,6 +96,7 @@ const fetchProjects = () => {
   loadingStore.show()
   requestAPI
     .get(`${API_ROUTES_STAFF.FETCH_DATA_PROJECT}/list`, {
+     params: {
       name: filter.name,
       levelProjectId: filter.levelProjectId,
       semesterId: filter.semesterId,
@@ -104,6 +105,7 @@ const fetchProjects = () => {
       status: filter.status,
       page: pagination.current,
       size: pagination.pageSize,
+     } 
     })
     .then((response) => {
       projects.value = response.data.data.data
@@ -157,7 +159,7 @@ const fetchSubjects = () => {
       subjects.value = response.data
     })
     .catch((error) => {
-      message.error(error.response?.data?.message || 'Lỗi khi lấy dữ liệu combobox môn học')
+      message.error(error.response?.data?.message || 'Lỗi khi lấy dữ liệu combobox môn')
     })
 }
 
@@ -216,15 +218,15 @@ const handleAddProject = () => {
     return
   }
   if (!newProject.subjectFacilityId) {
-    message.error('Phải chọn môn học')
+    message.error('Phải chọn môn')
     return
   }
 
   Modal.confirm({
-    title: 'Xác nhận thêm mới',
-    content: 'Bạn có chắc chắn muốn thêm dự án mới này?',
-    okText: 'Tiếp tục',
-    cancelText: 'Hủy bỏ',
+    title: 'Xác nhận thêm dự án mới',
+    content: 'Bạn có chắc chắn muốn thêm dự án mới này vào hệ thống không?',
+    okText: 'Thêm dự án',
+    cancelText: 'Hủy',
     onOk() {
       requestAPI
         .post(API_ROUTES_STAFF.FETCH_DATA_PROJECT, newProject)
@@ -278,15 +280,15 @@ const handleUpdateProject = () => {
     return
   }
   if (!detailProject.subjectFacilityId) {
-    message.error('Phải chọn môn học')
+    message.error('Phải chọn môn')
     return
   }
 
   Modal.confirm({
-    title: 'Xác nhận cập nhật',
-    content: 'Bạn có chắc chắn muốn cập nhật thông tin dự án này?',
-    okText: 'Tiếp tục',
-    cancelText: 'Hủy bỏ',
+    title: 'Xác nhận cập nhật thông tin dự án',
+    content: 'Bạn có chắc chắn muốn cập nhật thông tin của dự án này không?',
+    okText: 'Cập nhật',
+    cancelText: 'Hủy',
     onOk() {
       requestAPI
         .put(`${API_ROUTES_STAFF.FETCH_DATA_PROJECT}/${detailProject.id}`, detailProject)
@@ -311,7 +313,7 @@ const handleDeleteProject = (record) => {
       requestAPI
         .put(`${API_ROUTES_STAFF.FETCH_DATA_PROJECT}/change-status/${record.id}`)
         .then(() => {
-          message.success('Đổi trạng thái dự án thành công')
+          message.success('Thay đổi trạng thái dự án thành công')
           fetchProjects()
         })
         .catch((error) => {
@@ -328,7 +330,7 @@ const handleChangeStatusProjectBySemester = () => {
       requestAPI
         .put(`${API_ROUTES_STAFF.FETCH_DATA_PROJECT}/change-status-semester`)
         .then(() => {
-          message.success('Đổi trạng thái tất cả dự án kỳ trước thành công')
+          message.success('Thay đổi trạng thái tất cả dự án kỳ trước thành công')
           fetchProjects()
         })
         .catch((error) => {
@@ -348,7 +350,6 @@ const configImportExcel = {
   },
   showDownloadTemplate: true,
   showHistoryLog: true,
-  // showExport: true,
   btnImport: 'Import dự án',
   btnExport: 'Export dự án',
 }
@@ -450,10 +451,10 @@ onMounted(() => {
                   </a-select>
                 </div>
                 <div class="col-lg-3 col-md-6 col-sm-6">
-                  <div class="label-title">Môn học:</div>
+                  <div class="label-title">Môn:</div>
                   <a-select
                     v-model:value="filter.subjectId"
-                    placeholder="Môn học"
+                    placeholder="Môn"
                     allowClear
                     show-search
                     class="filter-select w-100"
@@ -464,7 +465,7 @@ onMounted(() => {
                         (option.label || '').toLowerCase().includes(input.toLowerCase())
                     "
                   >
-                    <a-select-option :value="null" label="Tất cả môn học">Tất cả môn học</a-select-option>
+                    <a-select-option :value="null" label="Tất cả môn">Tất cả môn</a-select-option>
                     <a-select-option
                       v-for="subject in subjects"
                       :key="subject.id"
@@ -637,10 +638,10 @@ onMounted(() => {
             </a-select-option>
           </a-select>
         </a-form-item>
-        <a-form-item label="Môn học" required>
+        <a-form-item label="Môn" required>
           <a-select
             v-model:value="newProject.subjectFacilityId"
-            placeholder="Chọn môn học"
+            placeholder="Chọn môn"
             allowClear
             show-search
             :filter-option="
@@ -663,7 +664,7 @@ onMounted(() => {
       <p><strong>Tên:</strong> {{ detailProject.name }}</p>
       <p><strong>Nhóm dự án:</strong> {{ detailProject.nameLevelProject }}</p>
       <p><strong>Học kỳ:</strong> {{ detailProject.nameSemester }}</p>
-      <p><strong>Môn học:</strong> {{ detailProject.nameSubject }}</p>
+      <p><strong>Môn:</strong> {{ detailProject.nameSubject }}</p>
       <p><strong>Mô tả:</strong> {{ detailProject.description }}</p>
       <p v-if="detailProject.createdAt">
         <strong>Ngày tạo:</strong> {{ formatDate(detailProject.createdAt) }}
@@ -737,10 +738,10 @@ onMounted(() => {
             </a-select-option>
           </a-select>
         </a-form-item>
-        <a-form-item label="Môn học" required>
+        <a-form-item label="Môn" required>
           <a-select
             v-model:value="detailProject.subjectFacilityId"
-            placeholder="Chọn môn học"
+            placeholder="Chọn môn"
             allowClear
             show-search
             :filter-option="

@@ -62,7 +62,7 @@ const configImportExcel = {
   showDownloadTemplate: true,
   showHistoryLog: true,
   showExport: true,
-  btnImport: 'Import ca học',
+  btnImport: 'Import ca',
   btnExport: 'Export điểm danh',
 }
 
@@ -95,9 +95,9 @@ const columns = ref(
     { title: 'Buổi', dataIndex: 'orderNumber', key: 'orderNumber' },
     { title: 'Ngày học', dataIndex: 'startDate', key: 'startDate' },
     { title: 'Thời gian', key: 'time' },
-    { title: 'Ca học', dataIndex: 'shift', key: 'shift' },
+    { title: 'Ca', dataIndex: 'shift', key: 'shift' },
     { title: 'Nội dung', dataIndex: 'description', key: 'description' },
-    { title: 'Phòng học', dataIndex: 'room', key: 'room' },
+    { title: 'Phòng', dataIndex: 'room', key: 'room' },
     { title: 'Link Online', dataIndex: 'link', key: 'link' },
     {
       title: 'Điểm danh trễ',
@@ -169,7 +169,7 @@ const formDataUpdateLink = reactive({
 
 const formRules = reactive({
   startDate: [{ required: true, message: 'Vui lòng chọn ngày học diễn ra!' }],
-  shift: [{ required: true, message: 'Vui lòng chọn ca học!' }],
+  shift: [{ required: true, message: 'Vui lòng chọn ca!' }],
   type: [{ required: true, message: 'Vui lòng chọn hình thức học!' }],
   link: [{ required: true, message: 'Vui lòng nhập link học online!' }],
   lateArrival: [{ required: true, message: 'Vui lòng nhập thời gian điểm danh muộn tối đa!' }],
@@ -239,7 +239,7 @@ const fetchDataShift = () => {
       lstShift.value = response.data
     })
     .catch((error) => {
-      message.error(error?.response?.data?.message || 'Lỗi khi lấy dữ liệu ca học')
+      message.error(error?.response?.data?.message || 'Lỗi khi lấy dữ liệu ca')
     })
 }
 
@@ -390,7 +390,7 @@ const fetchSendMail = () => {
       message.success(response.message)
     })
     .catch((error) => {
-      message.error(error?.response?.data?.message || 'Không thể gửi thông báo lịch học')
+      message.error(error?.response?.data?.message || 'Không thể gửi thông báo lịch')
     })
     .finally(() => {
       loadingStore.hide()
@@ -427,7 +427,7 @@ const handleShowAdd = () => {
   modalAddOrUpdate.isLoading = false
   modalAddOrUpdate.title = h('span', [
     h(PlusOutlined, { class: 'me-2 text-primary' }),
-    'Thêm ca học mới',
+    'Thêm ca mới',
   ])
   modalAddOrUpdate.okText = 'Thêm ngay'
   modalAddOrUpdate.onOk = () => handleSubmitAdd()
@@ -455,7 +455,7 @@ const handleShowUpdate = (item) => {
   modalAddOrUpdate.isLoading = false
   modalAddOrUpdate.title = h('span', [
     h(EditFilled, { class: 'me-2 text-primary' }),
-    'Chỉnh sửa ca học',
+    'Chỉnh sửa ca',
   ])
   modalAddOrUpdate.okText = 'Lưu lại'
   modalAddOrUpdate.onOk = () => handleSubmitUpdate()
@@ -483,7 +483,7 @@ const handleSubmitAdd = async () => {
     Modal.confirm({
       title: `Xác nhận thêm mới`,
       type: 'info',
-      content: `Bạn có chắc muốn thêm mới ca học này?`,
+      content: `Bạn có chắc muốn thêm mới ca này?`,
       okText: 'Tiếp tục',
       cancelText: 'Hủy bỏ',
       onOk() {
@@ -515,7 +515,7 @@ const handleSubmitUpdateLink = async () => {
     Modal.confirm({
       title: `Xác nhận cập nhật link`,
       type: 'info',
-      content: `Tất cả ca học online sẽ bị ảnh hưởng. Bạn có chắc muốn tiếp tục?`,
+      content: `Tất cả ca online sẽ bị ảnh hưởng. Bạn có chắc muốn tiếp tục?`,
       okText: 'Tiếp tục',
       cancelText: 'Hủy bỏ',
       onOk() {
@@ -527,9 +527,9 @@ const handleSubmitUpdateLink = async () => {
 
 const handleShowAlertDelete = (item) => {
   Modal.confirm({
-    title: `Xoá ca học: ${dayOfWeek(item.startDate)} - ${formatDate(item.startDate)}`,
+    title: `Xoá ca: ${dayOfWeek(item.startDate)} - ${formatDate(item.startDate)}`,
     type: 'error',
-    content: `Bạn có chắc muốn xoá ca học này?`,
+    content: `Bạn có chắc muốn xoá ca này?`,
     okText: 'Tiếp tục',
     cancelText: 'Hủy bỏ',
     okButtonProps: {
@@ -546,9 +546,9 @@ const handleShowAlertDelete = (item) => {
 
 const handleShowAlertMultipleDelete = () => {
   Modal.confirm({
-    title: `Xoá ca học đã chọn`,
+    title: `Xoá ca đã chọn`,
     type: 'error',
-    content: `Bạn có chắc muốn xoá ${selectedRowKeys.value.length} ca học đã chọn?`,
+    content: `Bạn có chắc muốn xoá ${selectedRowKeys.value.length} ca đã chọn?`,
     okText: 'Tiếp tục',
     cancelText: 'Hủy bỏ',
     okButtonProps: {
@@ -651,9 +651,9 @@ const handleUpdateTimeRange = () => {
 
 const handleSendMail = () => {
   Modal.confirm({
-    title: 'Xác nhận gửi mail thông báo lịch học',
+    title: 'Xác nhận gửi mail thông báo lịch',
     type: 'info',
-    content: `Một mail chứa tệp Excel lịch học sẽ được gửi tới giảng viên và sinh viên trong nhóm.`,
+    content: `Một mail chứa tệp Excel lịch sẽ được gửi tới giảng viên và sinh viên trong nhóm.`,
     okText: 'Tiếp tục',
     cancelText: 'Hủy bỏ',
     onOk() {
@@ -715,7 +715,7 @@ watch(
           :disabled="modalAddOrUpdate.isLoading"
         />
       </a-form-item>
-      <a-form-item class="col-sm-8" label="Phòng học">
+      <a-form-item class="col-sm-8" label="Phòng">
         <a-input
           class="w-100"
           v-model:value="formData.room"
@@ -725,7 +725,7 @@ watch(
           @keyup.enter="modalAddOrUpdate.onOk"
         />
       </a-form-item>
-      <a-form-item class="col-sm-8" label="Ca học" name="shift" :rules="formRules.shift">
+      <a-form-item class="col-sm-8" label="Ca" name="shift" :rules="formRules.shift">
         <a-select
           class="w-100"
           placeholder="Chọn nhiều ca cùng lúc để gộp lại thành 1 ca"
@@ -744,7 +744,7 @@ watch(
         </a-select>
       </a-form-item>
 
-      <a-form-item class="col-sm-4" label="Tuỳ chỉnh thời gian ca học" name="timeRange">
+      <a-form-item class="col-sm-4" label="Tuỳ chỉnh thời gian ca" name="timeRange">
         <a-range-picker
           class="w-100"
           v-model:value="formData.timeRange"
@@ -787,11 +787,11 @@ watch(
         />
       </a-form-item>
 
-      <a-form-item class="col-sm-12" label="Nội dung buổi học" name="description">
+      <a-form-item class="col-sm-12" label="Nội dung buổi" name="description">
         <a-textarea
           :rows="4"
           class="w-100"
-          placeholder="Mô tả nội dung buổi học"
+          placeholder="Mô tả nội dung buổi"
           v-model:value="formData.description"
           :disabled="modalAddOrUpdate.isLoading"
           allowClear
@@ -909,7 +909,7 @@ watch(
 
   <a-modal v-model:open="isShowListStudentExists" :width="1000" :footer="null">
     <template #title
-      ><InfoCircleFilled class="text-primary" /> Danh sách sinh viên bị trùng ca học
+      ><InfoCircleFilled class="text-primary" /> Danh sách sinh viên bị trùng ca
     </template>
     <div class="row g-2">
       <div class="col-12">
@@ -981,15 +981,15 @@ watch(
                   </a-select>
                 </div>
                 <div class="col-xxl-2 col-lg-4 col-md-4 col-sm-6">
-                  <div class="label-title">Ca học:</div>
+                  <div class="label-title">Ca:</div>
                   <a-select
                     v-model:value="dataFilter.shift"
                     class="w-100"
                     :dropdownMatchSelectWidth="false"
-                    placeholder="-- Tất cả ca học --"
+                    placeholder="-- Tất cả ca --"
                     allowClear
                   >
-                    <a-select-option :value="null">-- Tất cả ca học --</a-select-option>
+                    <a-select-option :value="null">-- Tất cả ca --</a-select-option>
                     <a-select-option v-for="o in lstShift" :key="o.id" :value="o.shift">
                       {{ SHIFT[o.shift] }}
                     </a-select-option>
@@ -1021,7 +1021,7 @@ watch(
       <div class="col-12">
         <a-card :bordered="false" class="cart">
           <template #title>
-            <UnorderedListOutlined /> Danh sách ca học
+            <UnorderedListOutlined /> Danh sách ca
             {{ `(${formatDate(_detail?.fromDate)} - ${formatDate(_detail?.toDate)})` }}
           </template>
 
@@ -1113,12 +1113,12 @@ watch(
                 </template>
                 <template v-if="column.key === 'actions'">
                   <template v-if="record.status !== 'DA_DIEN_RA'">
-                    <a-tooltip title="Chỉnh sửa ca học">
+                    <a-tooltip title="Chỉnh sửa ca">
                       <a-button class="btn-outline-info border-0" @click="handleShowUpdate(record)">
                         <EditFilled />
                       </a-button>
                     </a-tooltip>
-                    <a-tooltip title="Xoá ca học">
+                    <a-tooltip title="Xoá ca">
                       <a-button
                         class="btn-outline-danger border-0 ms-2"
                         @click="handleShowAlertDelete(record)"

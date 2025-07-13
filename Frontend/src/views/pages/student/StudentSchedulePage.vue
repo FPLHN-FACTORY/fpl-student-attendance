@@ -17,7 +17,7 @@ const breadcrumbStore = useBreadcrumbStore()
 
 const breadcrumb = ref([
   { name: GLOBAL_ROUTE_NAMES.STAFF_PAGE, breadcrumbName: 'Sinh viên' },
-  { name: ROUTE_NAMES.SCHEDULE, breadcrumbName: 'Lịch học' },
+  { name: ROUTE_NAMES.SCHEDULE, breadcrumbName: 'Lịch' },
 ])
 const loadingStore = useLoadingStore()
 const isLoading = ref(false)
@@ -88,7 +88,7 @@ const handleTableChange = (pageInfo) => {
 
 const handleShowDescription = (text) => {
   Modal.info({
-    title: 'Nội dung buổi học',
+    title: 'Nội dung',
     type: 'info',
     content: text || 'Không có mô tả',
     okText: 'Đóng',
@@ -109,7 +109,7 @@ const exportToExcel = async () => {
       { header: 'Ca', key: 'shift', width: 35 },
       { header: 'Nhóm xưởng', key: 'factoryName', width: 30 },
       { header: 'Dự án', key: 'projectName', width: 30 },
-      { header: 'Tên môn học', key: 'subjectName', width: 30 },
+      { header: 'Tên môn', key: 'subjectName', width: 30 },
       { header: 'Tên giảng viên', key: 'staffName', width: 30 },
       { header: 'Mô tả', key: 'description', width: 40 },
     ]
@@ -237,7 +237,7 @@ onMounted(() => {
               <template #header><FilterFilled /> Bộ lọc</template>
               <div class="row g-3 filter-container">
                 <div class="col-md-12">
-                  <div class="label-title">Lịch học:</div>
+                  <div class="label-title">Lịch:</div>
                   <a-select
                     v-model:value="filter.plan"
                     placeholder="Chọn khoảng thời gian"
@@ -274,7 +274,7 @@ onMounted(() => {
         <a-card :bordered="false" class="cart">
           <template #title>
             <UnorderedListOutlined />
-            Lịch học sắp tới
+            Lịch sắp tới
           </template>
 
           <div class="d-flex justify-content-end mb-3">

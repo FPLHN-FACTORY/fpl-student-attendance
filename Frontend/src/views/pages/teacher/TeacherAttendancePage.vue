@@ -154,7 +154,7 @@ onMounted(() => {
       <div class="col-12">
         <a-card :bordered="false" class="cart mb-3">
           <p class="p-attention">
-            1. Giảng viên thực hiện điểm danh trong khoảng thời gian diễn ra ca học. Sau khoảng thời
+            1. Giảng viên thực hiện điểm danh trong khoảng thời gian diễn ra ca. Sau khoảng thời
             gian đó, hệ thống sẽ khóa chức năng điểm danh.
           </p>
           <p class="p-attention">

@@ -203,7 +203,7 @@ const fetchSubjects = () => {
       subjects.value = res.data.data
     })
     .catch((error) => {
-      message.error(error.response?.data?.message || 'Lỗi khi tải danh sách môn học')
+      message.error(error.response?.data?.message || 'Lỗi khi tải danh sách môn')
     })
 }
 const fetchFactories = () => {
@@ -295,9 +295,9 @@ const handleShowUpdate = () => {
 }
 const handleUpdatePlanDate = () => {
   Modal.confirm({
-    title: 'Xác nhận cập nhật buổi dạy',
-    content: 'Bạn có chắc muốn lưu thay đổi này không?',
-    okText: 'Đồng ý',
+    title: 'Xác nhận cập nhật thông tin buổi học',
+    content: 'Bạn có chắc chắn muốn lưu những thay đổi này không?',
+    okText: 'Lưu thay đổi',
     cancelText: 'Hủy',
     onOk() {
       requestAPI
@@ -309,12 +309,12 @@ const handleUpdatePlanDate = () => {
           room: formUpdateData.room,
         })
         .then(({ data: response }) => {
-          message.success(response.message || 'Cập nhật buổi học thành công')
+          message.success(response.message || 'Cập nhật thông tin buổi học thành công')
           isUpdateModalVisible.value = false
           fetchTeachingSchedule()
           fetchTeachingSchedulePresent()
         })
-        .catch((e) => message.error(e.response?.data?.message || 'Lỗi khi cập nhật buổi học'))
+        .catch((e) => message.error(e.response?.data?.message || 'Lỗi khi cập nhật thông tin buổi học'))
     },
   })
 }
@@ -389,11 +389,11 @@ const roomInput = ref('')
 const pendingChangeRecord = ref(null)
 function handleTypeToggle(record, checked) {
   Modal.confirm({
-    title: 'Xác nhận thay đổi hình thức',
+    title: 'Xác nhận thay đổi hình thức học',
     content: checked
-      ? 'Bạn có chắc muốn bật Online và nhập link học không?'
-      : 'Bạn có chắc muốn chuyển về Offline không?',
-    okText: 'Đồng ý',
+      ? 'Bạn có chắc chắn muốn chuyển sang hình thức Online và cần nhập link học không?'
+      : 'Bạn có chắc chắn muốn chuyển về hình thức Offline không?',
+    okText: 'Xác nhận',
     cancelText: 'Hủy',
     onOk() {
       if (checked) {
@@ -413,7 +413,7 @@ function handleTypeToggle(record, checked) {
 // 3) Khi confirm chuyển về Offline: gọi change-type với roomInput.value
 function confirmRoomModal() {
   if (!roomInput.value) {
-    return message.error('Vui lòng nhập phòng học!')
+    return message.error('Vui lòng nhập phòng!')
   }
   showRoomModal.value = false
   loadingStore.show()
@@ -760,7 +760,7 @@ onMounted(() => {
         <a-form-item label="Địa điểm học" name="room">
           <a-input
             v-model:value="formUpdateData.room"
-            placeholder="Nhập phòng học"
+            placeholder="Nhập phòng"
             class="w-100"
             @keyup.enter="handleUpdatePlanDate"
           />
@@ -785,14 +785,14 @@ onMounted(() => {
 
     <a-modal
       v-model:open="showRoomModal"
-      title="Nhập phòng học để chuyển sang Offline"
+      title="Nhập phòng để chuyển sang Offline"
       @ok="confirmRoomModal"
       @cancel="showRoomModal = false"
       :okButtonProps="{ loading: isLoading }"
     >
       <a-form layout="vertical">
-        <a-form-item label="Phòng học">
-          <a-input v-model:value="roomInput" placeholder="Nhập phòng học" />
+        <a-form-item label="Phòng">
+          <a-input v-model:value="roomInput" placeholder="Nhập phòng" />
         </a-form-item>
       </a-form>
     </a-modal>
