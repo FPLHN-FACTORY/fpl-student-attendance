@@ -83,7 +83,7 @@ const fetchDataDetail = () => {
       breadcrumbStore.push({
         name: ROUTE_NAMES.MANAGEMENT_SHIFT_FACTORY,
         params: { id: _detail.value.factoryId },
-        breadcrumbName: 'Danh sách ca học - ' + _detail.value.factoryName,
+        breadcrumbName: 'Danh sách ca - ' + _detail.value.factoryName,
       })
       breadcrumbStore.push({
         breadcrumbName: 'Chi tiết điểm danh',
@@ -187,7 +187,6 @@ watch(
                     class="w-100"
                     :dropdownMatchSelectWidth="false"
                     placeholder="-- Tất cả trạng thái --"
-                    allowClear
                   >
                     <a-select-option :value="null">-- Tất cả trạng thái --</a-select-option>
                     <a-select-option :value="1">Có mặt</a-select-option>

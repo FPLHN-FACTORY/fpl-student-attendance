@@ -111,8 +111,4 @@ public class TCFactoryServiceImpl implements TCFactoryService {
                 return RouterHelper.responseSuccess("Lấy tất cả học kỳ thành công", semesters);
         }
 
-        public void invalidateTeacherFactoryCaches() {
-                redisInvalidationHelper.invalidateAllCaches();
-        }
-
 }

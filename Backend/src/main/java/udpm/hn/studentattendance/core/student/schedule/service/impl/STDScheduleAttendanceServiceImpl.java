@@ -122,7 +122,7 @@ public class STDScheduleAttendanceServiceImpl implements STDScheduleAttendanceSe
                         Color rowColor2 = new Color(245, 245, 245);
 
                         // Thêm header cho bảng
-                        Stream.of("Bài học", "Ngày học", "Ca học", "Nhóm xưởng", "Link học", "Địa điểm",
+                        Stream.of("#", "Ngày học", "Ca học", "Nhóm xưởng", "Link học", "Địa điểm",
                                         "Tên giảng viên", "Mô tả")
                                         .forEach(headerTitle -> {
                                                 PdfPCell headerCell = new PdfPCell();
@@ -225,17 +225,4 @@ public class STDScheduleAttendanceServiceImpl implements STDScheduleAttendanceSe
                 cell.setBorderColor(new Color(200, 200, 200));
         }
 
-        /**
-         * Xóa cache lịch học của một user
-         */
-        public void invalidateScheduleCache(String userId) {
-                redisInvalidationHelper.invalidateAllCaches();
-        }
-
-        /**
-         * Xóa tất cả các cache lịch học
-         */
-        public void invalidateAllScheduleCaches() {
-                redisInvalidationHelper.invalidateAllCaches();
-        }
 }

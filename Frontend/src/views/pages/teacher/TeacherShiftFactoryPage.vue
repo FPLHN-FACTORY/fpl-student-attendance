@@ -47,7 +47,7 @@ const columns = ref(
     { title: 'Buổi', dataIndex: 'orderNumber', key: 'orderNumber' },
     { title: 'Ngày học', dataIndex: 'startDate', key: 'startDate' },
     { title: 'Thời gian', key: 'time' },
-    { title: 'Ca học', dataIndex: 'shift', key: 'shift' },
+    { title: 'Ca', dataIndex: 'shift', key: 'shift' },
     { title: 'Nội dung', dataIndex: 'description', key: 'description' },
     { title: 'Phòng', dataIndex: 'room', key: 'room' },
     { title: 'Link Online', dataIndex: 'link', key: 'link' },
@@ -90,7 +90,7 @@ const fetchDataDetail = () => {
     .then(({ data: response }) => {
       _detail.value = response.data
       breadcrumbStore.push({
-        breadcrumbName: 'Danh sách ca học - ' + _detail.value.factoryName,
+        breadcrumbName: 'Danh sách ca - ' + _detail.value.factoryName,
       })
       fetchDataList()
     })
@@ -137,7 +137,7 @@ const fetchDataShift = () => {
       lstShift.value = response.data
     })
     .catch((error) => {
-      message.error(error?.response?.data?.message || 'Lỗi khi lấy dữ liệu ca học')
+      message.error(error?.response?.data?.message || 'Lỗi khi lấy dữ liệu ca')
     })
 }
 
@@ -167,7 +167,7 @@ const handleShowDescription = (text) => {
   Modal.info({
     title: 'Nội dung chi tiết',
     type: 'info',
-    content: text || 'Buổi học chưa có nội dung',
+    content: text || 'Ca chưa có nội dung',
     okText: 'Đóng',
     okButtonProps: {
       class: 'btn-gray',
@@ -226,7 +226,6 @@ watch(
                     class="w-100"
                     :dropdownMatchSelectWidth="false"
                     placeholder="-- Tất cả trạng thái --"
-                    allowClear
                   >
                     <a-select-option :value="null">-- Tất cả trạng thái --</a-select-option>
                     <a-select-option
@@ -254,15 +253,15 @@ watch(
                   </a-select>
                 </div>
                 <div class="col-xxl-2 col-lg-4 col-md-4 col-sm-6">
-                  <div class="label-title">Ca học:</div>
+                  <div class="label-title">Ca:</div>
                   <a-select
                     v-model:value="dataFilter.shift"
                     class="w-100"
                     :dropdownMatchSelectWidth="false"
-                    placeholder="-- Tất cả ca học --"
+                    placeholder="-- Tất cả ca --"
                     allowClear
                   >
-                    <a-select-option :value="null">-- Tất cả ca học --</a-select-option>
+                    <a-select-option :value="null">-- Tất cả ca --</a-select-option>
                     <a-select-option v-for="o in lstShift" :key="o.id" :value="o.shift">
                       {{ SHIFT[o.shift] }}
                     </a-select-option>
@@ -294,7 +293,7 @@ watch(
       <div class="col-12">
         <a-card :bordered="false" class="cart">
           <template #title>
-            <UnorderedListOutlined /> Danh sách ca học
+            <UnorderedListOutlined /> Danh sách ca
             {{ `(${formatDate(_detail?.fromDate)} - ${formatDate(_detail?.toDate)})` }}
           </template>
 

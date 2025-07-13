@@ -16,6 +16,7 @@ import udpm.hn.studentattendance.entities.Facility;
 import udpm.hn.studentattendance.entities.FacilityShift;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
 import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
+import udpm.hn.studentattendance.helpers.RequestTrimHelper;
 import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.helpers.SettingHelper;
 import udpm.hn.studentattendance.helpers.ShiftHelper;
@@ -90,6 +91,8 @@ public class AFFacilityShiftServiceImpl implements AFFacilityShiftService {
 
     @Override
     public ResponseEntity<?> addShift(AFAddOrUpdateFacilityShiftRequest request) {
+        // Trim all string fields in the request
+        RequestTrimHelper.trimStringFields(request);
 
         Facility facility = afFacilityExtendRepository.findById(request.getIdFacility()).orElse(null);
 
@@ -137,6 +140,9 @@ public class AFFacilityShiftServiceImpl implements AFFacilityShiftService {
 
     @Override
     public ResponseEntity<?> updateShift(AFAddOrUpdateFacilityShiftRequest request) {
+        // Trim all string fields in the request
+        RequestTrimHelper.trimStringFields(request);
+
         FacilityShift facilityShift = afFacilityShiftRepository.findById(request.getId()).orElse(null);
         if (facilityShift == null) {
             return RouterHelper.responseError("Không tìm thấy ca học muốn cập nhật");
@@ -240,10 +246,4 @@ public class AFFacilityShiftServiceImpl implements AFFacilityShiftService {
         return RouterHelper.responseSuccess("Thay đổi trạng thái ca học thành công", savedShift);
     }
 
-    /**
-     * @deprecated Use redisInvalidationHelper.invalidateAllCaches() instead
-     */
-    private void invalidateShiftCaches() {
-        redisInvalidationHelper.invalidateAllCaches();
-    }
 }

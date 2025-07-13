@@ -149,29 +149,6 @@ class STDScheduleAttendanceServiceImplTest {
     }
 
     @Test
-    @DisplayName("Should invalidate schedule cache for a user")
-    void invalidateScheduleCache_ShouldCallRedisDeletePattern() {
-        // Given
-        String userId = "user123";
-
-        // When
-        service.invalidateScheduleCache(userId);
-
-        // Then
-        verify(redisInvalidationHelper).invalidateAllCaches();
-    }
-
-    @Test
-    @DisplayName("Should invalidate all schedule caches")
-    void invalidateAllScheduleCaches_ShouldCallRedisDeletePattern() {
-        // When
-        service.invalidateAllScheduleCaches();
-
-        // Then
-        verify(redisInvalidationHelper).invalidateAllCaches();
-    }
-
-    @Test
     @DisplayName("Should export schedule attendance to PDF")
     void exportScheduleAttendance_ShouldReturnPdfInputStream() {
         // Given

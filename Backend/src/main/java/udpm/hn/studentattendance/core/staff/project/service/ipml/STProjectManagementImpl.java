@@ -10,10 +10,7 @@ import udpm.hn.studentattendance.core.staff.project.model.response.USProjectResp
 import udpm.hn.studentattendance.core.staff.project.repository.*;
 import udpm.hn.studentattendance.core.staff.project.service.STProjectManagementService;
 import udpm.hn.studentattendance.entities.*;
-import udpm.hn.studentattendance.helpers.PaginationHelper;
-import udpm.hn.studentattendance.helpers.RouterHelper;
-import udpm.hn.studentattendance.helpers.SessionHelper;
-import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
+import udpm.hn.studentattendance.helpers.*;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.common.repositories.CommonUserStudentRepository;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
@@ -53,6 +50,19 @@ public class STProjectManagementImpl implements STProjectManagementService {
 
     @Override
     public ResponseEntity<?> createProject(USProjectCreateOrUpdateRequest request) {
+        // Trim all string fields in the request
+        RequestTrimHelper.trimStringFields(request);
+
+        String namePattern = "^[a-zA-ZÀ-ỹ\\s_#-]+$";
+        if (!request.getName().matches(namePattern)) {
+            return RouterHelper
+                    .responseError("Tên dự án không hợp lệ: Chỉ được chứa ký tự chữ và các ký tự đặc biệt _ - #");
+        }
+
+        String[] words = request.getName().trim().split("\\s+");
+        if (words.length < 2) {
+            return RouterHelper.responseError("Tên dự án không hợp lệ: Tối thiểu 2 từ, cách nhau bởi khoảng trắng");
+        }
 
         LevelProject levelProject = levelProjectRepository.findById(request.getLevelProjectId()).orElse(null);
         if (levelProject == null) {
@@ -76,7 +86,7 @@ public class STProjectManagementImpl implements STProjectManagementService {
         }
 
         Project project = new Project();
-        project.setName(request.getName());
+        project.setName(request.getName().trim());
         project.setDescription(request.getDescription());
         project.setLevelProject(levelProject);
         project.setSemester(semester);
@@ -98,9 +108,23 @@ public class STProjectManagementImpl implements STProjectManagementService {
 
     @Override
     public ResponseEntity<?> updateProject(String idProject, USProjectCreateOrUpdateRequest request) {
+        // Trim all string fields in the request
+        RequestTrimHelper.trimStringFields(request);
+
         Project project = projectManagementRepository.findById(idProject).orElse(null);
         if (project == null) {
             return RouterHelper.responseError("Không tìm thấy dự án");
+        }
+
+        String namePattern = "^[a-zA-ZÀ-ỹ\\s_#-]+$";
+        if (!request.getName().matches(namePattern)) {
+            return RouterHelper
+                    .responseError("Tên dự án không hợp lệ: Chỉ được chứa ký tự chữ và các ký tự đặc biệt _ - #");
+        }
+
+        String[] words = request.getName().trim().split("\\s+");
+        if (words.length < 2) {
+            return RouterHelper.responseError("Tên dự án không hợp lệ: Tối thiểu 2 từ, cách nhau bởi khoảng trắng");
         }
 
         LevelProject levelProject = levelProjectRepository.findById(request.getLevelProjectId()).orElse(null);
@@ -131,7 +155,7 @@ public class STProjectManagementImpl implements STProjectManagementService {
             deleteBulkByProject.deleteAllByProjectId(project.getId());
         }
         String oldName = project.getName();
-        project.setName(request.getName());
+        project.setName(request.getName().trim());
         project.setDescription(request.getDescription());
         project.setLevelProject(levelProject);
         project.setSemester(semester);

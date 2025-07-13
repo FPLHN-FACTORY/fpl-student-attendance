@@ -19,7 +19,7 @@ public interface SPDPlanFactoryRepository extends PlanFactoryRepository {
 
     @Query(value = """
                 SELECT
-                    ROW_NUMBER() OVER (ORDER BY MAX(pd.created_at) DESC) as orderNumber,
+                    ROW_NUMBER() OVER (ORDER BY pf.status DESC, MAX(pd.created_at) DESC) as orderNumber,
                     pf.id,
                     pf.id_plan AS planId,
                     pl.name AS planName,

@@ -33,11 +33,11 @@ const pagination = ref({ ...DEFAULT_PAGINATION })
 
 const columns = autoAddColumnWidth([
   { title: '#', dataIndex: 'indexs', key: 'indexs' },
-  { title: 'Ngày học', key: 'time' },
+  { title: 'Ngày điểm danh', key: 'time' },
   { title: 'Ca', dataIndex: 'shift', key: 'shift' },
   { title: 'Nhóm xưởng', dataIndex: 'factoryName', key: 'factoryName' },
   { title: 'Dự án', dataIndex: 'projectName', key: 'projectName' },
-  { title: 'Link học', dataIndex: 'link', key: 'link' },
+  { title: 'Link', dataIndex: 'link', key: 'link' },
   { title: 'Địa điểm', dataIndex: 'location', key: 'location' },
   { title: 'Tên giảng viên', dataIndex: 'staffName', key: 'staffName' },
   { title: 'Mô tả', dataIndex: 'description', key: 'description' },
@@ -176,7 +176,7 @@ const exportToExcel = async () => {
 
     // 7. Xuất file
     const buf = await wb.xlsx.writeBuffer()
-    saveAs(new Blob([buf]), 'DiemDanh.xlsx')
+    saveAs(new Blob([buf]), 'lich-hoc.xlsx')
   } catch (error) {
     message.error('Lỗi khi xuất Excel: ' + error.message)
   } finally {
@@ -201,7 +201,7 @@ const exportToPDF = () => {
     })
     .then((res) => {
       const blob = new Blob([res.data], { type: 'application/pdf' })
-      const fileName = 'DiemDanh.pdf'
+      const fileName = 'lich-hoc.pdf'
       saveAs(blob, fileName)
       message.success('Xuất file PDF thành công')
     })

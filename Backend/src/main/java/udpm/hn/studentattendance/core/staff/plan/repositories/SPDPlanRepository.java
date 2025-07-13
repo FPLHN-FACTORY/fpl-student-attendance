@@ -21,7 +21,7 @@ public interface SPDPlanRepository extends PlanRepository {
 
     @Query(value = """
                 SELECT
-                    ROW_NUMBER() OVER (ORDER BY pl.created_at DESC) as orderNumber,
+                    ROW_NUMBER() OVER (ORDER BY pl.status DESC, pl.created_at DESC) as orderNumber,
                     pl.id,
                     pl.name AS planName,
                     p.id AS projectId,

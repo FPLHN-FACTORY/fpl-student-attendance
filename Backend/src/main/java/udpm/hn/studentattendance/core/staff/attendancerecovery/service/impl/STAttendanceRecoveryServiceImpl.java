@@ -25,6 +25,7 @@ import udpm.hn.studentattendance.infrastructure.constants.RedisPrefixConstant;
 import udpm.hn.studentattendance.infrastructure.excel.model.request.EXDataRequest;
 import udpm.hn.studentattendance.infrastructure.excel.model.response.ExImportLogDetailResponse;
 import udpm.hn.studentattendance.infrastructure.redis.service.RedisService;
+import udpm.hn.studentattendance.helpers.RequestTrimHelper;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -157,6 +158,9 @@ public class STAttendanceRecoveryServiceImpl implements STAttendanceRecoveryServ
 
     @Override
     public ResponseEntity<?> createNewEventAttendanceRecovery(STCreateOrUpdateNewEventRequest request) {
+        // Trim all string fields in the request
+        RequestTrimHelper.trimStringFields(request);
+
         Optional<Facility> facilityOptional = facilityRepository.findById(sessionHelper.getFacilityId());
         if (facilityOptional == null) {
             return RouterHelper.responseError("Cơ sở không tồn tại", null);
@@ -177,28 +181,8 @@ public class STAttendanceRecoveryServiceImpl implements STAttendanceRecoveryServ
     }
 
     public AttendanceRecovery getCachedAttendanceRecoveryDetail(String id) {
-        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_ATTENDANCE_RECOVERY + id;
-
-        Object cachedData = redisService.get(cacheKey);
-        if (cachedData != null) {
-            try {
-                return redisService.getObject(cacheKey, AttendanceRecovery.class);
-            } catch (Exception e) {
-                redisService.delete(cacheKey);
-            }
-        }
-
         Optional<AttendanceRecovery> attendanceRecoveryOptional = attendanceRecoveryRepository.findById(id);
-        AttendanceRecovery result = attendanceRecoveryOptional.orElse(null);
-
-        if (result != null) {
-            try {
-                redisService.set(cacheKey, result, redisTTL);
-            } catch (Exception ignored) {
-            }
-        }
-
-        return result;
+        return attendanceRecoveryOptional.orElse(null);
     }
 
     @Override
@@ -213,6 +197,9 @@ public class STAttendanceRecoveryServiceImpl implements STAttendanceRecoveryServ
 
     @Override
     public ResponseEntity<?> updateEventAttendanceRecovery(STCreateOrUpdateNewEventRequest request, String id) {
+        // Trim all string fields in the request
+        RequestTrimHelper.trimStringFields(request);
+
         Optional<AttendanceRecovery> attendanceRecoveryOptional = attendanceRecoveryRepository.findById(id);
         if (attendanceRecoveryOptional.isPresent()) {
             AttendanceRecovery attendanceRecovery = attendanceRecoveryOptional.get();
@@ -468,29 +455,8 @@ public class STAttendanceRecoveryServiceImpl implements STAttendanceRecoveryServ
     }
 
     public List<ExImportLogDetailResponse> getCachedHistoryLogDetailEvent(String idImportLog) {
-        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_ATTENDANCE_RECOVERY + "history_log_detail_"
-                + idImportLog + "_"
-                + sessionHelper.getUserId() + "_"
-                + sessionHelper.getFacilityId();
-
-        Object cachedData = redisService.get(cacheKey);
-        if (cachedData != null) {
-            try {
-                return redisService.getObject(cacheKey, List.class);
-            } catch (Exception e) {
-                redisService.delete(cacheKey);
-            }
-        }
-
-        List<ExImportLogDetailResponse> logDetailResponseList = historyLogRepository.getAllList(idImportLog,
+        return historyLogRepository.getAllList(idImportLog,
                 sessionHelper.getUserId(), sessionHelper.getFacilityId());
-
-        try {
-            redisService.set(cacheKey, logDetailResponseList, redisTTL);
-        } catch (Exception ignored) {
-        }
-
-        return logDetailResponseList;
     }
 
     @Override
@@ -501,29 +467,7 @@ public class STAttendanceRecoveryServiceImpl implements STAttendanceRecoveryServ
     }
 
     public Integer getCachedImportStudentSuccess(String idImportLog, String userId, String facilityId, Integer type) {
-        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_ATTENDANCE_RECOVERY + "import_success_"
-                + idImportLog + "_"
-                + userId + "_"
-                + facilityId + "_"
-                + type;
-
-        Object cachedData = redisService.get(cacheKey);
-        if (cachedData != null) {
-            try {
-                return redisService.getObject(cacheKey, Integer.class);
-            } catch (Exception e) {
-                redisService.delete(cacheKey);
-            }
-        }
-
-        Integer result = historyLogRepository.getAllLine(idImportLog, userId, facilityId, type);
-
-        try {
-            redisService.set(cacheKey, result, redisTTL);
-        } catch (Exception ignored) {
-        }
-
-        return result;
+        return historyLogRepository.getAllLine(idImportLog, userId, facilityId, type);
     }
 
     @Override
@@ -532,32 +476,15 @@ public class STAttendanceRecoveryServiceImpl implements STAttendanceRecoveryServ
     }
 
     public Boolean getCachedHasStudentAttendanceRecovery(String idAttendanceRecovery) {
-        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_ATTENDANCE_RECOVERY + "has_students_" + idAttendanceRecovery;
-
-        Object cachedData = redisService.get(cacheKey);
-        if (cachedData != null) {
-            try {
-                return redisService.getObject(cacheKey, Boolean.class);
-            } catch (Exception e) {
-                redisService.delete(cacheKey);
-            }
-        }
-
         Optional<AttendanceRecovery> attendanceRecoveryOptional = attendanceRecoveryRepository
                 .findById(idAttendanceRecovery);
 
-        boolean result = false;
         if (attendanceRecoveryOptional.isPresent()) {
             AttendanceRecovery attendanceRecovery = attendanceRecoveryOptional.get();
-            result = attendanceRecovery.getImportLog() != null;
-
-            try {
-                redisService.set(cacheKey, result, redisTTL);
-            } catch (Exception ignored) {
-            }
+            return attendanceRecovery.getImportLog() != null;
         }
 
-        return result;
+        return false;
     }
 
     @Override
@@ -611,17 +538,4 @@ public class STAttendanceRecoveryServiceImpl implements STAttendanceRecoveryServ
         return RouterHelper.responseError("Không tìm thấy sự kiện khôi phục điểm danh", null);
     }
 
-    /**
-     * @deprecated Use redisInvalidationHelper.invalidateAllCaches() instead
-     */
-    private void invalidateAttendanceRecoveryCache(String attendanceRecoveryId) {
-        redisInvalidationHelper.invalidateAllCaches();
-    }
-
-    /**
-     * @deprecated Use redisInvalidationHelper.invalidateAllCaches() instead
-     */
-    private void invalidateAttendanceRecoveryCaches() {
-        redisInvalidationHelper.invalidateAllCaches();
-    }
 }

@@ -406,12 +406,11 @@ onMounted(() => {
                   <div class="label-title">Trạng thái:</div>
                   <a-select
                     v-model:value="filter.status"
-                    placeholder="Chọn trạng thái"
-                    allowClear
+                    placeholder="-- Tất cả trạng thái --"
                     class="w-100"
                     @change="fetchStaffs"
                   >
-                    <a-select-option :value="''">Tất cả trạng thái</a-select-option>
+                    <a-select-option :value="''">-- Tất cả trạng thái --</a-select-option>
                     <a-select-option value="ACTIVE">Đang hoạt động</a-select-option>
                     <a-select-option value="INACTIVE">Ngừng hoạt động</a-select-option>
                   </a-select>
@@ -427,7 +426,7 @@ onMounted(() => {
                     class="w-100"
                     @change="fetchStaffs"
                   >
-                    <a-select-option :value="''">Tất cả vai trò</a-select-option>
+                    <a-select-option :value="''">-- Tất cả vai trò --</a-select-option>
                     <a-select-option value="1">Phụ trách xưởng</a-select-option>
                     <a-select-option value="3">Giảng viên</a-select-option>
                   </a-select>
@@ -442,7 +441,7 @@ onMounted(() => {
                     class="w-100"
                     @change="fetchStaffs"
                   >
-                    <a-select-option :value="''">Tất cả cơ sở</a-select-option>
+                    <a-select-option :value="''">-- Tất cả cơ sở --</a-select-option>
                     <a-select-option
                       v-for="facility in facilitiesListCombobox"
                       :key="facility.id"
