@@ -185,14 +185,14 @@ const handleTableChange = (pageInfo) => {
 
 const submitAddFactory = () => {
   if (!newFactory.factoryName || !newFactory.idUserStaff || !newFactory.idProject) {
-    message.error('Vui lòng điền đầy đủ thông tin bắt buộc')
+    message.error('Vui lòng điền đầy đủ thông tin bắt buộc (Tên nhóm xưởng, Phụ trách xưởng, Dự án)')
     return
   }
   Modal.confirm({
-    title: 'Xác nhận thêm mới',
-    content: 'Bạn có chắc chắn muốn thêm nhóm xưởng mới này?',
-    okText: 'Tiếp tục',
-    cancelText: 'Hủy bỏ',
+    title: 'Xác nhận thêm nhóm xưởng mới',
+    content: 'Bạn có chắc chắn muốn thêm nhóm xưởng mới này vào hệ thống không?',
+    okText: 'Thêm nhóm xưởng',
+    cancelText: 'Hủy',
     onOk() {
       loadingStore.show()
       requestAPI

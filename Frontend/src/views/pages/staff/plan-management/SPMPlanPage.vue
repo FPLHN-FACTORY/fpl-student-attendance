@@ -323,11 +323,11 @@ const handleSubmitAdd = async () => {
   try {
     await formRefAddOrUpdate.value.validate()
     Modal.confirm({
-      title: `Xác nhận thêm mới`,
+      title: `Xác nhận tạo kế hoạch mới`,
       type: 'info',
-      content: `Bạn có chắc muốn tạo kế hoạch này?`,
-      okText: 'Tiếp tục',
-      cancelText: 'Hủy bỏ',
+      content: `Bạn có chắc chắn muốn tạo kế hoạch này không?`,
+      okText: 'Tạo kế hoạch',
+      cancelText: 'Hủy',
       onOk() {
         fetchSubmitCreate()
       },
@@ -339,11 +339,11 @@ const handleSubmitUpdate = async () => {
   try {
     await formRefAddOrUpdate.value.validate()
     Modal.confirm({
-      title: `Xác nhận cập nhật`,
+      title: `Xác nhận cập nhật kế hoạch`,
       type: 'info',
-      content: `Mọi dữ liệu dư thừa trong khoảng thời gian diễn ra có thể mất. Bạn có chắc muốn cập nhật kế hoạch này?`,
-      okText: 'Tiếp tục',
-      cancelText: 'Hủy bỏ',
+      content: `Cập nhật kế hoạch có thể làm mất một số dữ liệu dư thừa trong khoảng thời gian diễn ra. Bạn có chắc chắn muốn tiếp tục không?`,
+      okText: 'Cập nhật',
+      cancelText: 'Hủy',
       onOk() {
         fetchSubmitUpdate()
       },
@@ -353,11 +353,11 @@ const handleSubmitUpdate = async () => {
 
 const handleChangeStatus = (id) => {
   Modal.confirm({
-    title: `Xác nhận thay đổi trạng thái`,
+    title: `Xác nhận thay đổi trạng thái kế hoạch`,
     type: 'info',
-    content: `Bạn có chắc muốn thay đổi trạng thái kế hoạch này?`,
-    okText: 'Tiếp tục',
-    cancelText: 'Hủy bỏ',
+    content: `Bạn có chắc chắn muốn thay đổi trạng thái của kế hoạch này không?`,
+    okText: 'Thay đổi',
+    cancelText: 'Hủy',
     onOk() {
       fetchSubmitChangeStatus(id)
     },
@@ -366,11 +366,11 @@ const handleChangeStatus = (id) => {
 
 const handleDelete = (id) => {
   Modal.confirm({
-    title: `Xác nhận xoá kế hoạch`,
+    title: `Xác nhận xóa kế hoạch`,
     type: 'warning',
-    content: `Mọi dữ liệu điểm danh sẽ bị xoá. Bạn vẫn muốn tiếp tục?`,
-    okText: 'Tiếp tục',
-    cancelText: 'Hủy bỏ',
+    content: `Việc xóa kế hoạch sẽ làm mất toàn bộ dữ liệu điểm danh liên quan. Bạn có chắc chắn muốn tiếp tục không?`,
+    okText: 'Xóa kế hoạch',
+    cancelText: 'Hủy',
     onOk() {
       fetchSubmitDelete(id)
     },

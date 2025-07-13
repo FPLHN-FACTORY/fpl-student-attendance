@@ -49,7 +49,7 @@ const columns = ref(
     { title: 'Thời gian', key: 'time' },
     { title: 'Ca học', dataIndex: 'shift', key: 'shift' },
     { title: 'Nội dung', dataIndex: 'description', key: 'description' },
-    { title: 'Phòng học', dataIndex: 'room', key: 'room' },
+    { title: 'Phòng', dataIndex: 'room', key: 'room' },
     { title: 'Link Online', dataIndex: 'link', key: 'link' },
     {
       title: 'Điểm danh trễ',

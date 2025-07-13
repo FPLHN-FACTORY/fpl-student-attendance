@@ -271,7 +271,7 @@ const updateSemester = () => {
   Modal.confirm({
     title: 'Xác nhận cập nhật học kỳ',
     content:
-      'Lưu ý: Các lịch học mà sinh viên đã được phân công theo lịch của học kỳ cũ vẫn sẽ hoạt động bình thường',
+      'Lưu ý: Các lịch mà sinh viên đã được phân công theo lịch của học kỳ cũ vẫn sẽ hoạt động bình thường',
     okText: 'Cập nhật',
     cancelText: 'Hủy',
     onOk: () => {

@@ -316,7 +316,7 @@ watch(
         />
       </a-form-item>
       <a-form-item
-        label="Thời gian diễn ra ca học tối thiểu (phút):"
+        label="Thời gian diễn ra ca tối thiểu (phút):"
         name="SHIFT_MIN_DIFF"
         :rules="ruleRequired"
       >

@@ -79,8 +79,8 @@ const formData = reactive({
 })
 
 const formRules = reactive({
-  shift: [{ required: true, message: 'Vui lòng chọn 1 ca học!' }],
-  timeRange: [{ required: true, message: 'Vui lòng chọn thời gian ca học!' }],
+  shift: [{ required: true, message: 'Vui lòng chọn 1 ca!' }],
+  timeRange: [{ required: true, message: 'Vui lòng chọn thời gian ca!' }],
 })
 
 const fetchDataDetail = () => {
@@ -97,7 +97,7 @@ const fetchDataDetail = () => {
       })
       breadcrumbStore.push({
         name: ROUTE_NAMES.MANAGEMENT_FACILITY_SHIFT,
-        breadcrumbName: 'Quản lý ca học',
+        breadcrumbName: 'Quản lý ca',
       })
       fetchDataList()
     })
