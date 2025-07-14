@@ -39,7 +39,6 @@ public class DBGenerator {
 
     private final SettingHelper settingHelper;
 
-
     @Value("${db.fake.isGenerated}")
     private String isGenerated;
 
@@ -72,7 +71,6 @@ public class DBGenerator {
 
     private void generateSettings() {
         Map<SettingKeys, Object> settings = settingHelper.getAllSettings();
-
         if (settings.get(SettingKeys.DISABLED_CHECK_EMAIL_FPT_STAFF) == null) {
             settingHelper.save(SettingKeys.DISABLED_CHECK_EMAIL_FPT_STAFF, "false");
         }
