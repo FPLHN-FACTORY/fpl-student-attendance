@@ -1,5 +1,6 @@
 package udpm.hn.studentattendance.core.admin.semester.service.impl;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -13,6 +14,7 @@ import udpm.hn.studentattendance.core.admin.semester.repository.ADSemesterReposi
 import udpm.hn.studentattendance.core.admin.semester.service.ADSemesterService;
 import udpm.hn.studentattendance.entities.Semester;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
+import udpm.hn.studentattendance.helpers.RedisCacheHelper;
 import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
 import udpm.hn.studentattendance.helpers.RequestTrimHelper;
 import udpm.hn.studentattendance.helpers.RouterHelper;
@@ -43,7 +45,7 @@ public class ADSemesterServiceImpl implements ADSemesterService {
 
     private final UserActivityLogHelper userActivityLogHelper;
 
-    private final RedisService redisService;
+    private final RedisCacheHelper redisCacheHelper;
 
     private final RedisInvalidationHelper redisInvalidationHelper;
 
@@ -52,30 +54,14 @@ public class ADSemesterServiceImpl implements ADSemesterService {
 
     @Override
     public ResponseEntity<?> getAllSemester(ADSemesterRequest request) {
-        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_SEMESTER + "all:" + request.toString();
-
-        // Kiểm tra cache cho PageableObject thay vì ResponseEntity
-        Object cachedData = redisService.get(cacheKey);
-        if (cachedData != null) {
-            try {
-                PageableObject pageableObject = redisService.getObject(cacheKey, PageableObject.class);
-                return RouterHelper.responseSuccess("Lấy học kỳ từ cached thành công", pageableObject);
-            } catch (Exception e) {
-                redisService.delete(cacheKey);
-            }
-        }
-
-        // Cache miss - fetch from database
-        Pageable pageable = PaginationHelper.createPageable(request, "createdAt");
-        PageableObject pageableObject = PageableObject
-                .of(adSemesterRepository.getAllSemester(pageable, request));
-
-        // Cache PageableObject thay vì ResponseEntity
-        try {
-            redisService.set(cacheKey, pageableObject, redisTTL);
-        } catch (Exception ignored) {
-        }
-
+        String key = RedisPrefixConstant.REDIS_PREFIX_SEMESTER + "all:" + request.toString();
+        PageableObject pageableObject = redisCacheHelper.getOrSet(
+                key,
+                () -> PageableObject.of(adSemesterRepository
+                        .getAllSemester(PaginationHelper.createPageable(request, "createdAt"), request)),
+                new TypeReference<PageableObject<?>>() {
+                },
+                redisTTL);
         return RouterHelper.responseSuccess("Hiển thị tất cả học kỳ thành công", pageableObject);
     }
 
@@ -88,7 +74,6 @@ public class ADSemesterServiceImpl implements ADSemesterService {
 
     @Override
     public ResponseEntity<?> createSemester(@Valid ADCreateUpdateSemesterRequest request) {
-        // Trim all string fields in the request
         RequestTrimHelper.trimStringFields(request);
 
         try {

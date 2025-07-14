@@ -7,7 +7,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.http.ResponseEntity;
 import udpm.hn.studentattendance.core.admin.subjectfacility.repository.ADFacilityRepository;
-import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
+import udpm.hn.studentattendance.helpers.RedisCacheHelper;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.redis.service.RedisService;
 
@@ -22,7 +22,7 @@ public class ADFacilityManagementServiceImplTest {
     @Mock
     private RedisService redisService;
     @Mock
-    private RedisInvalidationHelper redisInvalidationHelper;
+    private RedisCacheHelper redisCacheHelper;
     @InjectMocks
     private ADFacilityManagementServiceImpl service;
 
@@ -34,7 +34,7 @@ public class ADFacilityManagementServiceImplTest {
     @Test
     void testGetComboboxFacility() {
         String idSubject = "subject1";
-        when(redisService.get(anyString())).thenReturn(null);
+        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong())).thenReturn(null);
         when(repository.getFacility(idSubject)).thenReturn(Collections.emptyList());
         ResponseEntity<?> response = service.getComboboxFacility(idSubject);
         assertNotNull(response);
@@ -43,7 +43,7 @@ public class ADFacilityManagementServiceImplTest {
 
     @Test
     void testGetListFacility() {
-        when(redisService.get(anyString())).thenReturn(null);
+        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong())).thenReturn(null);
         when(repository.getFacilities(EntityStatus.ACTIVE)).thenReturn(Collections.emptyList());
         ResponseEntity<?> response = service.getListFacility();
         assertNotNull(response);

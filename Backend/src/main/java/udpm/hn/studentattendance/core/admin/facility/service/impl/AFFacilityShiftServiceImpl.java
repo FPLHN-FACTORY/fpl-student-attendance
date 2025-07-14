@@ -1,5 +1,6 @@
 package udpm.hn.studentattendance.core.admin.facility.service.impl;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -15,6 +16,7 @@ import udpm.hn.studentattendance.core.admin.facility.service.AFFacilityShiftServ
 import udpm.hn.studentattendance.entities.Facility;
 import udpm.hn.studentattendance.entities.FacilityShift;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
+import udpm.hn.studentattendance.helpers.RedisCacheHelper;
 import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
 import udpm.hn.studentattendance.helpers.RequestTrimHelper;
 import udpm.hn.studentattendance.helpers.RouterHelper;
@@ -39,7 +41,7 @@ public class AFFacilityShiftServiceImpl implements AFFacilityShiftService {
 
     private final SettingHelper settingHelper;
 
-    private final RedisService redisService;
+    private final RedisCacheHelper redisCacheHelper;
 
     private final RedisInvalidationHelper redisInvalidationHelper;
 
@@ -60,27 +62,14 @@ public class AFFacilityShiftServiceImpl implements AFFacilityShiftService {
     }
 
     public PageableObject<AFFacilityShiftResponse> getShiftList(AFFilterFacilityShiftRequest request) {
-        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_FACILITY_SHIFT + "list_" + request.toString();
-
-        Object cachedData = redisService.get(cacheKey);
-        if (cachedData != null) {
-            try {
-                return redisService.getObject(cacheKey, PageableObject.class);
-            } catch (Exception e) {
-                redisService.delete(cacheKey);
-            }
-        }
-
-        Pageable pageable = PaginationHelper.createPageable(request);
-        PageableObject<AFFacilityShiftResponse> data = PageableObject
-                .of(afFacilityShiftRepository.getAllByFilter(pageable, request));
-
-        try {
-            redisService.set(cacheKey, data, redisTTL);
-        } catch (Exception ignored) {
-        }
-
-        return data;
+        String key = RedisPrefixConstant.REDIS_PREFIX_FACILITY_SHIFT + "list_" + request.toString();
+        return redisCacheHelper.getOrSet(
+                key,
+                () -> PageableObject.of(
+                        afFacilityShiftRepository.getAllByFilter(PaginationHelper.createPageable(request), request)),
+                new TypeReference<PageableObject<AFFacilityShiftResponse>>() {
+                },
+                redisTTL);
     }
 
     @Override

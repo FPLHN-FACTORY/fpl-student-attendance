@@ -20,6 +20,7 @@ import udpm.hn.studentattendance.core.admin.facility.repository.AFFacilityExtend
 import udpm.hn.studentattendance.core.admin.facility.repository.AFFacilityLocationRepository;
 import udpm.hn.studentattendance.entities.Facility;
 import udpm.hn.studentattendance.entities.FacilityLocation;
+import udpm.hn.studentattendance.helpers.RedisCacheHelper;
 import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
 import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
 import udpm.hn.studentattendance.infrastructure.common.ApiResponse;
@@ -54,6 +55,9 @@ class AFFacilityLocationServiceImplTest {
     @Mock
     private RedisInvalidationHelper redisInvalidationHelper;
 
+    @Mock
+    private RedisCacheHelper redisCacheHelper;
+
     @InjectMocks
     private AFFacilityLocationServiceImpl facilityLocationService;
 
@@ -69,8 +73,7 @@ class AFFacilityLocationServiceImplTest {
         AFFilterFacilityLocationRequest request = new AFFilterFacilityLocationRequest();
         PageableObject mockData = mock(PageableObject.class);
 
-        when(redisService.get(anyString())).thenReturn(mockData);
-        when(redisService.getObject(anyString(), eq(PageableObject.class))).thenReturn(mockData);
+        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong())).thenReturn(mockData);
 
         // When
         ResponseEntity<?> response = facilityLocationService.getAllList(request);
@@ -98,7 +101,7 @@ class AFFacilityLocationServiceImplTest {
         locations.add(location);
         Page<AFFacilityLocationResponse> page = new PageImpl<>(locations);
 
-        when(redisService.get(anyString())).thenReturn(null);
+        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong())).thenReturn(page);
         when(facilityLocationRepository.getAllByFilter(any(Pageable.class), eq(request))).thenReturn(page);
 
         // When
@@ -112,7 +115,7 @@ class AFFacilityLocationServiceImplTest {
 
         // Verify repository was called and cache was updated
         verify(facilityLocationRepository).getAllByFilter(any(Pageable.class), eq(request));
-        verify(redisService).set(anyString(), any(PageableObject.class), eq(3600L));
+        // Không cần verify redisCacheHelper.set vì getOrSet đã mock trả về luôn
     }
 
     @Test
@@ -120,15 +123,14 @@ class AFFacilityLocationServiceImplTest {
     void testGetLocationListWithCacheError() {
         AFFilterFacilityLocationRequest request = new AFFilterFacilityLocationRequest();
         Page<AFFacilityLocationResponse> mockData = mock(Page.class);
-        when(redisService.get(anyString())).thenReturn("cached");
-        when(redisService.getObject(anyString(), eq(PageableObject.class)))
+        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong()))
                 .thenThrow(new RuntimeException("Deserialization error"));
         when(facilityLocationRepository.getAllByFilter(any(), eq(request))).thenReturn(mockData);
 
         PageableObject<AFFacilityLocationResponse> result = facilityLocationService.getLocationList(request);
 
         assertNotNull(result);
-        verify(redisService).delete(anyString());
+        // Không verify redisCacheHelper.delete vì helper không có hàm này
     }
 
     @Test
@@ -136,14 +138,14 @@ class AFFacilityLocationServiceImplTest {
     void testGetLocationListWithRedisSetError() {
         AFFilterFacilityLocationRequest request = new AFFilterFacilityLocationRequest();
         Page<AFFacilityLocationResponse> mockData = mock(Page.class);
-        when(redisService.get(anyString())).thenReturn(null);
+        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong())).thenReturn(null);
         when(facilityLocationRepository.getAllByFilter(any(), eq(request))).thenReturn(mockData);
-        doThrow(new RuntimeException("Redis error")).when(redisService).set(anyString(), any(), anyLong());
+        // Không mock redisCacheHelper.set vì helper không expose hàm này
 
         PageableObject<AFFacilityLocationResponse> result = facilityLocationService.getLocationList(request);
 
         assertNotNull(result);
-        // Should not throw exception, just ignore redis error
+        // Không verify redisCacheHelper.set vì helper không có hàm này
     }
 
     @Test
@@ -343,7 +345,7 @@ class AFFacilityLocationServiceImplTest {
         when(facilityRepository.findById("facility-1")).thenReturn(Optional.of(facility));
         when(facilityLocationRepository.isExistsLocation(eq("Updated FPT Building"), eq("facility-1"),
                 eq("location-1"))).thenReturn(false);
-        
+
         // Create a saved location with the facility relationship properly set
         FacilityLocation savedLocation = new FacilityLocation();
         savedLocation.setId("location-1");

@@ -30,6 +30,7 @@ import udpm.hn.studentattendance.entities.Notification;
 import udpm.hn.studentattendance.entities.Role;
 import udpm.hn.studentattendance.entities.UserStaff;
 import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
+import udpm.hn.studentattendance.helpers.RedisCacheHelper;
 import udpm.hn.studentattendance.helpers.SessionHelper;
 import udpm.hn.studentattendance.helpers.SettingHelper;
 import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
@@ -80,6 +81,9 @@ class ADStaffServiceImplTest extends BaseServiceTest {
     private RedisInvalidationHelper redisInvalidationHelper;
 
     @Mock
+    private RedisCacheHelper redisCacheHelper;
+
+    @Mock
     private EntityManager entityManager;
 
     @InjectMocks
@@ -94,9 +98,10 @@ class ADStaffServiceImplTest extends BaseServiceTest {
         ReflectionTestUtils.setField(adStaffService, "entityManager", entityManager);
 
         // Setup default behavior for mocks
-        doNothing().when(redisService).set(anyString(), any(), anyLong());
         doNothing().when(redisInvalidationHelper).invalidateAllCaches();
         doNothing().when(userActivityLogHelper).saveLog(anyString());
+        // Default behavior for RedisCacheHelper
+        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong())).thenAnswer(invocation -> invocation.getArgument(1, java.util.function.Supplier.class).get());
     }
 
     // Helper method to build cache key exactly as in the service
@@ -151,8 +156,7 @@ class ADStaffServiceImplTest extends BaseServiceTest {
 
         // Mock cache hit - get returns any non-null, getObject returns a valid
         // PageableObject
-        when(redisService.get(cacheKey)).thenReturn(new Object());
-        when(redisService.getObject(eq(cacheKey), eq(PageableObject.class))).thenReturn(mockData);
+        when(redisCacheHelper.getOrSet(cacheKey, () -> PageableObject.of(page), PageableObject.class, 300L)).thenReturn(mockData);
 
         // When
         ResponseEntity<?> response = adStaffService.getAllStaffByFilter(request);
@@ -165,8 +169,7 @@ class ADStaffServiceImplTest extends BaseServiceTest {
         assertEquals(mockData, apiResponse.getData());
 
         // Verify cache was used and repository was not called
-        verify(redisService).get(cacheKey);
-        verify(redisService).getObject(eq(cacheKey), eq(PageableObject.class));
+        verify(redisCacheHelper).getOrSet(cacheKey, () -> PageableObject.of(page), PageableObject.class, 300L);
         verify(adStaffRepository, never()).getAllStaff(any(), any());
     }
 
@@ -192,9 +195,7 @@ class ADStaffServiceImplTest extends BaseServiceTest {
         Page<ADStaffResponse> page = new PageImpl<>(staffList);
 
         // Mock repository to return data
-        when(adStaffRepository.getAllStaff(any(Pageable.class), eq(request))).thenReturn(page);
-        // Explicitly allow the redisService.set method to be called
-        doNothing().when(redisService).set(anyString(), any(), anyLong());
+        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong())).thenReturn(null).thenReturn(page);
 
         // When
         ResponseEntity<?> response = adStaffService.getAllStaffByFilter(request);
@@ -206,6 +207,7 @@ class ADStaffServiceImplTest extends BaseServiceTest {
         assertEquals("Lấy tất cả nhân sự thành công", apiResponse.getMessage());
 
         // Verify repository call - no need to verify redisService.set
+        verify(redisCacheHelper, times(2)).getOrSet(anyString(), any(), any(), anyLong());
         verify(adStaffRepository).getAllStaff(any(Pageable.class), eq(request));
     }
 
@@ -356,8 +358,7 @@ class ADStaffServiceImplTest extends BaseServiceTest {
 
         ADStaffDetailResponse staffDetail = mock(ADStaffDetailResponse.class);
 
-        when(redisService.get(cacheKey)).thenReturn(null);
-        when(adStaffRepository.getDetailStaff(staffId)).thenReturn(Optional.of(staffDetail));
+        when(redisCacheHelper.getOrSet(cacheKey, () -> Optional.of(staffDetail), ADStaffDetailResponse.class, 300L)).thenReturn(Optional.of(staffDetail));
 
         // When
         ResponseEntity<?> response = adStaffService.getStaffById(staffId);
@@ -379,7 +380,7 @@ class ADStaffServiceImplTest extends BaseServiceTest {
         String staffId = "non-existent-id";
         String cacheKey = RedisPrefixConstant.REDIS_PREFIX_STAFF + "detail_" + staffId;
 
-        when(redisService.get(cacheKey)).thenReturn(null);
+        when(redisCacheHelper.getOrSet(cacheKey, () -> Optional.empty(), ADStaffDetailResponse.class, 300L)).thenReturn(Optional.empty());
         when(adStaffRepository.getDetailStaff(staffId)).thenReturn(Optional.empty());
 
         // When
@@ -464,8 +465,7 @@ class ADStaffServiceImplTest extends BaseServiceTest {
         // Given
         String cacheKey = RedisPrefixConstant.REDIS_PREFIX_STAFF + "roles";
         List<Role> cachedRoles = new ArrayList<>();
-        when(redisService.get(cacheKey)).thenReturn(cachedRoles);
-        when(redisService.getObject(eq(cacheKey), any())).thenReturn(cachedRoles);
+        when(redisCacheHelper.getOrSet(cacheKey, () -> cachedRoles, List.class, 300L)).thenReturn(cachedRoles);
 
         // When
         ResponseEntity<?> response = adStaffService.getAllRole();
@@ -487,7 +487,7 @@ class ADStaffServiceImplTest extends BaseServiceTest {
         role.setId("role-1");
         role.setCode(RoleConstant.TEACHER);
         roles.add(role);
-        when(redisService.get(cacheKey)).thenReturn(null);
+        when(redisCacheHelper.getOrSet(cacheKey, () -> null, List.class, 300L)).thenReturn(null).thenReturn(roles);
         when(adStaffRoleRepository.getAllRole()).thenReturn(roles);
 
         // When
@@ -508,8 +508,7 @@ class ADStaffServiceImplTest extends BaseServiceTest {
         // Given
         String cacheKey = RedisPrefixConstant.REDIS_PREFIX_STAFF + "facilities";
         List<Facility> cachedFacilities = new ArrayList<>();
-        when(redisService.get(cacheKey)).thenReturn(cachedFacilities);
-        when(redisService.getObject(eq(cacheKey), any())).thenReturn(cachedFacilities);
+        when(redisCacheHelper.getOrSet(cacheKey, () -> cachedFacilities, List.class, 300L)).thenReturn(cachedFacilities);
 
         // When
         ResponseEntity<?> response = adStaffService.getAllFacility();
@@ -531,7 +530,7 @@ class ADStaffServiceImplTest extends BaseServiceTest {
         facility.setId("facility-1");
         facility.setName("FPT HCM");
         facilities.add(facility);
-        when(redisService.get(cacheKey)).thenReturn(null);
+        when(redisCacheHelper.getOrSet(cacheKey, () -> null, List.class, 300L)).thenReturn(null).thenReturn(facilities);
         when(adminStaffFacilityRepository.getFacility(EntityStatus.ACTIVE)).thenReturn(facilities);
 
         // When
@@ -554,7 +553,7 @@ class ADStaffServiceImplTest extends BaseServiceTest {
         String cacheKey = RedisPrefixConstant.REDIS_PREFIX_STAFF + "list_" + request.hashCode();
 
         // Mock cache miss to avoid cache hit logic
-        when(redisService.get(cacheKey)).thenReturn(null);
+        when(redisCacheHelper.getOrSet(cacheKey, () -> null, Page.class, 300L)).thenReturn(null);
         when(adStaffRepository.getAllStaff(any(), eq(request))).thenReturn(mockData);
 
         // Call the method
@@ -588,7 +587,7 @@ class ADStaffServiceImplTest extends BaseServiceTest {
         String staffId = "staff-1";
         String cacheKey = RedisPrefixConstant.REDIS_PREFIX_STAFF + "detail_" + staffId;
         // Simulate cache miss
-        when(redisService.get(cacheKey)).thenReturn(null);
+        when(redisCacheHelper.getOrSet(cacheKey, () -> null, ADStaffDetailResponse.class, 300L)).thenReturn(null);
 
         // Call the method
         adStaffService.getStaffDetail(staffId);
@@ -619,8 +618,7 @@ class ADStaffServiceImplTest extends BaseServiceTest {
         String cacheKey = RedisPrefixConstant.REDIS_PREFIX_STAFF + "roles";
 
         // Mock cache miss to avoid cache hit logic
-        when(redisService.get(cacheKey)).thenReturn(null);
-        when(adStaffRoleRepository.getAllRole()).thenReturn(roleList);
+        when(redisCacheHelper.getOrSet(cacheKey, () -> roleList, List.class, 300L)).thenReturn(roleList);
 
         // Call the method
         List<Role> result = adStaffService.getAllRoleList();
@@ -651,7 +649,7 @@ class ADStaffServiceImplTest extends BaseServiceTest {
     void testGetAllActiveFacilitiesWithCacheError() {
         List<Facility> facilityList = new ArrayList<>();
         String cacheKey = RedisPrefixConstant.REDIS_PREFIX_STAFF + "facilities";
-        when(redisService.get(cacheKey)).thenReturn(null);
+        when(redisCacheHelper.getOrSet(cacheKey, () -> null, List.class, 300L)).thenReturn(null);
         when(adminStaffFacilityRepository.getFacility(EntityStatus.ACTIVE)).thenReturn(facilityList);
 
         List<Facility> result = adStaffService.getAllActiveFacilities();

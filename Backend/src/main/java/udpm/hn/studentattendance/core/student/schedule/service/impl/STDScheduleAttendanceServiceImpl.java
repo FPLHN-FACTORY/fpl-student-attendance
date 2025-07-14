@@ -23,6 +23,8 @@ import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.constants.RedisPrefixConstant;
 import udpm.hn.studentattendance.infrastructure.redis.service.RedisService;
 import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
+import com.fasterxml.jackson.core.type.TypeReference;
+import udpm.hn.studentattendance.helpers.RedisCacheHelper;
 
 import java.awt.*;
 import java.io.ByteArrayInputStream;
@@ -42,36 +44,24 @@ public class STDScheduleAttendanceServiceImpl implements STDScheduleAttendanceSe
 
         private final SessionHelper sessionHelper;
 
-        private final RedisService redisService;
-
         private final RedisInvalidationHelper redisInvalidationHelper;
+
+        private final RedisCacheHelper redisCacheHelper;
 
         @Value("${spring.cache.redis.time-to-live}")
         private long redisTTL;
 
         public PageableObject<?> getCachedScheduleList(STDScheduleAttendanceSearchRequest request) {
-                String cacheKey = RedisPrefixConstant.REDIS_PREFIX_SCHEDULE_STUDENT + "list_"
+                String key = RedisPrefixConstant.REDIS_PREFIX_SCHEDULE_STUDENT + "list_"
                                 + sessionHelper.getUserId() + "_"
                                 + request.toString();
-
-                Object cachedData = redisService.get(cacheKey);
-                if (cachedData != null) {
-                        try {
-                                return redisService.getObject(cacheKey, PageableObject.class);
-                        } catch (Exception e) {
-                                redisService.delete(cacheKey);
-                        }
-                }
-
-                Pageable pageable = PaginationHelper.createPageable(request, "id");
-                PageableObject<?> result = PageableObject.of(repository.getAllListAttendanceByUser(pageable, request));
-
-                try {
-                        redisService.set(cacheKey, result, redisTTL);
-                } catch (Exception ignored) {
-                }
-
-                return result;
+                return redisCacheHelper.getOrSet(
+                                key,
+                                () -> PageableObject.of(repository.getAllListAttendanceByUser(
+                                                PaginationHelper.createPageable(request, "id"), request)),
+                                new TypeReference<PageableObject<?>>() {
+                                },
+                                redisTTL);
         }
 
         @Override

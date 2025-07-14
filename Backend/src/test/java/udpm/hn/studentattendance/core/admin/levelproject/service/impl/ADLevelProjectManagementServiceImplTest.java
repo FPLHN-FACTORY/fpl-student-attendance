@@ -21,6 +21,7 @@ import udpm.hn.studentattendance.core.admin.levelproject.model.request.ADLevelPr
 import udpm.hn.studentattendance.core.admin.levelproject.model.response.ADLevelProjectResponse;
 import udpm.hn.studentattendance.core.admin.levelproject.repository.ADLevelProjectRepository;
 import udpm.hn.studentattendance.entities.LevelProject;
+import udpm.hn.studentattendance.helpers.RedisCacheHelper;
 import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
 import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
 import udpm.hn.studentattendance.infrastructure.common.ApiResponse;
@@ -57,12 +58,18 @@ class ADLevelProjectManagementServiceImplTest {
     @Mock
     private RedisInvalidationHelper redisInvalidationHelper;
 
+    @Mock
+    private RedisCacheHelper redisCacheHelper;
+
     @InjectMocks
     private ADLevelProjectManagementServiceImpl levelProjectService;
 
     @BeforeEach
     void setUp() {
         ReflectionTestUtils.setField(levelProjectService, "redisTTL", 3600L);
+        // Default behavior for RedisCacheHelper
+        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong()))
+                .thenAnswer(invocation -> invocation.getArgument(1, java.util.function.Supplier.class).get());
     }
 
     @Test
@@ -81,8 +88,7 @@ class ADLevelProjectManagementServiceImplTest {
 
         PageableObject mockData = mock(PageableObject.class);
 
-        when(redisService.get(cacheKey)).thenReturn(mockData);
-        when(redisService.getObject(cacheKey, PageableObject.class)).thenReturn(mockData);
+        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong())).thenReturn(mockData);
 
         // When
         ResponseEntity<?> response = levelProjectService.getListLevelProject(request);
@@ -95,6 +101,7 @@ class ADLevelProjectManagementServiceImplTest {
         assertEquals(mockData, apiResponse.getData());
 
         // Verify repository was not called
+        verify(redisCacheHelper).getOrSet(anyString(), any(), any(), anyLong());
         verify(repository, never()).getAll(any(Pageable.class), any(ADLevelProjectSearchRequest.class));
     }
 
@@ -117,7 +124,7 @@ class ADLevelProjectManagementServiceImplTest {
         levelProjects.add(levelProjectResponse);
         Page<ADLevelProjectResponse> page = new PageImpl<>(levelProjects);
 
-        when(redisService.get(cacheKey)).thenReturn(null);
+        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong())).thenReturn(null);
         when(repository.getAll(any(Pageable.class), eq(request))).thenReturn(page);
 
         // When
@@ -130,8 +137,8 @@ class ADLevelProjectManagementServiceImplTest {
         assertEquals("Get level project list successfully", apiResponse.getMessage());
 
         // Verify repository was called and cache was updated
+        verify(redisCacheHelper).getOrSet(anyString(), any(), any(), anyLong());
         verify(repository).getAll(any(Pageable.class), eq(request));
-        verify(redisService).set(eq(cacheKey), any(PageableObject.class), eq(3600L));
     }
 
     @Test
@@ -278,8 +285,7 @@ class ADLevelProjectManagementServiceImplTest {
         LevelProject cachedLevel = new LevelProject();
         cachedLevel.setId(levelId);
 
-        when(redisService.get(cacheKey)).thenReturn(cachedLevel);
-        when(redisService.getObject(cacheKey, LevelProject.class)).thenReturn(cachedLevel);
+        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong())).thenReturn(cachedLevel);
 
         // When
         ResponseEntity<?> response = levelProjectService.detailLevelProject(levelId);
@@ -292,6 +298,7 @@ class ADLevelProjectManagementServiceImplTest {
         assertEquals(cachedLevel, apiResponse.getData());
 
         // Verify repository was not called
+        verify(redisCacheHelper).getOrSet(anyString(), any(), any(), anyLong());
         verify(repository, never()).findById(levelId);
     }
 
@@ -308,7 +315,7 @@ class ADLevelProjectManagementServiceImplTest {
         levelProject.setCode("TEST_LEVEL");
         levelProject.setStatus(EntityStatus.ACTIVE);
 
-        when(redisService.get(cacheKey)).thenReturn(null);
+        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong())).thenReturn(null);
         when(repository.findById(levelId)).thenReturn(Optional.of(levelProject));
 
         // When
@@ -322,8 +329,8 @@ class ADLevelProjectManagementServiceImplTest {
         assertEquals(levelProject, apiResponse.getData());
 
         // Verify repository was called and cache was updated
+        verify(redisCacheHelper).getOrSet(anyString(), any(), any(), anyLong());
         verify(repository).findById(levelId);
-        verify(redisService).set(eq(cacheKey), eq(levelProject), eq(3600L));
     }
 
     @Test

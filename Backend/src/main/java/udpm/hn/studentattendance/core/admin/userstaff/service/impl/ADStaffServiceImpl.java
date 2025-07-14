@@ -1,5 +1,6 @@
 package udpm.hn.studentattendance.core.admin.userstaff.service.impl;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +30,7 @@ import udpm.hn.studentattendance.helpers.SessionHelper;
 import udpm.hn.studentattendance.helpers.SettingHelper;
 import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
 import udpm.hn.studentattendance.helpers.ValidateHelper;
+import udpm.hn.studentattendance.helpers.RedisCacheHelper;
 
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
@@ -60,7 +62,7 @@ public class ADStaffServiceImpl implements ADStaffService {
 
     private final UserActivityLogHelper userActivityLogHelper;
 
-    private final RedisService redisService;
+    private final RedisCacheHelper redisCacheHelper;
 
     private final RedisInvalidationHelper redisInvalidationHelper;
 
@@ -73,26 +75,14 @@ public class ADStaffServiceImpl implements ADStaffService {
     private EntityManager entityManager;
 
     public PageableObject getStaffList(ADStaffRequest request) {
-        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_STAFF + "list_" + request.toString();
-
-        Object cachedData = redisService.get(cacheKey);
-        if (cachedData != null) {
-            try {
-                return redisService.getObject(cacheKey, PageableObject.class);
-            } catch (Exception e) {
-                redisService.delete(cacheKey);
-            }
-        }
-
-        Pageable pageable = PaginationHelper.createPageable(request, "createdAt");
-        PageableObject staffs = PageableObject.of(adStaffRepository.getAllStaff(pageable, request));
-
-        try {
-            redisService.set(cacheKey, staffs, redisTTL);
-        } catch (Exception ignored) {
-        }
-
-        return staffs;
+        String key = RedisPrefixConstant.REDIS_PREFIX_STAFF + "list_" + request.toString();
+        return redisCacheHelper.getOrSet(
+                key,
+                () -> PageableObject.of(
+                        adStaffRepository.getAllStaff(PaginationHelper.createPageable(request, "createdAt"), request)),
+                new TypeReference<PageableObject<?>>() {
+                },
+                redisTTL);
     }
 
     public ADStaffDetailResponse getStaffDetail(String id) {
@@ -102,47 +92,23 @@ public class ADStaffServiceImpl implements ADStaffService {
     }
 
     public List<Role> getAllRoleList() {
-        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_STAFF + "roles";
-
-        Object cachedData = redisService.get(cacheKey);
-        if (cachedData != null) {
-            try {
-                return redisService.getObject(cacheKey, List.class);
-            } catch (Exception e) {
-                redisService.delete(cacheKey);
-            }
-        }
-
-        List<Role> roles = adStaffRoleRepository.getAllRole();
-
-        try {
-            redisService.set(cacheKey, roles, redisTTL * 4);
-        } catch (Exception ignored) {
-        }
-
-        return roles;
+        String key = RedisPrefixConstant.REDIS_PREFIX_STAFF + "roles";
+        return redisCacheHelper.getOrSet(
+                key,
+                () -> adStaffRoleRepository.getAllRole(),
+                new TypeReference<List<Role>>() {
+                },
+                redisTTL * 4);
     }
 
     public List<Facility> getAllActiveFacilities() {
-        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_STAFF + "facilities";
-
-        Object cachedData = redisService.get(cacheKey);
-        if (cachedData != null) {
-            try {
-                return redisService.getObject(cacheKey, List.class);
-            } catch (Exception e) {
-                redisService.delete(cacheKey);
-            }
-        }
-
-        List<Facility> facilities = adminStaffFacilityRepository.getFacility(EntityStatus.ACTIVE);
-
-        try {
-            redisService.set(cacheKey, facilities, redisTTL * 4);
-        } catch (Exception ignored) {
-        }
-
-        return facilities;
+        String key = RedisPrefixConstant.REDIS_PREFIX_STAFF + "facilities";
+        return redisCacheHelper.getOrSet(
+                key,
+                () -> adminStaffFacilityRepository.getFacility(EntityStatus.ACTIVE),
+                new TypeReference<List<Facility>>() {
+                },
+                redisTTL * 4);
     }
 
     @Override

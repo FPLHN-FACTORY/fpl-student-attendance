@@ -12,6 +12,7 @@ import udpm.hn.studentattendance.core.admin.levelproject.repository.ADLevelProje
 import udpm.hn.studentattendance.core.admin.levelproject.service.ADLevelProjectManagementService;
 import udpm.hn.studentattendance.entities.LevelProject;
 import udpm.hn.studentattendance.helpers.*;
+import udpm.hn.studentattendance.helpers.RedisCacheHelper;
 import udpm.hn.studentattendance.helpers.RequestTrimHelper;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.common.repositories.CommonUserStudentRepository;
@@ -19,6 +20,7 @@ import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.RedisPrefixConstant;
 import udpm.hn.studentattendance.infrastructure.redis.service.RedisService;
 import udpm.hn.studentattendance.utils.CodeGeneratorUtils;
+import com.fasterxml.jackson.core.type.TypeReference;
 
 @Service
 @RequiredArgsConstructor
@@ -30,7 +32,7 @@ public class ADLevelProjectManagementServiceImpl implements ADLevelProjectManage
 
     private final UserActivityLogHelper userActivityLogHelper;
 
-    private final RedisService redisService;
+    private final RedisCacheHelper redisCacheHelper;
 
     private final RedisInvalidationHelper redisInvalidationHelper;
 
@@ -38,26 +40,13 @@ public class ADLevelProjectManagementServiceImpl implements ADLevelProjectManage
     private long redisTTL;
 
     public PageableObject getLevelProjects(ADLevelProjectSearchRequest request) {
-        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_LEVEL + "list_" + request.toString();
-
-        Object cachedData = redisService.get(cacheKey);
-        if (cachedData != null) {
-            try {
-                return redisService.getObject(cacheKey, PageableObject.class);
-            } catch (Exception e) {
-                redisService.delete(cacheKey);
-            }
-        }
-
-        Pageable pageable = PaginationHelper.createPageable(request, "id");
-        PageableObject result = PageableObject.of(repository.getAll(pageable, request));
-
-        try {
-            redisService.set(cacheKey, result, redisTTL);
-        } catch (Exception ignored) {
-        }
-
-        return result;
+        String key = RedisPrefixConstant.REDIS_PREFIX_LEVEL + "list_" + request.toString();
+        return redisCacheHelper.getOrSet(
+                key,
+                () -> PageableObject.of(repository.getAll(PaginationHelper.createPageable(request, "id"), request)),
+                new TypeReference<PageableObject<?>>() {
+                },
+                redisTTL);
     }
 
     @Override

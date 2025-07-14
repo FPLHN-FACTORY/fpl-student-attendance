@@ -29,6 +29,8 @@ import udpm.hn.studentattendance.infrastructure.constants.RedisPrefixConstant;
 import udpm.hn.studentattendance.infrastructure.constants.SettingKeys;
 import udpm.hn.studentattendance.infrastructure.redis.service.RedisService;
 import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
+import com.fasterxml.jackson.core.type.TypeReference;
+import udpm.hn.studentattendance.helpers.RedisCacheHelper;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -48,7 +50,7 @@ public class STStudentServiceImpl implements STStudentService {
 
     private final UserActivityLogHelper userActivityLogHelper;
 
-    private final RedisService redisService;
+    private final RedisCacheHelper redisCacheHelper;
 
     private final RedisInvalidationHelper redisInvalidationHelper;
 
@@ -58,28 +60,16 @@ public class STStudentServiceImpl implements STStudentService {
     private long redisTTL;
 
     public PageableObject<?> getCachedStudentList(USStudentRequest studentRequest) {
-        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_STUDENT + "list_" + sessionHelper.getFacilityId() + "_"
+        String key = RedisPrefixConstant.REDIS_PREFIX_STUDENT + "list_" + sessionHelper.getFacilityId() + "_"
                 + studentRequest.toString();
-
-        Object cachedData = redisService.get(cacheKey);
-        if (cachedData != null) {
-            try {
-                return redisService.getObject(cacheKey, PageableObject.class);
-            } catch (Exception e) {
-                redisService.delete(cacheKey);
-            }
-        }
-
-        Pageable pageable = PaginationHelper.createPageable(studentRequest);
-        PageableObject<?> pageableObject = PageableObject.of(studentExtendRepository
-                .getAllStudentByFacility(pageable, studentRequest, sessionHelper.getFacilityId()));
-
-        try {
-            redisService.set(cacheKey, pageableObject, redisTTL);
-        } catch (Exception ignored) {
-        }
-
-        return pageableObject;
+        return redisCacheHelper.getOrSet(
+                key,
+                () -> PageableObject.of(
+                        studentExtendRepository.getAllStudentByFacility(PaginationHelper.createPageable(studentRequest),
+                                studentRequest, sessionHelper.getFacilityId())),
+                new TypeReference<PageableObject<?>>() {
+                },
+                redisTTL);
     }
 
     @Override
@@ -288,34 +278,19 @@ public class STStudentServiceImpl implements STStudentService {
     }
 
     public Map<String, Boolean> getCachedFaceStatus() {
-        // Tạo cache key
-        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_STUDENT + "face_status_" + sessionHelper.getFacilityId();
-
-        // Thử lấy từ cache
-        Object cachedData = redisService.get(cacheKey);
-        if (cachedData != null) {
-            try {
-                return redisService.getObject(cacheKey, Map.class);
-            } catch (Exception e) {
-                redisService.delete(cacheKey);
-            }
-        }
-
-        // Nếu không có trong cache, truy vấn từ database
-        List<Map<String, Object>> faceStatus = studentExtendRepository
-                .existFaceForAllStudents(sessionHelper.getFacilityId());
-        Map<String, Boolean> studentFaceMap = faceStatus.stream()
-                .collect(Collectors.toMap(
-                        m -> (String) m.get("studentId"),
-                        m -> ((Number) m.get("hasFace")).intValue() == 1));
-
-        // Lưu vào cache
-        try {
-            redisService.set(cacheKey, studentFaceMap, redisTTL);
-        } catch (Exception ignored) {
-        }
-
-        return studentFaceMap;
+        String key = RedisPrefixConstant.REDIS_PREFIX_STUDENT + "face_status_" + sessionHelper.getFacilityId();
+        return redisCacheHelper.getOrSet(
+                key,
+                () -> {
+                    List<Map<String, Object>> faceStatus = studentExtendRepository
+                            .existFaceForAllStudents(sessionHelper.getFacilityId());
+                    return faceStatus.stream().collect(Collectors.toMap(
+                            m -> (String) m.get("studentId"),
+                            m -> ((Number) m.get("hasFace")).intValue() == 1));
+                },
+                new TypeReference<Map<String, Boolean>>() {
+                },
+                redisTTL);
     }
 
     @Override

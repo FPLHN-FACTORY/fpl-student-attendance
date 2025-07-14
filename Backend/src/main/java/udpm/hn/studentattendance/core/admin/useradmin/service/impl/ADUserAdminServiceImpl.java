@@ -24,6 +24,9 @@ import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.RedisPrefixConstant;
 import udpm.hn.studentattendance.infrastructure.constants.SettingKeys;
 import udpm.hn.studentattendance.infrastructure.redis.service.RedisService;
+import com.fasterxml.jackson.core.type.TypeReference;
+import udpm.hn.studentattendance.helpers.RedisCacheHelper;
+import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
 
 import java.util.HashMap;
 import java.util.List;
@@ -47,7 +50,7 @@ public class ADUserAdminServiceImpl implements ADUserAdminService {
 
         private final UserActivityLogHelper userActivityLogHelper;
 
-        private final RedisService redisService;
+        private final RedisCacheHelper redisCacheHelper;
 
         private final RedisInvalidationHelper redisInvalidationHelper;
 
@@ -60,56 +63,29 @@ public class ADUserAdminServiceImpl implements ADUserAdminService {
         private long redisTTL;
 
         public PageableObject getUserAdminList(ADUserAdminRequest request) {
-                // Tạo cache key sử dụng toString()
-                String cacheKey = RedisPrefixConstant.REDIS_PREFIX_ADMIN + "list_" + request.toString();
-
-                Object cachedData = redisService.get(cacheKey);
-                if (cachedData != null) {
-                        try {
-                                return redisService.getObject(cacheKey, PageableObject.class);
-                        } catch (Exception e) {
-                                redisService.delete(cacheKey);
-                        }
-                }
-
-                Pageable pageable = PaginationHelper.createPageable(request);
-                PageableObject list = PageableObject.of(userAdminExtendRepository.getAllUserAdmin(pageable, request));
-
-                try {
-                        redisService.set(cacheKey, list, redisTTL);
-                } catch (Exception ignored) {
-                }
-
-                return list;
+                String key = RedisPrefixConstant.REDIS_PREFIX_ADMIN + "list_" + request.toString();
+                return redisCacheHelper.getOrSet(
+                                key,
+                                () -> PageableObject.of(userAdminExtendRepository
+                                                .getAllUserAdmin(PaginationHelper.createPageable(request), request)),
+                                new TypeReference<PageableObject<?>>() {
+                                },
+                                redisTTL);
         }
-
 
         public UserAdmin getCachedUserAdminById(String id) {
                 Optional<UserAdmin> optionalUserAdmin = userAdminExtendRepository.findById(id);
                 return optionalUserAdmin.orElse(null);
         }
 
-
         public List<UserStaff> getAllUserStaffList() {
-                String cacheKey = RedisPrefixConstant.REDIS_PREFIX_ADMIN + "staff_list";
-
-                Object cachedData = redisService.get(cacheKey);
-                if (cachedData != null) {
-                        try {
-                                return redisService.getObject(cacheKey, List.class);
-                        } catch (Exception e) {
-                                redisService.delete(cacheKey);
-                        }
-                }
-
-                List<UserStaff> userStaffList = userAdminStaffExtendRepository.getAllUserStaff();
-
-                try {
-                        redisService.set(cacheKey, userStaffList, redisTTL);
-                } catch (Exception ignored) {
-                }
-
-                return userStaffList;
+                String key = RedisPrefixConstant.REDIS_PREFIX_ADMIN + "staff_list";
+                return redisCacheHelper.getOrSet(
+                                key,
+                                () -> userAdminStaffExtendRepository.getAllUserStaff(),
+                                new TypeReference<List<UserStaff>>() {
+                                },
+                                redisTTL);
         }
 
         @Override
@@ -131,7 +107,7 @@ public class ADUserAdminServiceImpl implements ADUserAdminService {
         public ResponseEntity<?> createUserAdmin(ADUserAdminCreateOrUpdateRequest createOrUpdateRequest) {
                 // Trim all string fields in the request
                 RequestTrimHelper.trimStringFields(createOrUpdateRequest);
-                
+
                 Optional<UserAdmin> existUserAdmin = userAdminExtendRepository
                                 .getUserAdminByCode(createOrUpdateRequest.getStaffCode());
                 Optional<UserAdmin> existUserAdmin2 = userAdminExtendRepository
@@ -139,7 +115,7 @@ public class ADUserAdminServiceImpl implements ADUserAdminService {
 
                 if (!ValidateHelper.isValidCode(createOrUpdateRequest.getStaffCode())) {
                         return RouterHelper.responseError(
-                                "Mã admin không hợp lệ: không có khoảng trắng, không có ký tự đặc biệt ngoài dấu chấm . và dấu gạch dưới _.");
+                                        "Mã admin không hợp lệ: không có khoảng trắng, không có ký tự đặc biệt ngoài dấu chấm . và dấu gạch dưới _.");
                 }
 
                 if (!ValidateHelper.isValidFullname(createOrUpdateRequest.getStaffName().trim())) {
@@ -195,7 +171,7 @@ public class ADUserAdminServiceImpl implements ADUserAdminService {
         public ResponseEntity<?> updateUserAdmin(ADUserAdminCreateOrUpdateRequest createOrUpdateRequest, String id) {
                 // Trim all string fields in the request
                 RequestTrimHelper.trimStringFields(createOrUpdateRequest);
-                
+
                 if (!ValidateHelper.isValidFullname(createOrUpdateRequest.getStaffName())) {
                         return RouterHelper.responseError(
                                         "Tên admin không hợp lệ: Tối thiểu 2 từ, cách nhau bởi khoảng trắng và Chỉ gồm ký tự chữ không chứa số hay ký tự đặc biệt.");

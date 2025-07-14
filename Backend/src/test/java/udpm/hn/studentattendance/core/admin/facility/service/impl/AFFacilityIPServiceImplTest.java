@@ -20,6 +20,7 @@ import udpm.hn.studentattendance.core.admin.facility.repository.AFFacilityExtend
 import udpm.hn.studentattendance.core.admin.facility.repository.AFFacilityIPRepository;
 import udpm.hn.studentattendance.entities.Facility;
 import udpm.hn.studentattendance.entities.FacilityIP;
+import udpm.hn.studentattendance.helpers.RedisCacheHelper;
 import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
 import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
 import udpm.hn.studentattendance.infrastructure.common.ApiResponse;
@@ -55,12 +56,18 @@ class AFFacilityIPServiceImplTest {
     @Mock
     private RedisInvalidationHelper redisInvalidationHelper;
 
+    @Mock
+    private RedisCacheHelper redisCacheHelper;
+
     @InjectMocks
     private AFFacilityIPServiceImpl facilityIPService;
 
     @BeforeEach
     void setUp() {
         ReflectionTestUtils.setField(facilityIPService, "redisTTL", 3600L);
+        // Default behavior for RedisCacheHelper
+        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong()))
+                .thenAnswer(invocation -> invocation.getArgument(1, java.util.function.Supplier.class).get());
     }
 
     @Test
@@ -71,8 +78,7 @@ class AFFacilityIPServiceImplTest {
         String cacheKey = RedisPrefixConstant.REDIS_PREFIX_FACILITY_IP + "list";
         PageableObject mockData = mock(PageableObject.class);
 
-        when(redisService.get(anyString())).thenReturn(mockData);
-        when(redisService.getObject(anyString(), eq(PageableObject.class))).thenReturn(mockData);
+        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong())).thenReturn(mockData);
 
         // When
         ResponseEntity<?> response = facilityIPService.getAllList(request);
@@ -85,6 +91,7 @@ class AFFacilityIPServiceImplTest {
         assertEquals(mockData, apiResponse.getData());
 
         // Verify repository was not called
+        verify(redisCacheHelper).getOrSet(anyString(), any(), any(), anyLong());
         verify(afFacilityIPRepository, never()).getAllByFilter(any(Pageable.class),
                 any(AFFilterFacilityIPRequest.class));
     }
@@ -100,7 +107,7 @@ class AFFacilityIPServiceImplTest {
         ipList.add(ipResponse);
         Page<AFFacilityIPResponse> page = new PageImpl<>(ipList);
 
-        when(redisService.get(anyString())).thenReturn(null);
+        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong())).thenReturn(null);
         when(afFacilityIPRepository.getAllByFilter(any(Pageable.class), eq(request))).thenReturn(page);
 
         // When
@@ -113,8 +120,8 @@ class AFFacilityIPServiceImplTest {
         assertEquals("Lấy danh sách dữ liệu thành công", apiResponse.getMessage());
 
         // Verify repository was called and cache was updated
+        verify(redisCacheHelper).getOrSet(anyString(), any(), any(), anyLong());
         verify(afFacilityIPRepository).getAllByFilter(any(Pageable.class), eq(request));
-        verify(redisService).set(anyString(), any(PageableObject.class), eq(3600L));
     }
 
     @Test
@@ -417,15 +424,15 @@ class AFFacilityIPServiceImplTest {
     void testGetIPListWithCacheError() {
         AFFilterFacilityIPRequest request = new AFFilterFacilityIPRequest();
         Page<AFFacilityIPResponse> mockData = mock(Page.class);
-        when(redisService.get(anyString())).thenReturn("cached");
-        when(redisService.getObject(anyString(), eq(PageableObject.class)))
+        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong())).thenReturn("cached");
+        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong()))
                 .thenThrow(new RuntimeException("Deserialization error"));
         when(afFacilityIPRepository.getAllByFilter(any(), eq(request))).thenReturn(mockData);
 
         PageableObject<AFFacilityIPResponse> result = facilityIPService.getIPList(request);
 
         assertNotNull(result);
-        verify(redisService).delete(anyString());
+        verify(redisCacheHelper).getOrSet(anyString(), any(), any(), anyLong());
     }
 
     @Test
@@ -433,7 +440,7 @@ class AFFacilityIPServiceImplTest {
     void testGetIPListWithRedisSetError() {
         AFFilterFacilityIPRequest request = new AFFilterFacilityIPRequest();
         Page<AFFacilityIPResponse> mockData = mock(Page.class);
-        when(redisService.get(anyString())).thenReturn(null);
+        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong())).thenReturn(null);
         when(afFacilityIPRepository.getAllByFilter(any(), eq(request))).thenReturn(mockData);
         doThrow(new RuntimeException("Redis error")).when(redisService).set(anyString(), any(), anyLong());
 
