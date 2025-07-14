@@ -81,10 +81,4 @@ public class ADFacilityManagementServiceImpl implements ADFacilityManagementServ
         return RouterHelper.responseSuccess("Lấy danh sách cơ sở để lọc thành công", facilities);
     }
 
-    /**
-     * @deprecated Use redisInvalidationHelper.invalidateAllCaches() instead
-     */
-    public void invalidateFacilityCaches() {
-        redisInvalidationHelper.invalidateAllCaches();
-    }
 }

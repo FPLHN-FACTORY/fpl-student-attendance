@@ -17,7 +17,7 @@ public class USFactoryRestController {
     private final USFactoryService factoryService;
 
     @GetMapping
-    public ResponseEntity<?> getAllFactory(USFactoryRequest staffFactoryRequest) {
+    public ResponseEntity<?> getAllFactory(@Valid USFactoryRequest staffFactoryRequest) {
         return factoryService.getAllFactory(staffFactoryRequest);
     }
 

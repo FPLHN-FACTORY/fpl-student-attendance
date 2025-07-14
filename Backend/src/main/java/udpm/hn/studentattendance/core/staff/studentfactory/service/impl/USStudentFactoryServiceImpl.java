@@ -22,6 +22,7 @@ import udpm.hn.studentattendance.entities.UserStudent;
 import udpm.hn.studentattendance.entities.UserStudentFactory;
 import udpm.hn.studentattendance.helpers.NotificationHelper;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
+import udpm.hn.studentattendance.helpers.RequestTrimHelper;
 import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.helpers.SessionHelper;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
@@ -178,6 +179,9 @@ public class USStudentFactoryServiceImpl implements USStudentFactoryService {
 
         @Override
         public ResponseEntity<?> createStudent(USStudentFactoryAddRequest addRequest) {
+                // Trim all string fields in the request
+                RequestTrimHelper.trimStringFields(addRequest);
+
                 Optional<UserStudent> existUserStudentByCode = userStudentFactoryExtendRepository
                                 .getUserStudentByCode(addRequest.getStudentCode());
                 Optional<UserStudentFactory> existStudentFactory = studentFactoryRepository
@@ -242,7 +246,7 @@ public class USStudentFactoryServiceImpl implements USStudentFactoryService {
 
         @Override
         public ResponseEntity<?> getAllPlanDateByStudent(USPDDetailShiftByStudentRequest request,
-                                                         String userStudentId) {
+                        String userStudentId) {
                 Pageable pageable = PaginationHelper.createPageable(request);
                 PageableObject<STPDDetailShiftByStudentResponse> data = PageableObject
                                 .of(studentFactoryRepository.getAllPlanDateByStudent(pageable, request, userStudentId));

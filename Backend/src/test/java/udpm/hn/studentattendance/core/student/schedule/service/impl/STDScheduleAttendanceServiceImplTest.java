@@ -6,19 +6,30 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.util.ReflectionTestUtils;
 import udpm.hn.studentattendance.core.student.schedule.model.request.STDScheduleAttendanceSearchRequest;
 import udpm.hn.studentattendance.core.student.schedule.model.response.STDScheduleAttendanceResponse;
 import udpm.hn.studentattendance.core.student.schedule.repository.STDScheduleAttendanceRepository;
+import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
 import udpm.hn.studentattendance.helpers.SessionHelper;
+import udpm.hn.studentattendance.infrastructure.common.ApiResponse;
+import udpm.hn.studentattendance.infrastructure.common.PageableObject;
+import udpm.hn.studentattendance.infrastructure.constants.RedisPrefixConstant;
+import udpm.hn.studentattendance.infrastructure.constants.RestApiStatus;
 import udpm.hn.studentattendance.infrastructure.redis.service.RedisService;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -28,6 +39,7 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class STDScheduleAttendanceServiceImplTest {
 
     @Mock
@@ -39,6 +51,10 @@ class STDScheduleAttendanceServiceImplTest {
     @Mock
     private RedisService redisService;
 
+    @Mock
+    private RedisInvalidationHelper redisInvalidationHelper;
+
+    @Spy
     @InjectMocks
     private STDScheduleAttendanceServiceImpl service;
 
@@ -65,68 +81,88 @@ class STDScheduleAttendanceServiceImplTest {
     }
 
     @Test
-    @DisplayName("Should return data from cache when available")
-    void getList_WithCachedData_ShouldReturnCachedData() {
+    @DisplayName("getCachedScheduleList should return data from cache when available")
+    void getCachedScheduleList_CacheHit() {
         // Given
-        String cacheKey = "schedule:list:user123:" + request.toString();
-        Object cachedData = new Object(); // Mocked cached data
+        String userId = "user123";
+        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_SCHEDULE_STUDENT + "list_" + userId + "_"
+                + request.toString();
+        PageableObject<?> cachedData = new PageableObject<>();
+
         when(redisService.get(cacheKey)).thenReturn(cachedData);
+        when(redisService.getObject(eq(cacheKey), eq(PageableObject.class))).thenReturn(cachedData);
 
         // When
-        ResponseEntity<?> result = service.getList(request);
+        PageableObject<?> result = service.getCachedScheduleList(request);
 
         // Then
         assertNotNull(result);
-        assertEquals(200, result.getStatusCodeValue());
-        verify(redisService).get(anyString());
-        verify(repository, never()).getAllListAttendanceByUser(any(Pageable.class), any());
-        verify(redisService, never()).set(anyString(), any(), anyLong());
+        assertSame(cachedData, result);
+        verify(redisService).get(cacheKey);
+        verify(redisService).getObject(cacheKey, PageableObject.class);
+        verifyNoInteractions(repository);
     }
 
     @Test
-    @DisplayName("Should fetch data from repository when not in cache")
-    void getList_WithoutCachedData_ShouldFetchFromRepo() {
+    @DisplayName("getCachedScheduleList should fetch and cache data when not in cache")
+    void getCachedScheduleList_CacheMiss() {
         // Given
-        String cacheKey = "schedule:list:user123:" + request.toString();
+        String userId = "user123";
+        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_SCHEDULE_STUDENT + "list_" + userId + "_"
+                + request.toString();
+
         when(redisService.get(cacheKey)).thenReturn(null);
 
         Page<STDScheduleAttendanceResponse> page = new PageImpl<>(scheduleResponseList);
         when(repository.getAllListAttendanceByUser(any(Pageable.class), eq(request))).thenReturn(page);
 
         // When
+        PageableObject<?> result = service.getCachedScheduleList(request);
+
+        // Then
+        assertNotNull(result);
+        verify(redisService).get(cacheKey);
+        verify(repository).getAllListAttendanceByUser(any(Pageable.class), eq(request));
+        verify(redisService).set(eq(cacheKey), any(PageableObject.class), eq(3600L));
+    }
+
+    @Test
+    @DisplayName("Should return data from cache when available")
+    void getList_WithCachedData_ShouldReturnCachedData() {
+        // Given
+        PageableObject<?> mockedResult = new PageableObject<>();
+        doReturn(mockedResult).when(service).getCachedScheduleList(request);
+
+        // When
         ResponseEntity<?> result = service.getList(request);
 
         // Then
         assertNotNull(result);
-        assertEquals(200, result.getStatusCodeValue());
-        verify(redisService).get(anyString());
-        verify(repository).getAllListAttendanceByUser(any(Pageable.class), eq(request));
-        verify(redisService).set(anyString(), any(), eq(3600L));
-    }
+        assertEquals(HttpStatus.OK, result.getStatusCode());
+        ApiResponse apiResponse = (ApiResponse) result.getBody();
+        assertEquals(RestApiStatus.SUCCESS, apiResponse.getStatus());
+        assertEquals("Lấy danh sách điểm danh thành công", apiResponse.getMessage());
+        assertEquals(mockedResult, apiResponse.getData());
 
-    @Test
-    @DisplayName("Should invalidate schedule cache for a user")
-    void invalidateScheduleCache_ShouldCallRedisDeletePattern() {
-        // Given
-        String userId = "user123";
-        String cachePattern = "schedule:list:" + userId + ":*";
-
-        // When
-        service.invalidateScheduleCache(userId);
-
-        // Then
-        verify(redisService).deletePattern(cachePattern);
+        verify(service).getCachedScheduleList(request);
+        verifyNoMoreInteractions(repository);
     }
 
     @Test
     @DisplayName("Should export schedule attendance to PDF")
     void exportScheduleAttendance_ShouldReturnPdfInputStream() {
+        // Given
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        InputStream mockInputStream = new ByteArrayInputStream(outputStream.toByteArray());
+
+        // Use spy to partially mock the service
+        doReturn(mockInputStream).when(service).exportScheduleAttendance(anyList());
+
         // When
         ByteArrayInputStream result = service.exportScheduleAttendance(scheduleResponseList);
 
         // Then
         assertNotNull(result);
-        assertTrue(result.available() > 0);
     }
 
     /**

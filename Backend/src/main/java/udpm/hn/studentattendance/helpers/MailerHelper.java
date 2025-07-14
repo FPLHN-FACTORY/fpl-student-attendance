@@ -60,6 +60,10 @@ public class MailerHelper {
 
     @Async(ExecutorConstants.TASK_EXECUTOR)
     public CompletableFuture<Boolean> send(MailerDefaultRequest request) {
+        if (request == null) {
+            return CompletableFuture.completedFuture(false);
+        }
+
         String content = request.getTemplate() != null ? loadTemplate(request.getTemplate()) : request.getContent();
 
         if (Objects.isNull(content)) {
@@ -79,6 +83,10 @@ public class MailerHelper {
         }
 
         MimeMessage mimeMessage = mailSender.createMimeMessage();
+        if (mimeMessage == null) {
+            return CompletableFuture.completedFuture(false);
+        }
+
         MimeMessageHelper mimeMessageHelper = null;
         try {
 
@@ -114,7 +122,6 @@ public class MailerHelper {
         return CompletableFuture.completedFuture(true);
     }
 
-
     public static String loadTemplate(String template_name) {
         try {
             ClassPathResource resource = new ClassPathResource(buildPathTemplate(template_name));
@@ -128,6 +135,10 @@ public class MailerHelper {
     }
 
     public static String loadTemplate(String template_name, Map<String, Object> data) {
+        if (data == null) {
+            return loadTemplate(template_name);
+        }
+
         String content = loadTemplate(template_name);
         for (String key : data.keySet()) {
             Object value = data.get(key);

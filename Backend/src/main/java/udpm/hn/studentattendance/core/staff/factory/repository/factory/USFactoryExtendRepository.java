@@ -38,11 +38,7 @@ public interface USFactoryExtendRepository extends FactoryRepository {
             WHERE
                 f.id = :facilityId
                 AND f.status = 1
-                AND p.status = 1
-                AND sf.status = 1
-                AND sub.status = 1
                 AND f.status = 1
-                AND lp.status = 1
                 AND (:#{#staffFactoryRequest.idProject} IS NULL OR p.id = :#{#staffFactoryRequest.idProject})
                 AND (:#{#staffFactoryRequest.idStaff} IS NULL OR us.id = :#{#staffFactoryRequest.idStaff})
                 AND (:#{#staffFactoryRequest.idSemester} IS NULL OR s.id = :#{#staffFactoryRequest.idSemester})
@@ -63,11 +59,7 @@ public interface USFactoryExtendRepository extends FactoryRepository {
                 WHERE
             f.id = :facilityId
             AND f.status = 1
-            AND p.status = 1
-            AND sf.status = 1
-            AND sub.status = 1
             AND f.status = 1
-            AND lp.status = 1
             AND (:#{#staffFactoryRequest.idProject} IS NULL OR p.id = :#{#staffFactoryRequest.idProject})
             AND (:#{#staffFactoryRequest.idStaff} IS NULL OR us.id = :#{#staffFactoryRequest.idStaff})
             AND (:#{#staffFactoryRequest.idSemester} IS NULL OR s.id = :#{#staffFactoryRequest.idSemester})

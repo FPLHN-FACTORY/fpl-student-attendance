@@ -65,11 +65,9 @@ const lstData = ref([])
 
 const columns = ref(
   autoAddColumnWidth([
-    { title: '#', dataIndex: 'orderNumber', key: 'orderNumber' },
-    { title: 'Tên địa điểm', dataIndex: 'name', key: 'name' },
-    { title: 'Vĩ độ', dataIndex: 'latitude', key: 'latitude' },
-    { title: 'Kinh độ', dataIndex: 'longitude', key: 'longitude' },
-    { title: 'Bán kính', dataIndex: 'radius', key: 'radius' },
+    { title: '#', key: 'rowNumber' },
+    { title: 'Tên vị trí', dataIndex: 'name', key: 'name' },
+    { title: 'Mô tả', dataIndex: 'description', key: 'description' },
     { title: 'Trạng thái', dataIndex: 'status', key: 'status' },
     { title: 'Chức năng', key: 'actions' },
   ]),
@@ -548,7 +546,6 @@ watch(mapCenter, (newCenter) => {
                     class="w-100"
                     :dropdownMatchSelectWidth="false"
                     placeholder="-- Tất cả trạng thái --"
-                    allowClear
                   >
                     <a-select-option :value="null">-- Tất cả trạng thái --</a-select-option>
                     <a-select-option v-for="(name, id) in STATUS_FACILITY_IP" :key="id" :value="id">
@@ -591,16 +588,19 @@ watch(mapCenter, (newCenter) => {
               :scroll="{ x: 'auto' }"
               @change="handleTableChange"
             >
-              <template #bodyCell="{ column, record }">
-                <template v-if="column.dataIndex === 'radius'">
+              <template #bodyCell="{ column, record, index }">
+                <template v-if="column.key === 'rowNumber'">
+                  {{ (pagination.value.current - 1) * pagination.value.pageSize + index + 1 }}
+                </template>
+                <template v-else-if="column.dataIndex === 'radius'">
                   <a-tag color="purple"> {{ record.radius }}m </a-tag>
                 </template>
-                <template v-if="column.dataIndex === 'type'">
+                <template v-else-if="column.dataIndex === 'type'">
                   <a-tag color="purple">
                     {{ TYPE_FACILITY_IP[record.type] }}
                   </a-tag>
                 </template>
-                <template v-if="column.dataIndex === 'status'">
+                <template v-else-if="column.dataIndex === 'status'">
                   <a-switch
                     class="me-2"
                     :checked="record.status === 1"
@@ -610,8 +610,8 @@ watch(mapCenter, (newCenter) => {
                     record.status === 1 ? 'Đang áp dụng' : 'Không áp dụng'
                   }}</a-tag>
                 </template>
-                <template v-if="column.key === 'actions'">
-                  <a-tooltip title="Chỉnh sửa IP">
+                <template v-else-if="column.key === 'actions'">
+                  <a-tooltip title="Chỉnh sửa địa điểm">
                     <a-button class="btn-outline-info border-0" @click="handleShowUpdate(record)">
                       <EditFilled />
                     </a-button>

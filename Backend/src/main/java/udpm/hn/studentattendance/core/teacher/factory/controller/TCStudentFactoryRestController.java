@@ -1,5 +1,6 @@
 package udpm.hn.studentattendance.core.teacher.factory.controller;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -16,7 +17,7 @@ public class TCStudentFactoryRestController {
     private final TCStudentFactoryService teacherStudentService;
 
     @GetMapping
-    public ResponseEntity<?> getAllStudentFactory(TCStudentFactoryRequest studentFactoryRequest) {
+    public ResponseEntity<?> getAllStudentFactory(@Valid TCStudentFactoryRequest studentFactoryRequest) {
         return teacherStudentService.getAllStudentFactory(studentFactoryRequest);
     }
 

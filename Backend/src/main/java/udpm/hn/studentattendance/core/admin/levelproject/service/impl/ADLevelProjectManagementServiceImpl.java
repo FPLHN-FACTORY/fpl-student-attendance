@@ -11,16 +11,14 @@ import udpm.hn.studentattendance.core.admin.levelproject.model.request.ADLevelPr
 import udpm.hn.studentattendance.core.admin.levelproject.repository.ADLevelProjectRepository;
 import udpm.hn.studentattendance.core.admin.levelproject.service.ADLevelProjectManagementService;
 import udpm.hn.studentattendance.entities.LevelProject;
-import udpm.hn.studentattendance.helpers.PaginationHelper;
-import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
-import udpm.hn.studentattendance.helpers.RouterHelper;
+import udpm.hn.studentattendance.helpers.*;
+import udpm.hn.studentattendance.helpers.RequestTrimHelper;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.common.repositories.CommonUserStudentRepository;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.RedisPrefixConstant;
 import udpm.hn.studentattendance.infrastructure.redis.service.RedisService;
 import udpm.hn.studentattendance.utils.CodeGeneratorUtils;
-import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
 
 @Service
 @RequiredArgsConstructor
@@ -40,15 +38,7 @@ public class ADLevelProjectManagementServiceImpl implements ADLevelProjectManage
     private long redisTTL;
 
     public PageableObject getLevelProjects(ADLevelProjectSearchRequest request) {
-        // Tạo cache key thủ công
-        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_LEVEL + "list_" +
-                "page=" + request.getPage() +
-                "_size=" + request.getSize() +
-                "_orderBy=" + request.getOrderBy() +
-                "_sortBy=" + request.getSortBy() +
-                "_q=" + (request.getQ() != null ? request.getQ() : "") +
-                "_name=" + (request.getName() != null ? request.getName() : "") +
-                "_status=" + (request.getStatus() != null ? request.getStatus() : "");
+        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_LEVEL + "list_" + request.toString();
 
         Object cachedData = redisService.get(cacheKey);
         if (cachedData != null) {
@@ -73,15 +63,22 @@ public class ADLevelProjectManagementServiceImpl implements ADLevelProjectManage
     @Override
     public ResponseEntity<?> getListLevelProject(ADLevelProjectSearchRequest request) {
         PageableObject result = getLevelProjects(request);
-        return RouterHelper.responseSuccess("Get level project list successfully", result);
+        return RouterHelper.responseSuccess("Hiển thị tất cả nhóm dự án thành công", result);
     }
 
     @Override
     public ResponseEntity<?> createLevelProject(ADLevelProjectCreateRequest request) {
+        RequestTrimHelper.trimStringFields(request);
+
         String code = CodeGeneratorUtils.generateCodeFromString(request.getName());
 
         if (repository.isExistsLevelProject(code, null)) {
-            return RouterHelper.responseError("Level project already exists in the system");
+            return RouterHelper.responseError("Nhóm dự án đã tồn tại trong hệ thống");
+        }
+
+        if (!ValidateHelper.isValidCode(request.getName())) {
+            return RouterHelper.responseError(
+                    "Tên nhóm dự án không hợp lệ: không có khoảng trắng, không có ký tự đặc biệt ngoài dấu chấm . và dấu gạch dưới _.");
         }
 
         LevelProject lv = new LevelProject();
@@ -90,24 +87,32 @@ public class ADLevelProjectManagementServiceImpl implements ADLevelProjectManage
         lv.setDescription(request.getDescription());
 
         LevelProject savedLevel = repository.save(lv);
-        userActivityLogHelper.saveLog("just added level project " + savedLevel.getName());
+        userActivityLogHelper.saveLog("Vừa thêm nhóm dự án: " + savedLevel.getName());
 
         // Invalidate all caches
         redisInvalidationHelper.invalidateAllCaches();
 
-        return RouterHelper.responseSuccess("Add new level project successfully", savedLevel);
+        return RouterHelper.responseSuccess("Thêm nhóm dự án mới thành công", savedLevel);
     }
 
     @Override
     public ResponseEntity<?> updateLevelProject(String id, ADLevelProjectUpdateRequest request) {
+        // Trim all string fields in the request
+        RequestTrimHelper.trimStringFields(request);
+
         LevelProject lv = repository.findById(id).orElse(null);
         if (lv == null) {
-            return RouterHelper.responseError("Level project not found for editing");
+            return RouterHelper.responseError("Nhóm dự án không tồn tại");
+        }
+
+        if (!ValidateHelper.isValidCode(request.getName())) {
+            return RouterHelper.responseError(
+                    "Tên nhóm dự án không hợp lệ: không có khoảng trắng, không có ký tự đặc biệt ngoài dấu chấm . và dấu gạch dưới _.");
         }
 
         String code = CodeGeneratorUtils.generateCodeFromString(request.getName());
         if (repository.isExistsLevelProject(code, lv.getId())) {
-            return RouterHelper.responseError("Level project already exists in the system");
+            return RouterHelper.responseError("Mã dự án đã tồn tại vui lòng sửa mã dự án khác");
         }
 
         lv.setName(request.getName().trim());
@@ -115,57 +120,34 @@ public class ADLevelProjectManagementServiceImpl implements ADLevelProjectManage
         lv.setDescription(request.getDescription());
 
         LevelProject updatedLevel = repository.save(lv);
-        userActivityLogHelper.saveLog("just updated level project " + updatedLevel.getName());
+        userActivityLogHelper.saveLog("Vừa cập nhật nhóm dự án " + updatedLevel.getName());
 
         // Invalidate all caches
         redisInvalidationHelper.invalidateAllCaches();
 
-        return RouterHelper.responseSuccess("Update level project successfully", updatedLevel);
+        return RouterHelper.responseSuccess("Cập nhật nhóm dự án thành công", updatedLevel);
     }
 
     // Phương thức helper để lấy thông tin chi tiết cấp độ dự án từ cache hoặc DB
     public LevelProject getLevelProjectById(String id) {
-        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_LEVEL + id;
-
-        // Kiểm tra cache
-        Object cachedData = redisService.get(cacheKey);
-        if (cachedData != null) {
-            try {
-                return redisService.getObject(cacheKey, LevelProject.class);
-            } catch (Exception e) {
-                redisService.delete(cacheKey);
-            }
-        }
-
-        // Cache miss - fetch from database
-        LevelProject lv = repository.findById(id).orElse(null);
-
-        if (lv != null) {
-            // Store in cache
-            try {
-                redisService.set(cacheKey, lv, redisTTL);
-            } catch (Exception ignored) {
-            }
-        }
-
-        return lv;
+        return repository.findById(id).orElse(null);
     }
 
     @Override
     public ResponseEntity<?> detailLevelProject(String id) {
         LevelProject lv = getLevelProjectById(id);
         if (lv == null) {
-            return RouterHelper.responseError("Level project not found");
+            return RouterHelper.responseError("Nhóm dự án không tồn tại");
         }
 
-        return RouterHelper.responseSuccess("Get level project details successfully", lv);
+        return RouterHelper.responseSuccess("Hiện thị chi tiết nhóm dự án thành công", lv);
     }
 
     @Override
     public ResponseEntity<?> changeStatus(String id) {
         LevelProject lv = repository.findById(id).orElse(null);
         if (lv == null) {
-            return RouterHelper.responseError("Level project not found for status change");
+            return RouterHelper.responseError("Nhóm dự án không tồn tại");
         }
         lv.setStatus(lv.getStatus() == EntityStatus.ACTIVE ? EntityStatus.INACTIVE : EntityStatus.ACTIVE);
         LevelProject entity = repository.save(lv);
@@ -173,25 +155,12 @@ public class ADLevelProjectManagementServiceImpl implements ADLevelProjectManage
             commonUserStudentRepository.disableAllStudentDuplicateShiftByIdLevelProject(entity.getId());
         }
         userActivityLogHelper.saveLog(
-                "just changed level project status " + entity.getName() + " to " + entity.getStatus().name());
+                "vừa thay đổi trạng thái nhóm dự án " + entity.getName() + " thành " + entity.getStatus().name());
 
         // Invalidate all caches
         redisInvalidationHelper.invalidateAllCaches();
 
-        return RouterHelper.responseSuccess("Change level project status successfully", entity);
+        return RouterHelper.responseSuccess("Thay đổi trạng thái nhóm dự án thành công", entity);
     }
 
-    /**
-     * @deprecated Use redisInvalidationHelper.invalidateAllCaches() instead
-     */
-    private void invalidateLevelProjectCaches() {
-        redisInvalidationHelper.invalidateAllCaches();
-    }
-
-    /**
-     * @deprecated Use redisInvalidationHelper.invalidateAllCaches() instead
-     */
-    private void invalidateLevelProjectCache(String id) {
-        redisInvalidationHelper.invalidateAllCaches();
-    }
 }

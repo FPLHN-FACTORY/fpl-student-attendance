@@ -15,11 +15,11 @@ public class ADUserAdminCreateOrUpdateRequest {
     private String staffCode;
 
     @NotBlank(message = "Không được để trống email admin")
-    @Size(max = EntityProperties.LENGTH_NAME, message = "Email chỉ được tối đa " + EntityProperties.LENGTH_NAME + " ký tự")
+    @Size(min = 2, max = EntityProperties.LENGTH_NAME, message = "Email chỉ được tối đa " + EntityProperties.LENGTH_NAME + " ký tự")
     private String email;
 
     @NotBlank(message = "Không được để trống tên admin")
-    @Size(max = EntityProperties.LENGTH_NAME, message = "Tên admin chỉ được tối đa " + EntityProperties.LENGTH_NAME + " ký tự")
+    @Size(min = 2, max = EntityProperties.LENGTH_NAME, message = "Tên admin chỉ được tối đa " + EntityProperties.LENGTH_NAME + " ký tự")
     private String staffName;
 
 }

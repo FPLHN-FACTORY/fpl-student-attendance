@@ -19,7 +19,7 @@ public class USStudentFactoryRestController {
 
     @GetMapping("/{factoryId}")
     public ResponseEntity<?> getAllStudentInFactory(@PathVariable("factoryId") String factoryId,
-                                                    USStudentFactoryRequest studentFactoryRequest) {
+                                                    @Valid USStudentFactoryRequest studentFactoryRequest) {
         return studentFactoryService.getAllStudentInFactory(factoryId, studentFactoryRequest);
     }
 
@@ -34,7 +34,7 @@ public class USStudentFactoryRestController {
     }
 
     @GetMapping("/students")
-    public ResponseEntity<?> getAllStudent(USUserStudentRequest userStudentRequest) {
+    public ResponseEntity<?> getAllStudent(@Valid USUserStudentRequest userStudentRequest) {
         return studentFactoryService.getAllStudent(userStudentRequest);
     }
 
@@ -55,7 +55,7 @@ public class USStudentFactoryRestController {
     }
 
     @GetMapping("/detail-shift/{id}")
-    public ResponseEntity<?> detailShiftByStudent(USPDDetailShiftByStudentRequest request, @PathVariable String id) {
+    public ResponseEntity<?> detailShiftByStudent(@Valid USPDDetailShiftByStudentRequest request, @PathVariable String id) {
         return studentFactoryService.getAllPlanDateByStudent(request, id);
     }
 }

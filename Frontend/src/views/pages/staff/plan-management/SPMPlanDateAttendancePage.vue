@@ -255,7 +255,6 @@ watch(
                     class="w-100"
                     :dropdownMatchSelectWidth="false"
                     placeholder="-- Tất cả trạng thái --"
-                    allowClear
                   >
                     <a-select-option :value="null">-- Tất cả trạng thái --</a-select-option>
                     <a-select-option :value="1">Có mặt</a-select-option>

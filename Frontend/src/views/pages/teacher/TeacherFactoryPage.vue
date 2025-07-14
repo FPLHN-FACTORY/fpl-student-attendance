@@ -237,7 +237,7 @@ onMounted(() => {
                     class="w-100"
                     @change="fetchFactoryByTeacher"
                   >
-                    <a-select-option :value="''">Tất cả dự án</a-select-option>
+                    <a-select-option :value="''">-- Tất cả dự án --</a-select-option>
                     <a-select-option v-for="item in projects" :key="item.id" :value="item.id">
                       {{ item.name }}
                     </a-select-option>
@@ -252,7 +252,7 @@ onMounted(() => {
                     class="w-100"
                     @change="fetchFactoryByTeacher"
                   >
-                    <a-select-option :value="null">Tất cả học kỳ</a-select-option>
+                    <a-select-option :value="null">-- Tất cả học kỳ --</a-select-option>
                     <a-select-option v-for="item in semesters" :key="item.id" :value="item.id">
                       {{ item.code }}
                     </a-select-option>
@@ -344,7 +344,7 @@ onMounted(() => {
                     <UsergroupAddOutlined />
                   </a-button>
                 </a-tooltip>
-                <a-tooltip title="Danh sách ca học" v-if="record.totalShift > 0">
+                <a-tooltip title="Danh sách ca" v-if="record.totalShift > 0">
                   <a-button
                     type="text"
                     class="btn-outline-primary border-0 me-2"

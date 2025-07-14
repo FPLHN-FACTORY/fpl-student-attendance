@@ -1,6 +1,7 @@
 package udpm.hn.studentattendance.core.teacher.factory.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -40,6 +41,9 @@ public class TCFactoryServiceImpl implements TCFactoryService {
 
         private final RedisInvalidationHelper redisInvalidationHelper;
 
+        @Value("${spring.cache.redis.time-to-live}")
+        private long redisTTL;
+
         @Override
         public ResponseEntity<?> getAllFactoryByTeacher(TCFactoryRequest teacherStudentRequest) {
                 String cacheKey = RedisPrefixConstant.REDIS_PREFIX_TEACHER_FACTORY + "factory_"
@@ -61,7 +65,7 @@ public class TCFactoryServiceImpl implements TCFactoryService {
                                                 sessionHelper.getFacilityId(), sessionHelper.getUserCode(),
                                                 teacherStudentRequest));
 
-                redisService.setObject(cacheKey, listFactoryByTeacher);
+                redisService.set(cacheKey, listFactoryByTeacher, redisTTL);
 
                 return RouterHelper.responseSuccess("Lấy tất cả nhóm xưởng do giảng viên " + sessionHelper.getUserCode()
                                 + " thành công", listFactoryByTeacher);
@@ -81,7 +85,7 @@ public class TCFactoryServiceImpl implements TCFactoryService {
                 List<Project> projects = teacherStudentProjectExtendRepository
                                 .getAllProjectName(sessionHelper.getFacilityId());
 
-                redisService.setObject(cacheKey, projects);
+                redisService.set(cacheKey, projects, redisTTL);
 
                 return RouterHelper.responseSuccess("Lấy tất cả dự án theo cơ sở thành công", projects);
         }
@@ -102,13 +106,9 @@ public class TCFactoryServiceImpl implements TCFactoryService {
 
                 List<Semester> semesters = semesterExtendRepository.getAllSemester(EntityStatus.ACTIVE);
 
-                redisService.setObject(cacheKey, semesters);
+                redisService.set(cacheKey, semesters, redisTTL);
 
                 return RouterHelper.responseSuccess("Lấy tất cả học kỳ thành công", semesters);
-        }
-
-        public void invalidateTeacherFactoryCaches() {
-                redisInvalidationHelper.invalidateAllCaches();
         }
 
 }

@@ -187,7 +187,7 @@ const columns = ref(
     { title: '#', dataIndex: 'orderNumber', key: 'orderNumber' },
     { title: 'Nhóm xưởng', dataIndex: 'factoryName', key: 'factoryName' },
     { title: 'Dự án', dataIndex: 'projectName', key: 'projectName' },
-    { title: 'Cấp độ', dataIndex: 'levelProject', key: 'levelProject' },
+    { title: 'Nhóm dự án', dataIndex: 'levelProject', key: 'levelProject' },
     { title: 'Bộ môn', dataIndex: 'subjectName', key: 'subjectName' },
     { title: 'Số buổi', dataIndex: 'totalShift', key: 'totalShift' },
     { title: 'Số sinh viên', dataIndex: 'totalStudent', key: 'totalStudent' },

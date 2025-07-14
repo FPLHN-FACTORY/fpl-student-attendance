@@ -24,6 +24,7 @@ import udpm.hn.studentattendance.entities.Project;
 import udpm.hn.studentattendance.entities.Semester;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
 import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
+import udpm.hn.studentattendance.helpers.RequestTrimHelper;
 import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.helpers.SessionHelper;
 import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
@@ -40,6 +41,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.HashMap;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -186,18 +189,16 @@ public class SPDPlanServiceImpl implements SPDPlanService {
     public PageableObject<SPDPlanResponse> getCachedPlans(SPDFilterPlanRequest request) {
         request.setIdFacility(sessionHelper.getFacilityId());
 
-        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_PLAN + "list_" +
-                "facility=" + sessionHelper.getFacilityId() +
-                "_page=" + request.getPage() +
-                "_size=" + request.getSize() +
-                "_orderBy=" + request.getOrderBy() +
-                "_sortBy=" + request.getSortBy() +
-                "_q=" + (request.getQ() != null ? request.getQ() : "");
+        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_PLAN + "list_" + request.toString();
 
         Object cachedData = redisService.get(cacheKey);
         if (cachedData != null) {
             try {
-                return redisService.getObject(cacheKey, PageableObject.class);
+                @SuppressWarnings("unchecked")
+                Map<String, Object> cachedMap = redisService.getObject(cacheKey, Map.class);
+                if (cachedMap != null) {
+                    return convertMapToPageableObject(cachedMap);
+                }
             } catch (Exception e) {
                 redisService.delete(cacheKey);
             }
@@ -207,7 +208,8 @@ public class SPDPlanServiceImpl implements SPDPlanService {
         PageableObject<SPDPlanResponse> data = PageableObject.of(spdPlanRepository.getAllByFilter(pageable, request));
 
         try {
-            redisService.set(cacheKey, data, redisTTL);
+            Map<String, Object> cacheMap = convertPageableObjectToMap(data);
+            redisService.set(cacheKey, cacheMap, redisTTL);
         } catch (Exception ignored) {
         }
 
@@ -221,28 +223,8 @@ public class SPDPlanServiceImpl implements SPDPlanService {
     }
 
     public SPDPlanResponse getCachedPlanById(String idPlan) {
-        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_PLAN + idPlan + "_facility=" + sessionHelper.getFacilityId();
-
-        Object cachedData = redisService.get(cacheKey);
-        if (cachedData != null) {
-            try {
-                return redisService.getObject(cacheKey, SPDPlanResponse.class);
-            } catch (Exception e) {
-                redisService.delete(cacheKey);
-            }
-        }
-
         Optional<SPDPlanResponse> data = spdPlanRepository.getByIdPlan(idPlan, sessionHelper.getFacilityId());
-
-        SPDPlanResponse result = data.orElse(null);
-        if (result != null) {
-            try {
-                redisService.set(cacheKey, result, redisTTL);
-            } catch (Exception ignored) {
-            }
-        }
-
-        return result;
+        return data.orElse(null);
     }
 
     @Override
@@ -288,6 +270,8 @@ public class SPDPlanServiceImpl implements SPDPlanService {
 
     @Override
     public ResponseEntity<?> createPlan(SPDAddOrUpdatePlanRequest request) {
+        // Trim all string fields in the request
+        RequestTrimHelper.trimStringFields(request);
 
         Project project = spdProjectRepository.findById(request.getIdProject()).orElse(null);
 
@@ -335,7 +319,7 @@ public class SPDPlanServiceImpl implements SPDPlanService {
         userActivityLogHelper.saveLog("vừa thêm 1 kế hoạch mới: " + o.getName());
 
         // Invalidate related caches
-        invalidatePlanCaches();
+        redisInvalidationHelper.invalidateAllCaches();
 
         return RouterHelper.responseSuccess("Tạo mới kế hoạch thành công", o);
     }
@@ -368,7 +352,7 @@ public class SPDPlanServiceImpl implements SPDPlanService {
         }
 
         // Invalidate specific cache for this plan
-        invalidatePlanCache(id);
+        redisInvalidationHelper.invalidateAllCaches();
 
         return RouterHelper.responseSuccess("Thay đổi trạng thái kế hoạch thành công", newEntity);
     }
@@ -394,13 +378,16 @@ public class SPDPlanServiceImpl implements SPDPlanService {
         userActivityLogHelper.saveLog("vừa xóa kế hoạch: " + plan.getName());
 
         // Invalidate specific cache for this plan
-        invalidatePlanCache(id);
+        redisInvalidationHelper.invalidateAllCaches();
 
         return RouterHelper.responseSuccess("Xoá thành công kế hoạch: " + plan.getName());
     }
 
     @Override
     public ResponseEntity<?> updatePlan(SPDAddOrUpdatePlanRequest request) {
+        // Trim all string fields in the request
+        RequestTrimHelper.trimStringFields(request);
+
         Plan plan = spdPlanRepository.findById(request.getId()).orElse(null);
         if (plan == null) {
             return RouterHelper.responseError("Không tìm thấy kế hoạch muốn cập nhật");
@@ -445,17 +432,140 @@ public class SPDPlanServiceImpl implements SPDPlanService {
 
         userActivityLogHelper.saveLog("vừa cập nhật kế hoạch: " + updatePlan.getName());
 
-        // Invalidate specific cache for this plan
-        invalidatePlanCache(request.getId());
+        // Invalidate all caches
+        redisInvalidationHelper.invalidateAllCaches();
 
         return RouterHelper.responseSuccess("Cập nhật kế hoạch thành công", updatePlan);
     }
 
-    private void invalidatePlanCache(String planId) {
-        redisInvalidationHelper.invalidateAllCaches();
+    // Helper methods to convert between Map and objects
+    private Map<String, Object> convertPageableObjectToMap(PageableObject<SPDPlanResponse> pageableObject) {
+        Map<String, Object> map = new HashMap<>();
+        map.put("data", pageableObject.getData().stream()
+                .map(this::convertSPDPlanResponseToMap)
+                .collect(Collectors.toList()));
+        map.put("totalPages", pageableObject.getTotalPages());
+        map.put("currentPage", pageableObject.getCurrentPage());
+        return map;
     }
 
-    private void invalidatePlanCaches() {
-        redisInvalidationHelper.invalidateAllCaches();
+    private PageableObject<SPDPlanResponse> convertMapToPageableObject(Map<String, Object> map) {
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> dataMaps = (List<Map<String, Object>>) map.get("data");
+        List<SPDPlanResponse> data = dataMaps.stream()
+                .map(this::convertMapToSPDPlanResponse)
+                .collect(Collectors.toList());
+
+        return new PageableObject<>(
+                data,
+                (Long) map.get("totalPages"),
+                (Integer) map.get("currentPage"));
+    }
+
+    private Map<String, Object> convertSPDPlanResponseToMap(SPDPlanResponse response) {
+        Map<String, Object> map = new HashMap<>();
+        map.put("id", response.getId());
+        map.put("orderNumber", response.getOrderNumber());
+        map.put("planName", response.getPlanName());
+        map.put("projectId", response.getProjectId());
+        map.put("projectName", response.getProjectName());
+        map.put("level", response.getLevel());
+        map.put("semesterName", response.getSemesterName());
+        map.put("subjectName", response.getSubjectName());
+        map.put("fromDate", response.getFromDate());
+        map.put("toDate", response.getToDate());
+        map.put("fromDateSemester", response.getFromDateSemester());
+        map.put("toDateSemester", response.getToDateSemester());
+        map.put("description", response.getDescription());
+        map.put("status", response.getStatus());
+        map.put("maxLateArrival", response.getMaxLateArrival());
+        return map;
+    }
+
+    private SPDPlanResponse convertMapToSPDPlanResponse(Map<String, Object> map) {
+        // Create a simple implementation that wraps the map
+        return new SPDPlanResponse() {
+            @Override
+            public String getId() {
+                return (String) map.get("id");
+            }
+
+            @Override
+            public Long getOrderNumber() {
+                Object value = map.get("orderNumber");
+                return value instanceof Number ? ((Number) value).longValue() : null;
+            }
+
+            @Override
+            public String getPlanName() {
+                return (String) map.get("planName");
+            }
+
+            @Override
+            public String getProjectId() {
+                return (String) map.get("projectId");
+            }
+
+            @Override
+            public String getProjectName() {
+                return (String) map.get("projectName");
+            }
+
+            @Override
+            public String getLevel() {
+                return (String) map.get("level");
+            }
+
+            @Override
+            public String getSemesterName() {
+                return (String) map.get("semesterName");
+            }
+
+            @Override
+            public String getSubjectName() {
+                return (String) map.get("subjectName");
+            }
+
+            @Override
+            public Long getFromDate() {
+                Object value = map.get("fromDate");
+                return value instanceof Number ? ((Number) value).longValue() : null;
+            }
+
+            @Override
+            public Long getToDate() {
+                Object value = map.get("toDate");
+                return value instanceof Number ? ((Number) value).longValue() : null;
+            }
+
+            @Override
+            public Long getFromDateSemester() {
+                Object value = map.get("fromDateSemester");
+                return value instanceof Number ? ((Number) value).longValue() : null;
+            }
+
+            @Override
+            public Long getToDateSemester() {
+                Object value = map.get("toDateSemester");
+                return value instanceof Number ? ((Number) value).longValue() : null;
+            }
+
+            @Override
+            public String getDescription() {
+                return (String) map.get("description");
+            }
+
+            @Override
+            public Integer getStatus() {
+                Object value = map.get("status");
+                return value instanceof Number ? ((Number) value).intValue() : null;
+            }
+
+            @Override
+            public Integer getMaxLateArrival() {
+                Object value = map.get("maxLateArrival");
+                return value instanceof Number ? ((Number) value).intValue() : null;
+            }
+        };
     }
 }

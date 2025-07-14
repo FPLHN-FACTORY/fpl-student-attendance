@@ -17,7 +17,7 @@ public class USStudentRestController {
     private final STStudentService studentService;
 
     @GetMapping
-    public ResponseEntity<?> getAllStudent(USStudentRequest studentRequest) {
+    public ResponseEntity<?> getAllStudent(@Valid USStudentRequest studentRequest) {
         return studentService.getAllStudentByFacility(studentRequest);
     }
 

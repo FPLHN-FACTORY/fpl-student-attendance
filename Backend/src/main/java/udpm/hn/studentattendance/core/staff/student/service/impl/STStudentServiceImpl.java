@@ -17,6 +17,7 @@ import udpm.hn.studentattendance.entities.Facility;
 import udpm.hn.studentattendance.entities.UserStudent;
 import udpm.hn.studentattendance.helpers.NotificationHelper;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
+import udpm.hn.studentattendance.helpers.RequestTrimHelper;
 import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.helpers.SessionHelper;
 import udpm.hn.studentattendance.helpers.SettingHelper;
@@ -27,6 +28,7 @@ import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.RedisPrefixConstant;
 import udpm.hn.studentattendance.infrastructure.constants.SettingKeys;
 import udpm.hn.studentattendance.infrastructure.redis.service.RedisService;
+import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -47,6 +49,8 @@ public class STStudentServiceImpl implements STStudentService {
     private final UserActivityLogHelper userActivityLogHelper;
 
     private final RedisService redisService;
+
+    private final RedisInvalidationHelper redisInvalidationHelper;
 
     private final SettingHelper settingHelper;
 
@@ -85,28 +89,8 @@ public class STStudentServiceImpl implements STStudentService {
     }
 
     public UserStudent getCachedStudentDetail(String studentId) {
-        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_STUDENT + studentId;
-
-        Object cachedData = redisService.get(cacheKey);
-        if (cachedData != null) {
-            try {
-                return redisService.getObject(cacheKey, UserStudent.class);
-            } catch (Exception e) {
-                redisService.delete(cacheKey);
-            }
-        }
-
         Optional<UserStudent> userStudent = studentExtendRepository.findById(studentId);
-
-        UserStudent result = userStudent.orElse(null);
-        if (result != null) {
-            try {
-                redisService.set(cacheKey, result, redisTTL);
-            } catch (Exception ignored) {
-            }
-        }
-
-        return result;
+        return userStudent.orElse(null);
     }
 
     @Override
@@ -120,6 +104,9 @@ public class STStudentServiceImpl implements STStudentService {
 
     @Override
     public ResponseEntity<?> createStudent(USStudentCreateUpdateRequest studentCreateUpdateRequest) {
+        // Trim all string fields in the request
+        RequestTrimHelper.trimStringFields(studentCreateUpdateRequest);
+
         if (!ValidateHelper.isValidCode(studentCreateUpdateRequest.getCode())) {
             return RouterHelper.responseError(
                     "Mã sinh viên không hợp lệ: không có khoảng trắng, không có ký tự đặc biệt ngoài dấu chấm . và dấu gạch dưới _.");
@@ -127,7 +114,7 @@ public class STStudentServiceImpl implements STStudentService {
 
         if (!ValidateHelper.isValidFullname(studentCreateUpdateRequest.getName())) {
             return RouterHelper.responseError(
-                    "Họ Tên admin không hợp lệ: Tối thiểu 2 từ, cách nhau bởi khoảng trắng và Chỉ gồm ký tự chữ không chứa số hay ký tự đặc biệt.");
+                    "Họ Tên sinh viên không hợp lệ: Tối thiểu 2 từ, cách nhau bởi khoảng trắng và Chỉ gồm ký tự chữ không chứa số hay ký tự đặc biệt.");
         }
 
         String email = studentCreateUpdateRequest.getEmail().trim();
@@ -162,6 +149,9 @@ public class STStudentServiceImpl implements STStudentService {
         if (existStudentEmail.isPresent()) {
             return RouterHelper.responseError("Email sinh viên đã tồn tại");
         }
+        if (facility.isEmpty()) {
+            return RouterHelper.responseError("Cơ sở không tồn tại");
+        }
 
         UserStudent userStudent = new UserStudent();
         userStudent.setCode(studentCreateUpdateRequest.getCode());
@@ -173,14 +163,17 @@ public class STStudentServiceImpl implements STStudentService {
         userActivityLogHelper
                 .saveLog("vừa thêm 1 sinh viên mới: " + saveUserStudent.getCode() + " - " + saveUserStudent.getName());
 
-        // Xóa cache liên quan đến danh sách sinh viên
-        invalidateStudentListCache();
+        // Invalidate all caches
+        redisInvalidationHelper.invalidateAllCaches();
 
         return RouterHelper.responseSuccess("Thêm sinh viên mới thành công", saveUserStudent);
     }
 
     @Override
     public ResponseEntity<?> updateStudent(USStudentCreateUpdateRequest studentCreateUpdateRequest) {
+        // Trim all string fields in the request
+        RequestTrimHelper.trimStringFields(studentCreateUpdateRequest);
+
         if (!ValidateHelper.isValidCode(studentCreateUpdateRequest.getCode())) {
             return RouterHelper.responseError(
                     "Mã sinh viên không hợp lệ: không có khoảng trắng, không có ký tự đặc biệt ngoài dấu chấm . và dấu gạch dưới _.");
@@ -237,8 +230,8 @@ public class STStudentServiceImpl implements STStudentService {
         userActivityLogHelper
                 .saveLog("vừa cập nhật sinh viên: " + saveUserStudent.getCode() + " - " + saveUserStudent.getName());
 
-        // Xóa cache liên quan đến sinh viên này
-        invalidateStudentCache(saveUserStudent.getId());
+        // Invalidate all caches
+        redisInvalidationHelper.invalidateAllCaches();
 
         return RouterHelper.responseSuccess("Cập nhật sinh viên thành công", saveUserStudent);
     }
@@ -257,8 +250,8 @@ public class STStudentServiceImpl implements STStudentService {
             userActivityLogHelper.saveLog("vừa thay đổi trạng thái sinh viên " + userStudent.getCode() + " - "
                     + userStudent.getName() + " từ " + oldStatus + " thành " + newStatus);
 
-            // Xóa cache liên quan đến sinh viên này
-            invalidateStudentCache(studentId);
+            // Invalidate all caches
+            redisInvalidationHelper.invalidateAllCaches();
 
             return RouterHelper.responseSuccess("Thay đổi trạng thái sinh viên thành công", userStudent);
         } else {
@@ -286,10 +279,8 @@ public class STStudentServiceImpl implements STStudentService {
             userActivityLogHelper.saveLog("vừa xóa dữ liệu khuôn mặt của sinh viên: " + userStudent.getCode() + " - "
                     + userStudent.getName());
 
-            // Xóa cache liên quan đến sinh viên này
-            invalidateStudentCache(studentId);
-            // Xóa cache trạng thái face
-            invalidateFaceStatusCache();
+            // Invalidate all caches
+            redisInvalidationHelper.invalidateAllCaches();
 
             return RouterHelper.responseSuccess("Cấp quyền thay đổi mặt sinh viên thành công", userStudent);
         }
@@ -333,30 +324,4 @@ public class STStudentServiceImpl implements STStudentService {
         return RouterHelper.responseSuccess("Lấy trạng thái face của sinh viên thành công", studentFaceMap);
     }
 
-    /**
-     * Xóa cache trạng thái face
-     */
-    private void invalidateFaceStatusCache() {
-        redisService.delete(RedisPrefixConstant.REDIS_PREFIX_STUDENT + "face_status_" + sessionHelper.getFacilityId());
-    }
-
-    /**
-     * Xóa cache liên quan đến một sinh viên cụ thể
-     */
-    private void invalidateStudentCache(String studentId) {
-        // Xóa cache chi tiết sinh viên
-        redisService.delete(RedisPrefixConstant.REDIS_PREFIX_STUDENT + studentId);
-        // Xóa cache danh sách sinh viên
-        invalidateStudentListCache();
-        // Xóa cache trạng thái face
-        invalidateFaceStatusCache();
-    }
-
-    /**
-     * Xóa cache danh sách sinh viên
-     */
-    private void invalidateStudentListCache() {
-        redisService.deletePattern(
-                RedisPrefixConstant.REDIS_PREFIX_STUDENT + "list_" + sessionHelper.getFacilityId() + "_*");
-    }
 }

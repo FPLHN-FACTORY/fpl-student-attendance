@@ -73,7 +73,7 @@ const columns = ref(
   autoAddColumnWidth([
     { title: '#', dataIndex: 'orderNumber', key: 'orderNumber' },
     { title: 'Thời gian', dataIndex: 'startDate', key: 'startDate' },
-    { title: 'Ca học', dataIndex: 'shift', key: 'shift' },
+    { title: 'Ca', dataIndex: 'shift', key: 'shift' },
     { title: 'Điểm danh muộn', dataIndex: 'lateArrival', key: 'lateArrival' },
     { title: 'Nhóm xưởng', dataIndex: 'factoryName', key: 'factoryName' },
     { title: 'Giảng viên', dataIndex: 'teacherName', key: 'teacherName' },
@@ -126,7 +126,7 @@ const fetchDataList = () => {
       pagination.value.total = response.data.totalPages * pagination.value.pageSize
     })
     .catch((error) => {
-      message.error(error.response?.data?.message || 'Lỗi khi lấy dữ liệu')
+      message.error(error.response?.data?.message || 'Không thể tải dữ liệu. Vui lòng thử lại!')
     })
     .finally(() => {
       isLoading.value = false
@@ -151,7 +151,7 @@ const fetchDataStudentInfo = () => {
       }
     })
     .catch((error) => {
-      message.error(error.response?.data?.message || 'Lỗi khi lấy thông tin sinh viên')
+      message.error(error.response?.data?.message || 'Không thể tải thông tin sinh viên. Vui lòng thử lại!')
     })
 }
 
@@ -184,7 +184,7 @@ const handleSubmitAttendance = () => {
       fetchDataList()
     })
     .catch((error) => {
-      message.error(error.response?.data?.message || 'Lỗi khi điểm danh ca học này')
+      message.error(error.response?.data?.message || 'Điểm danh không thành công. Vui lòng thử lại!')
     })
     .finally(() => {
       loadingPage.hide()
@@ -201,7 +201,7 @@ const handleSubmitUpdateInfo = () => {
       applicationStore.loadNotification()
     })
     .catch((error) => {
-      message.error(error.response?.data?.message || 'Lỗi khi cập nhật khuôn mặt')
+      message.error(error.response?.data?.message || 'Không thể cập nhật khuôn mặt. Vui lòng thử lại!')
     })
     .finally(() => {
       loadingPage.hide()
@@ -216,9 +216,9 @@ const handleUpdateInfo = async () => {
     Modal.confirm({
       title: 'Xác nhận cập nhật dữ liệu khuôn mặt',
       icon: createVNode(ExclamationCircleOutlined),
-      content: 'Không thể hoàn tác. Bạn thực sự muốn cập nhật khuôn mặt này?',
-      okText: 'Tiếp tục',
-      cancelText: 'Huỷ bỏ',
+      content: 'Việc cập nhật khuôn mặt không thể hoàn tác. Bạn có chắc chắn muốn tiếp tục không?',
+      okText: 'Cập nhật',
+      cancelText: 'Hủy',
       onOk: () => {
         handleSubmitUpdateInfo()
       },
@@ -404,7 +404,6 @@ watch(
                     class="w-100"
                     :dropdownMatchSelectWidth="false"
                     placeholder="-- Tất cả trạng thái --"
-                    allowClear
                   >
                     <a-select-option :value="null">-- Tất cả trạng thái --</a-select-option>
                     <a-select-option v-for="o in ATTENDANCE_STATUS" :key="o.id" :value="o.id">{{
@@ -443,7 +442,7 @@ watch(
 
       <div class="col-12">
         <a-card :bordered="false" class="cart">
-          <template #title> <UnorderedListOutlined /> Danh sách ca học hôm nay</template>
+          <template #title> <UnorderedListOutlined /> Danh sách ca hôm nay</template>
           <template #extra>
             <a-tooltip title="Vị trí hiện tại">
               <AimOutlined @click="handleShowLocation" />

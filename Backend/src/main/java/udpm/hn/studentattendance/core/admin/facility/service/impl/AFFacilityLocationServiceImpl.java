@@ -15,6 +15,7 @@ import udpm.hn.studentattendance.entities.Facility;
 import udpm.hn.studentattendance.entities.FacilityLocation;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
 import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
+import udpm.hn.studentattendance.helpers.RequestTrimHelper;
 import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
@@ -39,16 +40,8 @@ public class AFFacilityLocationServiceImpl implements AFFacilityLocationService 
     private long redisTTL;
 
     public PageableObject<AFFacilityLocationResponse> getLocationList(AFFilterFacilityLocationRequest request) {
-        // Tạo cache key thủ công
-        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_FACILITY_LOCATION + "list_" +
-                "page=" + request.getPage() +
-                "_size=" + request.getSize() +
-                "_orderBy=" + request.getOrderBy() +
-                "_sortBy=" + request.getSortBy() +
-                "_q=" + (request.getQ() != null ? request.getQ() : "") +
-                "_idFacility=" + (request.getIdFacility() != null ? request.getIdFacility() : "") +
-                "_keyword=" + (request.getKeyword() != null ? request.getKeyword() : "") +
-                "_status=" + (request.getStatus() != null ? request.getStatus() : "");
+        // Tạo cache key sử dụng toString()
+        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_FACILITY_LOCATION + "list_" + request.toString();
 
         // Kiểm tra cache
         Object cachedData = redisService.get(cacheKey);
@@ -67,7 +60,7 @@ public class AFFacilityLocationServiceImpl implements AFFacilityLocationService 
         PageableObject<AFFacilityLocationResponse> data = PageableObject.of(
                 afFacilityLocationRepository.getAllByFilter(pageable, request));
 
-        // Store in cache - sử dụng set với thời gian sống cụ thể
+        // Store in cache
         try {
             redisService.set(cacheKey, data, redisTTL);
         } catch (Exception ignored) {
@@ -84,6 +77,8 @@ public class AFFacilityLocationServiceImpl implements AFFacilityLocationService 
 
     @Override
     public ResponseEntity<?> addLocation(AFAddOrUpdateFacilityLocationRequest request) {
+        // Trim all string fields in the request
+        RequestTrimHelper.trimStringFields(request);
 
         Facility facility = afFacilityExtendRepository.findById(request.getIdFacility()).orElse(null);
 
@@ -114,6 +109,9 @@ public class AFFacilityLocationServiceImpl implements AFFacilityLocationService 
 
     @Override
     public ResponseEntity<?> updateLocation(AFAddOrUpdateFacilityLocationRequest request) {
+        // Trim all string fields in the request
+        RequestTrimHelper.trimStringFields(request);
+
         FacilityLocation facilityLocation = afFacilityLocationRepository.findById(request.getId()).orElse(null);
         if (facilityLocation == null) {
             return RouterHelper.responseError("Không tìm thấy địa điểm muốn cập nhật");
@@ -190,10 +188,4 @@ public class AFFacilityLocationServiceImpl implements AFFacilityLocationService 
         return RouterHelper.responseSuccess("Thay đổi trạng thái địa điểm thành công", savedLocation);
     }
 
-    /**
-     * @deprecated Use redisInvalidationHelper.invalidateAllCaches() instead
-     */
-    private void invalidateLocationCaches() {
-        redisInvalidationHelper.invalidateAllCaches();
-    }
 }

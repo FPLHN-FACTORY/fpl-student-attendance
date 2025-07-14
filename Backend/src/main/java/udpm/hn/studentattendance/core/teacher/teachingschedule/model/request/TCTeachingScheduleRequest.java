@@ -22,4 +22,19 @@ public class TCTeachingScheduleRequest extends PageableRequest {
 
     private Integer shiftType;
 
+    @Override
+    public String toString() {
+        return "page=" + getPage() +
+                "_size=" + getSize() +
+                "_orderBy=" + getOrderBy() +
+                "_sortBy=" + getSortBy() +
+                "_q=" + (getQ() != null ? getQ() : "") +
+                "_idSubject=" + (idSubject != null ? idSubject : "") +
+                "_idFactory=" + (idFactory != null ? idFactory : "") +
+                "_idProject=" + (idProject != null ? idProject : "") +
+                "_shift=" + (shift != null ? shift : "") +
+                "_startDate=" + (startDate != null ? startDate : "") +
+                "_endDate=" + (endDate != null ? endDate : "") +
+                "_shiftType=" + (shiftType != null ? shiftType : "");
+    }
 }

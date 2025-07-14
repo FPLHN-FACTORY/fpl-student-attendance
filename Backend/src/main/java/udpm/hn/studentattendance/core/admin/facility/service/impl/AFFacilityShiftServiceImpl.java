@@ -16,6 +16,7 @@ import udpm.hn.studentattendance.entities.Facility;
 import udpm.hn.studentattendance.entities.FacilityShift;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
 import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
+import udpm.hn.studentattendance.helpers.RequestTrimHelper;
 import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.helpers.SettingHelper;
 import udpm.hn.studentattendance.helpers.ShiftHelper;
@@ -49,19 +50,17 @@ public class AFFacilityShiftServiceImpl implements AFFacilityShiftService {
 
     @PostConstruct
     public void init() {
-        this.MIN_DIFF_SHIFT = settingHelper.getSetting(SettingKeys.SHIFT_MIN_DIFF, Integer.class);
+        try {
+            Integer minDiff = settingHelper.getSetting(SettingKeys.SHIFT_MIN_DIFF, Integer.class);
+            this.MIN_DIFF_SHIFT = minDiff != null ? minDiff : 10; // fallback to 10 minutes
+        } catch (Exception e) {
+            // If database is not ready or settings table doesn't exist, use default value
+            this.MIN_DIFF_SHIFT = 10; // default to 10 minutes
+        }
     }
 
     public PageableObject<AFFacilityShiftResponse> getShiftList(AFFilterFacilityShiftRequest request) {
-        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_FACILITY_SHIFT + "list_" +
-                "page=" + request.getPage() +
-                "_size=" + request.getSize() +
-                "_orderBy=" + request.getOrderBy() +
-                "_sortBy=" + request.getSortBy() +
-                "_q=" + (request.getQ() != null ? request.getQ() : "") +
-                "_idFacility=" + (request.getIdFacility() != null ? request.getIdFacility() : "") +
-                "_shift=" + (request.getShift() != null ? request.getShift() : "") +
-                "_status=" + (request.getStatus() != null ? request.getStatus() : "");
+        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_FACILITY_SHIFT + "list_" + request.toString();
 
         Object cachedData = redisService.get(cacheKey);
         if (cachedData != null) {
@@ -92,6 +91,8 @@ public class AFFacilityShiftServiceImpl implements AFFacilityShiftService {
 
     @Override
     public ResponseEntity<?> addShift(AFAddOrUpdateFacilityShiftRequest request) {
+        // Trim all string fields in the request
+        RequestTrimHelper.trimStringFields(request);
 
         Facility facility = afFacilityExtendRepository.findById(request.getIdFacility()).orElse(null);
 
@@ -139,6 +140,9 @@ public class AFFacilityShiftServiceImpl implements AFFacilityShiftService {
 
     @Override
     public ResponseEntity<?> updateShift(AFAddOrUpdateFacilityShiftRequest request) {
+        // Trim all string fields in the request
+        RequestTrimHelper.trimStringFields(request);
+
         FacilityShift facilityShift = afFacilityShiftRepository.findById(request.getId()).orElse(null);
         if (facilityShift == null) {
             return RouterHelper.responseError("Không tìm thấy ca học muốn cập nhật");
@@ -242,10 +246,4 @@ public class AFFacilityShiftServiceImpl implements AFFacilityShiftService {
         return RouterHelper.responseSuccess("Thay đổi trạng thái ca học thành công", savedShift);
     }
 
-    /**
-     * @deprecated Use redisInvalidationHelper.invalidateAllCaches() instead
-     */
-    private void invalidateShiftCaches() {
-        redisInvalidationHelper.invalidateAllCaches();
-    }
 }

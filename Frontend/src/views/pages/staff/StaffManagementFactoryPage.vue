@@ -185,14 +185,14 @@ const handleTableChange = (pageInfo) => {
 
 const submitAddFactory = () => {
   if (!newFactory.factoryName || !newFactory.idUserStaff || !newFactory.idProject) {
-    message.error('Vui lòng điền đầy đủ thông tin bắt buộc')
+    message.error('Vui lòng điền đầy đủ thông tin bắt buộc (Tên nhóm xưởng, Phụ trách xưởng, Dự án)')
     return
   }
   Modal.confirm({
-    title: 'Xác nhận thêm mới',
-    content: 'Bạn có chắc chắn muốn thêm nhóm xưởng mới này?',
-    okText: 'Tiếp tục',
-    cancelText: 'Hủy bỏ',
+    title: 'Xác nhận thêm nhóm xưởng mới',
+    content: 'Bạn có chắc chắn muốn thêm nhóm xưởng mới này vào hệ thống không?',
+    okText: 'Thêm nhóm xưởng',
+    cancelText: 'Hủy',
     onOk() {
       loadingStore.show()
       requestAPI
@@ -599,7 +599,7 @@ onMounted(() => {
                         (option.label || '').toLowerCase().includes(input.toLowerCase())
                     "
                   >
-                    <a-select-option :value="null">Tất cả giảng viên</a-select-option>
+                    <a-select-option :value="null">-- Tất cả giảng viên --</a-select-option>
                     <a-select-option
                       v-for="staff in staffs"
                       :key="staff.id"
@@ -624,7 +624,7 @@ onMounted(() => {
                         (option.label || '').toLowerCase().includes(input.toLowerCase())
                     "
                   >
-                    <a-select-option :value="null">Tất cả kỳ học</a-select-option>
+                    <a-select-option :value="null">-- Tất cả kỳ học --</a-select-option>
                     <a-select-option
                       v-for="semester in semesters"
                       :key="semester.id"

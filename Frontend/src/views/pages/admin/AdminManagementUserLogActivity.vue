@@ -252,7 +252,7 @@ watch(
                     allowClear
                     class="w-100"
                   >
-                    <a-select-option :value="''">--Tất cả cơ sở--</a-select-option>
+                    <a-select-option :value="''">-- Tất cả cơ sở --</a-select-option>
                     <a-select-option v-for="item in facility" :key="item.id" :value="item.id">
                       {{ item.name }}
                     </a-select-option>

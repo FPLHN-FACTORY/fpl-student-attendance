@@ -148,16 +148,16 @@ const handleTableChange = (pageInfo) => {
 // Hàm thêm cơ sở
 const handleAddFacility = () => {
   if (!newFacility.facilityName) {
-    message.error('Tên cơ sở không được bỏ trống')
+    message.error('Tên cơ sở không được để trống. Vui lòng nhập tên cơ sở!')
     return
   }
 
   Modal.confirm({
-    title: `Xác nhận thêm mới`,
+    title: `Xác nhận thêm cơ sở mới`,
     type: 'info',
-    content: `Bạn có chắc muốn thêm mới cơ sở này?`,
-    okText: 'Tiếp tục',
-    cancelText: 'Hủy bỏ',
+    content: `Bạn có chắc chắn muốn thêm cơ sở "${newFacility.facilityName}" vào hệ thống không?`,
+    okText: 'Thêm cơ sở',
+    cancelText: 'Hủy',
     onOk() {
       modalAddLoading.value = true
       loadingStore.show()
@@ -206,16 +206,16 @@ const handleUpdateFacility = (record) => {
 // Hàm cập nhật cơ sở
 const updateFacility = () => {
   if (!detailFacility.value.facilityName) {
-    message.error('Tên cơ sở không được bỏ trống')
+    message.error('Tên cơ sở không được để trống. Vui lòng nhập tên cơ sở!')
     return
   }
 
   Modal.confirm({
-    title: `Xác nhận cập nhật`,
+    title: `Xác nhận cập nhật thông tin cơ sở`,
     type: 'info',
-    content: `Bạn có chắc muốn lưu lại thay đổi?`,
-    okText: 'Tiếp tục',
-    cancelText: 'Hủy bỏ',
+    content: `Bạn có chắc chắn muốn lưu lại những thay đổi này không?`,
+    okText: 'Cập nhật',
+    cancelText: 'Hủy',
     onOk() {
       modalUpdateLoading.value = true
       loadingStore.show()
@@ -258,8 +258,8 @@ const handleShowLocation = (id) => {
 // Hàm đổi trạng thái cơ sở
 const handleChangeStatusFacility = (record) => {
   Modal.confirm({
-    title: 'Xác nhận thay đổi trạng thái',
-    content: `Bạn có chắc chắn muốn thay đổi trạng thái của cơ sở ${record.facilityName} ?`,
+    title: 'Xác nhận thay đổi trạng thái cơ sở',
+    content: `Bạn có chắc chắn muốn thay đổi trạng thái của cơ sở "${record.facilityName}" không?`,
     onOk: () => {
       loadingStore.show()
       requestAPI
@@ -355,12 +355,11 @@ onMounted(() => {
                   <div class="label-title">Trạng thái:</div>
                   <a-select
                     v-model:value="filter.status"
-                    placeholder="Chọn trạng thái"
-                    allowClear
+                    placeholder="-- Tất cả trạng thái --"
                     class="w-100"
                     @change="fetchFacilities"
                   >
-                    <a-select-option :value="null">Tất cả trạng thái</a-select-option>
+                    <a-select-option :value="null">-- Tất cả trạng thái --</a-select-option>
                     <a-select-option value="ACTIVE">Hoạt động</a-select-option>
                     <a-select-option value="INACTIVE">Không hoạt động</a-select-option>
                   </a-select>
@@ -435,7 +434,7 @@ onMounted(() => {
                       <EditFilled />
                     </a-button>
                   </a-tooltip>
-                  <a-tooltip title="Quản lý ca học">
+                  <a-tooltip title="Quản lý ca">
                     <a-button
                       class="btn-outline-primary border-0 me-2"
                       @click="handleShowShift(record.id)"

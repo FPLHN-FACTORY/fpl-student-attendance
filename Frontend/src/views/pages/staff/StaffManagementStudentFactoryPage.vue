@@ -249,7 +249,7 @@ const handleStudentCheckboxChange = (student, checked) => {
 function confirmDelete(record) {
   Modal.confirm({
     title: 'Xác nhận xóa sinh viên',
-    content: `Nếu xóa sinh viên ${record.studentName} các dữ liệu về buổi học của sinh viên sẽ bị mất, bạn có thể thay đổi trạng thái để bảo toàn dữ liệu. Xóa?`,
+    content: `Nếu xóa sinh viên ${record.studentName} các dữ liệu về lịch sắp tới của sinh viên sẽ bị mất, bạn có thể thay đổi trạng thái để bảo toàn dữ liệu. Xóa?`,
     okType: 'danger',
     onOk() {
       deleteStudentFactory(record.studentFactoryId)
@@ -360,7 +360,7 @@ function fetchDetailStudent(userStudentId) {
 /* -------------------- Quản lý modal thêm sinh viên -------------------- */
 const isAddStudentModalVisible = ref(false)
 
-// State cho modal chi tiết ca học
+// State cho modal chi tiết ca
 const shiftModalVisible = ref(false)
 const shiftFilter = reactive({ startDate: null, status: '' })
 const shiftPagination = reactive({ current: 1, pageSize: 5, total: 0 })
@@ -370,7 +370,7 @@ const shiftColumns = ref(
     { title: 'Buổi', dataIndex: 'orderNumber', key: 'orderNumber' },
     { title: 'Ngày học', dataIndex: 'startDate', key: 'startDate' },
     { title: 'Thời gian', key: 'time' },
-    { title: 'Ca học', dataIndex: 'shift', key: 'shift' },
+    { title: 'Ca', dataIndex: 'shift', key: 'shift' },
     { title: 'Trạng thái điểm danh', dataIndex: 'statusAttendance', key: 'statusAttendance' },
     { title: 'Trạng thái', dataIndex: 'status', key: 'status' },
   ]),
@@ -409,7 +409,7 @@ function fetchShiftDetails() {
       shiftPagination.total = result.totalRecords || result.totalPages * shiftPagination.pageSize
     })
     .catch((error) => {
-      message.error(error.response?.data?.message || 'Lỗi khi lấy chi tiết ca học')
+      message.error(error.response?.data?.message || 'Lỗi khi lấy chi tiết ca')
     })
     .finally(() => {
       isLoading.value = false
@@ -479,12 +479,11 @@ onMounted(() => {
                   <div class="label-title">Trạng thái:</div>
                   <a-select
                     v-model:value="filter.status"
-                    placeholder="Chọn trạng thái"
-                    allowClear
+                    placeholder="-- Tất cả trạng thái --"
                     class="w-100"
                     @change="fetchStudentFactories"
                   >
-                    <a-select-option :value="null">Tất cả trạng thái</a-select-option>
+                    <a-select-option :value="null">-- Tất cả trạng thái --</a-select-option>
                     <a-select-option value="1">Đang học</a-select-option>
                     <a-select-option value="0">Ngưng học</a-select-option>
                   </a-select>
@@ -625,7 +624,7 @@ onMounted(() => {
         <a-descriptions-item label="Trạng thái">
           {{ detailStudent.userStudentStatus === 1 ? 'Đang học' : 'Ngưng học' }}
         </a-descriptions-item>
-        <a-descriptions-item label="Ca học đang hoạt động">
+        <a-descriptions-item label="Ca đang hoạt động">
           <a @click="openShiftModal(detailStudent.id)">Chi tiết</a>
         </a-descriptions-item>
         <a-descriptions-item label="Học kỳ">
@@ -639,7 +638,7 @@ onMounted(() => {
 
     <a-modal
       v-model:open="shiftModalVisible"
-      title="Chi tiết ca học"
+      title="Chi tiết ca"
       :footer="null"
       width="80%"
       @cancel="closeShiftModal"
@@ -657,12 +656,11 @@ onMounted(() => {
         <div class="col-md-6">
           <a-select
             v-model:value="shiftFilter.status"
-            placeholder="Chọn trạng thái"
-            allowClear
+            placeholder="-- Tất cả trạng thái --"
             class="w-100"
             @change="fetchShiftDetails"
           >
-            <a-select-option :value="''">Tất cả trạng thái</a-select-option>
+            <a-select-option :value="''">-- Tất cả trạng thái --</a-select-option>
             <a-select-option value="DA_DIEN_RA">Đã diễn ra</a-select-option>
             <a-select-option value="CHUA_DIEN_RA">Chưa diễn ra</a-select-option>
           </a-select>

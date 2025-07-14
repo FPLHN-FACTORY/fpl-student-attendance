@@ -10,7 +10,7 @@ import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 @Getter
 @Setter
 public class ADSemesterRequest extends PageableRequest {
-    @Size(max = EntityProperties.LENGTH_NAME, message = "Tên học kỳ không được quá:" + EntityProperties.LENGTH_NAME)
+    @Size(max = EntityProperties.LENGTH_NAME, message = "Từ khóa không được quá:" + EntityProperties.LENGTH_NAME)
     private String semesterCode;
 
     private Long fromDateSemester;
@@ -19,4 +19,18 @@ public class ADSemesterRequest extends PageableRequest {
 
     private EntityStatus status;
 
+    @Override
+    public String toString() {
+        return "ADSemesterRequest{" +
+                "semesterCode='" + semesterCode + '\'' +
+                ", fromDateSemester=" + fromDateSemester +
+                ", toDateSemester=" + toDateSemester +
+                ", status=" + status +
+                ", page=" + getPage() +
+                ", size=" + getSize() +
+                ", sortBy=" + getSortBy() +
+                ", orderBy=" + getOrderBy() +
+                ", q=" + getQ() +
+                '}';
+    }
 }

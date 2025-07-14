@@ -38,4 +38,6 @@ public class RedisPrefixConstant {
 
     public static final String REDIS_PREFIX_TEACHER_FACTORY = "redis_teacher_factory_";
 
+    public static final String REDIS_PREFIX_SEMESTER = "redis_semester_";
+
 }

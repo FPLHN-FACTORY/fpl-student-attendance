@@ -16,7 +16,7 @@ public interface ADUserAdminExtendRepository extends UserAdminRepository {
 
     @Query(value = """
             SELECT
-            	ROW_NUMBER() OVER (ORDER BY ua.created_at DESC) AS rowNumber,
+            	ROW_NUMBER() OVER (ORDER BY ua.status DESC, ua.created_at DESC) AS rowNumber,
             	ua.id AS userAdminId,
             	ua.code AS userAdminCode,
             	ua.name AS userAdminName,
