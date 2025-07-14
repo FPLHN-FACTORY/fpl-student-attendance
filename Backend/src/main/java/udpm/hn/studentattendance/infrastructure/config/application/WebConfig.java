@@ -42,4 +42,5 @@ public class WebConfig implements WebMvcConfigurer {
 
         return new CorsFilter(source);
     }
+
 }
