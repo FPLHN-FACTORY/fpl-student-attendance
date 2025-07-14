@@ -39,9 +39,7 @@ public class ValidateHelper {
 
     private static final String DOMAIN_REGEX = "^(?=.{1,253}$)([a-zA-Z0-9-]{1,63}\\.)+[a-zA-Z]{2,}$";
 
-
     private static final InetAddressValidator validator = InetAddressValidator.getInstance();
-
 
     public static boolean isValidPhoneNumber(String phoneNumber) {
         Pattern pattern = Pattern.compile(PHONE_REGEX);
@@ -104,6 +102,9 @@ public class ValidateHelper {
     }
 
     public static boolean isLocalhost(String ip) {
+        if (ip == null) {
+            return false;
+        }
         return ip.equals("127.0.0.1") || ip.equals("::1") || ip.equals("0:0:0:0:0:0:0:1");
     }
 
@@ -179,7 +180,5 @@ public class ValidateHelper {
             return false;
         }
     }
-
-
 
 }

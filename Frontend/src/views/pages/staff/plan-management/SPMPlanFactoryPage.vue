@@ -102,7 +102,7 @@ const formDataAdd = reactive({
 const formRules = reactive({
   idFactory: [{ required: true, message: 'Vui lòng chọn 1 nhóm xưởng - dự án!' }],
   days: [{ required: true, message: 'Vui lòng chọn ít nhất 1 ngày trong tuần!' }],
-  shift: [{ required: true, message: 'Vui lòng chọn 1 ca học!' }],
+  shift: [{ required: true, message: 'Vui lòng chọn 1 ca!' }],
   type: [{ required: true, message: 'Vui lòng chọn 1 hình thức!' }],
   lateArrival: [{ required: true, message: 'Vui lòng nhập mục này!' }],
 })
@@ -163,7 +163,7 @@ const fetchDataShift = () => {
       lstShift.value = response.data
     })
     .catch((error) => {
-      message.error(error?.response?.data?.message || 'Lỗi khi lấy dữ liệu ca học')
+      message.error(error?.response?.data?.message || 'Lỗi khi lấy dữ liệu ca')
     })
 }
 
@@ -382,7 +382,7 @@ watch(
           </a-select-option>
         </a-select>
       </a-form-item>
-      <a-form-item class="col-sm-12" label="Ca học" name="shift" :rules="formRules.shift">
+      <a-form-item class="col-sm-12" label="Ca" name="shift" :rules="formRules.shift">
         <a-select
           class="w-100"
           v-model:value="formDataAdd.shift"
@@ -426,7 +426,7 @@ watch(
           @keyup.enter="modalAdd.onOk"
         />
       </a-form-item>
-      <a-form-item class="col-sm-4" label="Phòng học">
+      <a-form-item class="col-sm-4" label="Phòng">
         <a-input
           class="w-100"
           v-model:value="formDataAdd.room"
@@ -548,7 +548,6 @@ watch(
                     class="w-100"
                     :dropdownMatchSelectWidth="false"
                     placeholder="-- Tất cả trạng thái --"
-                    allowClear
                   >
                     <a-select-option :value="null">-- Tất cả trạng thái --</a-select-option>
                     <a-select-option :value="1">Đang triển khai</a-select-option>
@@ -639,7 +638,7 @@ watch(
                 }}</a-tag>
               </template>
               <template v-if="column.key === 'actions'">
-                <a-tooltip title="Chi tiết ca học">
+                <a-tooltip title="Chi tiết ca">
                   <a-button
                     class="btn-outline-primary border-0 me-2"
                     @click="handleShowDetail(record.id)"

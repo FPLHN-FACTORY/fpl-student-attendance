@@ -28,4 +28,19 @@ public class SPDFilterPlanDateRequest extends PageableRequest {
 
     private String status;
 
+    @Override
+    public String toString() {
+        return "page=" + getPage() +
+                "_size=" + getSize() +
+                "_orderBy=" + getOrderBy() +
+                "_sortBy=" + getSortBy() +
+                "_q=" + (getQ() != null ? getQ() : "") +
+                "_idPlanFactory=" + (idPlanFactory != null ? idPlanFactory : "") +
+                "_idFacility=" + (idFacility != null ? idFacility : "") +
+                "_keyword=" + (keyword != null ? keyword : "") +
+                "_shift=" + (shift != null ? shift : "") +
+                "_type=" + (type != null ? type : "") +
+                "_startDate=" + (startDate != null ? startDate : "") +
+                "_status=" + (status != null ? status : "");
+    }
 }

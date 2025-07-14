@@ -16,6 +16,7 @@ import udpm.hn.studentattendance.helpers.GenerateNameHelper;
 import udpm.hn.studentattendance.helpers.MailerHelper;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
 import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
+import udpm.hn.studentattendance.helpers.RequestTrimHelper;
 import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
@@ -56,14 +57,7 @@ public class AFFacilityServiceImpl implements AFFacilityService {
     private long redisTTL;
 
     public PageableObject<AFFacilityResponse> getCachedFacilities(AFFacilitySearchRequest request) {
-        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_FACILITY + "list_" +
-                "name=" + (request.getName() != null ? request.getName() : "") +
-                "_status=" + (request.getStatus() != null ? request.getStatus() : "null") +
-                "_page=" + request.getPage() +
-                "_size=" + request.getSize() +
-                "_orderBy=" + request.getOrderBy() +
-                "_sortBy=" + request.getSortBy() +
-                "_q=" + (request.getQ() != null ? request.getQ() : "");
+        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_FACILITY + "list_" + request.toString();
 
         Object cachedData = redisService.get(cacheKey);
         if (cachedData != null) {
@@ -94,7 +88,10 @@ public class AFFacilityServiceImpl implements AFFacilityService {
 
     @Override
     public ResponseEntity<?> createFacility(AFCreateUpdateFacilityRequest request) {
-        Optional<Facility> existFacility = facilityRepository.findByName(request.getFacilityName().trim());
+        // Trim all string fields in the request
+        RequestTrimHelper.trimStringFields(request);
+
+        Optional<Facility> existFacility = facilityRepository.findByName(request.getFacilityName());
         if (existFacility.isPresent()) {
             return RouterHelper.responseError("Tên cơ sở đã tồn tại trên hệ thống");
         }
@@ -117,6 +114,9 @@ public class AFFacilityServiceImpl implements AFFacilityService {
 
     @Override
     public ResponseEntity<?> updateFacility(String facilityId, AFCreateUpdateFacilityRequest request) {
+        // Trim all string fields in the request
+        RequestTrimHelper.trimStringFields(request);
+
         Optional<Facility> existFacility = facilityRepository.findById(facilityId);
         if (existFacility.isEmpty()) {
             return RouterHelper.responseError("Không tìm thấy cơ sở");
@@ -128,8 +128,8 @@ public class AFFacilityServiceImpl implements AFFacilityService {
 
         Facility facility = existFacility.get();
         String oldName = facility.getName();
-        facility.setCode(GenerateNameHelper.generateCodeFromName(request.getFacilityName().trim()));
-        facility.setName(GenerateNameHelper.replaceManySpaceToOneSpace(request.getFacilityName().trim()));
+        facility.setCode(GenerateNameHelper.generateCodeFromName(request.getFacilityName()));
+        facility.setName(GenerateNameHelper.replaceManySpaceToOneSpace(request.getFacilityName()));
 
         Facility savedFacility = facilityRepository.save(facility);
         userActivityLogHelper.saveLog("vừa cập nhật cơ sở: " + oldName + " → " + savedFacility.getName());
@@ -199,29 +199,8 @@ public class AFFacilityServiceImpl implements AFFacilityService {
     }
 
     public AFFacilityResponse getCachedFacilityById(String facilityId) {
-        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_FACILITY + facilityId;
-
-        // Kiểm tra cache
-        Object cachedData = redisService.get(cacheKey);
-        if (cachedData != null) {
-            try {
-                return redisService.getObject(cacheKey, AFFacilityResponse.class);
-            } catch (Exception e) {
-                redisService.delete(cacheKey);
-            }
-        }
-
         Optional<AFFacilityResponse> facility = facilityRepository.getDetailFacilityById(facilityId);
-
-        AFFacilityResponse result = facility.orElse(null);
-        if (result != null) {
-            try {
-                redisService.set(cacheKey, result, redisTTL);
-            } catch (Exception ignored) {
-            }
-        }
-
-        return result;
+        return facility.orElse(null);
     }
 
     @Override
@@ -276,21 +255,4 @@ public class AFFacilityServiceImpl implements AFFacilityService {
         return RouterHelper.responseSuccess("Giảm mức ưu tiên hiển thị thành công", updated);
     }
 
-    /**
-     * Xóa toàn bộ cache liên quan đến cơ sở
-     * 
-     * @deprecated Use redisInvalidationHelper.invalidateAllCaches() instead
-     */
-    private void invalidateFacilityCaches() {
-        redisInvalidationHelper.invalidateAllCaches();
-    }
-
-    /**
-     * Xóa cache của cơ sở cụ thể và danh sách cơ sở
-     * 
-     * @deprecated Use redisInvalidationHelper.invalidateAllCaches() instead
-     */
-    private void invalidateFacilityCache(String facilityId) {
-        redisInvalidationHelper.invalidateAllCaches();
-    }
 }

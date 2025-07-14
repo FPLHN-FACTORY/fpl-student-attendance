@@ -57,7 +57,7 @@ const detailSubject = reactive({
 
 const columns = ref(
   autoAddColumnWidth([
-    { title: '#', dataIndex: 'orderNumber', key: 'orderNumber' },
+    { title: '#', key: 'rowNumber' },
     { title: 'Tên bộ môn', dataIndex: 'name', key: 'name' },
     { title: 'Mã bộ môn', dataIndex: 'code', key: 'code' },
     {
@@ -307,12 +307,11 @@ onMounted(() => {
                   <div class="label-title">Trạng thái:</div>
                   <a-select
                     v-model:value="filter.status"
-                    placeholder="Chọn trạng thái"
-                    allowClear
+                    placeholder="-- Tất cả trạng thái --"
                     class="w-100"
                     @change="fetchSubjects"
                   >
-                    <a-select-option :value="''">Tất cả trạng thái</a-select-option>
+                    <a-select-option :value="''">-- Tất cả trạng thái --</a-select-option>
                     <a-select-option value="1">Hoạt động</a-select-option>
                     <a-select-option value="0">Không hoạt động</a-select-option>
                   </a-select>
@@ -354,8 +353,11 @@ onMounted(() => {
             :loading="loadingStore.isLoading"
             :scroll="{ x: 'auto' }"
           >
-            <template #bodyCell="{ column, record }">
-              <template v-if="column.dataIndex === 'name'">
+            <template #bodyCell="{ column, record, index }">
+              <template v-if="column.key === 'rowNumber'">
+                {{ (pagination.current - 1) * pagination.pageSize + index + 1 }}
+              </template>
+              <template v-else-if="column.dataIndex === 'name'">
                 <a @click="handleAddSubjectFacility(record)">{{ record.name }}</a>
               </template>
               <template v-else-if="column.dataIndex === 'status'">

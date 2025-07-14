@@ -54,9 +54,9 @@ const detailLevel = reactive({
 
 const columns = ref(
   autoAddColumnWidth([
-    { title: '#', dataIndex: 'orderNumber', key: 'orderNumber' },
+    { title: '#', key: 'rowNumber' },
     { title: 'Mã', dataIndex: 'code', key: 'code' },
-    { title: 'Tên cấp dự án', dataIndex: 'name', key: 'name' },
+    { title: 'Tên nhóm dự án', dataIndex: 'name', key: 'name' },
     { title: 'Mô tả', dataIndex: 'description', key: 'description' },
     { title: 'Trạng thái', dataIndex: 'status', key: 'status' },
     { title: 'Chức năng', key: 'actions' },
@@ -70,7 +70,7 @@ const breadcrumb = ref([
   },
   {
     name: ROUTE_NAMES.MANAGEMENT_LEVEL_PROJECT,
-    breadcrumbName: 'Quản lý cấp độ dự án',
+    breadcrumbName: 'Quản lý nhóm dự án',
   },
 ])
 
@@ -93,7 +93,7 @@ const fetchLevels = () => {
         result.totalElements || result.totalItems || result.totalPages * pagination.pageSize
     })
     .catch((error) => {
-      message.error(error.response?.data?.message || 'Lỗi khi lấy danh sách cấp dự án')
+      message.error(error.response?.data?.message || 'Lỗi khi lấy danh sách nhóm dự án')
     })
     .finally(() => {
       loadingStore.hide()
@@ -108,12 +108,12 @@ const handleTableChange = (pageInfo) => {
 
 const handleAddLevelProject = () => {
   if (!newLevel.name) {
-    message.error('Vui lòng nhập tên cấp dự án')
+    message.error('Vui lòng nhập tên nhóm dự án')
     return
   }
   Modal.confirm({
     title: 'Xác nhận thêm mới',
-    content: 'Bạn có chắc chắn muốn thêm cấp dự án mới này?',
+    content: 'Bạn có chắc chắn muốn thêm nhóm dự án mới này?',
     okText: 'Tiếp tục',
     cancelText: 'Hủy bỏ',
     onOk() {
@@ -121,12 +121,12 @@ const handleAddLevelProject = () => {
       requestAPI
         .post(API_ROUTES_ADMIN.FETCH_DATA_LEVEL_PROJECT, newLevel)
         .then((response) => {
-          message.success(response.data.message || 'Thêm cấp dự án thành công')
+          message.success(response.data.message || 'Thêm nhóm dự án thành công')
           modalAdd.value = false
           fetchLevels()
         })
         .catch((error) => {
-          message.error(error.response?.data?.message || 'Lỗi khi thêm cấp dự án')
+          message.error(error.response?.data?.message || 'Lỗi khi thêm nhóm dự án')
         })
         .finally(() => {
           loadingStore.hide()
@@ -144,7 +144,7 @@ const handleDetailLevel = (record) => {
       modalDetail.value = true
     })
     .catch((error) => {
-      message.error(error.response?.data?.message || 'Lỗi khi lấy chi tiết cấp dự án')
+      message.error(error.response?.data?.message || 'Lỗi khi lấy chi tiết nhóm dự án')
     })
     .finally(() => {
       loadingStore.hide()
@@ -160,7 +160,7 @@ const prepareUpdateLevel = (record) => {
       modalUpdate.value = true
     })
     .catch((error) => {
-      message.error(error.response?.data?.message || 'Lỗi khi lấy thông tin cấp dự án')
+      message.error(error.response?.data?.message || 'Lỗi khi lấy thông tin nhóm dự án')
     })
     .finally(() => {
       loadingStore.hide()
@@ -169,12 +169,12 @@ const prepareUpdateLevel = (record) => {
 
 const submitUpdateLevel = () => {
   if (!detailLevel.name) {
-    message.error('Vui lòng nhập tên cấp dự án')
+    message.error('Vui lòng nhập tên nhóm dự án')
     return
   }
   Modal.confirm({
     title: 'Xác nhận cập nhật',
-    content: 'Bạn có chắc chắn muốn cập nhật thông tin cấp dự án này?',
+    content: 'Bạn có chắc chắn muốn cập nhật thông tin nhóm dự án này?',
     okText: 'Tiếp tục',
     cancelText: 'Hủy bỏ',
     onOk() {
@@ -182,12 +182,12 @@ const submitUpdateLevel = () => {
       requestAPI
         .put(`${API_ROUTES_ADMIN.FETCH_DATA_LEVEL_PROJECT}/${detailLevel.id}`, detailLevel)
         .then((response) => {
-          message.success(response.data.message || 'Cập nhật cấp dự án thành công')
+          message.success(response.data.message || 'Cập nhật nhóm dự án thành công')
           modalUpdate.value = false
           fetchLevels()
         })
         .catch((error) => {
-          message.error(error.response?.data?.message || 'Lỗi khi cập nhật cấp dự án')
+          message.error(error.response?.data?.message || 'Lỗi khi cập nhật nhóm dự án')
         })
         .finally(() => {
           loadingStore.hide()
@@ -199,7 +199,7 @@ const submitUpdateLevel = () => {
 const confirmChangeStatus = (record) => {
   Modal.confirm({
     title: 'Xác nhận đổi trạng thái',
-    content: `Bạn có chắc muốn đổi trạng thái cho cấp dự án "${record.name}" ?`,
+    content: `Bạn có chắc muốn đổi trạng thái cho nhóm dự án "${record.name}" ?`,
     onOk() {
       changeStatus(record.id)
     },
@@ -211,11 +211,11 @@ const changeStatus = (id) => {
   requestAPI
     .delete(`${API_ROUTES_ADMIN.FETCH_DATA_LEVEL_PROJECT}/${id}`)
     .then((response) => {
-      message.success(response.data.message || 'Chuyển trạng thái cấp dự án thành công')
+      message.success(response.data.message || 'Chuyển trạng thái nhóm dự án thành công')
       fetchLevels()
     })
     .catch((error) => {
-      message.error(error.response?.data?.message || 'Lỗi khi thay đổi trạng thái cấp dự án')
+      message.error(error.response?.data?.message || 'Lỗi khi thay đổi trạng thái nhóm dự án')
     })
     .finally(() => {
       loadingStore.hide()
@@ -261,15 +261,15 @@ onMounted(() => {
   <!-- Modal Thêm cấp dự án -->
   <a-modal
     v-model:open="modalAdd"
-    title="Thêm cấp dự án"
+    title="Thêm nhóm dự án"
     @ok="handleAddLevelProject"
     :okButtonProps="{ loading: loadingStore.isLoading }"
   >
     <a-form :model="newLevel" layout="vertical">
-      <a-form-item label="Tên cấp dự án" required>
+      <a-form-item label="Tên nhóm dự án" required>
         <a-input
           v-model:value="newLevel.name"
-          placeholder="Nhập tên cấp dự án"
+          placeholder="Nhập tên nhóm dự án"
           @keyup.enter="handleAddLevelProject"
         />
       </a-form-item>
@@ -282,15 +282,15 @@ onMounted(() => {
   <!-- Modal Cập nhật cấp dự án -->
   <a-modal
     v-model:open="modalUpdate"
-    title="Cập nhật cấp dự án"
+    title="Cập nhật nhóm dự án"
     :okButtonProps="{ loading: loadingStore.isLoading }"
     @ok="submitUpdateLevel"
   >
     <a-form :model="detailLevel" layout="vertical">
-      <a-form-item label="Tên cấp dự án" required>
+      <a-form-item label="Tên nhóm dự án" required>
         <a-input
           v-model:value="detailLevel.name"
-          placeholder="Nhập tên cấp dự án"
+          placeholder="Nhập tên nhóm dự án"
           @keyup.enter="submitUpdateLevel"
         />
       </a-form-item>
@@ -301,7 +301,7 @@ onMounted(() => {
   </a-modal>
 
   <!-- Modal Xem chi tiết cấp dự án -->
-  <a-modal v-model:open="modalDetail" title="Chi tiết cấp dự án" :footer="null">
+  <a-modal v-model:open="modalDetail" title="Chi tiết nhóm dự án" :footer="null">
     <a-descriptions bordered :column="1">
       <a-descriptions-item label="Mã">{{ detailLevel.code }}</a-descriptions-item>
       <a-descriptions-item label="Tên">{{ detailLevel.name }}</a-descriptions-item>
@@ -332,7 +332,7 @@ onMounted(() => {
                   <div class="label-title">Từ khoá:</div>
                   <a-input
                     v-model:value="filter.name"
-                    placeholder="Tìm theo tên hoặc mã cấp độ"
+                    placeholder="Tìm theo tên hoặc mã nhóm dự án"
                     allowClear
                     @change="fetchLevels"
                   >
@@ -345,12 +345,11 @@ onMounted(() => {
                   <div class="label-title">Trạng thái:</div>
                   <a-select
                     v-model:value="filter.status"
-                    placeholder="Chọn trạng thái"
-                    allowClear
+                    placeholder="-- Tất cả trạng thái --"
                     class="w-100"
                     @change="fetchLevels"
                   >
-                    <a-select-option :value="null">Tất cả trạng thái</a-select-option>
+                    <a-select-option :value="null">-- Tất cả trạng thái --</a-select-option>
                     <a-select-option value="1">Hoạt động</a-select-option>
                     <a-select-option value="0">Không hoạt động</a-select-option>
                   </a-select>
@@ -372,12 +371,12 @@ onMounted(() => {
       <!-- Danh sách cấp dự án -->
       <div class="col-12">
         <a-card :bordered="false" class="cart">
-          <template #title> <UnorderedListOutlined /> Danh sách cấp dự án </template>
+          <template #title> <UnorderedListOutlined /> Danh sách nhóm dự án </template>
 
           <div class="d-flex justify-content-end mb-2">
-            <a-tooltip title="Thêm cấp dự án">
+            <a-tooltip title="Thêm nhóm dự án">
               <a-button type="primary" @click="handleShowModalAdd">
-                <PlusOutlined /> Thêm cấp dự án
+                <PlusOutlined /> Thêm nhóm dự án
               </a-button>
             </a-tooltip>
           </div>
@@ -392,8 +391,11 @@ onMounted(() => {
             :loading="loadingStore.isLoading"
             :scroll="{ x: 'auto' }"
           >
-            <template #bodyCell="{ column, record }">
-              <template v-if="column.dataIndex === 'status'">
+            <template #bodyCell="{ column, record, index }">
+              <template v-if="column.key === 'rowNumber'">
+                {{ (pagination.current - 1) * pagination.pageSize + index + 1 }}
+              </template>
+              <template v-else-if="column.dataIndex === 'status'">
                 <span class="nowrap">
                   <a-switch
                     class="me-2"

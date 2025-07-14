@@ -13,53 +13,59 @@ public class RedisInvalidationHelper {
         this.redisService = redisService;
     }
 
-  
     public void invalidateAllCaches() {
-        // Student caches
-        redisService.deletePattern(RedisPrefixConstant.REDIS_PREFIX_STUDENT + "*");
+        try {
+            // Student caches
+            redisService.deletePattern(RedisPrefixConstant.REDIS_PREFIX_STUDENT + "*");
 
-        // Staff caches
-        redisService.deletePattern(RedisPrefixConstant.REDIS_PREFIX_STAFF + "*");
+            // Staff caches
+            redisService.deletePattern(RedisPrefixConstant.REDIS_PREFIX_STAFF + "*");
 
-        // Teacher caches
-        redisService.deletePattern(RedisPrefixConstant.REDIS_PREFIX_TEACHER + "*");
+            // Teacher caches
+            redisService.deletePattern(RedisPrefixConstant.REDIS_PREFIX_TEACHER + "*");
 
-        // Factory caches
-        redisService.deletePattern(RedisPrefixConstant.REDIS_PREFIX_FACTORY + "*");
-        redisService.deletePattern(RedisPrefixConstant.REDIS_PREFIX_TEACHER_FACTORY + "*");
+            // Factory caches
+            redisService.deletePattern(RedisPrefixConstant.REDIS_PREFIX_FACTORY + "*");
+            redisService.deletePattern(RedisPrefixConstant.REDIS_PREFIX_TEACHER_FACTORY + "*");
 
-        // Plan caches
-        redisService.deletePattern(RedisPrefixConstant.REDIS_PREFIX_PLAN + "*");
+            // Plan caches
+            redisService.deletePattern(RedisPrefixConstant.REDIS_PREFIX_PLAN + "*");
 
-        // Attendance recovery caches
-        redisService.deletePattern(RedisPrefixConstant.REDIS_PREFIX_ATTENDANCE_RECOVERY + "*");
+            // Attendance recovery caches
+            redisService.deletePattern(RedisPrefixConstant.REDIS_PREFIX_ATTENDANCE_RECOVERY + "*");
 
-        // Subject caches
-        redisService.deletePattern(RedisPrefixConstant.REDIS_PREFIX_SUBJECT + "*");
+            // Subject caches
+            redisService.deletePattern(RedisPrefixConstant.REDIS_PREFIX_SUBJECT + "*");
 
-        // Level caches
-        redisService.deletePattern(RedisPrefixConstant.REDIS_PREFIX_LEVEL + "*");
+            // Level caches
+            redisService.deletePattern(RedisPrefixConstant.REDIS_PREFIX_LEVEL + "*");
 
-        // Facility caches
-        redisService.deletePattern(RedisPrefixConstant.REDIS_PREFIX_FACILITY + "*");
-        redisService.deletePattern(RedisPrefixConstant.REDIS_PREFIX_FACILITY_IP + "*");
-        redisService.deletePattern(RedisPrefixConstant.REDIS_PREFIX_FACILITY_LOCATION + "*");
-        redisService.deletePattern(RedisPrefixConstant.REDIS_PREFIX_FACILITY_SHIFT + "*");
+            // Facility caches
+            redisService.deletePattern(RedisPrefixConstant.REDIS_PREFIX_FACILITY + "*");
+            redisService.deletePattern(RedisPrefixConstant.REDIS_PREFIX_FACILITY_IP + "*");
+            redisService.deletePattern(RedisPrefixConstant.REDIS_PREFIX_FACILITY_LOCATION + "*");
+            redisService.deletePattern(RedisPrefixConstant.REDIS_PREFIX_FACILITY_SHIFT + "*");
 
-        // Subject facility caches
-        redisService.deletePattern(RedisPrefixConstant.REDIS_PREFIX_SUBJECT_FACILITY + "*");
+            // Subject facility caches
+            redisService.deletePattern(RedisPrefixConstant.REDIS_PREFIX_SUBJECT_FACILITY + "*");
 
-        // Admin caches
-        redisService.deletePattern(RedisPrefixConstant.REDIS_PREFIX_ADMIN + "*");
+            // Admin caches
+            redisService.deletePattern(RedisPrefixConstant.REDIS_PREFIX_ADMIN + "*");
 
-        // Schedule caches
-        redisService.deletePattern(RedisPrefixConstant.REDIS_PREFIX_SCHEDULE_TEACHER + "*");
-        redisService.deletePattern(RedisPrefixConstant.REDIS_PREFIX_SCHEDULE_STUDENT + "*");
+            // Schedule caches
+            redisService.deletePattern(RedisPrefixConstant.REDIS_PREFIX_SCHEDULE_TEACHER + "*");
+            redisService.deletePattern(RedisPrefixConstant.REDIS_PREFIX_SCHEDULE_STUDENT + "*");
 
-        // Statistics caches
-        redisService.deletePattern(RedisPrefixConstant.REDIS_PREFIX_STATISTICS + "*");
+            // Statistics caches
+            redisService.deletePattern(RedisPrefixConstant.REDIS_PREFIX_STATISTICS + "*");
 
-        // Catch-all for any keys that might have been missed
-        redisService.deletePattern("redis_*");
+            // Catch-all for any keys that might have been missed
+            redisService.deletePattern("redis_*");
+        } catch (Exception e) {
+            // Log error but don't propagate exception
+            // This ensures that application functionality continues even if Redis is
+            // unavailable
+            System.err.println("Error invalidating Redis caches: " + e.getMessage());
+        }
     }
 }

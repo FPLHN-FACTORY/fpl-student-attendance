@@ -115,7 +115,7 @@ const columnsDetail = ref(
     { title: '#', dataIndex: 'orderNumber', key: 'orderNumber' },
     { title: 'Ngày học', dataIndex: 'startDate', key: 'startDate' },
     { title: 'Thời gian', dataIndex: 'time', key: 'time' },
-    { title: 'Ca học', dataIndex: 'shift', key: 'shift' },
+    { title: 'Ca', dataIndex: 'shift', key: 'shift' },
     { title: 'Checkin đầu giờ', dataIndex: 'createdAt', key: 'createdAt' },
     { title: 'Checkout cuối giờ', dataIndex: 'updatedAt', key: 'updatedAt' },
     { title: 'Trạng thái', dataIndex: 'status', key: 'status' },
@@ -333,12 +333,11 @@ onMounted(() => {
                   <div class="label-title">Trạng thái:</div>
                   <a-select
                     v-model:value="filter.status"
-                    placeholder="Chọn trạng thái"
-                    allowClear
+                    placeholder="-- Tất cả trạng thái --"
                     class="w-100"
                     @change="fetchStudentFactory"
                   >
-                    <a-select-option :value="''">Tất cả trạng thái</a-select-option>
+                    <a-select-option :value="''">-- Tất cả trạng thái --</a-select-option>
                     <a-select-option value="1">Đang học</a-select-option>
                     <a-select-option value="0">Ngưng học</a-select-option>
                   </a-select>

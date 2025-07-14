@@ -84,7 +84,7 @@ const detailSubjectFacility = reactive({
 
 const columns = ref(
   autoAddColumnWidth([
-    { title: '#', dataIndex: 'orderNumber', key: 'orderNumber' },
+    { title: '#', key: 'rowNumber' },
     { title: 'Tên bộ môn', dataIndex: 'subjectName', key: 'subjectName' },
     {
       title: 'Tên cơ sở',
@@ -186,7 +186,7 @@ const handleAddSubjectFacility = () => {
     message.error('Vui lòng chọn cơ sở')
     return
   }
-  
+
   Modal.confirm({
     title: 'Xác nhận thêm mới',
     content: `Bạn có chắc chắn muốn thêm bộ môn này vào ${newSubjectFacility.facilityId.length} cơ sở?`,
@@ -194,7 +194,7 @@ const handleAddSubjectFacility = () => {
     cancelText: 'Hủy bỏ',
     onOk() {
       loadingStore.show()
-      
+
       // Tạo mảng promises để gọi API từng cơ sở một
       const addPromises = newSubjectFacility.facilityId.map(facilityId => {
         const requestData = {
@@ -204,20 +204,20 @@ const handleAddSubjectFacility = () => {
         }
         return requestAPI.post(API_ROUTES_ADMIN.FETCH_DATA_SUBJECT_FACILITY, requestData)
       })
-      
+
       // Thực hiện tất cả các API call
       Promise.allSettled(addPromises)
         .then((results) => {
           const successful = results.filter(result => result.status === 'fulfilled').length
           const failed = results.filter(result => result.status === 'rejected').length
-          
+
           if (successful > 0) {
             message.success(`Thêm thành công ${successful} bộ môn cơ sở`)
           }
           if (failed > 0) {
             message.warning(`${failed} bộ môn cơ sở thêm thất bại`)
           }
-          
+
           modalAdd.value = false
           fetchSubjectFacility()
           clearFormAdd()
@@ -383,7 +383,7 @@ onMounted(() => {
                     class="w-100"
                     @change="fetchSubjectFacility"
                   >
-                    <a-select-option :value="null">Tất cả cơ sở</a-select-option>
+                    <a-select-option :value="null">-- Tất cả cơ sở --</a-select-option>
                     <a-select-option v-for="item in facility" :key="item.id" :value="item.id">
                       {{ item.name }}
                     </a-select-option>
@@ -393,12 +393,11 @@ onMounted(() => {
                   <div class="label-title">Trạng thái:</div>
                   <a-select
                     v-model:value="filter.status"
-                    placeholder="Chọn trạng thái"
-                    allowClear
+                    placeholder="-- Tất cả trạng thái --"
                     class="w-100"
                     @change="fetchSubjectFacility"
                   >
-                    <a-select-option :value="null">Tất cả trạng thái</a-select-option>
+                    <a-select-option :value="null">-- Tất cả trạng thái --</a-select-option>
                     <a-select-option value="1">Hoạt động</a-select-option>
                     <a-select-option value="0">Không hoạt động</a-select-option>
                   </a-select>
@@ -439,8 +438,11 @@ onMounted(() => {
             :loading="loadingStore.isLoading"
             :scroll="{ x: 'auto' }"
           >
-            <template #bodyCell="{ column, record }">
-              <template v-if="column.dataIndex === 'status'">
+            <template #bodyCell="{ column, record, index }">
+              <template v-if="column.key === 'rowNumber'">
+                {{ (pagination.current - 1) * pagination.pageSize + index + 1 }}
+              </template>
+              <template v-else-if="column.dataIndex === 'status'">
                 <span class="nowrap">
                   <a-switch
                     class="me-2"
@@ -502,7 +504,7 @@ onMounted(() => {
             allowClear
             @change="handleFacilityChange"
           >
-            <a-select-option value="all">Tất cả</a-select-option>
+            <a-select-option value="all">-- Tất cả --</a-select-option>
             <a-select-option v-for="f in facilitySubject" :key="f.id" :value="f.id">
               {{ f.name }}
             </a-select-option>

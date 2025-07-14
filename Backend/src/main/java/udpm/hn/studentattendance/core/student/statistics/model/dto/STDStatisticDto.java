@@ -18,5 +18,6 @@ public class STDStatisticDto {
 
     private List<STDStatisticsFactoryChartResponse> factoryChartResponse;
 
-    private List<STDStatisticsAttendanceChartResponse> attendanceChartResponses;
+    private STDStatisticsAttendanceChartResponse attendanceChartResponses;
+
 }

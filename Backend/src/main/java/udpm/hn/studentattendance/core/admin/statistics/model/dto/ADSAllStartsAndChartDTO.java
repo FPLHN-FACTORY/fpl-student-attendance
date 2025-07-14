@@ -23,7 +23,7 @@ public class ADSAllStartsAndChartDTO implements Serializable {
 
     private ADStatisticsStatResponse statisticsStatResponse;
 
-    private Page<ADSProjectSubjectFacilityResponse> projectSubjectFacilityResponses;
+    private List<ADSProjectSubjectFacilityResponse> projectSubjectFacilityResponses;
 
     private ADSTotalProjectAndSubjectResponse totalProjectAndSubjectResponse;
 }

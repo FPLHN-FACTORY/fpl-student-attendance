@@ -28,7 +28,8 @@ public class SPDAddPlanFactoryRequest {
 
     private String link;
 
-    @Size(max = EntityProperties.LENGTH_NAME, message = "Phòng học không được vượt quá " + EntityProperties.LENGTH_NAME + " ký tự")
+    @Size(min = 2, max = EntityProperties.LENGTH_NAME, message = "Phòng học không được vượt quá "
+            + EntityProperties.LENGTH_NAME + " ký tự")
     private String room;
 
     private Integer requiredIp = StatusType.ENABLE.getKey();

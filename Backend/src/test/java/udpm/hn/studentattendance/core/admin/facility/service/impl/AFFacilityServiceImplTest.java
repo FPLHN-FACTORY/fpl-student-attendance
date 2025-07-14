@@ -19,18 +19,21 @@ import udpm.hn.studentattendance.core.admin.facility.model.response.AFFacilityRe
 import udpm.hn.studentattendance.core.admin.facility.repository.AFFacilityExtendRepository;
 import udpm.hn.studentattendance.entities.Facility;
 import udpm.hn.studentattendance.helpers.MailerHelper;
+import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
 import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
 import udpm.hn.studentattendance.infrastructure.common.ApiResponse;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.common.repositories.CommonUserStudentRepository;
 import udpm.hn.studentattendance.infrastructure.config.mailer.model.MailerDefaultRequest;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
+import udpm.hn.studentattendance.infrastructure.constants.RedisPrefixConstant;
 import udpm.hn.studentattendance.infrastructure.redis.service.RedisService;
 
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -56,6 +59,9 @@ class AFFacilityServiceImplTest {
     @Mock
     private RedisService redisService;
 
+    @Mock
+    private RedisInvalidationHelper redisInvalidationHelper;
+
     @InjectMocks
     private AFFacilityServiceImpl facilityService;
 
@@ -70,10 +76,17 @@ class AFFacilityServiceImplTest {
     void testGetAllFacilityFromCache() {
         // Given
         AFFacilitySearchRequest request = new AFFacilitySearchRequest();
-        String cacheKey = "admin:facility:" + request.toString();
+        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_FACILITY + "list_" +
+                "name=" + "_status=null_page=" + request.getPage() +
+                "_size=" + request.getSize() +
+                "_orderBy=" + request.getOrderBy() +
+                "_sortBy=" + request.getSortBy() +
+                "_q=";
+
         PageableObject mockData = mock(PageableObject.class);
 
-        when(redisService.get(cacheKey)).thenReturn(mockData);
+        when(redisService.get(anyString())).thenReturn(mockData);
+        when(redisService.getObject(anyString(), eq(PageableObject.class))).thenReturn(mockData);
 
         // When
         ResponseEntity<?> response = facilityService.getAllFacility(request);
@@ -82,7 +95,7 @@ class AFFacilityServiceImplTest {
         assertEquals(HttpStatus.OK, response.getStatusCode());
         ApiResponse apiResponse = (ApiResponse) response.getBody();
         assertNotNull(apiResponse);
-        assertEquals("Lấy danh sách cơ sở thành công (cached)", apiResponse.getMessage());
+        assertEquals("Lấy tất cả cơ sở thành công", apiResponse.getMessage());
         assertEquals(mockData, apiResponse.getData());
 
         // Verify repository was not called
@@ -94,14 +107,13 @@ class AFFacilityServiceImplTest {
     void testGetAllFacilityFromRepository() {
         // Given
         AFFacilitySearchRequest request = new AFFacilitySearchRequest();
-        String cacheKey = "admin:facility:" + request.toString();
 
         List<AFFacilityResponse> facilities = new ArrayList<>();
         AFFacilityResponse facility = mock(AFFacilityResponse.class);
         facilities.add(facility);
         Page<AFFacilityResponse> page = new PageImpl<>(facilities);
 
-        when(redisService.get(cacheKey)).thenReturn(null);
+        when(redisService.get(anyString())).thenReturn(null);
         when(facilityRepository.getAllFacility(any(Pageable.class), eq(request))).thenReturn(page);
 
         // When
@@ -115,7 +127,7 @@ class AFFacilityServiceImplTest {
 
         // Verify repository was called and cache was updated
         verify(facilityRepository).getAllFacility(any(Pageable.class), eq(request));
-        verify(redisService).set(eq(cacheKey), any(PageableObject.class), eq(3600L));
+        verify(redisService).set(anyString(), any(PageableObject.class), eq(3600L));
     }
 
     @Test
@@ -136,6 +148,7 @@ class AFFacilityServiceImplTest {
         savedFacility.setStatus(EntityStatus.ACTIVE);
 
         when(facilityRepository.save(any(Facility.class))).thenReturn(savedFacility);
+        // No need for doNothing on non-void methods
 
         // When
         ResponseEntity<?> response = facilityService.createFacility(request);
@@ -149,6 +162,7 @@ class AFFacilityServiceImplTest {
         // Verify repository was called
         verify(facilityRepository).save(any(Facility.class));
         verify(userActivityLogHelper).saveLog(contains("vừa thêm 1 cơ sở mới"));
+        verify(redisInvalidationHelper).invalidateAllCaches();
     }
 
     @Test
@@ -175,6 +189,7 @@ class AFFacilityServiceImplTest {
 
         // Verify repository was not called to save
         verify(facilityRepository, never()).save(any(Facility.class));
+        verify(redisInvalidationHelper, never()).invalidateAllCaches();
     }
 
     @Test
@@ -195,6 +210,7 @@ class AFFacilityServiceImplTest {
         when(facilityRepository.findById(facilityId)).thenReturn(Optional.of(existingFacility));
         when(facilityRepository.isExistsByName("FPT HCM Updated", facilityId)).thenReturn(false);
         when(facilityRepository.save(any(Facility.class))).thenReturn(existingFacility);
+        // No need for doNothing on non-void methods
 
         // When
         ResponseEntity<?> response = facilityService.updateFacility(facilityId, request);
@@ -211,6 +227,7 @@ class AFFacilityServiceImplTest {
         // Verify repository was called
         verify(facilityRepository).save(existingFacility);
         verify(userActivityLogHelper).saveLog(contains("vừa cập nhật cơ sở"));
+        verify(redisInvalidationHelper).invalidateAllCaches();
     }
 
     @Test
@@ -219,7 +236,6 @@ class AFFacilityServiceImplTest {
         // Given
         String facilityId = "non-existent-id";
         AFCreateUpdateFacilityRequest request = mock(AFCreateUpdateFacilityRequest.class);
-        when(request.getFacilityName()).thenReturn("FPT HCM Updated");
 
         when(facilityRepository.findById(facilityId)).thenReturn(Optional.empty());
 
@@ -234,6 +250,7 @@ class AFFacilityServiceImplTest {
 
         // Verify repository was not called to save
         verify(facilityRepository, never()).save(any(Facility.class));
+        verify(redisInvalidationHelper, never()).invalidateAllCaches();
     }
 
     @Test
@@ -252,9 +269,15 @@ class AFFacilityServiceImplTest {
         LocalDate yesterday = LocalDate.now(ZoneId.of("Asia/Ho_Chi_Minh")).minusDays(1);
         facility.setUpdatedAt(yesterday.atStartOfDay(ZoneId.of("Asia/Ho_Chi_Minh")).toInstant().toEpochMilli());
 
+        // Create a mutable ArrayList instead of using Arrays.asList which returns
+        // immutable list
+        ArrayList<String> emailList = new ArrayList<>();
+        emailList.add("user@example.com");
+
         when(facilityRepository.findById(facilityId)).thenReturn(Optional.of(facility));
         when(facilityRepository.save(any(Facility.class))).thenReturn(facility);
-        when(facilityRepository.getListEmailUserDisableFacility(facilityId)).thenReturn(List.of("user@example.com"));
+        when(facilityRepository.getListEmailUserDisableFacility(facilityId)).thenReturn(emailList);
+        when(facilityRepository.countFacility()).thenReturn(2);
 
         // When
         ResponseEntity<?> response = facilityService.changeFacilityStatus(facilityId);
@@ -272,6 +295,7 @@ class AFFacilityServiceImplTest {
         verify(facilityRepository).save(facility);
         verify(mailerHelper).send(any(MailerDefaultRequest.class));
         verify(userActivityLogHelper).saveLog(contains("vừa thay đổi trạng thái cơ sở"));
+        verify(redisInvalidationHelper).invalidateAllCaches();
     }
 
     @Test
@@ -303,6 +327,40 @@ class AFFacilityServiceImplTest {
 
         // Verify repository was not called to save
         verify(facilityRepository, never()).save(any(Facility.class));
+        verify(redisInvalidationHelper, never()).invalidateAllCaches();
+    }
+
+    @Test
+    @DisplayName("Test changeFacilityStatus should return error if trying to deactivate last active facility")
+    void testChangeFacilityStatusLastActive() {
+        // Given
+        String facilityId = "facility-1";
+
+        Facility facility = new Facility();
+        facility.setId(facilityId);
+        facility.setName("FPT HCM");
+        facility.setCode("FPT_HCM");
+        facility.setStatus(EntityStatus.ACTIVE);
+
+        // Set last updated date to yesterday
+        LocalDate yesterday = LocalDate.now(ZoneId.of("Asia/Ho_Chi_Minh")).minusDays(1);
+        facility.setUpdatedAt(yesterday.atStartOfDay(ZoneId.of("Asia/Ho_Chi_Minh")).toInstant().toEpochMilli());
+
+        when(facilityRepository.findById(facilityId)).thenReturn(Optional.of(facility));
+        when(facilityRepository.countFacility()).thenReturn(1); // Only one active facility
+
+        // When
+        ResponseEntity<?> response = facilityService.changeFacilityStatus(facilityId);
+
+        // Then
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        ApiResponse apiResponse = (ApiResponse) response.getBody();
+        assertNotNull(apiResponse);
+        assertEquals("Không thể thay đổi trạng thái cơ sở cuối cùng còn hoạt động", apiResponse.getMessage());
+
+        // Verify repository was not called to save
+        verify(facilityRepository, never()).save(any(Facility.class));
+        verify(redisInvalidationHelper, never()).invalidateAllCaches();
     }
 
     @Test
@@ -317,7 +375,8 @@ class AFFacilityServiceImplTest {
         facility.setPosition(2);
 
         when(facilityRepository.findById(facilityId)).thenReturn(Optional.of(facility));
-        doNothing().when(facilityRepository).updatePositionPreUp(1, facilityId);
+        when(facilityRepository.updatePositionPreUp(anyInt(), anyString())).thenReturn(1); // Return value since it's
+                                                                                           // not void
         when(facilityRepository.save(any(Facility.class))).thenReturn(facility);
 
         // When
@@ -333,8 +392,9 @@ class AFFacilityServiceImplTest {
         assertEquals(1, facility.getPosition());
 
         // Verify repository was called
-        verify(facilityRepository).updatePositionPreUp(1, facilityId);
+        verify(facilityRepository).updatePositionPreUp(anyInt(), eq(facilityId));
         verify(facilityRepository).save(facility);
+        verify(redisInvalidationHelper).invalidateAllCaches();
     }
 
     @Test
@@ -362,6 +422,7 @@ class AFFacilityServiceImplTest {
         // Verify repository was not called
         verify(facilityRepository, never()).updatePositionPreUp(anyInt(), anyString());
         verify(facilityRepository, never()).save(any(Facility.class));
+        verify(redisInvalidationHelper, never()).invalidateAllCaches();
     }
 
     @Test
@@ -377,7 +438,8 @@ class AFFacilityServiceImplTest {
 
         when(facilityRepository.findById(facilityId)).thenReturn(Optional.of(facility));
         when(facilityRepository.getLastPosition()).thenReturn(3);
-        doNothing().when(facilityRepository).updatePositionNextDown(2, facilityId);
+        when(facilityRepository.updatePositionNextDown(anyInt(), anyString())).thenReturn(1); // Return value since it's
+                                                                                              // not void
         when(facilityRepository.save(any(Facility.class))).thenReturn(facility);
 
         // When
@@ -393,8 +455,9 @@ class AFFacilityServiceImplTest {
         assertEquals(2, facility.getPosition());
 
         // Verify repository was called
-        verify(facilityRepository).updatePositionNextDown(2, facilityId);
+        verify(facilityRepository).updatePositionNextDown(anyInt(), eq(facilityId));
         verify(facilityRepository).save(facility);
+        verify(redisInvalidationHelper).invalidateAllCaches();
     }
 
     @Test
@@ -423,5 +486,138 @@ class AFFacilityServiceImplTest {
         // Verify repository was not called
         verify(facilityRepository, never()).updatePositionNextDown(anyInt(), anyString());
         verify(facilityRepository, never()).save(any(Facility.class));
+        verify(redisInvalidationHelper, never()).invalidateAllCaches();
+    }
+
+    @Test
+    @DisplayName("Test getFacilityById should return data from cache if available")
+    void testGetFacilityByIdFromCache() {
+        // Given
+        String facilityId = "facility-1";
+        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_FACILITY + facilityId;
+
+        AFFacilityResponse cachedFacility = mock(AFFacilityResponse.class);
+        when(redisService.get(cacheKey)).thenReturn(cachedFacility);
+        when(redisService.getObject(cacheKey, AFFacilityResponse.class)).thenReturn(cachedFacility);
+
+        // When
+        ResponseEntity<?> response = facilityService.getFacilityById(facilityId);
+
+        // Then
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        ApiResponse apiResponse = (ApiResponse) response.getBody();
+        assertNotNull(apiResponse);
+        assertEquals("Hiển thị chi tiết cơ sở thành công", apiResponse.getMessage());
+        assertEquals(cachedFacility, apiResponse.getData());
+
+        // Verify repository was not called
+        verify(facilityRepository, never()).getDetailFacilityById(facilityId);
+    }
+
+    @Test
+    @DisplayName("Test getFacilityById should fetch and cache data if not in cache")
+    void testGetFacilityByIdFromRepository() {
+        // Given
+        String facilityId = "facility-1";
+        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_FACILITY + facilityId;
+
+        AFFacilityResponse facility = mock(AFFacilityResponse.class);
+        when(redisService.get(cacheKey)).thenReturn(null);
+        when(facilityRepository.getDetailFacilityById(facilityId)).thenReturn(Optional.of(facility));
+
+        // When
+        ResponseEntity<?> response = facilityService.getFacilityById(facilityId);
+
+        // Then
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        ApiResponse apiResponse = (ApiResponse) response.getBody();
+        assertNotNull(apiResponse);
+        assertEquals("Hiển thị chi tiết cơ sở thành công", apiResponse.getMessage());
+        assertEquals(facility, apiResponse.getData());
+
+        // Verify repository was called and cache was updated
+        verify(facilityRepository).getDetailFacilityById(facilityId);
+        verify(redisService).set(eq(cacheKey), eq(facility), eq(3600L));
+    }
+
+    @Test
+    @DisplayName("Test getFacilityById should return error if facility not found")
+    void testGetFacilityByIdNotFound() {
+        // Given
+        String facilityId = "non-existent-id";
+        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_FACILITY + facilityId;
+
+        when(redisService.get(cacheKey)).thenReturn(null);
+        when(facilityRepository.getDetailFacilityById(facilityId)).thenReturn(Optional.empty());
+
+        // When
+        ResponseEntity<?> response = facilityService.getFacilityById(facilityId);
+
+        // Then
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        ApiResponse apiResponse = (ApiResponse) response.getBody();
+        assertNotNull(apiResponse);
+        assertEquals("Cơ sở không tồn tại", apiResponse.getMessage());
+
+        // Verify repository was called but cache was not updated
+        verify(facilityRepository).getDetailFacilityById(facilityId);
+        verify(redisService, never()).set(anyString(), any(), anyLong());
+    }
+
+    @Test
+    @DisplayName("Test getCachedFacilities should delete cache on deserialization exception")
+    void testGetCachedFacilitiesDeleteCacheOnDeserializationException() {
+        AFFacilitySearchRequest request = new AFFacilitySearchRequest();
+        String cacheKey = "someKey";
+        when(redisService.get(anyString())).thenReturn(new Object());
+        when(redisService.getObject(anyString(), eq(PageableObject.class)))
+                .thenThrow(new RuntimeException("Deserialize error"));
+        when(facilityRepository.getAllFacility(any(Pageable.class), eq(request)))
+                .thenReturn(new PageImpl<>(List.of()));
+
+        PageableObject<AFFacilityResponse> result = facilityService.getCachedFacilities(request);
+
+        assertNotNull(result);
+        verify(redisService).delete(anyString());
+    }
+
+    @Test
+    @DisplayName("Test changeFacilityStatus should send mail when deactivating facility")
+    void testChangeFacilityStatusSendMailWhenDeactivating() {
+        String facilityId = "facility-1";
+        Facility facility = new Facility();
+        facility.setId(facilityId);
+        facility.setName("FPT HCM");
+        facility.setStatus(EntityStatus.ACTIVE);
+        facility.setUpdatedAt(System.currentTimeMillis() - 86400000); // yesterday
+
+        when(facilityRepository.findById(facilityId)).thenReturn(Optional.of(facility));
+        when(facilityRepository.countFacility()).thenReturn(2);
+        when(facilityRepository.save(any(Facility.class))).thenReturn(facility);
+        when(facilityRepository.getListEmailUserDisableFacility(facilityId)).thenReturn(new ArrayList<>(Arrays.asList("a@a.com", "b@b.com")));
+
+        ResponseEntity<?> response = facilityService.changeFacilityStatus(facilityId);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        verify(mailerHelper).send(any(MailerDefaultRequest.class));
+    }
+
+    @Test
+    @DisplayName("Test changeFacilityStatus should disable all student duplicate shift when activating facility")
+    void testChangeFacilityStatusDisableAllStudentDuplicateShiftWhenActivating() {
+        String facilityId = "facility-1";
+        Facility facility = new Facility();
+        facility.setId(facilityId);
+        facility.setStatus(EntityStatus.INACTIVE);
+        facility.setUpdatedAt(System.currentTimeMillis() - 86400000); // yesterday
+
+        when(facilityRepository.findById(facilityId)).thenReturn(Optional.of(facility));
+        when(facilityRepository.countFacility()).thenReturn(2);
+        when(facilityRepository.save(any(Facility.class))).thenReturn(facility);
+
+        ResponseEntity<?> response = facilityService.changeFacilityStatus(facilityId);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        verify(commonUserStudentRepository).disableAllStudentDuplicateShiftByIdFacility(facilityId);
     }
 }

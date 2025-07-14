@@ -26,4 +26,18 @@ public class SPDFilterPlanFactoryRequest extends PageableRequest {
 
     private Long toDate;
 
+    @Override
+    public String toString() {
+        return "page=" + getPage() +
+                "_size=" + getSize() +
+                "_orderBy=" + getOrderBy() +
+                "_sortBy=" + getSortBy() +
+                "_q=" + (getQ() != null ? getQ() : "") +
+                "_idFacility=" + (idFacility != null ? idFacility : "") +
+                "_idPlan=" + (idPlan != null ? idPlan : "") +
+                "_keyword=" + (keyword != null ? keyword : "") +
+                "_status=" + (status != null ? status : "") +
+                "_fromDate=" + (fromDate != null ? fromDate : "") +
+                "_toDate=" + (toDate != null ? toDate : "");
+    }
 }

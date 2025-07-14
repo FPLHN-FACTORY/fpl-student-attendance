@@ -14,6 +14,7 @@ import udpm.hn.studentattendance.core.admin.semester.service.ADSemesterService;
 import udpm.hn.studentattendance.entities.Semester;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
 import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
+import udpm.hn.studentattendance.helpers.RequestTrimHelper;
 import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
@@ -51,10 +52,31 @@ public class ADSemesterServiceImpl implements ADSemesterService {
 
     @Override
     public ResponseEntity<?> getAllSemester(ADSemesterRequest request) {
+        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_SEMESTER + "all:" + request.toString();
+
+        // Kiểm tra cache cho PageableObject thay vì ResponseEntity
+        Object cachedData = redisService.get(cacheKey);
+        if (cachedData != null) {
+            try {
+                PageableObject pageableObject = redisService.getObject(cacheKey, PageableObject.class);
+                return RouterHelper.responseSuccess("Lấy học kỳ từ cached thành công", pageableObject);
+            } catch (Exception e) {
+                redisService.delete(cacheKey);
+            }
+        }
+
+        // Cache miss - fetch from database
         Pageable pageable = PaginationHelper.createPageable(request, "createdAt");
         PageableObject pageableObject = PageableObject
                 .of(adSemesterRepository.getAllSemester(pageable, request));
-        return RouterHelper.responseSuccess("Get semester successfully", pageableObject);
+
+        // Cache PageableObject thay vì ResponseEntity
+        try {
+            redisService.set(cacheKey, pageableObject, redisTTL);
+        } catch (Exception ignored) {
+        }
+
+        return RouterHelper.responseSuccess("Hiển thị tất cả học kỳ thành công", pageableObject);
     }
 
     @Override
@@ -66,6 +88,9 @@ public class ADSemesterServiceImpl implements ADSemesterService {
 
     @Override
     public ResponseEntity<?> createSemester(@Valid ADCreateUpdateSemesterRequest request) {
+        // Trim all string fields in the request
+        RequestTrimHelper.trimStringFields(request);
+
         try {
 
             LocalDateTime fromDate = Instant
@@ -114,7 +139,6 @@ public class ADSemesterServiceImpl implements ADSemesterService {
             Semester semesterSave = adSemesterRepository.save(semester);
             userActivityLogHelper.saveLog("vừa thêm 1 học kỳ mới: " + semesterSave.getCode());
 
-            // Invalidate all caches
             redisInvalidationHelper.invalidateAllCaches();
 
             return RouterHelper.responseSuccess("Created semester successfully", semesterSave);
@@ -126,6 +150,9 @@ public class ADSemesterServiceImpl implements ADSemesterService {
 
     @Override
     public ResponseEntity<?> updateSemester(@Valid ADCreateUpdateSemesterRequest request) {
+        // Trim all string fields in the request
+        RequestTrimHelper.trimStringFields(request);
+
         Optional<Semester> existSemester = adSemesterRepository.findById(request.getSemesterId());
         if (existSemester.isEmpty()) {
             return RouterHelper.responseError("Không tìm thấy học kỳ");
@@ -208,7 +235,6 @@ public class ADSemesterServiceImpl implements ADSemesterService {
         Semester semesterSave = adSemesterRepository.save(semester);
         userActivityLogHelper.saveLog("vừa cập nhật học kỳ: " + oldCode + " → " + semesterSave.getCode());
 
-        // Invalidate all caches
         redisInvalidationHelper.invalidateAllCaches();
 
         return RouterHelper.responseSuccess("Cập nhật thành công", semesterSave);

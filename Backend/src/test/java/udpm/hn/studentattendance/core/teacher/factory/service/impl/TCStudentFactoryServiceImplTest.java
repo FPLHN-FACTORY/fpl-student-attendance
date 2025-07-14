@@ -1,16 +1,20 @@
 package udpm.hn.studentattendance.core.teacher.factory.service.impl;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.test.util.ReflectionTestUtils;
 import udpm.hn.studentattendance.core.teacher.factory.model.request.TCPlanDateStudentFactoryRequest;
 import udpm.hn.studentattendance.core.teacher.factory.model.request.TCStudentFactoryRequest;
 import udpm.hn.studentattendance.core.teacher.factory.model.response.TCPlanDateStudentFactoryResponse;
@@ -18,8 +22,12 @@ import udpm.hn.studentattendance.core.teacher.factory.model.response.TCStudentFa
 import udpm.hn.studentattendance.core.teacher.factory.repository.TCStudentFactoryExtendRepository;
 import udpm.hn.studentattendance.entities.UserStudent;
 import udpm.hn.studentattendance.entities.UserStudentFactory;
+import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
+import udpm.hn.studentattendance.helpers.SessionHelper;
 import udpm.hn.studentattendance.infrastructure.common.ApiResponse;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
+import udpm.hn.studentattendance.infrastructure.constants.RestApiStatus;
+import udpm.hn.studentattendance.infrastructure.redis.service.RedisService;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -31,13 +39,28 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class TCStudentFactoryServiceImplTest {
 
     @Mock
     private TCStudentFactoryExtendRepository studentFactoryRepository;
 
+    @Mock
+    private RedisService redisService;
+
+    @Mock
+    private RedisInvalidationHelper redisInvalidationHelper;
+
+    @Mock
+    private SessionHelper sessionHelper;
+
     @InjectMocks
     private TCStudentFactoryServiceImpl studentFactoryService;
+
+    @BeforeEach
+    void setUp() {
+        // No fields to set for this service
+    }
 
     @Test
     @DisplayName("getAllStudentFactory should return paginated student list")
@@ -57,6 +80,7 @@ class TCStudentFactoryServiceImplTest {
         assertEquals(HttpStatus.OK, response.getStatusCode());
         ApiResponse apiResponse = (ApiResponse) response.getBody();
         assertNotNull(apiResponse);
+        assertEquals(RestApiStatus.SUCCESS, apiResponse.getStatus());
         assertEquals("Lấy tất cả học sinh trong nhóm xưởng thành công", apiResponse.getMessage());
 
         verify(studentFactoryRepository).getUserStudentInFactory(any(Pageable.class), eq("factory-1"), eq(request));
@@ -83,6 +107,7 @@ class TCStudentFactoryServiceImplTest {
         assertEquals(HttpStatus.OK, response.getStatusCode());
         ApiResponse apiResponse = (ApiResponse) response.getBody();
         assertNotNull(apiResponse);
+        assertEquals(RestApiStatus.SUCCESS, apiResponse.getStatus());
         assertEquals("Lấy danh sách dữ liệu thành công", apiResponse.getMessage());
         assertEquals(mockAttendanceList, apiResponse.getData());
 
@@ -108,6 +133,7 @@ class TCStudentFactoryServiceImplTest {
         assertEquals(HttpStatus.OK, response.getStatusCode());
         ApiResponse apiResponse = (ApiResponse) response.getBody();
         assertNotNull(apiResponse);
+        assertEquals(RestApiStatus.SUCCESS, apiResponse.getStatus());
         assertEquals("Lấy danh sách dữ liệu thành công", apiResponse.getMessage());
         assertEquals(mockAttendanceList, apiResponse.getData());
 
@@ -135,6 +161,7 @@ class TCStudentFactoryServiceImplTest {
         assertEquals(HttpStatus.OK, response.getStatusCode());
         ApiResponse apiResponse = (ApiResponse) response.getBody();
         assertNotNull(apiResponse);
+        assertEquals(RestApiStatus.SUCCESS, apiResponse.getStatus());
         assertEquals("Xoá sinh viên có mã SV001 thành công", apiResponse.getMessage());
 
         verify(studentFactoryRepository).findById(studentFactoryId);
@@ -156,6 +183,7 @@ class TCStudentFactoryServiceImplTest {
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         ApiResponse apiResponse = (ApiResponse) response.getBody();
         assertNotNull(apiResponse);
+        assertEquals(RestApiStatus.ERROR, apiResponse.getStatus());
         assertEquals("Sinh viên không tồn tại", apiResponse.getMessage());
 
         verify(studentFactoryRepository).findById(studentFactoryId);

@@ -20,4 +20,15 @@ public class AFFilterFacilityLocationRequest extends PageableRequest {
 
     private Integer status;
 
+    @Override
+    public String toString() {
+        return "page=" + getPage() +
+                "_size=" + getSize() +
+                "_orderBy=" + getOrderBy() +
+                "_sortBy=" + getSortBy() +
+                "_q=" + (getQ() != null ? getQ() : "") +
+                "_idFacility=" + (idFacility != null ? idFacility : "") +
+                "_keyword=" + (keyword != null ? keyword : "") +
+                "_status=" + (status != null ? status : "");
+    }
 }

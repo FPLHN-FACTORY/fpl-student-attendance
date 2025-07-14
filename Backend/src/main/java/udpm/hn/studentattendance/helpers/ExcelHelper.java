@@ -69,50 +69,6 @@ public class ExcelHelper {
 
         importLogDetailRepository.save(importLogDetail);
     }
-//    /**
-//     * Đọc file Excel, tự evaluate công thức và định dạng ô
-//     */
-//    public static List<Map<String, String>> readFile(MultipartFile file) throws IOException {
-//        List<Map<String, String>> result = new ArrayList<>();
-//        try (Workbook workbook = new XSSFWorkbook(file.getInputStream())) {
-//            Sheet sheet = workbook.getSheetAt(0);
-//            if (sheet == null) {
-//                throw new IllegalArgumentException("File Excel không có dữ liệu!");
-//            }
-//
-//            DataFormatter formatter    = new DataFormatter();
-//            FormulaEvaluator evaluator = workbook.getCreationHelper().createFormulaEvaluator();
-//
-//            Row headerRow = sheet.getRow(0);
-//            if (headerRow == null) {
-//                throw new IllegalArgumentException("File Excel không có tiêu đề cột!");
-//            }
-//            int lastCellNum = headerRow.getLastCellNum();
-//            List<String> headers = new ArrayList<>();
-//            for (int c = 0; c < lastCellNum; c++) {
-//                Cell hCell = headerRow.getCell(c, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
-//                headers.add(hCell.getStringCellValue().trim());
-//            }
-//
-//            // Đọc dữ liệu từ dòng 1 đến cuối
-//            for (int i = 1; i <= sheet.getLastRowNum(); i++) {
-//                Row row = sheet.getRow(i);
-//                if (row == null) continue;
-//
-//                Map<String, String> rowData = new LinkedHashMap<>();
-//                rowData.put("_LINE", String.valueOf(i));
-//                for (int c = 0; c < lastCellNum; c++) {
-//                    Cell cell = row.getCell(c, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
-//                    String rawValue = formatter.formatCellValue(cell, evaluator);
-//                    String key = CodeGeneratorUtils.generateCodeFromString(headers.get(c));
-//                    rowData.put(key, rawValue);
-//                }
-//                result.add(rowData);
-//            }
-//        }
-//        // Loại bỏ bản ghi trùng lặp
-//        return new ArrayList<>(new LinkedHashSet<>(result));
-//    }
 
     public static List<Map<String, String>> readFile(MultipartFile file) throws IOException {
         List<Map<String, String>> result = new ArrayList<>();

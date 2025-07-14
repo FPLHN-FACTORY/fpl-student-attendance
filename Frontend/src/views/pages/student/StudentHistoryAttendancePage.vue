@@ -39,7 +39,7 @@ const loadingExport = reactive({})
 const columns = autoAddColumnWidth([
   { title: '#', dataIndex: 'rowNumber', key: 'rowNumber' },
   { title: 'Ngày học', dataIndex: 'planDateStartDate', key: 'planDateStartDate' },
-  { title: 'Ca học', dataIndex: 'planDateShift', key: 'planDateShift' },
+  { title: 'Ca', dataIndex: 'planDateShift', key: 'planDateShift' },
   {
     title: 'Điểm danh muộn',
     dataIndex: 'lateArrival',
@@ -98,7 +98,7 @@ const fetchAllAttendanceHistory = async () => {
 
 const handleShowDescription = (text) => {
   Modal.info({
-    title: 'Nội dung buổi học',
+    title: 'Nội dung buổi',
     type: 'info',
     content: text || 'Không có mô tả',
     okText: 'Đóng',
@@ -249,7 +249,7 @@ onMounted(async () => {
                     allowClear
                     @change="fetchAllAttendanceHistory"
                   >
-                    <a-select-option :value="''">Tất cả xưởng</a-select-option>
+                    <a-select-option :value="''">-- Tất cả xưởng --</a-select-option>
                     <a-select-option
                       v-for="factory in factories"
                       :key="factory.id"

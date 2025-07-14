@@ -18,6 +18,7 @@ import udpm.hn.studentattendance.entities.Subject;
 import udpm.hn.studentattendance.entities.SubjectFacility;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
 import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
+import udpm.hn.studentattendance.helpers.RequestTrimHelper;
 import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
@@ -88,30 +89,7 @@ public class ADSubjectFacilityServiceImpl implements ADSubjectFacilityService {
      * Lấy thông tin chi tiết bộ môn cơ sở từ cache hoặc DB
      */
     public ADSubjectFacilityResponse getSubjectFacilityDetail(String id) {
-        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_SUBJECT_FACILITY + id;
-
-        // Kiểm tra cache
-        Object cachedData = redisService.get(cacheKey);
-        if (cachedData != null) {
-            try {
-                return redisService.getObject(cacheKey, ADSubjectFacilityResponse.class);
-            } catch (Exception e) {
-                redisService.delete(cacheKey);
-            }
-        }
-
-        // Cache miss - fetch from database
-        ADSubjectFacilityResponse result = repository.getOneById(id).orElse(null);
-
-        // Store in cache if found
-        if (result != null) {
-            try {
-                redisService.set(cacheKey, result, redisTTL);
-            } catch (Exception ignored) {
-            }
-        }
-
-        return result;
+        return repository.getOneById(id).orElse(null);
     }
 
     @Override
@@ -122,6 +100,9 @@ public class ADSubjectFacilityServiceImpl implements ADSubjectFacilityService {
 
     @Override
     public ResponseEntity<?> createSubjectFacility(ADSubjectFacilityCreateRequest request) {
+        // Trim all string fields in the request
+        RequestTrimHelper.trimStringFields(request);
+
         Facility facility = facilityRepository.findById(request.getFacilityId()).orElse(null);
         if (facility == null || facility.getStatus() == EntityStatus.INACTIVE) {
             return RouterHelper.responseError("Không tìm thấy cơ sở");
@@ -151,6 +132,9 @@ public class ADSubjectFacilityServiceImpl implements ADSubjectFacilityService {
 
     @Override
     public ResponseEntity<?> updateSubjectFacility(String id, ADSubjectFacilityUpdateRequest request) {
+        // Trim all string fields in the request
+        RequestTrimHelper.trimStringFields(request);
+
         SubjectFacility subjectFacility = repository.findById(id).orElse(null);
         if (subjectFacility == null) {
             return RouterHelper.responseError("Không tìm thấy bộ môn cơ sở");
@@ -215,17 +199,4 @@ public class ADSubjectFacilityServiceImpl implements ADSubjectFacilityService {
         return RouterHelper.responseSuccess("Thay đổi trạng thái thành công", newEntity);
     }
 
-    /**
-     * @deprecated Use redisInvalidationHelper.invalidateAllCaches() instead
-     */
-    private void invalidateSubjectFacilityCache(String id) {
-        redisInvalidationHelper.invalidateAllCaches();
-    }
-
-    /**
-     * @deprecated Use redisInvalidationHelper.invalidateAllCaches() instead
-     */
-    private void invalidateSubjectFacilityCaches() {
-        redisInvalidationHelper.invalidateAllCaches();
-    }
 }
