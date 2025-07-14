@@ -58,7 +58,6 @@ const columns = ref(
     {
       title: 'Chức năng',
       key: 'action',
-      fixed: 'right',
       width: 300,
     },
   ]),
