@@ -562,6 +562,12 @@ public class SPDPlanServiceImpl implements SPDPlanService {
             }
 
             @Override
+            public Integer getCurrentStatus() {
+                Object value = map.get("currentStatus");
+                return value instanceof Number ? ((Number) value).intValue() : null;
+            }
+
+            @Override
             public Integer getMaxLateArrival() {
                 Object value = map.get("maxLateArrival");
                 return value instanceof Number ? ((Number) value).intValue() : null;
