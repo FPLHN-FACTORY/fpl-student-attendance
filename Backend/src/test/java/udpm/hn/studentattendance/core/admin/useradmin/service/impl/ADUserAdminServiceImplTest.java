@@ -22,6 +22,7 @@ import udpm.hn.studentattendance.entities.Notification;
 import udpm.hn.studentattendance.entities.UserAdmin;
 import udpm.hn.studentattendance.entities.UserStaff;
 import udpm.hn.studentattendance.helpers.MailerHelper;
+import udpm.hn.studentattendance.helpers.RedisCacheHelper;
 import udpm.hn.studentattendance.infrastructure.common.ApiResponse;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.config.mailer.model.MailerDefaultRequest;
@@ -52,12 +53,18 @@ class ADUserAdminServiceImplTest extends BaseServiceTest {
     @Mock
     private MailerHelper mailerHelper;
 
+    @Mock
+    private RedisCacheHelper redisCacheHelper;
+
     @InjectMocks
     private ADUserAdminServiceImpl userAdminService;
 
     @BeforeEach
     void setUp() {
         setupCommonFields(userAdminService);
+        // Default behavior for RedisCacheHelper
+        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong()))
+                .thenAnswer(invocation -> invocation.getArgument(1, java.util.function.Supplier.class).get());
     }
 
     @Test
@@ -76,8 +83,7 @@ class ADUserAdminServiceImplTest extends BaseServiceTest {
 
         PageableObject<ADUserAdminResponse> mockData = mock(PageableObject.class);
 
-        when(redisService.get(cacheKey)).thenReturn(mockData);
-        when(redisService.getObject(eq(cacheKey), eq(PageableObject.class))).thenReturn(mockData);
+        when(redisCacheHelper.getOrSet(eq(cacheKey), any(), any(), anyLong())).thenReturn(mockData);
 
         // When
         ResponseEntity<?> response = userAdminService.getAllUserAdmin(request);
@@ -114,8 +120,7 @@ class ADUserAdminServiceImplTest extends BaseServiceTest {
 
         Page<ADUserAdminResponse> page = new PageImpl<>(responses);
 
-        when(redisService.get(cacheKey)).thenReturn(null);
-        when(userAdminExtendRepository.getAllUserAdmin(any(Pageable.class), eq(request))).thenReturn(page);
+        when(redisCacheHelper.getOrSet(eq(cacheKey), any(), any(), anyLong())).thenReturn(page);
 
         // When
         ResponseEntity<?> response = userAdminService.getAllUserAdmin(request);
@@ -128,7 +133,7 @@ class ADUserAdminServiceImplTest extends BaseServiceTest {
 
         // Verify repository was called and cache was updated
         verify(userAdminExtendRepository).getAllUserAdmin(any(Pageable.class), eq(request));
-        verify(redisService).set(eq(cacheKey), any(PageableObject.class), eq(3600L));
+        verify(redisCacheHelper).set(eq(cacheKey), any(PageableObject.class), eq(3600L));
     }
 
     @Test
@@ -140,8 +145,7 @@ class ADUserAdminServiceImplTest extends BaseServiceTest {
         UserAdmin cachedAdmin = new UserAdmin();
         cachedAdmin.setId(adminId);
 
-        when(redisService.get(cacheKey)).thenReturn(cachedAdmin);
-        when(redisService.getObject(eq(cacheKey), eq(UserAdmin.class))).thenReturn(cachedAdmin);
+        when(redisCacheHelper.getOrSet(eq(cacheKey), any(), any(), anyLong())).thenReturn(cachedAdmin);
 
         // When
         ResponseEntity<?> response = userAdminService.getUserAdminById(adminId);
@@ -169,8 +173,7 @@ class ADUserAdminServiceImplTest extends BaseServiceTest {
         admin.setName("Admin User");
         admin.setCode("AD001");
 
-        when(redisService.get(cacheKey)).thenReturn(null);
-        when(userAdminExtendRepository.findById(adminId)).thenReturn(Optional.of(admin));
+        when(redisCacheHelper.getOrSet(eq(cacheKey), any(), any(), anyLong())).thenReturn(admin);
 
         // When
         ResponseEntity<?> response = userAdminService.getUserAdminById(adminId);
@@ -183,7 +186,7 @@ class ADUserAdminServiceImplTest extends BaseServiceTest {
 
         // Verify repository was called and cache was updated
         verify(userAdminExtendRepository).findById(adminId);
-        verify(redisService).set(eq(cacheKey), eq(admin), eq(3600L));
+        verify(redisCacheHelper).set(eq(cacheKey), eq(admin), eq(3600L));
     }
 
     @Test
@@ -193,7 +196,7 @@ class ADUserAdminServiceImplTest extends BaseServiceTest {
         String adminId = "non-existent-id";
         String cacheKey = RedisPrefixConstant.REDIS_PREFIX_ADMIN + adminId;
 
-        when(redisService.get(cacheKey)).thenReturn(null);
+        when(redisCacheHelper.getOrSet(eq(cacheKey), any(), any(), anyLong())).thenReturn(null);
         when(userAdminExtendRepository.findById(adminId)).thenReturn(Optional.empty());
 
         // When
@@ -245,7 +248,7 @@ class ADUserAdminServiceImplTest extends BaseServiceTest {
         verify(userAdminExtendRepository).save(any(UserAdmin.class));
         verify(notificationService).add(any(NotificationAddRequest.class));
         verify(userActivityLogHelper).saveLog(contains("vừa thêm 1 tài khoản admin mới"));
-        verify(redisInvalidationHelper).invalidateAllCaches();
+        verify(redisCacheHelper).invalidateAllCaches();
     }
 
     @Test
@@ -268,7 +271,7 @@ class ADUserAdminServiceImplTest extends BaseServiceTest {
 
         // Verify repository was not called
         verify(userAdminExtendRepository, never()).save(any(UserAdmin.class));
-        verify(redisInvalidationHelper, never()).invalidateAllCaches();
+        verify(redisCacheHelper, never()).invalidateAllCaches();
     }
 
     @Test
@@ -291,7 +294,7 @@ class ADUserAdminServiceImplTest extends BaseServiceTest {
 
         // Verify repository was not called
         verify(userAdminExtendRepository, never()).save(any(UserAdmin.class));
-        verify(redisInvalidationHelper, never()).invalidateAllCaches();
+        verify(redisCacheHelper, never()).invalidateAllCaches();
     }
 
     @Test
@@ -331,7 +334,7 @@ class ADUserAdminServiceImplTest extends BaseServiceTest {
         verify(userAdminExtendRepository).save(any(UserAdmin.class));
         verify(notificationService).add(any(NotificationAddRequest.class));
         verify(userActivityLogHelper).saveLog(contains("vừa cập nhật tài khoản admin"));
-        verify(redisInvalidationHelper).invalidateAllCaches();
+        verify(redisCacheHelper).invalidateAllCaches();
     }
 
     @Test
@@ -370,7 +373,7 @@ class ADUserAdminServiceImplTest extends BaseServiceTest {
         verify(userAdminExtendRepository).save(admin);
         verify(mailerHelper).send(any(MailerDefaultRequest.class));
         verify(userActivityLogHelper).saveLog(contains("vừa thay đổi trạng thái tài khoản admin"));
-        verify(redisInvalidationHelper).invalidateAllCaches();
+        verify(redisCacheHelper).invalidateAllCaches();
     }
 
     @Test
@@ -399,7 +402,7 @@ class ADUserAdminServiceImplTest extends BaseServiceTest {
 
         // Verify repository was not called
         verify(userAdminExtendRepository, never()).save(any(UserAdmin.class));
-        verify(redisInvalidationHelper, never()).invalidateAllCaches();
+        verify(redisCacheHelper, never()).invalidateAllCaches();
     }
 
     @Test
@@ -449,8 +452,7 @@ class ADUserAdminServiceImplTest extends BaseServiceTest {
         String cacheKey = RedisPrefixConstant.REDIS_PREFIX_ADMIN + "staff_list";
         List<UserStaff> cachedStaff = new ArrayList<>();
 
-        when(redisService.get(cacheKey)).thenReturn(cachedStaff);
-        when(redisService.getObject(eq(cacheKey), eq(List.class))).thenReturn(cachedStaff);
+        when(redisCacheHelper.getOrSet(eq(cacheKey), any(), any(), anyLong())).thenReturn(cachedStaff);
 
         // When
         ResponseEntity<?> response = userAdminService.getAllUserStaff();
@@ -478,8 +480,7 @@ class ADUserAdminServiceImplTest extends BaseServiceTest {
         staff.setCode("ST001");
         staffList.add(staff);
 
-        when(redisService.get(cacheKey)).thenReturn(null);
-        when(userAdminStaffExtendRepository.getAllUserStaff()).thenReturn(staffList);
+        when(redisCacheHelper.getOrSet(eq(cacheKey), any(), any(), anyLong())).thenReturn(staffList);
 
         // When
         ResponseEntity<?> response = userAdminService.getAllUserStaff();
@@ -493,7 +494,7 @@ class ADUserAdminServiceImplTest extends BaseServiceTest {
 
         // Verify repository was called and cache was updated
         verify(userAdminStaffExtendRepository).getAllUserStaff();
-        verify(redisService).set(eq(cacheKey), eq(staffList), eq(3600L));
+        verify(redisCacheHelper).set(eq(cacheKey), eq(staffList), eq(3600L));
     }
 
     @Test
@@ -526,7 +527,7 @@ class ADUserAdminServiceImplTest extends BaseServiceTest {
         verify(userAdminExtendRepository).deleteById(adminId);
         verify(mailerHelper).send(any(MailerDefaultRequest.class));
         verify(userActivityLogHelper).saveLog(contains("vừa xóa tài khoản admin"));
-        verify(redisInvalidationHelper).invalidateAllCaches();
+        verify(redisCacheHelper).invalidateAllCaches();
     }
 
     @Test
@@ -538,7 +539,7 @@ class ADUserAdminServiceImplTest extends BaseServiceTest {
 
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         verify(userAdminExtendRepository, never()).deleteById(anyString());
-        verify(redisInvalidationHelper, never()).invalidateAllCaches();
+        verify(redisCacheHelper, never()).invalidateAllCaches();
     }
 
     @Test
@@ -559,8 +560,7 @@ class ADUserAdminServiceImplTest extends BaseServiceTest {
         assertNotNull(apiResponse);
         assertEquals("Không thể xóa tài khoản của chính mình", apiResponse.getMessage());
         verify(userAdminExtendRepository, never()).deleteById(anyString());
-        verify(redisInvalidationHelper, never()).invalidateAllCaches();
+        verify(redisCacheHelper, never()).invalidateAllCaches();
     }
 
- 
 }

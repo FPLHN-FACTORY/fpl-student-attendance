@@ -24,6 +24,7 @@ import udpm.hn.studentattendance.core.staff.factory.model.response.USFactoryResp
 import udpm.hn.studentattendance.core.staff.factory.model.response.USProjectFactoryResponse;
 import udpm.hn.studentattendance.core.staff.factory.repository.factory.*;
 import udpm.hn.studentattendance.entities.*;
+import udpm.hn.studentattendance.helpers.RedisCacheHelper;
 import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
 import udpm.hn.studentattendance.helpers.SessionHelper;
 import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
@@ -89,6 +90,9 @@ class USFactoryServiceImplTest {
         @Mock
         private RedisInvalidationHelper redisInvalidationHelper;
 
+        @Mock
+        private RedisCacheHelper redisCacheHelper;
+
         @InjectMocks
         private USFactoryServiceImpl factoryService;
 
@@ -96,6 +100,9 @@ class USFactoryServiceImplTest {
         void setUp() {
                 // Set Redis TTL value
                 ReflectionTestUtils.setField(factoryService, "redisTTL", 3600L);
+                // Default behavior for RedisCacheHelper
+                when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong())).thenAnswer(
+                                invocation -> invocation.getArgument(1, java.util.function.Supplier.class).get());
         }
 
         @Test
@@ -112,7 +119,7 @@ class USFactoryServiceImplTest {
                                 .thenReturn(page);
 
                 // Mock Redis cache miss
-                when(redisService.get(anyString())).thenReturn(null);
+                when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong())).thenReturn(null);
 
                 // Act
                 ResponseEntity<?> response = factoryService.getAllFactory(request);
@@ -125,7 +132,7 @@ class USFactoryServiceImplTest {
                 assertEquals("Hiển thị tất cả nhóm xưởng thành công", apiResponse.getMessage());
 
                 verify(factoryRepository).getAllFactory(any(Pageable.class), eq(facilityId), eq(request));
-                verify(redisService).set(anyString(), any(), eq(3600L));
+                verify(redisCacheHelper).getOrSet(anyString(), any(), any(), anyLong());
         }
 
         @Test
@@ -142,7 +149,7 @@ class USFactoryServiceImplTest {
                 when(projectFactoryExtendRepository.getAllProject(facilityId)).thenReturn(mockProjects);
 
                 // Mock Redis cache miss
-                when(redisService.get(anyString())).thenReturn(null);
+                when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong())).thenReturn(null);
 
                 // Act
                 ResponseEntity<?> response = factoryService.getAllProject();
@@ -156,7 +163,7 @@ class USFactoryServiceImplTest {
                 assertEquals(mockProjects, apiResponse.getData());
 
                 verify(projectFactoryExtendRepository).getAllProject(facilityId);
-                verify(redisService).set(anyString(), any(), eq(3600L));
+                verify(redisCacheHelper).getOrSet(anyString(), any(), any(), anyLong());
         }
 
         @Test
@@ -177,7 +184,7 @@ class USFactoryServiceImplTest {
                                 .thenReturn(mockSubjectFacilities);
 
                 // Mock Redis cache miss
-                when(redisService.get(anyString())).thenReturn(null);
+                when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong())).thenReturn(null);
 
                 // Act
                 ResponseEntity<?> response = factoryService.getAllSubjectFacility();
@@ -194,7 +201,7 @@ class USFactoryServiceImplTest {
                                 EntityStatus.ACTIVE,
                                 EntityStatus.ACTIVE,
                                 facilityId);
-                verify(redisService).set(anyString(), any(), eq(3600L));
+                verify(redisCacheHelper).getOrSet(anyString(), any(), any(), anyLong());
         }
 
         @Test
@@ -216,7 +223,7 @@ class USFactoryServiceImplTest {
                                 .thenReturn(mockStaffs);
 
                 // Mock Redis cache miss
-                when(redisService.get(anyString())).thenReturn(null);
+                when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong())).thenReturn(null);
 
                 // Act
                 ResponseEntity<?> response = factoryService.getAllStaff();
@@ -234,7 +241,7 @@ class USFactoryServiceImplTest {
                                 EntityStatus.ACTIVE,
                                 facilityId,
                                 RoleConstant.TEACHER);
-                verify(redisService).set(anyString(), any(), eq(3600L));
+                verify(redisCacheHelper).getOrSet(anyString(), any(), any(), anyLong());
         }
 
         @Test
@@ -247,7 +254,7 @@ class USFactoryServiceImplTest {
                 when(factoryRepository.getFactoryById(factoryId)).thenReturn(Optional.of(mockResponse));
 
                 // Mock Redis cache miss
-                when(redisService.get(anyString())).thenReturn(null);
+                when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong())).thenReturn(null);
 
                 // Act
                 ResponseEntity<?> response = factoryService.getDetailFactory(factoryId);
@@ -260,7 +267,7 @@ class USFactoryServiceImplTest {
                 assertEquals("Xem chi tiết nhóm xưởng thành công", apiResponse.getMessage());
 
                 verify(factoryRepository).getFactoryById(factoryId);
-                verify(redisService).set(anyString(), any(), eq(3600L));
+                verify(redisCacheHelper).getOrSet(anyString(), any(), any(), anyLong());
         }
 
         @Test
@@ -272,7 +279,7 @@ class USFactoryServiceImplTest {
                 when(factoryRepository.getFactoryById(factoryId)).thenReturn(Optional.empty());
 
                 // Mock Redis cache miss
-                when(redisService.get(anyString())).thenReturn(null);
+                when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong())).thenReturn(null);
 
                 // Act
                 ResponseEntity<?> response = factoryService.getDetailFactory(factoryId);
@@ -285,7 +292,7 @@ class USFactoryServiceImplTest {
                 assertEquals("Nhóm xưởng không tồn tại", apiResponse.getMessage());
 
                 verify(factoryRepository).getFactoryById(factoryId);
-                verify(redisService, never()).set(anyString(), any(), anyLong());
+                verify(redisCacheHelper, never()).getOrSet(anyString(), any(), any(), anyLong());
         }
 
         @Test

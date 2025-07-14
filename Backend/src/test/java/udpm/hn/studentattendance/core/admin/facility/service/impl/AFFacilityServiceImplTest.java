@@ -19,6 +19,7 @@ import udpm.hn.studentattendance.core.admin.facility.model.response.AFFacilityRe
 import udpm.hn.studentattendance.core.admin.facility.repository.AFFacilityExtendRepository;
 import udpm.hn.studentattendance.entities.Facility;
 import udpm.hn.studentattendance.helpers.MailerHelper;
+import udpm.hn.studentattendance.helpers.RedisCacheHelper;
 import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
 import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
 import udpm.hn.studentattendance.infrastructure.common.ApiResponse;
@@ -62,6 +63,9 @@ class AFFacilityServiceImplTest {
     @Mock
     private RedisInvalidationHelper redisInvalidationHelper;
 
+    @Mock
+    private RedisCacheHelper redisCacheHelper;
+
     @InjectMocks
     private AFFacilityServiceImpl facilityService;
 
@@ -69,6 +73,9 @@ class AFFacilityServiceImplTest {
     void setUp() {
         ReflectionTestUtils.setField(facilityService, "redisTTL", 3600L);
         ReflectionTestUtils.setField(facilityService, "appName", "Student Attendance App");
+        // Default behavior for RedisCacheHelper
+        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong()))
+                .thenAnswer(invocation -> invocation.getArgument(1, java.util.function.Supplier.class).get());
     }
 
     @Test
@@ -85,8 +92,7 @@ class AFFacilityServiceImplTest {
 
         PageableObject mockData = mock(PageableObject.class);
 
-        when(redisService.get(anyString())).thenReturn(mockData);
-        when(redisService.getObject(anyString(), eq(PageableObject.class))).thenReturn(mockData);
+        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong())).thenReturn(mockData);
 
         // When
         ResponseEntity<?> response = facilityService.getAllFacility(request);
@@ -99,6 +105,7 @@ class AFFacilityServiceImplTest {
         assertEquals(mockData, apiResponse.getData());
 
         // Verify repository was not called
+        verify(redisCacheHelper).getOrSet(anyString(), any(), any(), anyLong());
         verify(facilityRepository, never()).getAllFacility(any(Pageable.class), any(AFFacilitySearchRequest.class));
     }
 
@@ -113,7 +120,7 @@ class AFFacilityServiceImplTest {
         facilities.add(facility);
         Page<AFFacilityResponse> page = new PageImpl<>(facilities);
 
-        when(redisService.get(anyString())).thenReturn(null);
+        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong())).thenReturn(null);
         when(facilityRepository.getAllFacility(any(Pageable.class), eq(request))).thenReturn(page);
 
         // When
@@ -126,8 +133,8 @@ class AFFacilityServiceImplTest {
         assertEquals("Lấy tất cả cơ sở thành công", apiResponse.getMessage());
 
         // Verify repository was called and cache was updated
+        verify(redisCacheHelper).getOrSet(anyString(), any(), any(), anyLong());
         verify(facilityRepository).getAllFacility(any(Pageable.class), eq(request));
-        verify(redisService).set(anyString(), any(PageableObject.class), eq(3600L));
     }
 
     @Test
@@ -497,8 +504,7 @@ class AFFacilityServiceImplTest {
         String cacheKey = RedisPrefixConstant.REDIS_PREFIX_FACILITY + facilityId;
 
         AFFacilityResponse cachedFacility = mock(AFFacilityResponse.class);
-        when(redisService.get(cacheKey)).thenReturn(cachedFacility);
-        when(redisService.getObject(cacheKey, AFFacilityResponse.class)).thenReturn(cachedFacility);
+        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong())).thenReturn(cachedFacility);
 
         // When
         ResponseEntity<?> response = facilityService.getFacilityById(facilityId);
@@ -522,7 +528,7 @@ class AFFacilityServiceImplTest {
         String cacheKey = RedisPrefixConstant.REDIS_PREFIX_FACILITY + facilityId;
 
         AFFacilityResponse facility = mock(AFFacilityResponse.class);
-        when(redisService.get(cacheKey)).thenReturn(null);
+        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong())).thenReturn(null);
         when(facilityRepository.getDetailFacilityById(facilityId)).thenReturn(Optional.of(facility));
 
         // When
@@ -536,8 +542,8 @@ class AFFacilityServiceImplTest {
         assertEquals(facility, apiResponse.getData());
 
         // Verify repository was called and cache was updated
+        verify(redisCacheHelper).getOrSet(anyString(), any(), any(), anyLong());
         verify(facilityRepository).getDetailFacilityById(facilityId);
-        verify(redisService).set(eq(cacheKey), eq(facility), eq(3600L));
     }
 
     @Test
@@ -547,7 +553,7 @@ class AFFacilityServiceImplTest {
         String facilityId = "non-existent-id";
         String cacheKey = RedisPrefixConstant.REDIS_PREFIX_FACILITY + facilityId;
 
-        when(redisService.get(cacheKey)).thenReturn(null);
+        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong())).thenReturn(null);
         when(facilityRepository.getDetailFacilityById(facilityId)).thenReturn(Optional.empty());
 
         // When
@@ -561,7 +567,7 @@ class AFFacilityServiceImplTest {
 
         // Verify repository was called but cache was not updated
         verify(facilityRepository).getDetailFacilityById(facilityId);
-        verify(redisService, never()).set(anyString(), any(), anyLong());
+        verify(redisCacheHelper, never()).getOrSet(anyString(), any(), any(), anyLong());
     }
 
     @Test
@@ -569,8 +575,7 @@ class AFFacilityServiceImplTest {
     void testGetCachedFacilitiesDeleteCacheOnDeserializationException() {
         AFFacilitySearchRequest request = new AFFacilitySearchRequest();
         String cacheKey = "someKey";
-        when(redisService.get(anyString())).thenReturn(new Object());
-        when(redisService.getObject(anyString(), eq(PageableObject.class)))
+        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong()))
                 .thenThrow(new RuntimeException("Deserialize error"));
         when(facilityRepository.getAllFacility(any(Pageable.class), eq(request)))
                 .thenReturn(new PageImpl<>(List.of()));
@@ -578,7 +583,8 @@ class AFFacilityServiceImplTest {
         PageableObject<AFFacilityResponse> result = facilityService.getCachedFacilities(request);
 
         assertNotNull(result);
-        verify(redisService).delete(anyString());
+        verify(redisCacheHelper).getOrSet(anyString(), any(), any(), anyLong());
+        verify(redisInvalidationHelper).invalidateAllCaches();
     }
 
     @Test
@@ -594,7 +600,8 @@ class AFFacilityServiceImplTest {
         when(facilityRepository.findById(facilityId)).thenReturn(Optional.of(facility));
         when(facilityRepository.countFacility()).thenReturn(2);
         when(facilityRepository.save(any(Facility.class))).thenReturn(facility);
-        when(facilityRepository.getListEmailUserDisableFacility(facilityId)).thenReturn(new ArrayList<>(Arrays.asList("a@a.com", "b@b.com")));
+        when(facilityRepository.getListEmailUserDisableFacility(facilityId))
+                .thenReturn(new ArrayList<>(Arrays.asList("a@a.com", "b@b.com")));
 
         ResponseEntity<?> response = facilityService.changeFacilityStatus(facilityId);
 

@@ -18,6 +18,7 @@ import udpm.hn.studentattendance.core.admin.semester.model.request.ADSemesterReq
 import udpm.hn.studentattendance.core.admin.semester.model.response.ADSemesterResponse;
 import udpm.hn.studentattendance.core.admin.semester.repository.ADSemesterRepository;
 import udpm.hn.studentattendance.entities.Semester;
+import udpm.hn.studentattendance.helpers.RedisCacheHelper;
 import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
 import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
 import udpm.hn.studentattendance.infrastructure.common.ApiResponse;
@@ -56,12 +57,18 @@ class ADSemesterServiceImplTest {
     @Mock
     private RedisInvalidationHelper redisInvalidationHelper;
 
+    @Mock
+    private RedisCacheHelper redisCacheHelper;
+
     @InjectMocks
     private ADSemesterServiceImpl adSemesterService;
 
     @BeforeEach
     void setUp() {
         ReflectionTestUtils.setField(adSemesterService, "redisTTL", 3600L);
+        // Default behavior for RedisCacheHelper
+        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong()))
+                .thenAnswer(invocation -> invocation.getArgument(1, java.util.function.Supplier.class).get());
     }
 
     @Test

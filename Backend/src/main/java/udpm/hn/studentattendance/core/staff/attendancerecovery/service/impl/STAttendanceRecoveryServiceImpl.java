@@ -26,6 +26,8 @@ import udpm.hn.studentattendance.infrastructure.excel.model.request.EXDataReques
 import udpm.hn.studentattendance.infrastructure.excel.model.response.ExImportLogDetailResponse;
 import udpm.hn.studentattendance.infrastructure.redis.service.RedisService;
 import udpm.hn.studentattendance.helpers.RequestTrimHelper;
+import com.fasterxml.jackson.core.type.TypeReference;
+import udpm.hn.studentattendance.helpers.RedisCacheHelper;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -59,7 +61,7 @@ public class STAttendanceRecoveryServiceImpl implements STAttendanceRecoveryServ
 
     private final UserActivityLogHelper userActivityLogHelper;
 
-    private final RedisService redisService;
+    private final RedisCacheHelper redisCacheHelper;
 
     private final RedisInvalidationHelper redisInvalidationHelper;
 
@@ -75,29 +77,16 @@ public class STAttendanceRecoveryServiceImpl implements STAttendanceRecoveryServ
     private final STAttendanceRecoveryHistoryLogDetailRepository historyLogDetailRepository;
 
     public PageableObject<?> getCachedAttendanceRecoveryList(STAttendanceRecoveryRequest request) {
-        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_ATTENDANCE_RECOVERY + "list_"
+        String key = RedisPrefixConstant.REDIS_PREFIX_ATTENDANCE_RECOVERY + "list_"
                 + sessionHelper.getFacilityId() + "_"
                 + request.toString();
-
-        Object cachedData = redisService.get(cacheKey);
-        if (cachedData != null) {
-            try {
-                return redisService.getObject(cacheKey, PageableObject.class);
-            } catch (Exception e) {
-                redisService.delete(cacheKey);
-            }
-        }
-
-        Pageable pageable = PaginationHelper.createPageable(request);
-        PageableObject<?> list = PageableObject.of(attendanceRecoveryRepository.getListAttendanceRecovery(request,
-                sessionHelper.getFacilityId(), pageable));
-
-        try {
-            redisService.set(cacheKey, list, redisTTL);
-        } catch (Exception ignored) {
-        }
-
-        return list;
+        return redisCacheHelper.getOrSet(
+                key,
+                () -> PageableObject.of(attendanceRecoveryRepository.getListAttendanceRecovery(request,
+                        sessionHelper.getFacilityId(), PaginationHelper.createPageable(request))),
+                new TypeReference<PageableObject<?>>() {
+                },
+                redisTTL);
     }
 
     @Override
@@ -129,25 +118,13 @@ public class STAttendanceRecoveryServiceImpl implements STAttendanceRecoveryServ
     }
 
     public List<Semester> getCachedSemesters() {
-        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_ATTENDANCE_RECOVERY + "semesters";
-
-        Object cachedData = redisService.get(cacheKey);
-        if (cachedData != null) {
-            try {
-                return redisService.getObject(cacheKey, List.class);
-            } catch (Exception e) {
-                redisService.delete(cacheKey);
-            }
-        }
-
-        List<Semester> semesters = semesterRepository.getAllSemester(EntityStatus.ACTIVE);
-
-        try {
-            redisService.set(cacheKey, semesters, redisTTL);
-        } catch (Exception ignored) {
-        }
-
-        return semesters;
+        String key = RedisPrefixConstant.REDIS_PREFIX_ATTENDANCE_RECOVERY + "semesters";
+        return redisCacheHelper.getOrSet(
+                key,
+                () -> semesterRepository.getAllSemester(EntityStatus.ACTIVE),
+                new TypeReference<List<Semester>>() {
+                },
+                redisTTL);
     }
 
     @Override
@@ -427,25 +404,14 @@ public class STAttendanceRecoveryServiceImpl implements STAttendanceRecoveryServ
                 + sessionHelper.getFacilityId() + "_"
                 + request.toString();
 
-        Object cachedData = redisService.get(cacheKey);
-        if (cachedData != null) {
-            try {
-                return redisService.getObject(cacheKey, PageableObject.class);
-            } catch (Exception e) {
-                redisService.delete(cacheKey);
-            }
-        }
-
-        Pageable pageable = PaginationHelper.createPageable(request);
-        PageableObject<?> list = PageableObject.of(historyLogRepository.getListHistory(pageable, 6,
-                sessionHelper.getUserId(), sessionHelper.getFacilityId(), idImportLog));
-
-        try {
-            redisService.set(cacheKey, list, redisTTL);
-        } catch (Exception ignored) {
-        }
-
-        return list;
+        Object cachedData = redisCacheHelper.getOrSet(
+                cacheKey,
+                () -> PageableObject.of(historyLogRepository.getListHistory(PaginationHelper.createPageable(request), 6,
+                        sessionHelper.getUserId(), sessionHelper.getFacilityId(), idImportLog)),
+                new TypeReference<PageableObject<?>>() {
+                },
+                redisTTL);
+        return (PageableObject<?>) cachedData;
     }
 
     @Override

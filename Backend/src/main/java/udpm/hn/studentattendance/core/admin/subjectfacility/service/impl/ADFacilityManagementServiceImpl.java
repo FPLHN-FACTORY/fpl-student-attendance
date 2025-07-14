@@ -11,6 +11,8 @@ import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.RedisPrefixConstant;
 import udpm.hn.studentattendance.infrastructure.redis.service.RedisService;
+import com.fasterxml.jackson.core.type.TypeReference;
+import udpm.hn.studentattendance.helpers.RedisCacheHelper;
 
 import java.util.List;
 
@@ -19,7 +21,7 @@ import java.util.List;
 public class ADFacilityManagementServiceImpl implements ADFacilityManagementService {
 
     private final ADFacilityRepository repository;
-    private final RedisService redisService;
+    private final RedisCacheHelper redisCacheHelper;
     private final RedisInvalidationHelper redisInvalidationHelper;
 
     @Value("${spring.cache.redis.time-to-live}")
@@ -27,46 +29,22 @@ public class ADFacilityManagementServiceImpl implements ADFacilityManagementServ
 
     private List<?> getCachedFacilityCombobox(String idSubject) {
         String cacheKey = RedisPrefixConstant.REDIS_PREFIX_FACILITY + "combobox_" + idSubject;
-
-        Object cachedData = redisService.get(cacheKey);
-        if (cachedData != null) {
-            try {
-                return redisService.getObject(cacheKey, List.class);
-            } catch (Exception e) {
-                redisService.delete(cacheKey);
-            }
-        }
-
-        List<?> facilities = repository.getFacility(idSubject);
-
-        try {
-            redisService.set(cacheKey, facilities, redisTTL);
-        } catch (Exception ignored) {
-        }
-
-        return facilities;
+        return redisCacheHelper.getOrSet(
+                cacheKey,
+                () -> repository.getFacility(idSubject),
+                new TypeReference<List<?>>() {
+                },
+                redisTTL);
     }
 
     private List<?> getCachedActiveFacilities() {
         String cacheKey = RedisPrefixConstant.REDIS_PREFIX_FACILITY + "active_list";
-
-        Object cachedData = redisService.get(cacheKey);
-        if (cachedData != null) {
-            try {
-                return redisService.getObject(cacheKey, List.class);
-            } catch (Exception e) {
-                redisService.delete(cacheKey);
-            }
-        }
-
-        List<?> facilities = repository.getFacilities(EntityStatus.ACTIVE);
-
-        try {
-            redisService.set(cacheKey, facilities, redisTTL);
-        } catch (Exception ignored) {
-        }
-
-        return facilities;
+        return redisCacheHelper.getOrSet(
+                cacheKey,
+                () -> repository.getFacilities(EntityStatus.ACTIVE),
+                new TypeReference<List<?>>() {
+                },
+                redisTTL);
     }
 
     @Override

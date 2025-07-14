@@ -23,6 +23,7 @@ import udpm.hn.studentattendance.core.admin.subjectfacility.repository.ADSubject
 import udpm.hn.studentattendance.entities.Facility;
 import udpm.hn.studentattendance.entities.Subject;
 import udpm.hn.studentattendance.entities.SubjectFacility;
+import udpm.hn.studentattendance.helpers.RedisCacheHelper;
 import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
 import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
 import udpm.hn.studentattendance.infrastructure.common.ApiResponse;
@@ -64,12 +65,18 @@ class ADSubjectFacilityServiceImplTest {
     @Mock
     private RedisInvalidationHelper redisInvalidationHelper;
 
+    @Mock
+    private RedisCacheHelper redisCacheHelper;
+
     @InjectMocks
     private ADSubjectFacilityServiceImpl subjectFacilityService;
 
     @BeforeEach
     void setUp() {
         ReflectionTestUtils.setField(subjectFacilityService, "redisTTL", 3600L);
+        // Default behavior for RedisCacheHelper
+        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong()))
+                .thenAnswer(invocation -> invocation.getArgument(1, java.util.function.Supplier.class).get());
     }
 
     @Test
@@ -93,7 +100,7 @@ class ADSubjectFacilityServiceImplTest {
         subjectFacilities.add(response);
         Page<ADSubjectFacilityResponse> page = new PageImpl<>(subjectFacilities);
 
-        when(redisService.get(cacheKey)).thenReturn(null);
+        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong())).thenReturn(null);
         when(repository.getAll(any(Pageable.class), eq(request))).thenReturn(page);
 
         // When
@@ -106,8 +113,8 @@ class ADSubjectFacilityServiceImplTest {
         assertEquals("Lây danh sách bộ môn cơ sở thành công", apiResponse.getMessage());
 
         // Verify repository was called and cache was updated
+        verify(redisCacheHelper).getOrSet(anyString(), any(), any(), anyLong());
         verify(repository).getAll(any(Pageable.class), eq(request));
-        verify(redisService).set(eq(cacheKey), any(PageableObject.class), eq(3600L));
     }
 
     @Test
@@ -316,7 +323,7 @@ class ADSubjectFacilityServiceImplTest {
         String cacheKey = RedisPrefixConstant.REDIS_PREFIX_SUBJECT_FACILITY + id;
         ADSubjectFacilityResponse response = mock(ADSubjectFacilityResponse.class);
 
-        when(redisService.get(cacheKey)).thenReturn(null);
+        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong())).thenReturn(null);
         when(repository.getOneById(id)).thenReturn(Optional.of(response));
 
         // When
@@ -330,7 +337,7 @@ class ADSubjectFacilityServiceImplTest {
         assertEquals(response, apiResponse.getData());
 
         // Verify cache was updated
-        verify(redisService).set(eq(cacheKey), eq(response), eq(3600L));
+        verify(redisCacheHelper).getOrSet(anyString(), any(), any(), anyLong());
     }
 
     @Test
@@ -340,7 +347,7 @@ class ADSubjectFacilityServiceImplTest {
         String id = "non-existent-id";
         String cacheKey = RedisPrefixConstant.REDIS_PREFIX_SUBJECT_FACILITY + id;
 
-        when(redisService.get(cacheKey)).thenReturn(null);
+        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong())).thenReturn(null);
         when(repository.getOneById(id)).thenReturn(Optional.empty());
 
         // When
