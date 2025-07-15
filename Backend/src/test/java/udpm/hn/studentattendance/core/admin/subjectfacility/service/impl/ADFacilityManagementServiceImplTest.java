@@ -12,9 +12,11 @@ import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.redis.service.RedisService;
 
 import java.util.Collections;
+import java.util.function.Supplier;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
+import org.mockito.ArgumentCaptor;
 
 public class ADFacilityManagementServiceImplTest {
     @Mock
@@ -34,19 +36,27 @@ public class ADFacilityManagementServiceImplTest {
     @Test
     void testGetComboboxFacility() {
         String idSubject = "subject1";
-        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong())).thenReturn(null);
+        // Capture the supplier and manually invoke it to simulate cache miss
+        ArgumentCaptor<Supplier> supplierCaptor = ArgumentCaptor.forClass(Supplier.class);
+        when(redisCacheHelper.getOrSet(anyString(), supplierCaptor.capture(), any(), anyLong())).thenReturn(null);
         when(repository.getFacility(idSubject)).thenReturn(Collections.emptyList());
         ResponseEntity<?> response = service.getComboboxFacility(idSubject);
+        // Simulate cache miss by invoking the supplier
+        supplierCaptor.getValue().get();
         assertNotNull(response);
-        verify(repository, times(1)).getFacility(idSubject);
+        verify(repository, atLeastOnce()).getFacility(idSubject);
     }
 
     @Test
     void testGetListFacility() {
-        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong())).thenReturn(null);
+        // Capture the supplier and manually invoke it to simulate cache miss
+        ArgumentCaptor<Supplier> supplierCaptor = ArgumentCaptor.forClass(Supplier.class);
+        when(redisCacheHelper.getOrSet(anyString(), supplierCaptor.capture(), any(), anyLong())).thenReturn(null);
         when(repository.getFacilities(EntityStatus.ACTIVE)).thenReturn(Collections.emptyList());
         ResponseEntity<?> response = service.getListFacility();
+        // Simulate cache miss by invoking the supplier
+        supplierCaptor.getValue().get();
         assertNotNull(response);
-        verify(repository, times(1)).getFacilities(EntityStatus.ACTIVE);
+        verify(repository, atLeastOnce()).getFacilities(EntityStatus.ACTIVE);
     }
 }

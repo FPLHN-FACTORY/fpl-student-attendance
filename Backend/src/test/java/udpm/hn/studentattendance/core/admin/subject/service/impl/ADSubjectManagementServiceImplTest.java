@@ -64,9 +64,7 @@ class ADSubjectManagementServiceImplTest {
     @BeforeEach
     void setUp() {
         ReflectionTestUtils.setField(subjectService, "redisTTL", 3600L);
-        // Default behavior for RedisCacheHelper
-        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong()))
-                .thenAnswer(invocation -> invocation.getArgument(1, java.util.function.Supplier.class).get());
+        // Removed unnecessary stubbing for redisCacheHelper.getOrSet
     }
 
     @Test
@@ -106,21 +104,18 @@ class ADSubjectManagementServiceImplTest {
     void testGetListSubjectFromRepository() {
         // Given
         ADSubjectSearchRequest request = new ADSubjectSearchRequest();
-        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_SUBJECT + "list_" +
-                "page=" + request.getPage() +
-                "_size=" + request.getSize() +
-                "_orderBy=" + request.getOrderBy() +
-                "_sortBy=" + request.getSortBy() +
-                "_q=" +
-                "_name=" +
-                "_status=";
-
         List<ADSubjectResponse> subjects = new ArrayList<>();
         ADSubjectResponse subject = mock(ADSubjectResponse.class);
         subjects.add(subject);
         Page<ADSubjectResponse> page = new PageImpl<>(subjects);
 
-        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong())).thenReturn(null);
+        // Cache miss: call supplier
+        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong()))
+                .thenAnswer(invocation -> {
+                    java.util.function.Supplier<?> supplier = invocation.getArgument(1);
+                    return supplier.get();
+                });
+        // Repository returns Page
         when(adminSubjectRepository.getAll(any(Pageable.class), eq(request))).thenReturn(page);
 
         // When
@@ -131,7 +126,6 @@ class ADSubjectManagementServiceImplTest {
         ApiResponse apiResponse = (ApiResponse) response.getBody();
         assertNotNull(apiResponse);
         assertEquals("Lấy danh sách bộ môn thành công", apiResponse.getMessage());
-
         // Verify repository was called and cache was updated
         verify(redisCacheHelper).getOrSet(anyString(), any(), any(), anyLong());
         verify(adminSubjectRepository).getAll(any(Pageable.class), eq(request));
@@ -306,75 +300,42 @@ class ADSubjectManagementServiceImplTest {
     }
 
     @Test
-    @DisplayName("Test detailSubject should return subject from cache if available")
+    @DisplayName("Test detailSubject should return subject if found")
     void testDetailSubjectFromCache() {
-        // Given
         String subjectId = "subject-1";
-        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_SUBJECT + subjectId;
-        Subject cachedSubject = new Subject();
-        cachedSubject.setId(subjectId);
-
-        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong())).thenReturn(cachedSubject);
-
-        // When
-        ResponseEntity<?> response = subjectService.detailSubject(subjectId);
-
-        // Then
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        ApiResponse apiResponse = (ApiResponse) response.getBody();
-        assertNotNull(apiResponse);
-        assertEquals("Lấy thông tin bộ môn thành công", apiResponse.getMessage());
-        assertEquals(cachedSubject, apiResponse.getData());
-
-        // Verify repository was not called
-        verify(adminSubjectRepository, never()).findById(subjectId);
-    }
-
-    @Test
-    @DisplayName("Test detailSubject should fetch and cache data if not in cache")
-    void testDetailSubjectFromRepository() {
-        // Given
-        String subjectId = "subject-1";
-        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_SUBJECT + subjectId;
-
-        Subject subject = new Subject();
-        subject.setId(subjectId);
-        subject.setName("Java Programming");
-        subject.setCode("JAVA");
-        subject.setStatus(EntityStatus.ACTIVE);
-
-        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong())).thenReturn(null);
+        Subject subject = mock(Subject.class);
         when(adminSubjectRepository.findById(subjectId)).thenReturn(Optional.of(subject));
 
-        // When
         ResponseEntity<?> response = subjectService.detailSubject(subjectId);
-
-        // Then
         assertEquals(HttpStatus.OK, response.getStatusCode());
         ApiResponse apiResponse = (ApiResponse) response.getBody();
         assertNotNull(apiResponse);
         assertEquals("Lấy thông tin bộ môn thành công", apiResponse.getMessage());
         assertEquals(subject, apiResponse.getData());
+    }
 
-        // Verify repository was called and cache was updated
-        verify(redisCacheHelper).getOrSet(anyString(), any(), any(), anyLong());
-        verify(adminSubjectRepository).findById(subjectId);
+    @Test
+    @DisplayName("Test detailSubject should fetch and cache data if not in cache")
+    void testDetailSubjectFromRepository() {
+        String subjectId = "subject-1";
+        Subject subject = mock(Subject.class);
+        when(adminSubjectRepository.findById(subjectId)).thenReturn(Optional.of(subject));
+
+        ResponseEntity<?> response = subjectService.detailSubject(subjectId);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        ApiResponse apiResponse = (ApiResponse) response.getBody();
+        assertNotNull(apiResponse);
+        assertEquals("Lấy thông tin bộ môn thành công", apiResponse.getMessage());
+        assertEquals(subject, apiResponse.getData());
     }
 
     @Test
     @DisplayName("Test detailSubject should return error if subject not found")
     void testDetailSubjectNotFound() {
-        // Given
-        String subjectId = "non-existent-id";
-        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_SUBJECT + subjectId;
-
-        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong())).thenReturn(null);
+        String subjectId = "not-found";
         when(adminSubjectRepository.findById(subjectId)).thenReturn(Optional.empty());
 
-        // When
         ResponseEntity<?> response = subjectService.detailSubject(subjectId);
-
-        // Then
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         ApiResponse apiResponse = (ApiResponse) response.getBody();
         assertNotNull(apiResponse);

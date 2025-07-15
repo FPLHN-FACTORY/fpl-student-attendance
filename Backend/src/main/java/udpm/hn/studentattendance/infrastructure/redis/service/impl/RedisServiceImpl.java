@@ -11,7 +11,6 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -48,11 +47,12 @@ public class RedisServiceImpl implements RedisService {
     @Override
     public <T> T getObject(String key, TypeReference<T> type) {
         try {
-            String json = redisTemplate.opsForValue().get(key).toString();
-            if (json == null) return null;
+            Object value = redisTemplate.opsForValue().get(key);
+            if (value == null)
+                return null;
+            String json = value.toString();
             return objectMapper.readValue(json, type);
         } catch (Exception e) {
-
             return null;
         }
     }

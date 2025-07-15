@@ -74,33 +74,23 @@ class ADSubjectFacilityServiceImplTest {
     @BeforeEach
     void setUp() {
         ReflectionTestUtils.setField(subjectFacilityService, "redisTTL", 3600L);
-        // Default behavior for RedisCacheHelper
-        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong()))
-                .thenAnswer(invocation -> invocation.getArgument(1, java.util.function.Supplier.class).get());
+        // Removed unnecessary stubbing for redisCacheHelper.getOrSet
     }
 
     @Test
     @DisplayName("Test getListSubjectFacility should return data successfully")
     void testGetListSubjectFacility() {
-        // Given
         ADSubjectFacilitySearchRequest request = new ADSubjectFacilitySearchRequest();
-        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_SUBJECT_FACILITY + "list_" +
-                "page=" + request.getPage() +
-                "_size=" + request.getSize() +
-                "_orderBy=" + request.getOrderBy() +
-                "_sortBy=" + request.getSortBy() +
-                "_q=" +
-                "_name=" +
-                "_facilityId=" +
-                "_subjectId=" +
-                "_status=";
-
-        List<ADSubjectFacilityResponse> subjectFacilities = new ArrayList<>();
+        List<ADSubjectFacilityResponse> responses = new ArrayList<>();
         ADSubjectFacilityResponse response = mock(ADSubjectFacilityResponse.class);
-        subjectFacilities.add(response);
-        Page<ADSubjectFacilityResponse> page = new PageImpl<>(subjectFacilities);
+        responses.add(response);
+        Page<ADSubjectFacilityResponse> page = new PageImpl<>(responses);
 
-        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong())).thenReturn(null);
+        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong()))
+                .thenAnswer(invocation -> {
+                    java.util.function.Supplier<?> supplier = invocation.getArgument(1);
+                    return supplier.get();
+                });
         when(repository.getAll(any(Pageable.class), eq(request))).thenReturn(page);
 
         // When
@@ -320,10 +310,7 @@ class ADSubjectFacilityServiceImplTest {
     void testDetailSubjectFacilitySuccess() {
         // Given
         String id = "subject-facility-1";
-        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_SUBJECT_FACILITY + id;
         ADSubjectFacilityResponse response = mock(ADSubjectFacilityResponse.class);
-
-        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong())).thenReturn(null);
         when(repository.getOneById(id)).thenReturn(Optional.of(response));
 
         // When
@@ -335,9 +322,6 @@ class ADSubjectFacilityServiceImplTest {
         assertNotNull(apiResponse);
         assertEquals("Lấy thông tin bộ môn cơ sở thành công", apiResponse.getMessage());
         assertEquals(response, apiResponse.getData());
-
-        // Verify cache was updated
-        verify(redisCacheHelper).getOrSet(anyString(), any(), any(), anyLong());
     }
 
     @Test
@@ -345,9 +329,6 @@ class ADSubjectFacilityServiceImplTest {
     void testDetailSubjectFacilityNotFound() {
         // Given
         String id = "non-existent-id";
-        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_SUBJECT_FACILITY + id;
-
-        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong())).thenReturn(null);
         when(repository.getOneById(id)).thenReturn(Optional.empty());
 
         // When

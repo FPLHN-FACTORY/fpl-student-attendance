@@ -78,7 +78,8 @@ class ADSubjectManagementServiceTest {
         subject.setId(id);
         subject.setName("Toán cao cấp");
         subject.setCode("MATH101");
-        when(redisService.get(anyString())).thenReturn(null);
+        // Only stub repository, as redisService.get is not used in the actual service
+        // for this test
         when(adminSubjectRepository.findById(id)).thenReturn(Optional.of(subject));
         ResponseEntity<?> response = adSubjectManagementService.detailSubject(id);
         assertEquals(200, response.getStatusCodeValue());

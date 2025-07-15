@@ -37,6 +37,9 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
+import udpm.hn.studentattendance.entities.PlanFactory;
+import udpm.hn.studentattendance.entities.Plan;
+import udpm.hn.studentattendance.entities.Factory;
 
 @ExtendWith(MockitoExtension.class)
 class SPDPlanDateAttendanceServiceImplTest {
@@ -146,6 +149,13 @@ class SPDPlanDateAttendanceServiceImplTest {
         request.setStatus(0); // Checkin
 
         PlanDate planDate = mock(PlanDate.class);
+        PlanFactory planFactory = mock(PlanFactory.class);
+        Plan plan = mock(Plan.class);
+        Factory factory = mock(Factory.class);
+        when(factory.getName()).thenReturn("Test Factory");
+        when(planFactory.getFactory()).thenReturn(factory);
+        when(planDate.getPlanFactory()).thenReturn(planFactory);
+        when(planFactory.getPlan()).thenReturn(plan);
         when(planDate.getId()).thenReturn(planDateId);
         when(planDate.getStartDate()).thenReturn(DateTimeUtils.getCurrentTimeMillis() - 3600000); // 1 hour ago
         when(planDate.getRequiredCheckin()).thenReturn(StatusType.ENABLE);
@@ -203,6 +213,13 @@ class SPDPlanDateAttendanceServiceImplTest {
         request.setStatus(0); // Checkin
 
         PlanDate planDate = mock(PlanDate.class);
+        PlanFactory planFactory = mock(PlanFactory.class);
+        Plan plan = mock(Plan.class);
+        Factory factory = mock(Factory.class);
+        when(factory.getName()).thenReturn("Test Factory");
+        when(planFactory.getFactory()).thenReturn(factory);
+        when(planDate.getPlanFactory()).thenReturn(planFactory);
+        when(planFactory.getPlan()).thenReturn(plan);
         when(planDate.getId()).thenReturn(planDateId);
         when(planDate.getStartDate()).thenReturn(DateTimeUtils.getCurrentTimeMillis() - 3600000); // 1 hour ago
         when(planDate.getRequiredCheckin()).thenReturn(StatusType.ENABLE);

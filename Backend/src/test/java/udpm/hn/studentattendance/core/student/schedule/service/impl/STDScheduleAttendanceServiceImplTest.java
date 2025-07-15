@@ -1,5 +1,6 @@
 package udpm.hn.studentattendance.core.student.schedule.service.impl;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -20,6 +21,7 @@ import udpm.hn.studentattendance.core.student.schedule.model.request.STDSchedule
 import udpm.hn.studentattendance.core.student.schedule.model.response.STDScheduleAttendanceResponse;
 import udpm.hn.studentattendance.core.student.schedule.repository.STDScheduleAttendanceRepository;
 import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
+import udpm.hn.studentattendance.helpers.RedisCacheHelper;
 import udpm.hn.studentattendance.helpers.SessionHelper;
 import udpm.hn.studentattendance.infrastructure.common.ApiResponse;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
@@ -54,12 +56,19 @@ class STDScheduleAttendanceServiceImplTest {
     @Mock
     private RedisInvalidationHelper redisInvalidationHelper;
 
+    @Mock
+    private RedisCacheHelper redisCacheHelper;
+
     @Spy
     @InjectMocks
     private STDScheduleAttendanceServiceImpl service;
 
     private STDScheduleAttendanceSearchRequest request;
     private List<STDScheduleAttendanceResponse> scheduleResponseList;
+
+    // Shared TypeReference instance for mocking
+    private final TypeReference<PageableObject<STDScheduleAttendanceResponse>> pageableObjectTypeRef = new TypeReference<PageableObject<STDScheduleAttendanceResponse>>() {
+    };
 
     @BeforeEach
     void setUp() {
@@ -87,19 +96,18 @@ class STDScheduleAttendanceServiceImplTest {
         String userId = "user123";
         String cacheKey = RedisPrefixConstant.REDIS_PREFIX_SCHEDULE_STUDENT + "list_" + userId + "_"
                 + request.toString();
-        PageableObject<?> cachedData = new PageableObject<>();
+        PageableObject<STDScheduleAttendanceResponse> cachedData = mock(PageableObject.class);
 
-        when(redisService.get(cacheKey)).thenReturn(cachedData);
-        when(redisService.getObject(eq(cacheKey), eq(PageableObject.class))).thenReturn(cachedData);
+        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong())).thenReturn(cachedData);
 
         // When
-        PageableObject<?> result = service.getCachedScheduleList(request);
+        PageableObject<STDScheduleAttendanceResponse> result = (PageableObject<STDScheduleAttendanceResponse>) service
+                .getCachedScheduleList(request);
 
         // Then
         assertNotNull(result);
         assertSame(cachedData, result);
-        verify(redisService).get(cacheKey);
-        verify(redisService).getObject(cacheKey, PageableObject.class);
+        verify(redisCacheHelper).getOrSet(anyString(), any(), any(), anyLong());
         verifyNoInteractions(repository);
     }
 
@@ -111,19 +119,21 @@ class STDScheduleAttendanceServiceImplTest {
         String cacheKey = RedisPrefixConstant.REDIS_PREFIX_SCHEDULE_STUDENT + "list_" + userId + "_"
                 + request.toString();
 
-        when(redisService.get(cacheKey)).thenReturn(null);
-
         Page<STDScheduleAttendanceResponse> page = new PageImpl<>(scheduleResponseList);
         when(repository.getAllListAttendanceByUser(any(Pageable.class), eq(request))).thenReturn(page);
+        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong()))
+                .thenAnswer(invocation -> {
+                    java.util.function.Supplier<?> supplier = invocation.getArgument(1);
+                    return supplier.get();
+                });
 
         // When
         PageableObject<?> result = service.getCachedScheduleList(request);
 
         // Then
         assertNotNull(result);
-        verify(redisService).get(cacheKey);
+        verify(redisCacheHelper).getOrSet(anyString(), any(), any(), anyLong());
         verify(repository).getAllListAttendanceByUser(any(Pageable.class), eq(request));
-        verify(redisService).set(eq(cacheKey), any(PageableObject.class), eq(3600L));
     }
 
     @Test

@@ -66,9 +66,7 @@ class ADSemesterServiceImplTest {
     @BeforeEach
     void setUp() {
         ReflectionTestUtils.setField(adSemesterService, "redisTTL", 3600L);
-        // Default behavior for RedisCacheHelper
-        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong()))
-                .thenAnswer(invocation -> invocation.getArgument(1, java.util.function.Supplier.class).get());
+        // Removed unnecessary stubbing for redisCacheHelper.getOrSet
     }
 
     @Test
@@ -83,6 +81,11 @@ class ADSemesterServiceImplTest {
 
         Page<ADSemesterResponse> page = new PageImpl<>(semesters);
 
+        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong()))
+                .thenAnswer(invocation -> {
+                    java.util.function.Supplier<?> supplier = invocation.getArgument(1);
+                    return supplier.get();
+                });
         when(adSemesterRepository.getAllSemester(any(Pageable.class), eq(request))).thenReturn(page);
 
         // When
@@ -92,7 +95,7 @@ class ADSemesterServiceImplTest {
         assertEquals(HttpStatus.OK, response.getStatusCode());
         ApiResponse apiResponse = (ApiResponse) response.getBody();
         assertNotNull(apiResponse);
-        assertEquals("Get semester successfully", apiResponse.getMessage());
+        assertEquals("Hiển thị tất cả học kỳ thành công", apiResponse.getMessage());
 
         PageableObject pageableObject = (PageableObject) apiResponse.getData();
         assertNotNull(pageableObject);
