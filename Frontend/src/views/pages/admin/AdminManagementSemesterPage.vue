@@ -97,13 +97,11 @@ const columns = ref(
   ]),
 )
 
-// Hàm định dạng epoch sang "DD/MM/YYYY"
 const formatEpochToDate = (epoch) => {
   if (!epoch) return ''
   return dayjs(epoch).format('DD/MM/YYYY')
 }
 
-// Khi RangePicker thay đổi, chuyển đổi giá trị sang filter.fromDateSemester và filter.toDateSemester
 const handleDateRangeChange = (range) => {
   if (range && range.length === 2) {
     filter.dateRange = range
@@ -114,21 +112,17 @@ const handleDateRangeChange = (range) => {
     filter.fromDateSemester = null
     filter.toDateSemester = null
   }
-  // Đặt lại trang về 1 và gọi lại fetchSemesters
   pagination.current = 1
   fetchSemesters()
 }
 
-// Hàm lấy danh sách học kỳ, truyền phân trang từ pagination
 const fetchSemesters = () => {
   if (isLoading.value) return
   loadingStore.show()
   isLoading.value = true
 
-  // Tạo bản sao của filter, loại bỏ dateRange
   const { dateRange, ...filteredParams } = filter
 
-  // Thêm các tham số khác
   filteredParams.fromDateSemester = filter.fromDateSemester
     ? filter.fromDateSemester.valueOf()
     : null
@@ -140,7 +134,6 @@ const fetchSemesters = () => {
     .get(API_ROUTES_ADMIN.FETCH_DATA_SEMESTER, { params: filteredParams })
     .then((response) => {
       semesters.value = response.data.data.data
-      // Cập nhật tổng số bản ghi: nếu có totalRecords, dùng luôn, nếu không dùng totalPages * pageSize
       if (response.data.data.totalRecords !== undefined) {
         pagination.total = response.data.data.totalRecords
       } else {
@@ -159,7 +152,6 @@ const fetchSemesters = () => {
     })
 }
 
-// Hàm xử lý thay đổi trang (cập nhật current và pageSize rồi gọi lại API)
 const handleTableChange = (pageInfo) => {
   pagination.current = pageInfo.current
   pagination.pageSize = pageInfo.pageSize
@@ -167,7 +159,7 @@ const handleTableChange = (pageInfo) => {
 }
 
 const handleShowModalAdd = () => {
-  newSemester.semesterName = defaultDateRange.semesterName // Set lại là học kỳ hiện tại
+  newSemester.semesterName = defaultDateRange.semesterName 
   newSemester.fromDate = defaultDateRange.fromDate
   newSemester.toDate = defaultDateRange.toDate
   modalAdd.value = true
@@ -214,7 +206,6 @@ const handleAddSemester = () => {
 }
 
 const handleUpdateSemester = (record) => {
-  // Kiểm tra xem có thể chỉnh sửa học kỳ không
   if (!canEditSemester(record)) {
     message.warning('Không thể chỉnh sửa học kỳ đã kết thúc')
     return
@@ -230,7 +221,7 @@ const handleUpdateSemester = (record) => {
         fromDate: dayjs(data.fromDate),
         toDate: dayjs(data.toDate),
         semesterId: data.semesterId || data.id,
-        originalFromDate: data.fromDate, // Store original fromDate to check if it was changed
+        originalFromDate: data.fromDate, 
       }
       modalUpdate.value = true
     })
@@ -255,7 +246,6 @@ const updateSemester = () => {
     return
   }
 
-  // Kiểm tra trường hợp start date đã qua và đã bị thay đổi
   const originalFromDate = dayjs(detailSemester.value.originalFromDate)
   if (isStartDateBeforeToday(originalFromDate) &&
       !originalFromDate.isSame(detailSemester.value.fromDate, 'day')) {
@@ -345,21 +335,25 @@ const clearFormAdd = () => {
 }
 
 const handleClearFilter = () => {
-  // Clear all filter values
   Object.keys(filter).forEach((key) => {
     filter[key] = ''
   })
   pagination.current = 1
-  fetchSemesters() // or whatever your fetch function is named
+  fetchSemesters() 
 }
 
-// Kiểm tra nếu ngày hiện tại lớn hơn ngày bắt đầu của học kỳ
 const isStartDateBeforeToday = (startDate) => {
   if (!startDate) return false
   return dayjs().startOf('day') > dayjs(startDate).startOf('day')
 }
 
-// Kiểm tra học kỳ có đang diễn ra không (đã bắt đầu nhưng chưa kết thúc)
+const isSemesterNotStarted = (semester) => {
+  if (!semester.startDate) return false
+  const today = dayjs().startOf('day')
+  const startDate = dayjs(semester.startDate).startOf('day')
+  return today < startDate
+}
+
 const isSemesterInProgress = (semester) => {
   if (!semester.startDate || !semester.endDate) return false
   const today = dayjs().startOf('day')
@@ -368,7 +362,6 @@ const isSemesterInProgress = (semester) => {
   return today >= startDate && today <= endDate
 }
 
-// Kiểm tra học kỳ đã kết thúc chưa (ngày hiện tại > ngày kết thúc)
 const isSemesterEnded = (semester) => {
   if (!semester.endDate) return false
   const today = dayjs().startOf('day')
@@ -376,33 +369,26 @@ const isSemesterEnded = (semester) => {
   return today > endDate
 }
 
-// Kiểm tra có thể thay đổi trạng thái học kỳ không (không được khi đang diễn ra hoặc đã kết thúc)
 const canChangeStatus = (semester) => {
-  return !isSemesterInProgress(semester) && !isSemesterEnded(semester)
+  // Có thể thay đổi nếu học kỳ chưa bắt đầu hoặc trạng thái hiện tại là không hoạt động (INACTIVE)
+  return isSemesterNotStarted(semester) || semester.status === 'INACTIVE'
 }
 
-// Kiểm tra có thể chỉnh sửa học kỳ không (chỉ không được khi đã kết thúc)
 const canEditSemester = (semester) => {
   return !isSemesterEnded(semester)
 }
 
-// Hàm để check xem có được phép sửa ngày bắt đầu không
 const shouldDisableStartDate = (current) => {
-  // Nếu không có current (ngày đang kiểm tra), trả về false
   if (!current) return false
 
-  // Kiểm tra nếu học kỳ đang sửa có ngày bắt đầu trước ngày hiện tại
   if (detailSemester.value && detailSemester.value.fromDate) {
     const originalDate = dayjs(detailSemester.value.originalFromDate || detailSemester.value.fromDate)
 
-    // Nếu ngày bắt đầu gốc đã qua (trước ngày hiện tại)
     if (isStartDateBeforeToday(originalDate)) {
-      // Không cho phép chọn bất kỳ ngày nào khác ngoài ngày ban đầu
       return !current.isSame(originalDate, 'day')
     }
   }
 
-  // Mặc định: không cho phép chọn các ngày trong quá khứ
   return current < dayjs().startOf('day')
 }
 
@@ -445,7 +431,7 @@ onMounted(() => {
                   >
                     <a-select-option :value="''">-- Tất cả trạng thái --</a-select-option>
                     <a-select-option value="ACTIVE">Đang hoạt động</a-select-option>
-                    <a-select-option value="INACTIVE">Đã kết thúc</a-select-option>
+                    <a-select-option value="INACTIVE">Không hoạt động</a-select-option>
                   </a-select>
                 </div>
 
@@ -521,15 +507,25 @@ onMounted(() => {
 
                   <a-tag
                     :color="
-                      record.semesterStatus === 'ACTIVE' || record.semesterStatus === 1
+                      isSemesterEnded(record)
+                        ? 'red'
+                        : isSemesterNotStarted(record)
+                        ? 'gold'
+                        : isSemesterInProgress(record)
                         ? 'green'
-                        : 'red'
-                    "
+                        : null
+                    " 
                   >
                     {{
-                      record.semesterStatus === 'ACTIVE' || record.semesterStatus === 1
+                      isSemesterEnded(record)
+                        ? 'Đã kết thúc'
+                        : isSemesterInProgress(record)
+                        ? 'Đang diễn ra'
+                        : isSemesterNotStarted(record) && (record.semesterStatus === 'ACTIVE' || record.semesterStatus === 1)
+                        ? 'Chưa bắt đầu'
+                        : (record.semesterStatus === 'ACTIVE' || record.semesterStatus === 1)
                         ? 'Đang hoạt động'
-                        : 'Đã kết thúc'
+                        : 'Không hoạt động'
                     }}
                   </a-tag>
                 </span>
