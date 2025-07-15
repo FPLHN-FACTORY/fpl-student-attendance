@@ -392,4 +392,151 @@ class USFactoryServiceImplTest {
                 verify(factoryRepository, never()).save(any(Factory.class));
                 verify(redisInvalidationHelper, never()).invalidateAllCaches();
         }
+
+        @Test
+        @DisplayName("createFactory should return error when staff not found")
+        void testCreateFactory_StaffNotFound() {
+                // Arrange
+                USFactoryCreateUpdateRequest request = new USFactoryCreateUpdateRequest();
+                request.setFactoryName("Test Factory");
+                request.setIdUserStaff("staff-404");
+                request.setIdProject("project-1");
+
+                when(staffFactoryExtendRepository.findById("staff-404")).thenReturn(Optional.empty());
+
+                // Act
+                ResponseEntity<?> response = factoryService.createFactory(request);
+
+                // Assert
+                assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+                ApiResponse apiResponse = (ApiResponse) response.getBody();
+                assertNotNull(apiResponse);
+                assertEquals(RestApiStatus.ERROR, apiResponse.getStatus());
+                assertEquals("Giảng viên không tồn tại", apiResponse.getMessage());
+
+                verify(factoryRepository, never()).save(any(Factory.class));
+                verify(redisInvalidationHelper, never()).invalidateAllCaches();
+        }
+
+        @Test
+        @DisplayName("createFactory should return error when project not found")
+        void testCreateFactory_ProjectNotFound() {
+                // Arrange
+                USFactoryCreateUpdateRequest request = new USFactoryCreateUpdateRequest();
+                request.setFactoryName("Test Factory");
+                request.setIdUserStaff("staff-1");
+                request.setIdProject("project-404");
+
+                UserStaff mockStaff = mock(UserStaff.class);
+                when(staffFactoryExtendRepository.findById("staff-1")).thenReturn(Optional.of(mockStaff));
+                when(projectFactoryExtendRepository.findById("project-404")).thenReturn(Optional.empty());
+
+                // Act
+                ResponseEntity<?> response = factoryService.createFactory(request);
+
+                // Assert
+                assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+                ApiResponse apiResponse = (ApiResponse) response.getBody();
+                assertNotNull(apiResponse);
+                assertEquals(RestApiStatus.ERROR, apiResponse.getStatus());
+                assertEquals("Dự án không tồn tại", apiResponse.getMessage());
+
+                verify(factoryRepository, never()).save(any(Factory.class));
+                verify(redisInvalidationHelper, never()).invalidateAllCaches();
+        }
+
+        @Test
+        @DisplayName("updateFactory should update factory successfully")
+        void testUpdateFactory_Success() {
+                // Arrange
+                USFactoryCreateUpdateRequest request = new USFactoryCreateUpdateRequest();
+                request.setId("factory-1");
+                request.setFactoryName("Updated Factory");
+                request.setFactoryDescription("Updated Description");
+                request.setIdUserStaff("staff-1");
+                request.setIdProject("project-1");
+
+                Project oldProject = mock(Project.class);
+                when(oldProject.getId()).thenReturn("old-project-1");
+
+                Factory existingFactory = mock(Factory.class);
+                when(existingFactory.getId()).thenReturn("factory-1");
+                when(existingFactory.getName()).thenReturn("Old Factory Name");
+                when(existingFactory.getProject()).thenReturn(oldProject);
+                when(factoryRepository.findById("factory-1")).thenReturn(Optional.of(existingFactory));
+
+                UserStaff mockStaff = mock(UserStaff.class);
+                when(mockStaff.getId()).thenReturn("staff-1");
+                when(staffFactoryExtendRepository.findById("staff-1")).thenReturn(Optional.of(mockStaff));
+
+                Project mockProject = mock(Project.class);
+                when(mockProject.getId()).thenReturn("project-1");
+                when(projectFactoryExtendRepository.findById("project-1")).thenReturn(Optional.of(mockProject));
+
+                when(factoryRepository.isExistNameAndProject(request.getFactoryName(), request.getIdProject(),
+                                "factory-1"))
+                                .thenReturn(false);
+
+                Factory updatedFactory = new Factory();
+                updatedFactory.setId("factory-1");
+                updatedFactory.setName(request.getFactoryName());
+                when(factoryRepository.save(any(Factory.class))).thenReturn(updatedFactory);
+
+                doNothing().when(userActivityLogHelper).saveLog(anyString());
+                doNothing().when(redisInvalidationHelper).invalidateAllCaches();
+
+                // Act
+                ResponseEntity<?> response = factoryService.updateFactory(request);
+
+                // Assert
+                assertEquals(HttpStatus.OK, response.getStatusCode());
+                ApiResponse apiResponse = (ApiResponse) response.getBody();
+                assertNotNull(apiResponse);
+                assertEquals(RestApiStatus.SUCCESS, apiResponse.getStatus());
+                assertEquals("Cập nhật nhóm xưởng thành công", apiResponse.getMessage());
+
+                verify(factoryRepository).save(any(Factory.class));
+                verify(userActivityLogHelper).saveLog(contains("vừa cập nhật nhóm xưởng"));
+                verify(redisInvalidationHelper).invalidateAllCaches();
+        }
+
+        @Test
+        @DisplayName("changeStatus should change factory status successfully")
+        void testChangeStatus_Success() {
+                // Arrange
+                String factoryId = "factory-1";
+                Project project = mock(Project.class);
+                when(project.getName()).thenReturn("Test Project");
+
+                Factory factory = mock(Factory.class);
+                when(factory.getId()).thenReturn(factoryId);
+                when(factory.getName()).thenReturn("Test Factory");
+                when(factory.getStatus()).thenReturn(EntityStatus.ACTIVE);
+                when(factory.getProject()).thenReturn(project);
+                when(factoryRepository.findById(factoryId)).thenReturn(Optional.of(factory));
+
+                Factory savedFactory = mock(Factory.class);
+                when(savedFactory.getId()).thenReturn(factoryId);
+                when(savedFactory.getName()).thenReturn("Test Factory");
+                when(savedFactory.getStatus()).thenReturn(EntityStatus.INACTIVE);
+                when(savedFactory.getProject()).thenReturn(project);
+                when(factoryRepository.save(any(Factory.class))).thenReturn(savedFactory);
+
+                doNothing().when(userActivityLogHelper).saveLog(anyString());
+                doNothing().when(redisInvalidationHelper).invalidateAllCaches();
+
+                // Act
+                ResponseEntity<?> response = factoryService.changeStatus(factoryId);
+
+                // Assert
+                assertEquals(HttpStatus.OK, response.getStatusCode());
+                ApiResponse apiResponse = (ApiResponse) response.getBody();
+                assertNotNull(apiResponse);
+                assertEquals(RestApiStatus.SUCCESS, apiResponse.getStatus());
+                assertEquals("Đổi trạng thái nhóm xưởng thành công", apiResponse.getMessage());
+
+                verify(factoryRepository).save(any(Factory.class));
+                verify(userActivityLogHelper).saveLog(contains("vừa thay đổi trạng thái nhóm xưởng"));
+                verify(redisInvalidationHelper).invalidateAllCaches();
+        }
 }

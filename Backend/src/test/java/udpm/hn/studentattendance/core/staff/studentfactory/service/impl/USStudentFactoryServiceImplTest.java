@@ -189,4 +189,140 @@ public class USStudentFactoryServiceImplTest {
                 ApiResponse apiResponse = (ApiResponse) response.getBody();
                 assertEquals(RestApiStatus.SUCCESS, apiResponse.getStatus());
         }
+
+        @Test
+        public void testChangeStatus_StudentNotFound() {
+                // Arrange
+                String id = "notfound";
+                when(studentFactoryRepository.findById(id)).thenReturn(Optional.empty());
+
+                // Act
+                ResponseEntity<?> response = studentFactoryService.changeStatus(id);
+
+                // Assert
+                assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        }
+
+        @Test
+        public void testChangeStatus_StudentExistsShift() {
+                // Arrange
+                String id = "student-factory-id";
+                UserStudentFactory userStudentFactory = new UserStudentFactory();
+                Factory factory = new Factory();
+                factory.setId("factory-1");
+                UserStudent userStudent = new UserStudent();
+                userStudent.setId("student-1");
+                userStudentFactory.setFactory(factory);
+                userStudentFactory.setUserStudent(userStudent);
+                when(studentFactoryRepository.findById(id)).thenReturn(Optional.of(userStudentFactory));
+                when(sessionHelper.getFacilityId()).thenReturn("facility-1");
+                when(userStudentFactoryExtendRepository.isStudentExistsShift(any(), any(), any())).thenReturn(true);
+
+                // Act
+                ResponseEntity<?> response = studentFactoryService.changeStatus(id);
+
+                // Assert
+                assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        }
+
+        @Test
+        public void testChangeStatus_Success() {
+                // Arrange
+                String id = "student-factory-id";
+                UserStudentFactory userStudentFactory = new UserStudentFactory();
+                userStudentFactory.setStatus(EntityStatus.ACTIVE);
+                Factory factory = new Factory();
+                factory.setId("factory-1");
+                UserStudent userStudent = new UserStudent();
+                userStudent.setId("student-1");
+                userStudentFactory.setFactory(factory);
+                userStudentFactory.setUserStudent(userStudent);
+                when(studentFactoryRepository.findById(id)).thenReturn(Optional.of(userStudentFactory));
+                when(sessionHelper.getFacilityId()).thenReturn("facility-1");
+                when(userStudentFactoryExtendRepository.isStudentExistsShift(any(), any(), any())).thenReturn(false);
+                when(studentFactoryRepository.save(any())).thenReturn(userStudentFactory);
+
+                // Act
+                ResponseEntity<?> response = studentFactoryService.changeStatus(id);
+
+                // Assert
+                assertEquals(HttpStatus.OK, response.getStatusCode());
+        }
+
+        @Test
+        public void testCreateOrDeleteStudentFactory_AlreadyExists() {
+                // Arrange
+                USStudentFactoryCreateUpdateRequest req = new USStudentFactoryCreateUpdateRequest();
+                req.setStudentId("student-1");
+                req.setFactoryId("factory-1");
+                when(studentFactoryRepository.getUserStudentFactoriesByUserStudentIdAndFactoryId(anyString(),
+                                anyString())).thenReturn(Optional.of(new UserStudentFactory()));
+
+                // Act
+                ResponseEntity<?> response = studentFactoryService.createOrDeleteStudentFactory(req);
+
+                // Assert
+                assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        }
+
+        @Test
+        public void testCreateOrDeleteStudentFactory_ExceedTwenty() {
+                // Arrange
+                USStudentFactoryCreateUpdateRequest req = new USStudentFactoryCreateUpdateRequest();
+                req.setStudentId("student-1");
+                req.setFactoryId("factory-1");
+                when(studentFactoryRepository.getUserStudentFactoriesByUserStudentIdAndFactoryId(anyString(),
+                                anyString())).thenReturn(Optional.empty());
+                when(userStudentFactoryExtendRepository.isStudentGreaterThanTwenty(anyString())).thenReturn(false);
+
+                // Act
+                ResponseEntity<?> response = studentFactoryService.createOrDeleteStudentFactory(req);
+
+                // Assert
+                assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        }
+
+        @Test
+        public void testCreateOrDeleteStudentFactory_ExistsShift() {
+                // Arrange
+                USStudentFactoryCreateUpdateRequest req = new USStudentFactoryCreateUpdateRequest();
+                req.setStudentId("student-1");
+                req.setFactoryId("factory-1");
+                when(studentFactoryRepository.getUserStudentFactoriesByUserStudentIdAndFactoryId(anyString(),
+                                anyString())).thenReturn(Optional.empty());
+                when(userStudentFactoryExtendRepository.isStudentGreaterThanTwenty(anyString())).thenReturn(true);
+                when(userStudentFactoryExtendRepository.isStudentExistsShift(any(), any(), any())).thenReturn(true);
+
+                // Act
+                ResponseEntity<?> response = studentFactoryService.createOrDeleteStudentFactory(req);
+
+                // Assert
+                assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        }
+
+        @Test
+        public void testCreateOrDeleteStudentFactory_Success() {
+                // Arrange
+                USStudentFactoryCreateUpdateRequest req = new USStudentFactoryCreateUpdateRequest();
+                req.setStudentId("student-1");
+                req.setFactoryId("factory-1");
+                when(studentFactoryRepository.getUserStudentFactoriesByUserStudentIdAndFactoryId(anyString(),
+                                anyString())).thenReturn(Optional.empty());
+                when(userStudentFactoryExtendRepository.isStudentGreaterThanTwenty(anyString())).thenReturn(true);
+                when(userStudentFactoryExtendRepository.isStudentExistsShift(any(), any(), any())).thenReturn(false);
+                Factory factory = new Factory();
+                factory.setId("factory-1");
+                factory.setName("Test Factory");
+                UserStudent userStudent = new UserStudent();
+                userStudent.setId("student-1");
+                when(factoryRepository.findById(anyString())).thenReturn(Optional.of(factory));
+                when(userStudentFactoryExtendRepository.findById(anyString())).thenReturn(Optional.of(userStudent));
+                when(studentFactoryRepository.save(any())).thenReturn(new UserStudentFactory());
+
+                // Act
+                ResponseEntity<?> response = studentFactoryService.createOrDeleteStudentFactory(req);
+
+                // Assert
+                assertEquals(HttpStatus.OK, response.getStatusCode());
+        }
 }

@@ -5,7 +5,8 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class ExecutorConstantsTest {
     @Test
-    void testClassExists() {
-        assertNotNull(new ExecutorConstants());
+    void testConstantsNotNullOrEmpty() {
+        assertNotNull(ExecutorConstants.TASK_EXECUTOR);
+        assertFalse(ExecutorConstants.TASK_EXECUTOR.isEmpty());
     }
 }

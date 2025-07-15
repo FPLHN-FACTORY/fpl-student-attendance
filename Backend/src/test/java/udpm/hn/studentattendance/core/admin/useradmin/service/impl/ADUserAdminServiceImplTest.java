@@ -57,15 +57,13 @@ class ADUserAdminServiceImplTest extends BaseServiceTest {
     @Mock
     private RedisCacheHelper redisCacheHelper;
 
-    @Mock
-    private RedisInvalidationHelper redisInvalidationHelper;
-
     @InjectMocks
     private ADUserAdminServiceImpl userAdminService;
 
     @BeforeEach
     void setUp() {
         setupCommonFields(userAdminService);
+        setupCommonMocks();
         // Removed unnecessary stubbing for redisCacheHelper.getOrSet
     }
 

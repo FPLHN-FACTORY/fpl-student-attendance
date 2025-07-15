@@ -10,4 +10,16 @@ class ShiftTypeTest {
             assertNotNull(type);
         }
     }
+
+    @Test
+    void testEnumSpecificValues() {
+        assertEquals(ShiftType.OFFLINE, ShiftType.valueOf("OFFLINE"));
+        assertEquals(ShiftType.ONLINE, ShiftType.valueOf("ONLINE"));
+    }
+
+    @Test
+    void testEnumToString() {
+        assertEquals("OFFLINE", ShiftType.OFFLINE.toString());
+        assertEquals("ONLINE", ShiftType.ONLINE.toString());
+    }
 }
