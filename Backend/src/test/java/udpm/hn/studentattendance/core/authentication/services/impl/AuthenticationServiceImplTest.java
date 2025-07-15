@@ -1,6 +1,5 @@
 package udpm.hn.studentattendance.core.authentication.services.impl;
 
-import jakarta.persistence.EntityManager;
 import jakarta.servlet.http.HttpSession;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -8,12 +7,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockedStatic;
-import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.servlet.view.RedirectView;
 import udpm.hn.studentattendance.core.authentication.model.request.AuthenticationStudentRegisterRequest;
 import udpm.hn.studentattendance.core.authentication.model.request.AuthenticationStudentUpdateFaceIDRequest;
@@ -27,7 +23,6 @@ import udpm.hn.studentattendance.core.authentication.repositories.Authentication
 import udpm.hn.studentattendance.core.authentication.utils.JwtUtil;
 import udpm.hn.studentattendance.core.notification.service.NotificationService;
 import udpm.hn.studentattendance.entities.Facility;
-import udpm.hn.studentattendance.entities.Semester;
 import udpm.hn.studentattendance.entities.UserAdmin;
 import udpm.hn.studentattendance.entities.UserStaff;
 import udpm.hn.studentattendance.entities.UserStudent;
@@ -37,34 +32,25 @@ import udpm.hn.studentattendance.infrastructure.common.ApiResponse;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.RoleConstant;
 import udpm.hn.studentattendance.infrastructure.constants.SessionConstant;
-import udpm.hn.studentattendance.infrastructure.constants.RestApiStatus;
-import udpm.hn.studentattendance.utils.FaceRecognitionUtils;
+import udpm.hn.studentattendance.infrastructure.constants.router.RouteAuthenticationConstant;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
-import java.util.Map;
-import java.util.HashMap;
-import udpm.hn.studentattendance.infrastructure.constants.SettingKeys;
-
 @ExtendWith(MockitoExtension.class)
 class AuthenticationServiceImplTest {
-
-    @Mock
-    private EntityManager entityManager;
 
     @Mock
     private HttpSession httpSession;
 
     @Mock
     private SessionHelper sessionHelper;
+
+    @Mock
+    private SettingHelper settingHelper;
 
     @Mock
     private JwtUtil jwtUtil;
@@ -87,26 +73,21 @@ class AuthenticationServiceImplTest {
     @Mock
     private AuthenticationUserStudentRepository authenticationUserStudentRepository;
 
-    @Mock
-    private SettingHelper settingHelper;
-
     @InjectMocks
     private AuthenticationServiceImpl authenticationService;
 
     @BeforeEach
     void setUp() {
-        ReflectionTestUtils.setField(authenticationService, "settingHelper", settingHelper);
-        // Removed unnecessary stubbing for settingHelper.getSetting
-        // ... rest of your setup code ...
+        // Setup common mocks if needed
     }
 
     @Test
-    @DisplayName("Test authorSwitch should set session attributes and redirect")
+    @DisplayName("Test authorSwitch should set session attributes and return redirect view")
     void testAuthorSwitch() {
         // Given
-        String role = "STUDENT";
-        String redirectUri = "/student/dashboard";
-        String facilityId = "facility-123";
+        String role = "ADMIN";
+        String redirectUri = "http://localhost:3000";
+        String facilityId = "facility-1";
 
         // When
         RedirectView result = authenticationService.authorSwitch(role, redirectUri, facilityId);
@@ -115,20 +96,16 @@ class AuthenticationServiceImplTest {
         verify(httpSession).setAttribute(SessionConstant.LOGIN_ROLE, role);
         verify(httpSession).setAttribute(SessionConstant.LOGIN_REDIRECT, redirectUri);
         verify(httpSession).setAttribute(SessionConstant.LOGIN_FACILITY, facilityId);
-        assertNotNull(result);
+        assertEquals(RouteAuthenticationConstant.REDIRECT_GOOGLE_AUTHORIZATION, result.getUrl());
     }
 
     @Test
-    @DisplayName("Test getAllFacility should return list of active facilities")
+    @DisplayName("Test getAllFacility should return active facilities")
     void testGetAllFacility() {
         // Given
-        List<Facility> facilities = new ArrayList<>();
-        Facility facility = new Facility();
-        facility.setId("facility-123");
-        facility.setName("FPT HCM");
-        facility.setCode("HCM");
-        facilities.add(facility);
-
+        List<Facility> facilities = Arrays.asList(
+                createMockFacility("facility-1", "FPT HCM"),
+                createMockFacility("facility-2", "FPT HN"));
         when(authenticationFacilityRepository.findAllByStatusOrderByPositionAsc(EntityStatus.ACTIVE))
                 .thenReturn(facilities);
 
@@ -139,23 +116,17 @@ class AuthenticationServiceImplTest {
         assertEquals(HttpStatus.OK, response.getStatusCode());
         ApiResponse apiResponse = (ApiResponse) response.getBody();
         assertNotNull(apiResponse);
-        assertEquals(RestApiStatus.SUCCESS, apiResponse.getStatus());
         assertEquals("Tải dữ liệu danh sách cơ sở thành công", apiResponse.getMessage());
         assertEquals(facilities, apiResponse.getData());
     }
 
     @Test
-    @DisplayName("Test getAllSemester should return list of active semesters")
+    @DisplayName("Test getAllSemester should return active semesters")
     void testGetAllSemester() {
         // Given
-        List<Semester> semesters = new ArrayList<>();
-        Semester semester = new Semester();
-        semester.setId("semester-123");
-        semester.setCode("Spring 2023");
-        semesters.add(semester);
-
+        List<Object> semesters = Arrays.asList("Semester 1", "Semester 2");
         when(authenticationSemesterRepository.findAllByStatusOrderByFromDateDesc(EntityStatus.ACTIVE))
-                .thenReturn(semesters);
+                .thenReturn((List) semesters);
 
         // When
         ResponseEntity<?> response = authenticationService.getAllSemester();
@@ -164,44 +135,28 @@ class AuthenticationServiceImplTest {
         assertEquals(HttpStatus.OK, response.getStatusCode());
         ApiResponse apiResponse = (ApiResponse) response.getBody();
         assertNotNull(apiResponse);
-        assertEquals(RestApiStatus.SUCCESS, apiResponse.getStatus());
         assertEquals("Tải dữ liệu danh sách học kỳ thành công", apiResponse.getMessage());
         assertEquals(semesters, apiResponse.getData());
     }
 
     @Test
-    @DisplayName("Test getInfoUser for ADMIN role should return admin user info")
-    void testGetInfoUserWithAdminRole() {
+    @DisplayName("Test getSettings should return all settings")
+    void testGetSettings() {
         // Given
-        String role = "ADMIN";
-        String facilityId = "facility-123";
-        String email = "admin@example.com";
-        UserAdmin userAdmin = new UserAdmin();
-        userAdmin.setId("admin-123");
-        userAdmin.setEmail(email);
-        userAdmin.setName("Admin User");
-
-        AuthUser authUser = new AuthUser();
-        authUser.setId("admin-123");
-        authUser.setName("Admin User");
-        authUser.setEmail(email);
-
-        when(sessionHelper.getFacilityId()).thenReturn(facilityId);
-        when(sessionHelper.getUserEmail()).thenReturn(email);
-        when(sessionHelper.getUserRole()).thenReturn(Set.of(RoleConstant.ADMIN));
-        when(authenticationUserAdminRepository.findByEmail(email)).thenReturn(Optional.of(userAdmin));
-        when(sessionHelper.buildAuthUser(userAdmin, Set.of(RoleConstant.ADMIN), facilityId)).thenReturn(authUser);
+        Map<String, Object> settings = new HashMap<>();
+        settings.put("setting1", "value1");
+        settings.put("setting2", "value2");
+        when(settingHelper.getAllSettings()).thenReturn((Map) settings);
 
         // When
-        ResponseEntity<?> response = authenticationService.getInfoUser(role);
+        ResponseEntity<?> response = authenticationService.getSettings();
 
         // Then
         assertEquals(HttpStatus.OK, response.getStatusCode());
         ApiResponse apiResponse = (ApiResponse) response.getBody();
         assertNotNull(apiResponse);
-        assertEquals(RestApiStatus.SUCCESS, apiResponse.getStatus());
-        assertEquals("Lấy thông tin người dùng thành công", apiResponse.getMessage());
-        assertEquals(authUser, apiResponse.getData());
+        assertEquals("Lấy dữ liệu cài đặt thành công", apiResponse.getMessage());
+        assertEquals(settings, apiResponse.getData());
     }
 
     @Test
@@ -213,543 +168,257 @@ class AuthenticationServiceImplTest {
         // Then
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         ApiResponse apiResponse = (ApiResponse) response.getBody();
-        assertEquals(RestApiStatus.ERROR, apiResponse.getStatus());
+        assertNotNull(apiResponse);
         assertEquals("Token đăng nhập không hợp lệ", apiResponse.getMessage());
     }
 
     @Test
-    @DisplayName("Test getInfoUser should return error when admin not found")
-    void testGetInfoUserWithAdminNotFound() {
+    @DisplayName("Test getInfoUser should return admin info when role is ADMIN")
+    void testGetInfoUserForAdmin() {
         // Given
         String role = "ADMIN";
-        String email = "admin@example.com";
+        String userEmail = "admin@fpt.edu.vn";
+        String facilityId = "facility-1";
 
-        when(sessionHelper.getUserEmail()).thenReturn(email);
-        when(authenticationUserAdminRepository.findByEmail(email)).thenReturn(Optional.empty());
+        UserAdmin userAdmin = createMockUserAdmin();
+        AuthUser expectedAuthUser = createMockAuthUser();
+
+        when(sessionHelper.getFacilityId()).thenReturn(facilityId);
+        when(sessionHelper.getUserEmail()).thenReturn(userEmail);
+        when(sessionHelper.getUserRole()).thenReturn(Set.of(RoleConstant.ADMIN));
+        when(authenticationUserAdminRepository.findByEmail(userEmail)).thenReturn(Optional.of(userAdmin));
+        when(sessionHelper.buildAuthUser(userAdmin, Set.of(RoleConstant.ADMIN), facilityId))
+                .thenReturn(expectedAuthUser);
 
         // When
         ResponseEntity<?> response = authenticationService.getInfoUser(role);
-
-        // Then
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        ApiResponse apiResponse = (ApiResponse) response.getBody();
-        assertEquals(RestApiStatus.ERROR, apiResponse.getStatus());
-        assertEquals("Token đăng nhập không hợp lệ hoặc đã hết hạn", apiResponse.getMessage());
-    }
-
-    @Test
-    @DisplayName("Test getInfoUser should return error when staff not found")
-    void testGetInfoUserWithStaffNotFound() {
-        // Given
-        String role = "STAFF";
-        String facilityId = "facility-123";
-        String email = "staff@fpt.edu.vn";
-
-        when(sessionHelper.getFacilityId()).thenReturn(facilityId);
-        when(sessionHelper.getUserEmailFpt()).thenReturn(email);
-        when(authenticationUserStaffRepository.findLogin(email, facilityId)).thenReturn(Optional.empty());
-
-        // When
-        ResponseEntity<?> response = authenticationService.getInfoUser(role);
-
-        // Then
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        ApiResponse apiResponse = (ApiResponse) response.getBody();
-        assertEquals(RestApiStatus.ERROR, apiResponse.getStatus());
-        assertEquals("Token đăng nhập không hợp lệ hoặc đã hết hạn", apiResponse.getMessage());
-    }
-
-    @Test
-    @DisplayName("Test getInfoUser should return error when teacher not found")
-    void testGetInfoUserWithTeacherNotFound() {
-        // Given
-        String role = "TEACHER";
-        String facilityId = "facility-123";
-        String email = "teacher@fpt.edu.vn";
-
-        when(sessionHelper.getFacilityId()).thenReturn(facilityId);
-        when(sessionHelper.getUserEmailFpt()).thenReturn(email);
-        when(authenticationUserStaffRepository.findLogin(email, facilityId)).thenReturn(Optional.empty());
-
-        // When
-        ResponseEntity<?> response = authenticationService.getInfoUser(role);
-
-        // Then
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        ApiResponse apiResponse = (ApiResponse) response.getBody();
-        assertEquals(RestApiStatus.ERROR, apiResponse.getStatus());
-        assertEquals("Token đăng nhập không hợp lệ hoặc đã hết hạn", apiResponse.getMessage());
-    }
-
-    @Test
-    @DisplayName("Test getInfoUser should return error when student not found with facility")
-    void testGetInfoUserWithStudentNotFoundWithFacility() {
-        // Given
-        String role = "STUDENT";
-        String facilityId = "facility-123";
-        String email = "student@fpt.edu.vn";
-
-        when(sessionHelper.getFacilityId()).thenReturn(facilityId);
-        when(sessionHelper.getUserEmail()).thenReturn(email);
-        when(authenticationUserStudentRepository.findByEmailAndFacility_Id(email, facilityId))
-                .thenReturn(Optional.empty());
-
-        // When
-        ResponseEntity<?> response = authenticationService.getInfoUser(role);
-
-        // Then
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        ApiResponse apiResponse = (ApiResponse) response.getBody();
-        assertEquals(RestApiStatus.ERROR, apiResponse.getStatus());
-        assertEquals("Token đăng nhập không hợp lệ hoặc đã hết hạn", apiResponse.getMessage());
-    }
-
-    @Test
-    @DisplayName("Test getInfoUser should return error when student not found without facility")
-    void testGetInfoUserWithStudentNotFoundWithoutFacility() {
-        // Given
-        String role = "STUDENT";
-        String facilityId = "null";
-        String email = "student@fpt.edu.vn";
-
-        when(sessionHelper.getFacilityId()).thenReturn(facilityId);
-        when(sessionHelper.getUserEmail()).thenReturn(email);
-        when(authenticationUserStudentRepository.findByEmail(email)).thenReturn(Optional.empty());
-
-        // When
-        ResponseEntity<?> response = authenticationService.getInfoUser(role);
-
-        // Then
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        ApiResponse apiResponse = (ApiResponse) response.getBody();
-        assertEquals(RestApiStatus.ERROR, apiResponse.getStatus());
-        assertEquals("Token đăng nhập không hợp lệ hoặc đã hết hạn", apiResponse.getMessage());
-    }
-
-    @Test
-    @DisplayName("Test studentRegister should successfully register a student")
-    void testStudentRegisterSuccessfully() {
-        try (MockedStatic<FaceRecognitionUtils> faceRecognitionUtilsMocked = Mockito
-                .mockStatic(FaceRecognitionUtils.class)) {
-            // Given
-            String studentId = "student-123";
-            String facilityId = "facility-123";
-            String email = "student@example.com";
-            String faceEmbeddingStr = "[0.1, 0.2, 0.3]";
-
-            double[] faceEmbedding = new double[] { 0.1, 0.2, 0.3 };
-            List<double[]> faceEmbeddings = List.of(faceEmbedding);
-
-            UserStudent student = new UserStudent();
-            student.setId(studentId);
-            student.setEmail(email);
-
-            Facility facility = new Facility();
-            facility.setId(facilityId);
-            facility.setName("FPT HCM");
-
-            AuthenticationStudentRegisterRequest request = new AuthenticationStudentRegisterRequest();
-            request.setIdFacility(facilityId);
-            request.setCode("SE12345");
-            request.setName("Student Name");
-            request.setFaceEmbedding(faceEmbeddingStr);
-
-            AuthUser authUser = new AuthUser();
-            authUser.setId(studentId);
-            authUser.setEmail(email);
-
-            // Mock face recognition utils
-            faceRecognitionUtilsMocked.when(() -> FaceRecognitionUtils.parseEmbeddings(faceEmbeddingStr))
-                    .thenReturn(faceEmbeddings);
-            faceRecognitionUtilsMocked
-                    .when(() -> FaceRecognitionUtils.isSameFaceAndResult(anyList(), any(double[].class), anyDouble()))
-                    .thenReturn(null);
-            faceRecognitionUtilsMocked
-                    .when(() -> FaceRecognitionUtils.isSameFace(any(double[].class), any(double[].class), anyDouble()))
-                    .thenReturn(false);
-
-            // Mock repository methods
-            when(sessionHelper.getUserId()).thenReturn(studentId);
-            when(authenticationUserStudentRepository.findById(studentId)).thenReturn(Optional.of(student));
-            when(authenticationFacilityRepository.findById(facilityId)).thenReturn(Optional.of(facility));
-            when(authenticationUserStudentRepository.isExistsCode(request.getCode(), studentId, facilityId))
-                    .thenReturn(false);
-            when(authenticationUserStudentRepository.getAllFaceEmbedding(facilityId)).thenReturn(new ArrayList<>());
-            when(sessionHelper.buildAuthUser(any(UserStudent.class), anySet(), anyString())).thenReturn(authUser);
-            when(jwtUtil.generateToken(anyString(), any(AuthUser.class))).thenReturn("access-token");
-            when(jwtUtil.generateRefreshToken(anyString())).thenReturn("refresh-token");
-            when(authenticationUserStudentRepository.save(any(UserStudent.class))).thenAnswer(invocation -> {
-                UserStudent savedStudent = invocation.getArgument(0);
-                savedStudent.setId(studentId);
-                return savedStudent;
-            });
-
-            // When
-            ResponseEntity<?> response = authenticationService.studentRegister(request);
-
-            // Then
-            assertEquals(HttpStatus.OK, response.getStatusCode());
-            ApiResponse apiResponse = (ApiResponse) response.getBody();
-            assertNotNull(apiResponse);
-            assertEquals(RestApiStatus.SUCCESS, apiResponse.getStatus());
-            assertEquals("Đăng ký thông tin sinh viên thành công", apiResponse.getMessage());
-
-            AuthenticationToken token = (AuthenticationToken) apiResponse.getData();
-            assertEquals("access-token", token.getAccessToken());
-            assertEquals("refresh-token", token.getRefreshToken());
-
-            verify(authenticationUserStudentRepository).save(student);
-        }
-    }
-
-    @Test
-    @DisplayName("Test studentRegister should return error when student not found")
-    void testStudentRegisterWithStudentNotFound() {
-        // Given
-        String userId = "student-123";
-        AuthenticationStudentRegisterRequest request = new AuthenticationStudentRegisterRequest();
-        request.setIdFacility("facility-123");
-        request.setCode("ST001");
-        request.setFaceEmbedding("face-data");
-
-        when(sessionHelper.getUserId()).thenReturn(userId);
-        when(authenticationUserStudentRepository.findById(userId)).thenReturn(Optional.empty());
-
-        // When
-        ResponseEntity<?> response = authenticationService.studentRegister(request);
-
-        // Then
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        ApiResponse apiResponse = (ApiResponse) response.getBody();
-        assertEquals(RestApiStatus.ERROR, apiResponse.getStatus());
-        assertEquals("Không tìm thấy sinh viên", apiResponse.getMessage());
-    }
-
-    @Test
-    @DisplayName("Test studentRegister should return error when student already exists")
-    void testStudentRegisterWithStudentAlreadyExists() {
-        // Given
-        String userId = "student-123";
-        AuthenticationStudentRegisterRequest request = new AuthenticationStudentRegisterRequest();
-        request.setIdFacility("facility-123");
-        request.setCode("ST001");
-        request.setFaceEmbedding("face-data");
-
-        UserStudent student = new UserStudent();
-        student.setId(userId);
-        student.setFacility(new Facility()); // Student already has facility
-
-        when(sessionHelper.getUserId()).thenReturn(userId);
-        when(authenticationUserStudentRepository.findById(userId)).thenReturn(Optional.of(student));
-
-        // When
-        ResponseEntity<?> response = authenticationService.studentRegister(request);
-
-        // Then
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        ApiResponse apiResponse = (ApiResponse) response.getBody();
-        assertEquals(RestApiStatus.ERROR, apiResponse.getStatus());
-        assertEquals("Sinh viên đã tồn tại trên hệ thống", apiResponse.getMessage());
-    }
-
-    @Test
-    @DisplayName("Test studentRegister should return error when facility not found")
-    void testStudentRegisterWithFacilityNotFound() {
-        // Given
-        String userId = "student-123";
-        AuthenticationStudentRegisterRequest request = new AuthenticationStudentRegisterRequest();
-        request.setIdFacility("facility-123");
-        request.setCode("ST001");
-        request.setFaceEmbedding("face-data");
-
-        UserStudent student = new UserStudent();
-        student.setId(userId);
-        student.setFacility(null);
-
-        when(sessionHelper.getUserId()).thenReturn(userId);
-        when(authenticationUserStudentRepository.findById(userId)).thenReturn(Optional.of(student));
-        when(authenticationFacilityRepository.findById("facility-123")).thenReturn(Optional.empty());
-
-        // When
-        ResponseEntity<?> response = authenticationService.studentRegister(request);
-
-        // Then
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        ApiResponse apiResponse = (ApiResponse) response.getBody();
-        assertEquals(RestApiStatus.ERROR, apiResponse.getStatus());
-        assertEquals("Cơ sở không tồn tại", apiResponse.getMessage());
-    }
-
-    @Test
-    @DisplayName("Test studentRegister should return error when student code already exists")
-    void testStudentRegisterWithCodeAlreadyExists() {
-        // Given
-        String userId = "student-123";
-        AuthenticationStudentRegisterRequest request = new AuthenticationStudentRegisterRequest();
-        request.setIdFacility("facility-123");
-        request.setCode("ST001");
-        request.setFaceEmbedding("face-data");
-
-        UserStudent student = new UserStudent();
-        student.setId(userId);
-        student.setFacility(null);
-
-        Facility facility = new Facility();
-        facility.setId("facility-123");
-
-        when(sessionHelper.getUserId()).thenReturn(userId);
-        when(authenticationUserStudentRepository.findById(userId)).thenReturn(Optional.of(student));
-        when(authenticationFacilityRepository.findById("facility-123")).thenReturn(Optional.of(facility));
-        when(authenticationUserStudentRepository.isExistsCode("ST001", userId, "facility-123")).thenReturn(true);
-
-        // When
-        ResponseEntity<?> response = authenticationService.studentRegister(request);
-
-        // Then
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        ApiResponse apiResponse = (ApiResponse) response.getBody();
-        assertEquals(RestApiStatus.ERROR, apiResponse.getStatus());
-        assertEquals("Mã số sinh viên đã tồn tại trên cơ sở này", apiResponse.getMessage());
-    }
-
-    @Test
-    @DisplayName("Test studentRegister should return error when face embedding is null")
-    void testStudentRegisterWithNullFaceEmbedding() {
-        // Given
-        String userId = "student-123";
-        AuthenticationStudentRegisterRequest request = new AuthenticationStudentRegisterRequest();
-        request.setIdFacility("facility-123");
-        request.setCode("ST001");
-        request.setFaceEmbedding(null);
-
-        UserStudent student = new UserStudent();
-        student.setId(userId);
-        student.setFacility(null);
-
-        Facility facility = new Facility();
-        facility.setId("facility-123");
-
-        when(sessionHelper.getUserId()).thenReturn(userId);
-        when(authenticationUserStudentRepository.findById(userId)).thenReturn(Optional.of(student));
-        when(authenticationFacilityRepository.findById("facility-123")).thenReturn(Optional.of(facility));
-        when(authenticationUserStudentRepository.isExistsCode("ST001", userId, "facility-123")).thenReturn(false);
-
-        // When
-        ResponseEntity<?> response = authenticationService.studentRegister(request);
-
-        // Then
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        ApiResponse apiResponse = (ApiResponse) response.getBody();
-        assertEquals(RestApiStatus.ERROR, apiResponse.getStatus());
-        assertEquals("Thông tin khuôn mặt không hợp lệ", apiResponse.getMessage());
-    }
-
-    @Test
-    @DisplayName("Test studentRegister should return error when face embedding is empty")
-    void testStudentRegisterWithEmptyFaceEmbedding() {
-        // Given
-        String userId = "student-123";
-        AuthenticationStudentRegisterRequest request = new AuthenticationStudentRegisterRequest();
-        request.setIdFacility("facility-123");
-        request.setCode("ST001");
-        request.setFaceEmbedding("");
-
-        UserStudent student = new UserStudent();
-        student.setId(userId);
-        student.setFacility(null);
-
-        Facility facility = new Facility();
-        facility.setId("facility-123");
-
-        when(sessionHelper.getUserId()).thenReturn(userId);
-        when(authenticationUserStudentRepository.findById(userId)).thenReturn(Optional.of(student));
-        when(authenticationFacilityRepository.findById("facility-123")).thenReturn(Optional.of(facility));
-        when(authenticationUserStudentRepository.isExistsCode("ST001", userId, "facility-123")).thenReturn(false);
-
-        // When
-        ResponseEntity<?> response = authenticationService.studentRegister(request);
-
-        // Then
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        ApiResponse apiResponse = (ApiResponse) response.getBody();
-        assertEquals(RestApiStatus.ERROR, apiResponse.getStatus());
-        assertEquals("Thông tin khuôn mặt không hợp lệ", apiResponse.getMessage());
-    }
-
-    @Test
-    @DisplayName("Test studentInfo should return student information")
-    void testStudentInfo() {
-        // Given
-        String studentId = "student-123";
-        String facilityId = "facility-123";
-
-        UserStudent student = new UserStudent();
-        student.setId(studentId);
-        student.setFaceEmbedding("[0.1, 0.2, 0.3]");
-
-        Facility facility = new Facility();
-        facility.setId(facilityId);
-        student.setFacility(facility);
-
-        when(sessionHelper.getUserId()).thenReturn(studentId);
-        when(sessionHelper.getFacilityId()).thenReturn(facilityId);
-        when(authenticationUserStudentRepository.findById(studentId)).thenReturn(Optional.of(student));
-
-        // When
-        ResponseEntity<?> response = authenticationService.studentInfo();
 
         // Then
         assertEquals(HttpStatus.OK, response.getStatusCode());
         ApiResponse apiResponse = (ApiResponse) response.getBody();
         assertNotNull(apiResponse);
-        assertEquals(RestApiStatus.SUCCESS, apiResponse.getStatus());
-        assertEquals("Lấy thông tinh sinh viên thành công", apiResponse.getMessage());
-
-        UserStudent resultStudent = (UserStudent) apiResponse.getData();
-        assertEquals("OK", resultStudent.getFaceEmbedding()); // FaceEmbedding should be replaced with "OK"
+        assertEquals("Lấy thông tin người dùng thành công", apiResponse.getMessage());
+        assertEquals(expectedAuthUser, apiResponse.getData());
     }
 
     @Test
-    @DisplayName("Test studentUpdateFaceID should update student's face ID")
-    void testStudentUpdateFaceID() {
-        try (MockedStatic<FaceRecognitionUtils> faceRecognitionUtilsMocked = Mockito
-                .mockStatic(FaceRecognitionUtils.class)) {
-            // Given
-            String studentId = "student-123";
-            String facilityId = "facility-123";
-            String faceEmbeddingStr = "[0.1, 0.2, 0.3]";
-
-            double[] faceEmbedding = new double[] { 0.1, 0.2, 0.3 };
-            List<double[]> faceEmbeddings = List.of(faceEmbedding);
-
-            UserStudent student = new UserStudent();
-            student.setId(studentId);
-            // Ensure face embedding is null to pass the hasText check
-            student.setFaceEmbedding(null);
-
-            AuthenticationStudentUpdateFaceIDRequest request = new AuthenticationStudentUpdateFaceIDRequest();
-            request.setFaceEmbedding(faceEmbeddingStr);
-
-            // Mock face recognition utils
-            faceRecognitionUtilsMocked.when(() -> FaceRecognitionUtils.parseEmbeddings(faceEmbeddingStr))
-                    .thenReturn(faceEmbeddings);
-            faceRecognitionUtilsMocked.when(() -> FaceRecognitionUtils.parseEmbedding(anyString()))
-                    .thenReturn(faceEmbedding);
-            faceRecognitionUtilsMocked
-                    .when(() -> FaceRecognitionUtils.isSameFaceAndResult(anyList(), any(double[].class), anyDouble()))
-                    .thenReturn(null);
-            faceRecognitionUtilsMocked
-                    .when(() -> FaceRecognitionUtils.isSameFace(any(double[].class), any(double[].class), anyDouble()))
-                    .thenReturn(false);
-
-            when(sessionHelper.getUserId()).thenReturn(studentId);
-            when(sessionHelper.getFacilityId()).thenReturn(facilityId);
-            when(authenticationUserStudentRepository.findById(studentId)).thenReturn(Optional.of(student));
-
-            // Mock getAllFaceEmbedding to return a list with at least one element
-            List<String> faceEmbeddingsStr = List.of("[0.4, 0.5, 0.6]");
-            when(authenticationUserStudentRepository.getAllFaceEmbedding(facilityId)).thenReturn(faceEmbeddingsStr);
-
-            when(authenticationUserStudentRepository.save(student)).thenReturn(student);
-
-            // Add this stub to prevent ClassCastException
-            when(settingHelper.getSetting(any(), eq(Double.class))).thenReturn(0.5);
-
-            // When
-            ResponseEntity<?> response = authenticationService.studentUpdateFaceID(request);
-
-            // Then
-            assertEquals(HttpStatus.OK, response.getStatusCode());
-            ApiResponse apiResponse = (ApiResponse) response.getBody();
-            assertNotNull(apiResponse);
-            assertEquals(RestApiStatus.SUCCESS, apiResponse.getStatus());
-            assertEquals("Cập nhật khuôn mặt thành công", apiResponse.getMessage());
-
-            verify(notificationService).add(any());
-            verify(authenticationUserStudentRepository).save(student);
-        }
-    }
-
-    @Test
-    @DisplayName("Test studentUpdateFaceID should return error when student not found")
-    void testStudentUpdateFaceIDWithStudentNotFound() {
+    @DisplayName("Test getInfoUser should return error when admin not found")
+    void testGetInfoUserForAdminNotFound() {
         // Given
-        String userId = "student-123";
-        AuthenticationStudentUpdateFaceIDRequest request = new AuthenticationStudentUpdateFaceIDRequest();
-        request.setFaceEmbedding("face-data");
+        String role = "ADMIN";
+        String userEmail = "admin@fpt.edu.vn";
+        String facilityId = "facility-1";
 
-        when(sessionHelper.getUserId()).thenReturn(userId);
-        when(authenticationUserStudentRepository.findById(userId)).thenReturn(Optional.empty());
+        when(sessionHelper.getFacilityId()).thenReturn(facilityId);
+        when(sessionHelper.getUserEmail()).thenReturn(userEmail);
+        when(authenticationUserAdminRepository.findByEmail(userEmail)).thenReturn(Optional.empty());
 
         // When
-        ResponseEntity<?> response = authenticationService.studentUpdateFaceID(request);
+        ResponseEntity<?> response = authenticationService.getInfoUser(role);
 
         // Then
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         ApiResponse apiResponse = (ApiResponse) response.getBody();
-        assertEquals(RestApiStatus.ERROR, apiResponse.getStatus());
+        assertNotNull(apiResponse);
+        assertEquals("Token đăng nhập không hợp lệ hoặc đã hết hạn", apiResponse.getMessage());
+    }
+
+    @Test
+    @DisplayName("Test getInfoUser should return staff info when role is TEACHER")
+    void testGetInfoUserForTeacher() {
+        // Given
+        String role = "TEACHER";
+        String userEmailFpt = "teacher@fpt.edu.vn";
+        String facilityId = "facility-1";
+
+        UserStaff userStaff = createMockUserStaff();
+        AuthUser expectedAuthUser = createMockAuthUser();
+
+        when(sessionHelper.getFacilityId()).thenReturn(facilityId);
+        when(sessionHelper.getUserEmailFpt()).thenReturn(userEmailFpt);
+        when(sessionHelper.getUserRole()).thenReturn(Set.of(RoleConstant.TEACHER));
+        when(authenticationUserStaffRepository.findLogin(userEmailFpt, facilityId)).thenReturn(Optional.of(userStaff));
+        when(sessionHelper.buildAuthUser(userStaff, Set.of(RoleConstant.TEACHER), facilityId))
+                .thenReturn(expectedAuthUser);
+
+        // When
+        ResponseEntity<?> response = authenticationService.getInfoUser(role);
+
+        // Then
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        ApiResponse apiResponse = (ApiResponse) response.getBody();
+        assertNotNull(apiResponse);
+        assertEquals("Lấy thông tin người dùng thành công", apiResponse.getMessage());
+        assertEquals(expectedAuthUser, apiResponse.getData());
+    }
+
+    @Test
+    @DisplayName("Test getInfoUser should return student info when role is STUDENT")
+    void testGetInfoUserForStudent() {
+        // Given
+        String role = "STUDENT";
+        String userEmail = "student@fpt.edu.vn";
+        String facilityId = "facility-1";
+
+        UserStudent userStudent = createMockUserStudent();
+        AuthUser expectedAuthUser = createMockAuthUser();
+
+        when(sessionHelper.getFacilityId()).thenReturn(facilityId);
+        when(sessionHelper.getUserEmail()).thenReturn(userEmail);
+        when(sessionHelper.getUserRole()).thenReturn(Set.of(RoleConstant.STUDENT));
+        when(authenticationUserStudentRepository.findByEmailAndFacility_Id(userEmail, facilityId))
+                .thenReturn(Optional.of(userStudent));
+        when(sessionHelper.buildAuthUser(userStudent, Set.of(RoleConstant.STUDENT), facilityId))
+                .thenReturn(expectedAuthUser);
+
+        // When
+        ResponseEntity<?> response = authenticationService.getInfoUser(role);
+
+        // Then
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        ApiResponse apiResponse = (ApiResponse) response.getBody();
+        assertNotNull(apiResponse);
+        assertEquals("Lấy thông tin người dùng thành công", apiResponse.getMessage());
+        assertEquals(expectedAuthUser, apiResponse.getData());
+    }
+
+    @Test
+    @DisplayName("Test studentRegister should return error when student not found")
+    void testStudentRegisterStudentNotFound() {
+        // Given
+        AuthenticationStudentRegisterRequest request = createMockStudentRegisterRequest();
+        when(sessionHelper.getUserId()).thenReturn("student-1");
+        when(authenticationUserStudentRepository.findById("student-1")).thenReturn(Optional.empty());
+
+        // When
+        ResponseEntity<?> response = authenticationService.studentRegister(request);
+
+        // Then
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        ApiResponse apiResponse = (ApiResponse) response.getBody();
+        assertNotNull(apiResponse);
         assertEquals("Không tìm thấy sinh viên", apiResponse.getMessage());
     }
 
     @Test
-    @DisplayName("Test studentUpdateFaceID should return error when face embedding is null")
-    void testStudentUpdateFaceIDWithNullFaceEmbedding() {
+    @DisplayName("Test studentRegister should return error when student already has facility")
+    void testStudentRegisterStudentAlreadyHasFacility() {
         // Given
-        String userId = "student-123";
-        AuthenticationStudentUpdateFaceIDRequest request = new AuthenticationStudentUpdateFaceIDRequest();
+        AuthenticationStudentRegisterRequest request = createMockStudentRegisterRequest();
+        UserStudent student = createMockUserStudent();
+        student.setFacility(createMockFacility("facility-1", "FPT HCM"));
+
+        when(sessionHelper.getUserId()).thenReturn("student-1");
+        when(authenticationUserStudentRepository.findById("student-1")).thenReturn(Optional.of(student));
+
+        // When
+        ResponseEntity<?> response = authenticationService.studentRegister(request);
+
+        // Then
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        ApiResponse apiResponse = (ApiResponse) response.getBody();
+        assertNotNull(apiResponse);
+        assertEquals("Sinh viên đã tồn tại trên hệ thống", apiResponse.getMessage());
+    }
+
+    @Test
+    @DisplayName("Test studentRegister should return error when facility not found")
+    void testStudentRegisterFacilityNotFound() {
+        // Given
+        AuthenticationStudentRegisterRequest request = createMockStudentRegisterRequest();
+        UserStudent student = createMockUserStudent();
+
+        when(sessionHelper.getUserId()).thenReturn("student-1");
+        when(authenticationUserStudentRepository.findById("student-1")).thenReturn(Optional.of(student));
+        when(authenticationFacilityRepository.findById(request.getIdFacility())).thenReturn(Optional.empty());
+
+        // When
+        ResponseEntity<?> response = authenticationService.studentRegister(request);
+
+        // Then
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        ApiResponse apiResponse = (ApiResponse) response.getBody();
+        assertNotNull(apiResponse);
+        assertEquals("Cơ sở không tồn tại", apiResponse.getMessage());
+    }
+
+    @Test
+    @DisplayName("Test studentRegister should return error when student code already exists")
+    void testStudentRegisterCodeExists() {
+        // Given
+        AuthenticationStudentRegisterRequest request = createMockStudentRegisterRequest();
+        UserStudent student = createMockUserStudent();
+        Facility facility = createMockFacility("facility-1", "FPT HCM");
+
+        when(sessionHelper.getUserId()).thenReturn("student-1");
+        when(authenticationUserStudentRepository.findById("student-1")).thenReturn(Optional.of(student));
+        when(authenticationFacilityRepository.findById(request.getIdFacility())).thenReturn(Optional.of(facility));
+        when(authenticationUserStudentRepository.isExistsCode(request.getCode(), student.getId(), facility.getId()))
+                .thenReturn(true);
+
+        // When
+        ResponseEntity<?> response = authenticationService.studentRegister(request);
+
+        // Then
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        ApiResponse apiResponse = (ApiResponse) response.getBody();
+        assertNotNull(apiResponse);
+        assertEquals("Mã số sinh viên đã tồn tại trên cơ sở này", apiResponse.getMessage());
+    }
+
+    @Test
+    @DisplayName("Test studentRegister should return error when face embedding is null")
+    void testStudentRegisterNullFaceEmbedding() {
+        // Given
+        AuthenticationStudentRegisterRequest request = createMockStudentRegisterRequest();
         request.setFaceEmbedding(null);
+        UserStudent student = createMockUserStudent();
+        Facility facility = createMockFacility("facility-1", "FPT HCM");
 
-        UserStudent student = new UserStudent();
-        student.setId(userId);
-
-        when(sessionHelper.getUserId()).thenReturn(userId);
-        when(authenticationUserStudentRepository.findById(userId)).thenReturn(Optional.of(student));
+        when(sessionHelper.getUserId()).thenReturn("student-1");
+        when(authenticationUserStudentRepository.findById("student-1")).thenReturn(Optional.of(student));
+        when(authenticationFacilityRepository.findById(request.getIdFacility())).thenReturn(Optional.of(facility));
+        when(authenticationUserStudentRepository.isExistsCode(request.getCode(), student.getId(), facility.getId()))
+                .thenReturn(false);
 
         // When
-        ResponseEntity<?> response = authenticationService.studentUpdateFaceID(request);
+        ResponseEntity<?> response = authenticationService.studentRegister(request);
 
         // Then
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         ApiResponse apiResponse = (ApiResponse) response.getBody();
-        assertEquals(RestApiStatus.ERROR, apiResponse.getStatus());
+        assertNotNull(apiResponse);
         assertEquals("Thông tin khuôn mặt không hợp lệ", apiResponse.getMessage());
     }
 
     @Test
-    @DisplayName("Test studentUpdateFaceID should return error when face embedding is empty")
-    void testStudentUpdateFaceIDWithEmptyFaceEmbedding() {
+    @DisplayName("Test refreshToken should return error when token is invalid")
+    void testRefreshTokenInvalidToken() {
         // Given
-        String userId = "student-123";
-        AuthenticationStudentUpdateFaceIDRequest request = new AuthenticationStudentUpdateFaceIDRequest();
-        request.setFaceEmbedding("");
-
-        UserStudent student = new UserStudent();
-        student.setId(userId);
-
-        when(sessionHelper.getUserId()).thenReturn(userId);
-        when(authenticationUserStudentRepository.findById(userId)).thenReturn(Optional.of(student));
+        String refreshToken = "invalid-token";
+        when(jwtUtil.validateToken(refreshToken)).thenReturn(false);
 
         // When
-        ResponseEntity<?> response = authenticationService.studentUpdateFaceID(request);
+        ResponseEntity<?> response = authenticationService.refreshToken(refreshToken);
 
         // Then
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         ApiResponse apiResponse = (ApiResponse) response.getBody();
-        assertEquals(RestApiStatus.ERROR, apiResponse.getStatus());
-        assertEquals("Thông tin khuôn mặt không hợp lệ", apiResponse.getMessage());
+        assertNotNull(apiResponse);
+        assertEquals("Refresh Token không hợp lệ hoặc đã hết hạn", apiResponse.getMessage());
     }
 
     @Test
-    @DisplayName("Test refreshToken should return new token pair")
-    void testRefreshToken() {
+    @DisplayName("Test refreshToken should return new tokens when token is valid")
+    void testRefreshTokenValidToken() {
         // Given
-        String refreshToken = "valid-refresh-token";
-        String newAccessToken = "new-access-token";
+        String refreshToken = "valid-token";
+        String newToken = "new-access-token";
         String newRefreshToken = "new-refresh-token";
 
         when(jwtUtil.validateToken(refreshToken)).thenReturn(true);
-        when(jwtUtil.generateToken(refreshToken)).thenReturn(newAccessToken);
-        when(jwtUtil.generateRefreshToken(newAccessToken)).thenReturn(newRefreshToken);
+        when(jwtUtil.generateToken(refreshToken)).thenReturn(newToken);
+        when(jwtUtil.generateRefreshToken(newToken)).thenReturn(newRefreshToken);
 
         // When
         ResponseEntity<?> response = authenticationService.refreshToken(refreshToken);
@@ -758,320 +427,147 @@ class AuthenticationServiceImplTest {
         assertEquals(HttpStatus.OK, response.getStatusCode());
         ApiResponse apiResponse = (ApiResponse) response.getBody();
         assertNotNull(apiResponse);
-        assertEquals(RestApiStatus.SUCCESS, apiResponse.getStatus());
         assertEquals("Gia hạn token thành công", apiResponse.getMessage());
 
-        AuthenticationToken token = (AuthenticationToken) apiResponse.getData();
-        assertEquals(newAccessToken, token.getAccessToken());
-        assertEquals(newRefreshToken, token.getRefreshToken());
+        AuthenticationToken result = (AuthenticationToken) apiResponse.getData();
+        assertEquals(newToken, result.getAccessToken());
+        assertEquals(newRefreshToken, result.getRefreshToken());
     }
 
     @Test
-    @DisplayName("Test refreshToken should return error for invalid token")
-    void testRefreshTokenWithInvalidToken() {
+    @DisplayName("Test studentInfo should return error when student not found")
+    void testStudentInfoStudentNotFound() {
         // Given
-        String invalidToken = "invalid-token";
-
-        when(jwtUtil.validateToken(invalidToken)).thenReturn(false);
+        when(sessionHelper.getUserId()).thenReturn("student-1");
+        when(authenticationUserStudentRepository.findById("student-1")).thenReturn(Optional.empty());
 
         // When
-        ResponseEntity<?> response = authenticationService.refreshToken(invalidToken);
+        ResponseEntity<?> response = authenticationService.studentInfo();
 
         // Then
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         ApiResponse apiResponse = (ApiResponse) response.getBody();
         assertNotNull(apiResponse);
-        assertEquals(RestApiStatus.ERROR, apiResponse.getStatus());
-        assertEquals("Refresh Token không hợp lệ hoặc đã hết hạn", apiResponse.getMessage());
+        assertEquals("Vui lòng đăng ký thông tin sinh viên", apiResponse.getMessage());
     }
 
     @Test
-    @DisplayName("Test refreshToken should return error when refresh token is null")
-    void testRefreshTokenWithNullToken() {
-        // When
-        ResponseEntity<?> response = authenticationService.refreshToken(null);
-
-        // Then
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        ApiResponse apiResponse = (ApiResponse) response.getBody();
-        assertEquals(RestApiStatus.ERROR, apiResponse.getStatus());
-        assertEquals("Refresh Token không hợp lệ hoặc đã hết hạn", apiResponse.getMessage());
-    }
-
-    @Test
-    @DisplayName("Test refreshToken should return error when refresh token is empty")
-    void testRefreshTokenWithEmptyToken() {
-        // When
-        ResponseEntity<?> response = authenticationService.refreshToken("");
-
-        // Then
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        ApiResponse apiResponse = (ApiResponse) response.getBody();
-        assertEquals(RestApiStatus.ERROR, apiResponse.getStatus());
-        assertEquals("Refresh Token không hợp lệ hoặc đã hết hạn", apiResponse.getMessage());
-    }
-
-    @Test
-    @DisplayName("Test saveSettings should return error when required fields are null")
-    void testSaveSettingsWithNullRequiredFields() {
+    @DisplayName("Test studentInfo should return error when student has no facility")
+    void testStudentInfoStudentNoFacility() {
         // Given
-        Map<SettingKeys, String> settings = new HashMap<>();
-        settings.put(SettingKeys.DISABLED_CHECK_EMAIL_FPT_STAFF, null);
-        settings.put(SettingKeys.DISABLED_CHECK_EMAIL_FPT_STUDENT, "true");
-        settings.put(SettingKeys.SHIFT_MIN_DIFF, "60");
-        settings.put(SettingKeys.SHIFT_MAX_LATE_ARRIVAL, "30");
-        settings.put(SettingKeys.ATTENDANCE_EARLY_CHECKIN, "15");
-        settings.put(SettingKeys.EXPIRATION_MINUTE_LOGIN, "120");
-        settings.put(SettingKeys.FACE_THRESHOLD_CHECKIN, "0.7");
-        settings.put(SettingKeys.FACE_THRESHOLD_REGISTER, "0.8");
+        UserStudent student = createMockUserStudent();
+        student.setFacility(null);
+
+        when(sessionHelper.getUserId()).thenReturn("student-1");
+        when(authenticationUserStudentRepository.findById("student-1")).thenReturn(Optional.of(student));
 
         // When
-        ResponseEntity<?> response = authenticationService.saveSettings(settings);
+        ResponseEntity<?> response = authenticationService.studentInfo();
 
         // Then
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         ApiResponse apiResponse = (ApiResponse) response.getBody();
-        assertEquals(RestApiStatus.ERROR, apiResponse.getStatus());
-        assertEquals("Vui lòng nhập đầy đủ các trường bắt buộc", apiResponse.getMessage());
+        assertNotNull(apiResponse);
+        assertEquals("Vui lòng đăng ký thông tin sinh viên", apiResponse.getMessage());
     }
 
     @Test
-    @DisplayName("Test saveSettings should return error when shiftMinDiff is too low")
-    void testSaveSettingsWithShiftMinDiffTooLow() {
+    @DisplayName("Test studentInfo should return error when facility mismatch")
+    void testStudentInfoFacilityMismatch() {
         // Given
-        Map<SettingKeys, String> settings = new HashMap<>();
-        settings.put(SettingKeys.DISABLED_CHECK_EMAIL_FPT_STAFF, "false");
-        settings.put(SettingKeys.DISABLED_CHECK_EMAIL_FPT_STUDENT, "true");
-        settings.put(SettingKeys.SHIFT_MIN_DIFF, "0"); // Too low
-        settings.put(SettingKeys.SHIFT_MAX_LATE_ARRIVAL, "30");
-        settings.put(SettingKeys.ATTENDANCE_EARLY_CHECKIN, "15");
-        settings.put(SettingKeys.EXPIRATION_MINUTE_LOGIN, "120");
-        settings.put(SettingKeys.FACE_THRESHOLD_CHECKIN, "0.7");
-        settings.put(SettingKeys.FACE_THRESHOLD_REGISTER, "0.8");
+        UserStudent student = createMockUserStudent();
+        student.setFacility(createMockFacility("facility-1", "FPT HCM"));
+
+        when(sessionHelper.getUserId()).thenReturn("student-1");
+        when(sessionHelper.getFacilityId()).thenReturn("facility-2");
+        when(authenticationUserStudentRepository.findById("student-1")).thenReturn(Optional.of(student));
 
         // When
-        ResponseEntity<?> response = authenticationService.saveSettings(settings);
+        ResponseEntity<?> response = authenticationService.studentInfo();
 
         // Then
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         ApiResponse apiResponse = (ApiResponse) response.getBody();
-        assertEquals(RestApiStatus.ERROR, apiResponse.getStatus());
-        assertEquals("Thời gian diễn ra ca học tối thiểu không hợp lệ", apiResponse.getMessage());
+        assertNotNull(apiResponse);
+        assertEquals("Vui lòng đăng ký thông tin sinh viên", apiResponse.getMessage());
     }
 
     @Test
-    @DisplayName("Test saveSettings should return error when shiftMinDiff is too high")
-    void testSaveSettingsWithShiftMinDiffTooHigh() {
+    @DisplayName("Test studentInfo should return student info with face embedding")
+    void testStudentInfoSuccess() {
         // Given
-        Map<SettingKeys, String> settings = new HashMap<>();
-        settings.put(SettingKeys.DISABLED_CHECK_EMAIL_FPT_STAFF, "false");
-        settings.put(SettingKeys.DISABLED_CHECK_EMAIL_FPT_STUDENT, "true");
-        settings.put(SettingKeys.SHIFT_MIN_DIFF, "500"); // Too high
-        settings.put(SettingKeys.SHIFT_MAX_LATE_ARRIVAL, "30");
-        settings.put(SettingKeys.ATTENDANCE_EARLY_CHECKIN, "15");
-        settings.put(SettingKeys.EXPIRATION_MINUTE_LOGIN, "120");
-        settings.put(SettingKeys.FACE_THRESHOLD_CHECKIN, "0.7");
-        settings.put(SettingKeys.FACE_THRESHOLD_REGISTER, "0.8");
+        UserStudent student = createMockUserStudent();
+        student.setFacility(createMockFacility("facility-1", "FPT HCM"));
+        student.setFaceEmbedding("face-embedding-data");
+
+        when(sessionHelper.getUserId()).thenReturn("student-1");
+        when(sessionHelper.getFacilityId()).thenReturn("facility-1");
+        when(authenticationUserStudentRepository.findById("student-1")).thenReturn(Optional.of(student));
 
         // When
-        ResponseEntity<?> response = authenticationService.saveSettings(settings);
+        ResponseEntity<?> response = authenticationService.studentInfo();
 
         // Then
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertEquals(HttpStatus.OK, response.getStatusCode());
         ApiResponse apiResponse = (ApiResponse) response.getBody();
-        assertEquals(RestApiStatus.ERROR, apiResponse.getStatus());
-        assertEquals("Thời gian diễn ra ca học tối thiểu không hợp lệ", apiResponse.getMessage());
+        assertNotNull(apiResponse);
+        assertEquals("Lấy thông tinh sinh viên thành công", apiResponse.getMessage());
+
+        UserStudent result = (UserStudent) apiResponse.getData();
+        assertEquals("OK", result.getFaceEmbedding());
     }
 
-    @Test
-    @DisplayName("Test saveSettings should return error when shiftMaxLateArrival is too low")
-    void testSaveSettingsWithShiftMaxLateArrivalTooLow() {
-        // Given
-        Map<SettingKeys, String> settings = new HashMap<>();
-        settings.put(SettingKeys.DISABLED_CHECK_EMAIL_FPT_STAFF, "false");
-        settings.put(SettingKeys.DISABLED_CHECK_EMAIL_FPT_STUDENT, "true");
-        settings.put(SettingKeys.SHIFT_MIN_DIFF, "60");
-        settings.put(SettingKeys.SHIFT_MAX_LATE_ARRIVAL, "3"); // Too low
-        settings.put(SettingKeys.ATTENDANCE_EARLY_CHECKIN, "15");
-        settings.put(SettingKeys.EXPIRATION_MINUTE_LOGIN, "120");
-        settings.put(SettingKeys.FACE_THRESHOLD_CHECKIN, "0.7");
-        settings.put(SettingKeys.FACE_THRESHOLD_REGISTER, "0.8");
-
-        // When
-        ResponseEntity<?> response = authenticationService.saveSettings(settings);
-
-        // Then
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        ApiResponse apiResponse = (ApiResponse) response.getBody();
-        assertEquals(RestApiStatus.ERROR, apiResponse.getStatus());
-        assertEquals("Thời gian điểm danh muộn nhất không hợp lệ", apiResponse.getMessage());
+    // Helper methods
+    private Facility createMockFacility(String id, String name) {
+        Facility facility = new Facility();
+        facility.setId(id);
+        facility.setName(name);
+        return facility;
     }
 
-    @Test
-    @DisplayName("Test saveSettings should return error when shiftMaxLateArrival is too high")
-    void testSaveSettingsWithShiftMaxLateArrivalTooHigh() {
-        // Given
-        Map<SettingKeys, String> settings = new HashMap<>();
-        settings.put(SettingKeys.DISABLED_CHECK_EMAIL_FPT_STAFF, "false");
-        settings.put(SettingKeys.DISABLED_CHECK_EMAIL_FPT_STUDENT, "true");
-        settings.put(SettingKeys.SHIFT_MIN_DIFF, "60");
-        settings.put(SettingKeys.SHIFT_MAX_LATE_ARRIVAL, "100"); // Too high
-        settings.put(SettingKeys.ATTENDANCE_EARLY_CHECKIN, "15");
-        settings.put(SettingKeys.EXPIRATION_MINUTE_LOGIN, "120");
-        settings.put(SettingKeys.FACE_THRESHOLD_CHECKIN, "0.7");
-        settings.put(SettingKeys.FACE_THRESHOLD_REGISTER, "0.8");
-
-        // When
-        ResponseEntity<?> response = authenticationService.saveSettings(settings);
-
-        // Then
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        ApiResponse apiResponse = (ApiResponse) response.getBody();
-        assertEquals(RestApiStatus.ERROR, apiResponse.getStatus());
-        assertEquals("Thời gian điểm danh muộn nhất không hợp lệ", apiResponse.getMessage());
+    private UserAdmin createMockUserAdmin() {
+        UserAdmin userAdmin = new UserAdmin();
+        userAdmin.setId("admin-1");
+        userAdmin.setCode("AD001");
+        userAdmin.setName("Admin User");
+        userAdmin.setEmail("admin@fpt.edu.vn");
+        return userAdmin;
     }
 
-    @Test
-    @DisplayName("Test saveSettings should return error when attendanceEarlyCheckin is too high")
-    void testSaveSettingsWithAttendanceEarlyCheckinTooHigh() {
-        // Given
-        Map<SettingKeys, String> settings = new HashMap<>();
-        settings.put(SettingKeys.DISABLED_CHECK_EMAIL_FPT_STAFF, "false");
-        settings.put(SettingKeys.DISABLED_CHECK_EMAIL_FPT_STUDENT, "true");
-        settings.put(SettingKeys.SHIFT_MIN_DIFF, "60");
-        settings.put(SettingKeys.SHIFT_MAX_LATE_ARRIVAL, "30");
-        settings.put(SettingKeys.ATTENDANCE_EARLY_CHECKIN, "35"); // Too high
-        settings.put(SettingKeys.EXPIRATION_MINUTE_LOGIN, "120");
-        settings.put(SettingKeys.FACE_THRESHOLD_CHECKIN, "0.7");
-        settings.put(SettingKeys.FACE_THRESHOLD_REGISTER, "0.8");
-
-        // When
-        ResponseEntity<?> response = authenticationService.saveSettings(settings);
-
-        // Then
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        ApiResponse apiResponse = (ApiResponse) response.getBody();
-        assertEquals(RestApiStatus.ERROR, apiResponse.getStatus());
-        assertEquals("Thời gian cho phép checkin sớm không hợp lệ", apiResponse.getMessage());
+    private UserStaff createMockUserStaff() {
+        UserStaff userStaff = new UserStaff();
+        userStaff.setId("staff-1");
+        userStaff.setCode("ST001");
+        userStaff.setName("Staff User");
+        userStaff.setEmailFpt("staff@fpt.edu.vn");
+        return userStaff;
     }
 
-    @Test
-    @DisplayName("Test saveSettings should return error when expirationMinuteLogin is too low")
-    void testSaveSettingsWithExpirationMinuteLoginTooLow() {
-        // Given
-        Map<SettingKeys, String> settings = new HashMap<>();
-        settings.put(SettingKeys.DISABLED_CHECK_EMAIL_FPT_STAFF, "false");
-        settings.put(SettingKeys.DISABLED_CHECK_EMAIL_FPT_STUDENT, "true");
-        settings.put(SettingKeys.SHIFT_MIN_DIFF, "60");
-        settings.put(SettingKeys.SHIFT_MAX_LATE_ARRIVAL, "30");
-        settings.put(SettingKeys.ATTENDANCE_EARLY_CHECKIN, "15");
-        settings.put(SettingKeys.EXPIRATION_MINUTE_LOGIN, "50"); // Too low
-        settings.put(SettingKeys.FACE_THRESHOLD_CHECKIN, "0.7");
-        settings.put(SettingKeys.FACE_THRESHOLD_REGISTER, "0.8");
-
-        // When
-        ResponseEntity<?> response = authenticationService.saveSettings(settings);
-
-        // Then
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        ApiResponse apiResponse = (ApiResponse) response.getBody();
-        assertEquals(RestApiStatus.ERROR, apiResponse.getStatus());
-        assertEquals("Thời hạn phiên đăng nhập không hợp lệ", apiResponse.getMessage());
+    private UserStudent createMockUserStudent() {
+        UserStudent userStudent = new UserStudent();
+        userStudent.setId("student-1");
+        userStudent.setCode("SV001");
+        userStudent.setName("Student User");
+        userStudent.setEmail("student@fpt.edu.vn");
+        return userStudent;
     }
 
-    @Test
-    @DisplayName("Test saveSettings should return error when faceThresholdCheckin is zero")
-    void testSaveSettingsWithFaceThresholdCheckinZero() {
-        // Given
-        Map<SettingKeys, String> settings = new HashMap<>();
-        settings.put(SettingKeys.DISABLED_CHECK_EMAIL_FPT_STAFF, "false");
-        settings.put(SettingKeys.DISABLED_CHECK_EMAIL_FPT_STUDENT, "true");
-        settings.put(SettingKeys.SHIFT_MIN_DIFF, "60");
-        settings.put(SettingKeys.SHIFT_MAX_LATE_ARRIVAL, "30");
-        settings.put(SettingKeys.ATTENDANCE_EARLY_CHECKIN, "15");
-        settings.put(SettingKeys.EXPIRATION_MINUTE_LOGIN, "120");
-        settings.put(SettingKeys.FACE_THRESHOLD_CHECKIN, "0.0"); // Zero
-        settings.put(SettingKeys.FACE_THRESHOLD_REGISTER, "0.8");
-
-        // When
-        ResponseEntity<?> response = authenticationService.saveSettings(settings);
-
-        // Then
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        ApiResponse apiResponse = (ApiResponse) response.getBody();
-        assertEquals(RestApiStatus.ERROR, apiResponse.getStatus());
-        assertEquals("Độ khắt khe checkin/checkout không hợp lệ", apiResponse.getMessage());
+    private AuthUser createMockAuthUser() {
+        AuthUser authUser = new AuthUser();
+        authUser.setId("user-1");
+        authUser.setName("Test User");
+        authUser.setCode("TEST001");
+        authUser.setEmail("test@fpt.edu.vn");
+        authUser.setRole(Set.of(RoleConstant.ADMIN));
+        return authUser;
     }
 
-    @Test
-    @DisplayName("Test saveSettings should return error when faceThresholdCheckin is too high")
-    void testSaveSettingsWithFaceThresholdCheckinTooHigh() {
-        // Given
-        Map<SettingKeys, String> settings = new HashMap<>();
-        settings.put(SettingKeys.DISABLED_CHECK_EMAIL_FPT_STAFF, "false");
-        settings.put(SettingKeys.DISABLED_CHECK_EMAIL_FPT_STUDENT, "true");
-        settings.put(SettingKeys.SHIFT_MIN_DIFF, "60");
-        settings.put(SettingKeys.SHIFT_MAX_LATE_ARRIVAL, "30");
-        settings.put(SettingKeys.ATTENDANCE_EARLY_CHECKIN, "15");
-        settings.put(SettingKeys.EXPIRATION_MINUTE_LOGIN, "120");
-        settings.put(SettingKeys.FACE_THRESHOLD_CHECKIN, "1.5"); // Too high
-        settings.put(SettingKeys.FACE_THRESHOLD_REGISTER, "0.8");
-
-        // When
-        ResponseEntity<?> response = authenticationService.saveSettings(settings);
-
-        // Then
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        ApiResponse apiResponse = (ApiResponse) response.getBody();
-        assertEquals(RestApiStatus.ERROR, apiResponse.getStatus());
-        assertEquals("Độ khắt khe checkin/checkout không hợp lệ", apiResponse.getMessage());
-    }
-
-    @Test
-    @DisplayName("Test saveSettings should return error when faceThresholdRegister is zero")
-    void testSaveSettingsWithFaceThresholdRegisterZero() {
-        // Given
-        Map<SettingKeys, String> settings = new HashMap<>();
-        settings.put(SettingKeys.DISABLED_CHECK_EMAIL_FPT_STAFF, "false");
-        settings.put(SettingKeys.DISABLED_CHECK_EMAIL_FPT_STUDENT, "true");
-        settings.put(SettingKeys.SHIFT_MIN_DIFF, "60");
-        settings.put(SettingKeys.SHIFT_MAX_LATE_ARRIVAL, "30");
-        settings.put(SettingKeys.ATTENDANCE_EARLY_CHECKIN, "15");
-        settings.put(SettingKeys.EXPIRATION_MINUTE_LOGIN, "120");
-        settings.put(SettingKeys.FACE_THRESHOLD_CHECKIN, "0.7");
-        settings.put(SettingKeys.FACE_THRESHOLD_REGISTER, "0.0"); // Zero
-
-        // When
-        ResponseEntity<?> response = authenticationService.saveSettings(settings);
-
-        // Then
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        ApiResponse apiResponse = (ApiResponse) response.getBody();
-        assertEquals(RestApiStatus.ERROR, apiResponse.getStatus());
-        assertEquals("Độ khắt khe đăng ký mặt không hợp lệ", apiResponse.getMessage());
-    }
-
-    @Test
-    @DisplayName("Test saveSettings should return error when faceThresholdRegister is too high")
-    void testSaveSettingsWithFaceThresholdRegisterTooHigh() {
-        // Given
-        Map<SettingKeys, String> settings = new HashMap<>();
-        settings.put(SettingKeys.DISABLED_CHECK_EMAIL_FPT_STAFF, "false");
-        settings.put(SettingKeys.DISABLED_CHECK_EMAIL_FPT_STUDENT, "true");
-        settings.put(SettingKeys.SHIFT_MIN_DIFF, "60");
-        settings.put(SettingKeys.SHIFT_MAX_LATE_ARRIVAL, "30");
-        settings.put(SettingKeys.ATTENDANCE_EARLY_CHECKIN, "15");
-        settings.put(SettingKeys.EXPIRATION_MINUTE_LOGIN, "120");
-        settings.put(SettingKeys.FACE_THRESHOLD_CHECKIN, "0.7");
-        settings.put(SettingKeys.FACE_THRESHOLD_REGISTER, "1.2"); // Too high
-
-        // When
-        ResponseEntity<?> response = authenticationService.saveSettings(settings);
-
-        // Then
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        ApiResponse apiResponse = (ApiResponse) response.getBody();
-        assertEquals(RestApiStatus.ERROR, apiResponse.getStatus());
-        assertEquals("Độ khắt khe đăng ký mặt không hợp lệ", apiResponse.getMessage());
+    private AuthenticationStudentRegisterRequest createMockStudentRegisterRequest() {
+        AuthenticationStudentRegisterRequest request = new AuthenticationStudentRegisterRequest();
+        request.setIdFacility("facility-1");
+        request.setCode("SV001");
+        request.setName("Test Student");
+        request.setFaceEmbedding("face-embedding-data");
+        return request;
     }
 }

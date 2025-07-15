@@ -390,4 +390,497 @@ class STAttendanceRecoveryServiceImplTest {
 
         verify(attendanceRepository).save(any(Attendance.class));
     }
+
+    @Test
+    @DisplayName("importAttendanceRecoveryStudent should return error when request is null")
+    void testImportAttendanceRecoveryStudent_NullRequest() {
+        // Act
+        ResponseEntity<?> response = attendanceRecoveryService.importAttendanceRecoveryStudent(null);
+
+        // Assert
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        ApiResponse apiResponse = (ApiResponse) response.getBody();
+        assertEquals(RestApiStatus.ERROR, apiResponse.getStatus());
+        assertEquals("Dữ liệu đầu vào không hợp lệ", apiResponse.getMessage());
+    }
+
+    @Test
+    @DisplayName("importAttendanceRecoveryStudent should return error when student not found")
+    void testImportAttendanceRecoveryStudent_StudentNotFound() {
+        // Arrange
+        STStudentAttendanceRecoveryAddRequest request = new STStudentAttendanceRecoveryAddRequest();
+        request.setStudentCode("ST001");
+        request.setDay(System.currentTimeMillis());
+        request.setAttendanceRecoveryId("recovery-1");
+
+        when(studentRepository.getStudentByCode("ST001", EntityStatus.ACTIVE)).thenReturn(null);
+
+        // Act
+        ResponseEntity<?> response = attendanceRecoveryService.importAttendanceRecoveryStudent(request);
+
+        // Assert
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        ApiResponse apiResponse = (ApiResponse) response.getBody();
+        assertEquals(RestApiStatus.ERROR, apiResponse.getStatus());
+        assertTrue(apiResponse.getMessage().contains("Không tìm thấy mã sinh viên"));
+    }
+
+    @Test
+    @DisplayName("importAttendanceRecoveryStudent should return error when student factory not found")
+    void testImportAttendanceRecoveryStudent_StudentFactoryNotFound() {
+        // Arrange
+        STStudentAttendanceRecoveryAddRequest request = new STStudentAttendanceRecoveryAddRequest();
+        request.setStudentCode("ST001");
+        request.setDay(System.currentTimeMillis());
+        request.setAttendanceRecoveryId("recovery-1");
+
+        UserStudent student = mock(UserStudent.class);
+        when(student.getId()).thenReturn("student-1");
+        when(student.getCode()).thenReturn("ST001");
+        when(student.getName()).thenReturn("Student Name");
+        when(studentRepository.getStudentByCode("ST001", EntityStatus.ACTIVE)).thenReturn(student);
+
+        when(studentFactoryRepository.getUserStudentFactoryByUserId("student-1", EntityStatus.ACTIVE,
+                EntityStatus.ACTIVE))
+                .thenReturn(null);
+
+        // Act
+        ResponseEntity<?> response = attendanceRecoveryService.importAttendanceRecoveryStudent(request);
+
+        // Assert
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        ApiResponse apiResponse = (ApiResponse) response.getBody();
+        assertEquals(RestApiStatus.ERROR, apiResponse.getStatus());
+        assertTrue(apiResponse.getMessage().contains("chưa tham gia nhóm xưởng nào"));
+    }
+
+    @Test
+    @DisplayName("importAttendanceRecoveryStudent should return error when plan factory not found")
+    void testImportAttendanceRecoveryStudent_PlanFactoryNotFound() {
+        // Arrange
+        STStudentAttendanceRecoveryAddRequest request = new STStudentAttendanceRecoveryAddRequest();
+        request.setStudentCode("ST001");
+        request.setDay(System.currentTimeMillis());
+        request.setAttendanceRecoveryId("recovery-1");
+
+        UserStudent student = mock(UserStudent.class);
+        when(student.getId()).thenReturn("student-1");
+        when(student.getCode()).thenReturn("ST001");
+        when(student.getName()).thenReturn("Student Name");
+        when(studentRepository.getStudentByCode("ST001", EntityStatus.ACTIVE)).thenReturn(student);
+
+        UserStudentFactory studentFactory = mock(UserStudentFactory.class);
+        Factory factory = mock(Factory.class);
+        when(factory.getId()).thenReturn("factory-1");
+        when(studentFactory.getFactory()).thenReturn(factory);
+        when(studentFactoryRepository.getUserStudentFactoryByUserId("student-1", EntityStatus.ACTIVE,
+                EntityStatus.ACTIVE))
+                .thenReturn(studentFactory);
+
+        when(planFactoryRepository.getPlanFactoryByFactoryId("factory-1", EntityStatus.ACTIVE, EntityStatus.ACTIVE))
+                .thenReturn(null);
+
+        // Act
+        ResponseEntity<?> response = attendanceRecoveryService.importAttendanceRecoveryStudent(request);
+
+        // Assert
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        ApiResponse apiResponse = (ApiResponse) response.getBody();
+        assertEquals(RestApiStatus.ERROR, apiResponse.getStatus());
+        assertTrue(apiResponse.getMessage().contains("chưa có kế hoạch"));
+    }
+
+    @Test
+    @DisplayName("importAttendanceRecoveryStudent should return error when no valid plan dates")
+    void testImportAttendanceRecoveryStudent_NoValidPlanDates() {
+        // Arrange
+        STStudentAttendanceRecoveryAddRequest request = new STStudentAttendanceRecoveryAddRequest();
+        request.setStudentCode("ST001");
+        request.setDay(System.currentTimeMillis());
+        request.setAttendanceRecoveryId("recovery-1");
+
+        UserStudent student = mock(UserStudent.class);
+        when(student.getId()).thenReturn("student-1");
+        when(student.getCode()).thenReturn("ST001");
+        when(student.getName()).thenReturn("Student Name");
+        when(studentRepository.getStudentByCode("ST001", EntityStatus.ACTIVE)).thenReturn(student);
+
+        UserStudentFactory studentFactory = mock(UserStudentFactory.class);
+        Factory factory = mock(Factory.class);
+        when(factory.getId()).thenReturn("factory-1");
+        when(studentFactory.getFactory()).thenReturn(factory);
+        when(studentFactoryRepository.getUserStudentFactoryByUserId("student-1", EntityStatus.ACTIVE,
+                EntityStatus.ACTIVE))
+                .thenReturn(studentFactory);
+
+        PlanFactory planFactory = mock(PlanFactory.class);
+        when(planFactory.getId()).thenReturn("plan-factory-1");
+        when(planFactoryRepository.getPlanFactoryByFactoryId("factory-1", EntityStatus.ACTIVE, EntityStatus.ACTIVE))
+                .thenReturn(planFactory);
+
+        when(planDateRepository.getAllPlanDateByPlanFactoryId("plan-factory-1", EntityStatus.ACTIVE,
+                EntityStatus.ACTIVE))
+                .thenReturn(Collections.emptyList());
+
+        // Act
+        ResponseEntity<?> response = attendanceRecoveryService.importAttendanceRecoveryStudent(request);
+
+        // Assert
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        ApiResponse apiResponse = (ApiResponse) response.getBody();
+        assertEquals(RestApiStatus.ERROR, apiResponse.getStatus());
+        assertTrue(apiResponse.getMessage().contains("không có ca học nào"));
+    }
+
+    @Test
+    @DisplayName("deleteAttendanceRecovery should return error when event not found")
+    void testDeleteAttendanceRecovery_EventNotFound() {
+        // Arrange
+        String eventId = "event-1";
+        when(attendanceRecoveryRepository.findById(eventId)).thenReturn(Optional.empty());
+
+        // Act
+        ResponseEntity<?> response = attendanceRecoveryService.deleteAttendanceRecovery(eventId);
+
+        // Assert
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        ApiResponse apiResponse = (ApiResponse) response.getBody();
+        assertEquals(RestApiStatus.ERROR, apiResponse.getStatus());
+        assertEquals("Sự kiện khôi phục điểm danh sinh viên không tồn tại", apiResponse.getMessage());
+    }
+
+    @Test
+    @DisplayName("createNewEventAttendanceRecovery should return error when facility not found")
+    void testCreateNewEventAttendanceRecovery_FacilityNotFound() {
+        // Arrange
+        String facilityId = "facility-1";
+        STCreateOrUpdateNewEventRequest request = new STCreateOrUpdateNewEventRequest();
+        request.setName("New Event");
+        request.setDescription("Description");
+        request.setDay(System.currentTimeMillis());
+
+        when(sessionHelper.getFacilityId()).thenReturn(facilityId);
+        when(facilityRepository.findById(facilityId)).thenReturn(null);
+
+        // Act
+        ResponseEntity<?> response = attendanceRecoveryService.createNewEventAttendanceRecovery(request);
+
+        // Assert
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        ApiResponse apiResponse = (ApiResponse) response.getBody();
+        assertEquals(RestApiStatus.ERROR, apiResponse.getStatus());
+        assertEquals("Cơ sở không tồn tại", apiResponse.getMessage());
+    }
+
+    @Test
+    @DisplayName("getDetailEventAttendanceRecovery should return error when event not found")
+    void testGetDetailEventAttendanceRecovery_EventNotFound() {
+        // Arrange
+        String eventId = "event-1";
+        when(attendanceRecoveryRepository.findById(eventId)).thenReturn(Optional.empty());
+
+        // Act
+        ResponseEntity<?> response = attendanceRecoveryService.getDetailEventAttendanceRecovery(eventId);
+
+        // Assert
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        ApiResponse apiResponse = (ApiResponse) response.getBody();
+        assertEquals(RestApiStatus.ERROR, apiResponse.getStatus());
+        assertEquals("Sự Kiện khôi phục điểm danh không tồn tại", apiResponse.getMessage());
+    }
+
+    @Test
+    @DisplayName("updateEventAttendanceRecovery should return error when event not found")
+    void testUpdateEventAttendanceRecovery_EventNotFound() {
+        // Arrange
+        String eventId = "event-1";
+        STCreateOrUpdateNewEventRequest request = new STCreateOrUpdateNewEventRequest();
+        request.setName("Updated Event");
+        request.setDescription("Updated Description");
+        request.setDay(System.currentTimeMillis());
+
+        when(attendanceRecoveryRepository.findById(eventId)).thenReturn(Optional.empty());
+
+        // Act
+        ResponseEntity<?> response = attendanceRecoveryService.updateEventAttendanceRecovery(request, eventId);
+
+        // Assert
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        ApiResponse apiResponse = (ApiResponse) response.getBody();
+        assertEquals(RestApiStatus.ERROR, apiResponse.getStatus());
+        assertEquals("Sự kiện khôi phục điểm danh không tồn tại", apiResponse.getMessage());
+    }
+
+    @Test
+    @DisplayName("getCachedHistoryLogByEvent should return cached data")
+    void testGetCachedHistoryLogByEvent() {
+        // Arrange
+        String idImportLog = "import-1";
+        EXDataRequest request = new EXDataRequest();
+        String userId = "user-1";
+        String facilityId = "facility-1";
+
+        when(sessionHelper.getUserId()).thenReturn(userId);
+        when(sessionHelper.getFacilityId()).thenReturn(facilityId);
+
+        PageableObject<?> cachedData = new PageableObject<>();
+        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong())).thenReturn(cachedData);
+
+        // Act
+        PageableObject<?> result = attendanceRecoveryService.getCachedHistoryLogByEvent(idImportLog, request);
+
+        // Assert
+        assertNotNull(result);
+        assertSame(cachedData, result);
+        verify(redisCacheHelper).getOrSet(anyString(), any(), any(), anyLong());
+    }
+
+    @Test
+    @DisplayName("getAllHistoryLogByEvent should return history log")
+    void testGetAllHistoryLogByEvent() {
+        // Arrange
+        String idImportLog = "import-1";
+        EXDataRequest request = new EXDataRequest();
+
+        PageableObject<?> cachedData = new PageableObject<>();
+        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong())).thenReturn(cachedData);
+
+        // Act
+        ResponseEntity<?> response = attendanceRecoveryService.getAllHistoryLogByEvent(idImportLog, request);
+
+        // Assert
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        ApiResponse apiResponse = (ApiResponse) response.getBody();
+        assertEquals(RestApiStatus.SUCCESS, apiResponse.getStatus());
+        assertEquals("Lấy tất cả log import excel khôi phục điểm danh thành công", apiResponse.getMessage());
+    }
+
+    @Test
+    @DisplayName("getCachedHistoryLogDetailEvent should return log details")
+    void testGetCachedHistoryLogDetailEvent() {
+        // Arrange
+        String idImportLog = "import-1";
+        String userId = "user-1";
+        String facilityId = "facility-1";
+
+        when(sessionHelper.getUserId()).thenReturn(userId);
+        when(sessionHelper.getFacilityId()).thenReturn(facilityId);
+
+        List<ExImportLogDetailResponse> logDetails = Arrays.asList(
+                mock(ExImportLogDetailResponse.class),
+                mock(ExImportLogDetailResponse.class));
+        when(historyLogRepository.getAllList(idImportLog, userId, facilityId)).thenReturn(logDetails);
+
+        // Act
+        List<ExImportLogDetailResponse> result = attendanceRecoveryService.getCachedHistoryLogDetailEvent(idImportLog);
+
+        // Assert
+        assertNotNull(result);
+        assertEquals(logDetails, result);
+        verify(historyLogRepository).getAllList(idImportLog, userId, facilityId);
+    }
+
+    @Test
+    @DisplayName("getAllHistoryLogDetailEvent should return log detail response")
+    void testGetAllHistoryLogDetailEvent() {
+        // Arrange
+        String idImportLog = "import-1";
+        List<ExImportLogDetailResponse> logDetails = Arrays.asList(
+                mock(ExImportLogDetailResponse.class),
+                mock(ExImportLogDetailResponse.class));
+        when(historyLogRepository.getAllList(idImportLog, null, null)).thenReturn(logDetails);
+
+        // Act
+        ResponseEntity<?> response = attendanceRecoveryService.getAllHistoryLogDetailEvent(idImportLog);
+
+        // Assert
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        ApiResponse apiResponse = (ApiResponse) response.getBody();
+        assertEquals(RestApiStatus.SUCCESS, apiResponse.getStatus());
+        assertEquals("Lấy chi tiết lịch sử import khôi phục điểm danh thành công", apiResponse.getMessage());
+    }
+
+    @Test
+    @DisplayName("getCachedImportStudentSuccess should return success count")
+    void testGetCachedImportStudentSuccess() {
+        // Arrange
+        String idImportLog = "import-1";
+        String userId = "user-1";
+        String facilityId = "facility-1";
+        Integer type = 1;
+
+        Integer expectedCount = 5;
+        when(historyLogRepository.getAllLine(idImportLog, userId, facilityId, type)).thenReturn(expectedCount);
+
+        // Act
+        Integer result = attendanceRecoveryService.getCachedImportStudentSuccess(idImportLog, userId, facilityId, type);
+
+        // Assert
+        assertEquals(expectedCount, result);
+        verify(historyLogRepository).getAllLine(idImportLog, userId, facilityId, type);
+    }
+
+    @Test
+    @DisplayName("getAllImportStudentSuccess should return success count")
+    void testGetAllImportStudentSuccess() {
+        // Arrange
+        String idImportLog = "import-1";
+        String userId = "user-1";
+        String facilityId = "facility-1";
+        Integer type = 1;
+
+        Integer expectedCount = 5;
+        when(historyLogRepository.getAllLine(idImportLog, userId, facilityId, type)).thenReturn(expectedCount);
+
+        // Act
+        Integer result = attendanceRecoveryService.getAllImportStudentSuccess(idImportLog, userId, facilityId, type);
+
+        // Assert
+        assertEquals(expectedCount, result);
+    }
+
+    @Test
+    @DisplayName("getCachedHasStudentAttendanceRecovery should return true when has import log")
+    void testGetCachedHasStudentAttendanceRecovery_HasImportLog() {
+        // Arrange
+        String idAttendanceRecovery = "recovery-1";
+        AttendanceRecovery attendanceRecovery = mock(AttendanceRecovery.class);
+        ImportLog importLog = mock(ImportLog.class);
+
+        when(attendanceRecoveryRepository.findById(idAttendanceRecovery)).thenReturn(Optional.of(attendanceRecovery));
+        when(attendanceRecovery.getImportLog()).thenReturn(importLog);
+
+        // Act
+        Boolean result = attendanceRecoveryService.getCachedHasStudentAttendanceRecovery(idAttendanceRecovery);
+
+        // Assert
+        assertTrue(result);
+    }
+
+    @Test
+    @DisplayName("getCachedHasStudentAttendanceRecovery should return false when no import log")
+    void testGetCachedHasStudentAttendanceRecovery_NoImportLog() {
+        // Arrange
+        String idAttendanceRecovery = "recovery-1";
+        AttendanceRecovery attendanceRecovery = mock(AttendanceRecovery.class);
+
+        when(attendanceRecoveryRepository.findById(idAttendanceRecovery)).thenReturn(Optional.of(attendanceRecovery));
+        when(attendanceRecovery.getImportLog()).thenReturn(null);
+
+        // Act
+        Boolean result = attendanceRecoveryService.getCachedHasStudentAttendanceRecovery(idAttendanceRecovery);
+
+        // Assert
+        assertFalse(result);
+    }
+
+    @Test
+    @DisplayName("getCachedHasStudentAttendanceRecovery should return false when event not found")
+    void testGetCachedHasStudentAttendanceRecovery_EventNotFound() {
+        // Arrange
+        String idAttendanceRecovery = "recovery-1";
+        when(attendanceRecoveryRepository.findById(idAttendanceRecovery)).thenReturn(Optional.empty());
+
+        // Act
+        Boolean result = attendanceRecoveryService.getCachedHasStudentAttendanceRecovery(idAttendanceRecovery);
+
+        // Assert
+        assertFalse(result);
+    }
+
+    @Test
+    @DisplayName("isHasStudentAttendanceRecovery should return success when event found")
+    void testIsHasStudentAttendanceRecovery_Success() {
+        // Arrange
+        String idAttendanceRecovery = "recovery-1";
+        AttendanceRecovery attendanceRecovery = mock(AttendanceRecovery.class);
+        ImportLog importLog = mock(ImportLog.class);
+
+        when(attendanceRecoveryRepository.findById(idAttendanceRecovery)).thenReturn(Optional.of(attendanceRecovery));
+        when(attendanceRecovery.getImportLog()).thenReturn(importLog);
+
+        // Act
+        ResponseEntity<?> response = attendanceRecoveryService.isHasStudentAttendanceRecovery(idAttendanceRecovery);
+
+        // Assert
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        ApiResponse apiResponse = (ApiResponse) response.getBody();
+        assertEquals(RestApiStatus.SUCCESS, apiResponse.getStatus());
+        assertEquals("Kiểm tra sự kiện có sinh viên thành công", apiResponse.getMessage());
+        assertTrue((Boolean) apiResponse.getData());
+    }
+
+    @Test
+    @DisplayName("isHasStudentAttendanceRecovery should return error when event not found")
+    void testIsHasStudentAttendanceRecovery_EventNotFound() {
+        // Arrange
+        String idAttendanceRecovery = "recovery-1";
+        when(attendanceRecoveryRepository.findById(idAttendanceRecovery)).thenReturn(Optional.empty());
+
+        // Act
+        ResponseEntity<?> response = attendanceRecoveryService.isHasStudentAttendanceRecovery(idAttendanceRecovery);
+
+        // Assert
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        ApiResponse apiResponse = (ApiResponse) response.getBody();
+        assertEquals(RestApiStatus.ERROR, apiResponse.getStatus());
+        assertEquals("Không tìm thấy sự kiện", apiResponse.getMessage());
+    }
+
+    @Test
+    @DisplayName("deleteAttendanceRecordByAttendanceRecovery should delete records successfully")
+    void testDeleteAttendanceRecordByAttendanceRecovery_Success() {
+        // Arrange
+        String idAttendanceRecovery = "recovery-1";
+        AttendanceRecovery attendanceRecovery = mock(AttendanceRecovery.class);
+        ImportLog importLog = mock(ImportLog.class);
+
+        when(attendanceRecoveryRepository.findById(idAttendanceRecovery)).thenReturn(Optional.of(attendanceRecovery));
+        when(attendanceRecovery.getImportLog()).thenReturn(importLog);
+        when(attendanceRecovery.getName()).thenReturn("Test Event");
+        when(attendanceRecovery.getId()).thenReturn(idAttendanceRecovery);
+        when(importLog.getId()).thenReturn("import-1");
+
+        List<Attendance> attendanceList = Arrays.asList(mock(Attendance.class), mock(Attendance.class));
+        when(attendanceRepository.findAllByAttendanceRecoveryId(idAttendanceRecovery)).thenReturn(attendanceList);
+
+        List<ImportLogDetail> importLogDetailList = Arrays.asList(mock(ImportLogDetail.class),
+                mock(ImportLogDetail.class));
+        when(historyLogRepository.getAllByImportLog("import-1")).thenReturn(importLogDetailList);
+
+        when(historyLogRepository.findById(idAttendanceRecovery)).thenReturn(Optional.of(importLog));
+
+        // Act
+        ResponseEntity<?> response = attendanceRecoveryService
+                .deleteAttendanceRecordByAttendanceRecovery(idAttendanceRecovery);
+
+        // Assert
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        ApiResponse apiResponse = (ApiResponse) response.getBody();
+        assertEquals(RestApiStatus.SUCCESS, apiResponse.getStatus());
+        assertEquals("Xóa dữ liệu điểm danh thành công", apiResponse.getMessage());
+
+        verify(attendanceRepository).deleteAll(attendanceList);
+        verify(historyLogDetailRepository).deleteAll(importLogDetailList);
+        verify(historyLogRepository).deleteById("import-1");
+        verify(attendanceRecoveryRepository).save(attendanceRecovery);
+    }
+
+    @Test
+    @DisplayName("deleteAttendanceRecordByAttendanceRecovery should return error when event not found")
+    void testDeleteAttendanceRecordByAttendanceRecovery_EventNotFound() {
+        // Arrange
+        String idAttendanceRecovery = "recovery-1";
+        when(attendanceRecoveryRepository.findById(idAttendanceRecovery)).thenReturn(Optional.empty());
+
+        // Act
+        ResponseEntity<?> response = attendanceRecoveryService
+                .deleteAttendanceRecordByAttendanceRecovery(idAttendanceRecovery);
+
+        // Assert
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        ApiResponse apiResponse = (ApiResponse) response.getBody();
+        assertEquals(RestApiStatus.ERROR, apiResponse.getStatus());
+        assertEquals("Không tìm thấy sự kiện khôi phục điểm danh", apiResponse.getMessage());
+    }
 }

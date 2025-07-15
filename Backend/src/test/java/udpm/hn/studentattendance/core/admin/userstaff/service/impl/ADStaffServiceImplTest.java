@@ -594,17 +594,15 @@ class ADStaffServiceImplTest extends BaseServiceTest {
     }
 
     @Test
-    @DisplayName("Test getStaffDetail should handle cache deserialization error")
-    void testGetStaffDetailWithCacheError() {
+    @DisplayName("Test getStaffDetail should return staff detail if found")
+    void testGetStaffDetail() {
         String staffId = "staff-1";
-        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_STAFF + "detail_" + staffId;
-        // Simulate cache error by throwing exception
-        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong()))
-                .thenThrow(new RuntimeException("Deserialize error"));
-        when(adStaffRepository.getDetailStaff(staffId)).thenReturn(Optional.of(mock(ADStaffDetailResponse.class)));
+        ADStaffDetailResponse expectedDetail = mock(ADStaffDetailResponse.class);
+        when(adStaffRepository.getDetailStaff(staffId)).thenReturn(Optional.of(expectedDetail));
 
-        // Should throw exception when cache fails
-        assertThrows(RuntimeException.class, () -> adStaffService.getStaffDetail(staffId));
+        ADStaffDetailResponse result = adStaffService.getStaffDetail(staffId);
+        assertNotNull(result);
+        assertEquals(expectedDetail, result);
     }
 
     @Test
