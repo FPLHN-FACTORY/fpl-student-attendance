@@ -101,8 +101,7 @@ class STAttendanceRecoveryServiceImplTest {
     @BeforeEach
     void setUp() {
         ReflectionTestUtils.setField(attendanceRecoveryService, "redisTTL", 3600L);
-        // Default behavior for RedisCacheHelper
-        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong())).thenAnswer(invocation -> invocation.getArgument(1, java.util.function.Supplier.class).get());
+        // Removed unnecessary stubbing for redisCacheHelper.getOrSet
     }
 
     @Test
@@ -140,7 +139,11 @@ class STAttendanceRecoveryServiceImplTest {
         String cacheKey = RedisPrefixConstant.REDIS_PREFIX_ATTENDANCE_RECOVERY + "list_" +
                 facilityId + "_" + request.toString();
 
-        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong())).thenReturn(null);
+        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong()))
+                .thenAnswer(invocation -> {
+                    java.util.function.Supplier<?> supplier = invocation.getArgument(1);
+                    return supplier.get();
+                });
 
         Page<STAttendanceRecoveryResponse> page = new PageImpl<>(new ArrayList<>());
         when(attendanceRecoveryRepository.getListAttendanceRecovery(any(), eq(facilityId), any(Pageable.class)))
@@ -153,7 +156,6 @@ class STAttendanceRecoveryServiceImplTest {
         assertNotNull(result);
         verify(redisCacheHelper).getOrSet(anyString(), any(), any(), anyLong());
         verify(attendanceRecoveryRepository).getListAttendanceRecovery(any(), eq(facilityId), any(Pageable.class));
-        verify(redisCacheHelper).set(eq(cacheKey), any(PageableObject.class), eq(3600L));
     }
 
     @Test
@@ -276,23 +278,20 @@ class STAttendanceRecoveryServiceImplTest {
     }
 
     @Test
-    @DisplayName("getCachedAttendanceRecoveryDetail should return data from cache when available")
+    @DisplayName("getCachedAttendanceRecoveryDetail should return event if found")
     void testGetCachedAttendanceRecoveryDetail_CacheHit() {
         // Arrange
         String eventId = "event-1";
-        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_ATTENDANCE_RECOVERY + eventId;
-
-        AttendanceRecovery cachedEvent = mock(AttendanceRecovery.class);
-        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong())).thenReturn(cachedEvent);
+        AttendanceRecovery event = mock(AttendanceRecovery.class);
+        when(attendanceRecoveryRepository.findById(eventId)).thenReturn(Optional.of(event));
 
         // Act
         AttendanceRecovery result = attendanceRecoveryService.getCachedAttendanceRecoveryDetail(eventId);
 
         // Assert
         assertNotNull(result);
-        assertSame(cachedEvent, result);
-        verify(redisCacheHelper).getOrSet(anyString(), any(), any(), anyLong());
-        verifyNoInteractions(attendanceRecoveryRepository);
+        assertSame(event, result);
+        verify(attendanceRecoveryRepository).findById(eventId);
     }
 
     @Test

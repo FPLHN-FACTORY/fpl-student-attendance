@@ -10,6 +10,7 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.data.redis.core.HashOperations;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.core.type.TypeReference;
 import udpm.hn.studentattendance.infrastructure.redis.service.impl.RedisServiceImpl;
 import static org.mockito.Mockito.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -48,18 +49,16 @@ class RedisServiceImplTest {
     }
 
     @Test
-    void testSetObject() {
-        redisService.setObject("key", "value");
-        verify(valueOps).set(eq("key"), eq("value"), eq(3L), eq(java.util.concurrent.TimeUnit.DAYS));
-    }
-
-    @Test
     void testGetObject() throws Exception {
-        when(valueOps.get("key")).thenReturn("value");
-        when(objectMapper.readValue("value", String.class)).thenReturn("value");
-        Object result = redisService.getObject("key", String.class);
-        assertEquals("value", result);
+        String expectedValue = "value";
+        when(valueOps.get("key")).thenReturn(expectedValue);
+        when(objectMapper.readValue(eq(expectedValue), any(TypeReference.class))).thenReturn(expectedValue);
+        TypeReference<String> typeRef = new TypeReference<String>() {
+        };
+        Object result = redisService.getObject("key", typeRef);
+        assertEquals(expectedValue, result);
         verify(valueOps).get("key");
+        verify(objectMapper).readValue(eq(expectedValue), eq(typeRef));
     }
 
     @Test

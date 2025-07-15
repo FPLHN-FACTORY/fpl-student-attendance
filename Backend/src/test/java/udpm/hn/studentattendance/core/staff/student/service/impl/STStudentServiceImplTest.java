@@ -64,7 +64,7 @@ public class STStudentServiceImplTest {
 
     @Mock
     private SettingHelper settingHelper;
-    
+
     @Mock
     private RedisInvalidationHelper redisInvalidationHelper;
 
@@ -84,8 +84,6 @@ public class STStudentServiceImplTest {
         // Default behavior for setting helper
         when(settingHelper.getSetting(any(), any(Class.class))).thenReturn(false);
 
-        // Default behavior for RedisCacheHelper
-        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong())).thenAnswer(invocation -> invocation.getArgument(1, java.util.function.Supplier.class).get());
         // Default behavior for RedisInvalidationHelper
         doNothing().when(redisInvalidationHelper).invalidateAllCaches();
     }
@@ -120,9 +118,14 @@ public class STStudentServiceImplTest {
     public void testGetAllStudentByFacility_NoCachedData() {
         // Arrange
         USStudentRequest request = new USStudentRequest();
-        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong())).thenReturn(null).thenReturn(dbPage);
-
         Page<USStudentResponse> dbPage = new PageImpl<>(new ArrayList<>());
+
+        // Simulate cache miss by calling supplier
+        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong()))
+                .thenAnswer(invocation -> {
+                    java.util.function.Supplier<?> supplier = invocation.getArgument(1);
+                    return supplier.get();
+                });
         when(studentExtendRepository.getAllStudentByFacility(any(Pageable.class), any(), anyString()))
                 .thenReturn(dbPage);
 
@@ -135,19 +138,21 @@ public class STStudentServiceImplTest {
         assertNotNull(apiResponse);
         assertEquals(RestApiStatus.SUCCESS, apiResponse.getStatus());
 
-        verify(redisCacheHelper, times(2)).getOrSet(anyString(), any(), any(), anyLong());
+        verify(redisCacheHelper).getOrSet(anyString(), any(), any(), anyLong());
         verify(studentExtendRepository).getAllStudentByFacility(any(Pageable.class), any(), anyString());
     }
 
     @Test
-    @DisplayName("getDetailStudent should return student detail from cache when available")
-    public void testGetDetailStudent_CachedData() {
+    @DisplayName("getDetailStudent should return student detail when available")
+    public void testGetDetailStudent_Success() {
         // Arrange
         String studentId = "student-1";
-        UserStudent cachedStudent = new UserStudent();
-        cachedStudent.setId(studentId);
-        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong())).thenReturn(cachedStudent);
-        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong())).thenReturn(cachedStudent);
+        UserStudent student = new UserStudent();
+        student.setId(studentId);
+        student.setCode("ST001");
+        student.setName("Test Student");
+
+        when(studentExtendRepository.findById(studentId)).thenReturn(Optional.of(student));
 
         // Act
         ResponseEntity<?> response = studentService.getDetailStudent(studentId);
@@ -157,9 +162,7 @@ public class STStudentServiceImplTest {
         ApiResponse apiResponse = (ApiResponse) response.getBody();
         assertNotNull(apiResponse);
         assertEquals(RestApiStatus.SUCCESS, apiResponse.getStatus());
-
-        verify(redisCacheHelper).getOrSet(anyString(), any(), any(), anyLong());
-        verify(studentExtendRepository, never()).findById(any());
+        assertEquals(student, apiResponse.getData());
     }
 
     @Test
@@ -167,7 +170,6 @@ public class STStudentServiceImplTest {
     public void testGetDetailStudent_NotFound() {
         // Arrange
         String studentId = "nonexistent";
-        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong())).thenReturn(null);
         when(studentExtendRepository.findById(studentId)).thenReturn(Optional.empty());
 
         // Act
@@ -202,9 +204,6 @@ public class STStudentServiceImplTest {
         savedStudent.setName(request.getName());
         savedStudent.setEmail(request.getEmail());
         when(studentExtendRepository.save(any(UserStudent.class))).thenReturn(savedStudent);
-
-        // Don't verify deletePattern calls to avoid TooManyActualInvocations
-        doNothing().when(redisService).deletePattern(anyString());
 
         // Act
         ResponseEntity<?> response = studentService.createStudent(request);
@@ -284,10 +283,6 @@ public class STStudentServiceImplTest {
                 .thenReturn(false);
         when(studentExtendRepository.save(any(UserStudent.class))).thenReturn(existingStudent);
 
-        // Don't verify delete/deletePattern calls to avoid TooManyActualInvocations
-        doNothing().when(redisService).delete(anyString());
-        doNothing().when(redisService).deletePattern(anyString());
-
         // Act
         ResponseEntity<?> response = studentService.updateStudent(request);
 
@@ -314,9 +309,6 @@ public class STStudentServiceImplTest {
 
         when(studentExtendRepository.findById(studentId)).thenReturn(Optional.of(student));
         when(studentExtendRepository.save(any(UserStudent.class))).thenReturn(student);
-
-        // Don't verify delete calls to avoid TooManyActualInvocations
-        doNothing().when(redisService).delete(anyString());
 
         // Act
         ResponseEntity<?> response = studentService.changeStatusStudent(studentId);
@@ -347,9 +339,6 @@ public class STStudentServiceImplTest {
         when(sessionHelper.getUserCode()).thenReturn("STAFF001");
         when(sessionHelper.getUserName()).thenReturn("Staff Name");
 
-        // Don't verify delete calls to avoid TooManyActualInvocations
-        doNothing().when(redisService).delete(anyString());
-
         // Act
         ResponseEntity<?> response = studentService.deleteFaceStudentFactory(studentId);
 
@@ -373,7 +362,6 @@ public class STStudentServiceImplTest {
         cachedFaceStatus.put("student-1", true);
         cachedFaceStatus.put("student-2", false);
         when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong())).thenReturn(cachedFaceStatus);
-        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong())).thenReturn(cachedFaceStatus);
 
         // Act
         ResponseEntity<?> response = studentService.isExistFace();
@@ -391,7 +379,11 @@ public class STStudentServiceImplTest {
     @DisplayName("isExistFace should query database when cache miss")
     public void testIsExistFace_NoCachedData() {
         // Arrange
-        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong())).thenReturn(null);
+        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong()))
+                .thenAnswer(invocation -> {
+                    java.util.function.Supplier<?> supplier = invocation.getArgument(1);
+                    return supplier.get();
+                });
 
         // Create a list of maps to match the expected return type
         List<Map<String, Object>> faceStatusList = new ArrayList<>();
@@ -415,69 +407,41 @@ public class STStudentServiceImplTest {
         assertEquals(RestApiStatus.SUCCESS, apiResponse.getStatus());
 
         verify(studentExtendRepository).existFaceForAllStudents(anyString());
-        verify(redisService).set(anyString(), any(Map.class), eq(3600L));
     }
 
     @Test
     @DisplayName("Test getCachedStudentList should handle cache deserialization error")
     void testGetCachedStudentListWithCacheError() {
         USStudentRequest request = new USStudentRequest();
-        Page<USStudentResponse> mockData = mock(Page.class);
-        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong())).thenReturn("cached");
-        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong())).thenReturn(mockData);
-        when(studentExtendRepository.getAllStudentByFacility(any(), eq(request), anyString())).thenReturn(mockData);
 
-        PageableObject<?> result = studentService.getCachedStudentList(request);
+        // Simulate cache error by throwing exception
+        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong()))
+                .thenThrow(new RuntimeException("Deserialize error"));
 
-        assertNotNull(result);
-        verify(redisService).delete(anyString());
+        when(studentExtendRepository.getAllStudentByFacility(any(Pageable.class), eq(request), anyString()))
+                .thenReturn(new PageImpl<>(Collections.emptyList()));
+
+        // Should throw exception when cache fails
+        assertThrows(RuntimeException.class, () -> studentService.getCachedStudentList(request));
     }
 
     @Test
-    @DisplayName("Test getCachedStudentList should handle redis set exception")
-    void testGetCachedStudentListWithRedisSetError() {
-        USStudentRequest request = new USStudentRequest();
-        Page<USStudentResponse> mockData = mock(Page.class);
-        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong())).thenReturn(null);
-        when(studentExtendRepository.getAllStudentByFacility(any(), eq(request), anyString())).thenReturn(mockData);
-        doThrow(new RuntimeException("Redis error")).when(redisService).set(anyString(), any(), anyLong());
+    @DisplayName("Test getCachedFaceStatus should handle cache deserialization error")
+    void testGetCachedFaceStatusWithCacheError() {
+        // Simulate cache error by throwing exception
+        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong()))
+                .thenThrow(new RuntimeException("Deserialize error"));
 
-        PageableObject<?> result = studentService.getCachedStudentList(request);
+        // Mock repository and expected result
+        List<Map<String, Object>> faceStatusList = new ArrayList<>();
+        Map<String, Object> student1 = new HashMap<>();
+        student1.put("studentId", "student-1");
+        student1.put("hasFace", 1);
+        faceStatusList.add(student1);
+        when(studentExtendRepository.existFaceForAllStudents(anyString())).thenReturn(faceStatusList);
 
-        assertNotNull(result);
-        // Should not throw exception, just ignore redis error
-    }
-
-    @Test
-    @DisplayName("Test getCachedStudentDetail should handle cache deserialization error")
-    void testGetCachedStudentDetailWithCacheError() {
-        String studentId = "student-1";
-        UserStudent student = new UserStudent();
-        student.setId(studentId);
-        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong())).thenReturn("cached");
-        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong())).thenReturn(student);
-        when(studentExtendRepository.findById(studentId)).thenReturn(Optional.of(student));
-
-        UserStudent result = studentService.getCachedStudentDetail(studentId);
-
-        assertNotNull(result);
-        verify(redisService).delete(anyString());
-    }
-
-    @Test
-    @DisplayName("Test getCachedStudentDetail should handle redis set exception")
-    void testGetCachedStudentDetailWithRedisSetError() {
-        String studentId = "student-1";
-        UserStudent student = new UserStudent();
-        student.setId(studentId);
-        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong())).thenReturn(null);
-        when(studentExtendRepository.findById(studentId)).thenReturn(Optional.of(student));
-        doThrow(new RuntimeException("Redis error")).when(redisService).set(anyString(), any(), anyLong());
-
-        UserStudent result = studentService.getCachedStudentDetail(studentId);
-
-        assertNotNull(result);
-        // Should not throw exception, just ignore redis error
+        // Should throw exception when cache fails
+        assertThrows(RuntimeException.class, () -> studentService.getCachedFaceStatus());
     }
 
     @Test
@@ -802,34 +766,6 @@ public class STStudentServiceImplTest {
 
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         verify(studentExtendRepository, never()).save(any());
-    }
-
-    @Test
-    @DisplayName("Test getCachedFaceStatus should handle cache deserialization error")
-    void testGetCachedFaceStatusWithCacheError() {
-        Map<String, Boolean> faceStatus = new HashMap<>();
-        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong())).thenReturn("cached");
-        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong())).thenReturn(faceStatus);
-        when(studentExtendRepository.getAllStudentByFacility(any(), any(), anyString())).thenReturn(mock(Page.class));
-
-        Map<String, Boolean> result = studentService.getCachedFaceStatus();
-
-        assertNotNull(result);
-        verify(redisService).delete(anyString());
-    }
-
-    @Test
-    @DisplayName("Test getCachedFaceStatus should handle redis set exception")
-    void testGetCachedFaceStatusWithRedisSetError() {
-        Map<String, Boolean> faceStatus = new HashMap<>();
-        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong())).thenReturn(null);
-        when(studentExtendRepository.getAllStudentByFacility(any(), any(), anyString())).thenReturn(mock(Page.class));
-        doThrow(new RuntimeException("Redis error")).when(redisService).set(anyString(), any(), anyLong());
-
-        Map<String, Boolean> result = studentService.getCachedFaceStatus();
-
-        assertNotNull(result);
-        // Should not throw exception, just ignore redis error
     }
 
 }

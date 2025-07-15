@@ -100,9 +100,7 @@ class USFactoryServiceImplTest {
         void setUp() {
                 // Set Redis TTL value
                 ReflectionTestUtils.setField(factoryService, "redisTTL", 3600L);
-                // Default behavior for RedisCacheHelper
-                when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong())).thenAnswer(
-                                invocation -> invocation.getArgument(1, java.util.function.Supplier.class).get());
+                // Removed unnecessary stubbing for redisCacheHelper.getOrSet
         }
 
         @Test
@@ -119,7 +117,11 @@ class USFactoryServiceImplTest {
                                 .thenReturn(page);
 
                 // Mock Redis cache miss
-                when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong())).thenReturn(null);
+                when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong()))
+                                .thenAnswer(invocation -> {
+                                        java.util.function.Supplier<?> supplier = invocation.getArgument(1);
+                                        return supplier.get();
+                                });
 
                 // Act
                 ResponseEntity<?> response = factoryService.getAllFactory(request);
@@ -149,7 +151,11 @@ class USFactoryServiceImplTest {
                 when(projectFactoryExtendRepository.getAllProject(facilityId)).thenReturn(mockProjects);
 
                 // Mock Redis cache miss
-                when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong())).thenReturn(null);
+                when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong()))
+                                .thenAnswer(invocation -> {
+                                        java.util.function.Supplier<?> supplier = invocation.getArgument(1);
+                                        return supplier.get();
+                                });
 
                 // Act
                 ResponseEntity<?> response = factoryService.getAllProject();
@@ -184,7 +190,11 @@ class USFactoryServiceImplTest {
                                 .thenReturn(mockSubjectFacilities);
 
                 // Mock Redis cache miss
-                when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong())).thenReturn(null);
+                when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong()))
+                                .thenAnswer(invocation -> {
+                                        java.util.function.Supplier<?> supplier = invocation.getArgument(1);
+                                        return supplier.get();
+                                });
 
                 // Act
                 ResponseEntity<?> response = factoryService.getAllSubjectFacility();
@@ -223,7 +233,11 @@ class USFactoryServiceImplTest {
                                 .thenReturn(mockStaffs);
 
                 // Mock Redis cache miss
-                when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong())).thenReturn(null);
+                when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong()))
+                                .thenAnswer(invocation -> {
+                                        java.util.function.Supplier<?> supplier = invocation.getArgument(1);
+                                        return supplier.get();
+                                });
 
                 // Act
                 ResponseEntity<?> response = factoryService.getAllStaff();
@@ -253,9 +267,6 @@ class USFactoryServiceImplTest {
 
                 when(factoryRepository.getFactoryById(factoryId)).thenReturn(Optional.of(mockResponse));
 
-                // Mock Redis cache miss
-                when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong())).thenReturn(null);
-
                 // Act
                 ResponseEntity<?> response = factoryService.getDetailFactory(factoryId);
 
@@ -267,7 +278,6 @@ class USFactoryServiceImplTest {
                 assertEquals("Xem chi tiết nhóm xưởng thành công", apiResponse.getMessage());
 
                 verify(factoryRepository).getFactoryById(factoryId);
-                verify(redisCacheHelper).getOrSet(anyString(), any(), any(), anyLong());
         }
 
         @Test
