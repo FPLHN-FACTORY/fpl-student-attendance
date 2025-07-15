@@ -453,6 +453,7 @@ watch(mapCenter, (newCenter) => {
           class="w-100"
           v-model:value="formData.name"
           :disabled="modalAddOrUpdate.isLoading"
+          placeholder="Nhập tên địa điểm"
           allowClear
           @keyup.enter="modalAddOrUpdate.onOk"
         />
@@ -464,6 +465,7 @@ watch(mapCenter, (newCenter) => {
           :min="-90"
           :max="90"
           :disabled="modalAddOrUpdate.isLoading"
+          placeholder="Nhập vĩ độ (-90 đến 90)"
           allowClear
           @keyup.enter="modalAddOrUpdate.onOk"
         />
@@ -476,6 +478,7 @@ watch(mapCenter, (newCenter) => {
           :min="-180"
           :max="180"
           :disabled="modalAddOrUpdate.isLoading"
+          placeholder="Nhập kinh độ (-180 đến 180)"
           allowClear
           @keyup.enter="modalAddOrUpdate.onOk"
         />
@@ -486,6 +489,7 @@ watch(mapCenter, (newCenter) => {
           v-model:value="formData.radius"
           :min="1"
           :disabled="modalAddOrUpdate.isLoading"
+          placeholder="Nhập bán kính"
           allowClear
           @keyup.enter="modalAddOrUpdate.onOk"
         />
@@ -590,7 +594,7 @@ watch(mapCenter, (newCenter) => {
             >
               <template #bodyCell="{ column, record, index }">
                 <template v-if="column.key === 'rowNumber'">
-                  {{ (pagination.value.current - 1) * pagination.value.pageSize + index + 1 }}
+                  {{ (pagination.current - 1) * pagination.pageSize + index + 1 }}
                 </template>
                 <template v-else-if="column.dataIndex === 'radius'">
                   <a-tag color="purple"> {{ record.radius }}m </a-tag>

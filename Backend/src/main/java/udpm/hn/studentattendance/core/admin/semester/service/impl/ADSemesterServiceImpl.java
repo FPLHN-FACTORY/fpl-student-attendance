@@ -135,7 +135,6 @@ public class ADSemesterServiceImpl implements ADSemesterService {
 
     @Override
     public ResponseEntity<?> updateSemester(@Valid ADCreateUpdateSemesterRequest request) {
-        // Trim all string fields in the request
         RequestTrimHelper.trimStringFields(request);
 
         Optional<Semester> existSemester = adSemesterRepository.findById(request.getSemesterId());
@@ -157,14 +156,6 @@ public class ADSemesterServiceImpl implements ADSemesterService {
 
         Long fromTimeSemester = request.getStartTimeCustom();
         Long toTimeSemester = request.getEndTimeCustom();
-
-        if (!Objects.equals(fromTimeSemester, semester.getFromDate())
-                || !Objects.equals(toTimeSemester, semester.getToDate())) {
-            if (fromDate.isBefore(LocalDateTime.now())) {
-                return RouterHelper.responseError(
-                        "Ngày bắt đầu học kỳ không thể là ngày trong quá khứ hoặc hiện tại");
-            }
-        }
 
         Integer yearStartTime = fromDate.getYear();
         Integer yearEndTime = toDate.getYear();
@@ -190,6 +181,7 @@ public class ADSemesterServiceImpl implements ADSemesterService {
                 }
             }
         }
+
         if (!yearStartTime.equals(yearEndTime)) {
             return RouterHelper.responseError("Thời gian bắt đầu và kết thúc của học kỳ phải cùng 1 năm");
         }
@@ -210,6 +202,14 @@ public class ADSemesterServiceImpl implements ADSemesterService {
 
         if (oldFromDate.isBefore(currentDateTime)) {
             fromTimeSemester = semester.getFromDate();
+        }
+
+        if (!Objects.equals(fromTimeSemester, semester.getFromDate())
+                || !Objects.equals(toTimeSemester, semester.getToDate())) {
+            if (fromDate.isBefore(LocalDateTime.now())) {
+                return RouterHelper.responseError(
+                        "Ngày bắt đầu học kỳ không thể là ngày trong quá khứ hoặc hiện tại");
+            }
         }
 
         semester.setSemesterName(SemesterName.valueOf(name));
