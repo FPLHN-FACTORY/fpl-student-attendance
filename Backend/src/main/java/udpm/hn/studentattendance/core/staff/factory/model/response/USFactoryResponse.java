@@ -9,6 +9,8 @@ public interface USFactoryResponse {
 
     Integer getFactoryStatus();
 
+    Integer getCurrentStatus();
+
     String getProjectName();
 
     String getSubjectCode();
@@ -17,6 +19,6 @@ public interface USFactoryResponse {
 
     String getFactoryDescription();
 
-    // Long getPlanStartDate();
-    // String getPlanShift();
+    String getProjectId();
+
 }

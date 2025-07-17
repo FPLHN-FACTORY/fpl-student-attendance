@@ -6,4 +6,5 @@ import udpm.hn.studentattendance.entities.UserStudentFactory;
 
 @Repository
 public interface UserStudentFactoryRepository extends JpaRepository<UserStudentFactory, String> {
+   
 }

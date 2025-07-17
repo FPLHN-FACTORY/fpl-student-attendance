@@ -108,7 +108,7 @@ export const AdminRoutes = [
         component: () => import('@/views/pages/admin/AdminManagementLevelProjectPage.vue'),
         meta: {
           selectedKey: selectedKey++,
-          name: 'Quản lý cấp độ dự án',
+          name: 'Quản lý nhóm dự án',
           icon: ClusterOutlined,
         },
       },
@@ -118,7 +118,7 @@ export const AdminRoutes = [
         component: () => import('@/views/pages/admin/AdminManagementStaffPage.vue'),
         meta: {
           selectedKey: selectedKey++,
-          name: 'Quản lý phụ trách / giảng viên',
+          name: 'Quản lý nhân sự',
           icon: TeamOutlined,
         },
       },

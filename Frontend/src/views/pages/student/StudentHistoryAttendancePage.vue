@@ -31,6 +31,8 @@ const filter = reactive({
   pageSize: 5,
 })
 
+const countFilter = ref(0)
+
 const attendanceRecords = ref([])
 const isLoading = ref(false)
 const paginations = ref({})
@@ -39,7 +41,7 @@ const loadingExport = reactive({})
 const columns = autoAddColumnWidth([
   { title: '#', dataIndex: 'rowNumber', key: 'rowNumber' },
   { title: 'Ngày học', dataIndex: 'planDateStartDate', key: 'planDateStartDate' },
-  { title: 'Ca học', dataIndex: 'planDateShift', key: 'planDateShift' },
+  { title: 'Ca', dataIndex: 'planDateShift', key: 'planDateShift' },
   {
     title: 'Điểm danh muộn',
     dataIndex: 'lateArrival',
@@ -89,6 +91,9 @@ const fetchAllAttendanceHistory = async () => {
         total: grouped[factoryId].length,
       }
     }
+    countFilter.value = Object.values(paginations.value).filter(
+      (v) => typeof v === 'object' && v !== null && !Array.isArray(v),
+    ).length
   } catch (error) {
     message.error(error.response?.data?.message || 'Lỗi khi tải dữ liệu lịch sử điểm danh')
   } finally {
@@ -98,7 +103,7 @@ const fetchAllAttendanceHistory = async () => {
 
 const handleShowDescription = (text) => {
   Modal.info({
-    title: 'Nội dung buổi học',
+    title: 'Nội dung buổi',
     type: 'info',
     content: text || 'Không có mô tả',
     okText: 'Đóng',
@@ -221,7 +226,7 @@ onMounted(async () => {
         <a-card :bordered="false" class="cart no-body-padding">
           <a-collapse ghost>
             <a-collapse-panel>
-              <template #header><FilterFilled /> Bộ lọc</template>
+              <template #header><FilterFilled /> Bộ lọc ({{ countFilter }})</template>
               <div class="row g-3">
                 <div class="col-md-6 col-sm-6">
                   <div class="label-title">Học kỳ:</div>
@@ -249,7 +254,7 @@ onMounted(async () => {
                     allowClear
                     @change="fetchAllAttendanceHistory"
                   >
-                    <a-select-option :value="''">Tất cả xưởng</a-select-option>
+                    <a-select-option :value="''">-- Tất cả xưởng --</a-select-option>
                     <a-select-option
                       v-for="factory in factories"
                       :key="factory.id"
@@ -276,7 +281,7 @@ onMounted(async () => {
         <a-card :bordered="false" class="card">
           <template #title>
             <UnorderedListOutlined />
-            Nhóm: 
+            Nhóm:
             {{ getFactoryName(factoryId) }}
           </template>
           <template #extra>
@@ -285,7 +290,7 @@ onMounted(async () => {
               :loading="loadingExport[factoryId]"
               @click="exportPDF(factoryId, getFactoryName(factoryId))"
             >
-             <FilePdfOutlined /> Tải xuống PDF
+              <FilePdfOutlined /> Tải xuống PDF
             </a-button>
           </template>
 
@@ -303,7 +308,7 @@ onMounted(async () => {
               <template v-if="column.dataIndex">
                 <template v-if="column.dataIndex === 'planDateStartDate'">
                   {{ dayOfWeek(record.planDateStartDate) }} -
-                  {{ formatDate(record.planDateStartDate, 'dd/MM/yyyy HH:mm') }} - 
+                  {{ formatDate(record.planDateStartDate, 'dd/MM/yyyy HH:mm') }} -
                   {{ formatDate(record.planDateEndDate, 'HH:mm') }}
                 </template>
                 <template v-else-if="column.dataIndex === 'planDateShift'">
@@ -367,9 +372,7 @@ onMounted(async () => {
                           ? 'processing'
                           : record.statusAttendance === 'CO_MAT'
                             ? 'success'
-                            : record.statusAttendance === 'CHECK_IN'
-                              ? 'processing'
-                              : 'error'
+                            : 'error'
                     "
                     :text="
                       record.statusAttendance === 'CHUA_DIEN_RA'
@@ -378,9 +381,7 @@ onMounted(async () => {
                           ? 'Đang diễn ra'
                           : record.statusAttendance === 'CO_MAT'
                             ? 'Có mặt'
-                            : record.statusAttendance === 'CHECK_IN'
-                              ? 'Đã check-in'
-                              : 'Vắng mặt'
+                            : 'Vắng mặt'
                     "
                   />
                 </template>

@@ -116,8 +116,18 @@ public class SPDPlanDateAttendanceServiceImpl implements SPDPlanDateAttendanceSe
         attendance.setAttendanceStatus(status);
 
         Attendance newEntity = spdAttendanceRepository.save(attendance);
-        userActivityLogHelper.saveLog(
-                "vừa thay đổi trạng thái điểm danh của sinh viên " + userStudent.getName() + " thành " + status.name());
+        String logMessage = String.format(
+                "vừa thay đổi trạng thái điểm danh của sinh viên '%s' (Mã: %s) " +
+                        "từ '%s' thành '%s' - " +
+                        "Kế hoạch: %s , Nhóm xưởng: %s, " +
+                        "Thời gian: %s ",
+                userStudent.getName(),  userStudent.getCode(),
+                attendance.getAttendanceStatus() != null ? attendance.getAttendanceStatus().name() : "CHƯA CÓ",
+                status.name(),
+                planDate.getPlanFactory().getPlan().getName(),
+                planDate.getPlanFactory().getFactory().getName(),
+                DateTimeUtils.convertMillisToDate(planDate.getStartDate(), "dd/MM/yyyy HH:mm"));
+        userActivityLogHelper.saveLog(logMessage);
         return RouterHelper.responseSuccess(message + " sinh viên " + userStudent.getName(), newEntity);
     }
 

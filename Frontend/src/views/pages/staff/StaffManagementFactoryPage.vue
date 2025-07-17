@@ -15,7 +15,7 @@ import {
   SearchOutlined,
 } from '@ant-design/icons-vue'
 import { ROUTE_NAMES } from '@/router/staffRoute'
-import { DEFAULT_PAGINATION } from '@/constants'
+import { DEFAULT_PAGINATION, STATUS_TYPE } from '@/constants'
 import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
 import useLoadingStore from '@/stores/useLoadingStore'
 import ExcelUploadButton from '@/components/excel/ExcelUploadButton.vue'
@@ -25,6 +25,8 @@ const breadcrumbStore = useBreadcrumbStore()
 const loadingStore = useLoadingStore()
 const isLoading = ref(false)
 
+const countFilter = ref(0)
+
 /* ----------------- Data & Reactive Variables ----------------- */
 const factories = ref([])
 const projects = ref([])
@@ -32,9 +34,8 @@ const staffs = ref([])
 const semesters = ref([])
 const filter = reactive({
   factoryName: '',
-  status: '',
   idProject: null,
-  idStaff: null,
+  status: null,
   idSemester: null,
 })
 
@@ -106,6 +107,7 @@ const fetchFactories = () => {
       } else {
         pagination.total = result.totalPages * pagination.pageSize
       }
+      countFilter.value = result.totalItems
     })
     .catch((error) => {
       message.error(error.response?.data?.message || 'Lỗi khi lấy danh sách nhóm xưởng')
@@ -185,14 +187,16 @@ const handleTableChange = (pageInfo) => {
 
 const submitAddFactory = () => {
   if (!newFactory.factoryName || !newFactory.idUserStaff || !newFactory.idProject) {
-    message.error('Vui lòng điền đầy đủ thông tin bắt buộc')
+    message.error(
+      'Vui lòng điền đầy đủ thông tin bắt buộc (Tên nhóm xưởng, Phụ trách xưởng, Dự án)',
+    )
     return
   }
   Modal.confirm({
-    title: 'Xác nhận thêm mới',
-    content: 'Bạn có chắc chắn muốn thêm nhóm xưởng mới này?',
-    okText: 'Tiếp tục',
-    cancelText: 'Hủy bỏ',
+    title: 'Xác nhận thêm nhóm xưởng mới',
+    content: 'Bạn có chắc chắn muốn thêm nhóm xưởng mới này vào hệ thống không?',
+    okText: 'Thêm nhóm xưởng',
+    cancelText: 'Hủy',
     onOk() {
       loadingStore.show()
       requestAPI
@@ -245,7 +249,7 @@ const submitUpdateFactory = () => {
 
   // Check if project is changed
   const originalFactory = factories.value.find((f) => f.id === detailFactory.id)
-  if (originalFactory && originalFactory.projectId !== detailFactory.idProject) {
+  if (originalFactory.projectId !== detailFactory.idProject) {
     Modal.confirm({
       title: 'Xác nhận thay đổi dự án',
       content:
@@ -569,13 +573,13 @@ onMounted(() => {
         <a-card :bordered="false" class="cart no-body-padding">
           <a-collapse ghost>
             <a-collapse-panel>
-              <template #header><FilterFilled /> Bộ lọc</template>
+              <template #header><FilterFilled /> Bộ lọc ({{ countFilter }})</template>
               <div class="row g-3">
                 <div class="col-md-6 col-sm-12">
                   <div class="label-title">Từ khoá:</div>
                   <a-input
                     v-model:value="filter.factoryName"
-                    placeholder="Tìm theo tên nhóm xưởng"
+                    placeholder="Tìm theo tên nhóm xưởng, tên dự án, mã hoặc tên giảng viên"
                     allowClear
                     @change="onFilterChange"
                     class="w-100"
@@ -586,28 +590,17 @@ onMounted(() => {
                   </a-input>
                 </div>
                 <div class="col-md-3 col-sm-6">
-                  <div class="label-title">Giảng viên:</div>
+                  <div class="label-title">Trạng thái:</div>
                   <a-select
-                    v-model:value="filter.idStaff"
-                    placeholder="Chọn giảng viên"
-                    allowClear
-                    show-search
-                    @change="onFilterChange"
+                    v-model:value="filter.status"
                     class="w-100"
-                    :filter-option="
-                      (input, option) =>
-                        (option.label || '').toLowerCase().includes(input.toLowerCase())
-                    "
+                    @change="onFilterChange"
+                    :dropdownMatchSelectWidth="false"
+                    placeholder="-- Tất cả trạng thái --"
                   >
-                    <a-select-option :value="null">Tất cả giảng viên</a-select-option>
-                    <a-select-option
-                      v-for="staff in staffs"
-                      :key="staff.id"
-                      :value="staff.id"
-                      :label="staff.code + ' - ' + staff.name"
-                    >
-                      {{ staff.code + ' - ' + staff.name }}
-                    </a-select-option>
+                    <a-select-option :value="null">-- Tất cả trạng thái --</a-select-option>
+                    <a-select-option :value="1">Đang triển khai</a-select-option>
+                    <a-select-option :value="0">Ngừng triển khai</a-select-option>
                   </a-select>
                 </div>
                 <div class="col-md-3 col-sm-6">
@@ -624,7 +617,7 @@ onMounted(() => {
                         (option.label || '').toLowerCase().includes(input.toLowerCase())
                     "
                   >
-                    <a-select-option :value="null">Tất cả kỳ học</a-select-option>
+                    <a-select-option :value="null">-- Tất cả kỳ học --</a-select-option>
                     <a-select-option
                       v-for="semester in semesters"
                       :key="semester.id"
@@ -695,6 +688,7 @@ onMounted(() => {
                     <a-switch
                       class="me-2"
                       :checked="record.factoryStatus === 'ACTIVE' || record.factoryStatus === 1"
+                      :disabled="record.currentStatus !== record.factoryStatus"
                       @change="confirmChangeStatus(record)"
                     />
                     <a-tag
@@ -713,8 +707,8 @@ onMounted(() => {
                   </span>
                 </template>
                 <template v-if="column.dataIndex === 'factoryDescription'">
-                  <a-typography-link 
-                    v-if="record.factoryDescription" 
+                  <a-typography-link
+                    v-if="record.factoryDescription"
                     @click="handleShowDescription(record.factoryDescription)"
                   >
                     Chi tiết
@@ -724,7 +718,10 @@ onMounted(() => {
               </template>
               <template v-else-if="column.key === 'actions'">
                 <a-space>
-                  <a-tooltip title="Chi tiết nhóm xưởng">
+                  <a-tooltip
+                    title="Chi tiết nhóm xưởng"
+                    v-if="record.factoryStatus === STATUS_TYPE.ENABLE"
+                  >
                     <a-button
                       type="text"
                       class="btn-outline-primary"

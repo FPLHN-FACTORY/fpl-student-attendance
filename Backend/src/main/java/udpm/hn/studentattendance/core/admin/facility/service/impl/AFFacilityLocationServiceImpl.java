@@ -1,7 +1,7 @@
 package udpm.hn.studentattendance.core.admin.facility.service.impl;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Pageable;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import udpm.hn.studentattendance.core.admin.facility.model.request.AFAddOrUpdateFacilityLocationRequest;
@@ -13,10 +13,14 @@ import udpm.hn.studentattendance.core.admin.facility.service.AFFacilityLocationS
 import udpm.hn.studentattendance.entities.Facility;
 import udpm.hn.studentattendance.entities.FacilityLocation;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
+import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
 import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
+import udpm.hn.studentattendance.infrastructure.constants.RedisPrefixConstant;
+import com.fasterxml.jackson.core.type.TypeReference;
+import udpm.hn.studentattendance.helpers.RedisCacheHelper;
 
 @Service
 @RequiredArgsConstructor
@@ -27,11 +31,23 @@ public class AFFacilityLocationServiceImpl implements AFFacilityLocationService 
 
     private final UserActivityLogHelper userActivityLogHelper;
 
+    private final RedisCacheHelper redisCacheHelper;
+
+    private final RedisInvalidationHelper redisInvalidationHelper;
+
+    public PageableObject<AFFacilityLocationResponse> getLocationList(AFFilterFacilityLocationRequest request) {
+        String key = RedisPrefixConstant.REDIS_PREFIX_FACILITY_LOCATION + "list_" + request.toString();
+        return redisCacheHelper.getOrSet(
+                key,
+                () -> PageableObject.of(
+                        afFacilityLocationRepository.getAllByFilter(PaginationHelper.createPageable(request), request)),
+                new TypeReference<>() {
+                });
+    }
+
     @Override
     public ResponseEntity<?> getAllList(AFFilterFacilityLocationRequest request) {
-        Pageable pageable = PaginationHelper.createPageable(request);
-        PageableObject<AFFacilityLocationResponse> data = PageableObject
-                .of(afFacilityLocationRepository.getAllByFilter(pageable, request));
+        PageableObject<AFFacilityLocationResponse> data = getLocationList(request);
         return RouterHelper.responseSuccess("Lấy danh sách dữ liệu thành công", data);
     }
 
@@ -58,11 +74,16 @@ public class AFFacilityLocationServiceImpl implements AFFacilityLocationService 
         FacilityLocation savedLocation = afFacilityLocationRepository.save(facilityLocation);
         userActivityLogHelper
                 .saveLog("vừa thêm địa điểm mới: " + savedLocation.getName() + " tại cơ sở " + facility.getName());
+
+        // Invalidate all caches
+        redisInvalidationHelper.invalidateAllCaches();
+
         return RouterHelper.responseSuccess("Tạo mới địa điểm thành công", savedLocation);
     }
 
     @Override
     public ResponseEntity<?> updateLocation(AFAddOrUpdateFacilityLocationRequest request) {
+
         FacilityLocation facilityLocation = afFacilityLocationRepository.findById(request.getId()).orElse(null);
         if (facilityLocation == null) {
             return RouterHelper.responseError("Không tìm thấy địa điểm muốn cập nhật");
@@ -87,6 +108,10 @@ public class AFFacilityLocationServiceImpl implements AFFacilityLocationService 
         FacilityLocation savedLocation = afFacilityLocationRepository.save(facilityLocation);
         userActivityLogHelper.saveLog("vừa cập nhật địa điểm: " + savedLocation.getName() + " tại cơ sở "
                 + savedLocation.getFacility().getName());
+
+        // Invalidate all caches
+        redisInvalidationHelper.invalidateAllCaches();
+
         return RouterHelper.responseSuccess("Cập nhật địa điểm thành công", savedLocation);
     }
 
@@ -101,6 +126,10 @@ public class AFFacilityLocationServiceImpl implements AFFacilityLocationService 
         String facilityName = facilityLocation.getFacility().getName();
         afFacilityLocationRepository.delete(facilityLocation);
         userActivityLogHelper.saveLog("vừa xóa địa điểm: " + locationName + " tại cơ sở " + facilityName);
+
+        // Invalidate all caches
+        redisInvalidationHelper.invalidateAllCaches();
+
         return RouterHelper.responseSuccess("Xoá thành công địa điểm: " + facilityLocation.getName());
     }
 
@@ -124,6 +153,9 @@ public class AFFacilityLocationServiceImpl implements AFFacilityLocationService 
         String statusText = savedLocation.getStatus() == EntityStatus.ACTIVE ? "Hoạt động" : "Không hoạt động";
         userActivityLogHelper.saveLog("vừa thay đổi trạng thái địa điểm: " + savedLocation.getName() +
                 " tại cơ sở " + savedLocation.getFacility().getName() + " thành " + statusText);
+
+        // Invalidate all caches
+        redisInvalidationHelper.invalidateAllCaches();
 
         return RouterHelper.responseSuccess("Thay đổi trạng thái địa điểm thành công", savedLocation);
     }

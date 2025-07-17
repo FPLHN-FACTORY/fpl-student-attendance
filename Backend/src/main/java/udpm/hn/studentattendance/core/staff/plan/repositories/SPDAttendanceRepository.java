@@ -36,28 +36,7 @@ public interface SPDAttendanceRepository extends AttendanceRepository {
         LEFT JOIN attendance a ON pd.id = a.id_plan_date AND a.id_user_student = usf.id_user_student
         WHERE
             pd.status = 1 AND
-            pf.status = 1 AND
-            f.status = 1 AND
-            us.status = 1 AND
             usf.status = 1 AND
-            EXISTS(
-                SELECT 1
-                FROM plan p
-                JOIN project pj ON f.id_project = pj.id
-                JOIN subject_facility sf ON sf.id = pj.id_subject_facility
-                JOIN subject s2 ON s2.id = sf.id_subject
-                JOIN facility f2 ON sf.id_facility = f2.id
-                JOIN semester s ON pj.id_semester = s.id
-                WHERE 
-                     pf.id_plan = p.id AND
-                     p.status = 1 AND
-                     pj.status = 1 AND
-                     s.status = 1 AND
-                     s2.status = 1 AND
-                     f2.status = 1 AND
-                     sf.status = 1 AND
-                     f2.id = :#{#request.idFacility}
-            ) AND
             (NULLIF(TRIM(:#{#request.keyword}), '') IS NULL OR (
                 us.code LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%') OR
                 us.name LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%')
@@ -78,28 +57,7 @@ public interface SPDAttendanceRepository extends AttendanceRepository {
         LEFT JOIN attendance a ON pd.id = a.id_plan_date AND a.id_user_student = usf.id_user_student
         WHERE
             pd.status = 1 AND
-            pf.status = 1 AND
-            f.status = 1 AND
-            us.status = 1 AND
             usf.status = 1 AND
-            EXISTS(
-                SELECT 1
-                FROM plan p
-                JOIN project pj ON f.id_project = pj.id
-                JOIN subject_facility sf ON sf.id = pj.id_subject_facility
-                JOIN subject s2 ON s2.id = sf.id_subject
-                JOIN facility f2 ON sf.id_facility = f2.id
-                JOIN semester s ON pj.id_semester = s.id
-                WHERE 
-                     pf.id_plan = p.id AND
-                     p.status = 1 AND
-                     pj.status = 1 AND
-                     s.status = 1 AND
-                     s2.status = 1 AND
-                     f2.status = 1 AND
-                     sf.status = 1 AND
-                     f2.id = :#{#request.idFacility}
-            ) AND
             (NULLIF(TRIM(:#{#request.keyword}), '') IS NULL OR (
                 us.code LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%') OR
                 us.name LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%')
@@ -125,27 +83,7 @@ public interface SPDAttendanceRepository extends AttendanceRepository {
                 JOIN plan pl ON pf.id_plan = pl.id
                 JOIN factory f ON pf.id_factory = f.id
                 WHERE
-                    pf.status = 1 AND
-                    pl.status = 1 AND
-                    f.status = 1 AND
-                    EXISTS(
-                        SELECT 1
-                        FROM project p
-                        JOIN level_project lp ON lp.id = p.id_level_project
-                        JOIN semester s ON s.id = p.id_semester
-                        JOIN subject_facility sf ON sf.id = p.id_subject_facility
-                        JOIN subject s2 ON s2.id = sf.id_subject
-                        JOIN facility f2 ON sf.id_facility = f2.id
-                        WHERE
-                            p.id = pl.id_project AND
-                            p.status = 1 AND
-                            lp.status = 1 AND
-                            s.status = 1 AND
-                            sf.status = 1 AND
-                            s2.status = 1 AND
-                            f2.status = 1 AND
-                            f2.id = :idFacility
-                    ) AND
+                    pd.status = 1 AND
                     pd.id = :idPlanDate
             """, nativeQuery = true)
     Optional<SPDPlanDateAttendanceResponse> getDetailPlanDate(String idPlanDate, String idFacility);

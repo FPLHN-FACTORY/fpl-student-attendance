@@ -17,7 +17,7 @@ public interface ADSSubjectFacilityExtendRepository extends SubjectFacilityRepos
                f.name as facilityName,
                COUNT(sf.id) as totalSubjectFacility
            FROM
-               Facility f
+               facility f
                LEFT JOIN subject_facility sf ON f.id = sf.id_facility AND sf.status = 1
            WHERE
                f.status = 1

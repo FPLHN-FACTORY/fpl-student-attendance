@@ -1,5 +1,6 @@
 package udpm.hn.studentattendance.core.admin.semester.controller;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -15,7 +16,7 @@ public class ADSemesterRestController {
     private final ADSemesterService semesterService;
 
     @GetMapping
-    public ResponseEntity<?> getAll(ADSemesterRequest request) {
+    public ResponseEntity<?> getAll(@Valid ADSemesterRequest request) {
         return semesterService.getAllSemester(request);
     }
 

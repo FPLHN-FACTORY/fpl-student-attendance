@@ -37,7 +37,7 @@ public class EmojiSanitizingFilter extends OncePerRequestFilter {
 
     private static String sanitize(String input) {
         if (input == null) return null;
-        return input.replaceAll("[^\\p{L}\\p{N}\\s~`!@#$%^&*()_+\\-=\\[\\]{}|;:'\",.<>/?\\\\]", "");
+        return input.replaceAll("[^\\p{L}\\p{N}\\s~`!@#$%^&*()_+\\-=\\[\\]{}|;:'\",.<>/?\\\\]", "").trim();
     }
 
 }

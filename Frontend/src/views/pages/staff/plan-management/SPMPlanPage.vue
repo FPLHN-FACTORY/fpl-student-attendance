@@ -11,7 +11,7 @@ import {
 } from '@ant-design/icons-vue'
 import { message, Modal } from 'ant-design-vue'
 import requestAPI from '@/services/requestApiService'
-import { DEFAULT_DATE_FORMAT, DEFAULT_PAGINATION } from '@/constants'
+import { DEFAULT_DATE_FORMAT, DEFAULT_PAGINATION, STATUS_TYPE } from '@/constants'
 import { API_ROUTES_STAFF } from '@/constants/staffConstant'
 import { useRouter } from 'vue-router'
 import { ROUTE_NAMES } from '@/router/staffRoute'
@@ -47,6 +47,8 @@ const maxRangeDate = ref(dayjs())
 
 const currentProject = ref(null)
 
+const countFilter = ref(0)
+
 const columns = ref(
   autoAddColumnWidth([
     { title: '#', dataIndex: 'orderNumber', key: 'orderNumber' },
@@ -54,7 +56,7 @@ const columns = ref(
     { title: 'Tên dự án', dataIndex: 'projectName', key: 'projectName' },
     { title: 'Nội dung', dataIndex: 'description', key: 'description' },
     { title: 'Bộ môn', dataIndex: 'subjectName', key: 'subjectName' },
-    { title: 'Cấp độ', dataIndex: 'level', key: 'level' },
+    { title: 'Nhóm dự án', dataIndex: 'level', key: 'level' },
     { title: 'Ngày diễn ra', dataIndex: 'semesterName', key: 'semesterName' },
     {
       title: 'Checkin/checkout muộn',
@@ -134,7 +136,7 @@ const fetchDataLevel = () => {
       optLevel.value = response.data
     })
     .catch((error) => {
-      message.error(error?.response?.data?.message || 'Lỗi khi lấy dữ liệu cấp độ dự án')
+      message.error(error?.response?.data?.message || 'Lỗi khi lấy dữ liệu nhóm dự án')
     })
 }
 
@@ -177,6 +179,7 @@ const fetchDataList = () => {
     .then(({ data: response }) => {
       lstData.value = response.data.data
       pagination.value.total = response.data.totalPages * pagination.value.pageSize
+      countFilter.value = response.data.totalItems
     })
     .catch((error) => {
       message.error(error?.response?.data?.message || 'Không thể tải danh sách dữ liệu')
@@ -323,11 +326,11 @@ const handleSubmitAdd = async () => {
   try {
     await formRefAddOrUpdate.value.validate()
     Modal.confirm({
-      title: `Xác nhận thêm mới`,
+      title: `Xác nhận tạo kế hoạch mới`,
       type: 'info',
-      content: `Bạn có chắc muốn tạo kế hoạch này?`,
-      okText: 'Tiếp tục',
-      cancelText: 'Hủy bỏ',
+      content: `Bạn có chắc chắn muốn tạo kế hoạch này không?`,
+      okText: 'Tạo kế hoạch',
+      cancelText: 'Hủy',
       onOk() {
         fetchSubmitCreate()
       },
@@ -339,11 +342,11 @@ const handleSubmitUpdate = async () => {
   try {
     await formRefAddOrUpdate.value.validate()
     Modal.confirm({
-      title: `Xác nhận cập nhật`,
+      title: `Xác nhận cập nhật kế hoạch`,
       type: 'info',
-      content: `Mọi dữ liệu dư thừa trong khoảng thời gian diễn ra có thể mất. Bạn có chắc muốn cập nhật kế hoạch này?`,
-      okText: 'Tiếp tục',
-      cancelText: 'Hủy bỏ',
+      content: `Cập nhật kế hoạch có thể làm mất một số dữ liệu dư thừa trong khoảng thời gian diễn ra. Bạn có chắc chắn muốn tiếp tục không?`,
+      okText: 'Cập nhật',
+      cancelText: 'Hủy',
       onOk() {
         fetchSubmitUpdate()
       },
@@ -353,11 +356,11 @@ const handleSubmitUpdate = async () => {
 
 const handleChangeStatus = (id) => {
   Modal.confirm({
-    title: `Xác nhận thay đổi trạng thái`,
+    title: `Xác nhận thay đổi trạng thái kế hoạch`,
     type: 'info',
-    content: `Bạn có chắc muốn thay đổi trạng thái kế hoạch này?`,
-    okText: 'Tiếp tục',
-    cancelText: 'Hủy bỏ',
+    content: `Bạn có chắc chắn muốn thay đổi trạng thái của kế hoạch này không?`,
+    okText: 'Thay đổi',
+    cancelText: 'Hủy',
     onOk() {
       fetchSubmitChangeStatus(id)
     },
@@ -366,11 +369,11 @@ const handleChangeStatus = (id) => {
 
 const handleDelete = (id) => {
   Modal.confirm({
-    title: `Xác nhận xoá kế hoạch`,
+    title: `Xác nhận xóa kế hoạch`,
     type: 'warning',
-    content: `Mọi dữ liệu điểm danh sẽ bị xoá. Bạn vẫn muốn tiếp tục?`,
-    okText: 'Tiếp tục',
-    cancelText: 'Hủy bỏ',
+    content: `Việc xóa kế hoạch sẽ làm mất toàn bộ dữ liệu điểm danh liên quan. Bạn có chắc chắn muốn tiếp tục không?`,
+    okText: 'Xóa kế hoạch',
+    cancelText: 'Hủy',
     onOk() {
       fetchSubmitDelete(id)
     },
@@ -387,7 +390,14 @@ const handleChangeProjectId = (id) => {
   currentProject.value = lstDataProject.value.find((o) => o.id === id)
   minRangeDate.value = dayjs(currentProject.value.fromDate)
   maxRangeDate.value = dayjs(currentProject.value.toDate)
-  formData.rangeDate = [currentProject.value ? minRangeDate.value : dayjs(), maxRangeDate.value]
+  formData.rangeDate = [
+    currentProject.value
+      ? currentProject.value.fromDate < dayjs().valueOf()
+        ? dayjs()
+        : minRangeDate.value
+      : dayjs(),
+    maxRangeDate.value,
+  ]
 }
 
 const handleShowDetail = (id) => {
@@ -553,7 +563,7 @@ watch(
           v-model:value="dataFilterAdd.level"
           class="w-100"
           :dropdownMatchSelectWidth="false"
-          placeholder="-- Chọn 1 cấp độ --"
+          placeholder="-- Chọn 1 nhóm dự án --"
           allowClear
           :disabled="modalAddOrUpdate.isLoading"
         >
@@ -652,7 +662,7 @@ watch(
         <a-card :bordered="false" class="cart no-body-padding">
           <a-collapse ghost>
             <a-collapse-panel>
-              <template #header><FilterFilled /> Bộ lọc</template>
+              <template #header><FilterFilled /> Bộ lọc ({{ countFilter }})</template>
               <div class="row g-3">
                 <div class="col-xxl-2 col-md-4 col-sm-12">
                   <div class="label-title">Từ khoá:</div>
@@ -673,7 +683,6 @@ watch(
                     class="w-100"
                     :dropdownMatchSelectWidth="false"
                     placeholder="-- Tất cả trạng thái --"
-                    allowClear
                   >
                     <a-select-option :value="null">-- Tất cả trạng thái --</a-select-option>
                     <a-select-option :value="1">Đang triển khai</a-select-option>
@@ -696,7 +705,7 @@ watch(
                   </a-select>
                 </div>
                 <div class="col-xxl-2 col-md-4 col-sm-6">
-                  <div class="label-title">Cấp độ dự án:</div>
+                  <div class="label-title">Nhóm dự án:</div>
                   <a-select
                     v-model:value="dataFilter.level"
                     class="w-100"
@@ -775,8 +784,8 @@ watch(
           >
             <template #bodyCell="{ column, record }">
               <template v-if="column.dataIndex === 'description'">
-                <a-typography-link 
-                  v-if="record.description" 
+                <a-typography-link
+                  v-if="record.description"
                   @click="handleShowDescription(record.description)"
                   >Chi tiết</a-typography-link
                 >
@@ -803,7 +812,8 @@ watch(
               <template v-if="column.dataIndex === 'status'">
                 <a-switch
                   class="me-2"
-                  :checked="record.status === 1"
+                  :checked="record.status === STATUS_TYPE.ENABLE"
+                  :disabled="record.status !== record.currentStatus"
                   @change="handleChangeStatus(record.id)"
                 />
                 <a-tag :color="record.status === 1 ? 'green' : 'red'">{{
@@ -813,15 +823,15 @@ watch(
               <template v-if="column.key === 'actions'">
                 <a-tooltip title="Phân công nhóm xưởng">
                   <a-button
-                    class="btn-outline-primary border-0 me-2"
+                    class="btn-outline-primary border-0"
                     @click="handleShowDetail(record.id)"
                   >
                     <AlignLeftOutlined />
                   </a-button>
                 </a-tooltip>
-                <a-tooltip title="Chỉnh sửa kế hoạch">
+                <a-tooltip v-if="record.status === 1" title="Chỉnh sửa kế hoạch">
                   <a-button
-                    class="btn-outline-info border-0"
+                    class="btn-outline-info border-0 ms-2"
                     @click="handleShowModalUpdate(record)"
                   >
                     <EditFilled />

@@ -1,7 +1,7 @@
 package udpm.hn.studentattendance.core.staff.attendancerecovery.service.impl;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Pageable;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
@@ -12,15 +12,19 @@ import udpm.hn.studentattendance.core.staff.attendancerecovery.repository.*;
 import udpm.hn.studentattendance.core.staff.attendancerecovery.service.STAttendanceRecoveryService;
 import udpm.hn.studentattendance.entities.*;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
+import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
 import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.helpers.SessionHelper;
 import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
-import udpm.hn.studentattendance.helpers.ValidateHelper;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.constants.AttendanceStatus;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
+import udpm.hn.studentattendance.infrastructure.constants.RedisPrefixConstant;
 import udpm.hn.studentattendance.infrastructure.excel.model.request.EXDataRequest;
 import udpm.hn.studentattendance.infrastructure.excel.model.response.ExImportLogDetailResponse;
+import com.fasterxml.jackson.core.type.TypeReference;
+import udpm.hn.studentattendance.helpers.RedisCacheHelper;
+import udpm.hn.studentattendance.utils.DateTimeUtils;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -54,19 +58,33 @@ public class STAttendanceRecoveryServiceImpl implements STAttendanceRecoveryServ
 
     private final UserActivityLogHelper userActivityLogHelper;
 
+    private final RedisCacheHelper redisCacheHelper;
+
+    private final RedisInvalidationHelper redisInvalidationHelper;
+
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
-    private static final ZoneId VN_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
+    private static final ZoneId VN_ZONE = ZoneId.of(DateTimeUtils.ZONE_ID);
 
     private final STAttendanceRecoveryHistoryLogRepository historyLogRepository;
 
     private final STAttendanceRecoveryHistoryLogDetailRepository historyLogDetailRepository;
 
+    public PageableObject<?> getCachedAttendanceRecoveryList(STAttendanceRecoveryRequest request) {
+        String key = RedisPrefixConstant.REDIS_PREFIX_ATTENDANCE_RECOVERY + "list_"
+                + sessionHelper.getFacilityId() + "_"
+                + request.toString();
+        return redisCacheHelper.getOrSet(
+                key,
+                () -> PageableObject.of(attendanceRecoveryRepository.getListAttendanceRecovery(request,
+                        sessionHelper.getFacilityId(), PaginationHelper.createPageable(request))),
+                new TypeReference<>() {
+                });
+    }
+
     @Override
     public ResponseEntity<?> getListAttendanceRecovery(STAttendanceRecoveryRequest request) {
-        Pageable pageable = PaginationHelper.createPageable(request);
-        PageableObject list = PageableObject.of(attendanceRecoveryRepository.getListAttendanceRecovery(request,
-                sessionHelper.getFacilityId(), pageable));
+        PageableObject<?> list = getCachedAttendanceRecoveryList(request);
         return RouterHelper.responseSuccess("Lấy danh sách sự kiện thành công", list);
     }
 
@@ -82,20 +100,34 @@ public class STAttendanceRecoveryServiceImpl implements STAttendanceRecoveryServ
             userActivityLogHelper.saveLog(
                     "vừa xóa sự kiện khôi phục điểm danh: " + attendanceRecoveryOptional.get().getName());
             attendanceRecoveryRepository.deleteById(attendanceRecoveryOptional.get().getId());
+
+            // Invalidate all caches
+            redisInvalidationHelper.invalidateAllCaches();
+
             return RouterHelper.responseSuccess("Xóa sự kiện khôi phục điểm danh sinh viên thành công", null);
         } else {
             return RouterHelper.responseError("Sự kiện khôi phục điểm danh sinh viên không tồn tại", null);
         }
     }
 
+    public List<Semester> getCachedSemesters() {
+        String key = RedisPrefixConstant.REDIS_PREFIX_ATTENDANCE_RECOVERY + "semesters";
+        return redisCacheHelper.getOrSet(
+                key,
+                () -> semesterRepository.getAllSemester(EntityStatus.ACTIVE),
+                new TypeReference<>() {
+                });
+    }
+
     @Override
     public ResponseEntity<?> getAllSemester() {
-        List<Semester> semesters = semesterRepository.getAllSemester(EntityStatus.ACTIVE);
+        List<Semester> semesters = getCachedSemesters();
         return RouterHelper.responseSuccess("Lấy tất cả học kỳ thành công", semesters);
     }
 
     @Override
     public ResponseEntity<?> createNewEventAttendanceRecovery(STCreateOrUpdateNewEventRequest request) {
+
         Optional<Facility> facilityOptional = facilityRepository.findById(sessionHelper.getFacilityId());
         if (facilityOptional == null) {
             return RouterHelper.responseError("Cơ sở không tồn tại", null);
@@ -108,22 +140,31 @@ public class STAttendanceRecoveryServiceImpl implements STAttendanceRecoveryServ
         AttendanceRecovery attendanceRecoverySave = attendanceRecoveryRepository.save(attendanceRecovery);
 
         userActivityLogHelper.saveLog("vừa thêm sự kiện khôi phục điểm danh mới: " + attendanceRecoverySave.getName());
+
+        // Invalidate all caches
+        redisInvalidationHelper.invalidateAllCaches();
+
         return RouterHelper.responseSuccess("Thêm sự kiện khôi phục điểm danh mới thành công", attendanceRecoverySave);
+    }
+
+    public AttendanceRecovery getCachedAttendanceRecoveryDetail(String id) {
+        Optional<AttendanceRecovery> attendanceRecoveryOptional = attendanceRecoveryRepository.findById(id);
+        return attendanceRecoveryOptional.orElse(null);
     }
 
     @Override
     public ResponseEntity<?> getDetailEventAttendanceRecovery(String idEventAttendanceRecovery) {
-        Optional<AttendanceRecovery> attendanceRecoveryOptional = attendanceRecoveryRepository
-                .findById(idEventAttendanceRecovery);
-        if (attendanceRecoveryOptional.isPresent()) {
+        AttendanceRecovery attendanceRecovery = getCachedAttendanceRecoveryDetail(idEventAttendanceRecovery);
+        if (attendanceRecovery != null) {
             return RouterHelper.responseSuccess("Lấy chi tiết sự kiện khôi phục điểm danh thành công",
-                    attendanceRecoveryOptional);
+                    attendanceRecovery);
         }
         return RouterHelper.responseError("Sự Kiện khôi phục điểm danh không tồn tại", null);
     }
 
     @Override
     public ResponseEntity<?> updateEventAttendanceRecovery(STCreateOrUpdateNewEventRequest request, String id) {
+
         Optional<AttendanceRecovery> attendanceRecoveryOptional = attendanceRecoveryRepository.findById(id);
         if (attendanceRecoveryOptional.isPresent()) {
             AttendanceRecovery attendanceRecovery = attendanceRecoveryOptional.get();
@@ -135,6 +176,10 @@ public class STAttendanceRecoveryServiceImpl implements STAttendanceRecoveryServ
 
             userActivityLogHelper.saveLog(
                     "vừa cập nhật sự kiện khôi phục điểm danh: " + oldName + " → " + attendanceRecovery.getName());
+
+            // Invalidate all caches
+            redisInvalidationHelper.invalidateAllCaches();
+
             return RouterHelper.responseSuccess("Cập nhật sự kiện khôi phục điểm danh thành công", attendanceRecovery);
         }
         return RouterHelper.responseError("Sự kiện khôi phục điểm danh không tồn tại", null);
@@ -192,6 +237,9 @@ public class STAttendanceRecoveryServiceImpl implements STAttendanceRecoveryServ
                                 + formatDate(request.getDay()),
                         null);
             }
+
+            // Invalidate all caches
+            redisInvalidationHelper.invalidateAllCaches();
 
             return RouterHelper.responseSuccess(
                     String.format(
@@ -337,25 +385,59 @@ public class STAttendanceRecoveryServiceImpl implements STAttendanceRecoveryServ
         }
     }
 
+    public PageableObject<?> getCachedHistoryLogByEvent(String idImportLog, EXDataRequest request) {
+        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_ATTENDANCE_RECOVERY + "history_log_"
+                + idImportLog + "_"
+                + sessionHelper.getUserId() + "_"
+                + sessionHelper.getFacilityId() + "_"
+                + request.toString();
+
+        Object cachedData = redisCacheHelper.getOrSet(
+                cacheKey,
+                () -> PageableObject.of(historyLogRepository.getListHistory(PaginationHelper.createPageable(request), 6,
+                        sessionHelper.getUserId(), sessionHelper.getFacilityId(), idImportLog)),
+                new TypeReference<>() {
+                });
+        return (PageableObject<?>) cachedData;
+    }
+
     @Override
     public ResponseEntity<?> getAllHistoryLogByEvent(String idImportLog, EXDataRequest request) {
-        Pageable pageable = PaginationHelper.createPageable(request);
-        PageableObject list = PageableObject.of(historyLogRepository.getListHistory(pageable, 6,
-                sessionHelper.getUserId(), sessionHelper.getFacilityId(), idImportLog));
+        PageableObject<?> list = getCachedHistoryLogByEvent(idImportLog, request);
         return RouterHelper.responseSuccess("Lấy tất cả log import excel khôi phục điểm danh thành công", list);
+    }
+
+    public List<ExImportLogDetailResponse> getCachedHistoryLogDetailEvent(String idImportLog) {
+        return historyLogRepository.getAllList(idImportLog,
+                sessionHelper.getUserId(), sessionHelper.getFacilityId());
     }
 
     @Override
     public ResponseEntity<?> getAllHistoryLogDetailEvent(String idImportLog) {
-        List<ExImportLogDetailResponse> logDetailResponseList = historyLogRepository.getAllList(idImportLog,
-                sessionHelper.getUserId(), sessionHelper.getFacilityId());
+        List<ExImportLogDetailResponse> logDetailResponseList = getCachedHistoryLogDetailEvent(idImportLog);
         return RouterHelper.responseSuccess("Lấy chi tiết lịch sử import khôi phục điểm danh thành công",
                 logDetailResponseList);
     }
 
+    public Integer getCachedImportStudentSuccess(String idImportLog, String userId, String facilityId, Integer type) {
+        return historyLogRepository.getAllLine(idImportLog, userId, facilityId, type);
+    }
+
     @Override
     public Integer getAllImportStudentSuccess(String idImportLog, String userId, String facilityId, Integer type) {
-        return historyLogRepository.getAllLine(idImportLog, userId, facilityId, type);
+        return getCachedImportStudentSuccess(idImportLog, userId, facilityId, type);
+    }
+
+    public Boolean getCachedHasStudentAttendanceRecovery(String idAttendanceRecovery) {
+        Optional<AttendanceRecovery> attendanceRecoveryOptional = attendanceRecoveryRepository
+                .findById(idAttendanceRecovery);
+
+        if (attendanceRecoveryOptional.isPresent()) {
+            AttendanceRecovery attendanceRecovery = attendanceRecoveryOptional.get();
+            return attendanceRecovery.getImportLog() != null;
+        }
+
+        return false;
     }
 
     @Override
@@ -363,8 +445,7 @@ public class STAttendanceRecoveryServiceImpl implements STAttendanceRecoveryServ
         Optional<AttendanceRecovery> attendanceRecoveryOptional = attendanceRecoveryRepository
                 .findById(idAttendanceRecovery);
         if (attendanceRecoveryOptional.isPresent()) {
-            AttendanceRecovery attendanceRecovery = attendanceRecoveryOptional.get();
-            boolean hasStudents = attendanceRecovery.getImportLog() != null;
+            Boolean hasStudents = getCachedHasStudentAttendanceRecovery(idAttendanceRecovery);
             return RouterHelper.responseSuccess("Kiểm tra sự kiện có sinh viên thành công", hasStudents);
         }
         return RouterHelper.responseError("Không tìm thấy sự kiện", false);
@@ -379,13 +460,13 @@ public class STAttendanceRecoveryServiceImpl implements STAttendanceRecoveryServ
 
             List<Attendance> attendanceList = attendanceRepository
                     .findAllByAttendanceRecoveryId(attendanceRecovery.getId());
-            if (attendanceList != null){
+            if (attendanceList != null) {
                 attendanceRepository.deleteAll(attendanceList);
             }
 
             List<ImportLogDetail> importLogDetailList = historyLogRepository
                     .getAllByImportLog(attendanceRecoveryOptional.get().getImportLog().getId());
-            if (importLogDetailList != null){
+            if (importLogDetailList != null) {
                 historyLogDetailRepository.deleteAll(importLogDetailList);
 
             }
@@ -399,9 +480,12 @@ public class STAttendanceRecoveryServiceImpl implements STAttendanceRecoveryServ
             attendanceRecovery.setTotalStudent(0);
             attendanceRecoveryRepository.save(attendanceRecovery);
 
-
             userActivityLogHelper
                     .saveLog("đã xóa dữ liệu điểm danh của sự kiện khôi phục: " + attendanceRecovery.getName());
+
+            // Invalidate all caches
+            redisInvalidationHelper.invalidateAllCaches();
+
             return RouterHelper.responseSuccess("Xóa dữ liệu điểm danh thành công", null);
         }
         return RouterHelper.responseError("Không tìm thấy sự kiện khôi phục điểm danh", null);

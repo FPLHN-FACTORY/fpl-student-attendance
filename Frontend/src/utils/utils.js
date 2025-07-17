@@ -1,4 +1,5 @@
 import { DEFAULT_DATE_FORMAT } from '@/constants'
+import dayjs from 'dayjs'
 import { unref } from 'vue'
 
 export const decodeBase64 = (base64String) => {
@@ -89,6 +90,24 @@ export const formatDate = (timestamp, format) => {
   }
 
   return format.replace(/YYYY|yyyy|MM|dd|DD|HH|mm|ss/g, (matched) => map[matched])
+}
+
+export const getShiftTimeStart = (timestamp, startHour, startMinute) => {
+  return dayjs(timestamp)
+    .set('hour', startHour)
+    .set('minute', startMinute)
+    .set('second', 0)
+    .set('millisecond', 0)
+    .valueOf()
+}
+
+export const getShiftTimeEnd = (timestamp, endHour, endMinute) => {
+  return dayjs(timestamp)
+    .set('hour', endHour)
+    .set('minute', endMinute)
+    .set('second', 0)
+    .set('millisecond', 0)
+    .valueOf()
 }
 
 export const rowSelectTable = (selectedRowKeys, isDisabled = () => false) => {

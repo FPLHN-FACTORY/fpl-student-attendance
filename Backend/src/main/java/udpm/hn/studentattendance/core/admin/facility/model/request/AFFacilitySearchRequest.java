@@ -3,14 +3,17 @@ package udpm.hn.studentattendance.core.admin.facility.model.request;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 import udpm.hn.studentattendance.infrastructure.common.PageableRequest;
 import udpm.hn.studentattendance.infrastructure.constants.EntityProperties;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 
 @Getter
 @Setter
+@ToString
 public class AFFacilitySearchRequest extends PageableRequest {
-    @Size(max = EntityProperties.LENGTH_CODE, message = "Tên cơ sở không được vượt quá 50 ký tự")
+
+    @Size(max = EntityProperties.LENGTH_CODE, message = "Từ khóa không được vượt quá " + EntityProperties.LENGTH_CODE + " ký tự")
     private String name;
 
     private EntityStatus status;

@@ -14,6 +14,7 @@ public class USStudentFactoryRequest extends PageableRequest {
     private String factoryId;
 
     private String studentFactoryId;
+
     @Size(max = EntityProperties.LENGTH_NAME, message = "Tìm kiếm " + EntityProperties.LENGTH_NAME + " ký tự")
     private String searchQuery;
 

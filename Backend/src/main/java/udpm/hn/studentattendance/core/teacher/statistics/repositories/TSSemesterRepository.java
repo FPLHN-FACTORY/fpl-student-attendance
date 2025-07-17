@@ -14,8 +14,9 @@ public interface TSSemesterRepository extends SemesterRepository {
         WITH cte_factory AS (
             SELECT
                 f.id,
-                COUNT(DISTINCT CASE WHEN pf.status = 1 THEN pd.id END) AS total_shift,
-                COUNT(DISTINCT CASE WHEN pf.status = 1 AND pd.end_date <= UNIX_TIMESTAMP(NOW()) * 1000 THEN pd.id END) AS total_process_shift
+                LEAST(f.status, p.status, s.status, sf.status, s2.status, pf.status, pl.status) AS status,
+                COUNT(DISTINCT pd.id) AS total_shift,
+                COUNT(DISTINCT CASE WHEN pd.end_date <= UNIX_TIMESTAMP(NOW()) * 1000 THEN pd.id END) AS total_process_shift
             FROM factory f
             JOIN project p ON f.id_project = p.id
             JOIN semester s ON p.id_semester = s.id
@@ -25,21 +26,17 @@ public interface TSSemesterRepository extends SemesterRepository {
             JOIN plan pl ON p.id = pl.id_project
             JOIN plan_date pd ON pd.id_plan_factory = pf.id
             WHERE
-                f.status = 1 AND
                 s.status = 1 AND
-                sf.status = 1 AND
-                pl.status = 1 AND
-                p.status = 1 AND
                 pd.status = 1 AND
-                s2.status = 1 AND
                 f.id_user_staff = :idUserStaff AND
                 s.id = :idSemester AND
                 sf.id_facility = :idFacility
-            GROUP BY f.id
+            GROUP BY f.id, f.status, p.status, s.status, sf.status, s2.status, pf.status, pl.status
         ),
         cte_plan AS (
             SELECT
                 SUM(CASE WHEN total_shift = total_process_shift AND total_shift > 0 THEN 1 ELSE 0 END) AS totalPlanComplete,
+                SUM(CASE WHEN status <> 1 THEN 1 ELSE 0 END) AS totalPlanCancel,
                 SUM(CASE WHEN total_shift > total_process_shift THEN 1 ELSE 0 END) AS totalPlanProcess
             FROM cte_factory
         )
@@ -49,7 +46,8 @@ public interface TSSemesterRepository extends SemesterRepository {
             COUNT(DISTINCT f.id) AS totalFactory,
             COUNT(DISTINCT ust.id) AS totalStudent,
             (SELECT totalPlanComplete FROM cte_plan) AS totalPlanComplete,
-            (SELECT totalPlanProcess FROM cte_plan) AS totalPlanProcess
+            (SELECT totalPlanProcess FROM cte_plan) AS totalPlanProcess,
+            (SELECT totalPlanCancel FROM cte_plan) AS totalPlanCancel
         FROM semester s
         JOIN project p ON s.id = p.id_semester
         JOIN subject_facility sf ON p.id_subject_facility = sf.id
@@ -61,9 +59,6 @@ public interface TSSemesterRepository extends SemesterRepository {
         LEFT JOIN plan_date pd ON pf.id = pd.id_plan_factory AND pd.status = 1 AND DATE(FROM_UNIXTIME(pd.start_date / 1000)) = CURDATE()
         WHERE
             s.status = 1 AND
-            s2.status = 1 AND
-            p.status = 1 AND
-            sf.status = 1 AND
             f.id_user_staff = :idUserStaff AND
             sf.id_facility = :idFacility AND
             s.id = :idSemester

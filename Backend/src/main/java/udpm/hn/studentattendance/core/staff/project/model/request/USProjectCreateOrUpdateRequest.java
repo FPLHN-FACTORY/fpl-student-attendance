@@ -15,7 +15,8 @@ import udpm.hn.studentattendance.infrastructure.constants.EntityProperties;
 public class USProjectCreateOrUpdateRequest {
 
     @NotBlank(message = "Tên dự án không được bỏ trống")
-    @Size(max = EntityProperties.LENGTH_NAME, message = "Tên dự án chỉ được tối đa " + EntityProperties.LENGTH_NAME + " ký tự")
+    @Size(min = 2, max = EntityProperties.LENGTH_NAME, message = "Tên dự án chỉ được tối đa "
+            + EntityProperties.LENGTH_NAME + " ký tự")
     private String name;
 
     private String description;

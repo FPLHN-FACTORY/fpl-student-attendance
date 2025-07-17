@@ -1,5 +1,6 @@
 package udpm.hn.studentattendance.core.teacher.factory.controller;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -23,7 +24,7 @@ public class TCPlanDateAttendanceRestController {
     }
 
     @GetMapping("/{idPlanDate}/list")
-    public ResponseEntity<?> getAllList(@PathVariable String idPlanDate, TCFilterPlanDateAttendanceRequest request) {
+    public ResponseEntity<?> getAllList(@PathVariable String idPlanDate, @Valid TCFilterPlanDateAttendanceRequest request) {
         request.setIdPlanDate(idPlanDate);
         return tcPlanDateAttendanceService.getAllList(request);
     }

@@ -31,15 +31,15 @@ public interface STDScheduleAttendanceRepository extends FacilityRepository {
                        CONCAT(p.name, ' - ', lp.name) as projectName
                    FROM
                    plan_date pd
-            	   LEFT JOIN plan_factory pdf ON pdf.id = pd.id_plan_factory
-                   LEFT JOIN plan pl ON pl.id = pdf.id_plan
-                   LEFT JOIN factory ft ON pdf.id_factory = ft.id
-                   LEFT JOIN project p ON ft.id_project = p.id
-                   LEFT JOIN user_staff us ON ft.id_user_staff = us.id
-                   LEFT JOIN subject_facility sf ON p.id_subject_facility = sf.id
-                   LEFT JOIN subject s ON sf.id_subject = s.id
-                   LEFT JOIN level_project lp ON lp.id = p.id_level_project
-                   LEFT JOIN facility f ON f.id = sf.id_facility
+            	   JOIN plan_factory pdf ON pdf.id = pd.id_plan_factory
+                   JOIN plan pl ON pl.id = pdf.id_plan
+                   JOIN factory ft ON pdf.id_factory = ft.id
+                   JOIN project p ON ft.id_project = p.id
+                   JOIN user_staff us ON ft.id_user_staff = us.id
+                   JOIN subject_facility sf ON p.id_subject_facility = sf.id
+                   JOIN subject s ON sf.id_subject = s.id
+                   JOIN level_project lp ON lp.id = p.id_level_project
+                   JOIN facility f ON f.id = sf.id_facility
                    WHERE
                        ft.id IN (
                             SELECT id_factory
@@ -51,13 +51,13 @@ public interface STDScheduleAttendanceRepository extends FacilityRepository {
             """, countQuery = """
             SELECT COUNT(*) FROM plan_date pd
             LEFT JOIN plan_factory pdf ON pdf.id = pd.id_plan_factory
-                   LEFT JOIN plan pl ON pl.id = pdf.id_plan
-                   LEFT JOIN factory ft ON pdf.id_factory = ft.id
-                   LEFT JOIN project p ON ft.id_project = p.id
-                   LEFT JOIN user_staff us ON ft.id_user_staff = us.id
-                   LEFT JOIN subject_facility sf ON p.id_subject_facility = sf.id
-                   LEFT JOIN subject s ON sf.id_subject = s.id
-                   LEFT JOIN facility f ON f.id = sf.id_facility
+                   JOIN plan pl ON pl.id = pdf.id_plan
+                   JOIN factory ft ON pdf.id_factory = ft.id
+                   JOIN project p ON ft.id_project = p.id
+                   JOIN user_staff us ON ft.id_user_staff = us.id
+                   JOIN subject_facility sf ON p.id_subject_facility = sf.id
+                   JOIN subject s ON sf.id_subject = s.id
+                   JOIN facility f ON f.id = sf.id_facility
             WHERE
                 ft.id IN (
                     SELECT id_factory
@@ -84,17 +84,16 @@ public interface STDScheduleAttendanceRepository extends FacilityRepository {
                        pd.room as location,
                        ft.name as factoryName,
                        CONCAT(p.name, ' - ', lp.name) as projectName
-                   FROM
-                   plan_date pd
-            	   LEFT JOIN plan_factory pdf ON pdf.id = pd.id_plan_factory
-                   LEFT JOIN plan pl ON pl.id = pdf.id_plan
-                   LEFT JOIN factory ft ON pdf.id_factory = ft.id
-                   LEFT JOIN project p ON ft.id_project = p.id
-                   LEFT JOIN user_staff us ON ft.id_user_staff = us.id
-                   LEFT JOIN subject_facility sf ON p.id_subject_facility = sf.id
-                   LEFT JOIN subject s ON sf.id_subject = s.id
-                   LEFT JOIN level_project lp ON lp.id = p.id_level_project
-                   LEFT JOIN facility f ON f.id = sf.id_facility
+                   FROM plan_date pd
+            	   JOIN plan_factory pdf ON pdf.id = pd.id_plan_factory
+                   JOIN plan pl ON pl.id = pdf.id_plan
+                   JOIN factory ft ON pdf.id_factory = ft.id
+                   JOIN project p ON ft.id_project = p.id
+                   JOIN user_staff us ON ft.id_user_staff = us.id
+                   JOIN subject_facility sf ON p.id_subject_facility = sf.id
+                   JOIN subject s ON sf.id_subject = s.id
+                   JOIN level_project lp ON lp.id = p.id_level_project
+                   JOIN facility f ON f.id = sf.id_facility
                    WHERE
                        ft.id IN (
                             SELECT id_factory
@@ -105,4 +104,5 @@ public interface STDScheduleAttendanceRepository extends FacilityRepository {
             ORDER BY pd.start_date
             """, nativeQuery = true)
     List<STDScheduleAttendanceResponse> getAllListAttendanceByUserList(@Param("request") STDScheduleAttendanceSearchRequest request);
+
 }

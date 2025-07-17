@@ -1,15 +1,11 @@
 package udpm.hn.studentattendance.core.staff.plan.model.request;
 
-import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import udpm.hn.studentattendance.helpers.ShiftHelper;
-import udpm.hn.studentattendance.infrastructure.common.PageableRequest;
 import udpm.hn.studentattendance.infrastructure.constants.EntityProperties;
 import udpm.hn.studentattendance.infrastructure.constants.StatusType;
 
@@ -31,7 +27,7 @@ public class SPDAddOrUpdatePlanDateRequest {
 
     private String link;
 
-    @Size(max = EntityProperties.LENGTH_NAME, message = "Phòng học không được vượt quá " + EntityProperties.LENGTH_NAME + " ký tự")
+    @Size(min = 2, max = EntityProperties.LENGTH_NAME, message = "Phòng học không được vượt quá " + EntityProperties.LENGTH_NAME + " ký tự")
     private String room;
 
     private Integer requiredIp = StatusType.ENABLE.getKey();
@@ -50,5 +46,7 @@ public class SPDAddOrUpdatePlanDateRequest {
     private Integer lateArrival;
 
     private String description;
+
+    private List<Long> customTime;
 
 }

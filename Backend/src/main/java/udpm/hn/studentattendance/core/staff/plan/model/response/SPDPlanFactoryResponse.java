@@ -25,4 +25,6 @@ public interface SPDPlanFactoryResponse extends IsIdentify, HasOrderNumber {
 
     Integer getStatus();
 
+    Integer getCurrentStatus();
+
 }

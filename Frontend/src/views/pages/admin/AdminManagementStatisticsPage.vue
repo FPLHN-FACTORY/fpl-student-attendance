@@ -1,89 +1,71 @@
 <script setup>
 import { ref, onMounted, watch, reactive } from 'vue'
 import {
-  FilterFilled,
+  BookOutlined,
   UserOutlined,
   TeamOutlined,
-  ReadOutlined,
-  AuditOutlined,
+  ProjectOutlined,
   DatabaseOutlined,
+  FilterFilled,
 } from '@ant-design/icons-vue'
 import { message } from 'ant-design-vue'
 import requestAPI from '@/services/requestApiService'
-import { DEFAULT_DATE_FORMAT } from '@/constants'
 import { API_ROUTES_ADMIN } from '@/constants/adminConstant'
 import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
 import { ROUTE_NAMES } from '@/router/adminRoute'
 import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
-import { autoAddColumnWidth, debounce } from '@/utils/utils'
+
 import useLoadingStore from '@/stores/useLoadingStore'
 import WidgetCounter from '@/components/widgets/WidgetCounter.vue'
 import ChartBar from '@/components/charts/ChartBar.vue'
-import dayjs from 'dayjs'
+import DoughnutChart from '@/components/charts/DoughnutChart.vue'
+import ChartLine from '@/components/charts/ChartLine.vue'
 
 const breadcrumbStore = useBreadcrumbStore()
 const loadingStore = useLoadingStore()
 
 const dataStats = reactive({
-  admin: 0,
+  subject: 0,
+  totalProject: 0,
   teacher: 0,
   staff: 0,
-  logActivity: 0,
 })
 
-const lstData = ref([])
+import dayjs from 'dayjs'
+
+// Lấy năm hiện tại
+const currentYear = new Date().getFullYear()
 
 const dataFilter = reactive({
   fromDay: null,
   toDay: null,
+  year: dayjs().year(currentYear),
 })
-
-const dataRangePresets = [
-  {
-    label: 'Tuần này',
-    value: [dayjs().startOf('week'), dayjs().endOf('week')],
-  },
-  {
-    label: 'Tuần trước',
-    value: [dayjs().subtract(1, 'week').startOf('week'), dayjs().subtract(1, 'week').endOf('week')],
-  },
-  {
-    label: 'Tháng này',
-    value: [dayjs().startOf('month'), dayjs().endOf('month')],
-  },
-  {
-    label: 'Tháng trước',
-    value: [
-      dayjs().subtract(1, 'month').startOf('month'),
-      dayjs().subtract(1, 'month').endOf('month'),
-    ],
-  },
-]
 
 const stats = ref([
   {
-    title: 'Admin',
+    title: 'Bộ môn',
     value: 0,
-    icon: UserOutlined,
+    icon: BookOutlined,
+    class: 'bg-info',
+  },
+  {
+    title: 'Dự án',
+    value: 0,
+    icon: ProjectOutlined,
     class: 'bg-primary',
   },
   {
     title: 'Phụ trách xưởng',
     value: 0,
-    icon: TeamOutlined,
+    icon: UserOutlined,
     class: 'bg-success',
   },
   {
     title: 'Giảng viên',
     value: 0,
-    icon: ReadOutlined,
+    icon: TeamOutlined,
     class: 'bg-warning',
-  },
-  {
-    title: 'Hoạt động hệ thống',
-    value: 0,
-    icon: AuditOutlined,
-    class: 'bg-info',
   },
 ])
 
@@ -102,6 +84,57 @@ const barChartData = ref({
   ],
 })
 
+// Doughnut chart data for subject and project overview
+const doughnutChartData = ref({
+  labels: ['Bộ môn', 'Dự án'],
+  datasets: [
+    {
+      label: 'Tổng quan bộ môn và dự án',
+      backgroundColor: ['#1890FF', '#B37FEB'],
+      borderColor: ['#fff', '#fff'],
+      borderWidth: 2,
+      data: [0, 0],
+    },
+  ],
+})
+
+// Line chart data for semester statistics
+const lineChartData = ref({
+  labels: [],
+  datasets: [
+    {
+      label: 'Tỷ lệ điểm danh (%)',
+      tension: 0.2,
+      borderWidth: 3,
+      pointRadius: 6,
+      borderColor: '#1890ff',
+      backgroundColor: 'rgba(24, 144, 255, 0.1)',
+      data: [],
+      yAxisID: 'y',
+    },
+    {
+      label: 'Tổng xưởng',
+      tension: 0.2,
+      borderWidth: 3,
+      pointRadius: 6,
+      borderColor: '#b37feb',
+      backgroundColor: 'rgba(82, 196, 26, 0.1)',
+      data: [],
+      yAxisID: 'y',
+    },
+    {
+      label: 'Tổng sinh viên',
+      tension: 0.2,
+      borderWidth: 3,
+      pointRadius: 6,
+      borderColor: '#52c41a',
+      backgroundColor: 'rgba(250, 173, 20, 0.1)',
+      data: [],
+      yAxisID: 'y',
+    },
+  ],
+})
+
 const breadcrumb = ref([
   {
     name: GLOBAL_ROUTE_NAMES.ADMIN_PAGE,
@@ -113,40 +146,26 @@ const breadcrumb = ref([
   },
 ])
 
-const columns = ref(
-  autoAddColumnWidth([
-    { title: '#', dataIndex: 'index', key: 'index', width: 60 },
-    { title: 'Tên cơ sở', dataIndex: 'facilityName', key: 'facilityName' },
-    { title: 'Số bộ môn', dataIndex: 'totalSubjectFacility', key: 'totalSubjectFacility' },
-    { title: 'Tỷ lệ', dataIndex: 'percent', key: 'percent',  width: 120 },
-  ]),
-)
-
 const fetchDataAllStats = () => {
   loadingStore.show()
+
   requestAPI
-    .get(`${API_ROUTES_ADMIN.FETCH_DATA_STATISTICS}`, {
-      params: {
-        fromDay: dataFilter.fromDay,
-        toDay: dataFilter.toDay,
-      },
-    })
-    .then(({ data: response }) => {
+    .get(`${API_ROUTES_ADMIN.FETCH_DATA_STATISTICS}`).then(({ data: response }) => {
       // Update statistics from statisticsStatResponse
       if (response.data.statisticsStatResponse) {
         Object.assign(dataStats, response.data.statisticsStatResponse)
       }
-
       // Update chart data from subjectFacilityChartResponse
-      const subjectFacilityData = response.data.subjectFacilityChartResponse || []  
+      const subjectFacilityData = response.data.subjectFacilityChartResponse || []
       barChartData.value.labels = subjectFacilityData.map((o) => o.facilityName)
       barChartData.value.datasets[0].data = subjectFacilityData.map((o) => o.totalSubjectFacility)
 
-      // Add index for table display
-      lstData.value = subjectFacilityData.map((item, index) => ({
-        ...item,
-        index: index + 1,
-      }))
+      const totalProjectAndSubject = response.data.totalProjectAndSubjectResponse || {}
+      const totalSubject = totalProjectAndSubject.totalSubject || 0
+      const totalProject = totalProjectAndSubject.totalProject || 0
+
+      // Update doughnut chart data with subject and project totals
+      doughnutChartData.value.datasets[0].data = [totalSubject, totalProject]
     })
     .catch((error) => {
       message.error(error?.response?.data?.message || 'Không thể tải dữ liệu thống kê')
@@ -156,52 +175,50 @@ const fetchDataAllStats = () => {
     })
 }
 
-const handleClearFilter = () => {
-  Object.assign(dataFilter, {
-    fromDay: null,
-    toDay: null,
+const fetchDataLineChart = () => {
+  loadingStore.show()
+  requestAPI.get(`${API_ROUTES_ADMIN.FETCH_DATA_STATISTICS}/attendance-percentage`, {
+    params: {
+      year: dataFilter.year
+        ? (typeof dataFilter.year === 'string'
+            ? parseInt(dataFilter.year, 10)
+            : dataFilter.year.year
+              ? dataFilter.year.year()
+              : currentYear)
+        : currentYear,
+    },
+  }).then(({ data: response }) => {
+    const data = response.data || []
+    lineChartData.value.labels = data.map(item => item.code)
+    lineChartData.value.datasets[0].data = data.map(item => item.attendancePercentage || 0)
+    lineChartData.value.datasets[1].data = data.map(item => item.totalFactory || 0)
+    lineChartData.value.datasets[2].data = data.map(item => item.totalStudentFactory || 0)
   })
-  fetchDataAllStats()
-}
-
-const handleSubmitFilter = () => {
-  fetchDataAllStats()
-}
-
-const handleDateRangeChange = (dates) => {
-  if (dates && dates.length === 2) {
-    dataFilter.fromDay = dates[0].valueOf()
-    dataFilter.toDay = dates[1].valueOf()
-  } else {
-    dataFilter.fromDay = null
-    dataFilter.toDay = null
-  }
+  .catch((error) => {
+    message.error(error?.response?.data?.message || 'Không thể tải dữ liệu thống kê')
+  })
+  .finally(() => {
+    loadingStore.hide()
+  })
 }
 
 onMounted(() => {
   breadcrumbStore.setRoutes(breadcrumb.value)
   fetchDataAllStats()
+  fetchDataLineChart()
 })
 
 watch(
   dataStats,
   (data) => {
-    stats.value[0].value = data.admin || 0
-    stats.value[1].value = data.staff || 0
-    stats.value[2].value = data.teacher || 0
-    stats.value[3].value = data.logActivity || 0
+    stats.value[0].value = data.subject || 0
+    stats.value[1].value = data.totalProject || 0
+    stats.value[2].value = data.staff || 0
+    stats.value[3].value = data.teacher || 0
   },
   { deep: true },
 )
 
-const debounceFilter = debounce(handleSubmitFilter, 300)
-watch(
-  dataFilter,
-  () => {
-    debounceFilter()
-  },
-  { deep: true },
-)
 </script>
 
 <template>
@@ -218,179 +235,82 @@ watch(
           :status="stat.status"
         ></WidgetCounter>
       </div>
+    </div>
 
+    <div class="row g-3 mt-3">
       <!-- Chart Section -->
-      <div class="col-xl-8 col-lg-12">
-        <a-card :bordered="false" class="dashboard-bar-chart">
+      <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12">
+        <a-card :bordered="false" class="dashboard-bar-line header-solid">
           <template #title>
             <div class="d-flex align-items-center">
               <DatabaseOutlined class="me-2 text-primary" />
-              <h6 class="mb-0">Thống kê bộ môn theo cơ sở</h6>
+              <span>Thống kê bộ môn cơ sở</span>
             </div>
           </template>
           <template #extra>
             <a-tag color="blue" class="me-2">
-              {{ lstData.length }} cơ sở
-            </a-tag>
-            <a-tag color="green">
-              {{ lstData.reduce((sum, item) => sum + item.totalSubjectFacility, 0) }} bộ môn
+              {{ barChartData.labels.length }} cơ sở
             </a-tag>
           </template>
-          <ChartBar :height="320" :data="barChartData"></ChartBar>
+          <ChartBar :height="310" :data="barChartData"></ChartBar>
         </a-card>
       </div>
 
-      <!-- Summary Card -->
-      <div class="col-xl-4 col-lg-12">
-        <a-card :bordered="false" class="cart card-white h-100">
+      <!-- Doughnut Chart Section -->
+      <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12">
+        <a-card :bordered="false" class="dashboard-bar-line header-solid">
           <template #title>
             <div class="d-flex align-items-center">
-              <AuditOutlined class="me-2 text-success" />
-              <span>Tổng quan hệ thống</span>
-            </div>
-          </template>
-
-          <div class="summary-stats">
-            <div class="stat-item mb-3">
-              <div class="d-flex justify-content-between align-items-center">
-                <span class="stat-label">Tổng người dùng:</span>
-                <span class="stat-value text-primary fw-bold">
-                  {{ dataStats.admin + dataStats.staff + dataStats.teacher }}
-                </span>
-              </div>
-            </div>
-
-            <div class="stat-item mb-3">
-              <div class="d-flex justify-content-between align-items-center">
-                <span class="stat-label">Quản trị viên:</span>
-                <span class="stat-value text-info">{{ dataStats.admin }}</span>
-              </div>
-            </div>
-
-            <div class="stat-item mb-3">
-              <div class="d-flex justify-content-between align-items-center">
-                <span class="stat-label">Phụ trách xưởng:</span>
-                <span class="stat-value text-success">{{ dataStats.staff }}</span>
-              </div>
-            </div>
-
-            <div class="stat-item mb-3">
-              <div class="d-flex justify-content-between align-items-center">
-                <span class="stat-label">Giảng viên:</span>
-                <span class="stat-value text-warning">{{ dataStats.teacher }}</span>
-              </div>
-            </div>
-
-            <div class="stat-item mb-3">
-              <div class="d-flex justify-content-between align-items-center">
-                <span class="stat-label">Hoạt động hệ thống:</span>
-                <span class="stat-value text-danger">{{ dataStats.logActivity }}</span>
-              </div>
-            </div>
-
-            <div class="stat-item mb-3">
-              <div class="d-flex justify-content-between align-items-center">
-                <span class="stat-label">Tổng cơ sở:</span>
-                <span class="stat-value text-purple">{{ lstData.length }}</span>
-              </div>
-            </div>
-
-            <div class="stat-item">
-              <div class="d-flex justify-content-between align-items-center">
-                <span class="stat-label">Tổng bộ môn:</span>
-                <span class="stat-value text-primary fw-bold">
-                  {{ lstData.reduce((sum, item) => sum + item.totalSubjectFacility, 0) }}
-                </span>
-              </div>
-            </div>
-          </div>
-        </a-card>
-      </div>
-
-      <!-- Detailed Table -->
-      <div class="col-12">
-        <a-card :bordered="false" class="cart card-white">
-          <template #title>
-            <div class="d-flex align-items-center">
-              <DatabaseOutlined class="me-2 text-primary" />
-              <span>Chi tiết thống kê theo cơ sở</span>
+              <ProjectOutlined class="me-2 text-primary" />
+              <span>Tổng quan bộ môn và dự án</span>
             </div>
           </template>
           <template #extra>
-            <a-space>
-              <a-tag color="processing">
-                {{ lstData.length }} cơ sở
-              </a-tag>
-              <a-tag color="success">
-                {{ lstData.reduce((sum, item) => sum + item.totalSubjectFacility, 0) }} bộ môn
-              </a-tag>
-            </a-space>
-          </template>          <div class="table-responsive">
-            <a-table
-              rowKey="id"
-              class="nowrap"
-              :dataSource="lstData"
-              :columns="columns"
-              :pagination="false"
-              :scroll="{ x: 'auto' }"
-            >
-              <template #bodyCell="{ column, record }">
-                <template v-if="column.key === 'facilityName'">
-                  <a-typography-link class="fw-medium">{{ record.facilityName }}</a-typography-link>
-                </template>
-                <template v-if="column.dataIndex === 'totalSubjectFacility'">
-                  <a-tag color="blue" class="fw-medium">{{ record.totalSubjectFacility }} bộ môn</a-tag>
-                </template>
-                <template v-if="column.dataIndex === 'percent'">
-                  <a-progress
-                    :percent="Math.round((record.totalSubjectFacility / Math.max(lstData.reduce((sum, i) => sum + i.totalSubjectFacility, 0), 1)) * 100)"
-                    size="small"
-                    :stroke-color="record.index <= 3 ? '#52c41a' : '#1890ff'"
-                  />
-                </template>
-              </template>
-            </a-table>
-          </div>
+            <a-tag color="blue" class="me-2">Bộ môn</a-tag>
+            <a-tag color="purple" class="me-2">Dự án</a-tag>
+          </template>
+          <DoughnutChart :height="310" :data="doughnutChartData" />
+        </a-card>
+      </div>
+
+      <!-- Filter Section chỉ cho line chart -->
+      <div class="col-12 mt-4 mb-2">
+        <div class="d-flex align-items-center gap-3">
+          <a-date-picker
+            v-model:value="dataFilter.year"
+            picker="year"
+            placeholder="Chọn năm"
+            style="width: 150px"
+            format="YYYY"
+            value-format="YYYY"
+            :allow-clear="false"
+            @change="fetchDataLineChart"
+          />
+          <a-button type="primary" @click="fetchDataLineChart">
+            <FilterFilled /> Lọc
+          </a-button>
+          <a-button @click="() => { dataFilter.year = dayjs().year(currentYear); fetchDataLineChart(); }">Hủy lọc</a-button>
+        </div>
+      </div>
+
+      <!-- Line Chart Section -->
+      <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12">
+        <a-card :bordered="false" class="dashboard-bar-line header-solid">
+          <template #title>
+            <div class="d-flex align-items-center">
+              <ProjectOutlined class="me-2 text-primary" />
+              <span>Thống kê chấm công, điểm danh sinh viên</span>
+            </div>
+          </template>
+          <template #extra>
+            <a-badge color="primary" class="badge-dot-primary" text="Tỷ lệ điểm danh (%)" />
+            <a-badge color="success" class="badge-dot-secondary" text="Tổng xưởng" />
+            <a-badge color="warning" class="badge-dot-success" text="Tổng sinh viên" />
+          </template>
+          <ChartLine :height="320" :data="lineChartData" />
         </a-card>
       </div>
     </div>
   </div>
 </template>
 
-<style scoped>
-.summary-stats {
-  padding: 16px 0;
-}
-
-.stat-item {
-  padding: 8px 0;
-  border-bottom: 1px solid #f0f0f0;
-}
-
-.stat-item:last-child {
-  border-bottom: none;
-}
-
-.stat-label {
-  color: #666;
-  font-size: 14px;
-}
-
-.stat-value {
-  font-size: 16px;
-  font-weight: 500;
-}
-
-.text-purple {
-  color: #722ed1 !important;
-}
-
-.dashboard-bar-chart {
-  min-height: 420px;
-}
-
-.table-responsive {
-  max-height: 400px;
-  overflow-y: auto;
-}
-</style>

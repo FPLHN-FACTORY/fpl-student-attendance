@@ -48,7 +48,8 @@ public class TCStudentFactoryServiceImpl implements TCStudentFactoryService {
         @Override
         public ResponseEntity<?> deleteStudentFactoryById(String studentFactoryId) {
                 Optional<UserStudentFactory> userStudentFactory = teacherStudentFactoryExtendRepository
-                                .findById(studentFactoryId);                if (userStudentFactory.isPresent()) {
+                                .findById(studentFactoryId);
+                if (userStudentFactory.isPresent()) {
                         teacherStudentFactoryExtendRepository.deleteById(studentFactoryId);
                         return RouterHelper.responseSuccess("Xoá sinh viên có mã " + userStudentFactory.get()
                                         .getUserStudent().getCode() + " thành công", null);
