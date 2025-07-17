@@ -44,6 +44,8 @@ const modalAdd = ref(false)
 const modalUpdate = ref(false)
 const modalDetail = ref(false)
 
+const countFilter = ref(0)
+
 // Dữ liệu thêm mới sinh viên
 const newStudent = reactive({
   code: '',
@@ -112,6 +114,7 @@ const fetchStudents = async () => {
     } else {
       pagination.total = stuRes.data.data.totalPages * pagination.pageSize
     }
+    countFilter.value = stuRes.data.data.totalItems
   } catch (error) {
     message.error(error.response?.data?.message || 'Lỗi khi lấy danh sách sinh viên')
   } finally {
@@ -352,7 +355,7 @@ onMounted(() => {
         <a-card :bordered="false" class="cart no-body-padding">
           <a-collapse ghost>
             <a-collapse-panel>
-              <template #header><FilterFilled /> Bộ lọc</template>
+              <template #header><FilterFilled /> Bộ lọc ({{ countFilter }})</template>
               <div class="row g-3">
                 <!-- Input tìm kiếm theo mã, tên, email -->
                 <div class="col-md-6 col-sm-12">

@@ -47,6 +47,8 @@ const maxRangeDate = ref(dayjs())
 
 const currentProject = ref(null)
 
+const countFilter = ref(0)
+
 const columns = ref(
   autoAddColumnWidth([
     { title: '#', dataIndex: 'orderNumber', key: 'orderNumber' },
@@ -177,6 +179,7 @@ const fetchDataList = () => {
     .then(({ data: response }) => {
       lstData.value = response.data.data
       pagination.value.total = response.data.totalPages * pagination.value.pageSize
+      countFilter.value = response.data.totalItems
     })
     .catch((error) => {
       message.error(error?.response?.data?.message || 'Không thể tải danh sách dữ liệu')
@@ -659,7 +662,7 @@ watch(
         <a-card :bordered="false" class="cart no-body-padding">
           <a-collapse ghost>
             <a-collapse-panel>
-              <template #header><FilterFilled /> Bộ lọc</template>
+              <template #header><FilterFilled /> Bộ lọc ({{ countFilter }})</template>
               <div class="row g-3">
                 <div class="col-xxl-2 col-md-4 col-sm-12">
                   <div class="label-title">Từ khoá:</div>
