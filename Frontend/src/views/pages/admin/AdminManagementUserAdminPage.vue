@@ -33,6 +33,8 @@ const applicationStore = useApplicationStore()
 const loadingStore = useLoadingStore()
 const isLoading = ref(false)
 
+const countFilter = ref(0)
+
 // Staff list for change-power modal
 // const staffList = ref([])
 // const selectedStaffId = ref(null)
@@ -78,6 +80,8 @@ const fetchUsers = async () => {
     const data = res.data.data
     pagination.value.total = data.totalPages * pagination.value.pageSize
 
+    countFilter.value = data.totalItems
+
     const usersWithFlag = await Promise.all(
       data.data.map(async (user) => {
         const flagRes = await requestAPI.get(
@@ -118,7 +122,7 @@ const clearNewUser = () => {
 }
 
 const handleAddUser = () => {
-   if (!newUser.staffCode || !newUser.staffName || !newUser.email) {
+  if (!newUser.staffCode || !newUser.staffName || !newUser.email) {
     return message.error('Vui lòng điền đầy đủ thông tin')
   }
   Modal.confirm({
@@ -323,7 +327,7 @@ onMounted(() => {
         <a-card :bordered="false" class="cart no-body-padding">
           <a-collapse ghost>
             <a-collapse-panel>
-              <template #header><FilterFilled /> Bộ lọc</template>
+              <template #header><FilterFilled /> Bộ lọc ({{ countFilter }})</template>
               <div class="row g-3 filter-container">
                 <div class="col-md-8 col-sm-6">
                   <div class="label-title">Từ khoá:</div>
@@ -342,12 +346,11 @@ onMounted(() => {
                   <div class="label-title">Trạng thái:</div>
                   <a-select
                     v-model:value="filter.status"
-                    placeholder="Chọn trạng thái"
-                    allowClear
+                    placeholder="-- Tất cả trạng thái --"
                     class="w-100"
                     @change="fetchUsers"
                   >
-                    <a-select-option :value="''">Tất cả trạng thái</a-select-option>
+                    <a-select-option :value="''">-- Tất cả trạng thái --</a-select-option>
                     <a-select-option value="1">Hoạt động</a-select-option>
                     <a-select-option value="0">Không hoạt động</a-select-option>
                   </a-select>
@@ -372,10 +375,9 @@ onMounted(() => {
           <template #title><UnorderedListOutlined /> Danh sách Admin</template>
 
           <div class="d-flex justify-content-end mb-2 flex-wrap gap-3">
-              <a-button type="primary" @click="handleShowModalAdd"
-                ><PlusOutlined /> Thêm admin
-                </a-button
-              >
+            <a-button type="primary" @click="handleShowModalAdd"
+              ><PlusOutlined /> Thêm admin
+            </a-button>
           </div>
 
           <a-table

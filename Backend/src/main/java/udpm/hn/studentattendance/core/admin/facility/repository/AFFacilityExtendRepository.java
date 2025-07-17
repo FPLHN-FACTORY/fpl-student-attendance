@@ -31,7 +31,7 @@ public interface AFFacilityExtendRepository extends FacilityRepository {
                    OR f.code LIKE CONCAT('%', TRIM(:#{#request.q}), '%')
                    OR f.name LIKE CONCAT('%', TRIM(:#{#request.name}), '%'))
               AND (:#{#request.status} IS NULL OR f.status = (:#{#request.status}))
-            ORDER BY f.position ASC
+            ORDER BY f.status DESC, f.position ASC
             """, countQuery = """
             SELECT COUNT(f.id)
             FROM Facility f
@@ -41,13 +41,6 @@ public interface AFFacilityExtendRepository extends FacilityRepository {
               AND (:#{#request.status} IS NULL OR f.status = (:#{#request.status}))
             """)
     Page<AFFacilityResponse> getAllFacility(Pageable pageable, AFFacilitySearchRequest request);
-
-    @Query(value = """
-            SELECT COUNT(f) > 0
-            FROM Facility f
-            WHERE TRIM(f.name) = TRIM(:name) AND TRIM(f.code) = TRIM(:code)
-               """)
-    boolean existByName(String name, String code);
 
     @Query(value = """
             SELECT
@@ -117,5 +110,12 @@ public interface AFFacilityExtendRepository extends FacilityRepository {
                     id != TRIM(:idFacility)
             """, nativeQuery = true)
     boolean isExistsByName(String name, String idFacility);
+
+    @Query(value = """
+            SELECT COUNT(*)
+            FROM facility f
+            WHERE f.status = 1
+            """, nativeQuery = true)
+    Integer countFacility();
 
 }

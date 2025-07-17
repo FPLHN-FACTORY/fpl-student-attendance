@@ -17,7 +17,7 @@ public interface SSFactoryRepository extends FactoryRepository {
 
     @Query(value = """
                 SELECT
-                    ROW_NUMBER() OVER (ORDER BY f.name ASC) as orderNumber,
+                    ROW_NUMBER() OVER (ORDER BY LEAST(pl.status, f.status, pf.status, p.status, lp.status, sf.status, s2.status) DESC, f.name ASC) as orderNumber,
                     f.id,
                     p.id AS projectId,
                     p.name AS projectName,
@@ -27,7 +27,7 @@ public interface SSFactoryRepository extends FactoryRepository {
                     COUNT(DISTINCT pd.id) AS totalShift,
                     COUNT(DISTINCT CASE WHEN pd.end_date <= UNIX_TIMESTAMP(NOW()) * 1000 THEN pd.id END) AS totalCurrentShift,
                     (SELECT COUNT(usf.id) FROM user_student_factory usf WHERE f.id = usf.id_factory AND usf.status = 1) AS totalStudent,
-                    pl.status AS status
+                    LEAST(pl.status, f.status, pf.status, p.status, lp.status, sf.status, s2.status) AS status
                 FROM factory f
                 JOIN plan_factory pf ON f.id = pf.id_factory
                 JOIN plan pl ON pf.id_plan = pl.id
@@ -38,18 +38,12 @@ public interface SSFactoryRepository extends FactoryRepository {
                 JOIN subject s2 ON sf.id_subject = s2.id
                 LEFT JOIN plan_date pd ON pd.id_plan_factory = pf.id
                 WHERE
-                    pf.status = 1 AND
-                    p.status = 1 AND
-                    f.status = 1 AND
-                    sf.status = 1 AND
-                    lp.status = 1 AND
                     s.status = 1 AND
-                    s2.status = 1 AND
                     s.id = :#{#request.idSemester} AND
                     sf.id_facility = :#{#request.idFacility}
                 GROUP BY
-                    f.name, f.id, p.id, p.name, lp.name, s2.name, pl.status
-                ORDER BY pl.status DESC, f.name ASC
+                    f.name, f.id, p.id, p.name, lp.name, s2.name, pl.status, f.status, pf.status, p.status, lp.status, sf.status, s2.status
+                ORDER BY LEAST(pl.status, f.status, pf.status, p.status, lp.status, sf.status, s2.status) DESC, f.name ASC
             """, countQuery = """
                 SELECT
                     COUNT(DISTINCT f.id)
@@ -62,13 +56,7 @@ public interface SSFactoryRepository extends FactoryRepository {
                 JOIN subject_facility sf ON sf.id = p.id_subject_facility
                 JOIN subject s2 ON sf.id_subject = s2.id
                 WHERE
-                    pf.status = 1 AND
-                    p.status = 1 AND
-                    f.status = 1 AND
-                    sf.status = 1 AND
-                    lp.status = 1 AND
                     s.status = 1 AND
-                    s2.status = 1 AND
                     s.id = :#{#request.idSemester} AND
                     sf.id_facility = :#{#request.idFacility}
             """, nativeQuery = true)
@@ -128,8 +116,6 @@ public interface SSFactoryRepository extends FactoryRepository {
         LEFT JOIN attendance a ON pd.id = a.id_plan_date AND a.id_user_student = us.id
         WHERE
             pd.status = 1 AND
-            pf.status = 1 AND
-            us.status = 1 AND
             usf.status = 1 AND
             pf.id_factory = :idFactory AND
             pd.start_date >= :startDate AND
@@ -145,13 +131,8 @@ public interface SSFactoryRepository extends FactoryRepository {
                 JOIN semester s ON pj.id_semester = s.id
                 WHERE
                      pf.id_plan = p.id AND
-                     f.status = 1 AND
-                     p.status = 1 AND
-                     pj.status = 1 AND
-                     s.status = 1 AND
-                     s2.status = 1 AND
                      f2.status = 1 AND
-                     sf.status = 1
+                     s.status = 1
             )
         ORDER BY us.name ASC
     """, nativeQuery = true)

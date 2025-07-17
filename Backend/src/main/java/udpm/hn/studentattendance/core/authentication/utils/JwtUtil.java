@@ -5,9 +5,13 @@ import io.jsonwebtoken.Jws;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import udpm.hn.studentattendance.core.authentication.oauth2.AuthUser;
+import udpm.hn.studentattendance.helpers.SettingHelper;
+import udpm.hn.studentattendance.infrastructure.constants.SettingKeys;
+
 import javax.crypto.SecretKey;
 import java.time.Duration;
 import java.time.Instant;
@@ -19,13 +23,13 @@ import java.util.Map;
 import java.util.Set;
 
 @Component
+@RequiredArgsConstructor
 public class JwtUtil {
+
+    private final SettingHelper settingHelper;
 
     @Value("${authentication.secret-key}")
     private String SECRET_KEY;
-
-    @Value("${app.config.auth.expiration}")
-    private long EXPIRATION_TIME;
 
     public static String getAuthorization(HttpServletRequest request) {
         String token = request.getHeader("Authorization");
@@ -124,6 +128,7 @@ public class JwtUtil {
     }
 
     private Date buildExpiration() {
+        long EXPIRATION_TIME = settingHelper.getSetting(SettingKeys.EXPIRATION_MINUTE_LOGIN, Integer.class);
         return new Date(System.currentTimeMillis() + EXPIRATION_TIME * 60 * 1000);
     }
 

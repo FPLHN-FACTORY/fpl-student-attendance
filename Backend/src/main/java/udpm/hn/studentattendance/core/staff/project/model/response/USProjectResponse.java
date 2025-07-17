@@ -16,7 +16,9 @@ public interface USProjectResponse {
 
     String getDescription();
 
-    String getStatus();
+    Integer getStatus();
+
+    Integer getCurrentStatus();
 
     String getFacilityName();
 

@@ -1,7 +1,6 @@
 <script setup>
 import {
   ATTENDANCE_STATUS,
-  DEFAULT_EARLY_MINUTE_CHECKIN,
   DEFAULT_PAGINATION,
   STATUS_REQUIRED_ATTENDANCE,
   TYPE_SHIFT,
@@ -13,6 +12,7 @@ import requestAPI from '@/services/requestApiService'
 import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
 import { debounce, formatDate, autoAddColumnWidth } from '@/utils/utils'
 import {
+  AimOutlined,
   CheckOutlined,
   ExclamationCircleOutlined,
   FilterFilled,
@@ -25,6 +25,9 @@ import useLoadingStore from '@/stores/useLoadingStore'
 import useFaceIDStore from '@/stores/useFaceIDStore'
 import { ROUTE_NAMES_API } from '@/router/authenticationRoute'
 import useApplicationStore from '@/stores/useApplicationStore'
+import { LMap, LMarker, LTileLayer } from '@vue-leaflet/vue-leaflet'
+
+import 'leaflet/dist/leaflet.css'
 
 const applicationStore = useApplicationStore()
 const faceIDStore = useFaceIDStore()
@@ -34,7 +37,13 @@ const isLoading = ref(false)
 
 const lstData = ref([])
 
+const isShowLocation = ref(false)
 const isShowCamera = ref(false)
+
+const DEFAULT_EARLY_MINUTE_CHECKIN = ref(0)
+
+const mapRef = ref(null)
+const mapCenter = ref([0, 0])
 
 const video = ref(null)
 const canvas = ref(null)
@@ -48,6 +57,8 @@ const formData = reactive({
 })
 
 const breadcrumbStore = useBreadcrumbStore()
+
+const countFilter = ref(0)
 
 const breadcrumb = ref([
   {
@@ -64,7 +75,7 @@ const columns = ref(
   autoAddColumnWidth([
     { title: '#', dataIndex: 'orderNumber', key: 'orderNumber' },
     { title: 'Thời gian', dataIndex: 'startDate', key: 'startDate' },
-    { title: 'Ca học', dataIndex: 'shift', key: 'shift' },
+    { title: 'Ca', dataIndex: 'shift', key: 'shift' },
     { title: 'Điểm danh muộn', dataIndex: 'lateArrival', key: 'lateArrival' },
     { title: 'Nhóm xưởng', dataIndex: 'factoryName', key: 'factoryName' },
     { title: 'Giảng viên', dataIndex: 'teacherName', key: 'teacherName' },
@@ -87,6 +98,17 @@ const dataFilter = reactive({
   type: null,
 })
 
+const fetchDataSettings = () => {
+  requestAPI
+    .get(`${ROUTE_NAMES_API.FETCH_DATA_SETTINGS}`)
+    .then(({ data: response }) => {
+      DEFAULT_EARLY_MINUTE_CHECKIN.value = response.data?.['ATTENDANCE_EARLY_CHECKIN'] || 0
+    })
+    .catch((error) => {
+      message.error(error?.response?.data?.message || 'Không thể tải dữ liệu cài đặt')
+    })
+}
+
 const fetchDataList = () => {
   if (isLoading.value === true) {
     return
@@ -104,9 +126,10 @@ const fetchDataList = () => {
     .then(({ data: response }) => {
       lstData.value = response.data.data
       pagination.value.total = response.data.totalPages * pagination.value.pageSize
+      countFilter.value = response.data.totalItems
     })
     .catch((error) => {
-      message.error(error.response?.data?.message || 'Lỗi khi lấy dữ liệu')
+      message.error(error.response?.data?.message || 'Không thể tải dữ liệu. Vui lòng thử lại!')
     })
     .finally(() => {
       isLoading.value = false
@@ -131,7 +154,9 @@ const fetchDataStudentInfo = () => {
       }
     })
     .catch((error) => {
-      message.error(error.response?.data?.message || 'Lỗi khi lấy thông tin sinh viên')
+      message.error(
+        error.response?.data?.message || 'Không thể tải thông tin sinh viên. Vui lòng thử lại!',
+      )
     })
 }
 
@@ -164,7 +189,9 @@ const handleSubmitAttendance = () => {
       fetchDataList()
     })
     .catch((error) => {
-      message.error(error.response?.data?.message || 'Lỗi khi điểm danh ca học này')
+      message.error(
+        error.response?.data?.message || 'Điểm danh không thành công. Vui lòng thử lại!',
+      )
     })
     .finally(() => {
       loadingPage.hide()
@@ -181,7 +208,9 @@ const handleSubmitUpdateInfo = () => {
       applicationStore.loadNotification()
     })
     .catch((error) => {
-      message.error(error.response?.data?.message || 'Lỗi khi cập nhật khuôn mặt')
+      message.error(
+        error.response?.data?.message || 'Không thể cập nhật khuôn mặt. Vui lòng thử lại!',
+      )
     })
     .finally(() => {
       loadingPage.hide()
@@ -196,9 +225,9 @@ const handleUpdateInfo = async () => {
     Modal.confirm({
       title: 'Xác nhận cập nhật dữ liệu khuôn mặt',
       icon: createVNode(ExclamationCircleOutlined),
-      content: 'Không thể hoàn tác. Bạn thực sự muốn cập nhật khuôn mặt này?',
-      okText: 'Tiếp tục',
-      cancelText: 'Huỷ bỏ',
+      content: 'Việc cập nhật khuôn mặt không thể hoàn tác. Bạn có chắc chắn muốn tiếp tục không?',
+      okText: 'Cập nhật',
+      cancelText: 'Hủy',
       onOk: () => {
         handleSubmitUpdateInfo()
       },
@@ -226,6 +255,7 @@ const getCurrentLocation = async () => {
       const { latitude, longitude } = position.coords || {}
       formData.latitude = latitude
       formData.longitude = longitude
+      mapCenter.value = [latitude, longitude]
     },
     () => {
       Modal.confirm({
@@ -242,10 +272,21 @@ const getCurrentLocation = async () => {
   )
 }
 
+const handleShowLocation = async () => {
+  if (!mapCenter.value[0] || !mapCenter.value[1]) {
+    return message.error(
+      'Vui lòng bật quyền truy cập vị trí để có thể xem thông tin vị trí hiện tại',
+    )
+  }
+
+  isShowLocation.value = true
+}
+
 onMounted(async () => {
   breadcrumbStore.setRoutes(breadcrumb.value)
   loadingPage.show()
   fetchDataStudentInfo()
+  fetchDataSettings()
   fetchDataList()
   faceIDStore.loadModels()
   await getCurrentLocation()
@@ -263,6 +304,17 @@ watch(
 </script>
 
 <template>
+  <a-modal v-model:open="isShowLocation" title="Vị trí hiện tại">
+    <div class="row">
+      <div class="col-md-12">
+        <LMap ref="mapRef" style="height: 400px" zoom="15" :center="mapCenter">
+          <LTileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution="" />
+          <LMarker v-if="mapCenter" :lat-lng="mapCenter" />
+        </LMap>
+      </div>
+    </div>
+  </a-modal>
+
   <a-modal
     v-model:open="isShowCamera"
     title="Xác nhận khuôn mặt"
@@ -271,7 +323,7 @@ watch(
   >
     <div class="video-container">
       <canvas ref="canvas"></canvas>
-      <video ref="video" autoplay muted></video>
+      <video ref="video" :class="faceIDStore.isFaceChecking()" autoplay muted></video>
       <div class="face-id-step" :class="faceIDStore.renderStyle()">
         <div class="dot"></div>
         <div class="dot"></div>
@@ -340,7 +392,7 @@ watch(
         <a-card :bordered="false" class="cart no-body-padding">
           <a-collapse ghost>
             <a-collapse-panel>
-              <template #header><FilterFilled /> Bộ lọc</template>
+              <template #header><FilterFilled /> Bộ lọc ({{ countFilter }})</template>
               <div class="row g-3">
                 <div class="col-md-6 col-sm-12">
                   <div class="label-title">Từ khoá:</div>
@@ -361,7 +413,6 @@ watch(
                     class="w-100"
                     :dropdownMatchSelectWidth="false"
                     placeholder="-- Tất cả trạng thái --"
-                    allowClear
                   >
                     <a-select-option :value="null">-- Tất cả trạng thái --</a-select-option>
                     <a-select-option v-for="o in ATTENDANCE_STATUS" :key="o.id" :value="o.id">{{
@@ -400,8 +451,12 @@ watch(
 
       <div class="col-12">
         <a-card :bordered="false" class="cart">
-          <template #title> <UnorderedListOutlined /> Danh sách ca học hôm nay</template>
-
+          <template #title> <UnorderedListOutlined /> Danh sách ca hôm nay</template>
+          <template #extra>
+            <a-tooltip title="Vị trí hiện tại">
+              <AimOutlined @click="handleShowLocation" />
+            </a-tooltip>
+          </template>
           <a-table
             rowKey="id"
             class="nowrap mt-2"

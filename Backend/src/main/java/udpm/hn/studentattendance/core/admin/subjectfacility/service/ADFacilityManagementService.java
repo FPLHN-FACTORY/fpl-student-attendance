@@ -6,8 +6,9 @@ import udpm.hn.studentattendance.core.admin.subjectfacility.model.request.ADSubj
 
 public interface ADFacilityManagementService {
 
-    ResponseEntity<?> getComboboxFacility();
+    ResponseEntity<?> getComboboxFacility(String idSubject);
 
-    ResponseEntity<?> getComboboxFacilitySubject(ADSubjectFacilitySearchRequest request);
+    ResponseEntity<?> getListFacility();
+
 
 }

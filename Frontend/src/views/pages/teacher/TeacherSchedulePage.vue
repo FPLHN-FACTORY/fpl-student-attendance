@@ -32,6 +32,8 @@ const breadcrumb = ref([
 const loadingStore = useLoadingStore()
 const isLoading = ref(false)
 
+const countFilter = ref(0)
+
 // Đối tượng filter
 const filter = reactive({
   idSubject: '',
@@ -73,7 +75,7 @@ const columns = autoAddColumnWidth([
     key: 'startTeaching',
   },
   { title: 'Thời gian', key: 'time' },
-  { title: 'Ca học', dataIndex: 'shift', key: 'shift' },
+  { title: 'Ca', dataIndex: 'shift', key: 'shift' },
   {
     title: 'Điểm danh muộn',
     dataIndex: 'lateArrival',
@@ -95,7 +97,7 @@ const columns = autoAddColumnWidth([
 const columnsTeachingPresent = autoAddColumnWidth([
   { title: '#', dataIndex: 'indexs', key: 'indexs' },
   { title: 'Thời gian', key: 'time' },
-  { title: 'Ca học', dataIndex: 'shift', key: 'shift' },
+  { title: 'Ca', dataIndex: 'shift', key: 'shift' },
   {
     title: 'Điểm danh muộn ',
     dataIndex: 'lateArrival',
@@ -173,6 +175,7 @@ const fetchTeachingSchedule = () => {
       teachingScheduleRecords.value = result.data
       pagination.value.total = result.totalRecords || result.totalPages * filter.pageSize
       pagination.value.current = filter.page
+      countFilter.value = result.totalItems
     })
     .catch((error) => {
       message.error(error.response?.data?.message || 'Lỗi khi tải dữ liệu lịch dạy')
@@ -183,9 +186,9 @@ const fetchTeachingSchedule = () => {
 }
 const handleAttendance = (record) => {
   if (Date.now() <= record.startTeaching - 10 * 60 * 1000) {
-    message.error('Chưa đến giờ điểm danh cho buổi học này')
+    message.error('Chưa đến giờ điểm danh cho ca này')
   } else if (Date.now > record.endTeaching) {
-    message.error('Đã quá giờ điểm danh cho buổi học này')
+    message.error('Đã quá giờ điểm danh cho ca này')
   } else {
     router.push({
       name: ROUTE_NAMES.MANAGEMENT_STUDENT_ATTENDANCE,
@@ -203,7 +206,7 @@ const fetchSubjects = () => {
       subjects.value = res.data.data
     })
     .catch((error) => {
-      message.error(error.response?.data?.message || 'Lỗi khi tải danh sách môn học')
+      message.error(error.response?.data?.message || 'Lỗi khi tải danh sách môn')
     })
 }
 const fetchFactories = () => {
@@ -262,16 +265,24 @@ const formUpdateRules = {
     { required: true, message: 'Vui lòng nhập thời gian điểm danh muộn', trigger: 'change' },
   ],
 }
+
 const handleShowDescription = (record) => {
+  // Sử dụng record.id hoặc record.idPlanDate, ưu tiên record.id
+  const planDateId = record.id || record.idPlanDate
+  if (!planDateId) {
+    message.error('Không tìm thấy ID của ca')
+    return
+  }
+
   requestAPI
-    .get(`${API_ROUTES_TEACHER.FETCH_DATA_SCHEDULE}/${record.idPlanDate}`)
+    .get(`${API_ROUTES_TEACHER.FETCH_DATA_SCHEDULE}/${planDateId}`)
     .then((res) => {
       const d = res.data.data
       detailModalContent.value = d.description
       detailLateArrival.value = d.lateArrival
       detailLink.value = d.link
       detailRoom.value = d.room || ''
-      currentPlanDateId.value = d.planDateId
+      currentPlanDateId.value = d.planDateId || planDateId
       handleShowUpdate()
     })
     .catch((error) => {
@@ -287,9 +298,9 @@ const handleShowUpdate = () => {
 }
 const handleUpdatePlanDate = () => {
   Modal.confirm({
-    title: 'Xác nhận cập nhật buổi dạy',
-    content: 'Bạn có chắc muốn lưu thay đổi này không?',
-    okText: 'Đồng ý',
+    title: 'Xác nhận cập nhật thông tin ca',
+    content: 'Bạn có chắc chắn muốn lưu những thay đổi này không?',
+    okText: 'Lưu thay đổi',
     cancelText: 'Hủy',
     onOk() {
       requestAPI
@@ -301,12 +312,12 @@ const handleUpdatePlanDate = () => {
           room: formUpdateData.room,
         })
         .then(({ data: response }) => {
-          message.success(response.message || 'Cập nhật buổi học thành công')
+          message.success(response.message || 'Cập nhật thông tin ca thành công')
           isUpdateModalVisible.value = false
           fetchTeachingSchedule()
           fetchTeachingSchedulePresent()
         })
-        .catch((e) => message.error(e.response?.data?.message || 'Lỗi khi cập nhật buổi học'))
+        .catch((e) => message.error(e.response?.data?.message || 'Lỗi khi cập nhật thông tin ca'))
     },
   })
 }
@@ -354,11 +365,16 @@ const durationOptions = [
 // --- MỞ ĐẦU: thêm hàm để gọi endpoint PUT /change-type/{id}
 function handleChangeType(record, room = '') {
   loadingStore.show()
-  const id = record.idPlanDate
+  const id = record.id || record.idPlanDate
+  if (!id) {
+    message.error('Không tìm thấy ID của ca')
+    loadingStore.hide()
+    return
+  }
   requestAPI
     .put(`${API_ROUTES_TEACHER.FETCH_DATA_SCHEDULE}/change-type/${id}`, null, { params: { room } })
     .then(({ data: response }) => {
-      message.success(response.message || 'Đã đổi hình thức ca học')
+      message.success(response.message || 'Đã đổi hình thức ca')
       fetchTeachingSchedule()
       fetchTeachingSchedulePresent()
     })
@@ -376,11 +392,11 @@ const roomInput = ref('')
 const pendingChangeRecord = ref(null)
 function handleTypeToggle(record, checked) {
   Modal.confirm({
-    title: 'Xác nhận thay đổi hình thức',
+    title: 'Xác nhận thay đổi hình thức học',
     content: checked
-      ? 'Bạn có chắc muốn bật Online và nhập link học không?'
-      : 'Bạn có chắc muốn chuyển về Offline không?',
-    okText: 'Đồng ý',
+      ? 'Bạn có chắc chắn muốn chuyển sang hình thức Online và cần nhập link học không?'
+      : 'Bạn có chắc chắn muốn chuyển về hình thức Offline không?',
+    okText: 'Xác nhận',
     cancelText: 'Hủy',
     onOk() {
       if (checked) {
@@ -400,7 +416,7 @@ function handleTypeToggle(record, checked) {
 // 3) Khi confirm chuyển về Offline: gọi change-type với roomInput.value
 function confirmRoomModal() {
   if (!roomInput.value) {
-    return message.error('Vui lòng nhập phòng học!')
+    return message.error('Vui lòng nhập phòng!')
   }
   showRoomModal.value = false
   loadingStore.show()
@@ -415,9 +431,15 @@ function confirmLinkModal() {
   showLinkModal.value = false
   loadingStore.show()
   // 1) Cập nhật link
+  const planDateId = pendingRecord.value.id || pendingRecord.value.idPlanDate
+  if (!planDateId) {
+    message.error('Không tìm thấy ID của ca')
+    loadingStore.hide()
+    return
+  }
   requestAPI
     .put(API_ROUTES_TEACHER.FETCH_DATA_SCHEDULE, {
-      idPlanDate: pendingRecord.value.idPlanDate,
+      idPlanDate: planDateId,
       link: linkInput.value,
       description: pendingRecord.value.description,
       lateArrival: pendingRecord.value.lateArrival,
@@ -529,12 +551,11 @@ onMounted(() => {
                   }}</a-typography-link>
                 </template>
                 <template v-else-if="column.dataIndex === 'description'">
-                  <a-tooltip v-if="record.description" title="Xem, sửa chi tiết buổi dạy">
+                  <a-tooltip title="Xem, sửa chi tiết buổi dạy">
                     <a-typography-link @click="handleShowDescription(record)"
                       >Chi tiết</a-typography-link
                     >
                   </a-tooltip>
-                  <span v-else>Không có mô tả</span>
                 </template>
               </template>
               <!-- Cột action -->
@@ -585,7 +606,7 @@ onMounted(() => {
 
           <a-collapse ghost>
             <a-collapse-panel>
-              <template #header><FilterFilled /> Bộ lọc</template>
+              <template #header><FilterFilled /> Bộ lọc ({{ countFilter }})</template>
               <div class="row g-3">
                 <div class="col-md-4 col-sm-6">
                   <a-select
@@ -609,7 +630,7 @@ onMounted(() => {
                     class="w-100"
                     @change="fetchTeachingSchedule"
                   >
-                    <a-select-option :value="''">Tất cả hình thức học</a-select-option>
+                    <a-select-option :value="''">-- Tất cả hình thức --</a-select-option>
                     <a-select-option value="1">Online</a-select-option>
                     <a-select-option value="0">Offline</a-select-option>
                   </a-select>
@@ -683,12 +704,11 @@ onMounted(() => {
                   </a-tag>
                 </template>
                 <template v-else-if="column.dataIndex === 'description'">
-                  <a-tooltip v-if="record.description" title="Xem, sửa chi tiết buổi dạy">
+                  <a-tooltip title="Xem, sửa chi tiết buổi dạy">
                     <a-typography-link @click="handleShowDescription(record)"
                       >Chi tiết</a-typography-link
                     >
                   </a-tooltip>
-                  <span v-else>Không có mô tả</span>
                 </template>
                 <template v-else-if="column.dataIndex === 'factoryName'">
                   <a-typography-link @click="handleShowFactory(record)">{{
@@ -714,7 +734,7 @@ onMounted(() => {
       @cancel="isUpdateModalVisible = false"
     >
       <a-form layout="vertical" :model="formUpdateData" :rules="formUpdateRules">
-        <a-form-item label="Nội dung buổi học" name="description">
+        <a-form-item label="Nội dung ca" name="description">
           <a-textarea
             v-model:value="formUpdateData.description"
             rows="4"
@@ -742,7 +762,7 @@ onMounted(() => {
         <a-form-item label="Địa điểm học" name="room">
           <a-input
             v-model:value="formUpdateData.room"
-            placeholder="Nhập phòng học"
+            placeholder="Nhập phòng"
             class="w-100"
             @keyup.enter="handleUpdatePlanDate"
           />
@@ -767,14 +787,14 @@ onMounted(() => {
 
     <a-modal
       v-model:open="showRoomModal"
-      title="Nhập phòng học để chuyển sang Offline"
+      title="Nhập phòng để chuyển sang Offline"
       @ok="confirmRoomModal"
       @cancel="showRoomModal = false"
       :okButtonProps="{ loading: isLoading }"
     >
       <a-form layout="vertical">
-        <a-form-item label="Phòng học">
-          <a-input v-model:value="roomInput" placeholder="Nhập phòng học" />
+        <a-form-item label="Phòng">
+          <a-input v-model:value="roomInput" placeholder="Nhập phòng" />
         </a-form-item>
       </a-form>
     </a-modal>

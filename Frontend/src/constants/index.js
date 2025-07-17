@@ -2,10 +2,6 @@ export const DEFAULT_DATE_FORMAT = 'DD/MM/YYYY'
 
 export const DEFAULT_LATE_ARRIVAL = 15
 
-export const DEFAULT_EARLY_MINUTE_CHECKIN = 10
-
-export const DEFAULT_MAX_LATE_ARRIVAL = 90
-
 export const PAGINATION_SIZE = 10
 
 export const DEFAULT_PAGINATION = {
@@ -55,24 +51,6 @@ export const SHIFT = {
   4: 'Ca 4',
   5: 'Ca 5',
   6: 'Ca 6',
-  7: 'Ca 7',
-  8: 'Ca 8',
-  9: 'Ca 9',
-  10: 'Ca 10',
-  11: 'Ca 11',
-  12: 'Ca 12',
-  13: 'Ca 13',
-  14: 'Ca 14',
-  15: 'Ca 15',
-  16: 'Ca 16',
-  17: 'Ca 17',
-  18: 'Ca 18',
-  19: 'Ca 19',
-  20: 'Ca 20',
-  21: 'Ca 21',
-  22: 'Ca 22',
-  23: 'Ca 23',
-  24: 'Ca 24',
 }
 
 export const TYPE_SHIFT = {

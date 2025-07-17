@@ -1,9 +1,14 @@
 <script setup>
-import { ref, onMounted, watch, reactive } from 'vue'
+import { ref, onMounted, watch, reactive, computed } from 'vue'
 import { FilterFilled, SearchOutlined, UnorderedListOutlined } from '@ant-design/icons-vue'
 import { message, Modal } from 'ant-design-vue'
 import requestAPI from '@/services/requestApiService'
-import { ATTENDANCE_STATUS, DEFAULT_PAGINATION, STATUS_REQUIRED_ATTENDANCE } from '@/constants'
+import {
+  ATTENDANCE_STATUS,
+  DEFAULT_PAGINATION,
+  STATUS_REQUIRED_ATTENDANCE,
+  STATUS_TYPE,
+} from '@/constants'
 import { API_ROUTES_STAFF } from '@/constants/staffConstant'
 import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
 import { API_ROUTES_EXCEL, GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
@@ -16,6 +21,8 @@ import ExcelUploadButton from '@/components/excel/ExcelUploadButton.vue'
 const route = useRoute()
 const router = useRouter()
 
+const countFilter = ref(0)
+
 const breadcrumbStore = useBreadcrumbStore()
 const loadingStore = useLoadingStore()
 
@@ -23,6 +30,8 @@ const isLoading = ref(false)
 
 const _detail = ref(null)
 const lstData = ref([])
+
+const isActive = computed(() => _detail.value?.status === STATUS_TYPE.ENABLE)
 
 const configImportExcel = {
   fetchUrl: API_ROUTES_EXCEL.FETCH_IMPORT_PLAN_DATE,
@@ -122,6 +131,7 @@ const fetchDataList = () => {
     .then(({ data: response }) => {
       lstData.value = response.data.data
       pagination.value.total = response.data.totalPages * pagination.value.pageSize
+      countFilter.value = response.data.totalItems
     })
     .catch((error) => {
       message.error(error?.response?.data?.message || 'Không thể tải danh sách dữ liệu')
@@ -227,7 +237,7 @@ watch(
         <a-card :bordered="false" class="cart no-body-padding">
           <a-collapse ghost>
             <a-collapse-panel>
-              <template #header><FilterFilled /> Bộ lọc</template>
+              <template #header><FilterFilled /> Bộ lọc ({{ countFilter }})</template>
               <div class="row g-3">
                 <div class="col-md-6 col-sm-12">
                   <div class="label-title">Từ khoá:</div>
@@ -248,7 +258,6 @@ watch(
                     class="w-100"
                     :dropdownMatchSelectWidth="false"
                     placeholder="-- Tất cả trạng thái --"
-                    allowClear
                   >
                     <a-select-option :value="null">-- Tất cả trạng thái --</a-select-option>
                     <a-select-option :value="1">Có mặt</a-select-option>
@@ -302,6 +311,7 @@ watch(
                       <a-switch
                         class="me-2"
                         checked="false"
+                        :disabled="!isActive"
                         @change="handleSubmitCheckin(record)"
                       />
                       <a-badge status="error" /> Chưa checkin
@@ -329,7 +339,9 @@ watch(
                         class="me-2"
                         checked="false"
                         :disabled="
-                          record.status !== ATTENDANCE_STATUS.CHECKIN.id && _detail.requiredCheckin
+                          !isActive ||
+                          (record.status !== ATTENDANCE_STATUS.CHECKIN.id &&
+                            _detail.requiredCheckin)
                         "
                         @change="handleSubmitCheckout(record)"
                       />
@@ -352,7 +364,7 @@ watch(
                   <a-switch
                     class="me-2"
                     :checked="record.status === ATTENDANCE_STATUS.PRESENT.id"
-                    :disabled="record.status === ATTENDANCE_STATUS.PRESENT.id"
+                    :disabled="!isActive || record.status === ATTENDANCE_STATUS.PRESENT.id"
                     @change="handleSubmitAttendance(record)"
                   />
                   <a-tag color="green" v-if="record.status === ATTENDANCE_STATUS.PRESENT.id">

@@ -16,39 +16,36 @@ import java.util.Optional;
 
 @Repository
 public interface USFactoryExtendRepository extends FactoryRepository {
+
     @Query(value = """
             SELECT
-                ROW_NUMBER() OVER (ORDER BY ft.created_at DESC) as rowNumber,
+                ROW_NUMBER() OVER (ORDER BY LEAST(ft.status, p.status, lp.status, sf.status, sub.status, s.status, f.status) DESC, ft.created_at DESC) as rowNumber,
                 ft.id AS id,
                 CONCAT(ft.name, ' (', s.code, ')') AS name,
-                ft.status AS factoryStatus,
                 CONCAT(p.name, ' - ', lp.name) AS projectName,
                 sub.code AS subjectCode,
                 CONCAT(us.code, ' - ', us.name) AS staffName,
-                ft.description AS factoryDescription
+                ft.description AS factoryDescription,
+                p.id as projectId,
+                ft.status AS currentStatus,
+                LEAST(ft.status, p.status, lp.status, sf.status, sub.status, s.status, f.status) as factoryStatus
             FROM factory ft
-            LEFT JOIN project p ON p.id = ft.id_project
-            LEFT JOIN level_project lp ON lp.id = p.id_level_project
-            LEFT JOIN subject_facility sf ON p.id_subject_facility = sf.id
-            LEFT JOIN subject sub ON sub.id = sf.id_subject
-            LEFT JOIN user_staff us ON us.id = ft.id_user_staff
-            LEFT JOIN facility f ON f.id = sf.id_facility
-            LEFT JOIN semester s ON s.id = p.id_semester
+            JOIN project p ON p.id = ft.id_project
+            JOIN level_project lp ON lp.id = p.id_level_project
+            JOIN subject_facility sf ON p.id_subject_facility = sf.id
+            JOIN subject sub ON sub.id = sf.id_subject
+            JOIN user_staff us ON us.id = ft.id_user_staff
+            JOIN facility f ON f.id = sf.id_facility
+            JOIN semester s ON s.id = p.id_semester
             WHERE
                 f.id = :facilityId
                 AND f.status = 1
-                AND p.status = 1
-                AND sf.status = 1
-                AND sub.status = 1
-                AND f.status = 1
-                AND lp.status = 1
                 AND (:#{#staffFactoryRequest.idProject} IS NULL OR p.id = :#{#staffFactoryRequest.idProject})
-                AND (:#{#staffFactoryRequest.idStaff} IS NULL OR us.id = :#{#staffFactoryRequest.idStaff})
                 AND (:#{#staffFactoryRequest.idSemester} IS NULL OR s.id = :#{#staffFactoryRequest.idSemester})
-                AND (:#{#staffFactoryRequest.status} IS NULL OR ft.status = :#{#staffFactoryRequest.status})
+                AND (:#{#staffFactoryRequest.status} IS NULL OR LEAST(ft.status, p.status, lp.status, sf.status, sub.status, s.status, f.status) = :#{#staffFactoryRequest.status})
                 AND (:#{#staffFactoryRequest.factoryName} IS NULL OR
-                    CONCAT(ft.name, ' (', s.code, ')') LIKE CONCAT('%', TRIM(:#{#staffFactoryRequest.factoryName}), '%'))
-            ORDER BY ft.status DESC, ft.created_at DESC
+                    CONCAT(ft.name, ' ', us.code, ' ', us.name , ' ', p.name) LIKE CONCAT('%', TRIM(:#{#staffFactoryRequest.factoryName}), '%'))
+            ORDER BY LEAST(ft.status, p.status, lp.status, sf.status, sub.status, s.status, f.status) DESC, ft.created_at DESC
             """, countQuery = """
                 SELECT COUNT(*)
                 FROM factory ft
@@ -62,20 +59,40 @@ public interface USFactoryExtendRepository extends FactoryRepository {
                 WHERE
             f.id = :facilityId
             AND f.status = 1
-            AND p.status = 1
-            AND sf.status = 1
-            AND sub.status = 1
-            AND f.status = 1
-            AND lp.status = 1
             AND (:#{#staffFactoryRequest.idProject} IS NULL OR p.id = :#{#staffFactoryRequest.idProject})
-            AND (:#{#staffFactoryRequest.idStaff} IS NULL OR us.id = :#{#staffFactoryRequest.idStaff})
             AND (:#{#staffFactoryRequest.idSemester} IS NULL OR s.id = :#{#staffFactoryRequest.idSemester})
             AND (:#{#staffFactoryRequest.factoryName} IS NULL OR
-                CONCAT(ft.name, '-', s.code) LIKE CONCAT('%', TRIM(:#{#staffFactoryRequest.factoryName}), '%'))
-            AND (:#{#staffFactoryRequest.status} IS NULL OR ft.status = :#{#staffFactoryRequest.status})
+                CONCAT(ft.name, ' ', us.code, ' ', us.name , ' ', p.name) LIKE CONCAT('%', TRIM(:#{#staffFactoryRequest.factoryName}), '%'))
+            AND (:#{#staffFactoryRequest.status} IS NULL OR LEAST(ft.status, p.status, lp.status, sf.status, sub.status, s.status, f.status) = :#{#staffFactoryRequest.status})
                 """, nativeQuery = true)
     Page<USFactoryResponse> getAllFactory(Pageable pageable, String facilityId,
             USFactoryRequest staffFactoryRequest);
+
+    @Query(value = """
+            SELECT
+                ROW_NUMBER() OVER (ORDER BY LEAST(ft.status, p.status, lp.status, sf.status, sub.status, s.status, f.status) DESC, ft.created_at DESC) as rowNumber,
+                ft.id AS id,
+                CONCAT(ft.name, ' (', s.code, ')') AS name,
+                CONCAT(p.name, ' - ', lp.name) AS projectName,
+                sub.code AS subjectCode,
+                CONCAT(us.code, ' - ', us.name) AS staffName,
+                ft.description AS factoryDescription,
+                p.id as projectId,
+                ft.status AS currentStatus,
+                LEAST(ft.status, p.status, lp.status, sf.status, sub.status, s.status, f.status) as factoryStatus
+            FROM factory ft
+            JOIN project p ON p.id = ft.id_project
+            JOIN level_project lp ON lp.id = p.id_level_project
+            JOIN subject_facility sf ON p.id_subject_facility = sf.id
+            JOIN subject sub ON sub.id = sf.id_subject
+            JOIN user_staff us ON us.id = ft.id_user_staff
+            JOIN facility f ON f.id = sf.id_facility
+            JOIN semester s ON s.id = p.id_semester
+            WHERE
+                ft.id = :idFactory AND
+                f.id = :idFacility
+            """, nativeQuery = true)
+    Optional<USFactoryResponse> getDetailFactory(String idFactory, String idFacility);
 
     @Query(value = """
             SELECT
@@ -88,21 +105,16 @@ public interface USFactoryExtendRepository extends FactoryRepository {
                 CONCAT(us.code, ' - ', us.name) AS staffName,
                 ft.description AS factoryDescription
             FROM factory ft
-            LEFT JOIN project p ON p.id = ft.id_project
-            LEFT JOIN level_project lp ON lp.id = p.id_level_project
-            LEFT JOIN subject_facility sf ON p.id_subject_facility = sf.id
-            LEFT JOIN subject sub ON sub.id = sf.id_subject
-            LEFT JOIN user_staff us ON us.id = ft.id_user_staff
-            LEFT JOIN facility f ON f.id = sf.id_facility
-            LEFT JOIN semester s ON s.id = p.id_semester
+            JOIN project p ON p.id = ft.id_project
+            JOIN level_project lp ON lp.id = p.id_level_project
+            JOIN subject_facility sf ON p.id_subject_facility = sf.id
+            JOIN subject sub ON sub.id = sf.id_subject
+            JOIN user_staff us ON us.id = ft.id_user_staff
+            JOIN facility f ON f.id = sf.id_facility
+            JOIN semester s ON s.id = p.id_semester
             WHERE
                 f.id = :facilityId
                 AND f.status = 1
-                AND p.status = 1
-                AND sf.status = 1
-                AND sub.status = 1
-                AND f.status = 1
-                AND lp.status = 1
             ORDER BY ft.status DESC, ft.created_at DESC
             """, nativeQuery = true)
     List<USFactoryResponse> exportAllFactory(String facilityId);
@@ -216,7 +228,7 @@ public interface USFactoryExtendRepository extends FactoryRepository {
                              f2.status = 1 AND
                              sf.status = 1
                     )
-                ORDER BY us.name ASC
+                ORDER BY us.name
             """, nativeQuery = true)
     List<USPlanDateStudentFactoryResponse> getAllPlanDateAttendanceByIdFactory(String idFactory);
 }

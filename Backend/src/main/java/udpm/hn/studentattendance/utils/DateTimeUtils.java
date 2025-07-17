@@ -12,9 +12,9 @@ import java.util.Date;
 
 public class DateTimeUtils {
 
-    public static String DATE_FORMAT = "dd/MM/yyyy";
+    public static final String DATE_FORMAT = "dd/MM/yyyy";
     
-    private static final String ZONE_ID = "Asia/Ho_Chi_Minh";
+    public static final String ZONE_ID = "Asia/Ho_Chi_Minh";
 
     public static Long parseStringToLong(String date) {
         return parseStringToLong(date, DATE_FORMAT);

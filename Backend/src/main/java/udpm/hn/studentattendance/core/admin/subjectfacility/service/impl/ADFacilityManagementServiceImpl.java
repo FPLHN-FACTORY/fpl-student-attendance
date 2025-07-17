@@ -3,10 +3,15 @@ package udpm.hn.studentattendance.core.admin.subjectfacility.service.impl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import udpm.hn.studentattendance.core.admin.subjectfacility.model.request.ADSubjectFacilitySearchRequest;
 import udpm.hn.studentattendance.core.admin.subjectfacility.repository.ADFacilityRepository;
 import udpm.hn.studentattendance.core.admin.subjectfacility.service.ADFacilityManagementService;
 import udpm.hn.studentattendance.helpers.RouterHelper;
+import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
+import udpm.hn.studentattendance.infrastructure.constants.RedisPrefixConstant;
+import com.fasterxml.jackson.core.type.TypeReference;
+import udpm.hn.studentattendance.helpers.RedisCacheHelper;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -14,12 +19,36 @@ public class ADFacilityManagementServiceImpl implements ADFacilityManagementServ
 
     private final ADFacilityRepository repository;
 
-    public ResponseEntity<?> getComboboxFacility() {
-        return RouterHelper.responseSuccess("Lấy danh sách cơ sở thành công", repository.getFacility());
+    private final RedisCacheHelper redisCacheHelper;
+
+    private List<?> getCachedFacilityCombobox(String idSubject) {
+        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_FACILITY + "combobox_" + idSubject;
+        return redisCacheHelper.getOrSet(
+                cacheKey,
+                () -> repository.getFacility(idSubject),
+                new TypeReference<>() {
+                });
     }
 
-    public ResponseEntity<?> getComboboxFacilitySubject(ADSubjectFacilitySearchRequest request) {
-        return RouterHelper.responseSuccess("Lấy danh sách bộ môn theo cơ sở thành công", repository.getListFacility(request));
+    private List<?> getCachedActiveFacilities() {
+        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_FACILITY + "active_list";
+        return redisCacheHelper.getOrSet(
+                cacheKey,
+                () -> repository.getFacilities(EntityStatus.ACTIVE),
+                new TypeReference<>() {
+                });
+    }
+
+    @Override
+    public ResponseEntity<?> getComboboxFacility(String idSubject) {
+        List<?> facilities = getCachedFacilityCombobox(idSubject);
+        return RouterHelper.responseSuccess("Lấy danh sách cơ sở thành công", facilities);
+    }
+
+    @Override
+    public ResponseEntity<?> getListFacility() {
+        List<?> facilities = getCachedActiveFacilities();
+        return RouterHelper.responseSuccess("Lấy danh sách cơ sở để lọc thành công", facilities);
     }
 
 }

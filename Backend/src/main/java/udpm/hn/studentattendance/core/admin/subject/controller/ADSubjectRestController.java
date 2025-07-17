@@ -19,7 +19,7 @@ public class ADSubjectRestController {
     private ADSubjectManagementService service;
 
     @GetMapping("/list")
-    public ResponseEntity<?> getListSubject(ADSubjectSearchRequest request) {
+    public ResponseEntity<?> getListSubject(@Valid ADSubjectSearchRequest request) {
         return service.getListSubject(request);
     }
 

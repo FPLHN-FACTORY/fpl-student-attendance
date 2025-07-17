@@ -21,6 +21,8 @@ import { autoAddColumnWidth } from '@/utils/utils'
 const breadcrumbStore = useBreadcrumbStore()
 const loadingStore = useLoadingStore()
 
+const countFilter = ref(0)
+
 const breadcrumb = ref([
   {
     name: GLOBAL_ROUTE_NAMES.ADMIN_PAGE,
@@ -28,7 +30,7 @@ const breadcrumb = ref([
   },
   {
     name: ROUTE_NAMES.MANAGEMENT_STAFF,
-    breadcrumbName: 'Quản lý giảng viên/ phụ trách xưởng',
+    breadcrumbName: 'Quản lý nhân sự',
   },
 ])
 
@@ -109,7 +111,23 @@ const emailFptWithDomain = computed({
   },
 })
 
-// Dữ liệu cập nhật phụ trách / giảng viên
+// Computed properties cho form cập nhật
+const detailEmailFeWithDomain = computed({
+  get: () => detailStaff.emailFe,
+  set: (value) => {
+    // Loại bỏ domain nếu có
+    detailStaff.emailFe = value.replace(EMAIL_DOMAINS.FE, '')
+  },
+})
+
+const detailEmailFptWithDomain = computed({
+  get: () => detailStaff.emailFpt,
+  set: (value) => {
+    // Loại bỏ domain nếu có
+    detailStaff.emailFpt = value.replace(EMAIL_DOMAINS.FPT, '')
+  },
+})
+
 const detailStaff = reactive({
   id: '',
   staffCode: '',
@@ -124,8 +142,8 @@ const detailStaff = reactive({
 const columns = ref(
   autoAddColumnWidth([
     { title: '#', dataIndex: 'orderNumber', key: 'orderNumber' },
-    { title: 'Mã phụ trách / giảng viên', dataIndex: 'staffCode', key: 'staffCode' },
-    { title: 'Tên phụ trách / giảng viên', dataIndex: 'staffName', key: 'staffName' },
+    { title: 'Mã nhân sự', dataIndex: 'staffCode', key: 'staffCode' },
+    { title: 'Tên nhân sự', dataIndex: 'staffName', key: 'staffName' },
     { title: 'Email FE', dataIndex: 'staffEmailFe', key: 'staffEmailFe' },
     { title: 'Email FPT', dataIndex: 'staffEmailFpt', key: 'staffEmailFpt' },
     { title: 'Cơ sở', dataIndex: 'facilityName', key: 'facilityName' },
@@ -150,11 +168,12 @@ const fetchStaffs = () => {
     .then((response) => {
       staffs.value = response.data.data.data
       pagination.value.total = response.data.data.totalPages * pagination.value.pageSize
+      countFilter.value = response.data.data.totalItems
     })
     .catch((error) => {
       message.error(
         (error.response && error.response.data && error.response.data.message) ||
-          'Lỗi khi lấy danh sách phụ trách / giảng viên',
+          'Lỗi khi lấy danh sách nhân sự',
       )
     })
     .finally(() => {
@@ -199,7 +218,7 @@ const handleAddStaff = () => {
   }
   Modal.confirm({
     title: 'Xác nhận thêm mới',
-    content: 'Bạn có chắc chắn muốn thêm phụ trách / giảng viên mới này?',
+    content: 'Bạn có chắc chắn muốn thêm nhân sự mới này?',
     okText: 'Tiếp tục',
     cancelText: 'Hủy bỏ',
     onOk() {
@@ -213,7 +232,7 @@ const handleAddStaff = () => {
       requestAPI
         .post(API_ROUTES_ADMIN.FETCH_DATA_STAFF, payload)
         .then(() => {
-          message.success('Thêm phụ trách / giảng viên thành công')
+          message.success('Thêm nhân sự thành công')
           modalAdd.value = false
           fetchStaffs()
           clearNewStaffForm()
@@ -221,17 +240,17 @@ const handleAddStaff = () => {
         .catch((error) => {
           message.error(
             (error.response && error.response.data && error.response.data.message) ||
-              'Lỗi khi thêm phụ trách / giảng viên',
+              'Lỗi khi thêm nhân sự',
           )
         })
         .finally(() => {
           modalAddLoading.value = false
           loadingStore.hide()
         })
-    },    })
+    },
+  })
 }
 
-// Hàm lấy chi tiết phụ trách / giảng viên để cập nhật
 const handleUpdateStaff = (record) => {
   loadingStore.show()
   requestAPI
@@ -241,8 +260,9 @@ const handleUpdateStaff = (record) => {
       detailStaff.id = staff.id
       detailStaff.staffCode = staff.staffCode
       detailStaff.name = staff.staffName
-      detailStaff.emailFe = staff.staffEmailFe
-      detailStaff.emailFpt = staff.staffEmailFpt
+      // Loại bỏ domain khỏi email nếu có
+      detailStaff.emailFe = staff.staffEmailFe.replace(EMAIL_DOMAINS.FE, '')
+      detailStaff.emailFpt = staff.staffEmailFpt.replace(EMAIL_DOMAINS.FPT, '')
       detailStaff.facilityId = staff.facilityId
       detailStaff.roleCodes = staff.roleCode.split(',').map((role) => role.trim())
       modalUpdate.value = true
@@ -250,7 +270,7 @@ const handleUpdateStaff = (record) => {
     .catch((error) => {
       message.error(
         (error.response && error.response.data && error.response.data.message) ||
-          'Lỗi khi lấy chi tiết phụ trách / giảng viên',
+          'Lỗi khi lấy chi tiết nhân sự',
       )
     })
     .finally(() => {
@@ -258,7 +278,6 @@ const handleUpdateStaff = (record) => {
     })
 }
 
-// Hàm cập nhật phụ trách / giảng viên
 const updateStaff = () => {
   if (
     !detailStaff.staffCode ||
@@ -273,23 +292,28 @@ const updateStaff = () => {
   }
   Modal.confirm({
     title: 'Xác nhận cập nhật',
-    content: 'Bạn có chắc chắn muốn cập nhật thông tin phụ trách / giảng viên này?',
+    content: 'Bạn có chắc chắn muốn cập nhật thông tin nhân sự này?',
     okText: 'Tiếp tục',
     cancelText: 'Hủy bỏ',
     onOk() {
       modalUpdateLoading.value = true
       loadingStore.show()
+      const payload = {
+        ...detailStaff,
+        emailFe: detailStaff.emailFe + EMAIL_DOMAINS.FE,
+        emailFpt: detailStaff.emailFpt + EMAIL_DOMAINS.FPT,
+      }
       requestAPI
-        .put(`${API_ROUTES_ADMIN.FETCH_DATA_STAFF}/${detailStaff.id}`, detailStaff)
+        .put(`${API_ROUTES_ADMIN.FETCH_DATA_STAFF}/${detailStaff.id}`, payload)
         .then(() => {
-          message.success('Cập nhật phụ trách / giảng viên thành công')
+          message.success('Cập nhật nhân sự thành công')
           modalUpdate.value = false
           fetchStaffs()
         })
         .catch((error) => {
           message.error(
             (error.response && error.response.data && error.response.data.message) ||
-              'Lỗi khi cập nhật phụ trách / giảng viên',
+              'Lỗi khi cập nhật nhân sự',
           )
         })
         .finally(() => {
@@ -300,11 +324,10 @@ const updateStaff = () => {
   })
 }
 
-// Hàm đổi trạng thái phụ trách / giảng viên
 const handleChangeStatusStaff = (record) => {
   Modal.confirm({
     title: 'Xác nhận thay đổi trạng thái',
-    content: `Bạn có chắc chắn muốn đổi trạng thái cho phụ trách / giảng viên ${record.staffName}?`,
+    content: `Bạn có chắc chắn muốn đổi trạng thái cho nhân sự ${record.staffName}?`,
     onOk: () => {
       loadingStore.show()
       requestAPI
@@ -316,7 +339,7 @@ const handleChangeStatusStaff = (record) => {
         .catch((error) => {
           message.error(
             (error.response && error.response.data && error.response.data.message) ||
-              'Lỗi khi đổi trạng thái phụ trách / giảng viên',
+              'Lỗi khi đổi trạng thái nhân sự',
           )
         })
         .finally(() => {
@@ -345,8 +368,8 @@ const configImportExcel = {
   showDownloadTemplate: true,
   showExport: true,
   showHistoryLog: true,
-  btnImport: 'Import phụ trách / giảng viên',
-  btnExport: 'Export phụ trách / giảng viên',
+  btnImport: 'Import nhân sự',
+  btnExport: 'Export nhân sự',
 }
 
 const handleClearFilter = () => {
@@ -378,13 +401,12 @@ onMounted(() => {
 
 <template>
   <div class="container-fluid">
-    <!-- Card Danh sách phụ trách / giảng viên -->
     <div class="row g-3">
       <div class="col-12">
         <a-card :bordered="false" class="cart no-body-padding">
           <a-collapse ghost>
             <a-collapse-panel>
-              <template #header><FilterFilled /> Bộ lọc</template>
+              <template #header><FilterFilled /> Bộ lọc ({{ countFilter }})</template>
               <div class="row g-3 filter-container">
                 <!-- Input tìm kiếm theo mã, tên, email -->
                 <a-col class="col-lg-12 col-md-12 col-sm-12">
@@ -405,12 +427,11 @@ onMounted(() => {
                   <div class="label-title">Trạng thái:</div>
                   <a-select
                     v-model:value="filter.status"
-                    placeholder="Chọn trạng thái"
-                    allowClear
+                    placeholder="-- Tất cả trạng thái --"
                     class="w-100"
                     @change="fetchStaffs"
                   >
-                    <a-select-option :value="''">Tất cả trạng thái</a-select-option>
+                    <a-select-option :value="''">-- Tất cả trạng thái --</a-select-option>
                     <a-select-option value="ACTIVE">Đang hoạt động</a-select-option>
                     <a-select-option value="INACTIVE">Ngừng hoạt động</a-select-option>
                   </a-select>
@@ -426,7 +447,7 @@ onMounted(() => {
                     class="w-100"
                     @change="fetchStaffs"
                   >
-                    <a-select-option :value="''">Tất cả vai trò</a-select-option>
+                    <a-select-option :value="''">-- Tất cả vai trò --</a-select-option>
                     <a-select-option value="1">Phụ trách xưởng</a-select-option>
                     <a-select-option value="3">Giảng viên</a-select-option>
                   </a-select>
@@ -441,7 +462,7 @@ onMounted(() => {
                     class="w-100"
                     @change="fetchStaffs"
                   >
-                    <a-select-option :value="''">Tất cả cơ sở</a-select-option>
+                    <a-select-option :value="''">-- Tất cả cơ sở --</a-select-option>
                     <a-select-option
                       v-for="facility in facilitiesListCombobox"
                       :key="facility.id"
@@ -468,12 +489,12 @@ onMounted(() => {
 
       <div class="col-12">
         <a-card :bordered="false" class="cart">
-          <template #title> <UnorderedListOutlined /> Danh sách giảng viên </template>
+          <template #title> <UnorderedListOutlined /> Danh sách nhân sự </template>
           <div class="d-flex justify-content-end flex-wrap gap-3 mb-2">
             <ExcelUploadButton v-bind="configImportExcel" />
-              <a-button type="primary" @click="handleShowModalAdd">
-                <PlusOutlined /> Thêm giảng viên
-              </a-button>
+            <a-button type="primary" @click="handleShowModalAdd">
+              <PlusOutlined /> Thêm nhân sự
+            </a-button>
           </div>
 
           <a-table
@@ -508,10 +529,8 @@ onMounted(() => {
                 </span>
               </template>
               <template v-else-if="column.dataIndex === 'roleCode'">
-                  <a-badge
-                    status="processing"
-                  />
-                  {{ convertRole(record.roleCode) }}
+                <a-badge status="processing" />
+                {{ convertRole(record.roleCode) }}
               </template>
               <template v-else-if="column.dataIndex === 'facilityName'">
                 <a-tag>
@@ -520,7 +539,7 @@ onMounted(() => {
               </template>
               <template v-else-if="column.key === 'actions'">
                 <a-space>
-                  <a-tooltip title="Sửa phụ trách / giảng viên">
+                  <a-tooltip title="Sửa nhân sự">
                     <a-button
                       @click="handleUpdateStaff(record)"
                       type="text"
@@ -540,27 +559,27 @@ onMounted(() => {
       </div>
     </div>
 
-    <!-- Modal Thêm phụ trách / giảng viên -->
+    <!-- Modal Thêm nhân sự -->
     <a-modal
       v-model:open="modalAdd"
-      title="Thêm phụ trách / giảng viên"
+      title="Thêm nhân sự"
       @ok="handleAddStaff"
       :okButtonProps="{ loading: modalAddLoading }"
       @cancel="clearNewStaffForm"
       @close="clearNewStaffForm"
     >
       <a-form layout="vertical">
-        <a-form-item label="Mã phụ trách / giảng viên" required>
+        <a-form-item label="Mã nhân sự" required>
           <a-input
             v-model:value="newStaff.staffCode"
-            placeholder="Nhập mã phụ trách / giảng viên"
+            placeholder="Nhập mã nhân sự"
             @keyup.enter="handleAddStaff"
           />
         </a-form-item>
-        <a-form-item label="Tên phụ trách / giảng viên" required>
+        <a-form-item label="Tên nhân sự" required>
           <a-input
             v-model:value="newStaff.name"
-            placeholder="Nhập tên phụ trách / giảng viên"
+            placeholder="Nhập tên nhân sự"
             @keyup.enter="handleAddStaff"
           />
         </a-form-item>
@@ -617,41 +636,58 @@ onMounted(() => {
       </a-form>
     </a-modal>
 
-    <!-- Modal Cập nhật phụ trách / giảng viên -->
     <a-modal
       v-model:open="modalUpdate"
-      title="Cập nhật phụ trách / giảng viên"
+      title="Cập nhật nhân sự"
       @ok="updateStaff"
       :okButtonProps="{ loading: modalUpdateLoading }"
     >
       <a-form layout="vertical">
-        <a-form-item label="Mã phụ trách / giảng viên" required>
+        <a-form-item label="Mã nhân sự" required>
           <a-input
             v-model:value="detailStaff.staffCode"
-            placeholder="Nhập mã phụ trách / giảng viên"
+            placeholder="Nhập mã nhân sự"
             @keyup.enter="updateStaff"
           />
         </a-form-item>
-        <a-form-item label="Tên phụ trách / giảng viên" required>
+        <a-form-item label="Tên nhân sự" required>
           <a-input
             v-model:value="detailStaff.name"
-            placeholder="Nhập tên phụ trách / giảng viên"
+            placeholder="Nhập tên nhân sự"
             @keyup.enter="updateStaff"
           />
         </a-form-item>
         <a-form-item label="Email FE" required>
-          <a-input
-            v-model:value="detailStaff.emailFe"
-            placeholder="Nhập email FE"
-            @keyup.enter="updateStaff"
-          />
+          <a-input-group compact>
+            <a-input
+              v-model:value="detailEmailFeWithDomain"
+              placeholder="Nhập email FE"
+              style="width: calc(100% - 100px)"
+              @keyup.enter="updateStaff"
+            />
+            <a-input
+              :value="EMAIL_DOMAINS.FE"
+              style="width: 100px; background-color: #f5f5f5"
+              disabled
+              @keyup.enter="updateStaff"
+            />
+          </a-input-group>
         </a-form-item>
         <a-form-item label="Email FPT" required>
-          <a-input
-            v-model:value="detailStaff.emailFpt"
-            placeholder="Nhập email FPT"
-            @keyup.enter="updateStaff"
-          />
+          <a-input-group compact>
+            <a-input
+              v-model:value="detailEmailFptWithDomain"
+              placeholder="Nhập email FPT"
+              style="width: calc(100% - 100px)"
+              @keyup.enter="updateStaff"
+            />
+            <a-input
+              :value="EMAIL_DOMAINS.FPT"
+              style="width: 100px; background-color: #f5f5f5"
+              disabled
+              @keyup.enter="updateStaff"
+            />
+          </a-input-group>
         </a-form-item>
         <a-form-item label="Cơ sở" required>
           <a-select v-model:value="detailStaff.facilityId" placeholder="Chọn cơ sở">

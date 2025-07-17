@@ -40,11 +40,6 @@ public class AttendanceRecovery extends PrimaryEntity implements Serializable {
     @JoinColumn(name = "id_import_log")
     private ImportLog importLog;
 
-//    @ManyToOne
-//    @JoinColumn(name = "id_user_student")
-//    @OnDelete(action = OnDeleteAction.CASCADE)
-//    private UserStudent userStudent;
-
     @ManyToOne
     @JoinColumn(name = "id_facility")
     private Facility facility;

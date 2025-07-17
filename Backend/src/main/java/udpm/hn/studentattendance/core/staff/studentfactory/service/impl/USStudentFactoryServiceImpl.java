@@ -178,6 +178,7 @@ public class USStudentFactoryServiceImpl implements USStudentFactoryService {
 
         @Override
         public ResponseEntity<?> createStudent(USStudentFactoryAddRequest addRequest) {
+
                 Optional<UserStudent> existUserStudentByCode = userStudentFactoryExtendRepository
                                 .getUserStudentByCode(addRequest.getStudentCode());
                 Optional<UserStudentFactory> existStudentFactory = studentFactoryRepository
@@ -242,7 +243,7 @@ public class USStudentFactoryServiceImpl implements USStudentFactoryService {
 
         @Override
         public ResponseEntity<?> getAllPlanDateByStudent(USPDDetailShiftByStudentRequest request,
-                                                         String userStudentId) {
+                        String userStudentId) {
                 Pageable pageable = PaginationHelper.createPageable(request);
                 PageableObject<STPDDetailShiftByStudentResponse> data = PageableObject
                                 .of(studentFactoryRepository.getAllPlanDateByStudent(pageable, request, userStudentId));

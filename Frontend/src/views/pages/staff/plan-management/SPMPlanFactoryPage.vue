@@ -16,13 +16,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { ROUTE_NAMES } from '@/router/staffRoute'
 import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
 import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
-import {
-  DAY_OF_WEEK,
-  DEFAULT_DATE_FORMAT,
-  DEFAULT_LATE_ARRIVAL,
-  DEFAULT_MAX_LATE_ARRIVAL,
-  SHIFT,
-} from '@/constants'
+import { DAY_OF_WEEK, DEFAULT_DATE_FORMAT, DEFAULT_LATE_ARRIVAL, SHIFT } from '@/constants'
 import { autoAddColumnWidth, debounce, formatDate } from '@/utils/utils'
 import useLoadingStore from '@/stores/useLoadingStore'
 
@@ -43,6 +37,8 @@ const modalAdd = reactive({
   width: 800,
   onOk: () => handleSubmitAdd(),
 })
+
+const countFilter = ref(0)
 
 const lstData = ref([])
 const lstDataAdd = ref([])
@@ -108,7 +104,7 @@ const formDataAdd = reactive({
 const formRules = reactive({
   idFactory: [{ required: true, message: 'Vui lòng chọn 1 nhóm xưởng - dự án!' }],
   days: [{ required: true, message: 'Vui lòng chọn ít nhất 1 ngày trong tuần!' }],
-  shift: [{ required: true, message: 'Vui lòng chọn 1 ca học!' }],
+  shift: [{ required: true, message: 'Vui lòng chọn 1 ca!' }],
   type: [{ required: true, message: 'Vui lòng chọn 1 hình thức!' }],
   lateArrival: [{ required: true, message: 'Vui lòng nhập mục này!' }],
 })
@@ -153,6 +149,7 @@ const fetchDataList = () => {
     .then(({ data: response }) => {
       lstData.value = response.data.data
       pagination.value.total = response.data.totalPages * pagination.value.pageSize
+      countFilter.value = response.data.totalItems
     })
     .catch((error) => {
       message.error(error?.response?.data?.message || 'Không thể tải danh sách dữ liệu')
@@ -169,7 +166,7 @@ const fetchDataShift = () => {
       lstShift.value = response.data
     })
     .catch((error) => {
-      message.error(error?.response?.data?.message || 'Lỗi khi lấy dữ liệu ca học')
+      message.error(error?.response?.data?.message || 'Lỗi khi lấy dữ liệu ca')
     })
 }
 
@@ -326,7 +323,6 @@ const handleDelete = (id) => {
 onMounted(() => {
   breadcrumbStore.setRoutes(breadcrumb.value)
   fetchDataDetail()
-  fetchDataList()
   fetchDataShift()
 })
 
@@ -389,7 +385,7 @@ watch(
           </a-select-option>
         </a-select>
       </a-form-item>
-      <a-form-item class="col-sm-12" label="Ca học" name="shift" :rules="formRules.shift">
+      <a-form-item class="col-sm-12" label="Ca" name="shift" :rules="formRules.shift">
         <a-select
           class="w-100"
           v-model:value="formDataAdd.shift"
@@ -427,14 +423,13 @@ watch(
           class="w-100"
           v-model:value="formDataAdd.lateArrival"
           :min="0"
-          :max="DEFAULT_MAX_LATE_ARRIVAL"
           :step="1"
           :disabled="modalAdd.isLoading"
           allowClear
           @keyup.enter="modalAdd.onOk"
         />
       </a-form-item>
-      <a-form-item class="col-sm-4" label="Phòng học">
+      <a-form-item class="col-sm-4" label="Phòng">
         <a-input
           class="w-100"
           v-model:value="formDataAdd.room"
@@ -535,7 +530,7 @@ watch(
         <a-card :bordered="false" class="cart no-body-padding">
           <a-collapse ghost>
             <a-collapse-panel>
-              <template #header><FilterFilled /> Bộ lọc</template>
+              <template #header><FilterFilled /> Bộ lọc ({{ countFilter }})</template>
               <div class="row g-3">
                 <div class="col-md-4 col-sm-12">
                   <div class="label-title">Từ khoá:</div>
@@ -556,7 +551,6 @@ watch(
                     class="w-100"
                     :dropdownMatchSelectWidth="false"
                     placeholder="-- Tất cả trạng thái --"
-                    allowClear
                   >
                     <a-select-option :value="null">-- Tất cả trạng thái --</a-select-option>
                     <a-select-option :value="1">Đang triển khai</a-select-option>
@@ -590,7 +584,11 @@ watch(
         <a-card :bordered="false" class="cart">
           <template #title> <UnorderedListOutlined /> Danh sách phân công nhóm xưởng </template>
           <div class="d-flex justify-content-end gap-3 mb-2">
-            <a-button type="primary" @click="handleShowModalAdd">
+            <a-button
+              type="primary"
+              @click="handleShowModalAdd"
+              v-if="_detail?.status === STATUS_TYPE.ENABLE"
+            >
               <PlusOutlined /> Phân công nhóm xưởng
             </a-button>
           </div>
@@ -634,8 +632,8 @@ watch(
               <template v-if="column.dataIndex === 'status'">
                 <a-switch
                   class="me-2"
-                  :checked="record.status === 1"
-                  :disabled="_detail.status !== 1"
+                  :checked="record.status === STATUS_TYPE.ENABLE"
+                  :disabled="record.status !== record.currentStatus"
                   @change="handleChangeStatus(record.id)"
                 />
                 <a-tag :color="record.status === 1 && _detail.status === 1 ? 'green' : 'red'">{{
@@ -643,7 +641,7 @@ watch(
                 }}</a-tag>
               </template>
               <template v-if="column.key === 'actions'">
-                <a-tooltip title="Chi tiết ca học">
+                <a-tooltip title="Chi tiết ca">
                   <a-button
                     class="btn-outline-primary border-0 me-2"
                     @click="handleShowDetail(record.id)"
