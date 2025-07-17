@@ -110,6 +110,8 @@ const columns = ref(
   ]),
 )
 
+const countFilter = ref(0)
+
 const columnsDetail = ref(
   autoAddColumnWidth([
     { title: '#', dataIndex: 'orderNumber', key: 'orderNumber' },
@@ -142,6 +144,7 @@ const fetchStudentFactory = () => {
       pagination.total = result.totalPages * filter.pageSize
       // Nếu trả về tổng số bản ghi, thay thế bằng: pagination.total = result.totalRecords
       pagination.current = filter.page
+      countFilter.value = result.totalItems
     })
     .catch((error) => {
       message.error(error.data?.message || 'Lỗi khi lấy dữ liệu')
@@ -314,7 +317,7 @@ onMounted(() => {
         <a-card :bordered="false" class="cart no-body-padding">
           <a-collapse ghost>
             <a-collapse-panel>
-              <template #header><FilterFilled /> Bộ lọc</template>
+              <template #header><FilterFilled /> Bộ lọc ({{ countFilter }})</template>
               <div class="row g-3 filter-container">
                 <div class="col-md-6 col-sm-6">
                   <div class="label-title">Từ khoá:</div>

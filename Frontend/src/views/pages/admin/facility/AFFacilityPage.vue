@@ -15,7 +15,7 @@ import {
 import { message, Modal } from 'ant-design-vue'
 import requestAPI from '@/services/requestApiService'
 import { API_ROUTES_ADMIN } from '@/constants/adminConstant'
-import { DEFAULT_PAGINATION } from '@/constants'
+import { DEFAULT_PAGINATION, STATUS_TYPE } from '@/constants'
 import { useRouter } from 'vue-router'
 import { ROUTE_NAMES } from '@/router/adminRoute'
 import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
@@ -40,6 +40,8 @@ const breadcrumb = ref([
 
 // Danh sách cơ sở
 const facilities = ref([])
+
+const countFilter = ref(0)
 
 // Biến lọc gửi lên API (không chứa thông tin phân trang)
 const filter = reactive({
@@ -107,6 +109,7 @@ const fetchFacilities = () => {
       } else {
         pagination.total = response.data.data.totalPages * pagination.pageSize
       }
+      countFilter.value = response.data.data.totalItems
     })
     .catch((error) => {
       message.error(
@@ -336,7 +339,7 @@ onMounted(() => {
         <a-card :bordered="false" class="cart no-body-padding">
           <a-collapse ghost>
             <a-collapse-panel>
-              <template #header><FilterFilled /> Bộ lọc</template>
+              <template #header><FilterFilled /> Bộ lọc ({{ countFilter }})</template>
               <div class="row g-3">
                 <div class="col-xxl-8 col-md-8 col-sm-6">
                   <div class="label-title">Từ khoá:</div>
@@ -424,7 +427,7 @@ onMounted(() => {
                 </span>
               </template>
               <template v-else-if="column.key === 'actions'">
-                <a-space>
+                <a-space v-if="record.facilityStatus === STATUS_TYPE.ENABLE">
                   <a-tooltip title="Chỉnh sửa cơ sở">
                     <a-button
                       @click="handleUpdateFacility(record)"

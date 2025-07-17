@@ -25,6 +25,8 @@ const breadcrumbStore = useBreadcrumbStore()
 const loadingStore = useLoadingStore()
 const isLoading = ref(false)
 
+const countFilter = ref(0)
+
 const breadcrumb = ref([
   {
     name: GLOBAL_ROUTE_NAMES.STAFF_PAGE,
@@ -85,6 +87,7 @@ const fetchAttendanceRecovery = () => {
       } else {
         pagination.total = result.totalPages * pagination.pageSize
       }
+      countFilter.value = result.totalItems
     })
     .catch((error) => {
       message.error(error.response?.data?.message || 'Lỗi khi lấy danh sách khôi phục điểm danh')
@@ -437,7 +440,7 @@ onMounted(() => {
         <a-card :bordered="false" class="cart no-body-padding">
           <a-collapse ghost>
             <a-collapse-panel>
-              <template #header><FilterFilled /> Bộ lọc</template>
+              <template #header><FilterFilled /> Bộ lọc ({{ countFilter }})</template>
               <div class="row g-3">
                 <div class="col-lg-6 col-md-6 col-sm-12">
                   <div class="label-title">Từ khoá:</div>

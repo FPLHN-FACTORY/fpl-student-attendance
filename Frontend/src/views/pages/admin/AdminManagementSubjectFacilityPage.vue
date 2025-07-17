@@ -25,6 +25,8 @@ const idSubject = route.query.subjectId
 const loadingStore = useLoadingStore()
 const breadcrumbStore = useBreadcrumbStore()
 
+const countFilter = ref(0)
+
 const breadcrumb = ref([
   {
     name: GLOBAL_ROUTE_NAMES.ADMIN_PAGE,
@@ -109,6 +111,7 @@ const fetchSubjectFacility = () => {
       const result = response.data.data
       subjectFacility.value = result.data
       pagination.total = result.totalPages * pagination.pageSize
+      countFilter.value = result.totalItems
     })
     .catch((error) => {
       message.error(error.response?.data?.message || 'Lỗi khi lấy danh sách bộ môn cơ sở')
@@ -133,7 +136,6 @@ const fetchSubject = () => {
       loadingStore.hide()
     })
 }
-
 
 const fetchFacilitySubjectCombobox = () => {
   loadingStore.show()
@@ -196,11 +198,11 @@ const handleAddSubjectFacility = () => {
       loadingStore.show()
 
       // Tạo mảng promises để gọi API từng cơ sở một
-      const addPromises = newSubjectFacility.facilityId.map(facilityId => {
+      const addPromises = newSubjectFacility.facilityId.map((facilityId) => {
         const requestData = {
           subjectId: newSubjectFacility.subjectId,
           name: newSubjectFacility.name,
-          facilityId: facilityId
+          facilityId: facilityId,
         }
         return requestAPI.post(API_ROUTES_ADMIN.FETCH_DATA_SUBJECT_FACILITY, requestData)
       })
@@ -208,8 +210,8 @@ const handleAddSubjectFacility = () => {
       // Thực hiện tất cả các API call
       Promise.allSettled(addPromises)
         .then((results) => {
-          const successful = results.filter(result => result.status === 'fulfilled').length
-          const failed = results.filter(result => result.status === 'rejected').length
+          const successful = results.filter((result) => result.status === 'fulfilled').length
+          const failed = results.filter((result) => result.status === 'rejected').length
 
           if (successful > 0) {
             message.success(`Thêm thành công ${successful} bộ môn cơ sở`)
@@ -255,7 +257,10 @@ const handleUpdateSubjectFacility = () => {
       }
 
       requestAPI
-        .put(`${API_ROUTES_ADMIN.FETCH_DATA_SUBJECT_FACILITY}/${detailSubjectFacility.id}`, requestData)
+        .put(
+          `${API_ROUTES_ADMIN.FETCH_DATA_SUBJECT_FACILITY}/${detailSubjectFacility.id}`,
+          requestData,
+        )
         .then((response) => {
           message.success(response.data.message || 'Cập nhật bộ môn cơ sở thành công')
           modalUpdate.value = false
@@ -337,7 +342,7 @@ const clearFormAdd = () => {
 const handleFacilityChange = (selectedValues) => {
   // Nếu vừa chọn "Tất cả", thì chọn tất cả các cơ sở (không hiển thị "all" trong combobox)
   if (selectedValues.includes('all')) {
-    const allFacilityIds = facilitySubject.value.map(f => f.id)
+    const allFacilityIds = facilitySubject.value.map((f) => f.id)
     newSubjectFacility.facilityId = allFacilityIds
   } else {
     // Nếu không chọn "Tất cả", chỉ giữ lại các cơ sở được chọn
@@ -372,7 +377,7 @@ onMounted(() => {
         <a-card :bordered="false" class="cart no-body-padding">
           <a-collapse ghost>
             <a-collapse-panel>
-              <template #header><FilterFilled /> Bộ lọc</template>
+              <template #header><FilterFilled /> Bộ lọc ({{ countFilter }})</template>
               <div class="row g-3 filter-container">
                 <div class="col-xl-6 col-md-6 col-sm-12">
                   <div class="label-title">Cơ sở:</div>
@@ -424,7 +429,9 @@ onMounted(() => {
 
           <div class="d-flex justify-content-end mb-2">
             <a-tooltip title="Thêm bộ môn cơ sở">
-              <a-button type="primary" @click="showAddModal"> <PlusOutlined /> Thêm bộ môn cơ sở </a-button>
+              <a-button type="primary" @click="showAddModal">
+                <PlusOutlined /> Thêm bộ môn cơ sở
+              </a-button>
             </a-tooltip>
           </div>
 

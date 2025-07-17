@@ -32,6 +32,8 @@ const breadcrumb = ref([
 const loadingStore = useLoadingStore()
 const isLoading = ref(false)
 
+const countFilter = ref(0)
+
 // Đối tượng filter
 const filter = reactive({
   idSubject: '',
@@ -173,6 +175,7 @@ const fetchTeachingSchedule = () => {
       teachingScheduleRecords.value = result.data
       pagination.value.total = result.totalRecords || result.totalPages * filter.pageSize
       pagination.value.current = filter.page
+      countFilter.value = result.totalItems
     })
     .catch((error) => {
       message.error(error.response?.data?.message || 'Lỗi khi tải dữ liệu lịch dạy')
@@ -548,12 +551,11 @@ onMounted(() => {
                   }}</a-typography-link>
                 </template>
                 <template v-else-if="column.dataIndex === 'description'">
-                  <a-tooltip  title="Xem, sửa chi tiết buổi dạy">
+                  <a-tooltip title="Xem, sửa chi tiết buổi dạy">
                     <a-typography-link @click="handleShowDescription(record)"
                       >Chi tiết</a-typography-link
                     >
                   </a-tooltip>
-
                 </template>
               </template>
               <!-- Cột action -->
@@ -604,7 +606,7 @@ onMounted(() => {
 
           <a-collapse ghost>
             <a-collapse-panel>
-              <template #header><FilterFilled /> Bộ lọc</template>
+              <template #header><FilterFilled /> Bộ lọc ({{ countFilter }})</template>
               <div class="row g-3">
                 <div class="col-md-4 col-sm-6">
                   <a-select

@@ -134,6 +134,8 @@ const breadcrumb = ref([
   },
 ])
 
+const countFilter = ref(0)
+
 const pagination = ref({ ...DEFAULT_PAGINATION })
 
 const dataFilter = reactive({
@@ -226,6 +228,7 @@ const fetchDataList = () => {
     .then(({ data: response }) => {
       lstData.value = response.data.data
       pagination.value.total = response.data.totalPages * pagination.value.pageSize
+      countFilter.value = response.data.totalItems
     })
     .catch((error) => {
       message.error(error?.response?.data?.message || 'Không thể tải danh sách dữ liệu')
@@ -936,7 +939,7 @@ watch(
         <a-card :bordered="false" class="cart no-body-padding">
           <a-collapse ghost>
             <a-collapse-panel>
-              <template #header><FilterFilled /> Bộ lọc</template>
+              <template #header><FilterFilled /> Bộ lọc ({{ countFilter }})</template>
               <div class="row g-3">
                 <div class="col-xxl-4 col-lg-8 col-md-8 col-sm-12">
                   <div class="label-title">Từ khoá:</div>
