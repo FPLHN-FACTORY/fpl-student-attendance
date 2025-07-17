@@ -7,8 +7,6 @@ import com.lowagie.text.pdf.PdfPCell;
 import com.lowagie.text.pdf.PdfPTable;
 import com.lowagie.text.pdf.PdfWriter;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
@@ -21,8 +19,6 @@ import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.helpers.SessionHelper;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.constants.RedisPrefixConstant;
-import udpm.hn.studentattendance.infrastructure.redis.service.RedisService;
-import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
 import com.fasterxml.jackson.core.type.TypeReference;
 import udpm.hn.studentattendance.helpers.RedisCacheHelper;
 
@@ -44,12 +40,7 @@ public class STDScheduleAttendanceServiceImpl implements STDScheduleAttendanceSe
 
         private final SessionHelper sessionHelper;
 
-        private final RedisInvalidationHelper redisInvalidationHelper;
-
         private final RedisCacheHelper redisCacheHelper;
-
-        @Value("${spring.cache.redis.time-to-live}")
-        private long redisTTL;
 
         public PageableObject<?> getCachedScheduleList(STDScheduleAttendanceSearchRequest request) {
                 String key = RedisPrefixConstant.REDIS_PREFIX_SCHEDULE_STUDENT + "list_"
@@ -59,9 +50,8 @@ public class STDScheduleAttendanceServiceImpl implements STDScheduleAttendanceSe
                                 key,
                                 () -> PageableObject.of(repository.getAllListAttendanceByUser(
                                                 PaginationHelper.createPageable(request, "id"), request)),
-                                new TypeReference<PageableObject<?>>() {
-                                },
-                                redisTTL);
+                                new TypeReference<>() {
+                                });
         }
 
         @Override
@@ -193,8 +183,7 @@ public class STDScheduleAttendanceServiceImpl implements STDScheduleAttendanceSe
 
                         document.add(pdfTable);
                         document.close();
-                } catch (Exception e) {
-                        e.printStackTrace();
+                } catch (Exception ignored) {
                 }
 
                 return new ByteArrayInputStream(byteArrayOutputStream.toByteArray());

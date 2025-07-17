@@ -2,7 +2,6 @@ package udpm.hn.studentattendance.core.admin.facility.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
@@ -16,7 +15,6 @@ import udpm.hn.studentattendance.helpers.GenerateNameHelper;
 import udpm.hn.studentattendance.helpers.MailerHelper;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
 import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
-import udpm.hn.studentattendance.helpers.RequestTrimHelper;
 import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
@@ -24,7 +22,6 @@ import udpm.hn.studentattendance.infrastructure.common.repositories.CommonUserSt
 import udpm.hn.studentattendance.infrastructure.config.mailer.model.MailerDefaultRequest;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.RedisPrefixConstant;
-import udpm.hn.studentattendance.infrastructure.redis.service.RedisService;
 import com.fasterxml.jackson.core.type.TypeReference;
 import udpm.hn.studentattendance.helpers.RedisCacheHelper;
 
@@ -55,18 +52,14 @@ public class AFFacilityServiceImpl implements AFFacilityService {
     @Value("${app.config.app-name}")
     private String appName;
 
-    @Value("${spring.cache.redis.time-to-live}")
-    private long redisTTL;
-
     public PageableObject<AFFacilityResponse> getCachedFacilities(AFFacilitySearchRequest request) {
         String key = RedisPrefixConstant.REDIS_PREFIX_FACILITY + "list_" + request.toString();
         return redisCacheHelper.getOrSet(
                 key,
                 () -> PageableObject.of(facilityRepository
                         .getAllFacility(PaginationHelper.createPageable(request, "createdAt"), request)),
-                new TypeReference<PageableObject<AFFacilityResponse>>() {
-                },
-                redisTTL);
+                new TypeReference<>() {
+                });
     }
 
     @Override
@@ -77,7 +70,6 @@ public class AFFacilityServiceImpl implements AFFacilityService {
 
     @Override
     public ResponseEntity<?> createFacility(AFCreateUpdateFacilityRequest request) {
-        RequestTrimHelper.trimStringFields(request);
 
         Optional<Facility> existFacility = facilityRepository.findByName(request.getFacilityName());
         if (existFacility.isPresent()) {
@@ -102,8 +94,6 @@ public class AFFacilityServiceImpl implements AFFacilityService {
 
     @Override
     public ResponseEntity<?> updateFacility(String facilityId, AFCreateUpdateFacilityRequest request) {
-        // Trim all string fields in the request
-        RequestTrimHelper.trimStringFields(request);
 
         Optional<Facility> existFacility = facilityRepository.findById(facilityId);
         if (existFacility.isEmpty()) {

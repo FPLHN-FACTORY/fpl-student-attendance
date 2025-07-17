@@ -3,7 +3,6 @@ package udpm.hn.studentattendance.core.staff.plan.services.impl;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import udpm.hn.studentattendance.core.staff.plan.model.request.SPDAddOrUpdatePlanRequest;
@@ -25,7 +24,6 @@ import udpm.hn.studentattendance.entities.Semester;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
 import udpm.hn.studentattendance.helpers.RedisCacheHelper;
 import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
-import udpm.hn.studentattendance.helpers.RequestTrimHelper;
 import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.helpers.SessionHelper;
 import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
@@ -34,7 +32,6 @@ import udpm.hn.studentattendance.infrastructure.common.repositories.CommonUserSt
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.RedisPrefixConstant;
 import udpm.hn.studentattendance.infrastructure.constants.SemesterName;
-import udpm.hn.studentattendance.infrastructure.redis.service.RedisService;
 import udpm.hn.studentattendance.utils.DateTimeUtils;
 
 import java.util.Arrays;
@@ -42,8 +39,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import java.util.HashMap;
-import java.util.Map;
+
 import com.fasterxml.jackson.core.type.TypeReference;
 
 @Service
@@ -70,17 +66,13 @@ public class SPDPlanServiceImpl implements SPDPlanService {
 
     private final RedisInvalidationHelper redisInvalidationHelper;
 
-    @Value("${spring.cache.redis.time-to-live}")
-    private long redisTTL;
-
     public List<SPDSubjectResponse> getCachedSubjects() {
         String key = RedisPrefixConstant.REDIS_PREFIX_PLAN + "subjects_" + "facility=" + sessionHelper.getFacilityId();
         return redisCacheHelper.getOrSet(
                 key,
                 () -> spdSubjectRepository.getAllByFacility(sessionHelper.getFacilityId()),
-                new TypeReference<List<SPDSubjectResponse>>() {
-                },
-                redisTTL);
+                new TypeReference<>() {
+                });
     }
 
     @Override
@@ -91,15 +83,7 @@ public class SPDPlanServiceImpl implements SPDPlanService {
 
     public List<SPDLevelProjectResponse> getCachedLevels() {
         String cacheKey = RedisPrefixConstant.REDIS_PREFIX_LEVEL + "all";
-
-        Object cachedData = redisCacheHelper.getOrSet(
-                cacheKey,
-                () -> spdLevelProjectRepository.getAll(),
-                new TypeReference<List<SPDLevelProjectResponse>>() {
-                },
-                redisTTL);
-
-        return (List<SPDLevelProjectResponse>) cachedData;
+        return redisCacheHelper.getOrSet(cacheKey, spdLevelProjectRepository::getAll, new TypeReference<>() {});
     }
 
     @Override
@@ -111,16 +95,12 @@ public class SPDPlanServiceImpl implements SPDPlanService {
     public List<String> getCachedSemesterNames() {
         String cacheKey = RedisPrefixConstant.REDIS_PREFIX_PLAN + "semester_names_all";
 
-        Object cachedData = redisCacheHelper.getOrSet(
+        return redisCacheHelper.getOrSet(
                 cacheKey,
                 () -> Arrays.stream(SemesterName.values())
                         .map(Enum::name)
                         .collect(Collectors.toList()),
-                new TypeReference<List<String>>() {
-                },
-                redisTTL);
-
-        return (List<String>) cachedData;
+                new TypeReference<>() {});
     }
 
     @Override
@@ -131,15 +111,7 @@ public class SPDPlanServiceImpl implements SPDPlanService {
 
     public List<Integer> getCachedYears() {
         String cacheKey = RedisPrefixConstant.REDIS_PREFIX_PLAN + "years_all";
-
-        Object cachedData = redisCacheHelper.getOrSet(
-                cacheKey,
-                () -> spdSemesterRepository.getAllYear(),
-                new TypeReference<List<Integer>>() {
-                },
-                redisTTL);
-
-        return (List<Integer>) cachedData;
+        return redisCacheHelper.getOrSet(cacheKey, spdSemesterRepository::getAllYear, new TypeReference<>() {});
     }
 
     @Override
@@ -155,9 +127,7 @@ public class SPDPlanServiceImpl implements SPDPlanService {
                 key,
                 () -> PageableObject
                         .of(spdPlanRepository.getAllByFilter(PaginationHelper.createPageable(request), request)),
-                new TypeReference<PageableObject<SPDPlanResponse>>() {
-                },
-                redisTTL);
+                new TypeReference<>() {});
     }
 
     @Override
@@ -187,14 +157,11 @@ public class SPDPlanServiceImpl implements SPDPlanService {
         String cacheKey = RedisPrefixConstant.REDIS_PREFIX_PLAN + "projects_" +
                 "facility=" + sessionHelper.getFacilityId() + "_" + request.toString();
 
-        Object cachedData = redisCacheHelper.getOrSet(
+        return redisCacheHelper.getOrSet(
                 cacheKey,
                 () -> spdPlanRepository.getListProject(request),
-                new TypeReference<List<SPDProjectResponse>>() {
-                },
-                redisTTL);
-
-        return (List<SPDProjectResponse>) cachedData;
+                new TypeReference<>() {
+                });
     }
 
     @Override
@@ -205,8 +172,6 @@ public class SPDPlanServiceImpl implements SPDPlanService {
 
     @Override
     public ResponseEntity<?> createPlan(SPDAddOrUpdatePlanRequest request) {
-        // Trim all string fields in the request
-        RequestTrimHelper.trimStringFields(request);
 
         Project project = spdProjectRepository.findById(request.getIdProject()).orElse(null);
 
@@ -320,8 +285,6 @@ public class SPDPlanServiceImpl implements SPDPlanService {
 
     @Override
     public ResponseEntity<?> updatePlan(SPDAddOrUpdatePlanRequest request) {
-        // Trim all string fields in the request
-        RequestTrimHelper.trimStringFields(request);
 
         Plan plan = spdPlanRepository.findById(request.getId()).orElse(null);
         if (plan == null) {
@@ -373,140 +336,4 @@ public class SPDPlanServiceImpl implements SPDPlanService {
         return RouterHelper.responseSuccess("Cập nhật kế hoạch thành công", updatePlan);
     }
 
-    // Helper methods to convert between Map and objects
-    private Map<String, Object> convertPageableObjectToMap(PageableObject<SPDPlanResponse> pageableObject) {
-        Map<String, Object> map = new HashMap<>();
-        map.put("data", pageableObject.getData().stream()
-                .map(this::convertSPDPlanResponseToMap)
-                .collect(Collectors.toList()));
-        map.put("totalPages", pageableObject.getTotalPages());
-        map.put("currentPage", pageableObject.getCurrentPage());
-        return map;
-    }
-
-    private PageableObject<SPDPlanResponse> convertMapToPageableObject(Map<String, Object> map) {
-        @SuppressWarnings("unchecked")
-        List<Map<String, Object>> dataMaps = (List<Map<String, Object>>) map.get("data");
-        List<SPDPlanResponse> data = dataMaps.stream()
-                .map(this::convertMapToSPDPlanResponse)
-                .collect(Collectors.toList());
-
-        return new PageableObject<>(
-                data,
-                (Long) map.get("totalPages"),
-                (Integer) map.get("currentPage"));
-    }
-
-    private Map<String, Object> convertSPDPlanResponseToMap(SPDPlanResponse response) {
-        Map<String, Object> map = new HashMap<>();
-        map.put("id", response.getId());
-        map.put("orderNumber", response.getOrderNumber());
-        map.put("planName", response.getPlanName());
-        map.put("projectId", response.getProjectId());
-        map.put("projectName", response.getProjectName());
-        map.put("level", response.getLevel());
-        map.put("semesterName", response.getSemesterName());
-        map.put("subjectName", response.getSubjectName());
-        map.put("fromDate", response.getFromDate());
-        map.put("toDate", response.getToDate());
-        map.put("fromDateSemester", response.getFromDateSemester());
-        map.put("toDateSemester", response.getToDateSemester());
-        map.put("description", response.getDescription());
-        map.put("status", response.getStatus());
-        map.put("maxLateArrival", response.getMaxLateArrival());
-        return map;
-    }
-
-    private SPDPlanResponse convertMapToSPDPlanResponse(Map<String, Object> map) {
-        // Create a simple implementation that wraps the map
-        return new SPDPlanResponse() {
-            @Override
-            public String getId() {
-                return (String) map.get("id");
-            }
-
-            @Override
-            public Long getOrderNumber() {
-                Object value = map.get("orderNumber");
-                return value instanceof Number ? ((Number) value).longValue() : null;
-            }
-
-            @Override
-            public String getPlanName() {
-                return (String) map.get("planName");
-            }
-
-            @Override
-            public String getProjectId() {
-                return (String) map.get("projectId");
-            }
-
-            @Override
-            public String getProjectName() {
-                return (String) map.get("projectName");
-            }
-
-            @Override
-            public String getLevel() {
-                return (String) map.get("level");
-            }
-
-            @Override
-            public String getSemesterName() {
-                return (String) map.get("semesterName");
-            }
-
-            @Override
-            public String getSubjectName() {
-                return (String) map.get("subjectName");
-            }
-
-            @Override
-            public Long getFromDate() {
-                Object value = map.get("fromDate");
-                return value instanceof Number ? ((Number) value).longValue() : null;
-            }
-
-            @Override
-            public Long getToDate() {
-                Object value = map.get("toDate");
-                return value instanceof Number ? ((Number) value).longValue() : null;
-            }
-
-            @Override
-            public Long getFromDateSemester() {
-                Object value = map.get("fromDateSemester");
-                return value instanceof Number ? ((Number) value).longValue() : null;
-            }
-
-            @Override
-            public Long getToDateSemester() {
-                Object value = map.get("toDateSemester");
-                return value instanceof Number ? ((Number) value).longValue() : null;
-            }
-
-            @Override
-            public String getDescription() {
-                return (String) map.get("description");
-            }
-
-            @Override
-            public Integer getStatus() {
-                Object value = map.get("status");
-                return value instanceof Number ? ((Number) value).intValue() : null;
-            }
-
-            @Override
-            public Integer getCurrentStatus() {
-                Object value = map.get("currentStatus");
-                return value instanceof Number ? ((Number) value).intValue() : null;
-            }
-
-            @Override
-            public Integer getMaxLateArrival() {
-                Object value = map.get("maxLateArrival");
-                return value instanceof Number ? ((Number) value).intValue() : null;
-            }
-        };
-    }
 }

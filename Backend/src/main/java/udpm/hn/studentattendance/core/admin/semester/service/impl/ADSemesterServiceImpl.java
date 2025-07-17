@@ -4,7 +4,6 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
@@ -16,7 +15,6 @@ import udpm.hn.studentattendance.entities.Semester;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
 import udpm.hn.studentattendance.helpers.RedisCacheHelper;
 import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
-import udpm.hn.studentattendance.helpers.RequestTrimHelper;
 import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
@@ -24,7 +22,6 @@ import udpm.hn.studentattendance.infrastructure.common.repositories.CommonUserSt
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.RedisPrefixConstant;
 import udpm.hn.studentattendance.infrastructure.constants.SemesterName;
-import udpm.hn.studentattendance.infrastructure.redis.service.RedisService;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -49,9 +46,6 @@ public class ADSemesterServiceImpl implements ADSemesterService {
 
     private final RedisInvalidationHelper redisInvalidationHelper;
 
-    @Value("${spring.cache.redis.time-to-live}")
-    private long redisTTL;
-
     @Override
     public ResponseEntity<?> getAllSemester(ADSemesterRequest request) {
         String key = RedisPrefixConstant.REDIS_PREFIX_SEMESTER + "all:" + request.toString();
@@ -59,9 +53,8 @@ public class ADSemesterServiceImpl implements ADSemesterService {
                 key,
                 () -> PageableObject.of(adSemesterRepository
                         .getAllSemester(PaginationHelper.createPageable(request, "createdAt"), request)),
-                new TypeReference<PageableObject<?>>() {
-                },
-                redisTTL);
+                new TypeReference<>() {
+                });
         return RouterHelper.responseSuccess("Hiển thị tất cả học kỳ thành công", pageableObject);
     }
 
@@ -74,7 +67,6 @@ public class ADSemesterServiceImpl implements ADSemesterService {
 
     @Override
     public ResponseEntity<?> createSemester(@Valid ADCreateUpdateSemesterRequest request) {
-        RequestTrimHelper.trimStringFields(request);
 
         try {
 
@@ -128,14 +120,12 @@ public class ADSemesterServiceImpl implements ADSemesterService {
 
             return RouterHelper.responseSuccess("Created semester successfully", semesterSave);
         } catch (Exception e) {
-            e.printStackTrace();
             return RouterHelper.responseError("Created semester failed");
         }
     }
 
     @Override
     public ResponseEntity<?> updateSemester(@Valid ADCreateUpdateSemesterRequest request) {
-        RequestTrimHelper.trimStringFields(request);
 
         Optional<Semester> existSemester = adSemesterRepository.findById(request.getSemesterId());
         if (existSemester.isEmpty()) {

@@ -6,7 +6,6 @@ import com.lowagie.text.Font;
 import com.lowagie.text.pdf.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -37,7 +36,6 @@ import udpm.hn.studentattendance.infrastructure.constants.SettingKeys;
 import udpm.hn.studentattendance.infrastructure.constants.ShiftType;
 import udpm.hn.studentattendance.infrastructure.constants.StatusType;
 import udpm.hn.studentattendance.helpers.RedisCacheHelper;
-import udpm.hn.studentattendance.helpers.RequestTrimHelper;
 import udpm.hn.studentattendance.repositories.UserStudentFactoryRepository;
 
 import java.awt.*;
@@ -79,9 +77,6 @@ public class TCTeachingScheduleServiceImpl implements TCTeachingScheduleService 
         @Value("${app.config.app-name}")
         private String appName;
 
-        @Value("${spring.cache.redis.time-to-live}")
-        private long redisTTL;
-
         public PageableObject<?> getCachedTeachingSchedule(TCTeachingScheduleRequest request) {
                 String key = RedisPrefixConstant.REDIS_PREFIX_SCHEDULE_TEACHER + "list_"
                                 + sessionHelper.getUserId() + "_"
@@ -92,9 +87,8 @@ public class TCTeachingScheduleServiceImpl implements TCTeachingScheduleService 
                                                 teacherTeachingScheduleExtendRepository.getAllTeachingScheduleByStaff(
                                                                 sessionHelper.getUserId(),
                                                                 PaginationHelper.createPageable(request), request)),
-                                new TypeReference<PageableObject<?>>() {
-                                },
-                                redisTTL);
+                                new TypeReference<>() {
+                                });
         }
 
         @Override
@@ -112,9 +106,8 @@ public class TCTeachingScheduleServiceImpl implements TCTeachingScheduleService 
                                 key,
                                 () -> teacherTsFactoryExtendRepository.getAllFactoryByStaff(sessionHelper.getUserId(),
                                                 EntityStatus.ACTIVE),
-                                new TypeReference<List<Factory>>() {
-                                },
-                                redisTTL);
+                                new TypeReference<>() {
+                                });
         }
 
         @Override
@@ -131,9 +124,8 @@ public class TCTeachingScheduleServiceImpl implements TCTeachingScheduleService 
                                 key,
                                 () -> teacherTsProjectExtendRepository.getAllProject(sessionHelper.getUserId(),
                                                 EntityStatus.ACTIVE),
-                                new TypeReference<List<Project>>() {
-                                },
-                                redisTTL);
+                        new TypeReference<>() {
+                        });
         }
 
         @Override
@@ -150,9 +142,8 @@ public class TCTeachingScheduleServiceImpl implements TCTeachingScheduleService 
                                 key,
                                 () -> teacherTsSubjectExtendRepository.getAllSubjectByStaff(sessionHelper.getUserId(),
                                                 EntityStatus.ACTIVE),
-                                new TypeReference<List<Subject>>() {
-                                },
-                                redisTTL);
+                        new TypeReference<>() {
+                        });
         }
 
         @Override
@@ -166,10 +157,9 @@ public class TCTeachingScheduleServiceImpl implements TCTeachingScheduleService 
                 String cacheKey = RedisPrefixConstant.REDIS_PREFIX_SCHEDULE_TEACHER + "types";
                 return redisCacheHelper.getOrSet(
                                 cacheKey,
-                                () -> teacherTeachingScheduleExtendRepository.getAllType(),
-                                new TypeReference<List<PlanDate>>() {
-                                },
-                                redisTTL * 24 // Cache for a day since this doesn't change often
+                        teacherTeachingScheduleExtendRepository::getAllType,
+                        new TypeReference<>() {
+                        }
                 );
         }
 
@@ -287,8 +277,7 @@ public class TCTeachingScheduleServiceImpl implements TCTeachingScheduleService 
 
                         document.add(pdfTable);
                         document.close();
-                } catch (Exception e) {
-                        e.printStackTrace();
+                } catch (Exception ignored) {
                 }
 
                 return new ByteArrayInputStream(byteArrayOutputStream.toByteArray());
@@ -320,8 +309,6 @@ public class TCTeachingScheduleServiceImpl implements TCTeachingScheduleService 
 
         @Override
         public ResponseEntity<?> updatePlanDate(TCTSPlanDateUpdateRequest planDateUpdateRequest) {
-                // Trim all string fields in the request
-                RequestTrimHelper.trimStringFields(planDateUpdateRequest);
 
                 Optional<PlanDate> existPlanDate = teacherTeachingScheduleExtendRepository
                                 .findById(planDateUpdateRequest.getIdPlanDate());
@@ -453,8 +440,7 @@ public class TCTeachingScheduleServiceImpl implements TCTeachingScheduleService 
 
                                 mailerHelper.send(mailRequest);
                         }
-                } catch (Exception e) {
-                        e.printStackTrace();
+                } catch (Exception ignored) {
                 }
         }
 
@@ -468,9 +454,8 @@ public class TCTeachingScheduleServiceImpl implements TCTeachingScheduleService 
                                                 teacherTeachingScheduleExtendRepository.getAllTeachingSchedulePresent(
                                                                 sessionHelper.getUserId(),
                                                                 PaginationHelper.createPageable(request), request)),
-                                new TypeReference<PageableObject<?>>() {
-                                },
-                                redisTTL / 2 // Shorter TTL for current schedules as they change more often
+                                new TypeReference<>() {
+                                }
                 );
         }
 
