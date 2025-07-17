@@ -34,7 +34,7 @@ const facilityID = ref(null)
 const isShowModalSelectFacility = ref(false)
 const lstFacility = ref([])
 
-let roles = [
+let roles = ref([
   {
     role: ROLE.ADMIN,
     label: 'Admin',
@@ -59,27 +59,11 @@ let roles = [
     img: imgRoleStudent,
     route: GLOBAL_ROUTE_NAMES.STUDENT_PAGE,
   },
-]
+])
 
-const tmpRoles = [...roles]
+const tmpRoles = [...roles.value]
 
 const isRouteAdm = route.path === PREFIX_ADMIN_PANEL
-const isRoleAdm =
-  authStore?.user?.role.includes(ROLE.ADMIN) ||
-  authStore?.user?.role.includes(ROLE.STAFF) ||
-  authStore?.user?.role.includes(ROLE.TEACHER)
-
-if (isRouteAdm || isRoleAdm) {
-  roles = roles.filter((o) =>
-    isRoleAdm || !authStore.isLogin ? o.role !== ROLE.STUDENT : o.role === ROLE.STUDENT,
-  )
-} else {
-  roles = roles.filter((o) => o.role === ROLE.STUDENT)
-}
-
-if (!roles.length && authStore.isLogin) {
-  roles = tmpRoles.filter((o) => authStore.user.role.includes(o.role))
-}
 
 const handleLogout = () => {
   authStore.logout()
@@ -107,7 +91,7 @@ const handleRedirectLogin = (width_out_facility = false) => {
     return message.error('Vui lòng chọn cơ sở muốn đăng nhập')
   }
 
-  const currentRole = roles.find((o) => o.role.includes(roleLogin.value))
+  const currentRole = roles.value.find((o) => o.role.includes(roleLogin.value))
 
   if (!currentRole) {
     return message.error('Role đăng nhập không chính xác')
@@ -136,7 +120,7 @@ const fetchDataFacility = async () => {
 
 const redirectLoginRole = () => {
   if (authStore.isLogin) {
-    const role = roles.find((o) => o.role.includes(roleLogin.value))
+    const role = roles.value.find((o) => o.role.includes(roleLogin.value))
 
     if (role) {
       loadingPage.hide()
@@ -176,6 +160,22 @@ const checkLogin = () => {
 onMounted(async () => {
   document.body.classList.add('bg-login')
   checkLogin()
+  const isRoleAdm =
+    authStore?.user?.role.includes(ROLE.ADMIN) ||
+    authStore?.user?.role.includes(ROLE.STAFF) ||
+    authStore?.user?.role.includes(ROLE.TEACHER)
+
+  if (isRouteAdm || isRoleAdm) {
+    roles.value = roles.value.filter((o) =>
+      isRoleAdm || !authStore.isLogin ? o.role !== ROLE.STUDENT : o.role === ROLE.STUDENT,
+    )
+  } else {
+    roles.value = roles.value.filter((o) => o.role === ROLE.STUDENT)
+  }
+
+  if (!roles.value.length && authStore.isLogin) {
+    roles.value = tmpRoles.filter((o) => authStore.user.role.includes(o.role))
+  }
   await fetchDataFacility()
   loadingPage.hide()
 })
