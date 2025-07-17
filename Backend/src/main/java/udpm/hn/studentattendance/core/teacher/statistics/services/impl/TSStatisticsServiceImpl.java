@@ -56,7 +56,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-
 @Service
 @RequiredArgsConstructor
 public class TSStatisticsServiceImpl implements TSStatisticsService {
@@ -84,13 +83,16 @@ public class TSStatisticsServiceImpl implements TSStatisticsService {
 
     @Override
     public ResponseEntity<?> getAllStats(String idSemester) {
-        TSAllStatsResponse stats = TSSemesterRepository.getAllStats(idSemester, sessionHelper.getFacilityId(), sessionHelper.getUserId()).orElse(null);
+        TSAllStatsResponse stats = TSSemesterRepository
+                .getAllStats(idSemester, sessionHelper.getFacilityId(), sessionHelper.getUserId()).orElse(null);
         if (stats == null) {
             return RouterHelper.responseError("Không thể lấy dữ liệu thống kê");
         }
 
-        List<TSChartLevelProjectResponse> levelProjectStats = TSLevelProjectRepository.getStats(idSemester, sessionHelper.getFacilityId(), sessionHelper.getUserId());
-        List<TSChartSubjectFacilityResponse> subjectFacilityResponses = sSSubjectFacilityRepository.getStats(idSemester, sessionHelper.getFacilityId(), sessionHelper.getUserId());
+        List<TSChartLevelProjectResponse> levelProjectStats = TSLevelProjectRepository.getStats(idSemester,
+                sessionHelper.getFacilityId(), sessionHelper.getUserId());
+        List<TSChartSubjectFacilityResponse> subjectFacilityResponses = sSSubjectFacilityRepository.getStats(idSemester,
+                sessionHelper.getFacilityId(), sessionHelper.getUserId());
 
         TSAllStatsAndChartDto data = new TSAllStatsAndChartDto();
         data.setStats(stats);
@@ -105,15 +107,17 @@ public class TSStatisticsServiceImpl implements TSStatisticsService {
         request.setIdFacility(sessionHelper.getFacilityId());
         request.setIdUserStaff(sessionHelper.getUserId());
         Pageable pageable = PaginationHelper.createPageable(request);
-        PageableObject<TSFactoryStatsResponse> data = PageableObject.of(TSFactoryRepository.getAllByFilter(pageable, request));
+        PageableObject<TSFactoryStatsResponse> data = PageableObject
+                .of(TSFactoryRepository.getAllByFilter(pageable, request));
         return RouterHelper.responseSuccess("Lấy danh sách dữ liệu thành công", data);
     }
 
     @Override
     public ResponseEntity<?> getListUser(String idSemester) {
         List<TSUserResponse> lstAdmin = TSUserAdminRepository.getAllList(sessionHelper.getUserEmail());
-        List<TSUserResponse> lstStaff = TSUserStaffRepository.getAllListStaff(sessionHelper.getFacilityId(), sessionHelper.getUserEmail());
-        TSListUserDto data =  new TSListUserDto();
+        List<TSUserResponse> lstStaff = TSUserStaffRepository.getAllListStaff(sessionHelper.getFacilityId(),
+                sessionHelper.getUserEmail());
+        TSListUserDto data = new TSListUserDto();
         data.setAdmin(lstAdmin);
         data.setStaff(lstStaff);
         return RouterHelper.responseSuccess("Lấy dữ liệu thành công", data);
@@ -152,7 +156,8 @@ public class TSStatisticsServiceImpl implements TSStatisticsService {
         MailerDefaultRequest mailerDefaultRequest = new MailerDefaultRequest();
         mailerDefaultRequest.setTemplate(null);
         mailerDefaultRequest.setTo(to);
-        mailerDefaultRequest.setTitle("Báo cáo thống kê giảng viên " + sessionHelper.getUserCode() + " - " + sessionHelper.getUserName() + " - " + appName);
+        mailerDefaultRequest.setTitle("Báo cáo thống kê giảng viên " + sessionHelper.getUserCode() + " - "
+                + sessionHelper.getUserName() + " - " + appName);
 
         if (!lstEmails.isEmpty()) {
             mailerDefaultRequest.setBcc(lstEmails.toArray(new String[0]));
@@ -164,7 +169,10 @@ public class TSStatisticsServiceImpl implements TSStatisticsService {
         dataMail.put("TO_DATE", DateTimeUtils.convertMillisToDate(endDate));
 
         Map<String, byte[]> filesMail = new HashMap<>();
-        filesMail.put(sessionHelper.getUserCode() + "_" + CodeGeneratorUtils.generateCodeFromString(sessionHelper.getUserName()) + "__" + DateTimeUtils.convertMillisToDate(startDate, "dd-MM-yyyy") + "_" + DateTimeUtils.convertMillisToDate(endDate, "dd-MM-yyyy") + "__report.xlsx", file);
+        filesMail.put(sessionHelper.getUserCode() + "_"
+                + CodeGeneratorUtils.generateCodeFromString(sessionHelper.getUserName()) + "__"
+                + DateTimeUtils.convertMillisToDate(startDate, "dd-MM-yyyy") + "_"
+                + DateTimeUtils.convertMillisToDate(endDate, "dd-MM-yyyy") + "__report.xlsx", file);
 
         mailerDefaultRequest.setAttachments(filesMail);
         mailerDefaultRequest.setContent(MailerHelper.loadTemplate(MailerHelper.TEMPLATE_STATISTICS_TEACHER, dataMail));
@@ -175,17 +183,20 @@ public class TSStatisticsServiceImpl implements TSStatisticsService {
 
     private byte[] createFileStatistics(String idSemester, Long startDate, Long endDate) {
 
-        List<Factory> lstFactory = TSFactoryRepository.getAllFactoryBySemester(idSemester, sessionHelper.getFacilityId(), sessionHelper.getUserId());
+        List<Factory> lstFactory = TSFactoryRepository.getAllFactoryBySemester(idSemester,
+                sessionHelper.getFacilityId(), sessionHelper.getUserId());
 
         try (Workbook workbook = new XSSFWorkbook();
-             ByteArrayOutputStream data = new ByteArrayOutputStream()) {
+                ByteArrayOutputStream data = new ByteArrayOutputStream()) {
 
-            for (Factory factory: lstFactory) {
-                List<TSPlanDateStudentFactoryResponse> lstData = TSFactoryRepository.getAllPlanDateAttendanceByIdFactory(factory.getId(), DateTimeUtils.toStartOfDay(startDate), DateTimeUtils.toEndOfDay(endDate));
+            for (Factory factory : lstFactory) {
+                List<TSPlanDateStudentFactoryResponse> lstData = TSFactoryRepository
+                        .getAllPlanDateAttendanceByIdFactory(factory.getId(), DateTimeUtils.toStartOfDay(startDate),
+                                DateTimeUtils.toEndOfDay(endDate));
                 if (lstData.isEmpty()) {
                     continue;
                 }
-                
+
                 List<String> headers = new ArrayList<>(List.of("Mã sinh viên", "Họ tên sinh viên"));
 
                 Set<String> stPlanDate = lstData.stream()
@@ -194,7 +205,8 @@ public class TSStatisticsServiceImpl implements TSStatisticsService {
                 List<String> lstPlanDate = stPlanDate.stream()
                         .sorted(Comparator.comparing(s -> {
                             String datePart = s.split(" - ")[0];
-                            return LocalDate.parse(datePart, DateTimeFormatter.ofPattern(DateTimeUtils.DATE_FORMAT.replace('/', '-')));
+                            return LocalDate.parse(datePart,
+                                    DateTimeFormatter.ofPattern(DateTimeUtils.DATE_FORMAT.replace('/', '-')));
                         }))
                         .toList();
 
@@ -216,9 +228,8 @@ public class TSStatisticsServiceImpl implements TSStatisticsService {
                 colorMap.put("Có mặt (bù)", "#ffd966");
                 colorMap.put("Vắng mặt", "#ff7d7d");
 
-
                 int row = 1;
-                for (ExStudentModel student: lstStudent) {
+                for (ExStudentModel student : lstStudent) {
                     String studentCode = student.getCode();
                     String studentName = student.getName();
 
@@ -228,14 +239,17 @@ public class TSStatisticsServiceImpl implements TSStatisticsService {
 
                     double total_absent = 0;
                     int total_recovery = 0;
-                    for(String namePlanDate: lstPlanDate) {
-                        TSPlanDateStudentFactoryResponse planDate = lstData.stream().filter(s -> s.getCode().equals(studentCode) && buildCellPlanDate(s).equals(namePlanDate)).findFirst().orElse(null);
+                    for (String namePlanDate : lstPlanDate) {
+                        TSPlanDateStudentFactoryResponse planDate = lstData.stream().filter(
+                                s -> s.getCode().equals(studentCode) && buildCellPlanDate(s).equals(namePlanDate))
+                                .findFirst().orElse(null);
                         if (planDate == null || planDate.getStartDate() > DateTimeUtils.getCurrentTimeMillis()) {
                             dataCell.add(" - ");
                             continue;
                         }
                         if (planDate.getStatus() == AttendanceStatus.PRESENT.ordinal()) {
-                            if (planDate.getLateCheckin() != null && planDate.getLateCheckin() > 0 || planDate.getLateCheckout() != null && planDate.getLateCheckout() > 0) {
+                            if (planDate.getLateCheckin() != null && planDate.getLateCheckin() > 0
+                                    || planDate.getLateCheckout() != null && planDate.getLateCheckout() > 0) {
                                 total_recovery++;
                                 total_absent += 0.5;
                                 dataCell.add("Có mặt (bù)");
@@ -249,7 +263,8 @@ public class TSStatisticsServiceImpl implements TSStatisticsService {
                     }
 
                     dataCell.add(total_absent + "/" + lstPlanDate.size());
-                    dataCell.add(Math.round(total_absent / lstPlanDate.size() * 1000) / 10.0 + "%");
+                    dataCell.add(
+                            (total_absent > 0 ? Math.round(total_absent / lstPlanDate.size() * 1000) / 10.0 : 0) + "%");
                     dataCell.add(total_recovery);
 
                     ExcelUtils.insertRow(sheet, row, dataCell, colorMap);
@@ -266,7 +281,8 @@ public class TSStatisticsServiceImpl implements TSStatisticsService {
     }
 
     private String buildCellPlanDate(TSPlanDateStudentFactoryResponse o) {
-        return DateTimeUtils.convertMillisToDate(o.getStartDate(), DateTimeUtils.DATE_FORMAT.replace('/', '-')) + " - Ca " + o.getShift();
+        return DateTimeUtils.convertMillisToDate(o.getStartDate(), DateTimeUtils.DATE_FORMAT.replace('/', '-'))
+                + " - Ca " + o.getShift();
     }
 
 }

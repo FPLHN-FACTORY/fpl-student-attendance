@@ -1,6 +1,5 @@
 package udpm.hn.studentattendance.core.admin.facility.service;
 
-import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import udpm.hn.studentattendance.core.admin.facility.model.request.AFCreateUpdateFacilityRequest;
 import udpm.hn.studentattendance.core.admin.facility.model.request.AFFacilitySearchRequest;

@@ -15,7 +15,7 @@ import {
 import { message, Modal } from 'ant-design-vue'
 import requestAPI from '@/services/requestApiService'
 import { API_ROUTES_ADMIN } from '@/constants/adminConstant'
-import { DEFAULT_PAGINATION } from '@/constants'
+import { DEFAULT_PAGINATION, STATUS_TYPE } from '@/constants'
 import { useRouter } from 'vue-router'
 import { ROUTE_NAMES } from '@/router/adminRoute'
 import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
@@ -40,6 +40,8 @@ const breadcrumb = ref([
 
 // Danh sách cơ sở
 const facilities = ref([])
+
+const countFilter = ref(0)
 
 // Biến lọc gửi lên API (không chứa thông tin phân trang)
 const filter = reactive({
@@ -107,6 +109,7 @@ const fetchFacilities = () => {
       } else {
         pagination.total = response.data.data.totalPages * pagination.pageSize
       }
+      countFilter.value = response.data.data.totalItems
     })
     .catch((error) => {
       message.error(
@@ -148,16 +151,16 @@ const handleTableChange = (pageInfo) => {
 // Hàm thêm cơ sở
 const handleAddFacility = () => {
   if (!newFacility.facilityName) {
-    message.error('Tên cơ sở không được bỏ trống')
+    message.error('Tên cơ sở không được để trống. Vui lòng nhập tên cơ sở!')
     return
   }
 
   Modal.confirm({
-    title: `Xác nhận thêm mới`,
+    title: `Xác nhận thêm cơ sở mới`,
     type: 'info',
-    content: `Bạn có chắc muốn thêm mới cơ sở này?`,
-    okText: 'Tiếp tục',
-    cancelText: 'Hủy bỏ',
+    content: `Bạn có chắc chắn muốn thêm cơ sở "${newFacility.facilityName}" vào hệ thống không?`,
+    okText: 'Thêm cơ sở',
+    cancelText: 'Hủy',
     onOk() {
       modalAddLoading.value = true
       loadingStore.show()
@@ -206,16 +209,16 @@ const handleUpdateFacility = (record) => {
 // Hàm cập nhật cơ sở
 const updateFacility = () => {
   if (!detailFacility.value.facilityName) {
-    message.error('Tên cơ sở không được bỏ trống')
+    message.error('Tên cơ sở không được để trống. Vui lòng nhập tên cơ sở!')
     return
   }
 
   Modal.confirm({
-    title: `Xác nhận cập nhật`,
+    title: `Xác nhận cập nhật thông tin cơ sở`,
     type: 'info',
-    content: `Bạn có chắc muốn lưu lại thay đổi?`,
-    okText: 'Tiếp tục',
-    cancelText: 'Hủy bỏ',
+    content: `Bạn có chắc chắn muốn lưu lại những thay đổi này không?`,
+    okText: 'Cập nhật',
+    cancelText: 'Hủy',
     onOk() {
       modalUpdateLoading.value = true
       loadingStore.show()
@@ -258,8 +261,8 @@ const handleShowLocation = (id) => {
 // Hàm đổi trạng thái cơ sở
 const handleChangeStatusFacility = (record) => {
   Modal.confirm({
-    title: 'Xác nhận thay đổi trạng thái',
-    content: `Bạn có chắc chắn muốn thay đổi trạng thái của cơ sở ${record.facilityName} ?`,
+    title: 'Xác nhận thay đổi trạng thái cơ sở',
+    content: `Bạn có chắc chắn muốn thay đổi trạng thái của cơ sở "${record.facilityName}" không?`,
     onOk: () => {
       loadingStore.show()
       requestAPI
@@ -336,7 +339,7 @@ onMounted(() => {
         <a-card :bordered="false" class="cart no-body-padding">
           <a-collapse ghost>
             <a-collapse-panel>
-              <template #header><FilterFilled /> Bộ lọc</template>
+              <template #header><FilterFilled /> Bộ lọc ({{ countFilter }})</template>
               <div class="row g-3">
                 <div class="col-xxl-8 col-md-8 col-sm-6">
                   <div class="label-title">Từ khoá:</div>
@@ -355,12 +358,11 @@ onMounted(() => {
                   <div class="label-title">Trạng thái:</div>
                   <a-select
                     v-model:value="filter.status"
-                    placeholder="Chọn trạng thái"
-                    allowClear
+                    placeholder="-- Tất cả trạng thái --"
                     class="w-100"
                     @change="fetchFacilities"
                   >
-                    <a-select-option :value="null">Tất cả trạng thái</a-select-option>
+                    <a-select-option :value="null">-- Tất cả trạng thái --</a-select-option>
                     <a-select-option value="ACTIVE">Hoạt động</a-select-option>
                     <a-select-option value="INACTIVE">Không hoạt động</a-select-option>
                   </a-select>
@@ -425,7 +427,7 @@ onMounted(() => {
                 </span>
               </template>
               <template v-else-if="column.key === 'actions'">
-                <a-space>
+                <a-space v-if="record.facilityStatus === STATUS_TYPE.ENABLE">
                   <a-tooltip title="Chỉnh sửa cơ sở">
                     <a-button
                       @click="handleUpdateFacility(record)"
@@ -435,7 +437,7 @@ onMounted(() => {
                       <EditFilled />
                     </a-button>
                   </a-tooltip>
-                  <a-tooltip title="Quản lý ca học">
+                  <a-tooltip title="Quản lý ca">
                     <a-button
                       class="btn-outline-primary border-0 me-2"
                       @click="handleShowShift(record.id)"

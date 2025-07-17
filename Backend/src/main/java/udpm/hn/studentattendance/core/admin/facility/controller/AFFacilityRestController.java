@@ -17,7 +17,7 @@ public class AFFacilityRestController {
     private final AFFacilityService adFacilityService;
 
     @GetMapping
-    public ResponseEntity<?> getAllFacility(AFFacilitySearchRequest request) {
+    public ResponseEntity<?> getAllFacility(@Valid AFFacilitySearchRequest request) {
         return adFacilityService.getAllFacility(request);
     }
 

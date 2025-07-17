@@ -11,13 +11,20 @@ import { Modal, message } from 'ant-design-vue'
 import ExcelJS from 'exceljs'
 import { saveAs } from 'file-saver'
 import { autoAddColumnWidth, dayOfWeek, formatDate } from '@/utils/utils'
-import { CloudDownloadOutlined, FilePdfFilled, FilePdfOutlined, FilterFilled, UnorderedListOutlined } from '@ant-design/icons-vue'
+import {
+  CloudDownloadOutlined,
+  FilePdfOutlined,
+  FilterFilled,
+  UnorderedListOutlined,
+} from '@ant-design/icons-vue'
 
 const breadcrumbStore = useBreadcrumbStore()
 
+const countFilter = ref(0)
+
 const breadcrumb = ref([
   { name: GLOBAL_ROUTE_NAMES.STAFF_PAGE, breadcrumbName: 'Sinh viên' },
-  { name: ROUTE_NAMES.SCHEDULE, breadcrumbName: 'Lịch học' },
+  { name: ROUTE_NAMES.SCHEDULE, breadcrumbName: 'Lịch' },
 ])
 const loadingStore = useLoadingStore()
 const isLoading = ref(false)
@@ -33,11 +40,11 @@ const pagination = ref({ ...DEFAULT_PAGINATION })
 
 const columns = autoAddColumnWidth([
   { title: '#', dataIndex: 'indexs', key: 'indexs' },
-  { title: 'Ngày học', key: 'time' },
+  { title: 'Ngày điểm danh', key: 'time' },
   { title: 'Ca', dataIndex: 'shift', key: 'shift' },
   { title: 'Nhóm xưởng', dataIndex: 'factoryName', key: 'factoryName' },
   { title: 'Dự án', dataIndex: 'projectName', key: 'projectName' },
-  { title: 'Link học', dataIndex: 'link', key: 'link' },
+  { title: 'Link', dataIndex: 'link', key: 'link' },
   { title: 'Địa điểm', dataIndex: 'location', key: 'location' },
   { title: 'Tên giảng viên', dataIndex: 'staffName', key: 'staffName' },
   { title: 'Mô tả', dataIndex: 'description', key: 'description' },
@@ -69,6 +76,7 @@ const fetchAttendanceList = () => {
       attendanceList.value = data.data.data
       pagination.value.total = data.data.totalPages * pagination.value.pageSize
       pagination.value.current = filter.page
+      countFilter.value = data.data.totalItems
     })
     .catch((error) => {
       message.error(error.response?.data?.message || 'Lỗi khi lấy dữ liệu')
@@ -88,7 +96,7 @@ const handleTableChange = (pageInfo) => {
 
 const handleShowDescription = (text) => {
   Modal.info({
-    title: 'Nội dung buổi học',
+    title: 'Nội dung',
     type: 'info',
     content: text || 'Không có mô tả',
     okText: 'Đóng',
@@ -109,7 +117,7 @@ const exportToExcel = async () => {
       { header: 'Ca', key: 'shift', width: 35 },
       { header: 'Nhóm xưởng', key: 'factoryName', width: 30 },
       { header: 'Dự án', key: 'projectName', width: 30 },
-      { header: 'Tên môn học', key: 'subjectName', width: 30 },
+      { header: 'Tên môn', key: 'subjectName', width: 30 },
       { header: 'Tên giảng viên', key: 'staffName', width: 30 },
       { header: 'Mô tả', key: 'description', width: 40 },
     ]
@@ -176,7 +184,7 @@ const exportToExcel = async () => {
 
     // 7. Xuất file
     const buf = await wb.xlsx.writeBuffer()
-    saveAs(new Blob([buf]), 'DiemDanh.xlsx')
+    saveAs(new Blob([buf]), 'lich-hoc.xlsx')
   } catch (error) {
     message.error('Lỗi khi xuất Excel: ' + error.message)
   } finally {
@@ -201,7 +209,7 @@ const exportToPDF = () => {
     })
     .then((res) => {
       const blob = new Blob([res.data], { type: 'application/pdf' })
-      const fileName = 'DiemDanh.pdf'
+      const fileName = 'lich-hoc.pdf'
       saveAs(blob, fileName)
       message.success('Xuất file PDF thành công')
     })
@@ -234,14 +242,13 @@ onMounted(() => {
         <a-card :bordered="false" class="cart no-body-padding">
           <a-collapse ghost>
             <a-collapse-panel>
-              <template #header><FilterFilled /> Bộ lọc</template>
+              <template #header><FilterFilled /> Bộ lọc ({{ countFilter }})</template>
               <div class="row g-3 filter-container">
                 <div class="col-md-12">
-                  <div class="label-title">Lịch học:</div>
+                  <div class="label-title">Lịch:</div>
                   <a-select
                     v-model:value="filter.plan"
                     placeholder="Chọn khoảng thời gian"
-                    allowClear
                     class="w-100"
                     @change="fetchAttendanceList"
                   >
@@ -275,16 +282,14 @@ onMounted(() => {
         <a-card :bordered="false" class="cart">
           <template #title>
             <UnorderedListOutlined />
-            Lịch học sắp tới
+            Lịch sắp tới
           </template>
 
           <div class="d-flex justify-content-end mb-3">
-            <a-button type="primary" @click="exportToExcel" :loading="isLoadingExport" class="me-3"
-              >
+            <a-button type="primary" @click="exportToExcel" :loading="isLoadingExport" class="me-3">
               <CloudDownloadOutlined /> Tải xuống Excel</a-button
             >
-            <a-button type="default" @click="exportToPDF" :loading="isLoadingExport"
-              >
+            <a-button type="default" @click="exportToPDF" :loading="isLoadingExport">
               <FilePdfOutlined />Tải xuống PDF</a-button
             >
           </div>
@@ -325,7 +330,7 @@ onMounted(() => {
                 </a-tag>
               </template>
               <template v-if="column.dataIndex === 'description'">
-                <a-typography-link 
+                <a-typography-link
                   v-if="record.description"
                   @click="handleShowDescription(record.description)"
                   >Chi tiết</a-typography-link

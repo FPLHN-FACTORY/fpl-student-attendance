@@ -10,14 +10,17 @@ import udpm.hn.studentattendance.entities.Role;
 import udpm.hn.studentattendance.entities.UserAdmin;
 import udpm.hn.studentattendance.entities.UserStaff;
 import udpm.hn.studentattendance.entities.UserStudent;
+import udpm.hn.studentattendance.helpers.SettingHelper;
 import udpm.hn.studentattendance.infrastructure.config.dbgenerator.repositories.DBGeneratorFacilityRepository;
 import udpm.hn.studentattendance.infrastructure.config.dbgenerator.repositories.DBGeneratorRoleRepository;
 import udpm.hn.studentattendance.infrastructure.config.dbgenerator.repositories.DBGeneratorUserAdminRepository;
 import udpm.hn.studentattendance.infrastructure.config.dbgenerator.repositories.DBGeneratorUserStaffRepository;
 import udpm.hn.studentattendance.infrastructure.config.dbgenerator.repositories.DBGeneratorUserStudentRepository;
 import udpm.hn.studentattendance.infrastructure.constants.RoleConstant;
+import udpm.hn.studentattendance.infrastructure.constants.SettingKeys;
 import udpm.hn.studentattendance.utils.CodeGeneratorUtils;
 
+import java.util.Map;
 import java.util.Objects;
 
 @Component
@@ -34,6 +37,7 @@ public class DBGenerator {
 
     private final DBGeneratorRoleRepository dbGeneratorRoleRepository;
 
+    private final SettingHelper settingHelper;
 
     @Value("${db.fake.isGenerated}")
     private String isGenerated;
@@ -54,12 +58,51 @@ public class DBGenerator {
 
     @PostConstruct
     public void init() {
+        generateSettings();
         if (isGenerated.equals("true")) {
-            generateFacility();
+            if (StringUtils.hasText(facilityName)) {
+                generateFacility();
+            }
             generateUserAdmin();
-            generateUserStaff();
-            generateUserStudent();
+            //generateUserStaff();
+            //generateUserStudent();
         }
+    }
+
+    private void generateSettings() {
+        Map<SettingKeys, Object> settings = settingHelper.getAllSettings();
+        if (settings.get(SettingKeys.DISABLED_CHECK_EMAIL_FPT_STAFF) == null) {
+            settingHelper.save(SettingKeys.DISABLED_CHECK_EMAIL_FPT_STAFF, "false");
+        }
+
+        if (settings.get(SettingKeys.DISABLED_CHECK_EMAIL_FPT_STUDENT) == null) {
+            settingHelper.save(SettingKeys.DISABLED_CHECK_EMAIL_FPT_STUDENT, "true");
+        }
+
+        if (settings.get(SettingKeys.SHIFT_MIN_DIFF) == null) {
+            settingHelper.save(SettingKeys.SHIFT_MIN_DIFF, "30");
+        }
+
+        if (settings.get(SettingKeys.SHIFT_MAX_LATE_ARRIVAL) == null) {
+            settingHelper.save(SettingKeys.SHIFT_MAX_LATE_ARRIVAL, "90");
+        }
+
+        if (settings.get(SettingKeys.ATTENDANCE_EARLY_CHECKIN) == null) {
+            settingHelper.save(SettingKeys.ATTENDANCE_EARLY_CHECKIN, "10");
+        }
+
+        if (settings.get(SettingKeys.EXPIRATION_MINUTE_LOGIN) == null) {
+            settingHelper.save(SettingKeys.EXPIRATION_MINUTE_LOGIN, "1440");
+        }
+
+        if (settings.get(SettingKeys.FACE_THRESHOLD_CHECKIN) == null) {
+            settingHelper.save(SettingKeys.FACE_THRESHOLD_CHECKIN, "0.5");
+        }
+
+        if (settings.get(SettingKeys.FACE_THRESHOLD_REGISTER) == null) {
+            settingHelper.save(SettingKeys.FACE_THRESHOLD_REGISTER, "0.65");
+        }
+
     }
 
     private void generateFacility() {
@@ -109,7 +152,6 @@ public class DBGenerator {
         }
 
     }
-
 
     private void generateUserStaff() {
 

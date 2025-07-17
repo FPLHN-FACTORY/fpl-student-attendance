@@ -21,7 +21,6 @@ public interface AuthenticationUserStudentRepository extends UserStudentReposito
                 FROM user_student us
                 LEFT JOIN facility f ON us.id_facility = f.id
                 WHERE
-                    us.status = 1 AND
                     us.id != :idUser AND
                     us.code LIKE :code AND
                     f.id = :idFacility

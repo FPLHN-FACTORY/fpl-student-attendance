@@ -1,7 +1,7 @@
 package udpm.hn.studentattendance.core.staff.student.service.impl;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Pageable;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
@@ -18,10 +18,16 @@ import udpm.hn.studentattendance.helpers.NotificationHelper;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
 import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.helpers.SessionHelper;
+import udpm.hn.studentattendance.helpers.SettingHelper;
 import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
 import udpm.hn.studentattendance.helpers.ValidateHelper;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
+import udpm.hn.studentattendance.infrastructure.constants.RedisPrefixConstant;
+import udpm.hn.studentattendance.infrastructure.constants.SettingKeys;
+import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
+import com.fasterxml.jackson.core.type.TypeReference;
+import udpm.hn.studentattendance.helpers.RedisCacheHelper;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -41,45 +47,75 @@ public class STStudentServiceImpl implements STStudentService {
 
     private final UserActivityLogHelper userActivityLogHelper;
 
+    private final RedisCacheHelper redisCacheHelper;
+
+    private final RedisInvalidationHelper redisInvalidationHelper;
+
+    private final SettingHelper settingHelper;
+
+    public PageableObject<?> getCachedStudentList(USStudentRequest studentRequest) {
+        String key = RedisPrefixConstant.REDIS_PREFIX_STUDENT + "list_" + sessionHelper.getFacilityId() + "_"
+                + studentRequest.toString();
+        return redisCacheHelper.getOrSet(
+                key,
+                () -> PageableObject.of(
+                        studentExtendRepository.getAllStudentByFacility(PaginationHelper.createPageable(studentRequest),
+                                studentRequest, sessionHelper.getFacilityId())),
+                new TypeReference<>() {
+                });
+    }
+
     @Override
     public ResponseEntity<?> getAllStudentByFacility(USStudentRequest studentRequest) {
-        Pageable pageable = PaginationHelper.createPageable(studentRequest);
-        PageableObject pageableObject = PageableObject.of(studentExtendRepository
-                .getAllStudentByFacility(pageable, studentRequest, sessionHelper.getFacilityId()));
-
+        PageableObject<?> pageableObject = getCachedStudentList(studentRequest);
         return RouterHelper.responseSuccess("Lấy danh sách sinh viên thành công", pageableObject);
+    }
+
+    public UserStudent getCachedStudentDetail(String studentId) {
+        Optional<UserStudent> userStudent = studentExtendRepository.findById(studentId);
+        return userStudent.orElse(null);
     }
 
     @Override
     public ResponseEntity<?> getDetailStudent(String studentId) {
-        Optional<UserStudent> userStudent = studentExtendRepository.findById(studentId);
-
-        if (userStudent.isPresent()) {
-            return RouterHelper.responseSuccess("Hiện thị chi tiết nhân viên thành công", userStudent);
+        UserStudent userStudent = getCachedStudentDetail(studentId);
+        if (userStudent != null) {
+            return RouterHelper.responseSuccess("Hiện thị chi tiết sinh viên thành công", userStudent);
         }
-
         return RouterHelper.responseError("Sinh viên không tồn tại");
     }
 
     @Override
     public ResponseEntity<?> createStudent(USStudentCreateUpdateRequest studentCreateUpdateRequest) {
-        // Validate input
+
         if (!ValidateHelper.isValidCode(studentCreateUpdateRequest.getCode())) {
             return RouterHelper.responseError(
                     "Mã sinh viên không hợp lệ: không có khoảng trắng, không có ký tự đặc biệt ngoài dấu chấm . và dấu gạch dưới _.");
         }
 
-
         if (!ValidateHelper.isValidFullname(studentCreateUpdateRequest.getName())) {
             return RouterHelper.responseError(
-                    "Họ Tên admin không hợp lệ: Tối thiểu 2 từ, cách nhau bởi khoảng trắng và Chỉ gồm ký tự chữ không chứa số hay ký tự đặc biệt.");
+                    "Họ Tên sinh viên không hợp lệ: Tối thiểu 2 từ, cách nhau bởi khoảng trắng và Chỉ gồm ký tự chữ không chứa số hay ký tự đặc biệt.");
         }
 
+        String email = studentCreateUpdateRequest.getEmail().trim();
+        boolean isValidEmail = false;
 
-        if (!ValidateHelper.isValidEmailGmail(studentCreateUpdateRequest.getEmail())) {
-            return RouterHelper.responseError("Email phải có định dạng @gmail.com");
+        if (ValidateHelper.isValidEmailGmail(email) ||
+                ValidateHelper.isValidEmailFE(email) ||
+                ValidateHelper.isValidEmailFPT(email)) {
+            isValidEmail = true;
         }
 
+        if (!isValidEmail) {
+            return RouterHelper.responseError("Email phải có định dạng @gmail.com hoặc kết thúc bằng edu.vn");
+        }
+
+        if (!settingHelper.getSetting(SettingKeys.DISABLED_CHECK_EMAIL_FPT_STUDENT, Boolean.class)) {
+            if (!ValidateHelper.isValidEmailFPT(email)) {
+                return RouterHelper.responseError("Email phải kết thúc bằng fpt.edu.vn");
+            }
+        }
 
         Optional<UserStudent> existStudentCode = studentExtendRepository
                 .getUserStudentByCode(studentCreateUpdateRequest.getCode());
@@ -94,6 +130,9 @@ public class STStudentServiceImpl implements STStudentService {
         if (existStudentEmail.isPresent()) {
             return RouterHelper.responseError("Email sinh viên đã tồn tại");
         }
+        if (facility.isEmpty()) {
+            return RouterHelper.responseError("Cơ sở không tồn tại");
+        }
 
         UserStudent userStudent = new UserStudent();
         userStudent.setCode(studentCreateUpdateRequest.getCode());
@@ -103,29 +142,44 @@ public class STStudentServiceImpl implements STStudentService {
         userStudent.setStatus(EntityStatus.ACTIVE);
         UserStudent saveUserStudent = studentExtendRepository.save(userStudent);
         userActivityLogHelper
-                .saveLog("vừa thêm 1 sinh viên mới: "  + saveUserStudent.getCode() + " - " + saveUserStudent.getName());
+                .saveLog("vừa thêm 1 sinh viên mới: " + saveUserStudent.getCode() + " - " + saveUserStudent.getName());
+
+        // Invalidate all caches
+        redisInvalidationHelper.invalidateAllCaches();
+
         return RouterHelper.responseSuccess("Thêm sinh viên mới thành công", saveUserStudent);
     }
 
     @Override
     public ResponseEntity<?> updateStudent(USStudentCreateUpdateRequest studentCreateUpdateRequest) {
-        // Validate input
+
         if (!ValidateHelper.isValidCode(studentCreateUpdateRequest.getCode())) {
             return RouterHelper.responseError(
                     "Mã sinh viên không hợp lệ: không có khoảng trắng, không có ký tự đặc biệt ngoài dấu chấm . và dấu gạch dưới _.");
         }
-
-
 
         if (!ValidateHelper.isValidFullname(studentCreateUpdateRequest.getName())) {
             return RouterHelper.responseError(
                     "Họ Tên sinh viên không hợp lệ: Tối thiểu 2 từ, cách nhau bởi khoảng trắng và Chỉ gồm ký tự chữ không chứa số hay ký tự đặc biệt.");
         }
 
+        String email = studentCreateUpdateRequest.getEmail().trim();
+        boolean isValidEmail = false;
 
+        if (ValidateHelper.isValidEmailGmail(email) ||
+                ValidateHelper.isValidEmailFE(email) ||
+                ValidateHelper.isValidEmailFPT(email)) {
+            isValidEmail = true;
+        }
 
-        if (!ValidateHelper.isValidEmailGmail(studentCreateUpdateRequest.getEmail())) {
-            return RouterHelper.responseError("Email phải có định dạng @gmail.com");
+        if (!isValidEmail) {
+            return RouterHelper.responseError("Email phải có định dạng @gmail.com hoặc kết thúc bằng edu.vn");
+        }
+
+        if (!settingHelper.getSetting(SettingKeys.DISABLED_CHECK_EMAIL_FPT_STUDENT, Boolean.class)) {
+            if (!ValidateHelper.isValidEmailFPT(email)) {
+                return RouterHelper.responseError("Email phải kết thúc bằng edu.vn");
+            }
         }
 
         Optional<UserStudent> existStudent = studentExtendRepository
@@ -137,13 +191,11 @@ public class STStudentServiceImpl implements STStudentService {
 
         UserStudent current = existStudent.get();
 
-        // Check trùng code
         if (studentExtendRepository.isExistCodeUpdate(studentCreateUpdateRequest.getCode(),
                 current.getCode())) {
             return RouterHelper.responseError("Mã sinh viên đã tồn tại");
         }
 
-        // Check trùng email
         if (studentExtendRepository.isExistEmailFeUpdate(studentCreateUpdateRequest.getEmail(),
                 current.getEmail())) {
             return RouterHelper.responseError("Đã có sinh viên khác dùng email này");
@@ -155,7 +207,11 @@ public class STStudentServiceImpl implements STStudentService {
         userStudent.setName(studentCreateUpdateRequest.getName());
         UserStudent saveUserStudent = studentExtendRepository.save(userStudent);
         userActivityLogHelper
-                .saveLog("vừa thêm 1 sinh viên mới: "  + saveUserStudent.getCode() + " - " + saveUserStudent.getName());
+                .saveLog("vừa cập nhật sinh viên: " + saveUserStudent.getCode() + " - " + saveUserStudent.getName());
+
+        // Invalidate all caches
+        redisInvalidationHelper.invalidateAllCaches();
+
         return RouterHelper.responseSuccess("Cập nhật sinh viên thành công", saveUserStudent);
     }
 
@@ -172,12 +228,17 @@ public class STStudentServiceImpl implements STStudentService {
             studentExtendRepository.save(userStudent);
             userActivityLogHelper.saveLog("vừa thay đổi trạng thái sinh viên " + userStudent.getCode() + " - "
                     + userStudent.getName() + " từ " + oldStatus + " thành " + newStatus);
+
+            // Invalidate all caches
+            redisInvalidationHelper.invalidateAllCaches();
+
             return RouterHelper.responseSuccess("Thay đổi trạng thái sinh viên thành công", userStudent);
         } else {
             return RouterHelper.responseError("Sinh viên không tồn tại");
         }
     }
 
+    @Override
     public ResponseEntity<?> deleteFaceStudentFactory(String studentId) {
         Optional<UserStudent> existUserStudent = studentExtendRepository.findById(studentId);
         if (existUserStudent.isPresent()) {
@@ -196,20 +257,33 @@ public class STStudentServiceImpl implements STStudentService {
 
             userActivityLogHelper.saveLog("vừa xóa dữ liệu khuôn mặt của sinh viên: " + userStudent.getCode() + " - "
                     + userStudent.getName());
+
+            // Invalidate all caches
+            redisInvalidationHelper.invalidateAllCaches();
+
             return RouterHelper.responseSuccess("Cấp quyền thay đổi mặt sinh viên thành công", userStudent);
         }
         return RouterHelper.responseError("Sinh viên không tồn tại");
     }
 
+    public Map<String, Boolean> getCachedFaceStatus() {
+        String key = RedisPrefixConstant.REDIS_PREFIX_STUDENT + "face_status_" + sessionHelper.getFacilityId();
+        return redisCacheHelper.getOrSet(
+                key,
+                () -> {
+                    List<Map<String, Object>> faceStatus = studentExtendRepository
+                            .existFaceForAllStudents(sessionHelper.getFacilityId());
+                    return faceStatus.stream().collect(Collectors.toMap(
+                            m -> (String) m.get("studentId"),
+                            m -> ((Number) m.get("hasFace")).intValue() == 1));
+                },
+                new TypeReference<>() {
+                });
+    }
+
     @Override
     public ResponseEntity<?> isExistFace() {
-        List<Map<String, Object>> faceStatus = studentExtendRepository
-                .existFaceForAllStudents(sessionHelper.getFacilityId());
-        Map<String, Boolean> studentFaceMap = faceStatus.stream()
-                .collect(Collectors.toMap(
-                        m -> (String) m.get("studentId"),
-                        m -> ((Number) m.get("hasFace")).intValue() == 1));
-
+        Map<String, Boolean> studentFaceMap = getCachedFaceStatus();
         return RouterHelper.responseSuccess("Lấy trạng thái face của sinh viên thành công", studentFaceMap);
     }
 

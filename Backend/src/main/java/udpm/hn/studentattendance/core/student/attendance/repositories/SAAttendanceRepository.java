@@ -32,8 +32,8 @@ public interface SAAttendanceRepository extends AttendanceRepository {
             f.name AS factoryName,
             pd.required_checkin AS requiredCheckin,
             pd.required_checkout AS requiredCheckout,
-            (SELECT COUNT(*) FROM plan_date WHERE id_plan_factory = pf.id) / 100 * COALESCE(p.max_late_arrival, 0)  AS totalLateAttendance,
-            (
+            COALESCE((SELECT COUNT(*) FROM plan_date WHERE id_plan_factory = pf.id) / 100 * COALESCE(p.max_late_arrival, 0), 0)  AS totalLateAttendance,
+            COALESCE((
               SELECT
                   SUM(
                       CASE
@@ -48,7 +48,7 @@ public interface SAAttendanceRepository extends AttendanceRepository {
                 pd2.status = 1 AND
                 a2.id_user_student = usf.id_user_student AND
                 pd2.id_plan_factory = pf.id
-            ) AS currentLateAttendance,
+            ), 0) AS currentLateAttendance,
             CONCAT(us.code, ' - ', us.name) AS teacherName,
             COALESCE(a.attendance_status, 0) AS status
         FROM user_student_factory usf
@@ -138,8 +138,8 @@ public interface SAAttendanceRepository extends AttendanceRepository {
 
     @Query(value = """
         SELECT
-            (SELECT COUNT(*) FROM plan_date WHERE id_plan_factory = pf.id) / 100 * COALESCE(p.max_late_arrival, 0)  AS totalLateAttendance,
-            (
+            COALESCE((SELECT COUNT(*) FROM plan_date WHERE id_plan_factory = pf.id) / 100 * COALESCE(p.max_late_arrival, 0), 0)  AS totalLateAttendance,
+            COALESCE((
               SELECT
                   SUM(
                       CASE
@@ -154,7 +154,7 @@ public interface SAAttendanceRepository extends AttendanceRepository {
                 pd2.status = 1 AND
                 a.id_user_student = :idUserStudent AND
                 pd2.id_plan_factory = pf.id
-            ) AS currentLateAttendance
+            ), 0) AS currentLateAttendance
         FROM plan_date pd
         JOIN plan_factory pf ON pd.id_plan_factory = pf.id
         JOIN plan p ON p.id = pf.id_plan

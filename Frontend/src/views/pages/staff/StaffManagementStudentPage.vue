@@ -44,6 +44,8 @@ const modalAdd = ref(false)
 const modalUpdate = ref(false)
 const modalDetail = ref(false)
 
+const countFilter = ref(0)
+
 // Dữ liệu thêm mới sinh viên
 const newStudent = reactive({
   code: '',
@@ -112,6 +114,7 @@ const fetchStudents = async () => {
     } else {
       pagination.total = stuRes.data.data.totalPages * pagination.pageSize
     }
+    countFilter.value = stuRes.data.data.totalItems
   } catch (error) {
     message.error(error.response?.data?.message || 'Lỗi khi lấy danh sách sinh viên')
   } finally {
@@ -133,14 +136,14 @@ const handleTableChange = (pageInfo) => {
 // Hàm thêm sinh viên
 const handleAddStudent = () => {
   if (!newStudent.code || !newStudent.name || !newStudent.email) {
-    message.error('Vui lòng nhập đầy đủ thông tin')
+    message.error('Vui lòng nhập đầy đủ thông tin sinh viên (Mã, Tên, Email)')
     return
   }
   Modal.confirm({
-    title: 'Xác nhận thêm mới',
-    content: 'Bạn có chắc chắn muốn thêm sinh viên mới này?',
-    okText: 'Tiếp tục',
-    cancelText: 'Hủy bỏ',
+    title: 'Xác nhận thêm sinh viên mới',
+    content: 'Bạn có chắc chắn muốn thêm sinh viên mới này vào hệ thống không?',
+    okText: 'Thêm sinh viên',
+    cancelText: 'Hủy',
     onOk() {
       loadingStore.show()
       requestAPI
@@ -215,14 +218,14 @@ const handleDetailStudent = (record) => {
 // Hàm submit cập nhật sinh viên
 const updateStudent = () => {
   if (!detailStudent.code || !detailStudent.name || !detailStudent.email) {
-    message.error('Vui lòng nhập đầy đủ thông tin')
+    message.error('Vui lòng nhập đầy đủ thông tin sinh viên (Mã, Tên, Email)')
     return
   }
   Modal.confirm({
-    title: 'Xác nhận cập nhật',
-    content: 'Bạn có chắc chắn muốn cập nhật thông tin sinh viên này?',
-    okText: 'Tiếp tục',
-    cancelText: 'Hủy bỏ',
+    title: 'Xác nhận cập nhật thông tin sinh viên',
+    content: 'Bạn có chắc chắn muốn cập nhật thông tin của sinh viên này không?',
+    okText: 'Cập nhật',
+    cancelText: 'Hủy',
     onOk() {
       loadingStore.show()
       requestAPI
@@ -248,20 +251,20 @@ const updateStudent = () => {
 // Hàm đổi trạng thái sinh viên
 const handleChangeStatusStudent = (record) => {
   Modal.confirm({
-    title: 'Xác nhận thay đổi trạng thái',
-    content: `Bạn có chắc chắn muốn đổi trạng thái cho sinh viên ${record.studentName}?`,
+    title: 'Xác nhận thay đổi trạng thái sinh viên',
+    content: `Bạn có chắc chắn muốn thay đổi trạng thái của sinh viên "${record.studentName}" không?`,
     onOk: () => {
       loadingStore.show()
       requestAPI
         .put(`${API_ROUTES_STAFF.FETCH_DATA_STUDENT}/status/${record.studentId}`)
         .then(() => {
-          message.success('Đổi trạng thái thành công')
+          message.success('Thay đổi trạng thái sinh viên thành công')
           fetchStudents()
         })
         .catch((error) => {
           message.error(
             (error.response && error.response.data && error.response.data.message) ||
-              'Lỗi khi đổi trạng thái sinh viên',
+              'Lỗi khi thay đổi trạng thái sinh viên',
           )
         })
         .finally(() => {
@@ -272,15 +275,15 @@ const handleChangeStatusStudent = (record) => {
 }
 const changeFaceStudent = (record) => {
   Modal.confirm({
-    title: 'Xác nhận đổi mặt',
-    content: `Bạn có chắc muốn đổi mặt của sinh viên ${record.studentName}?`,
+    title: 'Xác nhận cập nhật khuôn mặt',
+    content: `Bạn có chắc chắn muốn cập nhật dữ liệu khuôn mặt của sinh viên "${record.studentName}" không?`,
     onOk() {
       loadingStore.show()
       // Giả sử record chứa studentId, nếu không hãy thay đổi cho phù hợp
       requestAPI
         .put(API_ROUTES_STAFF.FETCH_DATA_STUDENT + '/change-face/' + record.studentId)
         .then((response) => {
-          message.success(response.data.message || 'Đổi mặt học sinh thành công')
+          message.success(response.data.message || 'Cập nhật khuôn mặt sinh viên thành công')
           fetchStudents() // Làm mới danh sách sau khi đổi mặt
         })
         .catch((error) => {
@@ -352,7 +355,7 @@ onMounted(() => {
         <a-card :bordered="false" class="cart no-body-padding">
           <a-collapse ghost>
             <a-collapse-panel>
-              <template #header><FilterFilled /> Bộ lọc</template>
+              <template #header><FilterFilled /> Bộ lọc ({{ countFilter }})</template>
               <div class="row g-3">
                 <!-- Input tìm kiếm theo mã, tên, email -->
                 <div class="col-md-6 col-sm-12">
@@ -373,12 +376,11 @@ onMounted(() => {
                   <div class="label-title">Trạng thái:</div>
                   <a-select
                     v-model:value="filter.studentStatus"
-                    placeholder="Chọn trạng thái"
-                    allowClear
+                    placeholder="-- Tất cả trạng thái --"
                     class="w-100"
                     @change="fetchStudents"
                   >
-                    <a-select-option :value="''">Tất cả trạng thái</a-select-option>
+                    <a-select-option :value="''">-- Tất cả trạng thái --</a-select-option>
                     <a-select-option value="ACTIVE">Hoạt động</a-select-option>
                     <a-select-option value="INACTIVE">Không hoạt động</a-select-option>
                   </a-select>

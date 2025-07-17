@@ -110,12 +110,14 @@ const columns = ref(
   ]),
 )
 
+const countFilter = ref(0)
+
 const columnsDetail = ref(
   autoAddColumnWidth([
     { title: '#', dataIndex: 'orderNumber', key: 'orderNumber' },
     { title: 'Ngày học', dataIndex: 'startDate', key: 'startDate' },
     { title: 'Thời gian', dataIndex: 'time', key: 'time' },
-    { title: 'Ca học', dataIndex: 'shift', key: 'shift' },
+    { title: 'Ca', dataIndex: 'shift', key: 'shift' },
     { title: 'Checkin đầu giờ', dataIndex: 'createdAt', key: 'createdAt' },
     { title: 'Checkout cuối giờ', dataIndex: 'updatedAt', key: 'updatedAt' },
     { title: 'Trạng thái', dataIndex: 'status', key: 'status' },
@@ -142,6 +144,7 @@ const fetchStudentFactory = () => {
       pagination.total = result.totalPages * filter.pageSize
       // Nếu trả về tổng số bản ghi, thay thế bằng: pagination.total = result.totalRecords
       pagination.current = filter.page
+      countFilter.value = result.totalItems
     })
     .catch((error) => {
       message.error(error.data?.message || 'Lỗi khi lấy dữ liệu')
@@ -314,7 +317,7 @@ onMounted(() => {
         <a-card :bordered="false" class="cart no-body-padding">
           <a-collapse ghost>
             <a-collapse-panel>
-              <template #header><FilterFilled /> Bộ lọc</template>
+              <template #header><FilterFilled /> Bộ lọc ({{ countFilter }})</template>
               <div class="row g-3 filter-container">
                 <div class="col-md-6 col-sm-6">
                   <div class="label-title">Từ khoá:</div>
@@ -333,12 +336,11 @@ onMounted(() => {
                   <div class="label-title">Trạng thái:</div>
                   <a-select
                     v-model:value="filter.status"
-                    placeholder="Chọn trạng thái"
-                    allowClear
+                    placeholder="-- Tất cả trạng thái --"
                     class="w-100"
                     @change="fetchStudentFactory"
                   >
-                    <a-select-option :value="''">Tất cả trạng thái</a-select-option>
+                    <a-select-option :value="''">-- Tất cả trạng thái --</a-select-option>
                     <a-select-option value="1">Đang học</a-select-option>
                     <a-select-option value="0">Ngưng học</a-select-option>
                   </a-select>

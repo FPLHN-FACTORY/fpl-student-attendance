@@ -20,7 +20,7 @@ import java.util.Optional;
 public interface TCAttendanceRepository extends AttendanceRepository {
 
     @Query(value = """
-        SELECT 
+        SELECT
             ROW_NUMBER() OVER (ORDER BY us.name ASC) as orderNumber,
             us.id,
             us.code,
@@ -38,9 +38,6 @@ public interface TCAttendanceRepository extends AttendanceRepository {
         LEFT JOIN attendance a ON pd.id = a.id_plan_date AND a.id_user_student = usf.id_user_student
         WHERE
             pd.status = 1 AND
-            pf.status = 1 AND
-            f.status = 1 AND
-            us.status = 1 AND
             usf.status = 1 AND
             EXISTS(
                 SELECT 1
@@ -50,14 +47,9 @@ public interface TCAttendanceRepository extends AttendanceRepository {
                 JOIN subject s2 ON s2.id = sf.id_subject
                 JOIN facility f2 ON sf.id_facility = f2.id
                 JOIN semester s ON pj.id_semester = s.id
-                WHERE 
+                WHERE
                      pf.id_plan = p.id AND
-                     p.status = 1 AND
-                     pj.status = 1 AND
-                     s.status = 1 AND
-                     s2.status = 1 AND
                      f2.status = 1 AND
-                     sf.status = 1 AND
                      f2.id = :#{#request.idFacility}
             ) AND
             (NULLIF(TRIM(:#{#request.keyword}), '') IS NULL OR (
@@ -68,9 +60,9 @@ public interface TCAttendanceRepository extends AttendanceRepository {
             pd.start_date <= UNIX_TIMESTAMP(NOW()) * 1000 AND
             pd.id = :#{#request.idPlanDate}
         ORDER BY
-            us.name ASC 
+            us.name ASC
     """, countQuery = """
-       SELECT 
+       SELECT
             COUNT(*)
         FROM user_student_factory usf
         JOIN factory f ON usf.id_factory = f.id
@@ -80,9 +72,6 @@ public interface TCAttendanceRepository extends AttendanceRepository {
         LEFT JOIN attendance a ON pd.id = a.id_plan_date AND a.id_user_student = usf.id_user_student
         WHERE
             pd.status = 1 AND
-            pf.status = 1 AND
-            f.status = 1 AND
-            us.status = 1 AND
             usf.status = 1 AND
             EXISTS(
                 SELECT 1
@@ -94,12 +83,7 @@ public interface TCAttendanceRepository extends AttendanceRepository {
                 JOIN semester s ON pj.id_semester = s.id
                 WHERE 
                      pf.id_plan = p.id AND
-                     p.status = 1 AND
-                     pj.status = 1 AND
-                     s.status = 1 AND
-                     s2.status = 1 AND
                      f2.status = 1 AND
-                     sf.status = 1 AND
                      f2.id = :#{#request.idFacility}
             ) AND
             (NULLIF(TRIM(:#{#request.keyword}), '') IS NULL OR (
@@ -113,7 +97,7 @@ public interface TCAttendanceRepository extends AttendanceRepository {
     Page<TCPlanDateStudentResponse> getAllByFilter(Pageable pageable, TCFilterPlanDateAttendanceRequest request);
 
     @Query(value = """
-        SELECT 
+        SELECT
             ROW_NUMBER() OVER (ORDER BY us.name ASC) as orderNumber,
             us.id,
             us.code,
@@ -131,9 +115,6 @@ public interface TCAttendanceRepository extends AttendanceRepository {
         LEFT JOIN attendance a ON pd.id = a.id_plan_date AND a.id_user_student = usf.id_user_student
         WHERE
             pd.status = 1 AND
-            pf.status = 1 AND
-            f.status = 1 AND
-            us.status = 1 AND
             usf.status = 1 AND
             EXISTS(
                 SELECT 1
@@ -143,14 +124,9 @@ public interface TCAttendanceRepository extends AttendanceRepository {
                 JOIN subject s2 ON s2.id = sf.id_subject
                 JOIN facility f2 ON sf.id_facility = f2.id
                 JOIN semester s ON pj.id_semester = s.id
-                WHERE 
+                WHERE
                      pf.id_plan = p.id AND
-                     p.status = 1 AND
-                     pj.status = 1 AND
-                     s.status = 1 AND
-                     s2.status = 1 AND
                      f2.status = 1 AND
-                     sf.status = 1 AND
                      f2.id = :#{#request.idFacility}
             ) AND
             (NULLIF(TRIM(:#{#request.keyword}), '') IS NULL OR (
@@ -182,9 +158,6 @@ public interface TCAttendanceRepository extends AttendanceRepository {
                 JOIN plan pl ON pf.id_plan = pl.id
                 JOIN factory f ON pf.id_factory = f.id
                 WHERE
-                    pf.status = 1 AND
-                    pl.status = 1 AND
-                    f.status = 1 AND
                     EXISTS(
                         SELECT 1
                         FROM project p
@@ -195,11 +168,6 @@ public interface TCAttendanceRepository extends AttendanceRepository {
                         JOIN facility f2 ON sf.id_facility = f2.id
                         WHERE
                             p.id = pl.id_project AND
-                            p.status = 1 AND
-                            lp.status = 1 AND
-                            s.status = 1 AND
-                            sf.status = 1 AND
-                            s2.status = 1 AND
                             f2.status = 1 AND
                             f2.id = :idFacility
                     ) AND

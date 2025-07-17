@@ -1,7 +1,7 @@
 package udpm.hn.studentattendance.core.staff.plan.services.impl;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Pageable;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import udpm.hn.studentattendance.core.staff.plan.model.request.SPDAddOrUpdatePlanRequest;
@@ -21,12 +21,15 @@ import udpm.hn.studentattendance.entities.Plan;
 import udpm.hn.studentattendance.entities.Project;
 import udpm.hn.studentattendance.entities.Semester;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
+import udpm.hn.studentattendance.helpers.RedisCacheHelper;
+import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
 import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.helpers.SessionHelper;
 import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
-import udpm.hn.studentattendance.infrastructure.common.repositories.CommonUserStudentRepository;
+import udpm.hn.studentattendance.infrastructure.common.repositories.CommonPlanDateRepository;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
+import udpm.hn.studentattendance.infrastructure.constants.RedisPrefixConstant;
 import udpm.hn.studentattendance.infrastructure.constants.SemesterName;
 import udpm.hn.studentattendance.utils.DateTimeUtils;
 
@@ -35,6 +38,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
+
+import com.fasterxml.jackson.core.type.TypeReference;
 
 @Service
 @RequiredArgsConstructor
@@ -50,58 +55,117 @@ public class SPDPlanServiceImpl implements SPDPlanService {
 
     private final SPDProjectRepository spdProjectRepository;
 
-    private final CommonUserStudentRepository commonUserStudentRepository;
-
     private final SessionHelper sessionHelper;
 
     private final UserActivityLogHelper userActivityLogHelper;
 
+    private final RedisCacheHelper redisCacheHelper;
+
+    private final RedisInvalidationHelper redisInvalidationHelper;
+
+    private final CommonPlanDateRepository commonPlanDateRepository;
+
+    public List<SPDSubjectResponse> getCachedSubjects() {
+        String key = RedisPrefixConstant.REDIS_PREFIX_PLAN + "subjects_" + "facility=" + sessionHelper.getFacilityId();
+        return redisCacheHelper.getOrSet(
+                key,
+                () -> spdSubjectRepository.getAllByFacility(sessionHelper.getFacilityId()),
+                new TypeReference<>() {
+                });
+    }
+
     @Override
     public ResponseEntity<?> getAllSubject() {
-        List<SPDSubjectResponse> data = spdSubjectRepository.getAllByFacility(sessionHelper.getFacilityId());
+        List<SPDSubjectResponse> data = getCachedSubjects();
         return RouterHelper.responseSuccess("Lấy dữ liệu bộ môn thành công", data);
+    }
+
+    public List<SPDLevelProjectResponse> getCachedLevels() {
+        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_LEVEL + "all";
+        return redisCacheHelper.getOrSet(cacheKey, spdLevelProjectRepository::getAll, new TypeReference<>() {});
     }
 
     @Override
     public ResponseEntity<?> getAllLevel() {
-        List<SPDLevelProjectResponse> data = spdLevelProjectRepository.getAll();
+        List<SPDLevelProjectResponse> data = getCachedLevels();
         return RouterHelper.responseSuccess("Lấy dữ liệu level thành công", data);
+    }
+
+    public List<String> getCachedSemesterNames() {
+        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_PLAN + "semester_names_all";
+
+        return redisCacheHelper.getOrSet(
+                cacheKey,
+                () -> Arrays.stream(SemesterName.values())
+                        .map(Enum::name)
+                        .collect(Collectors.toList()),
+                new TypeReference<>() {});
     }
 
     @Override
     public ResponseEntity<?> getListSemester() {
-        List<String> data = Arrays.stream(SemesterName.values())
-                .map(Enum::name)
-                .collect(Collectors.toList());
+        List<String> data = getCachedSemesterNames();
         return RouterHelper.responseSuccess("Lấy dữ liệu học kỳ thành công", data);
+    }
+
+    public List<Integer> getCachedYears() {
+        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_PLAN + "years_all";
+        return redisCacheHelper.getOrSet(cacheKey, spdSemesterRepository::getAllYear, new TypeReference<>() {});
     }
 
     @Override
     public ResponseEntity<?> getAllYear() {
-        List<Integer> data = spdSemesterRepository.getAllYear();
+        List<Integer> data = getCachedYears();
         return RouterHelper.responseSuccess("Lấy dữ liệu năm học thành công", data);
+    }
+
+    public PageableObject<SPDPlanResponse> getCachedPlans(SPDFilterPlanRequest request) {
+        request.setIdFacility(sessionHelper.getFacilityId());
+        String key = RedisPrefixConstant.REDIS_PREFIX_PLAN + "list_" + request.toString();
+        return redisCacheHelper.getOrSet(
+                key,
+                () -> PageableObject
+                        .of(spdPlanRepository.getAllByFilter(PaginationHelper.createPageable(request), request)),
+                new TypeReference<>() {});
     }
 
     @Override
     public ResponseEntity<?> getAllList(SPDFilterPlanRequest request) {
-        request.setIdFacility(sessionHelper.getFacilityId());
-        Pageable pageable = PaginationHelper.createPageable(request);
-        PageableObject<SPDPlanResponse> data = PageableObject.of(spdPlanRepository.getAllByFilter(pageable, request));
+        PageableObject<SPDPlanResponse> data = getCachedPlans(request);
         return RouterHelper.responseSuccess("Lấy danh sách dữ liệu thành công", data);
+    }
+
+    public SPDPlanResponse getCachedPlanById(String idPlan) {
+        Optional<SPDPlanResponse> data = spdPlanRepository.getByIdPlan(idPlan, sessionHelper.getFacilityId());
+        return data.orElse(null);
     }
 
     @Override
     public ResponseEntity<?> getPlan(String idPlan) {
-        Optional<SPDPlanResponse> data = spdPlanRepository.getByIdPlan(idPlan, sessionHelper.getFacilityId());
-        return data
-                .map(spdPlanDateResponse -> RouterHelper.responseSuccess("Get dữ liệu thành công", spdPlanDateResponse))
-                .orElseGet(() -> RouterHelper.responseError("Không tìm thấy kế hoạch"));
+        SPDPlanResponse data = getCachedPlanById(idPlan);
+        if (data != null) {
+            return RouterHelper.responseSuccess("Get dữ liệu thành công", data);
+        } else {
+            return RouterHelper.responseError("Không tìm thấy kế hoạch");
+        }
+    }
+
+    public List<SPDProjectResponse> getCachedProjects(SPDFilterCreatePlanRequest request) {
+        request.setIdFacility(sessionHelper.getFacilityId());
+
+        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_PLAN + "projects_" +
+                "facility=" + sessionHelper.getFacilityId() + "_" + request.toString();
+
+        return redisCacheHelper.getOrSet(
+                cacheKey,
+                () -> spdPlanRepository.getListProject(request),
+                new TypeReference<>() {
+                });
     }
 
     @Override
     public ResponseEntity<?> getListProject(SPDFilterCreatePlanRequest request) {
-        request.setIdFacility(sessionHelper.getFacilityId());
-        List<SPDProjectResponse> data = spdPlanRepository.getListProject(request);
+        List<SPDProjectResponse> data = getCachedProjects(request);
         return RouterHelper.responseSuccess("Lấy danh sách dữ liệu thành công", data);
     }
 
@@ -152,6 +216,10 @@ public class SPDPlanServiceImpl implements SPDPlanService {
 
         Plan o = spdPlanRepository.save(plan);
         userActivityLogHelper.saveLog("vừa thêm 1 kế hoạch mới: " + o.getName());
+
+        // Invalidate related caches
+        redisInvalidationHelper.invalidateAllCaches();
+
         return RouterHelper.responseSuccess("Tạo mới kế hoạch thành công", o);
     }
 
@@ -166,7 +234,11 @@ public class SPDPlanServiceImpl implements SPDPlanService {
                 .orElse(null);
 
         if (planResponse == null || planResponse.getStatus() != plan.getStatus().ordinal()) {
-            return RouterHelper.responseError("Không thể thay đổi trạng thái kế hoạch này");
+            return RouterHelper.responseError("Không thể thay đổi trạng thái kế hoạch này. Vui lòng kiểm tra lại trạng thái dự án, cấp độ dự án, ...");
+        }
+
+        if (commonPlanDateRepository.existsNotYetStartedByPlan(plan.getId())) {
+            return RouterHelper.responseError("Đang tồn tại ca chưa hoặc đang diễn ra. Không thể thay đổi trạng thái");
         }
 
         if (plan.getStatus() == EntityStatus.INACTIVE
@@ -178,9 +250,8 @@ public class SPDPlanServiceImpl implements SPDPlanService {
         plan.setStatus(plan.getStatus() == EntityStatus.ACTIVE ? EntityStatus.INACTIVE : EntityStatus.ACTIVE);
         Plan newEntity = spdPlanRepository.save(plan);
 
-        if (newEntity.getStatus() == EntityStatus.ACTIVE) {
-            commonUserStudentRepository.disableAllStudentDuplicateShiftByIdPlan(plan.getId());
-        }
+        // Invalidate specific cache for this plan
+        redisInvalidationHelper.invalidateAllCaches();
 
         return RouterHelper.responseSuccess("Thay đổi trạng thái kế hoạch thành công", newEntity);
     }
@@ -192,7 +263,10 @@ public class SPDPlanServiceImpl implements SPDPlanService {
             return RouterHelper.responseError("Không tìm thấy kế hoạch");
         }
 
-        if (plan.getStatus() != EntityStatus.INACTIVE) {
+        SPDPlanResponse planResponse = spdPlanRepository.getByIdPlan(plan.getId(), sessionHelper.getFacilityId())
+                .orElse(null);
+
+        if (planResponse != null && planResponse.getStatus() != EntityStatus.INACTIVE.ordinal()) {
             return RouterHelper.responseError("Không thể xoá kế hoạch đang triển khai");
         }
 
@@ -201,11 +275,16 @@ public class SPDPlanServiceImpl implements SPDPlanService {
         spdPlanRepository.deleteAllPlanFactoryByIdPlan(plan.getId());
         spdPlanRepository.delete(plan);
         userActivityLogHelper.saveLog("vừa xóa kế hoạch: " + plan.getName());
+
+        // Invalidate specific cache for this plan
+        redisInvalidationHelper.invalidateAllCaches();
+
         return RouterHelper.responseSuccess("Xoá thành công kế hoạch: " + plan.getName());
     }
 
     @Override
     public ResponseEntity<?> updatePlan(SPDAddOrUpdatePlanRequest request) {
+
         Plan plan = spdPlanRepository.findById(request.getId()).orElse(null);
         if (plan == null) {
             return RouterHelper.responseError("Không tìm thấy kế hoạch muốn cập nhật");
@@ -249,6 +328,10 @@ public class SPDPlanServiceImpl implements SPDPlanService {
         spdPlanRepository.deleteAllPlanDateOutRangeDateByIdPlan(updatePlan.getId());
 
         userActivityLogHelper.saveLog("vừa cập nhật kế hoạch: " + updatePlan.getName());
+
+        // Invalidate all caches
+        redisInvalidationHelper.invalidateAllCaches();
+
         return RouterHelper.responseSuccess("Cập nhật kế hoạch thành công", updatePlan);
     }
 

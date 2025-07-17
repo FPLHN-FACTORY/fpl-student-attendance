@@ -16,8 +16,12 @@ import udpm.hn.studentattendance.entities.Role;
 import udpm.hn.studentattendance.entities.UserAdmin;
 import udpm.hn.studentattendance.entities.UserStaff;
 import udpm.hn.studentattendance.entities.UserStudent;
+import udpm.hn.studentattendance.helpers.SettingHelper;
+import udpm.hn.studentattendance.helpers.ValidateHelper;
+import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.RoleConstant;
 import udpm.hn.studentattendance.infrastructure.constants.SessionConstant;
+import udpm.hn.studentattendance.infrastructure.constants.SettingKeys;
 
 import java.util.HashSet;
 import java.util.List;
@@ -37,6 +41,8 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
     private final AuthenticationUserStudentRepository authenticationUserStudentRepository;
 
     private final AuthenticationRoleRepository authenticationRoleRepository;
+
+    private final SettingHelper settingHelper;
 
     @Override
     public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
@@ -96,6 +102,12 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
                 UserStudent userStudent = authenticationUserStudentRepository.findByEmail(customOAuth2User.getEmail())
                         .orElse(null);
                 if (userStudent == null) {
+                    if (!settingHelper.getSetting(SettingKeys.DISABLED_CHECK_EMAIL_FPT_STUDENT, Boolean.class)) {
+                        if (!ValidateHelper.isValidEmailFPT(customOAuth2User.getEmail())) {
+                            throw new OAuth2AuthenticationException(
+                                    new OAuth2Error("login_failed", "Hiện tại chỉ hỗ trợ đăng ký tài khoản mới bằng email FPT", null));
+                        }
+                    }
                     UserStudent newUserStudent = new UserStudent();
                     newUserStudent.setEmail(customOAuth2User.getEmail());
                     newUserStudent.setCode(customOAuth2User.getCode());
@@ -103,6 +115,12 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
                     newUserStudent.setImage(customOAuth2User.getPicture());
                     userStudent = authenticationUserStudentRepository.save(newUserStudent);
                 }
+
+                if (userStudent.getStatus() == EntityStatus.INACTIVE) {
+                    throw new OAuth2AuthenticationException(
+                            new OAuth2Error("login_failed", "Tài khoản của bạn đã bị cấm truy cập", null));
+                }
+
                 if (userStudent.getFacility() != null
                         && !facilityID.equalsIgnoreCase(userStudent.getFacility().getId())) {
                     throw new OAuth2AuthenticationException(

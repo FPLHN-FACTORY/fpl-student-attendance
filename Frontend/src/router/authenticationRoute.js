@@ -3,6 +3,7 @@ import { API_URL, GLOBAL_ROUTE_NAMES, PREFIX_ADMIN_PANEL } from '@/constants/rou
 
 export const ROUTE_NAMES_API = {
   FETCH_DATA_REFRESH_TOKEN: API_URL + '/refresh-token',
+  FETCH_DATA_SETTINGS: API_URL + '/settings',
   FETCH_DATA_FACILITY: API_URL + '/get-all-facility',
   FETCH_DATA_SEMESTER: API_URL + '/get-all-semester',
   FETCH_DATA_AVATAR: API_URL + '/get-avatar',

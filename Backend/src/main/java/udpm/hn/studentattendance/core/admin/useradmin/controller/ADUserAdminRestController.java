@@ -18,7 +18,7 @@ public class ADUserAdminRestController {
     private final ADUserAdminServiceImpl userAdminService;
 
     @GetMapping
-    public ResponseEntity<?> getAllUserAdmin(ADUserAdminRequest request) {
+    public ResponseEntity<?> getAllUserAdmin(@Valid ADUserAdminRequest request) {
         return userAdminService.getAllUserAdmin(request);
     }
 
