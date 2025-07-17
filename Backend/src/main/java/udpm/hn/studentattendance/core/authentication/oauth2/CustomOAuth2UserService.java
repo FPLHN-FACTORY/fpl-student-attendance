@@ -18,6 +18,7 @@ import udpm.hn.studentattendance.entities.UserStaff;
 import udpm.hn.studentattendance.entities.UserStudent;
 import udpm.hn.studentattendance.helpers.SettingHelper;
 import udpm.hn.studentattendance.helpers.ValidateHelper;
+import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.RoleConstant;
 import udpm.hn.studentattendance.infrastructure.constants.SessionConstant;
 import udpm.hn.studentattendance.infrastructure.constants.SettingKeys;
@@ -114,6 +115,12 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
                     newUserStudent.setImage(customOAuth2User.getPicture());
                     userStudent = authenticationUserStudentRepository.save(newUserStudent);
                 }
+
+                if (userStudent.getStatus() == EntityStatus.INACTIVE) {
+                    throw new OAuth2AuthenticationException(
+                            new OAuth2Error("login_failed", "Tài khoản của bạn đã bị cấm truy cập", null));
+                }
+
                 if (userStudent.getFacility() != null
                         && !facilityID.equalsIgnoreCase(userStudent.getFacility().getId())) {
                     throw new OAuth2AuthenticationException(
