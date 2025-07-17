@@ -2,8 +2,8 @@ package udpm.hn.studentattendance.helpers;
 
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
-import udpm.hn.studentattendance.infrastructure.redis.service.QueryCacheService;
-import udpm.hn.studentattendance.infrastructure.redis.service.RedisService;
+import udpm.hn.studentattendance.infrastructure.config.redis.service.QueryCacheService;
+import udpm.hn.studentattendance.infrastructure.config.redis.service.RedisService;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;

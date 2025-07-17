@@ -1,6 +1,8 @@
 package udpm.hn.studentattendance.infrastructure.redis.serializer;
 
 import org.junit.jupiter.api.Test;
+import udpm.hn.studentattendance.infrastructure.config.redis.serializer.CacheWrapper;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 class CacheWrapperTest {

@@ -11,7 +11,7 @@ import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.data.redis.core.HashOperations;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.core.type.TypeReference;
-import udpm.hn.studentattendance.infrastructure.redis.service.impl.RedisServiceImpl;
+import udpm.hn.studentattendance.infrastructure.config.redis.service.impl.RedisServiceImpl;
 import static org.mockito.Mockito.*;
 import static org.junit.jupiter.api.Assertions.*;
 

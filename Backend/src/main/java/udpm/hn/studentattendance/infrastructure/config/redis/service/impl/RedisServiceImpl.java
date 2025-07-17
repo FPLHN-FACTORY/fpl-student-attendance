@@ -1,9 +1,7 @@
-package udpm.hn.studentattendance.infrastructure.redis.service.impl;
+package udpm.hn.studentattendance.infrastructure.config.redis.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import udpm.hn.studentattendance.infrastructure.redis.service.RedisService;
+import udpm.hn.studentattendance.infrastructure.config.redis.service.RedisService;
 import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.HashOperations;
@@ -17,8 +15,6 @@ import java.util.concurrent.TimeUnit;
 
 @Service
 public class RedisServiceImpl implements RedisService {
-
-    private static final Logger logger = LoggerFactory.getLogger(RedisServiceImpl.class);
 
     private final RedisTemplate<String, Object> redisTemplate;
 
@@ -39,8 +35,7 @@ public class RedisServiceImpl implements RedisService {
         try {
             String json = objectMapper.writeValueAsString(value);
             redisTemplate.opsForValue().set(key, json, ttlMillis, TimeUnit.MILLISECONDS);
-        } catch (Exception e) {
-            logger.warn("Failed to set Redis key: " + key);
+        } catch (Exception ignored) {
         }
     }
 
@@ -48,8 +43,6 @@ public class RedisServiceImpl implements RedisService {
     public <T> T getObject(String key, TypeReference<T> type) {
         try {
             Object value = redisTemplate.opsForValue().get(key);
-            if (value == null)
-                return null;
             String json = value.toString();
             return objectMapper.readValue(json, type);
         } catch (Exception e) {
@@ -66,8 +59,7 @@ public class RedisServiceImpl implements RedisService {
     public void set(String key, String value) {
         try {
             redisTemplate.opsForValue().set(key, value, redisTimeToLive, TimeUnit.DAYS);
-        } catch (Exception e) {
-            logger.error("Error setting Redis key: {} - {}", key, e.getMessage());
+        } catch (Exception ignored) {
         }
     }
 
@@ -75,11 +67,10 @@ public class RedisServiceImpl implements RedisService {
     public void deletePattern(String pattern) {
         try {
             Set<String> keys = redisTemplate.keys(pattern);
-            if (keys != null && !keys.isEmpty()) {
+            if (!keys.isEmpty()) {
                 redisTemplate.delete(keys);
             }
-        } catch (Exception e) {
-            logger.error("Error deleting Redis keys with pattern: {} - {}", pattern, e.getMessage());
+        } catch (Exception ignored) {
         }
     }
 
@@ -87,8 +78,7 @@ public class RedisServiceImpl implements RedisService {
     public void delete(String key) {
         try {
             redisTemplate.delete(key);
-        } catch (Exception e) {
-            logger.error("Error deleting Redis key: {} - {}", key, e.getMessage());
+        } catch (Exception ignored) {
         }
     }
 
@@ -124,24 +114,16 @@ public class RedisServiceImpl implements RedisService {
         try {
             Object value = redisTemplate.opsForValue().get(key);
 
-            if (value == null) {
-                return null;
-            }
-
-            if (value instanceof String) {
-                String strValue = (String) value;
+            if (value instanceof String strValue) {
                 if (strValue.startsWith("{") || strValue.startsWith("[")) {
                     try {
                         return objectMapper.readValue(strValue, Object.class);
-                    } catch (Exception e) {
-                        logger.error("Error deserializing JSON string for key: {} - {}", key, e.getMessage());
+                    } catch (Exception ignored) {
                     }
                 }
             }
-            // Return original value if not a JSON string or deserialization failed
             return value;
         } catch (Exception e) {
-            logger.error("Error getting Redis key: {} - {}", key, e.getMessage());
             return null;
         }
     }

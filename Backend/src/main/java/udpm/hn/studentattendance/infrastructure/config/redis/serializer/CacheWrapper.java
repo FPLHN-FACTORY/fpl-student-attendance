@@ -1,4 +1,4 @@
-package udpm.hn.studentattendance.infrastructure.redis.serializer;
+package udpm.hn.studentattendance.infrastructure.config.redis.serializer;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
