@@ -225,7 +225,7 @@ watch(
                   <div class="label-title">Từ khoá:</div>
                   <a-input
                     v-model:value="dataFilter.searchQuery"
-                    placeholder="Nhập mã, tên hoặc hành động"
+                    placeholder="Nhập mã, tên người dùng hoặc hành động"
                     allowClear
                   >
                     <template #prefix>

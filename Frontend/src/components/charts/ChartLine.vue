@@ -74,6 +74,7 @@ const renderChart = async () => {
           ticks: {
             suggestedMin: 0,
             suggestedMax: 1000,
+            beginAtZero: true,
             display: true,
             color: '#8C8C8C',
             font: (context) => {

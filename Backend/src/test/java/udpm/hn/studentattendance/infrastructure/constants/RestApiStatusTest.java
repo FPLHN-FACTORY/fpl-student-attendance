@@ -6,8 +6,20 @@ import static org.junit.jupiter.api.Assertions.*;
 class RestApiStatusTest {
     @Test
     void testEnumValues() {
-        for (RestApiStatus status : RestApiStatus.values()) {
-            assertNotNull(status);
+        for (RestApiStatus type : RestApiStatus.values()) {
+            assertNotNull(type);
         }
+    }
+
+    @Test
+    void testEnumSpecificValues() {
+        assertEquals(RestApiStatus.SUCCESS, RestApiStatus.valueOf("SUCCESS"));
+        assertEquals(RestApiStatus.ERROR, RestApiStatus.valueOf("ERROR"));
+    }
+
+    @Test
+    void testEnumToString() {
+        assertEquals("SUCCESS", RestApiStatus.SUCCESS.toString());
+        assertEquals("ERROR", RestApiStatus.ERROR.toString());
     }
 }

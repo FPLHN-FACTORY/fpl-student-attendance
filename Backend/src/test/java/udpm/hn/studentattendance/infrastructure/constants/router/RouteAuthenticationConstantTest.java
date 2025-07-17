@@ -1,12 +1,12 @@
 package udpm.hn.studentattendance.infrastructure.constants.router;
 
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
+import udpm.hn.studentattendance.infrastructure.constants.router.RouteAuthenticationConstant;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 class RouteAuthenticationConstantTest {
     @Test
-    void testNoConstantsToTest() {
-        // No constants defined in RouteAuthenticationConstant, so nothing to test.
-        assertTrue(true);
+    void coverage() {
+        assertNotNull(RouteAuthenticationConstant.class);
     }
 }

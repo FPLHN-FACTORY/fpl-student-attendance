@@ -28,6 +28,8 @@ import udpm.hn.studentattendance.infrastructure.constants.RedisPrefixConstant;
 import udpm.hn.studentattendance.infrastructure.redis.service.RedisService;
 import udpm.hn.studentattendance.repositories.FacilityRepository;
 import udpm.hn.studentattendance.repositories.SubjectRepository;
+import com.fasterxml.jackson.core.type.TypeReference;
+import udpm.hn.studentattendance.helpers.RedisCacheHelper;
 
 @Service
 @RequiredArgsConstructor
@@ -43,7 +45,7 @@ public class ADSubjectFacilityServiceImpl implements ADSubjectFacilityService {
 
     private final UserActivityLogHelper userActivityLogHelper;
 
-    private final RedisService redisService;
+    private final RedisCacheHelper redisCacheHelper;
 
     private final RedisInvalidationHelper redisInvalidationHelper;
 
@@ -51,7 +53,7 @@ public class ADSubjectFacilityServiceImpl implements ADSubjectFacilityService {
     private long redisTTL;
 
     public PageableObject<ADSubjectFacilityResponse> getSubjectFacilityList(ADSubjectFacilitySearchRequest request) {
-        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_SUBJECT_FACILITY + "list_" +
+        String key = RedisPrefixConstant.REDIS_PREFIX_SUBJECT_FACILITY + "list_" +
                 "page=" + request.getPage() +
                 "_size=" + request.getSize() +
                 "_orderBy=" + request.getOrderBy() +
@@ -61,28 +63,12 @@ public class ADSubjectFacilityServiceImpl implements ADSubjectFacilityService {
                 "_facilityId=" + (request.getFacilityId() != null ? request.getFacilityId() : "") +
                 "_subjectId=" + (request.getSubjectId() != null ? request.getSubjectId() : "") +
                 "_status=" + (request.getStatus() != null ? request.getStatus() : "");
-
-        // Kiểm tra cache
-        Object cachedData = redisService.get(cacheKey);
-        if (cachedData != null) {
-            try {
-                return redisService.getObject(cacheKey, PageableObject.class);
-            } catch (Exception e) {
-                redisService.delete(cacheKey);
-            }
-        }
-
-        // Cache miss - fetch from database
-        Pageable pageable = PaginationHelper.createPageable(request, "id");
-        PageableObject<ADSubjectFacilityResponse> result = PageableObject.of(repository.getAll(pageable, request));
-
-        // Store in cache
-        try {
-            redisService.set(cacheKey, result, redisTTL);
-        } catch (Exception ignored) {
-        }
-
-        return result;
+        return redisCacheHelper.getOrSet(
+                key,
+                () -> PageableObject.of(repository.getAll(PaginationHelper.createPageable(request, "id"), request)),
+                new TypeReference<PageableObject<ADSubjectFacilityResponse>>() {
+                },
+                redisTTL);
     }
 
     /**

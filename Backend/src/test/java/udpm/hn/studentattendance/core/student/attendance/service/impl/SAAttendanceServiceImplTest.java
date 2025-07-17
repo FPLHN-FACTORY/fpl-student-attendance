@@ -164,7 +164,7 @@ class SAAttendanceServiceImplTest {
                 ApiResponse apiResponse = (ApiResponse) response.getBody();
                 assertNotNull(apiResponse);
                 assertEquals(RestApiStatus.ERROR, apiResponse.getStatus());
-                assertEquals("Không tìm thấy lịch học", apiResponse.getMessage());
+                assertEquals("Không tìm thấy lịch", apiResponse.getMessage());
         }
 
         @Test
@@ -212,7 +212,7 @@ class SAAttendanceServiceImplTest {
                 ApiResponse apiResponse = (ApiResponse) response.getBody();
                 assertNotNull(apiResponse);
                 assertEquals(RestApiStatus.ERROR, apiResponse.getStatus());
-                assertEquals("Ca học không tồn tại", apiResponse.getMessage());
+                assertEquals("Ca không tồn tại", apiResponse.getMessage());
         }
 
         @Test
@@ -289,7 +289,7 @@ class SAAttendanceServiceImplTest {
                 assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
                 ApiResponse apiResponse = (ApiResponse) response.getBody();
                 assertEquals(RestApiStatus.ERROR, apiResponse.getStatus());
-                assertEquals("Không tìm thấy lịch học", apiResponse.getMessage());
+                assertEquals("Không tìm thấy lịch", apiResponse.getMessage());
         }
 
         @Test
@@ -319,7 +319,7 @@ class SAAttendanceServiceImplTest {
                 assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
                 ApiResponse apiResponse = (ApiResponse) response.getBody();
                 assertEquals(RestApiStatus.ERROR, apiResponse.getStatus());
-                assertEquals("Ca học không tồn tại", apiResponse.getMessage());
+                assertEquals("Ca không tồn tại", apiResponse.getMessage());
         }
 
         @Test
@@ -535,7 +535,7 @@ class SAAttendanceServiceImplTest {
                 assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
                 ApiResponse apiResponse = (ApiResponse) response.getBody();
                 assertEquals(RestApiStatus.ERROR, apiResponse.getStatus());
-                assertEquals("Ca học đã được điểm danh", apiResponse.getMessage());
+                assertEquals("Ca đã được điểm danh", apiResponse.getMessage());
         }
 
         @Test

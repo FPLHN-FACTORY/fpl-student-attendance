@@ -25,6 +25,8 @@ import udpm.hn.studentattendance.infrastructure.constants.IPType;
 import udpm.hn.studentattendance.infrastructure.constants.RedisPrefixConstant;
 import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
 import udpm.hn.studentattendance.infrastructure.redis.service.RedisService;
+import com.fasterxml.jackson.core.type.TypeReference;
+import udpm.hn.studentattendance.helpers.RedisCacheHelper;
 
 @Service
 @RequiredArgsConstructor
@@ -36,7 +38,7 @@ public class AFFacilityIPServiceImpl implements AFFacilityIPService {
 
     private final UserActivityLogHelper userActivityLogHelper;
 
-    private final RedisService redisService;
+    private final RedisCacheHelper redisCacheHelper;
 
     private final RedisInvalidationHelper redisInvalidationHelper;
 
@@ -45,26 +47,13 @@ public class AFFacilityIPServiceImpl implements AFFacilityIPService {
 
     public PageableObject<AFFacilityIPResponse> getIPList(AFFilterFacilityIPRequest request) {
         String cacheKey = RedisPrefixConstant.REDIS_PREFIX_FACILITY_IP + "list_" + request.toString();
-
-        Object cachedData = redisService.get(cacheKey);
-        if (cachedData != null) {
-            try {
-                return redisService.getObject(cacheKey, PageableObject.class);
-            } catch (Exception e) {
-                redisService.delete(cacheKey);
-            }
-        }
-
-        Pageable pageable = PaginationHelper.createPageable(request);
-        PageableObject<AFFacilityIPResponse> data = PageableObject.of(
-                afFacilityIPRepository.getAllByFilter(pageable, request));
-
-        try {
-            redisService.set(cacheKey, data, redisTTL);
-        } catch (Exception ignored) {
-        }
-
-        return data;
+        return redisCacheHelper.getOrSet(
+                cacheKey,
+                () -> PageableObject
+                        .of(afFacilityIPRepository.getAllByFilter(PaginationHelper.createPageable(request), request)),
+                new TypeReference<PageableObject<AFFacilityIPResponse>>() {
+                },
+                redisTTL);
     }
 
     private ResponseEntity<ApiResponse> checkIP(IPType type, String ip) {
@@ -150,7 +139,7 @@ public class AFFacilityIPServiceImpl implements AFFacilityIPService {
     public ResponseEntity<?> updateIP(AFAddOrUpdateFacilityIPRequest request) {
         // Trim all string fields in the request
         RequestTrimHelper.trimStringFields(request);
-        
+
         FacilityIP facilityIP = afFacilityIPRepository.findById(request.getId()).orElse(null);
         if (facilityIP == null) {
             return RouterHelper.responseError("Không tìm thấy IP/DNS Suffix muốn cập nhật");

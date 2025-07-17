@@ -23,6 +23,7 @@ import udpm.hn.studentattendance.entities.Plan;
 import udpm.hn.studentattendance.entities.Project;
 import udpm.hn.studentattendance.entities.Semester;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
+import udpm.hn.studentattendance.helpers.RedisCacheHelper;
 import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
 import udpm.hn.studentattendance.helpers.RequestTrimHelper;
 import udpm.hn.studentattendance.helpers.RouterHelper;
@@ -43,6 +44,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.HashMap;
 import java.util.Map;
+import com.fasterxml.jackson.core.type.TypeReference;
 
 @Service
 @RequiredArgsConstructor
@@ -64,7 +66,7 @@ public class SPDPlanServiceImpl implements SPDPlanService {
 
     private final UserActivityLogHelper userActivityLogHelper;
 
-    private final RedisService redisService;
+    private final RedisCacheHelper redisCacheHelper;
 
     private final RedisInvalidationHelper redisInvalidationHelper;
 
@@ -72,26 +74,13 @@ public class SPDPlanServiceImpl implements SPDPlanService {
     private long redisTTL;
 
     public List<SPDSubjectResponse> getCachedSubjects() {
-        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_PLAN + "subjects_" + "facility="
-                + sessionHelper.getFacilityId();
-
-        Object cachedData = redisService.get(cacheKey);
-        if (cachedData != null) {
-            try {
-                return redisService.getObject(cacheKey, List.class);
-            } catch (Exception e) {
-                redisService.delete(cacheKey);
-            }
-        }
-
-        List<SPDSubjectResponse> data = spdSubjectRepository.getAllByFacility(sessionHelper.getFacilityId());
-
-        try {
-            redisService.set(cacheKey, data, redisTTL);
-        } catch (Exception ignored) {
-        }
-
-        return data;
+        String key = RedisPrefixConstant.REDIS_PREFIX_PLAN + "subjects_" + "facility=" + sessionHelper.getFacilityId();
+        return redisCacheHelper.getOrSet(
+                key,
+                () -> spdSubjectRepository.getAllByFacility(sessionHelper.getFacilityId()),
+                new TypeReference<List<SPDSubjectResponse>>() {
+                },
+                redisTTL);
     }
 
     @Override
@@ -103,23 +92,14 @@ public class SPDPlanServiceImpl implements SPDPlanService {
     public List<SPDLevelProjectResponse> getCachedLevels() {
         String cacheKey = RedisPrefixConstant.REDIS_PREFIX_LEVEL + "all";
 
-        Object cachedData = redisService.get(cacheKey);
-        if (cachedData != null) {
-            try {
-                return redisService.getObject(cacheKey, List.class);
-            } catch (Exception e) {
-                redisService.delete(cacheKey);
-            }
-        }
+        Object cachedData = redisCacheHelper.getOrSet(
+                cacheKey,
+                () -> spdLevelProjectRepository.getAll(),
+                new TypeReference<List<SPDLevelProjectResponse>>() {
+                },
+                redisTTL);
 
-        List<SPDLevelProjectResponse> data = spdLevelProjectRepository.getAll();
-
-        try {
-            redisService.set(cacheKey, data, redisTTL);
-        } catch (Exception ignored) {
-        }
-
-        return data;
+        return (List<SPDLevelProjectResponse>) cachedData;
     }
 
     @Override
@@ -131,25 +111,16 @@ public class SPDPlanServiceImpl implements SPDPlanService {
     public List<String> getCachedSemesterNames() {
         String cacheKey = RedisPrefixConstant.REDIS_PREFIX_PLAN + "semester_names_all";
 
-        Object cachedData = redisService.get(cacheKey);
-        if (cachedData != null) {
-            try {
-                return redisService.getObject(cacheKey, List.class);
-            } catch (Exception e) {
-                redisService.delete(cacheKey);
-            }
-        }
+        Object cachedData = redisCacheHelper.getOrSet(
+                cacheKey,
+                () -> Arrays.stream(SemesterName.values())
+                        .map(Enum::name)
+                        .collect(Collectors.toList()),
+                new TypeReference<List<String>>() {
+                },
+                redisTTL);
 
-        List<String> data = Arrays.stream(SemesterName.values())
-                .map(Enum::name)
-                .collect(Collectors.toList());
-
-        try {
-            redisService.set(cacheKey, data, redisTTL);
-        } catch (Exception ignored) {
-        }
-
-        return data;
+        return (List<String>) cachedData;
     }
 
     @Override
@@ -161,23 +132,14 @@ public class SPDPlanServiceImpl implements SPDPlanService {
     public List<Integer> getCachedYears() {
         String cacheKey = RedisPrefixConstant.REDIS_PREFIX_PLAN + "years_all";
 
-        Object cachedData = redisService.get(cacheKey);
-        if (cachedData != null) {
-            try {
-                return redisService.getObject(cacheKey, List.class);
-            } catch (Exception e) {
-                redisService.delete(cacheKey);
-            }
-        }
+        Object cachedData = redisCacheHelper.getOrSet(
+                cacheKey,
+                () -> spdSemesterRepository.getAllYear(),
+                new TypeReference<List<Integer>>() {
+                },
+                redisTTL);
 
-        List<Integer> data = spdSemesterRepository.getAllYear();
-
-        try {
-            redisService.set(cacheKey, data, redisTTL);
-        } catch (Exception ignored) {
-        }
-
-        return data;
+        return (List<Integer>) cachedData;
     }
 
     @Override
@@ -188,32 +150,14 @@ public class SPDPlanServiceImpl implements SPDPlanService {
 
     public PageableObject<SPDPlanResponse> getCachedPlans(SPDFilterPlanRequest request) {
         request.setIdFacility(sessionHelper.getFacilityId());
-
-        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_PLAN + "list_" + request.toString();
-
-        Object cachedData = redisService.get(cacheKey);
-        if (cachedData != null) {
-            try {
-                @SuppressWarnings("unchecked")
-                Map<String, Object> cachedMap = redisService.getObject(cacheKey, Map.class);
-                if (cachedMap != null) {
-                    return convertMapToPageableObject(cachedMap);
-                }
-            } catch (Exception e) {
-                redisService.delete(cacheKey);
-            }
-        }
-
-        Pageable pageable = PaginationHelper.createPageable(request);
-        PageableObject<SPDPlanResponse> data = PageableObject.of(spdPlanRepository.getAllByFilter(pageable, request));
-
-        try {
-            Map<String, Object> cacheMap = convertPageableObjectToMap(data);
-            redisService.set(cacheKey, cacheMap, redisTTL);
-        } catch (Exception ignored) {
-        }
-
-        return data;
+        String key = RedisPrefixConstant.REDIS_PREFIX_PLAN + "list_" + request.toString();
+        return redisCacheHelper.getOrSet(
+                key,
+                () -> PageableObject
+                        .of(spdPlanRepository.getAllByFilter(PaginationHelper.createPageable(request), request)),
+                new TypeReference<PageableObject<SPDPlanResponse>>() {
+                },
+                redisTTL);
     }
 
     @Override
@@ -243,23 +187,14 @@ public class SPDPlanServiceImpl implements SPDPlanService {
         String cacheKey = RedisPrefixConstant.REDIS_PREFIX_PLAN + "projects_" +
                 "facility=" + sessionHelper.getFacilityId() + "_" + request.toString();
 
-        Object cachedData = redisService.get(cacheKey);
-        if (cachedData != null) {
-            try {
-                return redisService.getObject(cacheKey, List.class);
-            } catch (Exception e) {
-                redisService.delete(cacheKey);
-            }
-        }
+        Object cachedData = redisCacheHelper.getOrSet(
+                cacheKey,
+                () -> spdPlanRepository.getListProject(request),
+                new TypeReference<List<SPDProjectResponse>>() {
+                },
+                redisTTL);
 
-        List<SPDProjectResponse> data = spdPlanRepository.getListProject(request);
-
-        try {
-            redisService.set(cacheKey, data, redisTTL);
-        } catch (Exception ignored) {
-        }
-
-        return data;
+        return (List<SPDProjectResponse>) cachedData;
     }
 
     @Override

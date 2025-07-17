@@ -109,7 +109,23 @@ const emailFptWithDomain = computed({
   },
 })
 
-// Dữ liệu cập nhật phụ trách / giảng viên
+// Computed properties cho form cập nhật
+const detailEmailFeWithDomain = computed({
+  get: () => detailStaff.emailFe,
+  set: (value) => {
+    // Loại bỏ domain nếu có
+    detailStaff.emailFe = value.replace(EMAIL_DOMAINS.FE, '')
+  },
+})
+
+const detailEmailFptWithDomain = computed({
+  get: () => detailStaff.emailFpt,
+  set: (value) => {
+    // Loại bỏ domain nếu có
+    detailStaff.emailFpt = value.replace(EMAIL_DOMAINS.FPT, '')
+  },
+})
+
 const detailStaff = reactive({
   id: '',
   staffCode: '',
@@ -232,7 +248,6 @@ const handleAddStaff = () => {
   })
 }
 
-// Hàm lấy chi tiết phụ trách / giảng viên để cập nhật
 const handleUpdateStaff = (record) => {
   loadingStore.show()
   requestAPI
@@ -242,8 +257,9 @@ const handleUpdateStaff = (record) => {
       detailStaff.id = staff.id
       detailStaff.staffCode = staff.staffCode
       detailStaff.name = staff.staffName
-      detailStaff.emailFe = staff.staffEmailFe
-      detailStaff.emailFpt = staff.staffEmailFpt
+      // Loại bỏ domain khỏi email nếu có
+      detailStaff.emailFe = staff.staffEmailFe.replace(EMAIL_DOMAINS.FE, '')
+      detailStaff.emailFpt = staff.staffEmailFpt.replace(EMAIL_DOMAINS.FPT, '')
       detailStaff.facilityId = staff.facilityId
       detailStaff.roleCodes = staff.roleCode.split(',').map((role) => role.trim())
       modalUpdate.value = true
@@ -259,7 +275,6 @@ const handleUpdateStaff = (record) => {
     })
 }
 
-// Hàm cập nhật phụ trách / giảng viên
 const updateStaff = () => {
   if (
     !detailStaff.staffCode ||
@@ -274,14 +289,19 @@ const updateStaff = () => {
   }
   Modal.confirm({
     title: 'Xác nhận cập nhật',
-    content: 'Bạn có chắc chắn muốn cập nhật thông tin phụ trách / giảng viên này?',
+    content: 'Bạn có chắc chắn muốn cập nhật thông tin nhân sự này?',
     okText: 'Tiếp tục',
     cancelText: 'Hủy bỏ',
     onOk() {
       modalUpdateLoading.value = true
       loadingStore.show()
+      const payload = {
+        ...detailStaff,
+        emailFe: detailStaff.emailFe + EMAIL_DOMAINS.FE,
+        emailFpt: detailStaff.emailFpt + EMAIL_DOMAINS.FPT,
+      }
       requestAPI
-        .put(`${API_ROUTES_ADMIN.FETCH_DATA_STAFF}/${detailStaff.id}`, detailStaff)
+        .put(`${API_ROUTES_ADMIN.FETCH_DATA_STAFF}/${detailStaff.id}`, payload)
         .then(() => {
           message.success('Cập nhật nhân sự thành công')
           modalUpdate.value = false
@@ -301,7 +321,6 @@ const updateStaff = () => {
   })
 }
 
-// Hàm đổi trạng thái phụ trách / giảng viên
 const handleChangeStatusStaff = (record) => {
   Modal.confirm({
     title: 'Xác nhận thay đổi trạng thái',
@@ -379,7 +398,6 @@ onMounted(() => {
 
 <template>
   <div class="container-fluid">
-    <!-- Card Danh sách phụ trách / giảng viên -->
     <div class="row g-3">
       <div class="col-12">
         <a-card :bordered="false" class="cart no-body-padding">
@@ -615,7 +633,6 @@ onMounted(() => {
       </a-form>
     </a-modal>
 
-    <!-- Modal Cập nhật phụ trách / giảng viên -->
     <a-modal
       v-model:open="modalUpdate"
       title="Cập nhật nhân sự"
@@ -638,18 +655,36 @@ onMounted(() => {
           />
         </a-form-item>
         <a-form-item label="Email FE" required>
-          <a-input
-            v-model:value="detailStaff.emailFe"
-            placeholder="Nhập email FE"
-            @keyup.enter="updateStaff"
-          />
+          <a-input-group compact>
+            <a-input
+              v-model:value="detailEmailFeWithDomain"
+              placeholder="Nhập email FE"
+              style="width: calc(100% - 100px)"
+              @keyup.enter="updateStaff"
+            />
+            <a-input
+              :value="EMAIL_DOMAINS.FE"
+              style="width: 100px; background-color: #f5f5f5"
+              disabled
+              @keyup.enter="updateStaff"
+            />
+          </a-input-group>
         </a-form-item>
         <a-form-item label="Email FPT" required>
-          <a-input
-            v-model:value="detailStaff.emailFpt"
-            placeholder="Nhập email FPT"
-            @keyup.enter="updateStaff"
-          />
+          <a-input-group compact>
+            <a-input
+              v-model:value="detailEmailFptWithDomain"
+              placeholder="Nhập email FPT"
+              style="width: calc(100% - 100px)"
+              @keyup.enter="updateStaff"
+            />
+            <a-input
+              :value="EMAIL_DOMAINS.FPT"
+              style="width: 100px; background-color: #f5f5f5"
+              disabled
+              @keyup.enter="updateStaff"
+            />
+          </a-input-group>
         </a-form-item>
         <a-form-item label="Cơ sở" required>
           <a-select v-model:value="detailStaff.facilityId" placeholder="Chọn cơ sở">

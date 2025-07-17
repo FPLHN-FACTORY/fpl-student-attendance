@@ -21,6 +21,8 @@ import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.RedisPrefixConstant;
 import udpm.hn.studentattendance.infrastructure.redis.service.RedisService;
+import com.fasterxml.jackson.core.type.TypeReference;
+import udpm.hn.studentattendance.helpers.RedisCacheHelper;
 
 import java.util.List;
 
@@ -37,7 +39,7 @@ public class TCFactoryServiceImpl implements TCFactoryService {
 
         private final TCSemesterExtendRepository semesterExtendRepository;
 
-        private final RedisService redisService;
+        private final RedisCacheHelper redisCacheHelper;
 
         private final RedisInvalidationHelper redisInvalidationHelper;
 
@@ -46,47 +48,35 @@ public class TCFactoryServiceImpl implements TCFactoryService {
 
         @Override
         public ResponseEntity<?> getAllFactoryByTeacher(TCFactoryRequest teacherStudentRequest) {
-                String cacheKey = RedisPrefixConstant.REDIS_PREFIX_TEACHER_FACTORY + "factory_"
+                String key = RedisPrefixConstant.REDIS_PREFIX_TEACHER_FACTORY + "factory_"
                                 + sessionHelper.getUserCode()
                                 + "_" + sessionHelper.getFacilityId()
                                 + "_" + teacherStudentRequest.toString();
-
-                Object cachedData = redisService.get(cacheKey);
-                if (cachedData != null) {
-                        return RouterHelper.responseSuccess(
-                                        "Lấy tất cả nhóm xưởng do giảng viên " + sessionHelper.getUserCode()
-                                                        + " thành công (cached)",
-                                        cachedData);
-                }
-
-                Pageable pageable = PaginationHelper.createPageable(teacherStudentRequest, "createdAt");
-                PageableObject listFactoryByTeacher = PageableObject
-                                .of(teacherStudentFactoryExtendRepository.getAllFactoryByTeacher(pageable,
+                PageableObject listFactoryByTeacher = redisCacheHelper.getOrSet(
+                                key,
+                                () -> PageableObject.of(teacherStudentFactoryExtendRepository.getAllFactoryByTeacher(
+                                                PaginationHelper.createPageable(teacherStudentRequest, "createdAt"),
                                                 sessionHelper.getFacilityId(), sessionHelper.getUserCode(),
-                                                teacherStudentRequest));
-
-                redisService.set(cacheKey, listFactoryByTeacher, redisTTL);
-
-                return RouterHelper.responseSuccess("Lấy tất cả nhóm xưởng do giảng viên " + sessionHelper.getUserCode()
-                                + " thành công", listFactoryByTeacher);
+                                                teacherStudentRequest)),
+                                new TypeReference<PageableObject<?>>() {
+                                },
+                                redisTTL);
+                return RouterHelper.responseSuccess(
+                                "Lấy tất cả nhóm xưởng do giảng viên " + sessionHelper.getUserCode() + " thành công",
+                                listFactoryByTeacher);
         }
 
         @Override
         public ResponseEntity<?> getAllProjectByFacility() {
-                String cacheKey = RedisPrefixConstant.REDIS_PREFIX_TEACHER_FACTORY + "projects_"
+                String key = RedisPrefixConstant.REDIS_PREFIX_TEACHER_FACTORY + "projects_"
                                 + sessionHelper.getFacilityId();
-
-                Object cachedData = redisService.get(cacheKey);
-                if (cachedData != null) {
-                        return RouterHelper.responseSuccess("Lấy tất cả dự án theo cơ sở thành công (cached)",
-                                        cachedData);
-                }
-
-                List<Project> projects = teacherStudentProjectExtendRepository
-                                .getAllProjectName(sessionHelper.getFacilityId());
-
-                redisService.set(cacheKey, projects, redisTTL);
-
+                List<Project> projects = redisCacheHelper.getOrSet(
+                                key,
+                                () -> teacherStudentProjectExtendRepository
+                                                .getAllProjectName(sessionHelper.getFacilityId()),
+                                new TypeReference<List<Project>>() {
+                                },
+                                redisTTL);
                 return RouterHelper.responseSuccess("Lấy tất cả dự án theo cơ sở thành công", projects);
         }
 
@@ -97,17 +87,13 @@ public class TCFactoryServiceImpl implements TCFactoryService {
 
         @Override
         public ResponseEntity<?> getAllSemester() {
-                String cacheKey = RedisPrefixConstant.REDIS_PREFIX_TEACHER_FACTORY + "semesters_active";
-
-                Object cachedData = redisService.get(cacheKey);
-                if (cachedData != null) {
-                        return RouterHelper.responseSuccess("Lấy tất cả học kỳ thành công (cached)", cachedData);
-                }
-
-                List<Semester> semesters = semesterExtendRepository.getAllSemester(EntityStatus.ACTIVE);
-
-                redisService.set(cacheKey, semesters, redisTTL);
-
+                String key = RedisPrefixConstant.REDIS_PREFIX_TEACHER_FACTORY + "semesters_active";
+                List<Semester> semesters = redisCacheHelper.getOrSet(
+                                key,
+                                () -> semesterExtendRepository.getAllSemester(EntityStatus.ACTIVE),
+                                new TypeReference<List<Semester>>() {
+                                },
+                                redisTTL);
                 return RouterHelper.responseSuccess("Lấy tất cả học kỳ thành công", semesters);
         }
 

@@ -1,5 +1,6 @@
 package udpm.hn.studentattendance.infrastructure.redis.service.impl;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -53,24 +54,30 @@ public class RedisServiceImplTest {
     }
 
     @Test
-    void testGetObject() {
+    void testGetObject() throws Exception {
         String key = "objKey";
         DummyObject dummy = new DummyObject("abc");
-        when(valueOperations.get(key)).thenReturn(dummy);
-        when(objectMapper.convertValue(dummy, DummyObject.class)).thenReturn(dummy);
+        String dummyJson = "{\"value\":\"abc\"}";
+        when(valueOperations.get(key)).thenReturn(dummyJson);
+        // Fix: Use ArgumentMatchers.any(TypeReference.class) to match any TypeReference
+        when(objectMapper.readValue(eq(dummyJson), any(TypeReference.class))).thenReturn(dummy);
 
-        DummyObject result = redisService.getObject(key, DummyObject.class);
+        TypeReference<DummyObject> typeRef = new TypeReference<DummyObject>() {
+        };
+        DummyObject result = redisService.getObject(key, typeRef);
         assertNotNull(result);
         assertEquals("abc", result.value);
     }
 
     @Test
-    void testSetObject() {
+    void testSetObject() throws Exception {
         String key = "objKey";
         DummyObject dummy = new DummyObject("abc");
-        doNothing().when(valueOperations).set(key, dummy, 1000L, TimeUnit.SECONDS);
+        String dummyJson = "{\"value\":\"abc\"}";
+        when(objectMapper.writeValueAsString(dummy)).thenReturn(dummyJson);
+        doNothing().when(valueOperations).set(key, dummyJson, 1000L, TimeUnit.MILLISECONDS);
         redisService.set(key, dummy, 1000L);
-        verify(valueOperations, times(1)).set(key, dummy, 1000L, TimeUnit.SECONDS);
+        verify(valueOperations, times(1)).set(key, dummyJson, 1000L, TimeUnit.MILLISECONDS);
     }
 
     static class DummyObject implements java.io.Serializable {
