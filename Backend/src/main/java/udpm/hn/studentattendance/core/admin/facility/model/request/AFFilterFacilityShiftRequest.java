@@ -4,12 +4,14 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.ToString;
 import udpm.hn.studentattendance.infrastructure.common.PageableRequest;
 
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@ToString
 public class AFFilterFacilityShiftRequest extends PageableRequest {
 
     private String idFacility;
@@ -18,15 +20,4 @@ public class AFFilterFacilityShiftRequest extends PageableRequest {
 
     private Integer status;
 
-    @Override
-    public String toString() {
-        return "page=" + getPage() +
-                "_size=" + getSize() +
-                "_orderBy=" + getOrderBy() +
-                "_sortBy=" + getSortBy() +
-                "_q=" + (getQ() != null ? getQ() : "") +
-                "_idFacility=" + (idFacility != null ? idFacility : "") +
-                "_shift=" + (shift != null ? shift : "") +
-                "_status=" + (status != null ? status : "");
-    }
 }
