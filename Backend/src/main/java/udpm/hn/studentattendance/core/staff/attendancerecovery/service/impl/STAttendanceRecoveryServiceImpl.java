@@ -24,6 +24,7 @@ import udpm.hn.studentattendance.infrastructure.excel.model.request.EXDataReques
 import udpm.hn.studentattendance.infrastructure.excel.model.response.ExImportLogDetailResponse;
 import com.fasterxml.jackson.core.type.TypeReference;
 import udpm.hn.studentattendance.helpers.RedisCacheHelper;
+import udpm.hn.studentattendance.utils.DateTimeUtils;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -63,7 +64,7 @@ public class STAttendanceRecoveryServiceImpl implements STAttendanceRecoveryServ
 
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
-    private static final ZoneId VN_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
+    private static final ZoneId VN_ZONE = ZoneId.of(DateTimeUtils.ZONE_ID);
 
     private final STAttendanceRecoveryHistoryLogRepository historyLogRepository;
 
