@@ -1,4 +1,4 @@
-package udpm.hn.studentattendance.infrastructure.redis.service;
+package udpm.hn.studentattendance.infrastructure.config.redis.service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 

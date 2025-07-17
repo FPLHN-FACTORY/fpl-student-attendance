@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Test;
 import static org.mockito.Mockito.*;
 import static org.junit.jupiter.api.Assertions.*;
 import com.fasterxml.jackson.core.type.TypeReference;
+import udpm.hn.studentattendance.infrastructure.config.redis.service.RedisService;
 
 class RedisServiceTest {
     @Test

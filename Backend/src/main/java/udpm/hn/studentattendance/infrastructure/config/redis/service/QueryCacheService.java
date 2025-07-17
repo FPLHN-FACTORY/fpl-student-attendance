@@ -1,4 +1,4 @@
-package udpm.hn.studentattendance.infrastructure.redis.service;
+package udpm.hn.studentattendance.infrastructure.config.redis.service;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -17,7 +17,7 @@ public class QueryCacheService {
     public void clearAllCaches() {
         try {
             redisService.deletePattern("query:*");
-        } catch (Exception e) {
+        } catch (Exception ignored) {
         }
     }
 }

@@ -9,7 +9,7 @@ import org.springframework.http.ResponseEntity;
 import udpm.hn.studentattendance.core.admin.subjectfacility.repository.ADFacilityRepository;
 import udpm.hn.studentattendance.helpers.RedisCacheHelper;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
-import udpm.hn.studentattendance.infrastructure.redis.service.RedisService;
+import udpm.hn.studentattendance.infrastructure.config.redis.service.RedisService;
 
 import java.util.Collections;
 import java.util.function.Supplier;

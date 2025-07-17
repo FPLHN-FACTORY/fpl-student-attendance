@@ -12,8 +12,7 @@ import udpm.hn.studentattendance.core.admin.semester.repository.ADSemesterReposi
 import udpm.hn.studentattendance.entities.Semester;
 import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
 import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
-import udpm.hn.studentattendance.infrastructure.common.repositories.CommonUserStudentRepository;
-import udpm.hn.studentattendance.infrastructure.redis.service.RedisService;
+import udpm.hn.studentattendance.infrastructure.config.redis.service.RedisService;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 import java.util.Optional;

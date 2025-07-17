@@ -28,12 +28,11 @@ import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.IPType;
 import udpm.hn.studentattendance.infrastructure.constants.RedisPrefixConstant;
-import udpm.hn.studentattendance.infrastructure.redis.service.RedisService;
+import udpm.hn.studentattendance.infrastructure.config.redis.service.RedisService;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import org.mockito.ArgumentCaptor;
 import java.util.function.Supplier;
 
 import static org.junit.jupiter.api.Assertions.*;

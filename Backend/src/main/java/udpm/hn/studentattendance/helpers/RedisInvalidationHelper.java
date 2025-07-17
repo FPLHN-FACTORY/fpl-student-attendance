@@ -2,7 +2,7 @@ package udpm.hn.studentattendance.helpers;
 
 import org.springframework.stereotype.Component;
 import udpm.hn.studentattendance.infrastructure.constants.RedisPrefixConstant;
-import udpm.hn.studentattendance.infrastructure.redis.service.RedisService;
+import udpm.hn.studentattendance.infrastructure.config.redis.service.RedisService;
 
 @Component
 public class RedisInvalidationHelper {

@@ -9,7 +9,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
-import udpm.hn.studentattendance.infrastructure.redis.service.impl.RedisServiceImpl;
+import udpm.hn.studentattendance.infrastructure.config.redis.service.impl.RedisServiceImpl;
 
 import java.util.concurrent.TimeUnit;
 
