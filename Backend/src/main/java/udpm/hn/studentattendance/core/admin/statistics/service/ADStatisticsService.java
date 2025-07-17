@@ -5,7 +5,8 @@ import udpm.hn.studentattendance.core.admin.statistics.model.request.ADStatistic
 
 public interface ADStatisticsService {
 
-    ResponseEntity<?> getAllListStats(ADStatisticRequest request);
+    ResponseEntity<?> getAllListStats();
 
+    ResponseEntity<?> getLineChartStats(int year);
 
 }

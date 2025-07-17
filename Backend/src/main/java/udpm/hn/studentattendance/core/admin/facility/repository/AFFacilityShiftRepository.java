@@ -29,7 +29,7 @@ public interface AFFacilityShiftRepository extends FacilityShiftRepository {
                     f.id = :#{#request.idFacility} AND
                     (:#{#request.shift} IS NULL OR fs.shift = :#{#request.shift}) AND
                     (:#{#request.status} IS NULL OR fs.status = :#{#request.status})
-                ORDER BY fs.status DESC, fs.shift ASC
+                ORDER BY fs.shift ASC
             """, countQuery = """
                 SELECT
                     COUNT(DISTINCT fs.id)

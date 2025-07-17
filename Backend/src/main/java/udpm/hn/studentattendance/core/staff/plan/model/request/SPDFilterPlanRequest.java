@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.ToString;
 import udpm.hn.studentattendance.infrastructure.common.PageableRequest;
 import udpm.hn.studentattendance.infrastructure.constants.EntityProperties;
 
@@ -12,11 +13,13 @@ import udpm.hn.studentattendance.infrastructure.constants.EntityProperties;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@ToString
 public class SPDFilterPlanRequest extends PageableRequest {
 
     private String idFacility;
 
-    @Size(max = EntityProperties.LENGTH_NAME, message = "Keyword không được vượt quá " + EntityProperties.LENGTH_NAME + " ký tự")
+    @Size(max = EntityProperties.LENGTH_NAME, message = "Keyword không được vượt quá " + EntityProperties.LENGTH_NAME
+            + " ký tự")
     private String keyword;
 
     private String level;

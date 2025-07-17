@@ -498,6 +498,9 @@ hr {
   border-radius: 12px !important;
   overflow: hidden;
   &-wrapper {
+    .ant-table-cell-fix-right {
+      z-index: 0;
+    }
     .ant-table-tbody {
       & > tr.ant-table-row-selected {
         & > td {
@@ -520,12 +523,19 @@ hr {
       z-index: 1;
       & > tr > th {
         background: #f8f9fa;
+        padding: 12px 16px;
       }
     }
     .ant-table-content {
       overflow: auto !important;
       max-height: 500px;
     }
+  }
+}
+
+.ant-slider {
+  .ant-slider-track {
+    background-color: #41395a !important;
   }
 }
 

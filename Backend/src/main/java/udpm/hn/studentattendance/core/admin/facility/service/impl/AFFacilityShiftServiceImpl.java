@@ -1,30 +1,30 @@
 package udpm.hn.studentattendance.core.admin.facility.service.impl;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import udpm.hn.studentattendance.core.admin.facility.model.request.AFAddOrUpdateFacilityLocationRequest;
 import udpm.hn.studentattendance.core.admin.facility.model.request.AFAddOrUpdateFacilityShiftRequest;
-import udpm.hn.studentattendance.core.admin.facility.model.request.AFFilterFacilityLocationRequest;
 import udpm.hn.studentattendance.core.admin.facility.model.request.AFFilterFacilityShiftRequest;
-import udpm.hn.studentattendance.core.admin.facility.model.response.AFFacilityLocationResponse;
 import udpm.hn.studentattendance.core.admin.facility.model.response.AFFacilityShiftResponse;
 import udpm.hn.studentattendance.core.admin.facility.repository.AFFacilityExtendRepository;
-import udpm.hn.studentattendance.core.admin.facility.repository.AFFacilityLocationRepository;
 import udpm.hn.studentattendance.core.admin.facility.repository.AFFacilityShiftRepository;
-import udpm.hn.studentattendance.core.admin.facility.service.AFFacilityLocationService;
 import udpm.hn.studentattendance.core.admin.facility.service.AFFacilityShiftService;
 import udpm.hn.studentattendance.entities.Facility;
-import udpm.hn.studentattendance.entities.FacilityLocation;
 import udpm.hn.studentattendance.entities.FacilityShift;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
+import udpm.hn.studentattendance.helpers.RedisCacheHelper;
+import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
 import udpm.hn.studentattendance.helpers.RouterHelper;
+import udpm.hn.studentattendance.helpers.SettingHelper;
 import udpm.hn.studentattendance.helpers.ShiftHelper;
 import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
+import udpm.hn.studentattendance.infrastructure.constants.RedisPrefixConstant;
+import udpm.hn.studentattendance.infrastructure.constants.SettingKeys;
 
 @Service
 @RequiredArgsConstructor
@@ -36,19 +36,31 @@ public class AFFacilityShiftServiceImpl implements AFFacilityShiftService {
 
     private final UserActivityLogHelper userActivityLogHelper;
 
-    @Value("${app.config.shift.min-diff}")
-    private int MIN_DIFF_SHIFT;
+    private final SettingHelper settingHelper;
+
+    private final RedisCacheHelper redisCacheHelper;
+
+    private final RedisInvalidationHelper redisInvalidationHelper;
+
+    public PageableObject<AFFacilityShiftResponse> getShiftList(AFFilterFacilityShiftRequest request) {
+        String key = RedisPrefixConstant.REDIS_PREFIX_FACILITY_SHIFT + "list_" + request.toString();
+        return redisCacheHelper.getOrSet(
+                key,
+                () -> PageableObject.of(
+                        afFacilityShiftRepository.getAllByFilter(PaginationHelper.createPageable(request), request)),
+                new TypeReference<>() {
+                });
+    }
 
     @Override
     public ResponseEntity<?> getAllList(AFFilterFacilityShiftRequest request) {
-        Pageable pageable = PaginationHelper.createPageable(request);
-        PageableObject<AFFacilityShiftResponse> data = PageableObject
-                .of(afFacilityShiftRepository.getAllByFilter(pageable, request));
+        PageableObject<AFFacilityShiftResponse> data = getShiftList(request);
         return RouterHelper.responseSuccess("Lấy danh sách dữ liệu thành công", data);
     }
 
     @Override
     public ResponseEntity<?> addShift(AFAddOrUpdateFacilityShiftRequest request) {
+        int MIN_DIFF_SHIFT = settingHelper.getSetting(SettingKeys.SHIFT_MIN_DIFF, Integer.class);
 
         Facility facility = afFacilityExtendRepository.findById(request.getIdFacility()).orElse(null);
 
@@ -88,11 +100,16 @@ public class AFFacilityShiftServiceImpl implements AFFacilityShiftService {
                 + request.getFromMinute() +
                 " - " + request.getToHour() + ":" + request.getToMinute() + ") tại cơ sở " + facility.getName());
 
+        // Invalidate all caches
+        redisInvalidationHelper.invalidateAllCaches();
+
         return RouterHelper.responseSuccess("Tạo mới ca học thành công", saveFacilityShift);
     }
 
     @Override
     public ResponseEntity<?> updateShift(AFAddOrUpdateFacilityShiftRequest request) {
+        int MIN_DIFF_SHIFT = settingHelper.getSetting(SettingKeys.SHIFT_MIN_DIFF, Integer.class);
+
         FacilityShift facilityShift = afFacilityShiftRepository.findById(request.getId()).orElse(null);
         if (facilityShift == null) {
             return RouterHelper.responseError("Không tìm thấy ca học muốn cập nhật");
@@ -139,6 +156,9 @@ public class AFFacilityShiftServiceImpl implements AFFacilityShiftService {
                 + request.getToMinute() +
                 ") tại cơ sở " + facility.getName());
 
+        // Invalidate all caches
+        redisInvalidationHelper.invalidateAllCaches();
+
         return RouterHelper.responseSuccess("Cập nhật ca học thành công", saveFacilityShift);
     }
 
@@ -157,6 +177,9 @@ public class AFFacilityShiftServiceImpl implements AFFacilityShiftService {
 
         // Log user activity
         userActivityLogHelper.saveLog("Xóa ca học: " + shiftInfo + " tại cơ sở " + facilityName);
+
+        // Invalidate all caches
+        redisInvalidationHelper.invalidateAllCaches();
 
         return RouterHelper.responseSuccess("Xoá thành công ca học: " + facilityShift.getShift());
     }
@@ -183,6 +206,9 @@ public class AFFacilityShiftServiceImpl implements AFFacilityShiftService {
                 facilityShift.getFromHour() + ":" + facilityShift.getFromMinute() + " - " +
                 facilityShift.getToHour() + ":" + facilityShift.getToMinute() + ") tại cơ sở "
                 + facilityShift.getFacility().getName());
+
+        // Invalidate all caches
+        redisInvalidationHelper.invalidateAllCaches();
 
         return RouterHelper.responseSuccess("Thay đổi trạng thái ca học thành công", savedShift);
     }

@@ -25,6 +25,8 @@ const breadcrumbStore = useBreadcrumbStore()
 const loadingStore = useLoadingStore()
 const isLoading = ref(false)
 
+const countFilter = ref(0)
+
 const breadcrumb = ref([
   {
     name: GLOBAL_ROUTE_NAMES.STAFF_PAGE,
@@ -50,7 +52,7 @@ const pagination = reactive({
 
 const columns = ref(
   autoAddColumnWidth([
-    { title: '#', dataIndex: 'rowNumber', key: 'rowNumber' },
+    { title: '#', key: 'rowNumber' },
     { title: 'Tên hoạt động', dataIndex: 'name', key: 'name' },
     { title: 'Mô tả', dataIndex: 'description', key: 'description' },
     { title: 'Ngày', dataIndex: 'dayHappen', key: 'dayHappen' },
@@ -58,7 +60,6 @@ const columns = ref(
     {
       title: 'Chức năng',
       key: 'action',
-      fixed: 'right',
       width: 300,
     },
   ]),
@@ -86,6 +87,7 @@ const fetchAttendanceRecovery = () => {
       } else {
         pagination.total = result.totalPages * pagination.pageSize
       }
+      countFilter.value = result.totalItems
     })
     .catch((error) => {
       message.error(error.response?.data?.message || 'Lỗi khi lấy danh sách khôi phục điểm danh')
@@ -438,7 +440,7 @@ onMounted(() => {
         <a-card :bordered="false" class="cart no-body-padding">
           <a-collapse ghost>
             <a-collapse-panel>
-              <template #header><FilterFilled /> Bộ lọc</template>
+              <template #header><FilterFilled /> Bộ lọc ({{ countFilter }})</template>
               <div class="row g-3">
                 <div class="col-lg-6 col-md-6 col-sm-12">
                   <div class="label-title">Từ khoá:</div>
@@ -501,22 +503,17 @@ onMounted(() => {
             :scroll="{ x: 'auto' }"
           >
             <template #bodyCell="{ column, record, index }">
-              <template v-if="column.dataIndex">
-                <template v-if="column.dataIndex === 'rowNumber'">
-                  {{ (pagination.current - 1) * pagination.pageSize + index + 1 }}
-                </template>
-                <template v-else-if="column.dataIndex === 'dayHappen'">
-                  {{ formatDate(record.dayHappen, DEFAULT_DATE_FORMAT) }}
-                </template>
-                <template v-else-if="column.dataIndex === 'totalStudent'">
-                  <a-tag v-if="record.totalStudent > 0">
-                    {{ record.totalStudent + ' Sinh Viên' }}
-                  </a-tag>
-                  <a-tag v-else> Chưa có sinh viên </a-tag>
-                </template>
-                <template v-else>
-                  {{ record[column.dataIndex] }}
-                </template>
+              <template v-if="column.key === 'rowNumber'">
+                {{ (pagination.current - 1) * pagination.pageSize + index + 1 }}
+              </template>
+              <template v-else-if="column.dataIndex === 'dayHappen'">
+                {{ formatDate(record.dayHappen, DEFAULT_DATE_FORMAT) }}
+              </template>
+              <template v-else-if="column.dataIndex === 'totalStudent'">
+                <a-tag v-if="record.totalStudent > 0">
+                  {{ record.totalStudent + ' Sinh Viên' }}
+                </a-tag>
+                <a-tag v-else> Chưa có sinh viên </a-tag>
               </template>
               <template v-else-if="column.key === 'action'">
                 <div class="d-flex flex-wrap gap-2">
@@ -546,6 +543,9 @@ onMounted(() => {
                     />
                   </div>
                 </div>
+              </template>
+              <template v-else>
+                {{ record[column.dataIndex] }}
               </template>
             </template>
           </a-table>

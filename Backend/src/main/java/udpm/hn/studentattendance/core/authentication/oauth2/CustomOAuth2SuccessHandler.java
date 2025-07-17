@@ -46,7 +46,7 @@ public class CustomOAuth2SuccessHandler implements AuthenticationSuccessHandler 
         String jsonToken = mapper.writeValueAsString(authenticationToken);
         String redirect_uri = (String) httpSession.getAttribute(SessionConstant.LOGIN_REDIRECT);
 
-        if (!ValidateHelper.isValidURL(redirect_uri)) {
+        if (!ValidateHelper.isValidURL(redirect_uri) && !redirect_uri.contains("localhost")) {
             response.setContentType("application/json");
             response.setCharacterEncoding("UTF-8");
             response.getWriter().write(jsonToken);

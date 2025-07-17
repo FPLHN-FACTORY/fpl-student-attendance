@@ -16,7 +16,7 @@ public class ADStaffRestController {
     private final ADStaffService adStaffService;
 
     @GetMapping
-    public ResponseEntity<?> getAllStaffs(ADStaffRequest staffRequest) {
+    public ResponseEntity<?> getAllStaffs(@Valid ADStaffRequest staffRequest) {
         return adStaffService.getAllStaffByFilter(staffRequest);
     }
 

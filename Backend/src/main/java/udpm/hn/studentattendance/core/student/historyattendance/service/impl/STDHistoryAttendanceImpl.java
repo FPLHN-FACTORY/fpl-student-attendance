@@ -73,13 +73,12 @@ public class STDHistoryAttendanceImpl implements STDHistoryAttendanceService {
         public ResponseEntity<?> getAllSemester() {
                 List<Semester> semesters = historyAttendanceSemesterExtendRepository
                                 .getAllSemesterByCode(EntityStatus.ACTIVE);
-                return RouterHelper.responseSuccess("Lấy tất cả học kỳ thành công", semesters);
+                return RouterHelper.responseSuccess("Lấy tất cả kỳ thành công", semesters);
         }
 
         @Override
         public ResponseEntity<?> getAllFactoryByUserStudent() {
                 List<Factory> factories = historyAttendanceFactoryExtendRepository.getAllFactoryByUser(
-                                EntityStatus.ACTIVE,
                                 sessionHelper.getUserId());
                 return RouterHelper.responseSuccess("Lấy tất cả nhóm xưởng của sinh viên " + sessionHelper.getUserCode()
                                 + " thành công", factories);
@@ -186,8 +185,7 @@ public class STDHistoryAttendanceImpl implements STDHistoryAttendanceService {
 
                         document.add(pdfTable);
                         document.close();
-                } catch (Exception e) {
-                        e.printStackTrace();
+                } catch (Exception ignored) {
                 }
 
                 return new ByteArrayInputStream(byteArrayOutputStream.toByteArray());
@@ -197,7 +195,7 @@ public class STDHistoryAttendanceImpl implements STDHistoryAttendanceService {
         public ResponseEntity<?> getDetailPlanDate() {
                 List<STDHistoryPlanDateAttendanceResponse> planDateAttendanceResponseList = historyAttendanceExtendRepository
                                 .getDetailPlanDate(sessionHelper.getUserId(), sessionHelper.getFacilityId());
-                return RouterHelper.responseSuccess("Lấy tất cả chi tiết ca học của sinh viên thành công",
+                return RouterHelper.responseSuccess("Lấy tất cả chi tiết ca của sinh viên thành công",
                                 planDateAttendanceResponseList);
         }
 

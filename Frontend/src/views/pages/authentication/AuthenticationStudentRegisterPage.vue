@@ -114,7 +114,7 @@ onMounted(async () => {
   >
     <div class="video-container">
       <canvas ref="canvas"></canvas>
-      <video ref="video" autoplay muted></video>
+      <video ref="video" :class="faceIDStore.isFaceChecking()" autoplay muted></video>
       <div class="face-id-step" :class="faceIDStore.renderStyle()">
         <div class="dot"></div>
         <div class="dot"></div>

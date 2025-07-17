@@ -6,9 +6,11 @@ import udpm.hn.studentattendance.core.authentication.model.request.Authenticatio
 import udpm.hn.studentattendance.core.authentication.model.request.AuthenticationStudentUpdateFaceIDRequest;
 import udpm.hn.studentattendance.core.authentication.oauth2.AuthUser;
 import udpm.hn.studentattendance.entities.Facility;
+import udpm.hn.studentattendance.infrastructure.constants.SettingKeys;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 public interface AuthenticationService {
 
@@ -29,5 +31,9 @@ public interface AuthenticationService {
     ResponseEntity<?> getAvatar(String urlImage);
 
     ResponseEntity<?> getAllSemester();
+
+    ResponseEntity<?> getSettings();
+
+    ResponseEntity<?> saveSettings(Map<SettingKeys, String> settings);
 
 }
