@@ -171,7 +171,7 @@ class STDHistoryAttendanceImplTest {
         assertEquals(HttpStatus.OK, result.getStatusCode());
         ApiResponse apiResponse = (ApiResponse) result.getBody();
         assertNotNull(apiResponse);
-        assertEquals("Lấy tất cả học kỳ thành công", apiResponse.getMessage());
+        assertEquals("Lấy tất cả kỳ thành công", apiResponse.getMessage());
         assertEquals(semesters, apiResponse.getData());
     }
 
@@ -230,7 +230,7 @@ class STDHistoryAttendanceImplTest {
         assertEquals(HttpStatus.OK, result.getStatusCode());
         ApiResponse apiResponse = (ApiResponse) result.getBody();
         assertNotNull(apiResponse);
-        assertEquals("Lấy tất cả chi tiết ca học của sinh viên thành công", apiResponse.getMessage());
+        assertEquals("Lấy tất cả chi tiết ca của sinh viên thành công", apiResponse.getMessage());
         assertEquals(planDateResponses, apiResponse.getData());
     }
 

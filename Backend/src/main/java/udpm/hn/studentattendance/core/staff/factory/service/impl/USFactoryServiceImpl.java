@@ -27,6 +27,8 @@ import udpm.hn.studentattendance.infrastructure.common.repositories.CommonUserSt
 import udpm.hn.studentattendance.infrastructure.constants.*;
 import udpm.hn.studentattendance.infrastructure.redis.service.RedisService;
 import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
+import com.fasterxml.jackson.core.type.TypeReference;
+import udpm.hn.studentattendance.helpers.RedisCacheHelper;
 
 import java.util.Date;
 import java.util.HashMap;
@@ -61,7 +63,7 @@ public class USFactoryServiceImpl implements USFactoryService {
 
     private final UserActivityLogHelper userActivityLogHelper;
 
-    private final RedisService redisService;
+    private final RedisCacheHelper redisCacheHelper;
 
     private final RedisInvalidationHelper redisInvalidationHelper;
 
@@ -69,30 +71,17 @@ public class USFactoryServiceImpl implements USFactoryService {
     private long redisTTL;
 
     public PageableObject<USFactoryResponse> getCachedFactories(USFactoryRequest factoryRequest) {
-        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_FACTORY + "list_" +
+        String key = RedisPrefixConstant.REDIS_PREFIX_FACTORY + "list_" +
                 "facility=" + sessionHelper.getFacilityId() + '_' +
                 factoryRequest.toString();
-
-        Object cachedData = redisService.get(cacheKey);
-        if (cachedData != null) {
-            try {
-                return redisService.getObject(cacheKey, PageableObject.class);
-            } catch (Exception e) {
-                redisService.delete(cacheKey);
-            }
-        }
-
-        Pageable pageable = PaginationHelper.createPageable(factoryRequest, "createdAt");
-        PageableObject<USFactoryResponse> factories = PageableObject.of(
-                factoryRepository.getAllFactory(pageable, sessionHelper.getFacilityId(),
-                        factoryRequest));
-
-        try {
-            redisService.set(cacheKey, factories, redisTTL);
-        } catch (Exception ignored) {
-        }
-
-        return factories;
+        return redisCacheHelper.getOrSet(
+                key,
+                () -> PageableObject.of(
+                        factoryRepository.getAllFactory(PaginationHelper.createPageable(factoryRequest, "createdAt"),
+                                sessionHelper.getFacilityId(), factoryRequest)),
+                new TypeReference<PageableObject<USFactoryResponse>>() {
+                },
+                redisTTL);
     }
 
     @Override
@@ -102,26 +91,13 @@ public class USFactoryServiceImpl implements USFactoryService {
     }
 
     public List<USProjectFactoryResponse> getCachedProjects() {
-        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_FACTORY + "projects_" + sessionHelper.getFacilityId();
-
-        Object cachedData = redisService.get(cacheKey);
-        if (cachedData != null) {
-            try {
-                return redisService.getObject(cacheKey, List.class);
-            } catch (Exception e) {
-                redisService.delete(cacheKey);
-            }
-        }
-
-        List<USProjectFactoryResponse> projects = projectFactoryExtendRepository.getAllProject(
-                sessionHelper.getFacilityId());
-
-        try {
-            redisService.set(cacheKey, projects, redisTTL);
-        } catch (Exception ignored) {
-        }
-
-        return projects;
+        String key = RedisPrefixConstant.REDIS_PREFIX_FACTORY + "projects_" + sessionHelper.getFacilityId();
+        return redisCacheHelper.getOrSet(
+                key,
+                () -> projectFactoryExtendRepository.getAllProject(sessionHelper.getFacilityId()),
+                new TypeReference<List<USProjectFactoryResponse>>() {
+                },
+                redisTTL);
     }
 
     @Override
@@ -131,26 +107,14 @@ public class USFactoryServiceImpl implements USFactoryService {
     }
 
     public List<SubjectFacility> getCachedSubjectFacilities() {
-        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_SUBJECT_FACILITY + "list_" + sessionHelper.getFacilityId();
-
-        Object cachedData = redisService.get(cacheKey);
-        if (cachedData != null) {
-            try {
-                return redisService.getObject(cacheKey, List.class);
-            } catch (Exception e) {
-                redisService.delete(cacheKey);
-            }
-        }
-
-        List<SubjectFacility> subjectFacilities = subjectFacilityFactoryExtendRepository.getAllSubjectFacility(
-                EntityStatus.ACTIVE, EntityStatus.ACTIVE, sessionHelper.getFacilityId());
-
-        try {
-            redisService.set(cacheKey, subjectFacilities, redisTTL);
-        } catch (Exception ignored) {
-        }
-
-        return subjectFacilities;
+        String key = RedisPrefixConstant.REDIS_PREFIX_SUBJECT_FACILITY + "list_" + sessionHelper.getFacilityId();
+        return redisCacheHelper.getOrSet(
+                key,
+                () -> subjectFacilityFactoryExtendRepository.getAllSubjectFacility(EntityStatus.ACTIVE,
+                        EntityStatus.ACTIVE, sessionHelper.getFacilityId()),
+                new TypeReference<List<SubjectFacility>>() {
+                },
+                redisTTL);
     }
 
     @Override
@@ -160,28 +124,16 @@ public class USFactoryServiceImpl implements USFactoryService {
     }
 
     public List<UserStaff> getCachedStaffs() {
-        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_STAFF + "list_" +
+        String key = RedisPrefixConstant.REDIS_PREFIX_STAFF + "list_" +
                 "facility=" + sessionHelper.getFacilityId() +
                 "_role=" + RoleConstant.TEACHER;
-
-        Object cachedData = redisService.get(cacheKey);
-        if (cachedData != null) {
-            try {
-                return redisService.getObject(cacheKey, List.class);
-            } catch (Exception e) {
-                redisService.delete(cacheKey);
-            }
-        }
-
-        List<UserStaff> staffs = staffFactoryExtendRepository.getListUserStaff(EntityStatus.ACTIVE,
-                EntityStatus.ACTIVE, sessionHelper.getFacilityId(), RoleConstant.TEACHER);
-
-        try {
-            redisService.set(cacheKey, staffs, redisTTL);
-        } catch (Exception ignored) {
-        }
-
-        return staffs;
+        return redisCacheHelper.getOrSet(
+                key,
+                () -> staffFactoryExtendRepository.getListUserStaff(EntityStatus.ACTIVE, EntityStatus.ACTIVE,
+                        sessionHelper.getFacilityId(), RoleConstant.TEACHER),
+                new TypeReference<List<UserStaff>>() {
+                },
+                redisTTL);
     }
 
     @Override
@@ -215,9 +167,9 @@ public class USFactoryServiceImpl implements USFactoryService {
 
         String namePattern = "^[a-zA-ZÀ-ỹ\\s_#-]+$";
         if (!factoryCreateUpdateRequest.getFactoryName().matches(namePattern)) {
-            return RouterHelper.responseError("Tên nhóm xưởng không hợp lệ: Chỉ được chứa ký tự chữ và các ký tự đặc biệt _ - #");
+            return RouterHelper
+                    .responseError("Tên nhóm xưởng không hợp lệ: Chỉ được chứa ký tự chữ và các ký tự đặc biệt _ - #");
         }
-
 
         if (userStaff.isEmpty()) {
             return RouterHelper.responseError("Giảng viên không tồn tại");
@@ -277,7 +229,8 @@ public class USFactoryServiceImpl implements USFactoryService {
 
         String namePattern = "^[a-zA-ZÀ-ỹ\\s_#-]+$";
         if (!req.getFactoryName().matches(namePattern)) {
-            return RouterHelper.responseError("Tên nhóm xưởng không hợp lệ: Chỉ được chứa ký tự chữ và các ký tự đặc biệt _ - #");
+            return RouterHelper
+                    .responseError("Tên nhóm xưởng không hợp lệ: Chỉ được chứa ký tự chữ và các ký tự đặc biệt _ - #");
         }
 
         if (newStaff == null) {
@@ -426,23 +379,13 @@ public class USFactoryServiceImpl implements USFactoryService {
     public List<Semester> getCachedSemesters() {
         String cacheKey = RedisPrefixConstant.REDIS_PREFIX_LEVEL + "semesters";
 
-        Object cachedData = redisService.get(cacheKey);
-        if (cachedData != null) {
-            try {
-                return redisService.getObject(cacheKey, List.class);
-            } catch (Exception e) {
-                redisService.delete(cacheKey);
-            }
-        }
-
-        List<Semester> semesters = semesterRepository.findAll();
-
-        try {
-            redisService.set(cacheKey, semesters, redisTTL);
-        } catch (Exception ignored) {
-        }
-
-        return semesters;
+        Object cachedData = redisCacheHelper.getOrSet(
+                cacheKey,
+                () -> semesterRepository.findAll(),
+                new TypeReference<List<Semester>>() {
+                },
+                redisTTL);
+        return (List<Semester>) cachedData;
     }
 
     @Override

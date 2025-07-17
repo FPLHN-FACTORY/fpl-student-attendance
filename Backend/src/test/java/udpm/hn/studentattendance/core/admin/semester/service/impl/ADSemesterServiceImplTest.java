@@ -18,6 +18,7 @@ import udpm.hn.studentattendance.core.admin.semester.model.request.ADSemesterReq
 import udpm.hn.studentattendance.core.admin.semester.model.response.ADSemesterResponse;
 import udpm.hn.studentattendance.core.admin.semester.repository.ADSemesterRepository;
 import udpm.hn.studentattendance.entities.Semester;
+import udpm.hn.studentattendance.helpers.RedisCacheHelper;
 import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
 import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
 import udpm.hn.studentattendance.infrastructure.common.ApiResponse;
@@ -56,12 +57,16 @@ class ADSemesterServiceImplTest {
     @Mock
     private RedisInvalidationHelper redisInvalidationHelper;
 
+    @Mock
+    private RedisCacheHelper redisCacheHelper;
+
     @InjectMocks
     private ADSemesterServiceImpl adSemesterService;
 
     @BeforeEach
     void setUp() {
         ReflectionTestUtils.setField(adSemesterService, "redisTTL", 3600L);
+        // Removed unnecessary stubbing for redisCacheHelper.getOrSet
     }
 
     @Test
@@ -76,6 +81,11 @@ class ADSemesterServiceImplTest {
 
         Page<ADSemesterResponse> page = new PageImpl<>(semesters);
 
+        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong()))
+                .thenAnswer(invocation -> {
+                    java.util.function.Supplier<?> supplier = invocation.getArgument(1);
+                    return supplier.get();
+                });
         when(adSemesterRepository.getAllSemester(any(Pageable.class), eq(request))).thenReturn(page);
 
         // When
@@ -85,7 +95,7 @@ class ADSemesterServiceImplTest {
         assertEquals(HttpStatus.OK, response.getStatusCode());
         ApiResponse apiResponse = (ApiResponse) response.getBody();
         assertNotNull(apiResponse);
-        assertEquals("Get semester successfully", apiResponse.getMessage());
+        assertEquals("Hiển thị tất cả học kỳ thành công", apiResponse.getMessage());
 
         PageableObject pageableObject = (PageableObject) apiResponse.getData();
         assertNotNull(pageableObject);

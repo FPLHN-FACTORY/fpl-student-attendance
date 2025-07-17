@@ -42,9 +42,8 @@ const lstData = ref([])
 const columns = ref(
   autoAddColumnWidth([
     { title: '#', key: 'rowNumber' },
-    { title: 'Tên IP', dataIndex: 'name', key: 'name' },
-    { title: 'Địa chỉ IP', dataIndex: 'ipAddress', key: 'ipAddress' },
-    { title: 'Mô tả', dataIndex: 'description', key: 'description' },
+    { title: 'Kiểu IP', dataIndex: 'type', key: 'type' },
+    { title: 'Địa chỉ IP', dataIndex: 'ip', key: 'ip' },
     { title: 'Trạng thái', dataIndex: 'status', key: 'status' },
     { title: 'Chức năng', key: 'actions' },
   ]),
@@ -354,6 +353,7 @@ watch(
           class="w-100"
           v-model:value="formData.type"
           :disabled="modalAddOrUpdate.isLoading"
+          placeholder="Chọn kiểu IP"
         >
           <a-select-option v-for="(name, id) in TYPE_FACILITY_IP" :key="id" :value="id">
             {{ name }}
@@ -371,6 +371,7 @@ watch(
           class="w-100"
           v-model:value="formData.ip"
           :disabled="modalAddOrUpdate.isLoading"
+          :placeholder="formData.type === Object.keys(TYPE_FACILITY_IP)[2] ? 'Nhập giá trị' : 'Nhập địa chỉ IP hoặc dải IP'"
           allowClear
           @keyup.enter="modalAddOrUpdate.onOk"
         />
@@ -463,7 +464,7 @@ watch(
             >
               <template #bodyCell="{ column, record, index }">
                 <template v-if="column.key === 'rowNumber'">
-                  {{ (pagination.value.current - 1) * pagination.value.pageSize + index + 1 }}
+                  {{ (pagination.current - 1) * pagination.pageSize + index + 1 }}
                 </template>
                 <template v-else-if="column.dataIndex === 'type'">
                   <a-tag color="purple">

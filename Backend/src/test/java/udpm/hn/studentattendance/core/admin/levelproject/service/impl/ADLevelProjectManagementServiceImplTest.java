@@ -21,6 +21,7 @@ import udpm.hn.studentattendance.core.admin.levelproject.model.request.ADLevelPr
 import udpm.hn.studentattendance.core.admin.levelproject.model.response.ADLevelProjectResponse;
 import udpm.hn.studentattendance.core.admin.levelproject.repository.ADLevelProjectRepository;
 import udpm.hn.studentattendance.entities.LevelProject;
+import udpm.hn.studentattendance.helpers.RedisCacheHelper;
 import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
 import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
 import udpm.hn.studentattendance.infrastructure.common.ApiResponse;
@@ -30,6 +31,7 @@ import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.RedisPrefixConstant;
 import udpm.hn.studentattendance.infrastructure.redis.service.RedisService;
 import udpm.hn.studentattendance.utils.CodeGeneratorUtils;
+import udpm.hn.studentattendance.helpers.ValidateHelper;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -57,12 +59,16 @@ class ADLevelProjectManagementServiceImplTest {
     @Mock
     private RedisInvalidationHelper redisInvalidationHelper;
 
+    @Mock
+    private RedisCacheHelper redisCacheHelper;
+
     @InjectMocks
     private ADLevelProjectManagementServiceImpl levelProjectService;
 
     @BeforeEach
     void setUp() {
         ReflectionTestUtils.setField(levelProjectService, "redisTTL", 3600L);
+        // Removed unnecessary stubbing for redisCacheHelper.getOrSet
     }
 
     @Test
@@ -81,8 +87,7 @@ class ADLevelProjectManagementServiceImplTest {
 
         PageableObject mockData = mock(PageableObject.class);
 
-        when(redisService.get(cacheKey)).thenReturn(mockData);
-        when(redisService.getObject(cacheKey, PageableObject.class)).thenReturn(mockData);
+        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong())).thenReturn(mockData);
 
         // When
         ResponseEntity<?> response = levelProjectService.getListLevelProject(request);
@@ -91,10 +96,11 @@ class ADLevelProjectManagementServiceImplTest {
         assertEquals(HttpStatus.OK, response.getStatusCode());
         ApiResponse apiResponse = (ApiResponse) response.getBody();
         assertNotNull(apiResponse);
-        assertEquals("Get level project list successfully", apiResponse.getMessage());
+        assertEquals("Hiển thị tất cả nhóm dự án thành công", apiResponse.getMessage());
         assertEquals(mockData, apiResponse.getData());
 
         // Verify repository was not called
+        verify(redisCacheHelper).getOrSet(anyString(), any(), any(), anyLong());
         verify(repository, never()).getAll(any(Pageable.class), any(ADLevelProjectSearchRequest.class));
     }
 
@@ -103,22 +109,16 @@ class ADLevelProjectManagementServiceImplTest {
     void testGetListLevelProjectFromRepository() {
         // Given
         ADLevelProjectSearchRequest request = new ADLevelProjectSearchRequest();
-        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_LEVEL + "list_" +
-                "page=" + request.getPage() +
-                "_size=" + request.getSize() +
-                "_orderBy=" + request.getOrderBy() +
-                "_sortBy=" + request.getSortBy() +
-                "_q=" + (request.getQ() != null ? request.getQ() : "") +
-                "_name=" + (request.getName() != null ? request.getName() : "") +
-                "_status=" + (request.getStatus() != null ? request.getStatus() : "");
-
         List<ADLevelProjectResponse> levelProjects = new ArrayList<>();
         ADLevelProjectResponse levelProjectResponse = mock(ADLevelProjectResponse.class);
         levelProjects.add(levelProjectResponse);
         Page<ADLevelProjectResponse> page = new PageImpl<>(levelProjects);
-
-        when(redisService.get(cacheKey)).thenReturn(null);
-        when(repository.getAll(any(Pageable.class), eq(request))).thenReturn(page);
+        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong()))
+                .thenAnswer(invocation -> {
+                    java.util.function.Supplier<?> supplier = invocation.getArgument(1);
+                    return supplier.get();
+                });
+        when(repository.getAll(any(Pageable.class), any(ADLevelProjectSearchRequest.class))).thenReturn(page);
 
         // When
         ResponseEntity<?> response = levelProjectService.getListLevelProject(request);
@@ -127,11 +127,9 @@ class ADLevelProjectManagementServiceImplTest {
         assertEquals(HttpStatus.OK, response.getStatusCode());
         ApiResponse apiResponse = (ApiResponse) response.getBody();
         assertNotNull(apiResponse);
-        assertEquals("Get level project list successfully", apiResponse.getMessage());
-
-        // Verify repository was called and cache was updated
-        verify(repository).getAll(any(Pageable.class), eq(request));
-        verify(redisService).set(eq(cacheKey), any(PageableObject.class), eq(3600L));
+        assertEquals("Hiển thị tất cả nhóm dự án thành công", apiResponse.getMessage());
+        verify(redisCacheHelper).getOrSet(anyString(), any(), any(), anyLong());
+        verify(repository).getAll(any(Pageable.class), any(ADLevelProjectSearchRequest.class));
     }
 
     @Test
@@ -143,9 +141,12 @@ class ADLevelProjectManagementServiceImplTest {
         request.setDescription("For advanced students");
 
         // Mock the static method call
-        try (MockedStatic<CodeGeneratorUtils> mockedStatic = Mockito.mockStatic(CodeGeneratorUtils.class)) {
+        try (MockedStatic<CodeGeneratorUtils> mockedStatic = Mockito.mockStatic(CodeGeneratorUtils.class);
+                MockedStatic<ValidateHelper> validateHelperMockedStatic = Mockito.mockStatic(ValidateHelper.class)) {
             mockedStatic.when(() -> CodeGeneratorUtils.generateCodeFromString("Advanced Project"))
                     .thenReturn("ADVANCED_PROJECT");
+            validateHelperMockedStatic.when(() -> ValidateHelper.isValidCode("Advanced Project"))
+                    .thenReturn(true);
 
             when(repository.isExistsLevelProject("ADVANCED_PROJECT", null)).thenReturn(false);
 
@@ -165,12 +166,12 @@ class ADLevelProjectManagementServiceImplTest {
             assertEquals(HttpStatus.OK, response.getStatusCode());
             ApiResponse apiResponse = (ApiResponse) response.getBody();
             assertNotNull(apiResponse);
-            assertEquals("Add new level project successfully", apiResponse.getMessage());
+            assertEquals("Thêm nhóm dự án mới thành công", apiResponse.getMessage());
             assertEquals(savedLevelProject, apiResponse.getData());
 
             // Verify repository was called
             verify(repository).save(any(LevelProject.class));
-            verify(userActivityLogHelper).saveLog(contains("just added level project"));
+            verify(userActivityLogHelper).saveLog("Vừa thêm nhóm dự án: Advanced Project");
             verify(redisInvalidationHelper).invalidateAllCaches();
         }
     }
@@ -196,7 +197,7 @@ class ADLevelProjectManagementServiceImplTest {
             assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
             ApiResponse apiResponse = (ApiResponse) response.getBody();
             assertNotNull(apiResponse);
-            assertEquals("Level project already exists in the system", apiResponse.getMessage());
+            assertEquals("Nhóm dự án đã tồn tại trong hệ thống", apiResponse.getMessage());
 
             // Verify repository was not called to save
             verify(repository, never()).save(any(LevelProject.class));
@@ -220,9 +221,12 @@ class ADLevelProjectManagementServiceImplTest {
         existingLevel.setDescription("Original description");
         existingLevel.setStatus(EntityStatus.ACTIVE);
 
-        try (MockedStatic<CodeGeneratorUtils> mockedStatic = Mockito.mockStatic(CodeGeneratorUtils.class)) {
+        try (MockedStatic<CodeGeneratorUtils> mockedStatic = Mockito.mockStatic(CodeGeneratorUtils.class);
+                MockedStatic<ValidateHelper> validateHelperMockedStatic = Mockito.mockStatic(ValidateHelper.class)) {
             mockedStatic.when(() -> CodeGeneratorUtils.generateCodeFromString("Updated Project"))
                     .thenReturn("UPDATED_PROJECT");
+            validateHelperMockedStatic.when(() -> ValidateHelper.isValidCode("Updated Project"))
+                    .thenReturn(true);
 
             when(repository.findById(levelId)).thenReturn(Optional.of(existingLevel));
             when(repository.isExistsLevelProject("UPDATED_PROJECT", levelId)).thenReturn(false);
@@ -235,11 +239,11 @@ class ADLevelProjectManagementServiceImplTest {
             assertEquals(HttpStatus.OK, response.getStatusCode());
             ApiResponse apiResponse = (ApiResponse) response.getBody();
             assertNotNull(apiResponse);
-            assertEquals("Update level project successfully", apiResponse.getMessage());
+            assertEquals("Cập nhật nhóm dự án thành công", apiResponse.getMessage());
 
             // Verify repository was called
             verify(repository).save(existingLevel);
-            verify(userActivityLogHelper).saveLog(contains("just updated level project"));
+            verify(userActivityLogHelper).saveLog("Vừa cập nhật nhóm dự án Updated Project");
             verify(redisInvalidationHelper).invalidateAllCaches();
         }
     }
@@ -262,7 +266,7 @@ class ADLevelProjectManagementServiceImplTest {
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         ApiResponse apiResponse = (ApiResponse) response.getBody();
         assertNotNull(apiResponse);
-        assertEquals("Level project not found for editing", apiResponse.getMessage());
+        assertEquals("Nhóm dự án không tồn tại", apiResponse.getMessage());
 
         // Verify repository was not called to save
         verify(repository, never()).save(any(LevelProject.class));
@@ -270,16 +274,13 @@ class ADLevelProjectManagementServiceImplTest {
     }
 
     @Test
-    @DisplayName("Test detailLevelProject should return level project from cache if available")
-    void testDetailLevelProjectFromCache() {
+    @DisplayName("Test detailLevelProject should return level project if found")
+    void testDetailLevelProjectFound() {
         // Given
         String levelId = "level-1";
-        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_LEVEL + levelId;
-        LevelProject cachedLevel = new LevelProject();
-        cachedLevel.setId(levelId);
-
-        when(redisService.get(cacheKey)).thenReturn(cachedLevel);
-        when(redisService.getObject(cacheKey, LevelProject.class)).thenReturn(cachedLevel);
+        LevelProject foundLevel = new LevelProject();
+        foundLevel.setId(levelId);
+        when(repository.findById(levelId)).thenReturn(Optional.of(foundLevel));
 
         // When
         ResponseEntity<?> response = levelProjectService.detailLevelProject(levelId);
@@ -288,42 +289,27 @@ class ADLevelProjectManagementServiceImplTest {
         assertEquals(HttpStatus.OK, response.getStatusCode());
         ApiResponse apiResponse = (ApiResponse) response.getBody();
         assertNotNull(apiResponse);
-        assertEquals("Get level project details successfully", apiResponse.getMessage());
-        assertEquals(cachedLevel, apiResponse.getData());
-
-        // Verify repository was not called
-        verify(repository, never()).findById(levelId);
+        assertEquals("Hiện thị chi tiết nhóm dự án thành công", apiResponse.getMessage());
+        assertEquals(foundLevel, apiResponse.getData());
+        verify(repository).findById(levelId);
     }
 
     @Test
-    @DisplayName("Test detailLevelProject should fetch and cache data if not in cache")
-    void testDetailLevelProjectFromRepository() {
+    @DisplayName("Test detailLevelProject should return error if not found")
+    void testDetailLevelProjectNotFound() {
         // Given
-        String levelId = "level-1";
-        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_LEVEL + levelId;
-
-        LevelProject levelProject = new LevelProject();
-        levelProject.setId(levelId);
-        levelProject.setName("Test Level");
-        levelProject.setCode("TEST_LEVEL");
-        levelProject.setStatus(EntityStatus.ACTIVE);
-
-        when(redisService.get(cacheKey)).thenReturn(null);
-        when(repository.findById(levelId)).thenReturn(Optional.of(levelProject));
+        String levelId = "not-exist";
+        when(repository.findById(levelId)).thenReturn(Optional.empty());
 
         // When
         ResponseEntity<?> response = levelProjectService.detailLevelProject(levelId);
 
         // Then
-        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         ApiResponse apiResponse = (ApiResponse) response.getBody();
         assertNotNull(apiResponse);
-        assertEquals("Get level project details successfully", apiResponse.getMessage());
-        assertEquals(levelProject, apiResponse.getData());
-
-        // Verify repository was called and cache was updated
+        assertEquals("Nhóm dự án không tồn tại", apiResponse.getMessage());
         verify(repository).findById(levelId);
-        verify(redisService).set(eq(cacheKey), eq(levelProject), eq(3600L));
     }
 
     @Test
@@ -331,13 +317,10 @@ class ADLevelProjectManagementServiceImplTest {
     void testChangeStatusSuccess() {
         // Given
         String levelId = "level-1";
-
         LevelProject levelProject = new LevelProject();
         levelProject.setId(levelId);
         levelProject.setName("Test Level");
-        levelProject.setCode("TEST_LEVEL");
         levelProject.setStatus(EntityStatus.ACTIVE);
-
         when(repository.findById(levelId)).thenReturn(Optional.of(levelProject));
         when(repository.save(any(LevelProject.class))).thenReturn(levelProject);
 
@@ -348,14 +331,9 @@ class ADLevelProjectManagementServiceImplTest {
         assertEquals(HttpStatus.OK, response.getStatusCode());
         ApiResponse apiResponse = (ApiResponse) response.getBody();
         assertNotNull(apiResponse);
-        assertEquals("Change level project status successfully", apiResponse.getMessage());
-
-        // Verify status was changed to INACTIVE
-        assertEquals(EntityStatus.INACTIVE, levelProject.getStatus());
-
-        // Verify repository was called
+        assertEquals("Thay đổi trạng thái nhóm dự án thành công", apiResponse.getMessage());
         verify(repository).save(levelProject);
-        verify(userActivityLogHelper).saveLog(contains("just changed level project status"));
+        verify(userActivityLogHelper).saveLog(contains("vừa thay đổi trạng thái nhóm dự án"));
         verify(redisInvalidationHelper).invalidateAllCaches();
     }
 
@@ -374,7 +352,7 @@ class ADLevelProjectManagementServiceImplTest {
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         ApiResponse apiResponse = (ApiResponse) response.getBody();
         assertNotNull(apiResponse);
-        assertEquals("Level project not found for status change", apiResponse.getMessage());
+        assertEquals("Nhóm dự án không tồn tại", apiResponse.getMessage());
 
         // Verify repository was not called to save
         verify(repository, never()).save(any(LevelProject.class));

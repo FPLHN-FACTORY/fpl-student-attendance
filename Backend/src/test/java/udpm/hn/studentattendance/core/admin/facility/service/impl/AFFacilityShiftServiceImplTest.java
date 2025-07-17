@@ -24,12 +24,16 @@ import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.redis.service.RedisService;
+import udpm.hn.studentattendance.helpers.RedisCacheHelper;
 
 import java.util.Optional;
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
+import com.fasterxml.jackson.core.type.TypeReference;
 
 @ExtendWith(MockitoExtension.class)
 class AFFacilityShiftServiceImplTest {
@@ -45,6 +49,12 @@ class AFFacilityShiftServiceImplTest {
     private RedisService redisService;
     @Mock
     private RedisInvalidationHelper redisInvalidationHelper;
+    @Mock
+    private RedisCacheHelper redisCacheHelper;
+
+    // Shared TypeReference instance for mocking
+    private final TypeReference<PageableObject<AFFacilityShiftResponse>> pageableObjectTypeRef = new TypeReference<PageableObject<AFFacilityShiftResponse>>() {
+    };
 
     @InjectMocks
     private AFFacilityShiftServiceImpl shiftService;
@@ -59,9 +69,7 @@ class AFFacilityShiftServiceImplTest {
     @DisplayName("Test getAllList should return data from repository")
     void testGetAllList() {
         AFFilterFacilityShiftRequest request = new AFFilterFacilityShiftRequest();
-        Page<AFFacilityShiftResponse> mockData = mock(Page.class);
-        when(redisService.get(anyString())).thenReturn(null);
-        when(afFacilityShiftRepository.getAllByFilter(any(), eq(request))).thenReturn(mockData);
+        // Remove unnecessary stubbing if not used
         ResponseEntity<?> response = shiftService.getAllList(request);
         assertEquals(HttpStatus.OK, response.getStatusCode());
     }
@@ -71,44 +79,83 @@ class AFFacilityShiftServiceImplTest {
     void testGetShiftListWithCache() {
         AFFilterFacilityShiftRequest request = new AFFilterFacilityShiftRequest();
         PageableObject<AFFacilityShiftResponse> cachedData = new PageableObject<>();
-        when(redisService.get(anyString())).thenReturn("cached");
-        when(redisService.getObject(anyString(), eq(PageableObject.class))).thenReturn(cachedData);
+        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong())).thenReturn(cachedData);
 
-        PageableObject<AFFacilityShiftResponse> result = shiftService.getShiftList(request);
-
-        assertNotNull(result);
-        verify(redisService).getObject(anyString(), eq(PageableObject.class));
+        // Gọi qua getAllList để nhận ApiResponse không null
+        ResponseEntity<?> response = shiftService.getAllList(request);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        udpm.hn.studentattendance.infrastructure.common.ApiResponse apiResponse = (udpm.hn.studentattendance.infrastructure.common.ApiResponse) response
+                .getBody();
+        assertNotNull(apiResponse);
+        assertEquals("Lấy danh sách dữ liệu thành công", apiResponse.getMessage());
+        PageableObject<AFFacilityShiftResponse> actual = (PageableObject<AFFacilityShiftResponse>) apiResponse
+                .getData();
+        assertNotNull(actual);
+        assertEquals(cachedData.getData(), actual.getData());
+        assertEquals(cachedData.getTotalPages(), actual.getTotalPages());
+        assertEquals(cachedData.getCurrentPage(), actual.getCurrentPage());
     }
 
     @Test
     @DisplayName("Test getShiftList should handle cache deserialization error")
     void testGetShiftListWithCacheError() {
         AFFilterFacilityShiftRequest request = new AFFilterFacilityShiftRequest();
-        Page<AFFacilityShiftResponse> mockData = mock(Page.class);
-        when(redisService.get(anyString())).thenReturn("cached");
-        when(redisService.getObject(anyString(), eq(PageableObject.class)))
-                .thenThrow(new RuntimeException("Deserialization error"));
-        when(afFacilityShiftRepository.getAllByFilter(any(), eq(request))).thenReturn(mockData);
+        List<AFFacilityShiftResponse> shifts = new ArrayList<>();
+        AFFacilityShiftResponse shift = mock(AFFacilityShiftResponse.class);
+        shifts.add(shift);
+        Page<AFFacilityShiftResponse> page = new org.springframework.data.domain.PageImpl<>(shifts);
+        PageableObject<AFFacilityShiftResponse> expected = PageableObject.of(page);
+        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong()))
+                .thenAnswer(invocation -> {
+                    java.util.function.Supplier<?> supplier = invocation.getArgument(1);
+                    return supplier.get();
+                });
+        when(afFacilityShiftRepository.getAllByFilter(any(), eq(request))).thenReturn(page);
 
-        PageableObject<AFFacilityShiftResponse> result = shiftService.getShiftList(request);
-
-        assertNotNull(result);
-        verify(redisService).delete(anyString());
+        // Gọi qua getAllList để nhận ApiResponse không null
+        ResponseEntity<?> response = shiftService.getAllList(request);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        udpm.hn.studentattendance.infrastructure.common.ApiResponse apiResponse = (udpm.hn.studentattendance.infrastructure.common.ApiResponse) response
+                .getBody();
+        assertNotNull(apiResponse);
+        assertEquals("Lấy danh sách dữ liệu thành công", apiResponse.getMessage());
+        PageableObject<AFFacilityShiftResponse> actual = (PageableObject<AFFacilityShiftResponse>) apiResponse
+                .getData();
+        assertNotNull(actual);
+        assertEquals(expected.getData(), actual.getData());
+        assertEquals(expected.getTotalPages(), actual.getTotalPages());
+        assertEquals(expected.getCurrentPage(), actual.getCurrentPage());
     }
 
-        @Test
+    @Test
     @DisplayName("Test getShiftList should handle redis set exception")
     void testGetShiftListWithRedisSetError() {
         AFFilterFacilityShiftRequest request = new AFFilterFacilityShiftRequest();
-        Page<AFFacilityShiftResponse> mockData = mock(Page.class);
-        when(redisService.get(anyString())).thenReturn(null);
-        when(afFacilityShiftRepository.getAllByFilter(any(), eq(request))).thenReturn(mockData);
-        doThrow(new RuntimeException("Redis error")).when(redisService).set(anyString(), any(), anyLong());
-        
-        PageableObject<AFFacilityShiftResponse> result = shiftService.getShiftList(request);
-        
-        assertNotNull(result);
-        // Should not throw exception, just ignore redis error
+        List<AFFacilityShiftResponse> shifts = new ArrayList<>();
+        AFFacilityShiftResponse shift = mock(AFFacilityShiftResponse.class);
+        shifts.add(shift);
+        Page<AFFacilityShiftResponse> page = new org.springframework.data.domain.PageImpl<>(shifts);
+        PageableObject<AFFacilityShiftResponse> expected = PageableObject.of(page);
+        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong()))
+                .thenAnswer(invocation -> {
+                    java.util.function.Supplier<?> supplier = invocation.getArgument(1);
+                    return supplier.get();
+                });
+        when(afFacilityShiftRepository.getAllByFilter(any(), eq(request))).thenReturn(page);
+
+        // Gọi qua getAllList để nhận ApiResponse không null
+        ResponseEntity<?> response = shiftService.getAllList(request);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        udpm.hn.studentattendance.infrastructure.common.ApiResponse apiResponse = (udpm.hn.studentattendance.infrastructure.common.ApiResponse) response
+                .getBody();
+        assertNotNull(apiResponse);
+        assertEquals("Lấy danh sách dữ liệu thành công", apiResponse.getMessage());
+        PageableObject<AFFacilityShiftResponse> actual = (PageableObject<AFFacilityShiftResponse>) apiResponse
+                .getData();
+        assertNotNull(actual);
+        assertEquals(expected.getData(), actual.getData());
+        assertEquals(expected.getTotalPages(), actual.getTotalPages());
+        assertEquals(expected.getCurrentPage(), actual.getCurrentPage());
     }
 
     @Test

@@ -25,6 +25,8 @@ import udpm.hn.studentattendance.infrastructure.config.mailer.model.MailerDefaul
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.RedisPrefixConstant;
 import udpm.hn.studentattendance.infrastructure.redis.service.RedisService;
+import com.fasterxml.jackson.core.type.TypeReference;
+import udpm.hn.studentattendance.helpers.RedisCacheHelper;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -46,7 +48,7 @@ public class AFFacilityServiceImpl implements AFFacilityService {
 
     private final UserActivityLogHelper userActivityLogHelper;
 
-    private final RedisService redisService;
+    private final RedisCacheHelper redisCacheHelper;
 
     private final RedisInvalidationHelper redisInvalidationHelper;
 
@@ -57,27 +59,14 @@ public class AFFacilityServiceImpl implements AFFacilityService {
     private long redisTTL;
 
     public PageableObject<AFFacilityResponse> getCachedFacilities(AFFacilitySearchRequest request) {
-        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_FACILITY + "list_" + request.toString();
-
-        Object cachedData = redisService.get(cacheKey);
-        if (cachedData != null) {
-            try {
-                return redisService.getObject(cacheKey, PageableObject.class);
-            } catch (Exception e) {
-                redisService.delete(cacheKey);
-            }
-        }
-
-        Pageable pageable = PaginationHelper.createPageable(request, "createdAt");
-        PageableObject<AFFacilityResponse> facilities = PageableObject.of(
-                facilityRepository.getAllFacility(pageable, request));
-
-        try {
-            redisService.set(cacheKey, facilities, redisTTL);
-        } catch (Exception ignored) {
-        }
-
-        return facilities;
+        String key = RedisPrefixConstant.REDIS_PREFIX_FACILITY + "list_" + request.toString();
+        return redisCacheHelper.getOrSet(
+                key,
+                () -> PageableObject.of(facilityRepository
+                        .getAllFacility(PaginationHelper.createPageable(request, "createdAt"), request)),
+                new TypeReference<PageableObject<AFFacilityResponse>>() {
+                },
+                redisTTL);
     }
 
     @Override
@@ -88,7 +77,6 @@ public class AFFacilityServiceImpl implements AFFacilityService {
 
     @Override
     public ResponseEntity<?> createFacility(AFCreateUpdateFacilityRequest request) {
-        // Trim all string fields in the request
         RequestTrimHelper.trimStringFields(request);
 
         Optional<Facility> existFacility = facilityRepository.findByName(request.getFacilityName());

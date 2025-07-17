@@ -29,6 +29,7 @@ import udpm.hn.studentattendance.entities.Project;
 import udpm.hn.studentattendance.entities.Semester;
 import udpm.hn.studentattendance.entities.SubjectFacility;
 import udpm.hn.studentattendance.entities.Facility;
+import udpm.hn.studentattendance.helpers.RedisCacheHelper;
 import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
 import udpm.hn.studentattendance.helpers.SessionHelper;
 import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
@@ -85,6 +86,9 @@ class SPDPlanServiceImplTest {
     @Mock
     private RedisInvalidationHelper redisInvalidationHelper;
 
+    @Mock
+    private RedisCacheHelper redisCacheHelper;
+
     @InjectMocks
     private SPDPlanServiceImpl planService;
 
@@ -102,8 +106,7 @@ class SPDPlanServiceImplTest {
 
         String cacheKey = RedisPrefixConstant.REDIS_PREFIX_PLAN + "subjects_facility=" + facilityId;
         List<SPDSubjectResponse> cachedData = Arrays.asList(mock(SPDSubjectResponse.class));
-        when(redisService.get(cacheKey)).thenReturn(cachedData);
-        when(redisService.getObject(cacheKey, List.class)).thenReturn(cachedData);
+        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong())).thenReturn(cachedData);
 
         // Act
         ResponseEntity<?> response = planService.getAllSubject();
@@ -116,7 +119,7 @@ class SPDPlanServiceImplTest {
         assertEquals("Lấy dữ liệu bộ môn thành công", apiResponse.getMessage());
         assertEquals(cachedData, apiResponse.getData());
 
-        verify(redisService).get(cacheKey);
+        verify(redisCacheHelper).getOrSet(anyString(), any(), any(), anyLong());
         verify(spdSubjectRepository, never()).getAllByFacility(anyString());
     }
 
@@ -128,9 +131,13 @@ class SPDPlanServiceImplTest {
         when(sessionHelper.getFacilityId()).thenReturn(facilityId);
 
         String cacheKey = RedisPrefixConstant.REDIS_PREFIX_PLAN + "subjects_facility=" + facilityId;
-        when(redisService.get(cacheKey)).thenReturn(null);
-
         List<SPDSubjectResponse> dbData = Arrays.asList(mock(SPDSubjectResponse.class));
+        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong()))
+                .thenAnswer(invocation -> {
+                    java.util.function.Supplier<?> supplier = invocation.getArgument(1);
+                    return supplier.get();
+                });
+
         when(spdSubjectRepository.getAllByFacility(facilityId)).thenReturn(dbData);
 
         // Act
@@ -144,9 +151,8 @@ class SPDPlanServiceImplTest {
         assertEquals("Lấy dữ liệu bộ môn thành công", apiResponse.getMessage());
         assertEquals(dbData, apiResponse.getData());
 
-        verify(redisService).get(cacheKey);
+        verify(redisCacheHelper).getOrSet(anyString(), any(), any(), anyLong());
         verify(spdSubjectRepository).getAllByFacility(facilityId);
-        verify(redisService).set(eq(cacheKey), eq(dbData), eq(3600L));
     }
 
     @Test
@@ -154,9 +160,13 @@ class SPDPlanServiceImplTest {
     void testGetAllLevel() {
         // Arrange
         String cacheKey = RedisPrefixConstant.REDIS_PREFIX_LEVEL + "all";
-        when(redisService.get(cacheKey)).thenReturn(null);
-
         List<SPDLevelProjectResponse> levels = Arrays.asList(mock(SPDLevelProjectResponse.class));
+        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong()))
+                .thenAnswer(invocation -> {
+                    java.util.function.Supplier<?> supplier = invocation.getArgument(1);
+                    return supplier.get();
+                });
+
         when(spdLevelProjectRepository.getAll()).thenReturn(levels);
 
         // Act
@@ -169,8 +179,8 @@ class SPDPlanServiceImplTest {
         assertEquals("Lấy dữ liệu level thành công", apiResponse.getMessage());
         assertEquals(levels, apiResponse.getData());
 
+        verify(redisCacheHelper).getOrSet(anyString(), any(), any(), anyLong());
         verify(spdLevelProjectRepository).getAll();
-        verify(redisService).set(eq(cacheKey), eq(levels), eq(3600L));
     }
 
     @Test
@@ -178,7 +188,12 @@ class SPDPlanServiceImplTest {
     void testGetListSemester() {
         // Arrange
         String cacheKey = RedisPrefixConstant.REDIS_PREFIX_PLAN + "semester_names_all";
-        when(redisService.get(cacheKey)).thenReturn(null);
+        List<String> semesterNames = Arrays.stream(SemesterName.values()).map(Enum::name).toList();
+        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong()))
+                .thenAnswer(invocation -> {
+                    java.util.function.Supplier<?> supplier = invocation.getArgument(1);
+                    return supplier.get();
+                });
 
         // Act
         ResponseEntity<?> response = planService.getListSemester();
@@ -190,10 +205,11 @@ class SPDPlanServiceImplTest {
         assertEquals("Lấy dữ liệu học kỳ thành công", apiResponse.getMessage());
 
         @SuppressWarnings("unchecked")
-        List<String> semesterNames = (List<String>) apiResponse.getData();
-        assertEquals(SemesterName.values().length, semesterNames.size());
+        List<String> actualSemesterNames = (List<String>) apiResponse.getData();
+        assertEquals(semesterNames.size(), actualSemesterNames.size());
+        assertEquals(semesterNames, actualSemesterNames);
 
-        verify(redisService).set(eq(cacheKey), any(List.class), eq(3600L));
+        verify(redisCacheHelper).getOrSet(anyString(), any(), any(), anyLong());
     }
 
     @Test
@@ -213,7 +229,7 @@ class SPDPlanServiceImplTest {
         String cacheKey = RedisPrefixConstant.REDIS_PREFIX_PLAN + "list_facility=" + facilityId +
                 "_page=" + request.getPage() + "_size=" + request.getSize() +
                 "_orderBy=" + request.getOrderBy() + "_sortBy=" + request.getSortBy() + "_q=";
-        when(redisService.get(cacheKey)).thenReturn(null);
+        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong())).thenReturn(null);
 
         // Create a simple page object
         List<SPDPlanResponse> planResponses = new ArrayList<>();
@@ -233,7 +249,7 @@ class SPDPlanServiceImplTest {
         assertEquals("Lấy danh sách dữ liệu thành công", apiResponse.getMessage());
 
         verify(spdPlanRepository).getAllByFilter(any(), any());
-        verify(redisService).set(eq(cacheKey), any(), eq(3600L));
+        verify(redisCacheHelper).getOrSet(anyString(), any(), any(), anyLong());
         assertEquals(facilityId, request.getIdFacility());
     }
 
@@ -339,5 +355,174 @@ class SPDPlanServiceImplTest {
 
         verify(spdPlanRepository, never()).save(any(Plan.class));
         verify(redisInvalidationHelper, never()).invalidateAllCaches();
+    }
+
+    @Test
+    @DisplayName("createPlan should return error if project not found")
+    void testCreatePlan_ProjectNotFound() {
+        // Arrange
+        SPDAddOrUpdatePlanRequest request = new SPDAddOrUpdatePlanRequest();
+        request.setIdProject("project-404");
+        request.setRangeDate(Arrays.asList(
+                DateTimeUtils.getCurrentTimeMillis(),
+                DateTimeUtils.getCurrentTimeMillis() + 86400000L));
+
+        String facilityId = "facility-1";
+        when(sessionHelper.getFacilityId()).thenReturn(facilityId);
+        when(spdProjectRepository.findById("project-404")).thenReturn(Optional.empty());
+
+        // Act
+        ResponseEntity<?> response = planService.createPlan(request);
+
+        // Assert
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        ApiResponse apiResponse = (ApiResponse) response.getBody();
+        assertEquals(RestApiStatus.ERROR, apiResponse.getStatus());
+        assertEquals("Không tìm thấy dự án", apiResponse.getMessage());
+        verify(spdPlanRepository, never()).save(any(Plan.class));
+        verify(redisInvalidationHelper, never()).invalidateAllCaches();
+    }
+
+    @Test
+    @DisplayName("createPlan should return error if semester is not active")
+    void testCreatePlan_SemesterNotActive() {
+        // Arrange
+        SPDAddOrUpdatePlanRequest request = new SPDAddOrUpdatePlanRequest();
+        request.setIdProject("project-1");
+        request.setRangeDate(Arrays.asList(
+                DateTimeUtils.getCurrentTimeMillis(),
+                DateTimeUtils.getCurrentTimeMillis() + 86400000L));
+
+        String facilityId = "facility-1";
+        when(sessionHelper.getFacilityId()).thenReturn(facilityId);
+
+        Project project = mock(Project.class);
+        when(project.getId()).thenReturn("project-1");
+        when(project.getName()).thenReturn("Test Project");
+        when(project.getStatus()).thenReturn(EntityStatus.ACTIVE);
+        Semester semester = mock(Semester.class);
+        when(semester.getStatus()).thenReturn(EntityStatus.INACTIVE);
+        when(project.getSemester()).thenReturn(semester);
+        SubjectFacility subjectFacility = mock(SubjectFacility.class);
+        Facility facility = mock(Facility.class);
+        when(facility.getId()).thenReturn(facilityId);
+        when(subjectFacility.getFacility()).thenReturn(facility);
+        when(project.getSubjectFacility()).thenReturn(subjectFacility);
+        when(spdProjectRepository.findById("project-1")).thenReturn(Optional.of(project));
+        when(spdPlanRepository.isExistsProjectInPlan("project-1", null)).thenReturn(false);
+
+        // Act
+        ResponseEntity<?> response = planService.createPlan(request);
+
+        // Assert
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        ApiResponse apiResponse = (ApiResponse) response.getBody();
+        assertEquals(RestApiStatus.ERROR, apiResponse.getStatus());
+        assertEquals("Không tìm thấy dự án", apiResponse.getMessage());
+        verify(spdPlanRepository, never()).save(any(Plan.class));
+        verify(redisInvalidationHelper, never()).invalidateAllCaches();
+    }
+
+    @Test
+    @DisplayName("getAllYear should return all years")
+    void testGetAllYear() {
+        // Arrange
+        List<Integer> years = Arrays.asList(2022, 2023);
+        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong()))
+                .thenAnswer(invocation -> {
+                    java.util.function.Supplier<?> supplier = invocation.getArgument(1);
+                    return supplier.get();
+                });
+        when(spdSemesterRepository.getAllYear()).thenReturn(years);
+
+        // Act
+        ResponseEntity<?> response = planService.getAllYear();
+
+        // Assert
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        ApiResponse apiResponse = (ApiResponse) response.getBody();
+        assertEquals("Lấy dữ liệu năm học thành công", apiResponse.getMessage());
+        assertEquals(years, apiResponse.getData());
+    }
+
+    @Test
+    @DisplayName("getPlan should return plan if found")
+    void testGetPlan_Found() {
+        String planId = "plan-1";
+        SPDPlanResponse planResponse = mock(SPDPlanResponse.class);
+        when(spdPlanRepository.getByIdPlan(eq(planId), anyString())).thenReturn(Optional.of(planResponse));
+        when(sessionHelper.getFacilityId()).thenReturn("facility-1");
+
+        ResponseEntity<?> response = planService.getPlan(planId);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        ApiResponse apiResponse = (ApiResponse) response.getBody();
+        assertEquals("Get dữ liệu thành công", apiResponse.getMessage());
+        assertEquals(planResponse, apiResponse.getData());
+    }
+
+    @Test
+    @DisplayName("getPlan should return error if not found")
+    void testGetPlan_NotFound() {
+        String planId = "plan-404";
+        when(spdPlanRepository.getByIdPlan(eq(planId), anyString())).thenReturn(Optional.empty());
+        when(sessionHelper.getFacilityId()).thenReturn("facility-1");
+
+        ResponseEntity<?> response = planService.getPlan(planId);
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        ApiResponse apiResponse = (ApiResponse) response.getBody();
+        assertEquals("Không tìm thấy kế hoạch", apiResponse.getMessage());
+    }
+
+    @Test
+    @DisplayName("getListProject should return list of projects")
+    void testGetListProject() {
+        SPDFilterCreatePlanRequest request = new SPDFilterCreatePlanRequest();
+        String facilityId = "facility-1";
+        when(sessionHelper.getFacilityId()).thenReturn(facilityId);
+        List<SPDProjectResponse> projects = Arrays.asList(mock(SPDProjectResponse.class));
+        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong()))
+                .thenAnswer(invocation -> {
+                    java.util.function.Supplier<?> supplier = invocation.getArgument(1);
+                    return supplier.get();
+                });
+        when(spdPlanRepository.getListProject(any())).thenReturn(projects);
+
+        ResponseEntity<?> response = planService.getListProject(request);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        ApiResponse apiResponse = (ApiResponse) response.getBody();
+        assertEquals("Lấy danh sách dữ liệu thành công", apiResponse.getMessage());
+        assertEquals(projects, apiResponse.getData());
+    }
+
+    @Test
+    @DisplayName("changeStatus should return error if plan not found")
+    void testChangeStatus_NotFound() {
+        when(spdPlanRepository.findById("plan-404")).thenReturn(Optional.empty());
+        ResponseEntity<?> response = planService.changeStatus("plan-404");
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        ApiResponse apiResponse = (ApiResponse) response.getBody();
+        assertEquals("Không tìm thấy kế hoạch", apiResponse.getMessage());
+    }
+
+    @Test
+    @DisplayName("deletePlan should return error if plan not found")
+    void testDeletePlan_NotFound() {
+        when(spdPlanRepository.findById("plan-404")).thenReturn(Optional.empty());
+        ResponseEntity<?> response = planService.deletePlan("plan-404");
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        ApiResponse apiResponse = (ApiResponse) response.getBody();
+        assertEquals("Không tìm thấy kế hoạch", apiResponse.getMessage());
+    }
+
+    @Test
+    @DisplayName("updatePlan should return error if plan not found")
+    void testUpdatePlan_PlanNotFound() {
+        SPDAddOrUpdatePlanRequest request = new SPDAddOrUpdatePlanRequest();
+        request.setId("plan-404");
+        when(spdPlanRepository.findById("plan-404")).thenReturn(Optional.empty());
+        ResponseEntity<?> response = planService.updatePlan(request);
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        ApiResponse apiResponse = (ApiResponse) response.getBody();
+        assertEquals("Không tìm thấy kế hoạch muốn cập nhật", apiResponse.getMessage());
     }
 }

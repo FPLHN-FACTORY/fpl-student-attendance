@@ -41,9 +41,8 @@ const lstData = ref([])
 
 const columns = ref(
   autoAddColumnWidth([
-    { title: '#', key: 'rowNumber' },
-    { title: 'Tên ca', dataIndex: 'name', key: 'name' },
-    { title: 'Mô tả', dataIndex: 'description', key: 'description' },
+    { title: '#', dataIndex : 'orderNumber', key: 'orderNumber' },
+    { title: 'Ca', dataIndex: 'shift', key: 'shift' },
     { title: 'Thời gian bắt đầu', dataIndex: 'startTime', key: 'startTime' },
     { title: 'Thời gian kết thúc', dataIndex: 'endTime', key: 'endTime' },
     { title: 'Trạng thái', dataIndex: 'status', key: 'status' },
@@ -476,10 +475,8 @@ watch(
               @change="handleTableChange"
             >
               <template #bodyCell="{ column, record, index }">
-                <template v-if="column.key === 'rowNumber'">
-                  {{ (pagination.value.current - 1) * pagination.value.pageSize + index + 1 }}
-                </template>
-                <template v-else-if="column.dataIndex === 'shift'">
+      
+                <template v-if="column.dataIndex === 'shift'">
                   <a-tag color="purple"> Ca {{ record.shift }} </a-tag>
                 </template>
                 <template v-else-if="column.dataIndex === 'status'">

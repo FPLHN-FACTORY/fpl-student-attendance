@@ -237,7 +237,7 @@ watch(
       </div>
     </div>
 
-    <div class="row g-3">
+    <div class="row g-3 mt-3">
       <!-- Chart Section -->
       <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12">
         <a-card :bordered="false" class="dashboard-bar-line header-solid">

@@ -1,5 +1,6 @@
 package udpm.hn.studentattendance.core.teacher.teachingschedule.service.impl;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.lowagie.text.*;
 import com.lowagie.text.Font;
 import com.lowagie.text.pdf.*;
@@ -35,9 +36,9 @@ import udpm.hn.studentattendance.infrastructure.constants.RedisPrefixConstant;
 import udpm.hn.studentattendance.infrastructure.constants.SettingKeys;
 import udpm.hn.studentattendance.infrastructure.constants.ShiftType;
 import udpm.hn.studentattendance.infrastructure.constants.StatusType;
-import udpm.hn.studentattendance.infrastructure.redis.service.RedisService;
-import udpm.hn.studentattendance.repositories.UserStudentFactoryRepository;
+import udpm.hn.studentattendance.helpers.RedisCacheHelper;
 import udpm.hn.studentattendance.helpers.RequestTrimHelper;
+import udpm.hn.studentattendance.repositories.UserStudentFactoryRepository;
 
 import java.awt.*;
 import java.io.ByteArrayInputStream;
@@ -55,544 +56,472 @@ import java.util.stream.Stream;
 @Validated
 public class TCTeachingScheduleServiceImpl implements TCTeachingScheduleService {
 
-    private final TCTeachingScheduleExtendRepository teacherTeachingScheduleExtendRepository;
+        private final TCTeachingScheduleExtendRepository teacherTeachingScheduleExtendRepository;
 
-    private final TCTSProjectExtendRepository teacherTsProjectExtendRepository;
+        private final TCTSProjectExtendRepository teacherTsProjectExtendRepository;
 
-    private final TCTSSubjectExtendRepository teacherTsSubjectExtendRepository;
+        private final TCTSSubjectExtendRepository teacherTsSubjectExtendRepository;
 
-    private final TCTSFactoryExtendRepository teacherTsFactoryExtendRepository;
+        private final TCTSFactoryExtendRepository teacherTsFactoryExtendRepository;
 
-    private final UserStudentFactoryRepository userStudentFactoryRepository;
+        private final UserStudentFactoryRepository userStudentFactoryRepository;
 
-    private final MailerHelper mailerHelper;
+        private final MailerHelper mailerHelper;
 
-    private final SessionHelper sessionHelper;
+        private final SessionHelper sessionHelper;
 
-    private final SettingHelper settingHelper;
+        private final SettingHelper settingHelper;
 
-    private final RedisService redisService;
+        private final RedisCacheHelper redisCacheHelper;
 
-    private final RedisInvalidationHelper redisInvalidationHelper;
+        private final RedisInvalidationHelper redisInvalidationHelper;
 
-    @Value("${app.config.app-name}")
-    private String appName;
+        @Value("${app.config.app-name}")
+        private String appName;
 
-    @Value("${spring.cache.redis.time-to-live}")
-    private long redisTTL;
+        @Value("${spring.cache.redis.time-to-live}")
+        private long redisTTL;
 
-    public PageableObject<?> getCachedTeachingSchedule(TCTeachingScheduleRequest request) {
-        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_SCHEDULE_TEACHER + "list_"
-                + sessionHelper.getUserId() + "_"
-                + request.toString();
-
-        Object cachedData = redisService.get(cacheKey);
-        if (cachedData != null) {
-            try {
-                return redisService.getObject(cacheKey, PageableObject.class);
-            } catch (Exception e) {
-                redisService.delete(cacheKey);
-            }
+        public PageableObject<?> getCachedTeachingSchedule(TCTeachingScheduleRequest request) {
+                String key = RedisPrefixConstant.REDIS_PREFIX_SCHEDULE_TEACHER + "list_"
+                                + sessionHelper.getUserId() + "_"
+                                + request.toString();
+                return redisCacheHelper.getOrSet(
+                                key,
+                                () -> PageableObject.of(
+                                                teacherTeachingScheduleExtendRepository.getAllTeachingScheduleByStaff(
+                                                                sessionHelper.getUserId(),
+                                                                PaginationHelper.createPageable(request), request)),
+                                new TypeReference<PageableObject<?>>() {
+                                },
+                                redisTTL);
         }
 
-        Pageable pageable = PaginationHelper.createPageable(request);
-        PageableObject<?> list = PageableObject
-                .of(teacherTeachingScheduleExtendRepository.getAllTeachingScheduleByStaff(
-                        sessionHelper.getUserId(), pageable, request));
-
-        try {
-            redisService.set(cacheKey, list, redisTTL);
-        } catch (Exception ignored) {
+        @Override
+        public ResponseEntity<?> getAllTeachingScheduleByStaff(
+                        TCTeachingScheduleRequest teachingScheduleRequest) {
+                PageableObject<?> list = getCachedTeachingSchedule(teachingScheduleRequest);
+                return RouterHelper.responseSuccess(
+                                "Lấy tất cả lịch dạy của " + sessionHelper.getUserId() + " thành công", list);
         }
 
-        return list;
-    }
-
-    @Override
-    public ResponseEntity<?> getAllTeachingScheduleByStaff(
-            TCTeachingScheduleRequest teachingScheduleRequest) {
-        PageableObject<?> list = getCachedTeachingSchedule(teachingScheduleRequest);
-        return RouterHelper.responseSuccess(
-                "Lấy tất cả lịch dạy của " + sessionHelper.getUserId() + " thành công", list);
-    }
-
-    public List<Factory> getCachedFactories() {
-        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_SCHEDULE_TEACHER + "factories_"
-                + sessionHelper.getUserId();
-
-        Object cachedData = redisService.get(cacheKey);
-        if (cachedData != null) {
-            try {
-                return redisService.getObject(cacheKey, List.class);
-            } catch (Exception e) {
-                redisService.delete(cacheKey);
-            }
+        public List<Factory> getCachedFactories() {
+                String key = RedisPrefixConstant.REDIS_PREFIX_SCHEDULE_TEACHER + "factories_"
+                                + sessionHelper.getUserId();
+                return redisCacheHelper.getOrSet(
+                                key,
+                                () -> teacherTsFactoryExtendRepository.getAllFactoryByStaff(sessionHelper.getUserId(),
+                                                EntityStatus.ACTIVE),
+                                new TypeReference<List<Factory>>() {
+                                },
+                                redisTTL);
         }
 
-        List<Factory> factories = teacherTsFactoryExtendRepository
-                .getAllFactoryByStaff(sessionHelper.getUserId(), EntityStatus.ACTIVE);
-
-        try {
-            redisService.set(cacheKey, factories, redisTTL);
-        } catch (Exception ignored) {
+        @Override
+        public ResponseEntity<?> getAllFactoryByStaff() {
+                List<Factory> factories = getCachedFactories();
+                return RouterHelper.responseSuccess(
+                                "Lấy tất cả nhóm xửng của " + sessionHelper.getUserId() + " dạy thành công", factories);
         }
 
-        return factories;
-    }
-
-    @Override
-    public ResponseEntity<?> getAllFactoryByStaff() {
-        List<Factory> factories = getCachedFactories();
-        return RouterHelper.responseSuccess(
-                "Lấy tất cả nhóm xửng của " + sessionHelper.getUserId() + " dạy thành công", factories);
-    }
-
-    public List<Project> getCachedProjects() {
-        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_SCHEDULE_TEACHER + "projects_"
-                + sessionHelper.getUserId();
-
-        Object cachedData = redisService.get(cacheKey);
-        if (cachedData != null) {
-            try {
-                return redisService.getObject(cacheKey, List.class);
-            } catch (Exception e) {
-                redisService.delete(cacheKey);
-            }
+        public List<Project> getCachedProjects() {
+                String key = RedisPrefixConstant.REDIS_PREFIX_SCHEDULE_TEACHER + "projects_"
+                                + sessionHelper.getUserId();
+                return redisCacheHelper.getOrSet(
+                                key,
+                                () -> teacherTsProjectExtendRepository.getAllProject(sessionHelper.getUserId(),
+                                                EntityStatus.ACTIVE),
+                                new TypeReference<List<Project>>() {
+                                },
+                                redisTTL);
         }
 
-        List<Project> projects = teacherTsProjectExtendRepository.getAllProject(sessionHelper.getUserId(),
-                EntityStatus.ACTIVE);
-
-        try {
-            redisService.set(cacheKey, projects, redisTTL);
-        } catch (Exception ignored) {
+        @Override
+        public ResponseEntity<?> getAllProjectByStaff() {
+                List<Project> projects = getCachedProjects();
+                return RouterHelper.responseSuccess(
+                                "Lấy tất cả dự án đang dạy của " + sessionHelper.getUserId() + " thành công", projects);
         }
 
-        return projects;
-    }
-
-    @Override
-    public ResponseEntity<?> getAllProjectByStaff() {
-        List<Project> projects = getCachedProjects();
-        return RouterHelper.responseSuccess(
-                "Lấy tất cả dự án đang dạy của " + sessionHelper.getUserId() + " thành công", projects);
-    }
-
-    public List<Subject> getCachedSubjects() {
-        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_SCHEDULE_TEACHER + "subjects_"
-                + sessionHelper.getUserId();
-
-        Object cachedData = redisService.get(cacheKey);
-        if (cachedData != null) {
-            try {
-                return redisService.getObject(cacheKey, List.class);
-            } catch (Exception e) {
-                redisService.delete(cacheKey);
-            }
+        public List<Subject> getCachedSubjects() {
+                String key = RedisPrefixConstant.REDIS_PREFIX_SCHEDULE_TEACHER + "subjects_"
+                                + sessionHelper.getUserId();
+                return redisCacheHelper.getOrSet(
+                                key,
+                                () -> teacherTsSubjectExtendRepository.getAllSubjectByStaff(sessionHelper.getUserId(),
+                                                EntityStatus.ACTIVE),
+                                new TypeReference<List<Subject>>() {
+                                },
+                                redisTTL);
         }
 
-        List<Subject> subjects = teacherTsSubjectExtendRepository
-                .getAllSubjectByStaff(sessionHelper.getUserId(), EntityStatus.ACTIVE);
-
-        try {
-            redisService.set(cacheKey, subjects, redisTTL);
-        } catch (Exception ignored) {
+        @Override
+        public ResponseEntity<?> getAllSubjectByStaff() {
+                List<Subject> subjects = getCachedSubjects();
+                return RouterHelper.responseSuccess(
+                                "Lấy tất cả môn học của " + sessionHelper.getUserId() + " thành công", subjects);
         }
 
-        return subjects;
-    }
-
-    @Override
-    public ResponseEntity<?> getAllSubjectByStaff() {
-        List<Subject> subjects = getCachedSubjects();
-        return RouterHelper.responseSuccess(
-                "Lấy tất cả môn học của " + sessionHelper.getUserId() + " thành công", subjects);
-    }
-
-    public List<PlanDate> getCachedTypes() {
-        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_SCHEDULE_TEACHER + "types";
-
-        Object cachedData = redisService.get(cacheKey);
-        if (cachedData != null) {
-            try {
-                return redisService.getObject(cacheKey, List.class);
-            } catch (Exception e) {
-                redisService.delete(cacheKey);
-            }
+        public List<PlanDate> getCachedTypes() {
+                String cacheKey = RedisPrefixConstant.REDIS_PREFIX_SCHEDULE_TEACHER + "types";
+                return redisCacheHelper.getOrSet(
+                                cacheKey,
+                                () -> teacherTeachingScheduleExtendRepository.getAllType(),
+                                new TypeReference<List<PlanDate>>() {
+                                },
+                                redisTTL * 24 // Cache for a day since this doesn't change often
+                );
         }
 
-        List<PlanDate> shifts = teacherTeachingScheduleExtendRepository.getAllType();
-
-        try {
-            redisService.set(cacheKey, shifts, redisTTL * 24); // Cache for a day since this doesn't change
-            // often
-        } catch (Exception ignored) {
+        @Override
+        public ResponseEntity<?> getAllType() {
+                List<PlanDate> shifts = getCachedTypes();
+                return RouterHelper.responseSuccess("Lấy tất cả hình thức thành công", shifts);
         }
 
-        return shifts;
-    }
+        @Override
+        public ByteArrayInputStream exportTeachingSchedule(
+                        List<TCTeachingScheduleResponse> teachingScheduleResponseList) {
+                Document document = new Document();
+                ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
 
-    @Override
-    public ResponseEntity<?> getAllType() {
-        List<PlanDate> shifts = getCachedTypes();
-        return RouterHelper.responseSuccess("Lấy tất cả hình thức thành công", shifts);
-    }
+                try {
+                        PdfWriter.getInstance(document, byteArrayOutputStream);
+                        document.open();
 
-    @Override
-    public ByteArrayInputStream exportTeachingSchedule(
-            List<TCTeachingScheduleResponse> teachingScheduleResponseList) {
-        Document document = new Document();
-        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+                        BaseFont unicodeFont = BaseFont.createFont("font/Arial Unicode.ttf", BaseFont.IDENTITY_H,
+                                        BaseFont.EMBEDDED);
+                        Font fontHeaders = new Font(unicodeFont, 15, Font.BOLD);
+                        Font headFont = new Font(unicodeFont, 12, Font.SYMBOL, new Color(239, 235, 235));
+                        Font cellFont = new Font(unicodeFont, 12);
 
-        try {
-            PdfWriter.getInstance(document, byteArrayOutputStream);
-            document.open();
+                        Paragraph paragraph = new Paragraph(
+                                        "Lịch dạy giảng viên: "
+                                                        + sessionHelper.getUserCode()
+                                                        + " - "
+                                                        + sessionHelper.getUserName(),
+                                        fontHeaders);
+                        paragraph.setAlignment(Element.ALIGN_CENTER);
+                        document.add(paragraph);
+                        document.add(Chunk.NEWLINE);
 
-            BaseFont unicodeFont = BaseFont.createFont("font/Arial Unicode.ttf", BaseFont.IDENTITY_H,
-                    BaseFont.EMBEDDED);
-            Font fontHeaders = new Font(unicodeFont, 15, Font.BOLD);
-            Font headFont = new Font(unicodeFont, 12, Font.SYMBOL, new Color(239, 235, 235));
-            Font cellFont = new Font(unicodeFont, 12);
+                        PdfPTable pdfTable = new PdfPTable(8);
+                        pdfTable.setWidthPercentage(100);
+                        pdfTable.setSpacingBefore(10f);
+                        pdfTable.setSpacingAfter(10f);
+                        pdfTable.setWidths(new float[] { 50, 30, 30, 20, 30, 30, 25, 30 });
 
-            Paragraph paragraph = new Paragraph(
-                    "Lịch dạy giảng viên: "
-                            + sessionHelper.getUserCode()
-                            + " - "
-                            + sessionHelper.getUserName(),
-                    fontHeaders);
-            paragraph.setAlignment(Element.ALIGN_CENTER);
-            document.add(paragraph);
-            document.add(Chunk.NEWLINE);
+                        Color headerColor = new Color(2, 3, 51);
 
-            PdfPTable pdfTable = new PdfPTable(8);
-            pdfTable.setWidthPercentage(100);
-            pdfTable.setSpacingBefore(10f);
-            pdfTable.setSpacingAfter(10f);
-            pdfTable.setWidths(new float[] { 50, 30, 30, 20, 30, 30, 25, 30 });
+                        Color rowColor1 = new Color(255, 255, 255);
+                        Color rowColor2 = new Color(245, 245, 245);
 
-            Color headerColor = new Color(2, 3, 51);
+                        Stream.of("Ngày", "Ca ", "Điểm danh muộn", "Mã môn", "Xưởng", "Địa điểm", "Hình thức",
+                                        "Mô tả")
+                                        .forEach(headerTitle -> {
+                                                PdfPCell headerCell = new PdfPCell();
+                                                headerCell.setBackgroundColor(headerColor);
+                                                headerCell.setHorizontalAlignment(Element.ALIGN_CENTER);
+                                                headerCell.setBorderWidth(1);
+                                                headerCell.setPadding(8);
+                                                headerCell.setPhrase(new Phrase(headerTitle, headFont));
+                                                pdfTable.addCell(headerCell);
+                                        });
 
-            Color rowColor1 = new Color(255, 255, 255);
-            Color rowColor2 = new Color(245, 245, 245);
+                        SimpleDateFormat dateFormat = new SimpleDateFormat("EEEE - dd/MM/yyyy HH:mm",
+                                        new Locale("vi", "VN"));
 
-            Stream.of("Ngày", "Ca ", "Điểm danh muộn", "Mã môn", "Xưởng", "Địa điểm", "Hình thức",
-                    "Mô tả")
-                    .forEach(headerTitle -> {
-                        PdfPCell headerCell = new PdfPCell();
-                        headerCell.setBackgroundColor(headerColor);
-                        headerCell.setHorizontalAlignment(Element.ALIGN_CENTER);
-                        headerCell.setBorderWidth(1);
-                        headerCell.setPadding(8);
-                        headerCell.setPhrase(new Phrase(headerTitle, headFont));
-                        pdfTable.addCell(headerCell);
-                    });
+                        int rowIndex = 0;
+                        for (TCTeachingScheduleResponse teachingScheduleResponse : teachingScheduleResponseList) {
+                                Color backgroundColor = (rowIndex % 2 == 0) ? rowColor1 : rowColor2;
 
-            SimpleDateFormat dateFormat = new SimpleDateFormat("EEEE - dd/MM/yyyy HH:mm",
-                    new Locale("vi", "VN"));
+                                String formattedTeachingDay = dateFormat
+                                                .format(new Date(teachingScheduleResponse.getStartTeaching()));
+                                PdfPCell teachingDayCell = new PdfPCell(new Phrase(formattedTeachingDay, cellFont));
+                                styleCell(teachingDayCell, backgroundColor);
+                                pdfTable.addCell(teachingDayCell);
 
-            int rowIndex = 0;
-            for (TCTeachingScheduleResponse teachingScheduleResponse : teachingScheduleResponseList) {
-                Color backgroundColor = (rowIndex % 2 == 0) ? rowColor1 : rowColor2;
+                                PdfPCell shiftCell = new PdfPCell(new Phrase(
+                                                String.valueOf(teachingScheduleResponse.getShift()), cellFont));
+                                styleCell(shiftCell, backgroundColor);
+                                pdfTable.addCell(shiftCell);
 
-                String formattedTeachingDay = dateFormat
-                        .format(new Date(teachingScheduleResponse.getStartTeaching()));
-                PdfPCell teachingDayCell = new PdfPCell(new Phrase(formattedTeachingDay, cellFont));
-                styleCell(teachingDayCell, backgroundColor);
-                pdfTable.addCell(teachingDayCell);
+                                PdfPCell lateArrivalCell = new PdfPCell(new Phrase(
+                                                String.valueOf(teachingScheduleResponse.getLateArrival() + " phút"),
+                                                cellFont));
+                                styleCell(lateArrivalCell, backgroundColor);
+                                pdfTable.addCell(lateArrivalCell);
 
-                PdfPCell shiftCell = new PdfPCell(new Phrase(
-                        String.valueOf(teachingScheduleResponse.getShift()), cellFont));
-                styleCell(shiftCell, backgroundColor);
-                pdfTable.addCell(shiftCell);
+                                PdfPCell subjectCell = new PdfPCell(new Phrase(
+                                                String.valueOf(teachingScheduleResponse.getSubjectCode()), cellFont));
+                                styleCell(subjectCell, backgroundColor);
+                                pdfTable.addCell(subjectCell);
 
-                PdfPCell lateArrivalCell = new PdfPCell(new Phrase(
-                        String.valueOf(teachingScheduleResponse.getLateArrival() + " phút"),
-                        cellFont));
-                styleCell(lateArrivalCell, backgroundColor);
-                pdfTable.addCell(lateArrivalCell);
+                                PdfPCell factoryCell = new PdfPCell(new Phrase(
+                                                String.valueOf(teachingScheduleResponse.getFactoryName()), cellFont));
+                                styleCell(factoryCell, backgroundColor);
+                                pdfTable.addCell(factoryCell);
 
-                PdfPCell subjectCell = new PdfPCell(new Phrase(
-                        String.valueOf(teachingScheduleResponse.getSubjectCode()), cellFont));
-                styleCell(subjectCell, backgroundColor);
-                pdfTable.addCell(subjectCell);
+                                PdfPCell roomCell = new PdfPCell(new Phrase(
+                                                String.valueOf(teachingScheduleResponse.getRoom()), cellFont));
+                                styleCell(roomCell, backgroundColor);
+                                pdfTable.addCell(roomCell);
 
-                PdfPCell factoryCell = new PdfPCell(new Phrase(
-                        String.valueOf(teachingScheduleResponse.getFactoryName()), cellFont));
-                styleCell(factoryCell, backgroundColor);
-                pdfTable.addCell(factoryCell);
+                                PdfPCell typeCell = new PdfPCell(new Phrase(
+                                                String.valueOf(teachingScheduleResponse.getType() == 0 ? "Offline"
+                                                                : "Online"),
+                                                cellFont));
+                                styleCell(typeCell, backgroundColor);
+                                pdfTable.addCell(typeCell);
 
-                PdfPCell roomCell = new PdfPCell(new Phrase(
-                        String.valueOf(teachingScheduleResponse.getRoom()), cellFont));
-                styleCell(roomCell, backgroundColor);
-                pdfTable.addCell(roomCell);
+                                PdfPCell descriptionCell = new PdfPCell(new Phrase(
+                                                teachingScheduleResponse.getDescription() != null
+                                                                ? teachingScheduleResponse.getDescription()
+                                                                : "",
+                                                cellFont));
+                                styleCell(descriptionCell, backgroundColor);
+                                pdfTable.addCell(descriptionCell);
 
-                PdfPCell typeCell = new PdfPCell(new Phrase(
-                        String.valueOf(teachingScheduleResponse.getType() == 0 ? "Offline"
-                                : "Online"),
-                        cellFont));
-                styleCell(typeCell, backgroundColor);
-                pdfTable.addCell(typeCell);
+                                rowIndex++;
+                        }
 
-                PdfPCell descriptionCell = new PdfPCell(new Phrase(
-                        teachingScheduleResponse.getDescription() != null
-                                ? teachingScheduleResponse.getDescription()
-                                : "",
-                        cellFont));
-                styleCell(descriptionCell, backgroundColor);
-                pdfTable.addCell(descriptionCell);
-
-                rowIndex++;
-            }
-
-            document.add(pdfTable);
-            document.close();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        return new ByteArrayInputStream(byteArrayOutputStream.toByteArray());
-    }
-
-    private void styleCell(PdfPCell cell, Color backgroundColor) {
-        cell.setBackgroundColor(backgroundColor);
-        cell.setHorizontalAlignment(Element.ALIGN_CENTER);
-        cell.setVerticalAlignment(Element.ALIGN_MIDDLE);
-        cell.setBorderWidth(1);
-        cell.setPadding(8);
-        cell.setBorderColor(new Color(200, 200, 200));
-    }
-
-    public TCTSDetailPlanDateResponse getCachedPlanDateDetail(String planDateId) {
-        Optional<TCTSDetailPlanDateResponse> getDetailPlanDateResponse = teacherTeachingScheduleExtendRepository
-                .getPlanDateById(planDateId);
-        return getDetailPlanDateResponse.orElse(null);
-    }
-
-    @Override
-    public ResponseEntity<?> getDetailPlanDate(String planDateId) {
-        TCTSDetailPlanDateResponse detail = getCachedPlanDateDetail(planDateId);
-        if (detail != null) {
-            return RouterHelper.responseSuccess("Lấy chi tiết kế hoạch thành công", detail);
-        }
-        return RouterHelper.responseSuccess("Lấy chi tiết lịch dạy thành công", null);
-    }
-
-    @Override
-    public ResponseEntity<?> updatePlanDate(TCTSPlanDateUpdateRequest planDateUpdateRequest) {
-        // Trim all string fields in the request
-        RequestTrimHelper.trimStringFields(planDateUpdateRequest);
-
-        Optional<PlanDate> existPlanDate = teacherTeachingScheduleExtendRepository
-                .findById(planDateUpdateRequest.getIdPlanDate());
-
-        if (existPlanDate.isEmpty()) {
-            return RouterHelper.responseError("Không tìm thấy lịch dạy");
-        }
-
-        PlanDate planDate = existPlanDate.get();
-        if (!Objects.equals(planDate.getPlanFactory().getFactory().getUserStaff().getId(),
-                sessionHelper.getUserId())) {
-            return RouterHelper.responseError("Lịch dạy không phải của bạn");
-        }
-
-        boolean isOutOfTime = teacherTeachingScheduleExtendRepository.isOutOfTime(existPlanDate.get().getId());
-        if (isOutOfTime) {
-            return RouterHelper.responseError("Đã quá giờ cập nhật ca dạy");
-        }
-
-        int MAX_LATE_ARRIVAL = settingHelper.getSetting(SettingKeys.SHIFT_MAX_LATE_ARRIVAL, Integer.class);
-
-        if (planDateUpdateRequest.getLateArrival() > MAX_LATE_ARRIVAL) {
-            return RouterHelper.responseError(
-                    "Thời gian điểm danh muộn nhất không quá " + MAX_LATE_ARRIVAL + " phút");
-        }
-
-        if (StringUtils.hasText(planDateUpdateRequest.getLink())
-                && !ValidateHelper.isValidURL(planDateUpdateRequest.getLink())) {
-            return RouterHelper.responseError("Link online không hợp lệ");
-        }
-
-        String oldDescription = planDate.getDescription();
-        Integer oldLateArrival = planDate.getLateArrival();
-        String oldLink = planDate.getLink();
-        String oldRoom = planDate.getRoom();
-
-        planDate.setDescription(planDateUpdateRequest.getDescription());
-        planDate.setLateArrival(planDateUpdateRequest.getLateArrival());
-        planDate.setLink(planDateUpdateRequest.getLink());
-        planDate.setRoom(planDateUpdateRequest.getRoom());
-        PlanDate savedPlanDate = teacherTeachingScheduleExtendRepository.save(planDate);
-
-        boolean hasChanges = !Objects.equals(oldDescription, planDateUpdateRequest.getDescription()) ||
-                !Objects.equals(oldLateArrival, planDateUpdateRequest.getLateArrival()) ||
-                !Objects.equals(oldLink, planDateUpdateRequest.getLink()) ||
-                !Objects.equals(oldRoom, planDateUpdateRequest.getRoom());
-
-        if (hasChanges) {
-            sendUpdateNotificationToStudents(savedPlanDate,
-                    "Thông báo cập nhật lịch học",
-                    "Thông tin lịch học đã được cập nhật");
-        }
-
-        // Invalidate related caches
-        redisInvalidationHelper.invalidateAllCaches();
-
-        return RouterHelper.responseSuccess("Cập nhật thông tin buổi thành công", savedPlanDate);
-    }
-
-    private void sendUpdateNotificationToStudents(PlanDate planDate, String subject, String notificationType) {
-        try {
-            String factoryId = planDate.getPlanFactory().getFactory().getId();
-
-            Factory factory = planDate.getPlanFactory().getFactory();
-            String factoryName = factory.getName();
-            String projectName = factory.getProject().getName();
-            String subjectName = factory.getProject().getSubjectFacility().getSubject().getName();
-            String staffName = factory.getUserStaff().getName() + " (" + factory.getUserStaff().getCode()
-                    + ")";
-
-            String shiftStr = ShiftHelper.getShiftsString(planDate.getShift());
-            String classType = planDate.getType() == ShiftType.ONLINE ? "Online" : "Offline";
-            String location = planDate.getRoom() != null ? planDate.getRoom() : "Chưa có thông tin";
-            String link = planDate.getLink() != null && !planDate.getLink().trim().isEmpty()
-                    ? planDate.getLink()
-                    : "Không có";
-
-            LocalDateTime startDateTime = LocalDateTime.ofInstant(
-                    java.time.Instant.ofEpochMilli(planDate.getStartDate()),
-                    ZoneId.systemDefault());
-            LocalDateTime endDateTime = LocalDateTime.ofInstant(
-                    java.time.Instant.ofEpochMilli(planDate.getEndDate()),
-                    ZoneId.systemDefault());
-
-            DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-            DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm");
-
-            String classDate = startDateTime.format(dateFormatter);
-            String startTime = startDateTime.format(timeFormatter);
-            String endTime = endDateTime.format(timeFormatter);
-
-            List<UserStudentFactory> studentFactories = userStudentFactoryRepository.findAll().stream()
-                    .filter(usf -> usf.getStatus() == EntityStatus.ACTIVE)
-                    .filter(usf -> usf.getFactory().getStatus() == EntityStatus.ACTIVE)
-                    .filter(usf -> usf.getFactory().getId().equals(factoryId))
-                    .filter(usf -> usf.getUserStudent().getStatus() == EntityStatus.ACTIVE)
-                    .toList();
-
-            for (UserStudentFactory studentFactory : studentFactories) {
-                UserStudent student = studentFactory.getUserStudent();
-                if (student.getEmail() == null || student.getEmail().trim().isEmpty()) {
-                    continue;
+                        document.add(pdfTable);
+                        document.close();
+                } catch (Exception e) {
+                        e.printStackTrace();
                 }
 
-                Map<String, Object> data = new HashMap<>();
-                data.put("STUDENT_NAME", student.getName());
-                data.put("NOTIFICATION_TYPE", notificationType);
-                data.put("FACTORY_NAME", factoryName);
-                data.put("PROJECT_NAME", projectName);
-                data.put("SUBJECT_NAME", subjectName);
-                data.put("STAFF_NAME", staffName);
-                data.put("LOCATION", location);
-                data.put("SHIFT", shiftStr);
-                data.put("CLASS_TYPE", classType);
-                data.put("CLASS_DATE", classDate);
-                data.put("START_TIME", startTime);
-                data.put("END_TIME", endTime);
-                data.put("LINK", link);
-                data.put("LATE_ARRIVAL", planDate.getLateArrival() + " phút");
-                data.put("DESCRIPTION", planDate.getDescription() != null ? planDate.getDescription()
-                        : "Không có");
-
-                String content = MailerHelper.loadTemplate("schedule-update-notification.html", data);
-
-                MailerDefaultRequest mailRequest = new MailerDefaultRequest();
-                mailRequest.setTo(student.getEmail());
-                mailRequest.setTitle("[" + appName + "] " + subject);
-                mailRequest.setContent(content);
-
-                mailerHelper.send(mailRequest);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    public PageableObject<?> getCachedCurrentTeachingSchedule(TCTeachingScheduleRequest request) {
-        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_SCHEDULE_TEACHER + "current_"
-                + sessionHelper.getUserId() + "_"
-                + request.toString();
-
-        Object cachedData = redisService.get(cacheKey);
-        if (cachedData != null) {
-            try {
-                return redisService.getObject(cacheKey, PageableObject.class);
-            } catch (Exception e) {
-                redisService.delete(cacheKey);
-            }
+                return new ByteArrayInputStream(byteArrayOutputStream.toByteArray());
         }
 
-        Pageable pageable = PaginationHelper.createPageable(request);
-        PageableObject<?> list = PageableObject
-                .of(teacherTeachingScheduleExtendRepository.getAllTeachingSchedulePresent(
-                        sessionHelper.getUserId(), pageable, request));
-
-        try {
-            redisService.set(cacheKey, list, redisTTL / 2); // Shorter TTL for current schedules as they
-            // change more often
-        } catch (Exception ignored) {
+        private void styleCell(PdfPCell cell, Color backgroundColor) {
+                cell.setBackgroundColor(backgroundColor);
+                cell.setHorizontalAlignment(Element.ALIGN_CENTER);
+                cell.setVerticalAlignment(Element.ALIGN_MIDDLE);
+                cell.setBorderWidth(1);
+                cell.setPadding(8);
+                cell.setBorderColor(new Color(200, 200, 200));
         }
 
-        return list;
-    }
-
-    @Override
-    public ResponseEntity<?> getAllTeachingSchedulePresent(
-            TCTeachingScheduleRequest teachingScheduleRequest) {
-        PageableObject<?> list = getCachedCurrentTeachingSchedule(teachingScheduleRequest);
-        return RouterHelper.responseSuccess("Lấy tất cả lịch dạy hiện tại thành công", list);
-    }
-
-    @Override
-    public ResponseEntity<?> changeTypePlanDate(String planDateId, String room) {
-        Optional<PlanDate> existPlanDate = teacherTeachingScheduleExtendRepository.findById(planDateId);
-        if (existPlanDate.isEmpty()) {
-            return RouterHelper.responseError("Không tìm thấy lịch dạy");
+        public TCTSDetailPlanDateResponse getCachedPlanDateDetail(String planDateId) {
+                Optional<TCTSDetailPlanDateResponse> getDetailPlanDateResponse = teacherTeachingScheduleExtendRepository
+                                .getPlanDateById(planDateId);
+                return getDetailPlanDateResponse.orElse(null);
         }
 
-        PlanDate planDate = existPlanDate.get();
-        if (!Objects.equals(planDate.getPlanFactory().getFactory().getUserStaff().getId(),
-                sessionHelper.getUserId())) {
-            return RouterHelper.responseError("Lịch dạy không phải của bạn");
+        @Override
+        public ResponseEntity<?> getDetailPlanDate(String planDateId) {
+                TCTSDetailPlanDateResponse detail = getCachedPlanDateDetail(planDateId);
+                if (detail != null) {
+                        return RouterHelper.responseSuccess("Lấy chi tiết kế hoạch thành công", detail);
+                }
+                return RouterHelper.responseSuccess("Lấy chi tiết lịch dạy thành công", null);
         }
 
-        boolean isOutOfTime = teacherTeachingScheduleExtendRepository.isOutOfTime(existPlanDate.get().getId());
-        if (isOutOfTime) {
-            return RouterHelper.responseError("Đã quá giờ cập nhật ca dạy");
+        @Override
+        public ResponseEntity<?> updatePlanDate(TCTSPlanDateUpdateRequest planDateUpdateRequest) {
+                // Trim all string fields in the request
+                RequestTrimHelper.trimStringFields(planDateUpdateRequest);
+
+                Optional<PlanDate> existPlanDate = teacherTeachingScheduleExtendRepository
+                                .findById(planDateUpdateRequest.getIdPlanDate());
+
+                if (existPlanDate.isEmpty()) {
+                        return RouterHelper.responseError("Không tìm thấy lịch dạy");
+                }
+
+                PlanDate planDate = existPlanDate.get();
+                if (!Objects.equals(planDate.getPlanFactory().getFactory().getUserStaff().getId(),
+                                sessionHelper.getUserId())) {
+                        return RouterHelper.responseError("Lịch dạy không phải của bạn");
+                }
+
+                boolean isOutOfTime = teacherTeachingScheduleExtendRepository.isOutOfTime(existPlanDate.get().getId());
+                if (isOutOfTime) {
+                        return RouterHelper.responseError("Đã quá giờ cập nhật ca dạy");
+                }
+
+                int MAX_LATE_ARRIVAL = settingHelper.getSetting(SettingKeys.SHIFT_MAX_LATE_ARRIVAL, Integer.class);
+
+                if (planDateUpdateRequest.getLateArrival() > MAX_LATE_ARRIVAL) {
+                        return RouterHelper.responseError(
+                                        "Thời gian điểm danh muộn nhất không quá " + MAX_LATE_ARRIVAL + " phút");
+                }
+
+                if (StringUtils.hasText(planDateUpdateRequest.getLink())
+                                && !ValidateHelper.isValidURL(planDateUpdateRequest.getLink())) {
+                        return RouterHelper.responseError("Link online không hợp lệ");
+                }
+
+                String oldDescription = planDate.getDescription();
+                Integer oldLateArrival = planDate.getLateArrival();
+                String oldLink = planDate.getLink();
+                String oldRoom = planDate.getRoom();
+
+                planDate.setDescription(planDateUpdateRequest.getDescription());
+                planDate.setLateArrival(planDateUpdateRequest.getLateArrival());
+                planDate.setLink(planDateUpdateRequest.getLink());
+                planDate.setRoom(planDateUpdateRequest.getRoom());
+                PlanDate savedPlanDate = teacherTeachingScheduleExtendRepository.save(planDate);
+
+                boolean hasChanges = !Objects.equals(oldDescription, planDateUpdateRequest.getDescription()) ||
+                                !Objects.equals(oldLateArrival, planDateUpdateRequest.getLateArrival()) ||
+                                !Objects.equals(oldLink, planDateUpdateRequest.getLink()) ||
+                                !Objects.equals(oldRoom, planDateUpdateRequest.getRoom());
+
+                if (hasChanges) {
+                        sendUpdateNotificationToStudents(savedPlanDate,
+                                        "Thông báo cập nhật lịch học",
+                                        "Thông tin lịch học đã được cập nhật");
+                }
+
+                // Invalidate related caches
+                redisInvalidationHelper.invalidateAllCaches();
+
+                return RouterHelper.responseSuccess("Cập nhật thông tin buổi thành công", savedPlanDate);
         }
 
-        ShiftType oldType = planDate.getType();
+        private void sendUpdateNotificationToStudents(PlanDate planDate, String subject, String notificationType) {
+                try {
+                        String factoryId = planDate.getPlanFactory().getFactory().getId();
 
-        planDate.setType(planDate.getType() == ShiftType.ONLINE ? ShiftType.OFFLINE : ShiftType.ONLINE);
-        planDate.setRequiredIp(planDate.getRequiredIp() == StatusType.DISABLE ? StatusType.ENABLE
-                : StatusType.DISABLE);
-        planDate.setRequiredLocation(planDate.getRequiredLocation() == StatusType.DISABLE ? StatusType.ENABLE
-                : StatusType.DISABLE);
-        planDate.setRoom(planDate.getType() == ShiftType.ONLINE ? "" : room);
-        planDate.setLink(planDate.getType() == ShiftType.ONLINE ? planDate.getLink() : "");
-        PlanDate savedPlanDate = teacherTeachingScheduleExtendRepository.save(planDate);
+                        Factory factory = planDate.getPlanFactory().getFactory();
+                        String factoryName = factory.getName();
+                        String projectName = factory.getProject().getName();
+                        String subjectName = factory.getProject().getSubjectFacility().getSubject().getName();
+                        String staffName = factory.getUserStaff().getName() + " (" + factory.getUserStaff().getCode()
+                                        + ")";
 
-        String notificationType = "Thay đổi hình thức học từ " +
-                (oldType == ShiftType.ONLINE ? "Online" : "Offline") +
-                " sang " +
-                (savedPlanDate.getType() == ShiftType.ONLINE ? "Online" : "Offline");
+                        String shiftStr = ShiftHelper.getShiftsString(planDate.getShift());
+                        String classType = planDate.getType() == ShiftType.ONLINE ? "Online" : "Offline";
+                        String location = planDate.getRoom() != null ? planDate.getRoom() : "Chưa có thông tin";
+                        String link = planDate.getLink() != null && !planDate.getLink().trim().isEmpty()
+                                        ? planDate.getLink()
+                                        : "Không có";
 
-        sendUpdateNotificationToStudents(savedPlanDate,
-                "Thông báo thay đổi hình thức học",
-                notificationType);
+                        LocalDateTime startDateTime = LocalDateTime.ofInstant(
+                                        java.time.Instant.ofEpochMilli(planDate.getStartDate()),
+                                        ZoneId.systemDefault());
+                        LocalDateTime endDateTime = LocalDateTime.ofInstant(
+                                        java.time.Instant.ofEpochMilli(planDate.getEndDate()),
+                                        ZoneId.systemDefault());
 
-        // Invalidate related caches
-        redisInvalidationHelper.invalidateAllCaches();
+                        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+                        DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm");
 
-        return RouterHelper.responseSuccess("Thay đổi hình thức thành công", savedPlanDate);
-    }
+                        String classDate = startDateTime.format(dateFormatter);
+                        String startTime = startDateTime.format(timeFormatter);
+                        String endTime = endDateTime.format(timeFormatter);
+
+                        List<UserStudentFactory> studentFactories = userStudentFactoryRepository.findAll().stream()
+                                        .filter(usf -> usf.getStatus() == EntityStatus.ACTIVE)
+                                        .filter(usf -> usf.getFactory().getStatus() == EntityStatus.ACTIVE)
+                                        .filter(usf -> usf.getFactory().getId().equals(factoryId))
+                                        .filter(usf -> usf.getUserStudent().getStatus() == EntityStatus.ACTIVE)
+                                        .toList();
+
+                        for (UserStudentFactory studentFactory : studentFactories) {
+                                UserStudent student = studentFactory.getUserStudent();
+                                if (student.getEmail() == null || student.getEmail().trim().isEmpty()) {
+                                        continue;
+                                }
+
+                                Map<String, Object> data = new HashMap<>();
+                                data.put("STUDENT_NAME", student.getName());
+                                data.put("NOTIFICATION_TYPE", notificationType);
+                                data.put("FACTORY_NAME", factoryName);
+                                data.put("PROJECT_NAME", projectName);
+                                data.put("SUBJECT_NAME", subjectName);
+                                data.put("STAFF_NAME", staffName);
+                                data.put("LOCATION", location);
+                                data.put("SHIFT", shiftStr);
+                                data.put("CLASS_TYPE", classType);
+                                data.put("CLASS_DATE", classDate);
+                                data.put("START_TIME", startTime);
+                                data.put("END_TIME", endTime);
+                                data.put("LINK", link);
+                                data.put("LATE_ARRIVAL", planDate.getLateArrival() + " phút");
+                                data.put("DESCRIPTION", planDate.getDescription() != null ? planDate.getDescription()
+                                                : "Không có");
+
+                                String content = MailerHelper.loadTemplate("schedule-update-notification.html", data);
+
+                                MailerDefaultRequest mailRequest = new MailerDefaultRequest();
+                                mailRequest.setTo(student.getEmail());
+                                mailRequest.setTitle("[" + appName + "] " + subject);
+                                mailRequest.setContent(content);
+
+                                mailerHelper.send(mailRequest);
+                        }
+                } catch (Exception e) {
+                        e.printStackTrace();
+                }
+        }
+
+        public PageableObject<?> getCachedCurrentTeachingSchedule(TCTeachingScheduleRequest request) {
+                String cacheKey = RedisPrefixConstant.REDIS_PREFIX_SCHEDULE_TEACHER + "current_"
+                                + sessionHelper.getUserId() + "_"
+                                + request.toString();
+                return redisCacheHelper.getOrSet(
+                                cacheKey,
+                                () -> PageableObject.of(
+                                                teacherTeachingScheduleExtendRepository.getAllTeachingSchedulePresent(
+                                                                sessionHelper.getUserId(),
+                                                                PaginationHelper.createPageable(request), request)),
+                                new TypeReference<PageableObject<?>>() {
+                                },
+                                redisTTL / 2 // Shorter TTL for current schedules as they change more often
+                );
+        }
+
+        @Override
+        public ResponseEntity<?> getAllTeachingSchedulePresent(
+                        TCTeachingScheduleRequest teachingScheduleRequest) {
+                PageableObject<?> list = getCachedCurrentTeachingSchedule(teachingScheduleRequest);
+                return RouterHelper.responseSuccess("Lấy tất cả lịch dạy hiện tại thành công", list);
+        }
+
+        @Override
+        public ResponseEntity<?> changeTypePlanDate(String planDateId, String room) {
+                Optional<PlanDate> existPlanDate = teacherTeachingScheduleExtendRepository.findById(planDateId);
+                if (existPlanDate.isEmpty()) {
+                        return RouterHelper.responseError("Không tìm thấy lịch dạy");
+                }
+
+                PlanDate planDate = existPlanDate.get();
+                if (!Objects.equals(planDate.getPlanFactory().getFactory().getUserStaff().getId(),
+                                sessionHelper.getUserId())) {
+                        return RouterHelper.responseError("Lịch dạy không phải của bạn");
+                }
+
+                boolean isOutOfTime = teacherTeachingScheduleExtendRepository.isOutOfTime(existPlanDate.get().getId());
+                if (isOutOfTime) {
+                        return RouterHelper.responseError("Đã quá giờ cập nhật ca dạy");
+                }
+
+                ShiftType oldType = planDate.getType();
+
+                planDate.setType(planDate.getType() == ShiftType.ONLINE ? ShiftType.OFFLINE : ShiftType.ONLINE);
+                planDate.setRequiredIp(planDate.getRequiredIp() == StatusType.DISABLE ? StatusType.ENABLE
+                                : StatusType.DISABLE);
+                planDate.setRequiredLocation(planDate.getRequiredLocation() == StatusType.DISABLE ? StatusType.ENABLE
+                                : StatusType.DISABLE);
+                planDate.setRoom(planDate.getType() == ShiftType.ONLINE ? "" : room);
+                planDate.setLink(planDate.getType() == ShiftType.ONLINE ? planDate.getLink() : "");
+                PlanDate savedPlanDate = teacherTeachingScheduleExtendRepository.save(planDate);
+
+                String notificationType = "Thay đổi hình thức học từ " +
+                                (oldType == ShiftType.ONLINE ? "Online" : "Offline") +
+                                " sang " +
+                                (savedPlanDate.getType() == ShiftType.ONLINE ? "Online" : "Offline");
+
+                sendUpdateNotificationToStudents(savedPlanDate,
+                                "Thông báo thay đổi hình thức học",
+                                notificationType);
+
+                // Invalidate related caches
+                redisInvalidationHelper.invalidateAllCaches();
+
+                return RouterHelper.responseSuccess("Thay đổi hình thức thành công", savedPlanDate);
+        }
 }

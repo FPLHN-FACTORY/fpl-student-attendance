@@ -22,6 +22,8 @@ import udpm.hn.studentattendance.infrastructure.common.repositories.CommonUserSt
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.RedisPrefixConstant;
 import udpm.hn.studentattendance.infrastructure.redis.service.RedisService;
+import com.fasterxml.jackson.core.type.TypeReference;
+import udpm.hn.studentattendance.helpers.RedisCacheHelper;
 
 @Service
 @RequiredArgsConstructor
@@ -33,7 +35,7 @@ public class ADSubjectManagementServiceImpl implements ADSubjectManagementServic
 
     private final UserActivityLogHelper userActivityLogHelper;
 
-    private final RedisService redisService;
+    private final RedisCacheHelper redisCacheHelper;
 
     private final RedisInvalidationHelper redisInvalidationHelper;
 
@@ -42,29 +44,14 @@ public class ADSubjectManagementServiceImpl implements ADSubjectManagementServic
 
     // Phương thức helper để lấy danh sách bộ môn từ cache hoặc DB
     public PageableObject getSubjects(ADSubjectSearchRequest request) {
-        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_SUBJECT + "list_" + request.toString();
-
-        // Kiểm tra cache
-        Object cachedData = redisService.get(cacheKey);
-        if (cachedData != null) {
-            try {
-                return redisService.getObject(cacheKey, PageableObject.class);
-            } catch (Exception e) {
-                redisService.delete(cacheKey);
-            }
-        }
-
-        // Cache miss - fetch from database
-        Pageable pageable = PaginationHelper.createPageable(request, "id");
-        PageableObject result = PageableObject.of(adminSubjectRepository.getAll(pageable, request));
-
-        // Store in cache
-        try {
-            redisService.set(cacheKey, result, redisTTL);
-        } catch (Exception ignored) {
-        }
-
-        return result;
+        String key = RedisPrefixConstant.REDIS_PREFIX_SUBJECT + "list_" + request.toString();
+        return redisCacheHelper.getOrSet(
+                key,
+                () -> PageableObject
+                        .of(adminSubjectRepository.getAll(PaginationHelper.createPageable(request, "id"), request)),
+                new TypeReference<PageableObject<?>>() {
+                },
+                redisTTL);
     }
 
     public Subject getSubjectById(String id) {
@@ -176,5 +163,4 @@ public class ADSubjectManagementServiceImpl implements ADSubjectManagementServic
         return RouterHelper.responseSuccess("Đổi trạng thái bộ môn thành công", newEntity);
     }
 
-   
 }

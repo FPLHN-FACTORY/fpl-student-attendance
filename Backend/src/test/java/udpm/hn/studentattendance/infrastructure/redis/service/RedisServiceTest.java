@@ -3,16 +3,17 @@ package udpm.hn.studentattendance.infrastructure.redis.service;
 import org.junit.jupiter.api.Test;
 import static org.mockito.Mockito.*;
 import static org.junit.jupiter.api.Assertions.*;
+import com.fasterxml.jackson.core.type.TypeReference;
 
 class RedisServiceTest {
     @Test
     void testSetAndGetObject() {
         RedisService redis = mock(RedisService.class);
-        when(redis.getObject("key", String.class)).thenReturn("value");
-        redis.setObject("key", "value");
-        String result = redis.getObject("key", String.class);
+        TypeReference<String> typeRef = new TypeReference<String>() {
+        };
+        when(redis.getObject("key", typeRef)).thenReturn("value");
+        String result = redis.getObject("key", typeRef);
         assertEquals("value", result);
-        verify(redis).setObject("key", "value");
     }
 
     @Test

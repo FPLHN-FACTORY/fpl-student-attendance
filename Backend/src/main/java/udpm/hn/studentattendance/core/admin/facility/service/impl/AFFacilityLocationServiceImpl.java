@@ -22,6 +22,8 @@ import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.RedisPrefixConstant;
 import udpm.hn.studentattendance.infrastructure.redis.service.RedisService;
+import com.fasterxml.jackson.core.type.TypeReference;
+import udpm.hn.studentattendance.helpers.RedisCacheHelper;
 
 @Service
 @RequiredArgsConstructor
@@ -32,7 +34,7 @@ public class AFFacilityLocationServiceImpl implements AFFacilityLocationService 
 
     private final UserActivityLogHelper userActivityLogHelper;
 
-    private final RedisService redisService;
+    private final RedisCacheHelper redisCacheHelper;
 
     private final RedisInvalidationHelper redisInvalidationHelper;
 
@@ -40,33 +42,14 @@ public class AFFacilityLocationServiceImpl implements AFFacilityLocationService 
     private long redisTTL;
 
     public PageableObject<AFFacilityLocationResponse> getLocationList(AFFilterFacilityLocationRequest request) {
-        // Tạo cache key sử dụng toString()
-        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_FACILITY_LOCATION + "list_" + request.toString();
-
-        // Kiểm tra cache
-        Object cachedData = redisService.get(cacheKey);
-        if (cachedData != null) {
-            try {
-                // Thử lấy dữ liệu từ cache sử dụng getObject
-                return redisService.getObject(cacheKey, PageableObject.class);
-            } catch (Exception e) {
-                // Nếu lỗi, xóa cache entry và tiếp tục lấy dữ liệu mới
-                redisService.delete(cacheKey);
-            }
-        }
-
-        // Cache miss - fetch from database
-        Pageable pageable = PaginationHelper.createPageable(request);
-        PageableObject<AFFacilityLocationResponse> data = PageableObject.of(
-                afFacilityLocationRepository.getAllByFilter(pageable, request));
-
-        // Store in cache
-        try {
-            redisService.set(cacheKey, data, redisTTL);
-        } catch (Exception ignored) {
-        }
-
-        return data;
+        String key = RedisPrefixConstant.REDIS_PREFIX_FACILITY_LOCATION + "list_" + request.toString();
+        return redisCacheHelper.getOrSet(
+                key,
+                () -> PageableObject.of(
+                        afFacilityLocationRepository.getAllByFilter(PaginationHelper.createPageable(request), request)),
+                new TypeReference<PageableObject<AFFacilityLocationResponse>>() {
+                },
+                redisTTL);
     }
 
     @Override
