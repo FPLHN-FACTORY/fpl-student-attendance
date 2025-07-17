@@ -23,7 +23,6 @@ import udpm.hn.studentattendance.core.staff.plan.repositories.SPDPlanFactoryRepo
 import udpm.hn.studentattendance.core.staff.plan.repositories.SPDUserStudentRepository;
 import udpm.hn.studentattendance.helpers.MailerHelper;
 import udpm.hn.studentattendance.helpers.SettingHelper;
-import udpm.hn.studentattendance.infrastructure.common.repositories.CommonUserStudentRepository;
 import udpm.hn.studentattendance.core.staff.plan.services.SPDPlanDateService;
 import udpm.hn.studentattendance.entities.FacilityShift;
 import udpm.hn.studentattendance.entities.Factory;
@@ -69,8 +68,6 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
     private final SPDFacilityShiftRepository spdFacilityShiftRepository;
 
     private final SPDUserStudentRepository spdUserStudentRepository;
-
-    private final CommonUserStudentRepository commonUserStudentRepository;
 
     private final SessionHelper sessionHelper;
 
@@ -298,9 +295,6 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
 
         PlanDate newEntity = spdPlanDateRepository.save(planDate);
 
-        commonUserStudentRepository.disableAllStudentDuplicateShiftByStartDate(
-                planDate.getPlanFactory().getFactory().getId(), planDate.getStartDate());
-
         StringBuilder logMessage = new StringBuilder();
         logMessage.append(String.format(
                 "vừa cập nhật lịch ngày %s - Nhóm xưởng: %s - Kế hoạch: %s",
@@ -472,9 +466,6 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
         planDate.setLateArrival(request.getLateArrival());
 
         PlanDate newEntity = spdPlanDateRepository.save(planDate);
-
-        commonUserStudentRepository.disableAllStudentDuplicateShiftByStartDate(
-                planDate.getPlanFactory().getFactory().getId(), planDate.getStartDate());
 
         // Enhanced logging with detailed information
         String logMessage = String.format(

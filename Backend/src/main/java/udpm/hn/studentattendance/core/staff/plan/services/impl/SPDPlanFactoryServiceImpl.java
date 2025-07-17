@@ -28,7 +28,7 @@ import udpm.hn.studentattendance.helpers.SettingHelper;
 import udpm.hn.studentattendance.helpers.ShiftHelper;
 import udpm.hn.studentattendance.helpers.ValidateHelper;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
-import udpm.hn.studentattendance.infrastructure.common.repositories.CommonUserStudentRepository;
+import udpm.hn.studentattendance.infrastructure.common.repositories.CommonPlanDateRepository;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.SettingKeys;
 import udpm.hn.studentattendance.infrastructure.constants.ShiftType;
@@ -59,13 +59,13 @@ public class SPDPlanFactoryServiceImpl implements SPDPlanFactoryService {
 
     private final SPDFacilityShiftRepository spdFacilityShiftRepository;
 
-    private final CommonUserStudentRepository commonUserStudentRepository;
-
     private final SessionHelper sessionHelper;
 
     private final SettingHelper settingHelper;
 
     private final UserActivityLogHelper userActivityLogHelper;
+
+    private final CommonPlanDateRepository commonPlanDateRepository;
 
     @Value("${app.config.allows-one-teacher-to-teach-multiple-classes}")
     private boolean isDisableCheckExistsTeacherOnShift;
@@ -242,8 +242,6 @@ public class SPDPlanFactoryServiceImpl implements SPDPlanFactoryService {
         }
         List<PlanDate> lstEntity = spdPlanDateRepository.saveAllAndFlush(lstPlanDate);
 
-        commonUserStudentRepository.disableAllStudentDuplicateShiftByIdPlanFactory(planFactory.getId());
-
         String firstPlanDate = lstPlanDate.isEmpty() ? "Không có"
                 : DateTimeUtils.convertMillisToDate(lstPlanDate.get(0).getStartDate(), "dd/MM/yyyy HH:mm");
         String lastPlanDate = lstPlanDate.isEmpty() ? "Không có"
@@ -282,6 +280,10 @@ public class SPDPlanFactoryServiceImpl implements SPDPlanFactoryService {
             return RouterHelper.responseError("Không thể thay đổi trạng thái nhóm xưởng này trong kế hoạch");
         }
 
+        if (commonPlanDateRepository.existsNotYetStartedByPlanFactory(planFactory.getId())) {
+            return RouterHelper.responseError("Đang tồn tại ca chưa hoặc đang diễn ra. Không thể thay đổi trạng thái");
+        }
+
         if (planFactory.getStatus() == EntityStatus.INACTIVE
                 && spdPlanFactoryRepository.isExistsFactoryInPlan(planFactory.getFactory().getId())) {
             return RouterHelper.responseError(
@@ -291,10 +293,6 @@ public class SPDPlanFactoryServiceImpl implements SPDPlanFactoryService {
         planFactory.setStatus(
                 planFactory.getStatus() == EntityStatus.ACTIVE ? EntityStatus.INACTIVE : EntityStatus.ACTIVE);
         PlanFactory newEntity = spdPlanFactoryRepository.save(planFactory);
-
-        if (newEntity.getStatus() == EntityStatus.ACTIVE) {
-            commonUserStudentRepository.disableAllStudentDuplicateShiftByIdPlanFactory(planFactory.getId());
-        }
 
         String oldStatus = planFactory.getStatus() == EntityStatus.ACTIVE ? "Hoạt động" : "Không hoạt động";
         String newStatus = newEntity.getStatus() == EntityStatus.ACTIVE ? "Hoạt động" : "Không hoạt động";

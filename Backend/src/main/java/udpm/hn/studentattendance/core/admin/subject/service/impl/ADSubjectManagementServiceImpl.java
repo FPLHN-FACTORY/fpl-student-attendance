@@ -1,7 +1,6 @@
 package udpm.hn.studentattendance.core.admin.subject.service.impl;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import udpm.hn.studentattendance.core.admin.subject.model.request.ADSubjectCreateRequest;
@@ -16,7 +15,7 @@ import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
 import udpm.hn.studentattendance.helpers.ValidateHelper;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
-import udpm.hn.studentattendance.infrastructure.common.repositories.CommonUserStudentRepository;
+import udpm.hn.studentattendance.infrastructure.common.repositories.CommonPlanDateRepository;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.RedisPrefixConstant;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -28,7 +27,7 @@ public class ADSubjectManagementServiceImpl implements ADSubjectManagementServic
 
     private final ADSubjectExtendRepository adminSubjectRepository;
 
-    private final CommonUserStudentRepository commonUserStudentRepository;
+    private final CommonPlanDateRepository commonPlanDateRepository;
 
     private final UserActivityLogHelper userActivityLogHelper;
 
@@ -136,13 +135,15 @@ public class ADSubjectManagementServiceImpl implements ADSubjectManagementServic
         if (s == null) {
             return RouterHelper.responseError("Không tìm thấy bộ môn");
         }
+
+        if (commonPlanDateRepository.existsNotYetStartedBySubject(s.getId())) {
+            return RouterHelper.responseError("Đang tồn tại ca chưa hoặc đang diễn ra. Không thể thay đổi trạng thái");
+        }
+
         s.setStatus(s.getStatus() == EntityStatus.ACTIVE ? EntityStatus.INACTIVE : EntityStatus.ACTIVE);
 
         Subject newEntity = adminSubjectRepository.save(s);
 
-        if (s.getStatus() == EntityStatus.ACTIVE) {
-            commonUserStudentRepository.disableAllStudentDuplicateShiftByIdSubject(s.getId());
-        }
         userActivityLogHelper
                 .saveLog("vừa thay đổi trạng thái 1 bộ môn : " + newEntity.getCode() + " - " + newEntity.getName());
 

@@ -128,6 +128,11 @@ const plan_stats = ref([
     value: 0,
     class: 'text-success',
   },
+  {
+    title: 'Ngừng triển khai',
+    value: 0,
+    class: 'text-danger',
+  },
 ])
 
 const barChartData = ref({
@@ -192,6 +197,7 @@ const columns = ref(
     { title: 'Số buổi', dataIndex: 'totalShift', key: 'totalShift' },
     { title: 'Số sinh viên', dataIndex: 'totalStudent', key: 'totalStudent' },
     { title: 'Tiến độ', dataIndex: 'process', key: 'process' },
+    { title: '', dataIndex: 'status', key: 'status' },
   ]),
 )
 
@@ -376,6 +382,7 @@ watch(
 
     plan_stats.value[0].value = data.totalPLanProcess || 0
     plan_stats.value[1].value = data.totalPLanComplete || 0
+    plan_stats.value[2].value = data.totalPLanCancel || 0
 
     rangePresets.value = dataRangePresets
       .map((preset) => {
@@ -584,13 +591,18 @@ watch(
                 <a-tag color="blue"> {{ record.totalStudent }} sinh viên </a-tag>
               </template>
               <template v-if="column.dataIndex === 'process'">
-                <a-tag color="red" v-if="record.status !== 1">Ngừng triển khai</a-tag>
                 <a-progress
-                  v-else
                   :percent="Math.round((record.totalCurrentShift / record.totalShift) * 100)"
                   :steps="5"
                   :stroke-color="['#FDD835', '#FFCA28', '#CDDC39', '#7CB342', '#4CAF50']"
                 />
+              </template>
+              <template v-if="column.key === 'status'">
+                <span v-if="record.status !== 1"><a-badge status="error" /> Ngừng triển khai</span>
+                <span v-else-if="record.totalCurrentShift === record.totalShift"
+                  ><a-badge status="success" /> Đã hoàn thành</span
+                >
+                <span v-else><a-badge status="processing" /> Đang tiến hành</span>
               </template>
             </template>
           </a-table>

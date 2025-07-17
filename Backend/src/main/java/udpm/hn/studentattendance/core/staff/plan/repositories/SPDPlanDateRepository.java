@@ -123,12 +123,16 @@ public interface SPDPlanDateRepository extends PlanDateRepository {
         JOIN factory f ON f.id = pf.id_factory
         JOIN project p ON p.id = f.id_project
         JOIN subject_facility sf ON sf.id = p.id_subject_facility
+        JOIN subject s ON sf.id_subject = s.id
+        JOIN semester sem ON p.id_semester = sem.id
         JOIN facility f2 ON sf.id_facility = f2.id
         WHERE 
             f.status = 1 AND
             p.status = 1 AND
             sf.status = 1 AND
             f2.status = 1 AND
+            s.status = 1 AND
+            sem.status = 1 AND
             pf.id = :idPlanFactory AND
             pd.start_date > UNIX_TIMESTAMP(NOW()) * 1000 
         ORDER BY pd.start_date ASC

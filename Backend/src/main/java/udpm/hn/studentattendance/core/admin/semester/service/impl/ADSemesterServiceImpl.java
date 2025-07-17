@@ -3,7 +3,6 @@ package udpm.hn.studentattendance.core.admin.semester.service.impl;
 import com.fasterxml.jackson.core.type.TypeReference;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
@@ -18,7 +17,6 @@ import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
 import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
-import udpm.hn.studentattendance.infrastructure.common.repositories.CommonUserStudentRepository;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.RedisPrefixConstant;
 import udpm.hn.studentattendance.infrastructure.constants.SemesterName;
@@ -37,8 +35,6 @@ import java.util.Optional;
 public class ADSemesterServiceImpl implements ADSemesterService {
 
     private final ADSemesterRepository adSemesterRepository;
-
-    private final CommonUserStudentRepository commonUserStudentRepository;
 
     private final UserActivityLogHelper userActivityLogHelper;
 
@@ -230,11 +226,6 @@ public class ADSemesterServiceImpl implements ADSemesterService {
             String newStatus = semester.getStatus() == EntityStatus.ACTIVE ? "Hoạt động"
                     : "Không hoạt động";
             adSemesterRepository.save(semester);
-
-            if (semester.getStatus() == EntityStatus.ACTIVE) {
-                commonUserStudentRepository
-                        .disableAllStudentDuplicateShiftByIdSemester(semester.getId());
-            }
 
             userActivityLogHelper.saveLog("vừa thay đổi trạng thái học kỳ " + semester.getCode() + " từ "
                     + oldStatus + " thành " + newStatus);

@@ -44,15 +44,11 @@ public interface STDHistoryAttendanceExtendRepository extends FactoryRepository 
                 pd.late_arrival         AS lateArrival
             FROM plan_date pd
             JOIN plan_factory pf    ON pd.id_plan_factory = pf.id
-                                   AND pf.status = 1
             JOIN plan pl            ON pf.id_plan        = pl.id
-                                   AND pl.status = 1
             JOIN project p          ON pl.id_project     = p.id
-                                   AND p.status = 1
             JOIN semester s         ON p.id_semester     = s.id
                                    AND s.status = 1
             JOIN factory ft         ON pf.id_factory     = ft.id
-                                   AND ft.status = 1
             JOIN user_student_factory usf
                                    ON usf.id_factory    = ft.id
             JOIN user_student us    ON usf.id_user_student = us.id
@@ -73,15 +69,11 @@ public interface STDHistoryAttendanceExtendRepository extends FactoryRepository 
                     SELECT COUNT(*)
                     FROM plan_date pd
                     JOIN plan_factory pf    ON pd.id_plan_factory = pf.id
-                                           AND pf.status = 1
                     JOIN plan pl            ON pf.id_plan        = pl.id
-                                           AND pl.status = 1
                     JOIN project p          ON pl.id_project     = p.id
-                                           AND p.status = 1
                     JOIN semester s         ON p.id_semester     = s.id
                                            AND s.status = 1
                     JOIN factory ft         ON pf.id_factory     = ft.id
-                                           AND ft.status = 1
                     JOIN user_student_factory usf
                                            ON usf.id_factory    = ft.id
                     JOIN user_student us    ON usf.id_user_student = us.id
@@ -122,9 +114,6 @@ public interface STDHistoryAttendanceExtendRepository extends FactoryRepository 
                 JOIN user_student_factory usf ON usf.id_factory = f.id
                 JOIN user_student us ON usf.id_user_student = us.id
                 WHERE
-                    pf.status = 1 AND
-                    pl.status = 1 AND
-                    f.status = 1 AND
                     EXISTS(
                         SELECT 1
                         FROM project p
@@ -135,11 +124,7 @@ public interface STDHistoryAttendanceExtendRepository extends FactoryRepository 
                         JOIN facility f2 ON sf.id_facility = f2.id
                         WHERE
                             p.id = pl.id_project AND
-                            p.status = 1 AND
-                            lp.status = 1 AND
                             s.status = 1 AND
-                            sf.status = 1 AND
-                            s2.status = 1 AND
                             f2.status = 1 AND
                             f2.id = :idFacility
                     ) AND
@@ -175,19 +160,15 @@ public interface STDHistoryAttendanceExtendRepository extends FactoryRepository 
               ON usf.id_user_student = us.id
             JOIN factory ft 
               ON ft.id = usf.id_factory 
-             AND ft.status = 1
             JOIN project p 
               ON p.id = ft.id_project 
-             AND p.status = 1
             JOIN semester s 
               ON s.id = p.id_semester 
              AND s.status = 1
             JOIN plan pl 
               ON pl.id_project = p.id 
-             AND pl.status = 1
             JOIN plan_factory pf 
               ON pf.id_factory = ft.id 
-             AND pf.status = 1
             JOIN plan_date pd 
               ON pd.id_plan_factory = pf.id 
              AND pd.status = 1

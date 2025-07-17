@@ -114,7 +114,7 @@ public class MailerHelper {
             mimeMessageHelper.setSubject(request.getTitle());
 
             mailSender.send(mimeMessage);
-        } catch (MessagingException e) {
+        } catch (Exception e) {
             logger.warn(e.getMessage());
             return CompletableFuture.completedFuture(false);
         }
