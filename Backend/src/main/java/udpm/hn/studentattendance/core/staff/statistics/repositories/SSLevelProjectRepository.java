@@ -17,7 +17,6 @@ public interface SSLevelProjectRepository extends LevelProjectRepository {
         FROM level_project lp
         LEFT JOIN project p ON
             p.id_level_project = lp.id AND
-            p.status = 1 AND
             EXISTS (
                 SELECT 1
                 FROM semester s
@@ -26,13 +25,9 @@ public interface SSLevelProjectRepository extends LevelProjectRepository {
                 WHERE
                     s.id = p.id_semester AND
                     s.status = 1 AND
-                    s2.status = 1 AND
-                    sf.status = 1 AND
                     sf.id_facility = :idFacility AND
                     s.id = :idSemester
             )
-        WHERE
-            lp.status = 1
         GROUP BY lp.id, lp.name
         ORDER BY lp.name ASC
     """, nativeQuery = true)

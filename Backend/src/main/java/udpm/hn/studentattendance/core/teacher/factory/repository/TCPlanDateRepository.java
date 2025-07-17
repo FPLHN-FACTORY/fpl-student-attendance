@@ -46,9 +46,7 @@ public interface TCPlanDateRepository extends PlanDateRepository {
         JOIN subject_facility sf ON sf.id = p.id_subject_facility
         JOIN facility f2 ON sf.id_facility = f2.id
         WHERE 
-            f.status = 1 AND
-            p.status = 1 AND
-            sf.status = 1 AND
+            pd.status = 1 AND
             f2.status = 1 AND
             sf.id_facility = :#{#request.idFacility} AND
             f.id = :#{#request.idFactory} AND
@@ -77,10 +75,8 @@ public interface TCPlanDateRepository extends PlanDateRepository {
         JOIN project p ON p.id = f.id_project
         JOIN subject_facility sf ON sf.id = p.id_subject_facility
         JOIN facility f2 ON sf.id_facility = f2.id
-        WHERE 
-            f.status = 1 AND
-            p.status = 1 AND
-            sf.status = 1 AND
+        WHERE
+            pd.status = 1 AND
             f2.status = 1 AND
             sf.id_facility = :#{#request.idFacility} AND
             f.id = :#{#request.idFactory} AND

@@ -11,17 +11,12 @@ import java.util.List;
 @Repository
 public interface STDHistoryAttendanceFactoryExtendRepository extends FactoryRepository {
     @Query(value = """
-                        SELECT
-                        ft
-                        FROM
-                        Factory ft
-                        LEFT JOIN
-                        UserStudentFactory usf ON usf.factory.id = ft.id
-                        WHERE
-                        ft.status = :factoryStatus
-                        AND
-                        usf.userStudent.id = :userStudentId
-            """)
-    List<Factory> getAllFactoryByUser(EntityStatus factoryStatus, String userStudentId);
+           SELECT ft
+           FROM Factory ft
+           JOIN UserStudentFactory usf ON usf.factory.id = ft.id
+           WHERE
+            usf.userStudent.id = :userStudentId
+    """)
+    List<Factory> getAllFactoryByUser(String userStudentId);
 
 }

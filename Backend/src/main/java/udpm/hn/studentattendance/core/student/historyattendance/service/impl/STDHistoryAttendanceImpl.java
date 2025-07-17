@@ -79,7 +79,6 @@ public class STDHistoryAttendanceImpl implements STDHistoryAttendanceService {
         @Override
         public ResponseEntity<?> getAllFactoryByUserStudent() {
                 List<Factory> factories = historyAttendanceFactoryExtendRepository.getAllFactoryByUser(
-                                EntityStatus.ACTIVE,
                                 sessionHelper.getUserId());
                 return RouterHelper.responseSuccess("Lấy tất cả nhóm xưởng của sinh viên " + sessionHelper.getUserCode()
                                 + " thành công", factories);

@@ -1,7 +1,6 @@
 package udpm.hn.studentattendance.core.staff.factory.service.impl;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
@@ -21,7 +20,7 @@ import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.helpers.SessionHelper;
 import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
-import udpm.hn.studentattendance.infrastructure.common.repositories.CommonUserStudentRepository;
+import udpm.hn.studentattendance.infrastructure.common.repositories.CommonPlanDateRepository;
 import udpm.hn.studentattendance.infrastructure.constants.*;
 import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -52,8 +51,6 @@ public class USFactoryServiceImpl implements USFactoryService {
 
     private final NotificationService notificationService;
 
-    private final CommonUserStudentRepository commonUserStudentRepository;
-
     private final SessionHelper sessionHelper;
 
     private final USFactoryProjectPlanExtendRepository projectPlanExtendRepository;
@@ -63,6 +60,8 @@ public class USFactoryServiceImpl implements USFactoryService {
     private final RedisCacheHelper redisCacheHelper;
 
     private final RedisInvalidationHelper redisInvalidationHelper;
+
+    private final CommonPlanDateRepository commonPlanDateRepository;
 
     public PageableObject<USFactoryResponse> getCachedFactories(USFactoryRequest factoryRequest) {
         String key = RedisPrefixConstant.REDIS_PREFIX_FACTORY + "list_" +
@@ -284,23 +283,35 @@ public class USFactoryServiceImpl implements USFactoryService {
     @Override
     public ResponseEntity<?> changeStatus(String factoryId) {
         Optional<Factory> existFactory = factoryRepository.findById(factoryId);
-        if (existFactory.isPresent()) {
-            Factory factory = existFactory.get();
-            String oldStatus = factory.getStatus() == EntityStatus.ACTIVE ? "Hoạt động" : "Không hoạt động";
-            factory.setStatus(existFactory.get().getStatus() == EntityStatus.ACTIVE ? EntityStatus.INACTIVE
-                    : EntityStatus.ACTIVE);
-            String newStatus = factory.getStatus() == EntityStatus.ACTIVE ? "Hoạt động" : "Không hoạt động";
-            Factory saveFactory = factoryRepository.save(factory);
-            if (factory.getStatus() == EntityStatus.ACTIVE) {
-                commonUserStudentRepository.disableAllStudentDuplicateShiftByIdFactory(factory.getId());
-            }
-            userActivityLogHelper
-                    .saveLog("vừa thay đổi trạng thái nhóm xưởng " + saveFactory.getName() + " từ " + oldStatus
-                            + " thành " + newStatus + " trong dự án" + saveFactory.getProject().getName());
 
-            // Invalidate all caches
-            redisInvalidationHelper.invalidateAllCaches();
+        if (existFactory.isEmpty()) {
+            return RouterHelper.responseError("Không tìm thấy nhóm xưởng");
         }
+
+        Factory factory = existFactory.get();
+
+        USFactoryResponse factoryResponse = factoryRepository.getDetailFactory(factory.getId(), sessionHelper.getFacilityId()).orElse(null);
+        if (factoryResponse != null && factoryResponse.getFactoryStatus() != factory.getStatus().ordinal()) {
+            return RouterHelper.responseError("Không thể thay đổi trạng thái mục này");
+        }
+
+        if (commonPlanDateRepository.existsNotYetStartedByFactory(factory.getId())) {
+            return RouterHelper.responseError("Đang tồn tại ca chưa hoặc đang diễn ra. Không thể thay đổi trạng thái");
+        }
+
+        String oldStatus = factory.getStatus() == EntityStatus.ACTIVE ? "Hoạt động" : "Không hoạt động";
+        factory.setStatus(existFactory.get().getStatus() == EntityStatus.ACTIVE ? EntityStatus.INACTIVE
+                : EntityStatus.ACTIVE);
+        String newStatus = factory.getStatus() == EntityStatus.ACTIVE ? "Hoạt động" : "Không hoạt động";
+        Factory saveFactory = factoryRepository.save(factory);
+
+        userActivityLogHelper
+                .saveLog("vừa thay đổi trạng thái nhóm xưởng " + saveFactory.getName() + " từ " + oldStatus
+                        + " thành " + newStatus + " trong dự án" + saveFactory.getProject().getName());
+
+        // Invalidate all caches
+        redisInvalidationHelper.invalidateAllCaches();
+
         return RouterHelper.responseSuccess("Đổi trạng thái nhóm xưởng thành công", null);
     }
 
@@ -347,9 +358,6 @@ public class USFactoryServiceImpl implements USFactoryService {
             factory.setStatus(factory.getStatus() == EntityStatus.ACTIVE ? EntityStatus.INACTIVE
                     : EntityStatus.ACTIVE);
             factoryRepository.save(factory);
-            if (factory.getStatus() == EntityStatus.ACTIVE) {
-                commonUserStudentRepository.disableAllStudentDuplicateShiftByIdFactory(factory.getId());
-            }
 
             // Invalidate each factory's cache
             redisInvalidationHelper.invalidateAllCaches();

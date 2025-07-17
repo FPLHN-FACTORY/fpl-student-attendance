@@ -2,7 +2,6 @@ package udpm.hn.studentattendance.core.staff.plan.services.impl;
 
 import lombok.RequiredArgsConstructor;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import udpm.hn.studentattendance.core.staff.plan.model.request.SPDAddOrUpdatePlanRequest;
@@ -28,7 +27,7 @@ import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.helpers.SessionHelper;
 import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
-import udpm.hn.studentattendance.infrastructure.common.repositories.CommonUserStudentRepository;
+import udpm.hn.studentattendance.infrastructure.common.repositories.CommonPlanDateRepository;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.RedisPrefixConstant;
 import udpm.hn.studentattendance.infrastructure.constants.SemesterName;
@@ -56,8 +55,6 @@ public class SPDPlanServiceImpl implements SPDPlanService {
 
     private final SPDProjectRepository spdProjectRepository;
 
-    private final CommonUserStudentRepository commonUserStudentRepository;
-
     private final SessionHelper sessionHelper;
 
     private final UserActivityLogHelper userActivityLogHelper;
@@ -65,6 +62,8 @@ public class SPDPlanServiceImpl implements SPDPlanService {
     private final RedisCacheHelper redisCacheHelper;
 
     private final RedisInvalidationHelper redisInvalidationHelper;
+
+    private final CommonPlanDateRepository commonPlanDateRepository;
 
     public List<SPDSubjectResponse> getCachedSubjects() {
         String key = RedisPrefixConstant.REDIS_PREFIX_PLAN + "subjects_" + "facility=" + sessionHelper.getFacilityId();
@@ -238,6 +237,10 @@ public class SPDPlanServiceImpl implements SPDPlanService {
             return RouterHelper.responseError("Không thể thay đổi trạng thái kế hoạch này. Vui lòng kiểm tra lại trạng thái dự án, cấp độ dự án, ...");
         }
 
+        if (commonPlanDateRepository.existsNotYetStartedByPlan(plan.getId())) {
+            return RouterHelper.responseError("Đang tồn tại ca chưa hoặc đang diễn ra. Không thể thay đổi trạng thái");
+        }
+
         if (plan.getStatus() == EntityStatus.INACTIVE
                 && spdPlanRepository.isExistsProjectInPlan(plan.getProject().getId(), null)) {
             return RouterHelper.responseError(
@@ -246,10 +249,6 @@ public class SPDPlanServiceImpl implements SPDPlanService {
 
         plan.setStatus(plan.getStatus() == EntityStatus.ACTIVE ? EntityStatus.INACTIVE : EntityStatus.ACTIVE);
         Plan newEntity = spdPlanRepository.save(plan);
-
-        if (newEntity.getStatus() == EntityStatus.ACTIVE) {
-            commonUserStudentRepository.disableAllStudentDuplicateShiftByIdPlan(plan.getId());
-        }
 
         // Invalidate specific cache for this plan
         redisInvalidationHelper.invalidateAllCaches();

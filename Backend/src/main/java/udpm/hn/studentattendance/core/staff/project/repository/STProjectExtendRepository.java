@@ -18,14 +18,15 @@ public interface STProjectExtendRepository extends ProjectRepository {
 
     @Query(value = """
                     SELECT
-                        ROW_NUMBER() OVER (ORDER BY p.status DESC, p.created_at DESC) AS indexs,
+                        ROW_NUMBER() OVER (ORDER BY LEAST(p.status, lp.status, sf.status, s.status, sem.status, f.status) DESC, p.created_at DESC) AS indexs,
                         p.id AS id,
                         p.name AS name,
                         lp.name AS nameLevelProject,
                         s.name AS nameSubject,
                         sem.code AS nameSemester,
                         p.description AS description,
-                        p.status AS status
+                        LEAST(p.status, lp.status, sf.status, s.status, sem.status, f.status) AS status,
+                        p.status AS currentStatus
                     FROM project p
                     JOIN level_project lp ON p.id_level_project = lp.id
                     JOIN subject_facility sf ON p.id_subject_facility = sf.id
@@ -33,7 +34,6 @@ public interface STProjectExtendRepository extends ProjectRepository {
                     JOIN semester sem ON p.id_semester = sem.id
                     JOIN facility f ON sf.id_facility = f.id
                     WHERE
-                        sem.status = 1 AND
                         f.status = 1 AND
                     (
                         (:#{#request.name} IS NULL OR p.name LIKE CONCAT('%', TRIM(:#{#request.name}), '%'))
@@ -41,9 +41,9 @@ public interface STProjectExtendRepository extends ProjectRepository {
                         AND (:#{#request.semesterId} IS NULL OR sem.id = :#{#request.semesterId})
                         AND (:#{#request.subjectId} IS NULL OR sf.id = :#{#request.subjectId})
                         AND (:#{#request.facilityId} IS NULL OR f.id = :#{#request.facilityId})
-                        AND (:#{#request.status} IS NULL OR p.status = :#{#request.status})
+                        AND (:#{#request.status} IS NULL OR LEAST(p.status, lp.status, sf.status, s.status, sem.status, f.status) = :#{#request.status})
                     )
-                    ORDER BY  p.status DESC, p.created_at DESC
+                    ORDER BY LEAST(p.status, lp.status, sf.status, s.status, sem.status, f.status) DESC, p.created_at DESC
             """, countQuery = """
                     SELECT
                        COUNT(*)
@@ -54,7 +54,6 @@ public interface STProjectExtendRepository extends ProjectRepository {
                     JOIN semester sem ON p.id_semester = sem.id
                     JOIN facility f ON sf.id_facility = f.id
                     WHERE
-                        sem.status = 1 AND
                         f.status = 1 AND
                     (
                         (:#{#request.name} IS NULL OR p.name LIKE CONCAT('%', TRIM(:#{#request.name}), '%'))
@@ -62,7 +61,7 @@ public interface STProjectExtendRepository extends ProjectRepository {
                         AND (:#{#request.semesterId} IS NULL OR sem.id = :#{#request.semesterId})
                         AND (:#{#request.subjectId} IS NULL OR sf.id = :#{#request.subjectId})
                         AND (:#{#request.facilityId} IS NULL OR f.id = :#{#request.facilityId})
-                        AND (:#{#request.status} IS NULL OR p.status = :#{#request.status})
+                        AND (:#{#request.status} IS NULL OR LEAST(p.status, lp.status, sf.status, s.status, sem.status, f.status) = :#{#request.status})
                     )
             """, nativeQuery = true)
     Page<USProjectResponse> getListProject(Pageable pageable, USProjectSearchRequest request);
@@ -84,10 +83,6 @@ public interface STProjectExtendRepository extends ProjectRepository {
                     JOIN semester sem ON p.id_semester = sem.id
                     JOIN facility f ON sf.id_facility = f.id
                     WHERE
-                        lp.status = 1 AND
-                        sf.status = 1 AND
-                        s.status = 1 AND
-                        sem.status = 1 AND
                         f.status = 1 AND
                         f.id = :facilityId
                     ORDER BY  p.status DESC, p.created_at DESC
@@ -95,24 +90,27 @@ public interface STProjectExtendRepository extends ProjectRepository {
     List<USProjectResponse> exportAllProject(String facilityId);
 
     @Query(value = """
-                SELECT
-                                     p.id as id,
-                                     p.name as name,
-                                     s.name as nameSemester,
-                                     lp.name as nameLevelProject,
-                                     sb.name as nameSubject,
-                                     p.description as description,
-                                     p.status as status,
-                                 	 lp.id as levelProjectId,
-                                     s.id AS semesterId,
-                                     sf.id as subjectFacilityId
-                                     FROM project p
-                                     LEFT JOIN semester s ON p.id_semester = s.id
-                                     LEFT JOIN subject_facility sf ON p.id_subject_facility = sf.id
-                                     LEFT JOIN level_project lp ON p.id_level_project = lp.id
-                                     LEFT JOIN subject sb ON sf.id_subject = sb.id
-                                     WHERE
-                                     p.id = :projectId
+        SELECT
+            p.id as id,
+            p.name as name,
+            s.name as nameSemester,
+            lp.name as nameLevelProject,
+            sb.name as nameSubject,
+            p.description as description,
+            lp.id as levelProjectId,
+            s.id AS semesterId,
+            sf.id as subjectFacilityId,
+            LEAST(p.status, lp.status, sf.status, s.status, sb.status, f.status) AS status,
+            p.status AS currentStatus
+        FROM project p
+        JOIN semester s ON p.id_semester = s.id
+        JOIN subject_facility sf ON p.id_subject_facility = sf.id
+        JOIN level_project lp ON p.id_level_project = lp.id
+        JOIN subject sb ON sf.id_subject = sb.id
+        JOIN facility f ON sf.id_facility = f.id
+        WHERE
+            f.status = 1 AND
+            p.id = :projectId
             """, nativeQuery = true)
     Optional<USProjectResponse> getDetailProject(String projectId);
 
@@ -131,14 +129,14 @@ public interface STProjectExtendRepository extends ProjectRepository {
             String idProject);
 
     @Query(value = """
-                                    SELECT
-                                    p
-                                    FROM
-                                    Project p
-                                    JOIN Semester s ON p.semester.id = s.id
-                                    JOIN SubjectFacility sf ON p.subjectFacility.id = sf.id
-                                    AND sf.facility.id = :facilityId
-                                    AND s.id = :semesterId
+            SELECT
+                p
+            FROM Project p
+            JOIN Semester s ON p.semester.id = s.id
+            JOIN SubjectFacility sf ON p.subjectFacility.id = sf.id
+            WHERE
+                sf.facility.id = :facilityId
+                AND s.id = :semesterId
             """)
     List<Project> getAllProjectBySemester(String facilityId, String semesterId);
 }

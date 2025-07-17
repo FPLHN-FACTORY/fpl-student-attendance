@@ -18,12 +18,13 @@ import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
 import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
-import udpm.hn.studentattendance.infrastructure.common.repositories.CommonUserStudentRepository;
+import udpm.hn.studentattendance.infrastructure.common.repositories.CommonPlanDateRepository;
 import udpm.hn.studentattendance.infrastructure.config.mailer.model.MailerDefaultRequest;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.RedisPrefixConstant;
 import com.fasterxml.jackson.core.type.TypeReference;
 import udpm.hn.studentattendance.helpers.RedisCacheHelper;
+import udpm.hn.studentattendance.utils.DateTimeUtils;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -39,8 +40,6 @@ public class AFFacilityServiceImpl implements AFFacilityService {
 
     private final AFFacilityExtendRepository facilityRepository;
 
-    private final CommonUserStudentRepository commonUserStudentRepository;
-
     private final MailerHelper mailerHelper;
 
     private final UserActivityLogHelper userActivityLogHelper;
@@ -48,6 +47,8 @@ public class AFFacilityServiceImpl implements AFFacilityService {
     private final RedisCacheHelper redisCacheHelper;
 
     private final RedisInvalidationHelper redisInvalidationHelper;
+
+    private final CommonPlanDateRepository commonPlanDateRepository;
 
     @Value("${app.config.app-name}")
     private String appName;
@@ -128,12 +129,16 @@ public class AFFacilityServiceImpl implements AFFacilityService {
 
         Facility facility = facilityOptional.get();
 
+        if (commonPlanDateRepository.existsNotYetStartedByFacility(facility.getId())) {
+            return RouterHelper.responseError("Đang tồn tại ca chưa hoặc đang diễn ra. Không thể thay đổi trạng thái");
+        }
+
         long lastUpdatedMillis = facility.getUpdatedAt(); // epoch millis
         LocalDate lastUpdatedDate = Instant
                 .ofEpochMilli(lastUpdatedMillis)
-                .atZone(ZoneId.of("Asia/Ho_Chi_Minh")) // dùng timezone phù hợp
+                .atZone(ZoneId.of(DateTimeUtils.ZONE_ID)) // dùng timezone phù hợp
                 .toLocalDate();
-        LocalDate today = LocalDate.now(ZoneId.of("Asia/Ho_Chi_Minh"));
+        LocalDate today = LocalDate.now(ZoneId.of(DateTimeUtils.ZONE_ID));
         if (lastUpdatedDate.isEqual(today) && facility.getStatus() == EntityStatus.ACTIVE) {
             return RouterHelper.responseError("Chỉ được đổi trạng thái cơ sở ngừng hoạt động 1 lần mỗi ngày");
         }
@@ -163,8 +168,6 @@ public class AFFacilityServiceImpl implements AFFacilityService {
                         Map.of("FACILITY_NAME", entity.getName())));
                 mailerHelper.send(mailerDefaultRequest);
             }
-        } else {
-            commonUserStudentRepository.disableAllStudentDuplicateShiftByIdFacility(facility.getId());
         }
 
         userActivityLogHelper.saveLog(
