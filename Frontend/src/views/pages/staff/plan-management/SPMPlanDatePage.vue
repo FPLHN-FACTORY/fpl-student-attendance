@@ -603,22 +603,24 @@ const handleShowUpdateLink = () => {
 }
 
 const handleChangeShift = (newValues) => {
-  const updated = new Set(newValues)
+  formData.shift = [newValues]
 
-  const sorted = [...updated].sort((a, b) => a - b)
+  // const updated = new Set(newValues)
 
-  for (let i = 0; i < sorted.length - 1; i++) {
-    const start = sorted[i]
-    const end = sorted[i + 1]
+  // const sorted = [...updated].sort((a, b) => a - b)
 
-    if (end - start > 1) {
-      for (let j = start + 1; j < end; j++) {
-        updated.add(j)
-      }
-    }
-  }
+  // for (let i = 0; i < sorted.length - 1; i++) {
+  //   const start = sorted[i]
+  //   const end = sorted[i + 1]
 
-  formData.shift = Array.from(updated).sort((a, b) => a - b)
+  //   if (end - start > 1) {
+  //     for (let j = start + 1; j < end; j++) {
+  //       updated.add(j)
+  //     }
+  //   }
+  // }
+
+  // formData.shift = Array.from(updated).sort((a, b) => a - b)
 }
 
 const handleShowListStudentExists = (data) => {
@@ -728,14 +730,13 @@ watch(
           @keyup.enter="modalAddOrUpdate.onOk"
         />
       </a-form-item>
-      <a-form-item class="col-sm-8" label="Ca" name="shift" :rules="formRules.shift">
+      <a-form-item class="col-sm-12" label="Ca" name="shift" :rules="formRules.shift">
         <a-select
           class="w-100"
-          placeholder="Chọn nhiều ca cùng lúc để gộp lại thành 1 ca"
+          placeholder="Chọn 1 ca học"
           v-model:value="formData.shift"
           :disabled="modalAddOrUpdate.isLoading"
           @change="handleChangeShift"
-          mode="multiple"
           allow-clear
         >
           <a-select-option v-for="o in lstShift" :key="o.id" :value="o.shift">
@@ -747,7 +748,7 @@ watch(
         </a-select>
       </a-form-item>
 
-      <a-form-item class="col-sm-4" label="Tuỳ chỉnh thời gian ca" name="timeRange">
+      <!-- <a-form-item class="col-sm-4" label="Tuỳ chỉnh thời gian ca" name="timeRange">
         <a-range-picker
           class="w-100"
           v-model:value="formData.timeRange"
@@ -756,7 +757,7 @@ watch(
           picker="time"
           :placeholder="['Bắt đầu', 'Kết thúc']"
         />
-      </a-form-item>
+      </a-form-item> -->
 
       <a-form-item class="col-sm-5" label="Hình thức học" name="type" :rules="formRules.type">
         <a-select
