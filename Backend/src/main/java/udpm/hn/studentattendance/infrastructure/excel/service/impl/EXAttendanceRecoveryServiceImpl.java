@@ -27,6 +27,7 @@ import udpm.hn.studentattendance.infrastructure.excel.model.response.ExImportLog
 import udpm.hn.studentattendance.infrastructure.excel.repositories.EXImportLogDetailRepository;
 import udpm.hn.studentattendance.infrastructure.excel.repositories.EXImportLogRepository;
 import udpm.hn.studentattendance.infrastructure.excel.service.EXAttendanceRecoveryService;
+import udpm.hn.studentattendance.utils.DateTimeUtils;
 import udpm.hn.studentattendance.utils.ExcelUtils;
 
 import java.io.ByteArrayOutputStream;
@@ -109,7 +110,7 @@ public class EXAttendanceRecoveryServiceImpl implements EXAttendanceRecoveryServ
             return RouterHelper.responseError(msg, HttpStatus.BAD_REQUEST);
         }
 
-        LocalDateTime currentDateTime = LocalDateTime.now(ZoneId.of("Asia/Ho_Chi_Minh"));
+        LocalDateTime currentDateTime = LocalDateTime.now(ZoneId.of(DateTimeUtils.ZONE_ID));
         if (attendanceDateTime.isAfter(currentDateTime)) {
             String msg = "Không thể khôi phục điểm danh cho ngày trong tương lai. Ngày điểm danh phải là ngày hiện tại hoặc trong quá khứ.";
             createImportLogDetail(importLog, request, msg, EntityStatus.INACTIVE);
@@ -161,7 +162,7 @@ public class EXAttendanceRecoveryServiceImpl implements EXAttendanceRecoveryServ
     }
 
     private Long convertToEpochMilli(LocalDateTime localDateTime) {
-        ZoneId vietnamZone = ZoneId.of("Asia/Ho_Chi_Minh");
+        ZoneId vietnamZone = ZoneId.of(DateTimeUtils.ZONE_ID);
         ZonedDateTime zonedDateTime = localDateTime.atZone(vietnamZone);
         return zonedDateTime.toInstant().toEpochMilli();
     }
