@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.ToString;
 import udpm.hn.studentattendance.infrastructure.common.PageableRequest;
 import udpm.hn.studentattendance.infrastructure.constants.EntityProperties;
 
@@ -12,6 +13,7 @@ import udpm.hn.studentattendance.infrastructure.constants.EntityProperties;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@ToString
 public class SPDFilterPlanRequest extends PageableRequest {
 
     private String idFacility;
@@ -30,19 +32,4 @@ public class SPDFilterPlanRequest extends PageableRequest {
 
     private String subject;
 
-    @Override
-    public String toString() {
-        return "page=" + getPage() +
-                "_size=" + getSize() +
-                "_orderBy=" + getOrderBy() +
-                "_sortBy=" + getSortBy() +
-                "_q=" + (getQ() != null ? getQ() : "") +
-                "_idFacility=" + (idFacility != null ? idFacility : "") +
-                "_keyword=" + (keyword != null ? keyword : "") +
-                "_level=" + (level != null ? level : "") +
-                "_status=" + (status != null ? status : "") +
-                "_semester=" + (semester != null ? semester : "") +
-                "_year=" + (year != null ? year : "") +
-                "_subject=" + (subject != null ? subject : "");
-    }
 }

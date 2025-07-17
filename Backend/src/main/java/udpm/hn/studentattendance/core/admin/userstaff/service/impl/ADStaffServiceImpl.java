@@ -5,7 +5,6 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
@@ -24,7 +23,6 @@ import udpm.hn.studentattendance.entities.UserStaff;
 import udpm.hn.studentattendance.helpers.NotificationHelper;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
 import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
-import udpm.hn.studentattendance.helpers.RequestTrimHelper;
 import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.helpers.SessionHelper;
 import udpm.hn.studentattendance.helpers.SettingHelper;
@@ -38,7 +36,6 @@ import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.RedisPrefixConstant;
 import udpm.hn.studentattendance.infrastructure.constants.RoleConstant;
 import udpm.hn.studentattendance.infrastructure.constants.SettingKeys;
-import udpm.hn.studentattendance.infrastructure.redis.service.RedisService;
 
 import java.util.HashMap;
 import java.util.List;
@@ -68,9 +65,6 @@ public class ADStaffServiceImpl implements ADStaffService {
 
     private final SettingHelper settingHelper;
 
-    @Value("${spring.cache.redis.time-to-live}")
-    private long redisTTL;
-
     @PersistenceContext
     private EntityManager entityManager;
 
@@ -80,9 +74,8 @@ public class ADStaffServiceImpl implements ADStaffService {
                 key,
                 () -> PageableObject.of(
                         adStaffRepository.getAllStaff(PaginationHelper.createPageable(request, "createdAt"), request)),
-                new TypeReference<PageableObject<?>>() {
-                },
-                redisTTL);
+                new TypeReference<>() {
+                });
     }
 
     public ADStaffDetailResponse getStaffDetail(String id) {
@@ -96,9 +89,8 @@ public class ADStaffServiceImpl implements ADStaffService {
         return redisCacheHelper.getOrSet(
                 key,
                 () -> adStaffRoleRepository.getAllRole(),
-                new TypeReference<List<Role>>() {
-                },
-                redisTTL * 4);
+                new TypeReference<>() {
+                });
     }
 
     public List<Facility> getAllActiveFacilities() {
@@ -106,9 +98,8 @@ public class ADStaffServiceImpl implements ADStaffService {
         return redisCacheHelper.getOrSet(
                 key,
                 () -> adminStaffFacilityRepository.getFacility(EntityStatus.ACTIVE),
-                new TypeReference<List<Facility>>() {
-                },
-                redisTTL * 4);
+                new TypeReference<>() {
+                });
     }
 
     @Override
@@ -119,8 +110,6 @@ public class ADStaffServiceImpl implements ADStaffService {
 
     @Override
     public ResponseEntity<?> createStaff(ADCreateUpdateStaffRequest adCreateUpdateStaffRequest) {
-        // Trim all string fields in the request
-        RequestTrimHelper.trimStringFieldsWithLogging(adCreateUpdateStaffRequest);
 
         if (!ValidateHelper.isValidCode(adCreateUpdateStaffRequest.getStaffCode())) {
             return RouterHelper.responseError(
@@ -210,8 +199,6 @@ public class ADStaffServiceImpl implements ADStaffService {
 
     @Override
     public ResponseEntity<?> updateStaff(ADCreateUpdateStaffRequest adCreateUpdateStaffRequest, String id) {
-        // Trim all string fields in the request
-        RequestTrimHelper.trimStringFields(adCreateUpdateStaffRequest);
 
         if (!ValidateHelper.isValidCode(adCreateUpdateStaffRequest.getStaffCode())) {
             return RouterHelper.responseError(

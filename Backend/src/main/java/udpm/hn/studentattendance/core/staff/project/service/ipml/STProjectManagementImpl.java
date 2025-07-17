@@ -50,8 +50,6 @@ public class STProjectManagementImpl implements STProjectManagementService {
 
     @Override
     public ResponseEntity<?> createProject(USProjectCreateOrUpdateRequest request) {
-        // Trim all string fields in the request
-        RequestTrimHelper.trimStringFields(request);
 
         String namePattern = "^[a-zA-ZÀ-ỹ\\s_#-]+$";
         if (!request.getName().matches(namePattern)) {
@@ -108,8 +106,6 @@ public class STProjectManagementImpl implements STProjectManagementService {
 
     @Override
     public ResponseEntity<?> updateProject(String idProject, USProjectCreateOrUpdateRequest request) {
-        // Trim all string fields in the request
-        RequestTrimHelper.trimStringFields(request);
 
         Project project = projectManagementRepository.findById(idProject).orElse(null);
         if (project == null) {

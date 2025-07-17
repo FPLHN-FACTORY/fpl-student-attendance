@@ -2,7 +2,6 @@ package udpm.hn.studentattendance.core.staff.factory.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
@@ -18,14 +17,12 @@ import udpm.hn.studentattendance.core.staff.factory.service.USFactoryService;
 import udpm.hn.studentattendance.entities.*;
 import udpm.hn.studentattendance.helpers.NotificationHelper;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
-import udpm.hn.studentattendance.helpers.RequestTrimHelper;
 import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.helpers.SessionHelper;
 import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.common.repositories.CommonUserStudentRepository;
 import udpm.hn.studentattendance.infrastructure.constants.*;
-import udpm.hn.studentattendance.infrastructure.redis.service.RedisService;
 import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
 import com.fasterxml.jackson.core.type.TypeReference;
 import udpm.hn.studentattendance.helpers.RedisCacheHelper;
@@ -67,9 +64,6 @@ public class USFactoryServiceImpl implements USFactoryService {
 
     private final RedisInvalidationHelper redisInvalidationHelper;
 
-    @Value("${spring.cache.redis.time-to-live}")
-    private long redisTTL;
-
     public PageableObject<USFactoryResponse> getCachedFactories(USFactoryRequest factoryRequest) {
         String key = RedisPrefixConstant.REDIS_PREFIX_FACTORY + "list_" +
                 "facility=" + sessionHelper.getFacilityId() + '_' +
@@ -79,9 +73,8 @@ public class USFactoryServiceImpl implements USFactoryService {
                 () -> PageableObject.of(
                         factoryRepository.getAllFactory(PaginationHelper.createPageable(factoryRequest, "createdAt"),
                                 sessionHelper.getFacilityId(), factoryRequest)),
-                new TypeReference<PageableObject<USFactoryResponse>>() {
-                },
-                redisTTL);
+                new TypeReference<>() {
+                });
     }
 
     @Override
@@ -95,9 +88,8 @@ public class USFactoryServiceImpl implements USFactoryService {
         return redisCacheHelper.getOrSet(
                 key,
                 () -> projectFactoryExtendRepository.getAllProject(sessionHelper.getFacilityId()),
-                new TypeReference<List<USProjectFactoryResponse>>() {
-                },
-                redisTTL);
+                new TypeReference<>() {
+                });
     }
 
     @Override
@@ -112,9 +104,8 @@ public class USFactoryServiceImpl implements USFactoryService {
                 key,
                 () -> subjectFacilityFactoryExtendRepository.getAllSubjectFacility(EntityStatus.ACTIVE,
                         EntityStatus.ACTIVE, sessionHelper.getFacilityId()),
-                new TypeReference<List<SubjectFacility>>() {
-                },
-                redisTTL);
+                new TypeReference<>() {
+                });
     }
 
     @Override
@@ -131,9 +122,8 @@ public class USFactoryServiceImpl implements USFactoryService {
                 key,
                 () -> staffFactoryExtendRepository.getListUserStaff(EntityStatus.ACTIVE, EntityStatus.ACTIVE,
                         sessionHelper.getFacilityId(), RoleConstant.TEACHER),
-                new TypeReference<List<UserStaff>>() {
-                },
-                redisTTL);
+                new TypeReference<>() {
+                });
     }
 
     @Override
@@ -158,7 +148,6 @@ public class USFactoryServiceImpl implements USFactoryService {
 
     @Override
     public ResponseEntity<?> createFactory(USFactoryCreateUpdateRequest factoryCreateUpdateRequest) {
-        RequestTrimHelper.trimStringFields(factoryCreateUpdateRequest);
 
         Optional<UserStaff> userStaff = staffFactoryExtendRepository
                 .findById(factoryCreateUpdateRequest.getIdUserStaff());
@@ -214,7 +203,6 @@ public class USFactoryServiceImpl implements USFactoryService {
 
     @Override
     public ResponseEntity<?> updateFactory(USFactoryCreateUpdateRequest req) {
-        RequestTrimHelper.trimStringFields(req);
 
         Factory factory = factoryRepository.findById(req.getId())
                 .orElseThrow();
@@ -381,10 +369,9 @@ public class USFactoryServiceImpl implements USFactoryService {
 
         Object cachedData = redisCacheHelper.getOrSet(
                 cacheKey,
-                () -> semesterRepository.findAll(),
-                new TypeReference<List<Semester>>() {
-                },
-                redisTTL);
+                semesterRepository::findAll,
+                new TypeReference<>() {
+                });
         return (List<Semester>) cachedData;
     }
 

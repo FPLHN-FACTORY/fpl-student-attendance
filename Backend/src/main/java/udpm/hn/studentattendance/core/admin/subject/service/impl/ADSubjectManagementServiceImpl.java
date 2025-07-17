@@ -2,7 +2,6 @@ package udpm.hn.studentattendance.core.admin.subject.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import udpm.hn.studentattendance.core.admin.subject.model.request.ADSubjectCreateRequest;
@@ -13,7 +12,6 @@ import udpm.hn.studentattendance.core.admin.subject.service.ADSubjectManagementS
 import udpm.hn.studentattendance.entities.Subject;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
 import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
-import udpm.hn.studentattendance.helpers.RequestTrimHelper;
 import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
 import udpm.hn.studentattendance.helpers.ValidateHelper;
@@ -21,7 +19,6 @@ import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.common.repositories.CommonUserStudentRepository;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.RedisPrefixConstant;
-import udpm.hn.studentattendance.infrastructure.redis.service.RedisService;
 import com.fasterxml.jackson.core.type.TypeReference;
 import udpm.hn.studentattendance.helpers.RedisCacheHelper;
 
@@ -39,9 +36,6 @@ public class ADSubjectManagementServiceImpl implements ADSubjectManagementServic
 
     private final RedisInvalidationHelper redisInvalidationHelper;
 
-    @Value("${spring.cache.redis.time-to-live}")
-    private long redisTTL;
-
     // Phương thức helper để lấy danh sách bộ môn từ cache hoặc DB
     public PageableObject getSubjects(ADSubjectSearchRequest request) {
         String key = RedisPrefixConstant.REDIS_PREFIX_SUBJECT + "list_" + request.toString();
@@ -49,9 +43,8 @@ public class ADSubjectManagementServiceImpl implements ADSubjectManagementServic
                 key,
                 () -> PageableObject
                         .of(adminSubjectRepository.getAll(PaginationHelper.createPageable(request, "id"), request)),
-                new TypeReference<PageableObject<?>>() {
-                },
-                redisTTL);
+                new TypeReference<>() {
+                });
     }
 
     public Subject getSubjectById(String id) {
@@ -66,8 +59,6 @@ public class ADSubjectManagementServiceImpl implements ADSubjectManagementServic
 
     @Override
     public ResponseEntity<?> createSubject(ADSubjectCreateRequest request) {
-        // Trim all string fields in the request
-        RequestTrimHelper.trimStringFields(request);
 
         if (!ValidateHelper.isValidCode(request.getCode())) {
             return RouterHelper.responseError(
@@ -97,8 +88,6 @@ public class ADSubjectManagementServiceImpl implements ADSubjectManagementServic
 
     @Override
     public ResponseEntity<?> updateSubject(String id, ADSubjectUpdateRequest request) {
-        // Trim all string fields in the request
-        RequestTrimHelper.trimStringFields(request);
 
         Subject s = adminSubjectRepository.findById(id).orElse(null);
         if (s == null) {

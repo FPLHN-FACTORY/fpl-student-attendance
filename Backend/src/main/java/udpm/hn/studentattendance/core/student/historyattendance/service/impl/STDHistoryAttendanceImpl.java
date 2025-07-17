@@ -186,8 +186,7 @@ public class STDHistoryAttendanceImpl implements STDHistoryAttendanceService {
 
                         document.add(pdfTable);
                         document.close();
-                } catch (Exception e) {
-                        e.printStackTrace();
+                } catch (Exception ignored) {
                 }
 
                 return new ByteArrayInputStream(byteArrayOutputStream.toByteArray());

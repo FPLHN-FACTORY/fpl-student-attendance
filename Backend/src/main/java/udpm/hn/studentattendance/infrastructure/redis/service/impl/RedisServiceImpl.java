@@ -40,7 +40,7 @@ public class RedisServiceImpl implements RedisService {
             String json = objectMapper.writeValueAsString(value);
             redisTemplate.opsForValue().set(key, json, ttlMillis, TimeUnit.MILLISECONDS);
         } catch (Exception e) {
-            logger.error("Failed to set Redis key: " + key, e);
+            logger.warn("Failed to set Redis key: " + key);
         }
     }
 
