@@ -34,7 +34,6 @@ import udpm.hn.studentattendance.infrastructure.constants.SettingKeys;
 import udpm.hn.studentattendance.infrastructure.constants.ShiftType;
 import udpm.hn.studentattendance.infrastructure.constants.StatusType;
 import udpm.hn.studentattendance.infrastructure.constants.router.RouteWebsocketConstant;
-import udpm.hn.studentattendance.infrastructure.redis.service.RedisService;
 import udpm.hn.studentattendance.utils.AppUtils;
 import udpm.hn.studentattendance.utils.DateTimeUtils;
 import udpm.hn.studentattendance.utils.FaceRecognitionUtils;

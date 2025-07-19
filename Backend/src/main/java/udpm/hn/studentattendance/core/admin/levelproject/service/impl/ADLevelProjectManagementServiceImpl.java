@@ -1,8 +1,6 @@
 package udpm.hn.studentattendance.core.admin.levelproject.service.impl;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import udpm.hn.studentattendance.core.admin.levelproject.model.request.ADLevelProjectCreateRequest;
@@ -13,12 +11,10 @@ import udpm.hn.studentattendance.core.admin.levelproject.service.ADLevelProjectM
 import udpm.hn.studentattendance.entities.LevelProject;
 import udpm.hn.studentattendance.helpers.*;
 import udpm.hn.studentattendance.helpers.RedisCacheHelper;
-import udpm.hn.studentattendance.helpers.RequestTrimHelper;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
-import udpm.hn.studentattendance.infrastructure.common.repositories.CommonUserStudentRepository;
+import udpm.hn.studentattendance.infrastructure.common.repositories.CommonPlanDateRepository;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.RedisPrefixConstant;
-import udpm.hn.studentattendance.infrastructure.redis.service.RedisService;
 import udpm.hn.studentattendance.utils.CodeGeneratorUtils;
 import com.fasterxml.jackson.core.type.TypeReference;
 
@@ -28,25 +24,21 @@ public class ADLevelProjectManagementServiceImpl implements ADLevelProjectManage
 
     private final ADLevelProjectRepository repository;
 
-    private final CommonUserStudentRepository commonUserStudentRepository;
-
     private final UserActivityLogHelper userActivityLogHelper;
 
     private final RedisCacheHelper redisCacheHelper;
 
     private final RedisInvalidationHelper redisInvalidationHelper;
 
-    @Value("${spring.cache.redis.time-to-live}")
-    private long redisTTL;
+    private final CommonPlanDateRepository commonPlanDateRepository;
 
     public PageableObject getLevelProjects(ADLevelProjectSearchRequest request) {
         String key = RedisPrefixConstant.REDIS_PREFIX_LEVEL + "list_" + request.toString();
         return redisCacheHelper.getOrSet(
                 key,
                 () -> PageableObject.of(repository.getAll(PaginationHelper.createPageable(request, "id"), request)),
-                new TypeReference<PageableObject<?>>() {
-                },
-                redisTTL);
+                new TypeReference<>() {
+                });
     }
 
     @Override
@@ -57,7 +49,6 @@ public class ADLevelProjectManagementServiceImpl implements ADLevelProjectManage
 
     @Override
     public ResponseEntity<?> createLevelProject(ADLevelProjectCreateRequest request) {
-        RequestTrimHelper.trimStringFields(request);
 
         String code = CodeGeneratorUtils.generateCodeFromString(request.getName());
 
@@ -86,8 +77,6 @@ public class ADLevelProjectManagementServiceImpl implements ADLevelProjectManage
 
     @Override
     public ResponseEntity<?> updateLevelProject(String id, ADLevelProjectUpdateRequest request) {
-        // Trim all string fields in the request
-        RequestTrimHelper.trimStringFields(request);
 
         LevelProject lv = repository.findById(id).orElse(null);
         if (lv == null) {
@@ -138,11 +127,14 @@ public class ADLevelProjectManagementServiceImpl implements ADLevelProjectManage
         if (lv == null) {
             return RouterHelper.responseError("Nhóm dự án không tồn tại");
         }
+
+        if(commonPlanDateRepository.existsNotYetStartedByLevelProject(lv.getId())) {
+            return RouterHelper.responseError("Đang tồn tại ca chưa hoặc đang diễn ra. Không thể thay đổi trạng thái");
+        }
+
         lv.setStatus(lv.getStatus() == EntityStatus.ACTIVE ? EntityStatus.INACTIVE : EntityStatus.ACTIVE);
         LevelProject entity = repository.save(lv);
-        if (entity.getStatus() == EntityStatus.ACTIVE) {
-            commonUserStudentRepository.disableAllStudentDuplicateShiftByIdLevelProject(entity.getId());
-        }
+
         userActivityLogHelper.saveLog(
                 "vừa thay đổi trạng thái nhóm dự án " + entity.getName() + " thành " + entity.getStatus().name());
 

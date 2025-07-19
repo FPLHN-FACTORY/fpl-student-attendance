@@ -2,7 +2,6 @@ package udpm.hn.studentattendance.core.admin.facility.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import udpm.hn.studentattendance.core.admin.facility.model.request.AFAddOrUpdateFacilityIPRequest;
@@ -15,7 +14,6 @@ import udpm.hn.studentattendance.entities.Facility;
 import udpm.hn.studentattendance.entities.FacilityIP;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
 import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
-import udpm.hn.studentattendance.helpers.RequestTrimHelper;
 import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.helpers.ValidateHelper;
 import udpm.hn.studentattendance.infrastructure.common.ApiResponse;
@@ -24,7 +22,6 @@ import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.IPType;
 import udpm.hn.studentattendance.infrastructure.constants.RedisPrefixConstant;
 import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
-import udpm.hn.studentattendance.infrastructure.redis.service.RedisService;
 import com.fasterxml.jackson.core.type.TypeReference;
 import udpm.hn.studentattendance.helpers.RedisCacheHelper;
 
@@ -42,18 +39,14 @@ public class AFFacilityIPServiceImpl implements AFFacilityIPService {
 
     private final RedisInvalidationHelper redisInvalidationHelper;
 
-    @Value("${REDIS_TTL}")
-    private long redisTTL;
-
     public PageableObject<AFFacilityIPResponse> getIPList(AFFilterFacilityIPRequest request) {
         String cacheKey = RedisPrefixConstant.REDIS_PREFIX_FACILITY_IP + "list_" + request.toString();
         return redisCacheHelper.getOrSet(
                 cacheKey,
                 () -> PageableObject
                         .of(afFacilityIPRepository.getAllByFilter(PaginationHelper.createPageable(request), request)),
-                new TypeReference<PageableObject<AFFacilityIPResponse>>() {
-                },
-                redisTTL);
+                new TypeReference<>() {
+                });
     }
 
     private ResponseEntity<ApiResponse> checkIP(IPType type, String ip) {
@@ -93,8 +86,6 @@ public class AFFacilityIPServiceImpl implements AFFacilityIPService {
 
     @Override
     public ResponseEntity<?> addIP(AFAddOrUpdateFacilityIPRequest request) {
-        // Trim all string fields in the request
-        RequestTrimHelper.trimStringFields(request);
 
         Facility facility = afFacilityExtendRepository.findById(request.getIdFacility()).orElse(null);
 
@@ -137,8 +128,6 @@ public class AFFacilityIPServiceImpl implements AFFacilityIPService {
 
     @Override
     public ResponseEntity<?> updateIP(AFAddOrUpdateFacilityIPRequest request) {
-        // Trim all string fields in the request
-        RequestTrimHelper.trimStringFields(request);
 
         FacilityIP facilityIP = afFacilityIPRepository.findById(request.getId()).orElse(null);
         if (facilityIP == null) {

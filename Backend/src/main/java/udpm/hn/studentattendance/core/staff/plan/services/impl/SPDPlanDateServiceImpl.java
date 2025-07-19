@@ -22,9 +22,7 @@ import udpm.hn.studentattendance.core.staff.plan.repositories.SPDPlanDateReposit
 import udpm.hn.studentattendance.core.staff.plan.repositories.SPDPlanFactoryRepository;
 import udpm.hn.studentattendance.core.staff.plan.repositories.SPDUserStudentRepository;
 import udpm.hn.studentattendance.helpers.MailerHelper;
-import udpm.hn.studentattendance.helpers.RequestTrimHelper;
 import udpm.hn.studentattendance.helpers.SettingHelper;
-import udpm.hn.studentattendance.infrastructure.common.repositories.CommonUserStudentRepository;
 import udpm.hn.studentattendance.core.staff.plan.services.SPDPlanDateService;
 import udpm.hn.studentattendance.entities.FacilityShift;
 import udpm.hn.studentattendance.entities.Factory;
@@ -70,8 +68,6 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
     private final SPDFacilityShiftRepository spdFacilityShiftRepository;
 
     private final SPDUserStudentRepository spdUserStudentRepository;
-
-    private final CommonUserStudentRepository commonUserStudentRepository;
 
     private final SessionHelper sessionHelper;
 
@@ -165,8 +161,6 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
 
     @Override
     public ResponseEntity<?> updatePlanDate(SPDAddOrUpdatePlanDateRequest request) {
-        // Trim all string fields in the request
-        RequestTrimHelper.trimStringFields(request);
 
         request.setIdFacility(sessionHelper.getFacilityId());
         int MAX_LATE_ARRIVAL = settingHelper.getSetting(SettingKeys.SHIFT_MAX_LATE_ARRIVAL, Integer.class);
@@ -301,9 +295,6 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
 
         PlanDate newEntity = spdPlanDateRepository.save(planDate);
 
-        commonUserStudentRepository.disableAllStudentDuplicateShiftByStartDate(
-                planDate.getPlanFactory().getFactory().getId(), planDate.getStartDate());
-
         StringBuilder logMessage = new StringBuilder();
         logMessage.append(String.format(
                 "vừa cập nhật lịch ngày %s - Nhóm xưởng: %s - Kế hoạch: %s",
@@ -340,8 +331,6 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
 
     @Override
     public ResponseEntity<?> addPlanDate(SPDAddOrUpdatePlanDateRequest request) {
-        // Trim all string fields in the request
-        RequestTrimHelper.trimStringFields(request);
 
         request.setIdFacility(sessionHelper.getFacilityId());
 
@@ -478,9 +467,6 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
 
         PlanDate newEntity = spdPlanDateRepository.save(planDate);
 
-        commonUserStudentRepository.disableAllStudentDuplicateShiftByStartDate(
-                planDate.getPlanFactory().getFactory().getId(), planDate.getStartDate());
-
         // Enhanced logging with detailed information
         String logMessage = String.format(
                 "vừa thêm kế hoạch chi tiết ngày %s - Nhóm xưởng: %s - Kế hoạch: %s - Ca học: %s - Thời gian: %s-%s",
@@ -497,8 +483,6 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
 
     @Override
     public ResponseEntity<?> updateLinkMeet(SPDUpdateLinkMeetRequest request) {
-        // Trim all string fields in the request
-        RequestTrimHelper.trimStringFields(request);
 
         if (!ValidateHelper.isValidURL(request.getLink())) {
             return RouterHelper.responseError("Link học online không hợp lệ");

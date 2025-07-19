@@ -1,8 +1,6 @@
 package udpm.hn.studentattendance.core.admin.subjectfacility.service.impl;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import udpm.hn.studentattendance.core.admin.subjectfacility.model.request.ADSubjectFacilityCreateRequest;
@@ -18,16 +16,12 @@ import udpm.hn.studentattendance.entities.Subject;
 import udpm.hn.studentattendance.entities.SubjectFacility;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
 import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
-import udpm.hn.studentattendance.helpers.RequestTrimHelper;
 import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
-import udpm.hn.studentattendance.infrastructure.common.repositories.CommonUserStudentRepository;
+import udpm.hn.studentattendance.infrastructure.common.repositories.CommonPlanDateRepository;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.RedisPrefixConstant;
-import udpm.hn.studentattendance.infrastructure.redis.service.RedisService;
-import udpm.hn.studentattendance.repositories.FacilityRepository;
-import udpm.hn.studentattendance.repositories.SubjectRepository;
 import com.fasterxml.jackson.core.type.TypeReference;
 import udpm.hn.studentattendance.helpers.RedisCacheHelper;
 
@@ -37,11 +31,11 @@ public class ADSubjectFacilityServiceImpl implements ADSubjectFacilityService {
 
     private final ADSubjectFacilityRepository repository;
 
+    private final CommonPlanDateRepository commonPlanDateRepository;
+
     private final ADSubjectRepository subjectRepository;
 
     private final ADFacilityRepository facilityRepository;
-
-    private final CommonUserStudentRepository commonUserStudentRepository;
 
     private final UserActivityLogHelper userActivityLogHelper;
 
@@ -49,26 +43,13 @@ public class ADSubjectFacilityServiceImpl implements ADSubjectFacilityService {
 
     private final RedisInvalidationHelper redisInvalidationHelper;
 
-    @Value("${spring.cache.redis.time-to-live}")
-    private long redisTTL;
-
     public PageableObject<ADSubjectFacilityResponse> getSubjectFacilityList(ADSubjectFacilitySearchRequest request) {
-        String key = RedisPrefixConstant.REDIS_PREFIX_SUBJECT_FACILITY + "list_" +
-                "page=" + request.getPage() +
-                "_size=" + request.getSize() +
-                "_orderBy=" + request.getOrderBy() +
-                "_sortBy=" + request.getSortBy() +
-                "_q=" + (request.getQ() != null ? request.getQ() : "") +
-                "_name=" + (request.getName() != null ? request.getName() : "") +
-                "_facilityId=" + (request.getFacilityId() != null ? request.getFacilityId() : "") +
-                "_subjectId=" + (request.getSubjectId() != null ? request.getSubjectId() : "") +
-                "_status=" + (request.getStatus() != null ? request.getStatus() : "");
+        String key = RedisPrefixConstant.REDIS_PREFIX_SUBJECT_FACILITY + "list_" + request.toString();
         return redisCacheHelper.getOrSet(
                 key,
                 () -> PageableObject.of(repository.getAll(PaginationHelper.createPageable(request, "id"), request)),
-                new TypeReference<PageableObject<ADSubjectFacilityResponse>>() {
-                },
-                redisTTL);
+                new TypeReference<>() {
+                });
     }
 
     /**
@@ -86,8 +67,6 @@ public class ADSubjectFacilityServiceImpl implements ADSubjectFacilityService {
 
     @Override
     public ResponseEntity<?> createSubjectFacility(ADSubjectFacilityCreateRequest request) {
-        // Trim all string fields in the request
-        RequestTrimHelper.trimStringFields(request);
 
         Facility facility = facilityRepository.findById(request.getFacilityId()).orElse(null);
         if (facility == null || facility.getStatus() == EntityStatus.INACTIVE) {
@@ -118,8 +97,6 @@ public class ADSubjectFacilityServiceImpl implements ADSubjectFacilityService {
 
     @Override
     public ResponseEntity<?> updateSubjectFacility(String id, ADSubjectFacilityUpdateRequest request) {
-        // Trim all string fields in the request
-        RequestTrimHelper.trimStringFields(request);
 
         SubjectFacility subjectFacility = repository.findById(id).orElse(null);
         if (subjectFacility == null) {
@@ -167,14 +144,17 @@ public class ADSubjectFacilityServiceImpl implements ADSubjectFacilityService {
         if (subjectFacility == null) {
             return RouterHelper.responseError("Không tìm thấy bộ môn cơ sở");
         }
+
+        if(commonPlanDateRepository.existsNotYetStartedBySubjectFacility(subjectFacility.getId())) {
+            return RouterHelper.responseError("Đang tồn tại ca chưa hoặc đang diễn ra. Không thể thay đổi trạng thái");
+        }
+
         subjectFacility.setStatus(
                 subjectFacility.getStatus() == EntityStatus.ACTIVE ? EntityStatus.INACTIVE : EntityStatus.ACTIVE);
 
         SubjectFacility newEntity = repository.save(subjectFacility);
 
-        if (subjectFacility.getStatus() == EntityStatus.ACTIVE) {
-            commonUserStudentRepository.disableAllStudentDuplicateShiftByIdSubjectFacility(subjectFacility.getId());
-        }
+
         String statusText = newEntity.getStatus() == EntityStatus.ACTIVE ? "Hoạt động" : "Không hoạt động";
         userActivityLogHelper.saveLog("vừa thay đổi trạng thái bộ môn cơ sở: " + newEntity.getSubject().getName()
                 + " tại cơ sở " + newEntity.getFacility().getName() + " thành " + statusText);

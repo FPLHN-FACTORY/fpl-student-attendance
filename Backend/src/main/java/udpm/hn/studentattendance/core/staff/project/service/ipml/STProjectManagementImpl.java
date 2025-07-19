@@ -12,11 +12,12 @@ import udpm.hn.studentattendance.core.staff.project.service.STProjectManagementS
 import udpm.hn.studentattendance.entities.*;
 import udpm.hn.studentattendance.helpers.*;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
-import udpm.hn.studentattendance.infrastructure.common.repositories.CommonUserStudentRepository;
+import udpm.hn.studentattendance.infrastructure.common.repositories.CommonPlanDateRepository;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -30,13 +31,13 @@ public class STProjectManagementImpl implements STProjectManagementService {
 
     private final STProjectSubjectFacilityExtendRepository subjectFacilityRepository;
 
-    private final CommonUserStudentRepository commonUserStudentRepository;
-
     private final SessionHelper sessionHelper;
 
     private final STProjectChangeSemesterExtendRepository deleteBulkByProject;
 
     private final UserActivityLogHelper userActivityLogHelper;
+
+    private final CommonPlanDateRepository commonPlanDateRepository;
 
     @Override
     public ResponseEntity<?> getListProject(USProjectSearchRequest request) {
@@ -50,8 +51,6 @@ public class STProjectManagementImpl implements STProjectManagementService {
 
     @Override
     public ResponseEntity<?> createProject(USProjectCreateOrUpdateRequest request) {
-        // Trim all string fields in the request
-        RequestTrimHelper.trimStringFields(request);
 
         String namePattern = "^[a-zA-ZÀ-ỹ\\s_#-]+$";
         if (!request.getName().matches(namePattern)) {
@@ -108,8 +107,6 @@ public class STProjectManagementImpl implements STProjectManagementService {
 
     @Override
     public ResponseEntity<?> updateProject(String idProject, USProjectCreateOrUpdateRequest request) {
-        // Trim all string fields in the request
-        RequestTrimHelper.trimStringFields(request);
 
         Project project = projectManagementRepository.findById(idProject).orElse(null);
         if (project == null) {
@@ -175,7 +172,22 @@ public class STProjectManagementImpl implements STProjectManagementService {
 
     @Override
     public ResponseEntity<?> changeStatus(String idProject) {
-        Project project = projectManagementRepository.findById(idProject).get();
+        Optional<Project> projectOptional = projectManagementRepository.findById(idProject);
+        if (projectOptional.isEmpty()) {
+            return RouterHelper.responseError("Không tìm thấy dự án");
+        }
+        Project project = projectOptional.get();
+
+        USProjectResponse usProjectResponse = projectManagementRepository.getDetailProject(project.getId()).orElse(null);
+
+        if (usProjectResponse != null && usProjectResponse.getStatus() != project.getStatus().ordinal()) {
+            return RouterHelper.responseError("Không thể thay đổi trạng thái mục này");
+        }
+
+        if (commonPlanDateRepository.existsNotYetStartedByProject(project.getId())) {
+            return RouterHelper.responseError("Đang tồn tại ca chưa hoặc đang diễn ra. Không thể thay đổi trạng thái");
+        }
+
         String oldStatus = project.getStatus() == EntityStatus.ACTIVE ? "Hoạt động" : "Không hoạt động";
         if (project.getStatus() == EntityStatus.ACTIVE) {
             project.setStatus(EntityStatus.INACTIVE);
@@ -184,9 +196,7 @@ public class STProjectManagementImpl implements STProjectManagementService {
         }
         String newStatus = project.getStatus() == EntityStatus.ACTIVE ? "Hoạt động" : "Không hoạt động";
         projectManagementRepository.save(project);
-        if (project.getStatus() == EntityStatus.ACTIVE) {
-            commonUserStudentRepository.disableAllStudentDuplicateShiftByIdProject(project.getId());
-        }
+
         userActivityLogHelper.saveLog(
                 "vừa thay đổi trạng thái dự án " + project.getName() + " từ " + oldStatus + " thành " + newStatus);
         return RouterHelper.responseSuccess("Chuyển trạng thái thành công", project);
@@ -219,9 +229,6 @@ public class STProjectManagementImpl implements STProjectManagementService {
             project.setStatus(project.getStatus() == EntityStatus.ACTIVE ? EntityStatus.INACTIVE
                     : EntityStatus.ACTIVE);
             projectManagementRepository.save(project);
-            if (project.getStatus() == EntityStatus.ACTIVE) {
-                commonUserStudentRepository.disableAllStudentDuplicateShiftByIdProject(project.getId());
-            }
         }
 
         userActivityLogHelper
