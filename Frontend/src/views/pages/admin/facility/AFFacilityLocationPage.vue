@@ -65,9 +65,11 @@ const lstData = ref([])
 
 const columns = ref(
   autoAddColumnWidth([
-    { title: '#', key: 'rowNumber' },
-    { title: 'Tên vị trí', dataIndex: 'name', key: 'name' },
-    { title: 'Mô tả', dataIndex: 'description', key: 'description' },
+    { title: '#', dataIndex: 'orderNumber', key: 'orderNumber' },
+    { title: 'Tên địa điểm', dataIndex: 'name', key: 'name' },
+    { title: 'Vĩ độ', dataIndex: 'latitude', key: 'latitude' },
+    { title: 'Kinh độ', dataIndex: 'longitude', key: 'longitude' },
+    { title: 'Bán kính', dataIndex: 'radius', key: 'radius' },
     { title: 'Trạng thái', dataIndex: 'status', key: 'status' },
     { title: 'Chức năng', key: 'actions' },
   ]),
