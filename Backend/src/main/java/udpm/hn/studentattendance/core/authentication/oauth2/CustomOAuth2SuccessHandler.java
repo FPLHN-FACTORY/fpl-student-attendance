@@ -9,6 +9,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
 import udpm.hn.studentattendance.core.authentication.model.request.AuthenticationToken;
+import udpm.hn.studentattendance.helpers.ValidateHelper;
 import udpm.hn.studentattendance.infrastructure.common.ApiResponse;
 import udpm.hn.studentattendance.infrastructure.constants.router.RouteAuthenticationConstant;
 import udpm.hn.studentattendance.core.authentication.utils.JwtUtil;
@@ -43,10 +44,16 @@ public class CustomOAuth2SuccessHandler implements AuthenticationSuccessHandler 
 
         ObjectMapper mapper = new ObjectMapper();
         String jsonToken = mapper.writeValueAsString(authenticationToken);
-        String data = Base64.getEncoder().encodeToString(jsonToken.getBytes(StandardCharsets.UTF_8));
-
         String redirect_uri = (String) httpSession.getAttribute(SessionConstant.LOGIN_REDIRECT);
 
+        if (!ValidateHelper.isValidURL(redirect_uri) && !redirect_uri.contains("localhost")) {
+            response.setContentType("application/json");
+            response.setCharacterEncoding("UTF-8");
+            response.getWriter().write(jsonToken);
+            return;
+        }
+
+        String data = Base64.getEncoder().encodeToString(jsonToken.getBytes(StandardCharsets.UTF_8));
         response.sendRedirect(redirect_uri + "?" + RouteAuthenticationConstant.PARAM_ROUTE_ROLE + "=" + role + "&"
                 + RouteAuthenticationConstant.PARAM_LOGIN_SUCCESS + "=" + data);
     }

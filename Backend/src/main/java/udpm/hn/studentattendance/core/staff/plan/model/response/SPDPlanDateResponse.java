@@ -31,4 +31,8 @@ public interface SPDPlanDateResponse extends IsIdentify, HasOrderNumber {
 
     Integer getRequiredLocation();
 
+    Integer getRequiredCheckin();
+
+    Integer getRequiredCheckout();
+
 }

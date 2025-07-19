@@ -41,27 +41,19 @@ const lstData = ref([])
 
 const columns = ref(
   autoAddColumnWidth([
-    { title: '#', dataIndex: 'orderNumber', key: 'orderNumber' },
-    { title: 'Ca học', dataIndex: 'shift', key: 'shift' },
-    {
-      title: 'Thời gian bắt đầu',
-      dataIndex: 'startTime',
-      key: 'startTime',
-    },
-    {
-      title: 'Thời gian kết thúc',
-      dataIndex: 'endTime',
-      key: 'endTime',
-    },
+    { title: '#', dataIndex : 'orderNumber', key: 'orderNumber' },
+    { title: 'Ca', dataIndex: 'shift', key: 'shift' },
+    { title: 'Thời gian bắt đầu', dataIndex: 'startTime', key: 'startTime' },
+    { title: 'Thời gian kết thúc', dataIndex: 'endTime', key: 'endTime' },
     { title: 'Trạng thái', dataIndex: 'status', key: 'status' },
-    { title: '', key: 'actions' },
+    { title: 'Chức năng', key: 'actions' },
   ]),
 )
 
 const breadcrumb = ref([
   {
     name: GLOBAL_ROUTE_NAMES.STAFF_PAGE,
-    breadcrumbName: 'Ban đào tạo',
+    breadcrumbName: 'Admin',
   },
   {
     name: ROUTE_NAMES.MANAGEMENT_FACILITY,
@@ -86,8 +78,8 @@ const formData = reactive({
 })
 
 const formRules = reactive({
-  shift: [{ required: true, message: 'Vui lòng chọn 1 ca học!' }],
-  timeRange: [{ required: true, message: 'Vui lòng chọn thời gian ca học!' }],
+  shift: [{ required: true, message: 'Vui lòng chọn 1 ca!' }],
+  timeRange: [{ required: true, message: 'Vui lòng chọn thời gian ca!' }],
 })
 
 const fetchDataDetail = () => {
@@ -104,7 +96,7 @@ const fetchDataDetail = () => {
       })
       breadcrumbStore.push({
         name: ROUTE_NAMES.MANAGEMENT_FACILITY_SHIFT,
-        breadcrumbName: 'Quản lý ca học',
+        breadcrumbName: 'Quản lý ca',
       })
       fetchDataList()
     })
@@ -217,7 +209,7 @@ const fetchSubmitChangeStatus = (id) => {
       fetchDataList()
     })
     .catch((error) => {
-      message.error(error?.response?.data?.message || 'Không thể thay đổi trạng thái ca học')
+      message.error(error?.response?.data?.message || 'Không thể thay đổi trạng thái ca')
     })
 }
 
@@ -248,7 +240,7 @@ const handleShowAdd = () => {
   modalAddOrUpdate.isLoading = false
   modalAddOrUpdate.title = h('span', [
     h(PlusOutlined, { class: 'me-2 text-primary' }),
-    'Thêm ca học mới',
+    'Thêm ca mới',
   ])
   modalAddOrUpdate.okText = 'Thêm ngay'
   modalAddOrUpdate.onOk = () => handleSubmitAdd()
@@ -270,7 +262,7 @@ const handleShowUpdate = (item) => {
   modalAddOrUpdate.isLoading = false
   modalAddOrUpdate.title = h('span', [
     h(EditFilled, { class: 'me-2 text-primary' }),
-    'Chỉnh sửa ca học',
+    'Chỉnh sửa ca',
   ])
   modalAddOrUpdate.okText = 'Lưu lại'
   modalAddOrUpdate.onOk = () => handleSubmitUpdate()
@@ -293,7 +285,7 @@ const handleSubmitAdd = async () => {
     Modal.confirm({
       title: `Xác nhận thêm mới`,
       type: 'info',
-      content: `Bạn có chắc muốn thêm mới ca học này?`,
+      content: `Bạn có chắc muốn thêm mới ca này?`,
       okText: 'Tiếp tục',
       cancelText: 'Hủy bỏ',
       onOk() {
@@ -323,7 +315,7 @@ const handleChangeStatus = (id) => {
   Modal.confirm({
     title: `Xác nhận thay đổi trạng thái`,
     type: 'info',
-    content: `Bạn có chắc muốn thay đổi trạng thái ca học này?`,
+    content: `Bạn có chắc muốn thay đổi trạng thái ca này?`,
     okText: 'Tiếp tục',
     cancelText: 'Hủy bỏ',
     onOk() {
@@ -334,9 +326,9 @@ const handleChangeStatus = (id) => {
 
 const handleShowAlertDelete = (item) => {
   Modal.confirm({
-    title: `Xoá ca học: ${item.shift}`,
+    title: `Xoá ca: ${item.shift}`,
     type: 'error',
-    content: `Bạn có chắc muốn xoá ca học này?`,
+    content: `Bạn có chắc muốn xoá ca này?`,
     okText: 'Tiếp tục',
     cancelText: 'Hủy bỏ',
     okButtonProps: {
@@ -379,7 +371,7 @@ watch(
       autocomplete="off"
       :model="formData"
     >
-      <a-form-item class="col-sm-4" label="Ca học" name="shift" :rules="formRules.shift">
+      <a-form-item class="col-sm-4" label="Ca" name="shift" :rules="formRules.shift">
         <a-select
           class="w-100"
           v-model:value="formData.shift"
@@ -393,7 +385,7 @@ watch(
 
       <a-form-item
         class="col-sm-8"
-        label="Thời gian ca học"
+        label="Thời gian ca"
         name="timeRange"
         :rules="formRules.timeRange"
       >
@@ -412,59 +404,62 @@ watch(
   <div class="container-fluid">
     <div class="row g-3">
       <div class="col-12">
-        <!-- Bộ lọc tìm kiếm -->
-        <a-card :bordered="false" class="cart">
-          <template #title> <FilterFilled /> Bộ lọc </template>
-          <div class="row g-2">
-            <div class="col-lg-4 col-md-6 col-sm-6">
-              <div class="label-title">Ca học:</div>
-              <a-select
-                v-model:value="dataFilter.shift"
-                class="w-100"
-                :dropdownMatchSelectWidth="false"
-                placeholder="-- Tất cả ca học --"
-                allowClear
-              >
-                <a-select-option :value="null">-- Tất cả ca học --</a-select-option>
-                <a-select-option v-for="(name, id) in SHIFT" :key="id" :value="id">
-                  {{ name }}
-                </a-select-option>
-              </a-select>
-            </div>
-            <div class="col-lg-4 col-md-6 col-sm-6">
-              <div class="label-title">Trạng thái:</div>
-              <a-select
-                v-model:value="dataFilter.status"
-                class="w-100"
-                :dropdownMatchSelectWidth="false"
-                placeholder="-- Tất cả trạng thái --"
-                allowClear
-              >
-                <a-select-option :value="null">-- Tất cả trạng thái --</a-select-option>
-                <a-select-option v-for="(name, id) in STATUS_FACILITY_IP" :key="id" :value="id">
-                  {{ name }}
-                </a-select-option>
-              </a-select>
-            </div>
+        <a-card :bordered="false" class="cart no-body-padding">
+          <a-collapse ghost>
+            <a-collapse-panel>
+              <template #header><FilterFilled /> Bộ lọc</template>
+              <div class="row g-3">
+                <div class="col-lg-6 col-md-6 col-sm-6">
+                  <div class="label-title">Ca:</div>
+                  <a-select
+                    v-model:value="dataFilter.shift"
+                    class="w-100"
+                    :dropdownMatchSelectWidth="false"
+                    placeholder="-- Tất cả ca --"
+                    allowClear
+                  >
+                    <a-select-option :value="null">-- Tất cả ca --</a-select-option>
+                    <a-select-option v-for="(name, id) in SHIFT" :key="id" :value="id">
+                      {{ name }}
+                    </a-select-option>
+                  </a-select>
+                </div>
+                <div class="col-lg-6 col-md-6 col-sm-6">
+                  <div class="label-title">Trạng thái:</div>
+                  <a-select
+                    v-model:value="dataFilter.status"
+                    class="w-100"
+                    :dropdownMatchSelectWidth="false"
+                    placeholder="-- Tất cả trạng thái --"
+                  >
+                    <a-select-option :value="null">-- Tất cả trạng thái --</a-select-option>
+                    <a-select-option v-for="(name, id) in STATUS_FACILITY_IP" :key="id" :value="id">
+                      {{ name }}
+                    </a-select-option>
+                  </a-select>
+                </div>
 
-            <div class="col-12">
-              <div class="d-flex justify-content-center flex-wrap gap-2 mt-3">
-                <a-button class="btn-light" @click="handleSubmitFilter">
-                  <FilterFilled /> Lọc
-                </a-button>
-                <a-button class="btn-gray" @click="handleClearFilter"> Huỷ lọc </a-button>
+                <div class="col-12">
+                  <div class="d-flex justify-content-center flex-wrap gap-2">
+                    <a-button class="btn-light" @click="handleSubmitFilter">
+                      <FilterFilled /> Lọc
+                    </a-button>
+                    <a-button class="btn-gray" @click="handleClearFilter"> Huỷ lọc </a-button>
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
+            </a-collapse-panel>
+          </a-collapse>
         </a-card>
       </div>
 
       <div class="col-12">
         <a-card :bordered="false" class="cart">
-          <template #title> <UnorderedListOutlined /> Danh sách ca học </template>
-          <div class="d-flex justify-content-end mb-3 flex-wrap gap-3">
+          <template #title> <UnorderedListOutlined /> Danh sách ca </template>
+
+          <div class="d-flex justify-content-end mb-2 flex-wrap gap-3">
             <a-button type="primary" @click="handleShowAdd">
-              <PlusOutlined /> Thêm ca học mới
+              <PlusOutlined /> Thêm ca mới
             </a-button>
           </div>
 
@@ -479,11 +474,12 @@ watch(
               :scroll="{ x: 'auto' }"
               @change="handleTableChange"
             >
-              <template #bodyCell="{ column, record }">
+              <template #bodyCell="{ column, record, index }">
+      
                 <template v-if="column.dataIndex === 'shift'">
                   <a-tag color="purple"> Ca {{ record.shift }} </a-tag>
                 </template>
-                <template v-if="column.dataIndex === 'status'">
+                <template v-else-if="column.dataIndex === 'status'">
                   <a-switch
                     class="me-2"
                     :checked="record.status === 1"
@@ -493,13 +489,13 @@ watch(
                     record.status === 1 ? 'Đang áp dụng' : 'Không áp dụng'
                   }}</a-tag>
                 </template>
-                <template v-if="column.key === 'actions'">
-                  <a-tooltip title="Chỉnh sửa ca học">
+                <template v-else-if="column.key === 'actions'">
+                  <a-tooltip title="Chỉnh sửa ca">
                     <a-button class="btn-outline-info border-0" @click="handleShowUpdate(record)">
                       <EditFilled />
                     </a-button>
                   </a-tooltip>
-                  <a-tooltip title="Xoá ca học">
+                  <a-tooltip title="Xoá ca">
                     <a-button
                       class="btn-outline-danger border-0 ms-2"
                       @click="handleShowAlertDelete(record)"

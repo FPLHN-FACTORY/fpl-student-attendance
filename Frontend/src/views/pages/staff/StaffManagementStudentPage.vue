@@ -11,6 +11,7 @@ import {
   UnorderedListOutlined,
   FilterFilled,
   UserDeleteOutlined,
+  SearchOutlined,
 } from '@ant-design/icons-vue'
 import { ROUTE_NAMES } from '@/router/staffRoute'
 import { DEFAULT_PAGINATION } from '@/constants'
@@ -61,7 +62,7 @@ const detailStudent = reactive({
 // Cấu hình cột cho bảng
 const columns = ref(
   autoAddColumnWidth([
-    { title: 'STT', dataIndex: 'rowNumber', key: 'rowNumber' },
+    { title: 'STT', dataIndex: 'index', key: 'index' },
     { title: 'Mã sinh viên', dataIndex: 'studentCode', key: 'studentCode' },
     { title: 'Tên sinh viên', dataIndex: 'studentName', key: 'studentName' },
     { title: 'Email', dataIndex: 'studentEmail', key: 'studentEmail' },
@@ -97,11 +98,12 @@ const fetchStudents = async () => {
     ])
 
     const list = stuRes.data.data.data // danh sách sinh viên
-    const flags = faceRes.data.data // mảng Boolean
-    // gán thêm hasFace vào từng object
-    students.value = list.map((s, idx) => ({
-      ...s,
-      hasFace: flags[idx] === 1,
+    const faceMap = faceRes.data.data // map studentId -> hasFace
+
+    // gán thêm hasFace vào từng object dựa trên studentId
+    students.value = list.map((student) => ({
+      ...student,
+      hasFace: faceMap[student.studentId] || false,
     }))
 
     // cập nhật tổng bản ghi
@@ -131,27 +133,35 @@ const handleTableChange = (pageInfo) => {
 // Hàm thêm sinh viên
 const handleAddStudent = () => {
   if (!newStudent.code || !newStudent.name || !newStudent.email) {
-    message.error('Vui lòng nhập đầy đủ thông tin')
+    message.error('Vui lòng nhập đầy đủ thông tin sinh viên (Mã, Tên, Email)')
     return
   }
-  loadingStore.show()
-  requestAPI
-    .post(API_ROUTES_STAFF.FETCH_DATA_STUDENT, newStudent)
-    .then(() => {
-      message.success('Thêm sinh viên thành công')
-      modalAdd.value = false
-      fetchStudents()
-      clearNewStudentForm()
-    })
-    .catch((error) => {
-      message.error(
-        (error.response && error.response.data && error.response.data.message) ||
-          'Lỗi khi thêm sinh viên',
-      )
-    })
-    .finally(() => {
-      loadingStore.hide()
-    })
+  Modal.confirm({
+    title: 'Xác nhận thêm sinh viên mới',
+    content: 'Bạn có chắc chắn muốn thêm sinh viên mới này vào hệ thống không?',
+    okText: 'Thêm sinh viên',
+    cancelText: 'Hủy',
+    onOk() {
+      loadingStore.show()
+      requestAPI
+        .post(API_ROUTES_STAFF.FETCH_DATA_STUDENT, newStudent)
+        .then(() => {
+          message.success('Thêm sinh viên thành công')
+          modalAdd.value = false
+          fetchStudents()
+          clearNewStudentForm()
+        })
+        .catch((error) => {
+          message.error(
+            (error.response && error.response.data && error.response.data.message) ||
+              'Lỗi khi thêm sinh viên',
+          )
+        })
+        .finally(() => {
+          loadingStore.hide()
+        })
+    },
+  })
 }
 
 // Hàm mở modal cập nhật và load chi tiết sinh viên
@@ -205,45 +215,53 @@ const handleDetailStudent = (record) => {
 // Hàm submit cập nhật sinh viên
 const updateStudent = () => {
   if (!detailStudent.code || !detailStudent.name || !detailStudent.email) {
-    message.error('Vui lòng nhập đầy đủ thông tin')
+    message.error('Vui lòng nhập đầy đủ thông tin sinh viên (Mã, Tên, Email)')
     return
   }
-  loadingStore.show()
-  requestAPI
-    .put(API_ROUTES_STAFF.FETCH_DATA_STUDENT, detailStudent)
-    .then(() => {
-      message.success('Cập nhật sinh viên thành công')
-      modalUpdate.value = false
-      fetchStudents()
-    })
-    .catch((error) => {
-      message.error(
-        (error.response && error.response.data && error.response.data.message) ||
-          'Lỗi khi cập nhật sinh viên',
-      )
-    })
-    .finally(() => {
-      loadingStore.hide()
-    })
-}
-
-// Hàm đổi trạng thái sinh viên
-const handleChangeStatusStudent = (record) => {
   Modal.confirm({
-    title: 'Xác nhận thay đổi trạng thái',
-    content: `Bạn có chắc chắn muốn đổi trạng thái cho sinh viên ${record.studentName}?`,
-    onOk: () => {
+    title: 'Xác nhận cập nhật thông tin sinh viên',
+    content: 'Bạn có chắc chắn muốn cập nhật thông tin của sinh viên này không?',
+    okText: 'Cập nhật',
+    cancelText: 'Hủy',
+    onOk() {
       loadingStore.show()
       requestAPI
-        .put(`${API_ROUTES_STAFF.FETCH_DATA_STUDENT}/status/${record.studentId}`)
+        .put(API_ROUTES_STAFF.FETCH_DATA_STUDENT, detailStudent)
         .then(() => {
-          message.success('Đổi trạng thái thành công')
+          message.success('Cập nhật sinh viên thành công')
+          modalUpdate.value = false
           fetchStudents()
         })
         .catch((error) => {
           message.error(
             (error.response && error.response.data && error.response.data.message) ||
-              'Lỗi khi đổi trạng thái sinh viên',
+              'Lỗi khi cập nhật sinh viên',
+          )
+        })
+        .finally(() => {
+          loadingStore.hide()
+        })
+    },
+  })
+}
+
+// Hàm đổi trạng thái sinh viên
+const handleChangeStatusStudent = (record) => {
+  Modal.confirm({
+    title: 'Xác nhận thay đổi trạng thái sinh viên',
+    content: `Bạn có chắc chắn muốn thay đổi trạng thái của sinh viên "${record.studentName}" không?`,
+    onOk: () => {
+      loadingStore.show()
+      requestAPI
+        .put(`${API_ROUTES_STAFF.FETCH_DATA_STUDENT}/status/${record.studentId}`)
+        .then(() => {
+          message.success('Thay đổi trạng thái sinh viên thành công')
+          fetchStudents()
+        })
+        .catch((error) => {
+          message.error(
+            (error.response && error.response.data && error.response.data.message) ||
+              'Lỗi khi thay đổi trạng thái sinh viên',
           )
         })
         .finally(() => {
@@ -254,15 +272,15 @@ const handleChangeStatusStudent = (record) => {
 }
 const changeFaceStudent = (record) => {
   Modal.confirm({
-    title: 'Xác nhận đổi mặt',
-    content: `Bạn có chắc muốn đổi mặt của sinh viên ${record.studentName}?`,
+    title: 'Xác nhận cập nhật khuôn mặt',
+    content: `Bạn có chắc chắn muốn cập nhật dữ liệu khuôn mặt của sinh viên "${record.studentName}" không?`,
     onOk() {
       loadingStore.show()
       // Giả sử record chứa studentId, nếu không hãy thay đổi cho phù hợp
       requestAPI
         .put(API_ROUTES_STAFF.FETCH_DATA_STUDENT + '/change-face/' + record.studentId)
         .then((response) => {
-          message.success(response.data.message || 'Đổi mặt học sinh thành công')
+          message.success(response.data.message || 'Cập nhật khuôn mặt sinh viên thành công')
           fetchStudents() // Làm mới danh sách sau khi đổi mặt
         })
         .catch((error) => {
@@ -284,6 +302,9 @@ const configImportExcel = {
   },
   showDownloadTemplate: true,
   showHistoryLog: true,
+  showExport: true,
+  btnImport: 'Import sinh viên',
+  btnExport: 'Export sinh viên',
 }
 
 const clearNewStudentForm = () => {
@@ -301,6 +322,22 @@ const handleClearFilter = () => {
   fetchStudents() // or whatever your fetch function is named
 }
 
+const clearUpdateStudentForm = () => {
+  detailStudent.id = ''
+  detailStudent.code = ''
+  detailStudent.name = ''
+  detailStudent.email = ''
+  modalUpdate.value = false
+}
+
+const handleShowModalAdd = () => {
+  newStudent.code = null
+  newStudent.email = null
+  newStudent.name = null
+
+  modalAdd.value = true
+}
+
 onMounted(() => {
   breadcrumbStore.setRoutes(breadcrumb.value)
   fetchStudents()
@@ -309,63 +346,71 @@ onMounted(() => {
 
 <template>
   <div class="container-fluid">
-    <!-- Bộ lọc tìm kiếm -->
-    <div class="row g-3">
-      <div class="col-12">
-        <a-card :bordered="false" class="cart mb-3">
-          <template #title> <FilterFilled /> Bộ lọc </template>
-          <div class="row g-3 filter-container">
-            <!-- Input tìm kiếm theo mã, tên, email -->
-            <a-col :span="12" class="col">
-              <div class="label-title">Tìm kiếm mã, tên, email:</div>
-              <a-input
-                v-model:value="filter.searchQuery"
-                placeholder="Tìm kiếm theo mã, tên, email"
-                allowClear
-                @change="fetchStudents"
-              />
-            </a-col>
-            <!-- Combobox trạng thái -->
-            <a-col :span="12" class="col">
-              <div class="label-title">Trạng thái:</div>
-              <a-select
-                v-model:value="filter.studentStatus"
-                placeholder="Chọn trạng thái"
-                allowClear
-                style="width: 100%"
-                @change="fetchStudents"
-              >
-                <a-select-option :value="''">Tất cả trạng thái</a-select-option>
-                <a-select-option value="ACTIVE">Hoạt động</a-select-option>
-                <a-select-option value="INACTIVE">Không hoạt động</a-select-option>
-              </a-select>
-            </a-col>
-          </div>
-          <div class="row">
-            <div class="col-12">
-              <div class="d-flex justify-content-center flex-wrap gap-2 mt-3">
-                <a-button class="btn-light" @click="fetchStudents"> <FilterFilled /> Lọc </a-button>
-                <a-button class="btn-gray" @click="handleClearFilter"> Huỷ lọc </a-button>
-              </div>
-            </div>
-          </div>
-        </a-card>
-      </div>
-    </div>
-
     <!-- Danh sách sinh viên -->
     <div class="row g-3">
       <div class="col-12">
+        <a-card :bordered="false" class="cart no-body-padding">
+          <a-collapse ghost>
+            <a-collapse-panel>
+              <template #header><FilterFilled /> Bộ lọc</template>
+              <div class="row g-3">
+                <!-- Input tìm kiếm theo mã, tên, email -->
+                <div class="col-md-6 col-sm-12">
+                  <div class="label-title">Từ khoá:</div>
+                  <a-input
+                    v-model:value="filter.searchQuery"
+                    placeholder="Tìm kiếm theo mã, tên, email"
+                    allowClear
+                    @change="fetchStudents"
+                  >
+                    <template #prefix>
+                      <SearchOutlined />
+                    </template>
+                  </a-input>
+                </div>
+                <!-- Combobox trạng thái -->
+                <div class="col-md-6 col-sm-12">
+                  <div class="label-title">Trạng thái:</div>
+                  <a-select
+                    v-model:value="filter.studentStatus"
+                    placeholder="-- Tất cả trạng thái --"
+                    class="w-100"
+                    @change="fetchStudents"
+                  >
+                    <a-select-option :value="''">-- Tất cả trạng thái --</a-select-option>
+                    <a-select-option value="ACTIVE">Hoạt động</a-select-option>
+                    <a-select-option value="INACTIVE">Không hoạt động</a-select-option>
+                  </a-select>
+                </div>
+
+                <div class="col-12">
+                  <div class="d-flex justify-content-center flex-wrap gap-2">
+                    <a-button class="btn-light" @click="fetchStudents">
+                      <FilterFilled /> Lọc
+                    </a-button>
+                    <a-button class="btn-gray" @click="handleClearFilter"> Huỷ lọc </a-button>
+                  </div>
+                </div>
+              </div>
+            </a-collapse-panel>
+          </a-collapse>
+        </a-card>
+      </div>
+
+      <div class="col-12">
         <a-card :bordered="false" class="cart">
           <template #title> <UnorderedListOutlined /> Danh sách sinh viên </template>
-          <div class="d-flex justify-content-end mb-3 flex-wrap gap-3">
+          <div class="d-flex justify-content-end flex-wrap gap-3 mb-2">
             <ExcelUploadButton v-bind="configImportExcel" />
 
             <a-tooltip title="Thêm mới sinh viên">
               <!-- Sử dụng nút primary kiểu filled -->
-              <a-button type="primary" @click="modalAdd = true"> <PlusOutlined /> Thêm </a-button>
+              <a-button type="primary" @click="handleShowModalAdd">
+                <PlusOutlined /> Thêm sinh viên
+              </a-button>
             </a-tooltip>
           </div>
+
           <a-table
             :dataSource="students"
             :columns="columns"
@@ -376,7 +421,10 @@ onMounted(() => {
             @change="handleTableChange"
             class="nowrap"
           >
-            <template #bodyCell="{ column, record }">
+            <template #bodyCell="{ column, record, index }">
+              <template v-if="column.dataIndex === 'index'">
+                {{ index + 1 + (pagination.current - 1) * pagination.pageSize }}
+              </template>
               <!-- Hiển thị trạng thái -->
               <template v-if="column.dataIndex === 'studentStatus'">
                 <span class="nowrap">
@@ -442,31 +490,69 @@ onMounted(() => {
     </div>
 
     <!-- Modal thêm sinh viên -->
-    <a-modal v-model:open="modalAdd" title="Thêm sinh viên" @ok="handleAddStudent">
+    <a-modal
+      v-model:open="modalAdd"
+      title="Thêm sinh viên"
+      @ok="handleAddStudent"
+      :okButtonProps="{ loading: isLoading }"
+      @cancel="clearNewStudentForm"
+      @close="clearNewStudentForm"
+    >
       <a-form layout="vertical">
         <a-form-item label="Mã sinh viên" required>
-          <a-input v-model:value="newStudent.code" placeholder="--Nhập mã sinh viên--" />
+          <a-input
+            v-model:value="newStudent.code"
+            placeholder="--Nhập mã sinh viên--"
+            @keyup.enter="handleAddStudent"
+          />
         </a-form-item>
         <a-form-item label="Tên sinh viên" required>
-          <a-input v-model:value="newStudent.name" placeholder="--Nhập tên sinh viên--" />
+          <a-input
+            v-model:value="newStudent.name"
+            placeholder="--Nhập tên sinh viên--"
+            @keyup.enter="handleAddStudent"
+          />
         </a-form-item>
         <a-form-item label="Email" required>
-          <a-input v-model:value="newStudent.email" placeholder="--Nhập email sinh viên--" />
+          <a-input
+            v-model:value="newStudent.email"
+            placeholder="--Nhập email sinh viên--"
+            @keyup.enter="handleAddStudent"
+          />
         </a-form-item>
       </a-form>
     </a-modal>
 
     <!-- Modal cập nhật sinh viên -->
-    <a-modal v-model:open="modalUpdate" title="Cập nhật sinh viên" @ok="updateStudent">
+    <a-modal
+      v-model:open="modalUpdate"
+      title="Cập nhật sinh viên"
+      @ok="updateStudent"
+      :okButtonProps="{ loading: isLoading }"
+      @cancel="clearUpdateStudentForm"
+      @close="clearUpdateStudentForm"
+    >
       <a-form layout="vertical">
         <a-form-item label="Mã sinh viên" required>
-          <a-input v-model:value="detailStudent.code" placeholder="--Nhập mã sinh viên--" />
+          <a-input
+            v-model:value="detailStudent.code"
+            placeholder="--Nhập mã sinh viên--"
+            @keyup.enter="updateStudent"
+          />
         </a-form-item>
         <a-form-item label="Tên sinh viên" required>
-          <a-input v-model:value="detailStudent.name" placeholder="--Nhập tên sinh viên--" />
+          <a-input
+            v-model:value="detailStudent.name"
+            placeholder="--Nhập tên sinh viên--"
+            @keyup.enter="updateStudent"
+          />
         </a-form-item>
         <a-form-item label="Email" required>
-          <a-input v-model:value="detailStudent.email" placeholder="--Nhập email sinh viên--" />
+          <a-input
+            v-model:value="detailStudent.email"
+            placeholder="--Nhập email sinh viên--"
+            @keyup.enter="updateStudent"
+          />
         </a-form-item>
       </a-form>
     </a-modal>

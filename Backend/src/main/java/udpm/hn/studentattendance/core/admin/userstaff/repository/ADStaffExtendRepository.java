@@ -11,6 +11,7 @@ import udpm.hn.studentattendance.entities.UserStaff;
 
 import udpm.hn.studentattendance.repositories.UserStaffRepository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -18,7 +19,7 @@ public interface ADStaffExtendRepository extends UserStaffRepository {
 
     @Query(value = """
             SELECT
-              ROW_NUMBER() OVER (ORDER BY s.created_at DESC) AS orderNumber,
+              ROW_NUMBER() OVER (ORDER BY s.status DESC, s.created_at DESC) AS orderNumber,
               s.id AS id,
               s.name AS staffName,
               s.code AS staffCode,
@@ -47,7 +48,7 @@ public interface ADStaffExtendRepository extends UserStaffRepository {
             HAVING
               (:#{#adStaffRequest.roleCodeFilter} IS NULL
                OR SUM(r.code = :#{#adStaffRequest.roleCodeFilter}) > 0)
-            ORDER BY
+            ORDER BY s.status DESC,
               s.created_at DESC
             """,
             countQuery = """
@@ -76,7 +77,32 @@ public interface ADStaffExtendRepository extends UserStaffRepository {
             nativeQuery = true
     )
     Page<ADStaffResponse> getAllStaff(Pageable pageable, ADStaffRequest adStaffRequest);
-
+    
+    @Query(value = """
+            SELECT
+              ROW_NUMBER() OVER (ORDER BY s.created_at DESC) AS orderNumber,
+              s.id AS id,
+              s.name AS staffName,
+              s.code AS staffCode,
+              s.email_fe AS staffEmailFe,
+              s.email_fpt AS staffEmailFpt,
+              s.status AS staffStatus,
+              MIN(f.name) AS facilityName,
+              f.id AS facilityId,
+              GROUP_CONCAT(DISTINCT r.code ORDER BY r.code SEPARATOR ', ') AS roleCode
+            FROM user_staff s
+              LEFT JOIN role r ON r.id_user_staff = s.id
+              LEFT JOIN facility f ON r.id_facility = f.id
+            WHERE
+              f.status = 1
+            GROUP BY
+              s.id, s.name, s.code, s.email_fe, s.email_fpt, s.status, s.created_at, f.id
+            ORDER BY
+              s.status DESC, s.created_at DESC
+            """,
+            nativeQuery = true
+    )
+    List<ADStaffResponse> exportAllStaff();
 
     Optional<UserStaff> findUserStaffByCode(String staffCode);
 

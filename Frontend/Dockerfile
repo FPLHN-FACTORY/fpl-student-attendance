@@ -3,20 +3,19 @@
 # ----------------------
 # Stage 1: Build with Node
 # ----------------------
-FROM node:20-alpine AS builder
+FROM node:23-alpine AS builder
 WORKDIR /app
 
-# Nếu bạn có .env, copy vào nếu cần (tuỳ bạn có embed env ở build time)
-# COPY .env .env
-
-# Embed biến Vite (nếu cần)
-ENV VITE_BASE_URL="https://fptudpm.site"
-ENV VITE_BASE_API_URL="https://server.fptudpm.site"
+# Embed biến Vite
+ENV VITE_BASE_URL="https://fplstudentattendance.site/"
+ENV VITE_BASE_API_URL="https://fplstudentattendance.site/"
 ENV VITE_PREFIX_API="/api/v1"
+ENV VITE_PREFIX_ADMIN_PANEL="/admin-panel"
 
 # Copy package và cài dependencies
 COPY package.json package-lock.json ./
-RUN npm ci
+RUN npm ci --production=false
+
 # Copy toàn bộ source và build
 COPY . .
 RUN npm run build
@@ -24,23 +23,41 @@ RUN npm run build
 # -------------------------
 # Stage 2: Serve với Nginx
 # -------------------------
-FROM nginx:stable-alpine
+FROM nginx:1.28.0-alpine
+
+# Update và cài đặt security patches
+RUN apk update && \
+    apk upgrade && \
+    apk add --no-cache curl && \
+    rm -rf /var/cache/apk/*
+
+# Tạo non-root user
+RUN adduser -D -H -u 101 -s /sbin/nologin nginx || true
 
 WORKDIR /usr/share/nginx/html
 
-
-# 1. Xoá config mặc định (nếu bạn muốn mount conf riêng)
+# Xoá config mặc định
 RUN rm /etc/nginx/conf.d/default.conf
 
-# 2. Copy bản build từ builder sang thư mục serve tĩnh
+# Copy bản build từ builder
 COPY --from=builder /app/dist .
 
-# Copy toàn bộ cấu hình nginx
+# Copy cấu hình nginx
 COPY nginx/nginx.conf /etc/nginx/nginx.conf
 COPY nginx/conf.d /etc/nginx/conf.d
 
-# 4. Expose port 80 (Nginx sẽ listen 80 trong config)
+# Set permissions
+RUN chown -R nginx:nginx /usr/share/nginx/html && \
+    chmod -R 755 /usr/share/nginx/html && \
+    chown -R nginx:nginx /var/cache/nginx && \
+    chown -R nginx:nginx /var/log/nginx && \
+    chown -R nginx:nginx /etc/nginx/conf.d && \
+    touch /var/run/nginx.pid && \
+    chown -R nginx:nginx /var/run/nginx.pid
+
+# Switch to non-root user
+USER nginx
+
 EXPOSE 80
 
-# 5. Khởi động Nginx ở foreground
 CMD ["nginx", "-g", "daemon off;"]

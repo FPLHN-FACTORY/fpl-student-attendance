@@ -26,4 +26,10 @@ public abstract class PrimaryEntity extends AuditEntity implements IsIdentified 
     @Enumerated(EnumType.ORDINAL)
     private EntityStatus status;
 
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() +
+                "[id=" + getId() +
+                ", status=" + getStatus() + ", " + super.toString() + "]";
+    }
 }

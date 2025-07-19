@@ -1,27 +1,25 @@
 package udpm.hn.studentattendance.core.admin.useradmin.model.request;
 
-import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
+import udpm.hn.studentattendance.infrastructure.constants.EntityProperties;
 
 @Getter
 @Setter
 public class ADUserAdminCreateOrUpdateRequest {
 
-    @NotBlank(message = "Không được để trống mã ban đào tạo")
+    @NotBlank(message = "Mã admin tạo không được bỏ trống")
+    @Size(max = EntityProperties.LENGTH_CODE, message = "Mã admin chỉ được tối đa " + EntityProperties.LENGTH_CODE + " ký tự")
     private String staffCode;
 
-    @NotBlank(message = "Không được để trống email ban đào tạo")
-    @Email(message = "Email không đúng định dạng")
-    @Pattern(
-            // regex: local‑part kí tự chữ số/chữ/các dấu ._%+- , sau đó @ rồi phải là 1
-            // trong 3 domain
-            regexp = "^[A-Za-z0-9._%+-]+@(gmail\\.com|fpt\\.edu\\.vn|fe\\.edu\\.vn)$", message = "Email phải có đuôi @gmail.com, @fpt.edu.vn hoặc @fe.edu.vn")
+    @NotBlank(message = "Không được để trống email admin")
+    @Size(min = 2, max = EntityProperties.LENGTH_NAME, message = "Email chỉ được tối đa " + EntityProperties.LENGTH_NAME + " ký tự")
     private String email;
 
-    @NotBlank(message = "Không được để trống tên ban đào tạo")
+    @NotBlank(message = "Không được để trống tên admin")
+    @Size(min = 2, max = EntityProperties.LENGTH_NAME, message = "Tên admin chỉ được tối đa " + EntityProperties.LENGTH_NAME + " ký tự")
     private String staffName;
 
 }

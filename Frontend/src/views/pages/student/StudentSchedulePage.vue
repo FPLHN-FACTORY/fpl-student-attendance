@@ -8,22 +8,20 @@ import { DEFAULT_DATE_FORMAT, DEFAULT_PAGINATION, TYPE_SHIFT } from '@/constants
 import { onMounted, ref, reactive } from 'vue'
 import useLoadingStore from '@/stores/useLoadingStore'
 import { Modal, message } from 'ant-design-vue'
-import * as XLSX from 'xlsx'
-import jsPDF from 'jspdf'
-import autoTable from 'jspdf-autotable'
 import ExcelJS from 'exceljs'
 import { saveAs } from 'file-saver'
 import { autoAddColumnWidth, dayOfWeek, formatDate } from '@/utils/utils'
-import { FilterFilled } from '@ant-design/icons-vue'
+import { CloudDownloadOutlined, FilePdfOutlined, FilterFilled, UnorderedListOutlined } from '@ant-design/icons-vue'
 
 const breadcrumbStore = useBreadcrumbStore()
 
 const breadcrumb = ref([
   { name: GLOBAL_ROUTE_NAMES.STAFF_PAGE, breadcrumbName: 'Sinh viên' },
-  { name: ROUTE_NAMES.SCHEDULE, breadcrumbName: 'Lịch học' },
+  { name: ROUTE_NAMES.SCHEDULE, breadcrumbName: 'Lịch' },
 ])
 const loadingStore = useLoadingStore()
 const isLoading = ref(false)
+const isLoadingExport = ref(false)
 
 const attendanceList = ref([])
 const filter = reactive({
@@ -35,11 +33,11 @@ const pagination = ref({ ...DEFAULT_PAGINATION })
 
 const columns = autoAddColumnWidth([
   { title: '#', dataIndex: 'indexs', key: 'indexs' },
-  { title: 'Ngày học', key: 'time' },
+  { title: 'Ngày điểm danh', key: 'time' },
   { title: 'Ca', dataIndex: 'shift', key: 'shift' },
   { title: 'Nhóm xưởng', dataIndex: 'factoryName', key: 'factoryName' },
   { title: 'Dự án', dataIndex: 'projectName', key: 'projectName' },
-  { title: 'Link học', dataIndex: 'link', key: 'link' },
+  { title: 'Link', dataIndex: 'link', key: 'link' },
   { title: 'Địa điểm', dataIndex: 'location', key: 'location' },
   { title: 'Tên giảng viên', dataIndex: 'staffName', key: 'staffName' },
   { title: 'Mô tả', dataIndex: 'description', key: 'description' },
@@ -90,99 +88,104 @@ const handleTableChange = (pageInfo) => {
 
 const handleShowDescription = (text) => {
   Modal.info({
-    title: 'Nội dung buổi học',
+    title: 'Nội dung',
     type: 'info',
-    content: text || 'Buổi học chưa có nội dung',
+    content: text || 'Không có mô tả',
     okText: 'Đóng',
     okButtonProps: { class: 'btn-gray' },
   })
 }
 
 const exportToExcel = async () => {
-  const wb = new ExcelJS.Workbook()
-  const ws = wb.addWorksheet('DanhSach')
+  isLoadingExport.value = true
+  try {
+    const wb = new ExcelJS.Workbook()
+    const ws = wb.addWorksheet('DanhSach')
 
-  // 1. Định nghĩa cột + độ rộng
-  ws.columns = [
-    { header: 'STT', key: 'stt', width: 6 },
-    { header: 'Ngày điểm danh', key: 'day', width: 45 },
-    { header: 'Ca', key: 'shift', width: 35 },
-    { header: 'Nhóm xưởng', key: 'factoryName', width: 30 },
-    { header: 'Dự án', key: 'projectName', width: 30 },
-    { header: 'Tên môn học', key: 'subjectName', width: 30 },
-    { header: 'Tên giảng viên', key: 'staffName', width: 30 },
-    { header: 'Mô tả', key: 'description', width: 40 },
-  ]
+    // 1. Định nghĩa cột + độ rộng
+    ws.columns = [
+      { header: 'STT', key: 'stt', width: 6 },
+      { header: 'Ngày điểm danh', key: 'day', width: 45 },
+      { header: 'Ca', key: 'shift', width: 35 },
+      { header: 'Nhóm xưởng', key: 'factoryName', width: 30 },
+      { header: 'Dự án', key: 'projectName', width: 30 },
+      { header: 'Tên môn', key: 'subjectName', width: 30 },
+      { header: 'Tên giảng viên', key: 'staffName', width: 30 },
+      { header: 'Mô tả', key: 'description', width: 40 },
+    ]
 
-  // 2. Thêm dữ liệu (giữ nguyên logic cũ của bạn)
-  attendanceList.value.forEach((item, idx) => {
-    const dayString = `${dayOfWeek(item.attendanceDayStart)}, ${formatDate(
-      item.attendanceDayStart,
-      DEFAULT_DATE_FORMAT
-    )}`
-    const timeRange = `${formatDate(item.attendanceDayStart, 'HH:mm')} - ${formatDate(
-      item.attendanceDayEnd,
-      'HH:mm'
-    )}`
+    // 2. Thêm dữ liệu (giữ nguyên logic cũ của bạn)
+    attendanceList.value.forEach((item, idx) => {
+      const dayString = `${dayOfWeek(item.attendanceDayStart)}, ${formatDate(
+        item.attendanceDayStart,
+        DEFAULT_DATE_FORMAT,
+      )}`
+      const timeRange = `${formatDate(item.attendanceDayStart, 'HH:mm')} - ${formatDate(
+        item.attendanceDayEnd,
+        'HH:mm',
+      )}`
 
-    ws.addRow({
-      stt: idx + 1,
-      day: `${dayString} ${timeRange}`,
-      shift: `Ca ${item.shift}`,
-      factoryName: item.factoryName,
-      projectName: item.projectName,
-      subjectName: item.subjectName,
-      staffName: item.staffName,
-      description: item.description || '',
+      ws.addRow({
+        stt: idx + 1,
+        day: `${dayString} ${timeRange}`,
+        shift: `Ca ${item.shift}`,
+        factoryName: item.factoryName,
+        projectName: item.projectName,
+        subjectName: item.subjectName,
+        staffName: item.staffName,
+        description: item.description || '',
+      })
     })
-  })
 
-  // 3. Style header
-  const headerRow = ws.getRow(1)
-  headerRow.font = { bold: true, size: 12 }
-  headerRow.alignment = { vertical: 'middle', horizontal: 'center' }
-  headerRow.eachCell((cell) => {
-    cell.fill = {
-      type: 'pattern',
-      pattern: 'solid',
-      fgColor: { argb: 'FFADD8E6' },
-    }
-  })
-
-  // 4. Wrap text cho cột description
-  ws.getColumn('description').alignment = { wrapText: true }
-
-  // —— BẮT ĐẦU CHO READ-ONLY —— //
-
-  // 5. Đánh dấu tất cả các ô là locked (mặc định locked=true, nhưng làm rõ lại)
-  ws.eachRow((row) =>
-    row.eachCell((cell) => {
-      cell.protection = { locked: true }
+    // 3. Style header
+    const headerRow = ws.getRow(1)
+    headerRow.font = { bold: true, size: 12 }
+    headerRow.alignment = { vertical: 'middle', horizontal: 'center' }
+    headerRow.eachCell((cell) => {
+      cell.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FFADD8E6' },
+      }
     })
-  )
 
-  // 6. Protect toàn bộ worksheet
-  //    - Nếu muốn để không có mật khẩu thì gọi ws.protect() không tham số.
-  //    - Nếu muốn mật khẩu, truyền vào string, ví dụ '1234'.
-  await ws.protect('', {
-    selectLockedCells: true,
-    selectUnlockedCells: true,
-    formatCells: false,
-    formatRows: false,
-    formatColumns: false,
-    insertRows: false,
-    deleteRows: false,
-    // ... bạn có thể tắt thêm các quyền khác nếu cần
-  })
+    // 4. Wrap text cho cột description
+    ws.getColumn('description').alignment = { wrapText: true }
 
-  // —— KẾT THÚC READ-ONLY —— //
+    // —— BẮT ĐẦU CHO READ-ONLY —— //
 
-  // 7. Xuất file
-  const buf = await wb.xlsx.writeBuffer()
-  saveAs(new Blob([buf]), 'DiemDanh.xlsx')
+    // 5. Đánh dấu tất cả các ô là locked (mặc định locked=true, nhưng làm rõ lại)
+    ws.eachRow((row) =>
+      row.eachCell((cell) => {
+        cell.protection = { locked: true }
+      }),
+    )
+
+    await ws.protect('', {
+      selectLockedCells: true,
+      selectUnlockedCells: true,
+      formatCells: false,
+      formatRows: false,
+      formatColumns: false,
+      insertRows: false,
+      deleteRows: false,
+      // ... bạn có thể tắt thêm các quyền khác nếu cần
+    })
+
+    // —— KẾT THÚC READ-ONLY —— //
+
+    // 7. Xuất file
+    const buf = await wb.xlsx.writeBuffer()
+    saveAs(new Blob([buf]), 'lich-hoc.xlsx')
+  } catch (error) {
+    message.error('Lỗi khi xuất Excel: ' + error.message)
+  } finally {
+    isLoadingExport.value = false
+  }
 }
 
 const exportToPDF = () => {
+  isLoadingExport.value = true
   const { now, max } = getTimeRange()
 
   loadingStore.show()
@@ -198,16 +201,17 @@ const exportToPDF = () => {
     })
     .then((res) => {
       const blob = new Blob([res.data], { type: 'application/pdf' })
-      // đặt tên file có dấu Unicode
-      const fileName = 'DiemDanh.pdf'
-      // sử dụng FileSaver để đảm bảo cross-browser
+      const fileName = 'lich-hoc.pdf'
       saveAs(blob, fileName)
       message.success('Xuất file PDF thành công')
     })
     .catch((err) => {
       message.error(err.response?.data?.message || 'Lỗi khi xuất file PDF')
     })
-    .finally(() => loadingStore.hide())
+    .finally(() => {
+      loadingStore.hide()
+      isLoadingExport.value = false
+    })
 }
 
 const handleClearFilter = () => {
@@ -227,102 +231,115 @@ onMounted(() => {
   <div class="container-fluid">
     <div class="row g-3">
       <div class="col-12">
-        <div class="container-fluid">
-          <a-card class="mb-3">
-            <template #title><FilterFilled /> Bộ lọc</template>
-            <div class="row g-3 filter-container">
-              <a-col :span="24">
-                <a-select
-                  v-model:value="filter.plan"
-                  placeholder="Chọn khoảng thời gian"
-                  allowClear
-                  style="width: 100%"
-                  @change="fetchAttendanceList"
-                >
-                  <a-select-option :value="-90">90 ngày trước</a-select-option>
-                  <a-select-option :value="-30">30 ngày trước</a-select-option>
-                  <a-select-option :value="-14">14 ngày trước</a-select-option>
-                  <a-select-option :value="-7">7 ngày trước</a-select-option>
-                  <a-select-option :value="7">7 ngày tới</a-select-option>
-                  <a-select-option :value="14">14 ngày tới</a-select-option>
-                  <a-select-option :value="30">30 ngày tới</a-select-option>
-                  <a-select-option :value="90">90 ngày tới</a-select-option>
-                </a-select>
-              </a-col>
-            </div>
-            <div class="row">
-              <div class="col-12">
-                <div class="d-flex justify-content-center flex-wrap gap-2 mt-3">
-                  <a-button class="btn-light" @click="fetchAttendanceList">
-                    <FilterFilled /> Lọc
-                  </a-button>
-                  <a-button class="btn-gray" @click="handleClearFilter"> Huỷ lọc </a-button>
+        <a-card :bordered="false" class="cart no-body-padding">
+          <a-collapse ghost>
+            <a-collapse-panel>
+              <template #header><FilterFilled /> Bộ lọc</template>
+              <div class="row g-3 filter-container">
+                <div class="col-md-12">
+                  <div class="label-title">Lịch:</div>
+                  <a-select
+                    v-model:value="filter.plan"
+                    placeholder="Chọn khoảng thời gian"
+                    class="w-100"
+                    @change="fetchAttendanceList"
+                  >
+                    <a-select-option :value="-90">90 ngày trước</a-select-option>
+                    <a-select-option :value="-30">30 ngày trước</a-select-option>
+                    <a-select-option :value="-14">14 ngày trước</a-select-option>
+                    <a-select-option :value="-7">7 ngày trước</a-select-option>
+                    <a-select-option :value="7">7 ngày tới</a-select-option>
+                    <a-select-option :value="14">14 ngày tới</a-select-option>
+                    <a-select-option :value="30">30 ngày tới</a-select-option>
+                    <a-select-option :value="90">90 ngày tới</a-select-option>
+                  </a-select>
                 </div>
               </div>
-            </div>
-          </a-card>
+              <div class="row">
+                <div class="col-12">
+                  <div class="d-flex justify-content-center flex-wrap gap-2 mt-3">
+                    <a-button class="btn-light" @click="fetchAttendanceList">
+                      <FilterFilled /> Lọc
+                    </a-button>
+                    <a-button class="btn-gray" @click="handleClearFilter"> Huỷ lọc </a-button>
+                  </div>
+                </div>
+              </div>
+            </a-collapse-panel>
+          </a-collapse>
+        </a-card>
+      </div>
 
-          <a-card title="Danh sách điểm danh" :bordered="false" class="cart">
-            <div class="d-flex justify-content-end mb-3">
-              <a-button type="primary" @click="exportToExcel" class="me-3"
-                >Tải xuống Excel</a-button
+      <div class="col-12">
+        <a-card :bordered="false" class="cart">
+          <template #title>
+            <UnorderedListOutlined />
+            Lịch sắp tới
+          </template>
+
+          <div class="d-flex justify-content-end mb-3">
+            <a-button type="primary" @click="exportToExcel" :loading="isLoadingExport" class="me-3"
               >
-              <a-button type="default" @click="exportToPDF">Tải xuống PDF</a-button>
-            </div>
-
-            <a-table
-              class="nowrap"
-              :dataSource="attendanceList"
-              :columns="columns"
-              :rowKey="'id'"
-              :loading="isLoading"
-              :scroll="{ x: 'auto' }"
-              :pagination="pagination"
-              @change="handleTableChange"
+              <CloudDownloadOutlined /> Tải xuống Excel</a-button
             >
-              <template #bodyCell="{ column, record }">
-                <template v-if="column.key === 'time'">
-                  {{
-                    `${dayOfWeek(record.attendanceDayStart)}, ${formatDate(
-                      record.attendanceDayStart,
-                      DEFAULT_DATE_FORMAT
-                    )}`
-                  }}
-                  {{
-                    `${formatDate(record.attendanceDayStart, 'HH:mm')} - ${formatDate(
-                      record.attendanceDayEnd,
-                      'HH:mm'
-                    )}`
-                  }}
-                </template>
-                <template v-else-if="column.dataIndex === 'shift'">
-                  <a-tag :color="record.type === 1 ? 'blue' : 'purple'">
-                    {{
-                      `Ca ${record.shift
-                        .split(',')
-                        .map((o) => Number(o))
-                        .join(', ')} - ${TYPE_SHIFT[record.type]}`
-                    }}
-                  </a-tag>
-                </template>
-                <template v-if="column.dataIndex === 'description'">
-                  <a-typography-link @click="handleShowDescription(record.description)"
-                    >Chi tiết</a-typography-link
-                  >
-                </template>
-                <template v-else-if="column.dataIndex === 'link'">
-                  <a v-if="record.link" :href="record.link" target="_blank">{{ record.link }}</a>
-                </template>
-                <template v-if="column.dataIndex === 'staffName'">
-                  <a-tag color="green">{{ record.staffName }}</a-tag>
-                </template>
-                <template v-if="column.dataIndex === 'factoryName'">
-                  <a-badge status="processing" :text="record.factoryName" />
-                </template>
+            <a-button type="default" @click="exportToPDF" :loading="isLoadingExport"
+              >
+              <FilePdfOutlined />Tải xuống PDF</a-button
+            >
+          </div>
+
+          <a-table
+            class="nowrap"
+            :dataSource="attendanceList"
+            :columns="columns"
+            :rowKey="'id'"
+            :loading="isLoading"
+            :scroll="{ x: 'auto' }"
+            :pagination="pagination"
+            @change="handleTableChange"
+          >
+            <template #bodyCell="{ column, record }">
+              <template v-if="column.key === 'time'">
+                {{
+                  `${dayOfWeek(record.attendanceDayStart)}, ${formatDate(
+                    record.attendanceDayStart,
+                    DEFAULT_DATE_FORMAT,
+                  )}`
+                }}
+                {{
+                  `${formatDate(record.attendanceDayStart, 'HH:mm')} - ${formatDate(
+                    record.attendanceDayEnd,
+                    'HH:mm',
+                  )}`
+                }}
               </template>
-            </a-table>
-          </a-card>
-        </div>
+              <template v-else-if="column.dataIndex === 'shift'">
+                <a-tag :color="record.type === 1 ? 'blue' : 'purple'">
+                  {{
+                    `Ca ${record.shift
+                      .split(',')
+                      .map((o) => Number(o))
+                      .join(', ')} - ${TYPE_SHIFT[record.type]}`
+                  }}
+                </a-tag>
+              </template>
+              <template v-if="column.dataIndex === 'description'">
+                <a-typography-link
+                  v-if="record.description"
+                  @click="handleShowDescription(record.description)"
+                  >Chi tiết</a-typography-link
+                >
+                <span v-else>Không có mô tả</span>
+              </template>
+              <template v-else-if="column.dataIndex === 'link'">
+                <a v-if="record.link" :href="record.link" target="_blank">{{ record.link }}</a>
+              </template>
+              <template v-if="column.dataIndex === 'factoryName'">
+                <a-badge status="processing" :text="record.factoryName" />
+              </template>
+            </template>
+          </a-table>
+        </a-card>
       </div>
     </div>
   </div>

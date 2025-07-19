@@ -1,7 +1,6 @@
 package udpm.hn.studentattendance.infrastructure.excel.common;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -18,6 +17,9 @@ public interface IEXDefaultController {
 
     @PostMapping(RouteExcelConstant.DEFAULT_IMPORT)
     ResponseEntity<?> importItem(@RequestBody EXImportRequest request);
+
+    @PostMapping(RouteExcelConstant.DEFAULT_EXPORT)
+    ResponseEntity<?> exportData(@RequestBody EXDataRequest request);
 
     @PostMapping(RouteExcelConstant.DEFAULT_DOWNLOAD_TEMPLATE)
     ResponseEntity<?> downloadTemplate(@RequestBody EXDataRequest request);

@@ -1,8 +1,5 @@
 package udpm.hn.studentattendance.core.authentication.services.impl;
 
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
-import jakarta.persistence.Query;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -14,6 +11,7 @@ import udpm.hn.studentattendance.core.authentication.model.request.Authenticatio
 import udpm.hn.studentattendance.core.authentication.model.request.AuthenticationStudentUpdateFaceIDRequest;
 import udpm.hn.studentattendance.core.authentication.oauth2.AuthUser;
 import udpm.hn.studentattendance.core.authentication.repositories.AuthenticationFacilityRepository;
+import udpm.hn.studentattendance.core.authentication.repositories.AuthenticationSemesterRepository;
 import udpm.hn.studentattendance.core.authentication.repositories.AuthenticationUserAdminRepository;
 import udpm.hn.studentattendance.core.authentication.repositories.AuthenticationUserStaffRepository;
 import udpm.hn.studentattendance.core.authentication.repositories.AuthenticationUserStudentRepository;
@@ -26,8 +24,10 @@ import udpm.hn.studentattendance.entities.UserStudent;
 import udpm.hn.studentattendance.helpers.NotificationHelper;
 import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.helpers.SessionHelper;
+import udpm.hn.studentattendance.helpers.SettingHelper;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.RoleConstant;
+import udpm.hn.studentattendance.infrastructure.constants.SettingKeys;
 import udpm.hn.studentattendance.infrastructure.constants.router.RouteAuthenticationConstant;
 import udpm.hn.studentattendance.core.authentication.services.AuthenticationService;
 import udpm.hn.studentattendance.entities.Facility;
@@ -37,26 +37,27 @@ import udpm.hn.studentattendance.utils.FaceRecognitionUtils;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class AuthenticationServiceImpl implements AuthenticationService {
 
-    @PersistenceContext
-    private EntityManager entityManager;
-
     private final HttpSession httpSession;
 
     private final SessionHelper sessionHelper;
+
+    private final SettingHelper settingHelper;
 
     private final JwtUtil jwtUtil;
 
     private final NotificationService notificationService;
 
     private final AuthenticationFacilityRepository authenticationFacilityRepository;
+
+    private final AuthenticationSemesterRepository authenticationSemesterRepository;
 
     private final AuthenticationUserAdminRepository authenticationUserAdminRepository;
 
@@ -75,7 +76,73 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
     @Override
     public ResponseEntity<?> getAllFacility() {
-        return RouterHelper.responseSuccess("Tải dữ liệu danh sách cơ sở thành công", authenticationFacilityRepository.findAllByStatusOrderByPositionAsc(EntityStatus.ACTIVE));
+        return RouterHelper.responseSuccess("Tải dữ liệu danh sách cơ sở thành công",
+                authenticationFacilityRepository.findAllByStatusOrderByPositionAsc(EntityStatus.ACTIVE));
+    }
+
+    @Override
+    public ResponseEntity<?> getAllSemester() {
+        return RouterHelper.responseSuccess("Tải dữ liệu danh sách học kỳ thành công",
+                authenticationSemesterRepository.findAllByStatusOrderByFromDateDesc(EntityStatus.ACTIVE));
+    }
+
+    @Override
+    public ResponseEntity<?> getSettings() {
+        return RouterHelper.responseSuccess("Lấy dữ liệu cài đặt thành công", settingHelper.getAllSettings());
+    }
+
+    @Override
+    public ResponseEntity<?> saveSettings(Map<SettingKeys, String> settings) {
+        Boolean disableCheckEmailFPTStaff = (Boolean) SettingHelper
+                .parseValue(settings.get(SettingKeys.DISABLED_CHECK_EMAIL_FPT_STAFF));
+        Boolean disableCheckEmailFPTStudent = (Boolean) SettingHelper
+                .parseValue(settings.get(SettingKeys.DISABLED_CHECK_EMAIL_FPT_STUDENT));
+        Integer shiftMinDiff = (Integer) SettingHelper.parseValue(settings.get(SettingKeys.SHIFT_MIN_DIFF));
+        Integer shiftMaxLateArrival = (Integer) SettingHelper
+                .parseValue(settings.get(SettingKeys.SHIFT_MAX_LATE_ARRIVAL));
+        Integer attendanceEarlyCheckin = (Integer) SettingHelper
+                .parseValue(settings.get(SettingKeys.ATTENDANCE_EARLY_CHECKIN));
+        Integer expirationMinuteLogin = (Integer) SettingHelper
+                .parseValue(settings.get(SettingKeys.EXPIRATION_MINUTE_LOGIN));
+        Double faceThresholdCheckin = (Double) SettingHelper
+                .parseValue(settings.get(SettingKeys.FACE_THRESHOLD_CHECKIN));
+        Double faceThresholdRegister = (Double) SettingHelper
+                .parseValue(settings.get(SettingKeys.FACE_THRESHOLD_REGISTER));
+
+        if (disableCheckEmailFPTStaff == null || disableCheckEmailFPTStudent == null || shiftMinDiff == null
+                || shiftMaxLateArrival == null || attendanceEarlyCheckin == null || expirationMinuteLogin == null
+                || faceThresholdCheckin == null || faceThresholdRegister == null) {
+            return RouterHelper.responseError("Vui lòng nhập đầy đủ các trường bắt buộc");
+        }
+
+        if (shiftMinDiff < 1 || shiftMinDiff > 480) {
+            return RouterHelper.responseError("Thời gian diễn ra ca học tối thiểu không hợp lệ");
+        }
+
+        if (shiftMaxLateArrival < 5 || shiftMaxLateArrival > 90) {
+            return RouterHelper.responseError("Thời gian điểm danh muộn nhất không hợp lệ");
+        }
+
+        if (attendanceEarlyCheckin < 0 || attendanceEarlyCheckin > 30) {
+            return RouterHelper.responseError("Thời gian cho phép checkin sớm không hợp lệ");
+        }
+
+        if (expirationMinuteLogin < 60) {
+            return RouterHelper.responseError("Thời hạn phiên đăng nhập không hợp lệ");
+        }
+
+        if (faceThresholdCheckin == 0 || faceThresholdCheckin > 1) {
+            return RouterHelper.responseError("Độ khắt khe checkin/checkout không hợp lệ");
+        }
+
+        if (faceThresholdRegister == 0 || faceThresholdRegister > 1) {
+            return RouterHelper.responseError("Độ khắt khe đăng ký mặt không hợp lệ");
+        }
+
+        for (Map.Entry<SettingKeys, String> entry : settings.entrySet()) {
+            settingHelper.save(entry.getKey(), entry.getValue());
+        }
+        return RouterHelper.responseSuccess("Lưu lại cài đặt thành công");
     }
 
     @Override
@@ -142,21 +209,23 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         }
 
         List<double[]> faceEmbeddings = FaceRecognitionUtils.parseEmbeddings(request.getFaceEmbedding());
-        if (isFaceExists(faceEmbeddings)) {
-            return RouterHelper.responseError("Đã tồn tại khuôn mặt trên hệ thống");
+
+        if (faceEmbeddings.isEmpty() || isFaceExists(facility.getId(), faceEmbeddings)) {
+            return RouterHelper.responseError("Dữ liệu ảnh quá mờ hoặc đã tồn tại khuôn mặt trên hệ thống");
         }
 
         student.setFacility(facility);
         student.setCode(request.getCode());
         student.setName(request.getName());
-        student.setFaceEmbedding(Arrays.toString(faceEmbeddings.get(0)));
+        student.setFaceEmbedding(Arrays.toString(faceEmbeddings.get(faceEmbeddings.size() - 1)));
         authenticationUserStudentRepository.save(student);
 
         String accessToken = jwtUtil.generateToken(student.getEmail(),
                 sessionHelper.buildAuthUser(student, Set.of(RoleConstant.STUDENT), student.getFacility().getId()));
         String refreshToken = jwtUtil.generateRefreshToken(accessToken);
 
-        return RouterHelper.responseSuccess("Đăng ký thông tin sinh viên thành công", new AuthenticationToken(accessToken, refreshToken));
+        return RouterHelper.responseSuccess("Đăng ký thông tin sinh viên thành công",
+                new AuthenticationToken(accessToken, refreshToken));
     }
 
     @Override
@@ -168,7 +237,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             return RouterHelper.responseError("Vui lòng đăng ký thông tin sinh viên");
         }
 
-        if (StringUtils.hasText(student.getFaceEmbedding())) {
+        if (student.getFaceEmbedding() != null && !student.getFaceEmbedding().isEmpty()) {
             student.setFaceEmbedding("OK");
         }
 
@@ -191,11 +260,11 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         }
 
         List<double[]> faceEmbeddings = FaceRecognitionUtils.parseEmbeddings(request.getFaceEmbedding());
-        if (isFaceExists(faceEmbeddings)) {
-            return RouterHelper.responseError("Đã tồn tại khuôn mặt trên hệ thống");
+        if (isFaceExists(sessionHelper.getFacilityId(), faceEmbeddings)) {
+            return RouterHelper.responseError("Mặt quá mờ hoặc đã tồn tại trên hệ thống. Vui lòng thử lại");
         }
 
-        student.setFaceEmbedding(Arrays.toString(faceEmbeddings.get(0)));
+        student.setFaceEmbedding(Arrays.toString(faceEmbeddings.get(faceEmbeddings.size() - 1)));
 
         NotificationAddRequest notificationAddRequest = new NotificationAddRequest();
         notificationAddRequest.setType(NotificationHelper.TYPE_SUCCESS_UPDATE_FACE_ID);
@@ -222,49 +291,33 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     }
 
     @Override
-    public ResponseEntity<?> getAvater(String urlImage) {
+    public ResponseEntity<?> getAvatar(String urlImage) {
         return RouterHelper.responseSuccess("Lấy dữ liệu avatar thành công", AppUtils.imageUrlToBase64(urlImage));
     }
 
-    private boolean isFaceExists(List<double[]> embeddings) {
-        double[] embedding = embeddings.remove(0);
-        List<String> matchedIds = isFaceExists(embedding);
-        if (matchedIds.isEmpty()) {
+    private boolean isFaceExists(String idFacility, List<double[]> embeddings) {
+        List<String> lstRawFaceEmbeddings = authenticationUserStudentRepository.getAllFaceEmbedding(idFacility);
+        List<double[]> lstFaceEmbeddings = lstRawFaceEmbeddings.stream().map(FaceRecognitionUtils::parseEmbedding)
+                .toList();
+
+        if (lstFaceEmbeddings.isEmpty()) {
             return false;
         }
-        for (double[] emb: embeddings) {
-            boolean isExist = !isFaceExists(emb).isEmpty();
-            if(!isExist) {
-                return false;
-            }
-        }
-        return true;
-    }
 
-    private List<String> isFaceExists(double[] embedding) {
-        StringBuilder queryBuilder = new StringBuilder(
-                "SELECT id FROM user_student WHERE face_embedding IS NOT NULL AND face_embedding <> '' AND ");
-        queryBuilder.append("SQRT(");
+        double[] firstFace = embeddings.get(0);
+        double[] lastFace = embeddings.get(embeddings.size() - 1);
 
-        for (int i = 0; i < embedding.length; i++) {
-            if (i > 0)
-                queryBuilder.append(" + ");
-            queryBuilder.append("POW(IFNULL(JSON_EXTRACT(face_embedding, '$[").append(i).append("]'), 0) - :e")
-                    .append(i).append(", 2)");
-        }
-        queryBuilder.append(") < :threshold");
+        double threshold_register = settingHelper.getSetting(SettingKeys.FACE_THRESHOLD_REGISTER, Double.class);
 
-        Query query = entityManager.createNativeQuery(queryBuilder.toString());
+        double[] resultFace = FaceRecognitionUtils.isSameFaceAndResult(lstFaceEmbeddings, lastFace, threshold_register);
 
-        for (int i = 0; i < embedding.length; i++) {
-            query.setParameter("e" + i, embedding[i]);
+        if (resultFace == null) {
+            boolean isSameFirst = FaceRecognitionUtils.isSameFaceAndResult(lstFaceEmbeddings, firstFace,
+                    threshold_register) == null;
+            return !isSameFirst;
         }
 
-        query.setParameter("threshold", FaceRecognitionUtils.THRESHOLD);
-        return ((List<?>) query.getResultList())
-                .stream()
-                .map(Object::toString)
-                .toList();
+        return FaceRecognitionUtils.isSameFace(resultFace, firstFace, threshold_register);
     }
 
 }

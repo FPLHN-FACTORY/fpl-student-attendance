@@ -17,6 +17,6 @@ public interface USFactoryResponse {
 
     String getFactoryDescription();
 
-    // Long getPlanStartDate();
-    // String getPlanShift();
+    String getProjectId();
+
 }

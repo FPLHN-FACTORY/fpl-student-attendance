@@ -23,7 +23,11 @@ public interface SPDAttendanceRepository extends AttendanceRepository {
             us.id,
             us.code,
             us.name,
-            COALESCE(a.attendance_status, 0) AS status
+            COALESCE(a.attendance_status, 0) AS status,
+            COALESCE(a.created_at, 0) AS createdAt,
+            COALESCE(a.updated_at, 0) AS updatedAt,
+            a.late_checkin,
+            a.late_checkout
         FROM user_student_factory usf
         JOIN factory f ON usf.id_factory = f.id
         JOIN plan_factory pf ON f.id = pf.id_factory
@@ -55,8 +59,8 @@ public interface SPDAttendanceRepository extends AttendanceRepository {
                      f2.id = :#{#request.idFacility}
             ) AND
             (NULLIF(TRIM(:#{#request.keyword}), '') IS NULL OR (
-                BINARY us.code LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%') OR
-                BINARY us.name LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%')
+                us.code LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%') OR
+                us.name LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%')
             )) AND
             (COALESCE(:#{#request.status}, 0) = 0 OR a.status = :#{#request.status}) AND
             pd.start_date <= UNIX_TIMESTAMP(NOW()) * 1000 AND
@@ -97,8 +101,8 @@ public interface SPDAttendanceRepository extends AttendanceRepository {
                      f2.id = :#{#request.idFacility}
             ) AND
             (NULLIF(TRIM(:#{#request.keyword}), '') IS NULL OR (
-                BINARY us.code LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%') OR
-                BINARY us.name LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%')
+                us.code LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%') OR
+                us.name LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%')
             )) AND
             (COALESCE(:#{#request.status}, 0) = 0 OR a.status = :#{#request.status}) AND
             pd.start_date <= UNIX_TIMESTAMP(NOW()) * 1000 AND
@@ -113,7 +117,9 @@ public interface SPDAttendanceRepository extends AttendanceRepository {
                     pl.id AS planId,
                     pl.name AS planName,
                     pf.id AS factoryId,
-                    f.name AS factoryName
+                    f.name AS factoryName,
+                    pd.required_checkin,
+                    pd.required_checkout
                 FROM plan_date pd
                 JOIN plan_factory pf ON pd.id_plan_factory = pf.id
                 JOIN plan pl ON pf.id_plan = pl.id

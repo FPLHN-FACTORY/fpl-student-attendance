@@ -1,5 +1,6 @@
 package udpm.hn.studentattendance.core.admin.subject.controller;
 
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -18,7 +19,7 @@ public class ADSubjectRestController {
     private ADSubjectManagementService service;
 
     @GetMapping("/list")
-    public ResponseEntity<?> getListSubject(ADSubjectSearchRequest request) {
+    public ResponseEntity<?> getListSubject(@Valid ADSubjectSearchRequest request) {
         return service.getListSubject(request);
     }
 
@@ -28,12 +29,12 @@ public class ADSubjectRestController {
     }
 
     @PostMapping
-    public ResponseEntity<?> addSubject(@RequestBody ADSubjectCreateRequest request) {
+    public ResponseEntity<?> addSubject(@Valid @RequestBody ADSubjectCreateRequest request) {
         return service.createSubject(request);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateSubject(@PathVariable String id, @RequestBody ADSubjectUpdateRequest request) {
+    public ResponseEntity<?> updateSubject(@PathVariable String id, @Valid @RequestBody ADSubjectUpdateRequest request) {
         return service.updateSubject(id, request);
     }
 

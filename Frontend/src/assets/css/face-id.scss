@@ -45,7 +45,7 @@
   height: 250px;
   background: #000;
   border-radius: 10px;
-  &::after {
+  .face-background {
     content: '';
     position: absolute;
     inset: 0;
@@ -61,11 +61,11 @@
   }
   video {
     position: absolute;
-    left: 0;
+    // left: 0;
     top: 0;
     height: 100%;
-    width: 100%;
-    object-fit: cover;
+    // width: 100%;
+    // object-fit: cover;
     transform: scaleX(-1);
   }
   canvas {
@@ -121,17 +121,131 @@
     height: 200px;
     z-index: 1;
     transform: rotate(45deg);
-    & > div,
-    & > div:after {
+    border-radius: 50%;
+    // &::before {
+    //   content: '';
+    //   position: absolute;
+    //   inset: 0;
+    //   width: 100%;
+    //   height: 100%;
+    //   background: url('images/face-range.png');
+    //   background-repeat: no-repeat;
+    //   background-size: cover;
+    //   transform: rotate(315deg);
+    //   opacity: 0.3;
+    // }
+    & > .axis {
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      transform: rotate(45deg);
+      perspective: 1000px;
+      display: none;
+      &.active {
+        display: block;
+      }
+      .a-y {
+        height: 20px;
+        width: calc(100% - 10px);
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, calc(-50% - 10px));
+        &__top {
+          content: '';
+          position: absolute;
+          left: 0;
+          width: 50%;
+          height: 100%;
+          background: rgba(255, 255, 255, 0.45);
+          border: 2px solid #8d70e3;
+          border-bottom: 0;
+          border-right: 0;
+          transform-origin: bottom;
+          transform: rotateX(90deg);
+          transition: transform 0.1s;
+          border-top-left-radius: 100%;
+          border-top-right-radius: 0;
+          border-bottom-left-radius: 0;
+          border-bottom-right-radius: 0;
+        }
+        &__bottom {
+          content: '';
+          position: absolute;
+          right: 0;
+          width: 50%;
+          height: 100%;
+          background: rgba(255, 255, 255, 0.45);
+          border: 2px solid #8d70e3;
+          border-bottom: 0;
+          border-left: 0;
+          transform-origin: bottom;
+          transform: rotateX(90deg);
+          transition: transform 0.1s;
+          border-top-left-radius: 0;
+          border-top-right-radius: 100%;
+          border-bottom-left-radius: 0;
+          border-bottom-right-radius: 0;
+        }
+      }
+
+      .a-x {
+        height: calc(100% - 10px);
+        width: 20px;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(calc(-50% - 10px), -50%);
+        &__left {
+          content: '';
+          position: absolute;
+          bottom: 0;
+          width: 100%;
+          height: 50%;
+          background: rgba(255, 255, 255, 0.45);
+          border: 2px solid #8d70e3;
+          border-right: 0;
+          border-top: 0;
+          transform-origin: right;
+          transform: rotateY(90deg);
+          transition: transform 0.1s;
+          border-top-left-radius: 0;
+          border-top-right-radius: 0;
+          border-bottom-left-radius: 100%;
+          border-bottom-right-radius: 0;
+        }
+        &__right {
+          content: '';
+          position: absolute;
+          inset: 0;
+          width: 100%;
+          height: 50%;
+          background: rgba(255, 255, 255, 0.45);
+          border: 2px solid #8d70e3;
+          border-right: 0;
+          border-bottom: 0;
+          transform-origin: right;
+          transform: rotateY(90deg);
+          transition: transform 0.1s;
+          border-top-left-radius: 100%;
+          border-top-right-radius: 0;
+          border-bottom-left-radius: 0;
+          border-bottom-right-radius: 0;
+        }
+      }
+    }
+
+    & > .dot,
+    & > .dot::after {
       box-sizing: border-box;
     }
 
-    & > div {
+    & > .dot {
       transform-origin: 100px 100px;
       opacity: 0.6;
     }
 
-    & > div:after {
+    & > .dot::after {
       content: ' ';
       display: block;
       position: absolute;
@@ -144,23 +258,26 @@
       transform: rotate(325deg);
     }
 
-    @for $i from 1 through 36 {
-      & > div:nth-child(#{$i}) {
+    @for $i from 1 through 40 {
+      & > .dot:nth-child(#{$i}) {
         transform: rotate(#{($i - 1) * 10}deg);
       }
     }
 
     &.checking {
-      & > div {
+      & > .dot {
         color: #ffffff;
         opacity: 1;
+      }
+      & + .face-background {
+        background: #222;
       }
     }
 
     &.step1 {
       @for $i from 1 through 9 {
-        & > div:nth-child(#{$i}) {
-          animation: step1 0s alternate forwards;
+        & > .dot:nth-child(#{$i}) {
+          animation: step 0s alternate forwards;
           animation-delay: #{math.div($i, 50)}s;
         }
       }
@@ -168,34 +285,48 @@
 
     &.step2 {
       @for $i from 10 through 18 {
-        & > div:nth-child(#{$i}) {
-          animation: step1 0s alternate forwards;
+        & > .dot:nth-child(#{$i}) {
+          animation: step 0s alternate forwards;
           animation-delay: #{math.div($i - 9, 50)}s;
         }
       }
     }
     &.step3 {
       @for $i from 19 through 27 {
-        & > div:nth-child(#{$i}) {
-          animation: step1 0s alternate forwards;
+        & > .dot:nth-child(#{$i}) {
+          animation: step 0s alternate forwards;
           animation-delay: #{math.div($i - 18, 50)}s;
         }
       }
     }
     &.step4 {
+      animation: showBorder 0.4s ease-in-out forwards;
       @for $i from 28 through 40 {
-        & > div:nth-child(#{$i}) {
-          animation: step1 0s alternate forwards;
+        & > .dot:nth-child(#{$i}) {
+          animation: step 0s alternate forwards;
           animation-delay: #{math.div($i - 27, 50)}s;
         }
       }
+      & > .dot::after {
+        animation: rotateStep 0.4s ease-in-out forwards;
+      }
+      & > .axis.active {
+        display: none;
+      }
     }
     &.fullStep {
+      animation: showBorder 0.4s ease-in-out forwards;
       @for $i from 1 through 40 {
-        & > div:nth-child(#{$i}) {
-          animation: step1 0s alternate forwards;
+        & > .dot:nth-child(#{$i}) {
+          animation: fullstep 0s alternate forwards;
           animation-delay: #{math.div(math.div($i, 50), 2)}s;
         }
+      }
+      & > .dot::after {
+        animation: rotateStep 0.4s ease-in-out forwards;
+      }
+      & > .axis.active {
+        display: none;
       }
     }
   }
@@ -213,9 +344,31 @@
   }
 }
 
-@keyframes step1 {
+@keyframes step {
   to {
     color: rgb(139 111 229);
     opacity: 1;
+  }
+}
+
+@keyframes fullstep {
+  to {
+    color: rgb(139 111 229);
+    opacity: 1;
+  }
+}
+
+@keyframes rotateStep {
+  to {
+    transform: rotate(235deg);
+    opacity: 0;
+  }
+}
+
+@keyframes showBorder {
+  to {
+    border: 6.4px solid rgb(139 111 229);
+    height: 220px;
+    width: 220px;
   }
 }

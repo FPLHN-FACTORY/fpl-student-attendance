@@ -19,4 +19,7 @@ public interface STDHistoryAttendanceSemesterExtendRepository extends SemesterRe
                         s.status = :semesterStatus
                                 """)
         List<Semester> getAllSemesterByCode(EntityStatus semesterStatus);
+
+        List<Semester> getAllSemestersByStatus(EntityStatus status);
+
 }

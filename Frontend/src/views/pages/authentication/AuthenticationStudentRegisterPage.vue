@@ -3,14 +3,13 @@ import { useRouter } from 'vue-router'
 import imgLogoFpt from '@/assets/images/logo-fpt.png'
 import imgLogoUdpm from '@/assets/images/logo-udpm.png'
 import { nextTick, onMounted, reactive, ref } from 'vue'
-import { toast } from 'vue3-toastify'
 import requestAPI from '@/services/requestApiService'
 import useAuthStore from '@/stores/useAuthStore'
 import useLoadingStore from '@/stores/useLoadingStore'
 import { ROUTE_NAMES_API } from '@/router/authenticationRoute'
 
 import { message, Modal } from 'ant-design-vue'
-import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
+import { BASE_URL, GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
 import useFaceIDStore from '@/stores/useFaceIDStore'
 
 const router = useRouter()
@@ -22,6 +21,7 @@ const faceIDStore = useFaceIDStore()
 const isShowCamera = ref(false)
 const video = ref(null)
 const canvas = ref(null)
+const axis = ref(null)
 
 const formData = reactive({
   idFacility: null,
@@ -34,7 +34,7 @@ const lstFacility = ref([])
 
 const handleLogout = () => {
   authStore.logout()
-  window.location.reload()
+  window.location.href = BASE_URL
 }
 
 const formRules = reactive({
@@ -68,7 +68,7 @@ const fetchDataFacility = async () => {
     const response = await requestAPI.get(ROUTE_NAMES_API.FETCH_DATA_FACILITY)
     lstFacility.value = response.data.data
   } catch (error) {
-    toast.error('Không thể tải danh sách cơ sở')
+    message.error('Không thể tải danh sách cơ sở')
   }
 }
 
@@ -97,7 +97,7 @@ const fetchSubmitRegister = () => {
 onMounted(async () => {
   document.body.classList.add('bg-login')
   fetchDataFacility()
-  faceIDStore.init(video, canvas, false, (descriptor) => {
+  faceIDStore.init(video, canvas, axis, false, (descriptor) => {
     formData.faceEmbedding = JSON.stringify(descriptor)
     isShowCamera.value = false
   })
@@ -116,45 +116,54 @@ onMounted(async () => {
       <canvas ref="canvas"></canvas>
       <video ref="video" autoplay muted></video>
       <div class="face-id-step" :class="faceIDStore.renderStyle()">
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="axis" ref="axis">
+          <div class="a-x">
+            <div class="a-x__left"></div>
+            <div class="a-x__right"></div>
+          </div>
+          <div class="a-y">
+            <div class="a-y__top"></div>
+            <div class="a-y__bottom"></div>
+          </div>
+        </div>
       </div>
+      <div class="face-background"></div>
       <div class="face-id-loading" v-show="faceIDStore.isLoading">
         <div class="bg-loading">
           <div></div>
@@ -206,10 +215,20 @@ onMounted(async () => {
             </a-form-item>
 
             <a-form-item class="col-md-4" label="MSSV:" name="code" :rules="formRules.code">
-              <a-input class="w-100" v-model:value="formData.code" allowClear />
+              <a-input
+                class="w-100"
+                v-model:value="formData.code"
+                allowClear
+                @keyup.enter="handleSubmitRegister"
+              />
             </a-form-item>
             <a-form-item class="col-md-8" label="Họ và tên:" name="name" :rules="formRules.name">
-              <a-input class="w-100" v-model:value="formData.name" allowClear />
+              <a-input
+                class="w-100"
+                v-model:value="formData.name"
+                allowClear
+                @keyup.enter="handleSubmitRegister"
+              />
             </a-form-item>
             <a-form-item
               class="col-md-12"

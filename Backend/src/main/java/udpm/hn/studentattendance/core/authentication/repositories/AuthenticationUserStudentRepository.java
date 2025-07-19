@@ -5,6 +5,7 @@ import org.springframework.stereotype.Repository;
 import udpm.hn.studentattendance.entities.UserStudent;
 import udpm.hn.studentattendance.repositories.UserStudentRepository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -26,4 +27,16 @@ public interface AuthenticationUserStudentRepository extends UserStudentReposito
                     f.id = :idFacility
             """, nativeQuery = true)
     boolean isExistsCode(String code, String idUser, String idFacility);
+
+    @Query(value = """
+        SELECT face_embedding
+        FROM user_student
+        WHERE
+            status = 1 AND
+            face_embedding IS NOT NULL AND
+            face_embedding NOT LIKE '' AND
+            id_facility = :idFacility
+    """, nativeQuery = true)
+    List<String> getAllFaceEmbedding(String idFacility);
+
 }

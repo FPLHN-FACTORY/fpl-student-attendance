@@ -37,6 +37,9 @@ public class Plan extends PrimaryEntity implements Serializable {
     @Column(name = "to_date")
     private Long toDate;
 
+    @Column(name = "max_late_arrival")
+    private Integer maxLateArrival = 0;
+
     @ManyToOne
     @JoinColumn(name = "id_project")
     private Project project;

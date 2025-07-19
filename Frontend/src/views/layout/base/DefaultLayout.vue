@@ -1,5 +1,5 @@
 <script setup>
-import { h, onMounted, reactive, ref, watch } from 'vue'
+import { h, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
 import {
   MenuUnfoldOutlined,
   MenuFoldOutlined,
@@ -11,24 +11,37 @@ import {
   DeleteFilled,
   EyeOutlined,
   EyeInvisibleOutlined,
+  SettingOutlined,
 } from '@ant-design/icons-vue'
 import imgLogoUdpm from '@/assets/images/logo-udpm.png'
 import useAuthStore from '@/stores/useAuthStore'
 import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
 import { useRoute, useRouter } from 'vue-router'
-import { API_ROUTES_NOTIFICATION, GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
+import {
+  API_ROUTES_NOTIFICATION,
+  BASE_URL,
+  GLOBAL_ROUTE_NAMES,
+  URL_ADMIN_PANEL,
+} from '@/constants/routesConstant'
 import useApplicationStore from '@/stores/useApplicationStore'
 import ExcelUploadList from '@/components/excel/ExcelUploadList.vue'
 import { autoAddColumnWidth, formatDate } from '@/utils/utils'
-import { DEFAULT_DATE_FORMAT, DEFAULT_PAGINATION } from '@/constants'
+import { DEFAULT_DATE_FORMAT, DEFAULT_PAGINATION, ROLE } from '@/constants'
 import requestAPI from '@/services/requestApiService'
-import { message } from 'ant-design-vue'
+import { message, Modal } from 'ant-design-vue'
+import useLoadingStore from '@/stores/useLoadingStore'
+import { ROUTE_NAMES_API } from '@/router/authenticationRoute'
+import { API_ROUTES_ADMIN } from '@/constants/adminConstant'
 
 const router = useRouter()
 const route = useRoute()
 
+const screenWidth = ref(window.innerWidth)
+const screenHeight = ref(window.innerHeight)
+
 const collapsed = ref(false)
 const authStore = useAuthStore()
+const loadingStore = useLoadingStore()
 const breadcrumbStore = useBreadcrumbStore()
 const applicationStore = useApplicationStore()
 
@@ -46,6 +59,27 @@ const columns = ref(
     { title: '', key: 'actions' },
   ]),
 )
+const formDataSettings = reactive({
+  DISABLED_CHECK_EMAIL_FPT_STAFF: true,
+  DISABLED_CHECK_EMAIL_FPT_STUDENT: false,
+  SHIFT_MIN_DIFF: 0,
+  SHIFT_MAX_LATE_ARRIVAL: 0,
+  ATTENDANCE_EARLY_CHECKIN: 0,
+  EXPIRATION_MINUTE_LOGIN: 0,
+  FACE_THRESHOLD_CHECKIN: 0,
+  FACE_THRESHOLD_REGISTER: 0,
+})
+
+const formRefSettings = ref(null)
+const modalSettings = reactive({
+  isShow: false,
+  isLoading: false,
+  title: null,
+  cancelText: 'Hủy bỏ',
+  okText: 'Lưu lại',
+  onOk: null,
+  width: 800,
+})
 
 const dataFilter = reactive({
   status: null,
@@ -53,18 +87,13 @@ const dataFilter = reactive({
 
 const pagination = ref({ ...DEFAULT_PAGINATION })
 
-const handleToggleNav = () => {
-  collapsed.value = !collapsed.value
-  if (collapsed.value) {
-    document.body.classList.add('disable-scroll-x')
-  } else {
-    document.body.classList.remove('disable-scroll-x')
-  }
-}
-
 const handleLogout = () => {
+  const isAdm =
+    authStore?.user?.role.includes(ROLE.ADMIN) ||
+    authStore?.user?.role.includes(ROLE.STAFF) ||
+    authStore?.user?.role.includes(ROLE.TEACHER)
   authStore.logout()
-  window.location.reload()
+  window.location.href = isAdm ? URL_ADMIN_PANEL : BASE_URL
 }
 
 const handleShowAllNotification = () => {
@@ -124,6 +153,44 @@ const fetchDataListNotification = (callback) => {
     })
 }
 
+const ruleRequired = [{ required: true, message: 'Vui lòng không bỏ trống mục này!' }]
+
+const fetchUpdateSettings = () => {
+  modalSettings.isLoading = true
+  requestAPI
+    .put(`${API_ROUTES_ADMIN.FETCH_DATA_SETTINGS}`, {
+      ...formDataSettings,
+      FACE_THRESHOLD_CHECKIN: parseFloat(formDataSettings.FACE_THRESHOLD_CHECKIN).toFixed(2),
+      FACE_THRESHOLD_REGISTER: parseFloat(formDataSettings.FACE_THRESHOLD_REGISTER).toFixed(2),
+    })
+    .then(({ data: response }) => {
+      message.success(response.message)
+      modalSettings.isShow = false
+    })
+    .catch((error) => {
+      message.error(error?.response?.data?.message || 'Không thể cập nhật mục này')
+    })
+    .finally(() => {
+      modalSettings.isLoading = false
+    })
+}
+
+const handleSubmitSettings = async () => {
+  try {
+    await formRefSettings.value.validate()
+    Modal.confirm({
+      title: `Xác nhận lưu lại`,
+      type: 'info',
+      content: `Bạn có chắc muốn lưu lại thay đổi?`,
+      okText: 'Tiếp tục',
+      cancelText: 'Hủy bỏ',
+      onOk() {
+        fetchUpdateSettings()
+      },
+    })
+  } catch (error) {}
+}
+
 const handleTableChange = (page) => {
   pagination.value.current = page.current
   pagination.value.pageSize = page.pageSize
@@ -134,11 +201,66 @@ const handleSwitchRole = () => {
   router.push({ name: GLOBAL_ROUTE_NAMES.SWITCH_ROLE })
 }
 
+const handleShowSettings = () => {
+  if (formRefSettings.value) {
+    formRefSettings.value.clearValidate()
+  }
+  modalSettings.title = h('span', [
+    h(SettingOutlined, { class: 'me-2 text-primary' }),
+    'Cài đặt hệ thống',
+  ])
+  modalSettings.okText = 'Lưu lại'
+  modalSettings.onOk = () => handleSubmitSettings()
+
+  loadingStore.show()
+  requestAPI
+    .get(`${ROUTE_NAMES_API.FETCH_DATA_SETTINGS}`)
+    .then(({ data: response }) => {
+      for (let key in response.data) {
+        formDataSettings[key] = response.data[key]
+      }
+      modalSettings.isShow = true
+      modalSettings.isLoading = false
+    })
+    .catch((error) => {
+      message.error(error?.response?.data?.message || 'Không thể tải dữ liệu cài đặt')
+    })
+    .finally(() => {
+      loadingStore.hide()
+    })
+}
+
+const handleMenuClick = () => {
+  if (screenWidth.value <= 912) {
+    collapsed.value = false
+    document.body.classList.remove('disable-scroll-x')
+  }
+}
+
+const handleResizeScreen = () => {
+  screenWidth.value = window.innerWidth
+  screenHeight.value = window.innerHeight
+}
+
+const handleToggleNav = () => {
+  collapsed.value = !collapsed.value
+  if (collapsed.value && screenWidth.value <= 912) {
+    document.body.classList.add('disable-scroll-x')
+  } else {
+    document.body.classList.remove('disable-scroll-x')
+  }
+}
+
 onMounted(() => {
+  window.addEventListener('resize', handleResizeScreen)
   if (!authStore.user?.facilityID) {
     return router.push({ name: GLOBAL_ROUTE_NAMES.STUDENT_REGISTER_PAGE })
   }
   applicationStore.loadNotification()
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', handleResizeScreen)
 })
 
 watch(
@@ -150,6 +272,153 @@ watch(
 </script>
 
 <template>
+  <a-modal
+    v-model:open="modalSettings.isShow"
+    v-bind="modalSettings"
+    :okButtonProps="{ loading: modalSettings.isLoading }"
+  >
+    <a-form
+      ref="formRefSettings"
+      class="mt-3"
+      autocomplete="off"
+      :model="formDataSettings"
+      :label-col="{ span: 10 }"
+      :wrapper-col="{ span: 13 }"
+    >
+      <a-form-item
+        label="Chỉ chấp nhận email FPT (nhân sự):"
+        name="DISABLED_CHECK_EMAIL_FPT_STAFF"
+        :rules="ruleRequired"
+      >
+        <a-switch
+          class="me-2"
+          :checked="!formDataSettings.DISABLED_CHECK_EMAIL_FPT_STAFF"
+          @change="
+            formDataSettings.DISABLED_CHECK_EMAIL_FPT_STAFF =
+              !formDataSettings.DISABLED_CHECK_EMAIL_FPT_STAFF
+          "
+          :disabled="modalSettings.isLoading"
+        />
+      </a-form-item>
+      <a-form-item
+        label="Chỉ chấp nhận email FPT (sinh viên):"
+        name="DISABLED_CHECK_EMAIL_FPT_STUDENT"
+        :rules="ruleRequired"
+      >
+        <a-switch
+          class="me-2"
+          :checked="!formDataSettings.DISABLED_CHECK_EMAIL_FPT_STUDENT"
+          @change="
+            formDataSettings.DISABLED_CHECK_EMAIL_FPT_STUDENT =
+              !formDataSettings.DISABLED_CHECK_EMAIL_FPT_STUDENT
+          "
+          :disabled="modalSettings.isLoading"
+        />
+      </a-form-item>
+      <a-form-item
+        label="Thời gian diễn ra ca tối thiểu (phút):"
+        name="SHIFT_MIN_DIFF"
+        :rules="ruleRequired"
+      >
+        <a-input-number
+          class="w-100"
+          v-model:value="formDataSettings.SHIFT_MIN_DIFF"
+          :min="1"
+          :max="480"
+          :step="1"
+          :disabled="modalSettings.isLoading"
+          placeholder="Tối đa 480"
+          @keyup.enter="modalSettings.onOk"
+        />
+      </a-form-item>
+      <a-form-item
+        label="Điểm danh muộn nhất (phút):"
+        name="SHIFT_MAX_LATE_ARRIVAL"
+        :rules="ruleRequired"
+      >
+        <a-input-number
+          class="w-100"
+          v-model:value="formDataSettings.SHIFT_MAX_LATE_ARRIVAL"
+          :min="5"
+          :max="90"
+          :step="1"
+          :disabled="modalSettings.isLoading"
+          placeholder="Tối thiểu 5 - tối đa 90"
+          @keyup.enter="modalSettings.onOk"
+        />
+      </a-form-item>
+      <a-form-item
+        label="Cho phép checkin sớm (phút):"
+        name="ATTENDANCE_EARLY_CHECKIN"
+        :rules="ruleRequired"
+      >
+        <a-input-number
+          class="w-100"
+          v-model:value="formDataSettings.ATTENDANCE_EARLY_CHECKIN"
+          :min="0"
+          :max="30"
+          :step="1"
+          :disabled="modalSettings.isLoading"
+          placeholder="Tối đa 30"
+          @keyup.enter="modalSettings.onOk"
+        />
+      </a-form-item>
+      <a-form-item
+        label="Thời hạn phiên đăng nhập (phút):"
+        name="EXPIRATION_MINUTE_LOGIN"
+        :rules="ruleRequired"
+      >
+        <a-input-number
+          class="w-100"
+          v-model:value="formDataSettings.EXPIRATION_MINUTE_LOGIN"
+          :min="60"
+          :step="1"
+          :disabled="modalSettings.isLoading"
+          placeholder="Tối thiểu 60"
+          @keyup.enter="modalSettings.onOk"
+        />
+      </a-form-item>
+      <a-form-item
+        label="Độ khắt khe checkin/checkout:"
+        name="FACE_THRESHOLD_CHECKIN"
+        :rules="ruleRequired"
+      >
+        <a-slider
+          class="w-100"
+          :min="0"
+          :max="1"
+          :step="0.01"
+          v-model:value="formDataSettings.FACE_THRESHOLD_CHECKIN"
+          :disabled="modalSettings.isLoading"
+          :marks="{
+            0: 'Thấp',
+            0.5: 'Trung bình',
+            1: 'Cao',
+          }"
+        />
+      </a-form-item>
+      <a-form-item
+        label="Độ khắt khe đăng ký mặt:"
+        name="FACE_THRESHOLD_REGISTER"
+        :rules="ruleRequired"
+      >
+        <a-slider
+          class="w-100"
+          :min="0"
+          :max="1"
+          :step="0.01"
+          v-model:value="formDataSettings.FACE_THRESHOLD_REGISTER"
+          :disabled="modalSettings.isLoading"
+          :marks="{
+            0: 'Thấp',
+            0.5: 'Trung bình',
+            1: 'Cao',
+          }"
+        />
+      </a-form-item>
+    </a-form>
+  </a-modal>
+
   <a-modal v-model:open="isShowAllNotification" :width="1000" :footer="null">
     <template #title><BellFilled class="text-primary" /> Tất cả thông báo </template>
     <div class="row g-2">
@@ -247,14 +516,19 @@ watch(
       <div class="logo">
         <img :src="imgLogoUdpm" />
       </div>
-      <a-menu v-model:selectedKeys="applicationStore.selectedKeys" theme="light" mode="inline">
+      <a-menu
+        v-model:selectedKeys="applicationStore.selectedKeys"
+        theme="light"
+        mode="inline"
+        @click="handleMenuClick"
+      >
         <slot></slot>
       </a-menu>
     </a-layout-sider>
 
     <a-layout class="sider-content">
       <!-- HEADER -->
-      <a-layout-header class="d-flex justify-content-between bg-white ps-0">
+      <a-layout-header class="d-flex justify-content-between ps-0">
         <component
           :is="collapsed ? MenuUnfoldOutlined : MenuFoldOutlined"
           class="trigger"
@@ -338,26 +612,34 @@ watch(
           </a-dropdown>
           <a-dropdown>
             <a class="user-menu" @click.prevent>
-              <a-avatar size="medium" :src="authStore.user.picture" />
+              <a-avatar size="medium" :src="authStore.user?.picture" />
               <div class="user-deital">
-                <div class="username">{{ authStore.user.name }}</div>
-                <div class="email">{{ authStore.user.sub }}</div>
+                <div class="username">{{ authStore.user?.name }}</div>
+                <div class="email">{{ authStore.user?.sub }}</div>
               </div>
             </a>
             <template #overlay>
               <a-menu>
                 <a-menu-item class="active d-lg-none">
-                  <b>{{ authStore.user.name }}</b>
-                  <div>{{ authStore.user.sub }}</div>
+                  <b>{{ authStore.user?.name }}</b>
+                  <div>{{ authStore.user?.sub }}</div>
                 </a-menu-item>
                 <a-menu-divider class="d-lg-none" />
                 <a-menu-item
                   key="switchRole"
                   @click="handleSwitchRole()"
-                  v-if="authStore.user.role.length > 1"
+                  v-if="authStore.user?.role.length > 1"
                 >
                   <UserSwitchOutlined />
                   <span class="ms-2">Thay đổi vai trò</span>
+                </a-menu-item>
+                <a-menu-item
+                  key="Settings"
+                  @click="handleShowSettings()"
+                  v-if="authStore.user?.role.includes(ROLE.ADMIN)"
+                >
+                  <SettingOutlined />
+                  <span class="ms-2">Cài đặt hệ thống</span>
                 </a-menu-item>
                 <a-menu-item key="logout" @click="handleLogout()">
                   <LogoutOutlined />
