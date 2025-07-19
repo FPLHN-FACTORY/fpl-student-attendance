@@ -22,8 +22,6 @@ public interface SSSubjectFacilityRepository extends SubjectFacilityRepository {
         LEFT JOIN user_student_factory usf ON f.id = usf.id_factory AND usf.status = 1
         LEFT JOIN user_student us ON usf.id_user_student = us.id AND us.status = 1
         WHERE
-            s.status = 1 AND
-            sf.status = 1 AND
             sf.id_facility = :idFacility AND
             EXISTS(
                 SELECT 1

@@ -13,7 +13,7 @@ import java.util.List;
 
 public class ShiftHelper {
 
-    private static final ZoneId ZONEID = ZoneId.of("Asia/Ho_Chi_Minh");
+    private static final ZoneId ZONEID = ZoneId.of(DateTimeUtils.ZONE_ID);
 
     public static Long getShiftTimeStart(long time, LocalTime startTime) {
         LocalDate date = DateTimeUtils.convertTimestampToLocalDate(time);

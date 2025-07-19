@@ -19,10 +19,4 @@ public abstract class AuditEntity {
     @Column
     private Long updatedAt;
 
-    @Override
-    public String toString() {
-        return getClass().getSimpleName() +
-                "[createdAt=" + getCreatedAt() +
-                ", updatedAt=" + getUpdatedAt() + "]";
-    }
 }

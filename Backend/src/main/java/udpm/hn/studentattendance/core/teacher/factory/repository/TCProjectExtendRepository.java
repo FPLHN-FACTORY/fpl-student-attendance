@@ -14,8 +14,8 @@ public interface TCProjectExtendRepository extends ProjectRepository {
                  p.*
                  FROM
                  project p
-                 LEFT JOIN subject_facility sf ON sf.id = p.id_subject_facility
-                 LEFT JOIN facility f ON f.id = sf.id_facility
+                 JOIN subject_facility sf ON sf.id = p.id_subject_facility
+                 JOIN facility f ON f.id = sf.id_facility
                  WHERE
                  p.status = 1
                  AND

@@ -9,6 +9,8 @@ public interface USFactoryResponse {
 
     Integer getFactoryStatus();
 
+    Integer getCurrentStatus();
+
     String getProjectName();
 
     String getSubjectCode();
