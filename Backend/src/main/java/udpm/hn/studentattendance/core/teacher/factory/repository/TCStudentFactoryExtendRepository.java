@@ -23,7 +23,6 @@ public interface TCStudentFactoryExtendRepository extends UserStudentFactoryRepo
                 JOIN plan_factory pf ON pd.id_plan_factory = pf.id
                 WHERE
                     pd.status = 1 AND
-                    pf.status = 1 AND
                     pf.id_factory = :factoryId
             )
             SELECT
@@ -42,7 +41,6 @@ public interface TCStudentFactoryExtendRepository extends UserStudentFactoryRepo
                         JOIN plan_factory pf ON pd.id_plan_factory = pf.id
                         WHERE
                             pd.status = 1 AND
-                            pf.status = 1 AND
                             a.attendance_status = 3 AND
                             pf.id_factory = ft.id AND
                             a.id_user_student = usf.id_user_student
@@ -74,11 +72,7 @@ public interface TCStudentFactoryExtendRepository extends UserStudentFactoryRepo
             LEFT JOIN user_student us ON us.id = usf.id_user_student
             WHERE
                 ft.id = :factoryId
-                AND pf.status = 1
-                AND p.status = 1
                 AND usf.status = 1
-                AND ft.status = 1
-                AND us.status = 1
                 AND (:#{#studentRequest.status} IS NULL OR usf.status = :#{#studentRequest.status})
                 AND (
                     :#{#studentRequest.searchQuery} IS NULL OR :#{#studentRequest.searchQuery} = ''
@@ -97,11 +91,7 @@ public interface TCStudentFactoryExtendRepository extends UserStudentFactoryRepo
             LEFT JOIN user_student us ON us.id = usf.id_user_student
             WHERE
                 ft.id = :factoryId
-                AND pf.status = 1
-                AND p.status = 1
                 AND usf.status = 1
-                AND ft.status = 1
-                AND us.status = 1
                 AND (:#{#studentRequest.status} IS NULL OR usf.status = :#{#studentRequest.status})
                 AND (
                     :#{#studentRequest.searchQuery} IS NULL OR :#{#studentRequest.searchQuery} = ''
@@ -133,7 +123,6 @@ public interface TCStudentFactoryExtendRepository extends UserStudentFactoryRepo
                 LEFT JOIN attendance a ON pd.id = a.id_plan_date AND a.id_user_student = :#{#request.idUserStudent}
                 WHERE
                     pd.status = 1 AND
-                    pf.status = 1 AND
                     pf.id_factory = :#{#request.idFactory} AND
                     EXISTS(
                         SELECT 1
@@ -148,15 +137,7 @@ public interface TCStudentFactoryExtendRepository extends UserStudentFactoryRepo
                         JOIN semester s ON pj.id_semester = s.id
                         WHERE
                              pf.id_plan = p.id AND
-                             f.status = 1 AND
-                             us.status = 1 AND
-                             usf.status = 1 AND
-                             p.status = 1 AND
-                             pj.status = 1 AND
-                             s.status = 1 AND
-                             s2.status = 1 AND
                              f2.status = 1 AND
-                             sf.status = 1 AND
                              us.id = :#{#request.idUserStudent}
                     )
                 ORDER BY pd.start_date ASC
@@ -186,8 +167,6 @@ public interface TCStudentFactoryExtendRepository extends UserStudentFactoryRepo
                 LEFT JOIN attendance a ON pd.id = a.id_plan_date AND a.id_user_student = us.id
                 WHERE
                     pd.status = 1 AND
-                    pf.status = 1 AND
-                    us.status = 1 AND
                     usf.status = 1 AND
                     pf.id_factory = :idFactory AND
                     EXISTS(
@@ -201,13 +180,7 @@ public interface TCStudentFactoryExtendRepository extends UserStudentFactoryRepo
                         JOIN semester s ON pj.id_semester = s.id
                         WHERE
                              pf.id_plan = p.id AND
-                             f.status = 1 AND
-                             p.status = 1 AND
-                             pj.status = 1 AND
-                             s.status = 1 AND
-                             s2.status = 1 AND
-                             f2.status = 1 AND
-                             sf.status = 1
+                             f2.status = 1
                     )
                 ORDER BY us.name ASC
             """, nativeQuery = true)
