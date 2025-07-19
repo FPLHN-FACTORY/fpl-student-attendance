@@ -3,12 +3,14 @@ package udpm.hn.studentattendance.core.staff.student.model.request;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 import udpm.hn.studentattendance.infrastructure.common.PageableRequest;
 import udpm.hn.studentattendance.infrastructure.constants.EntityProperties;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 
 @Getter
 @Setter
+@ToString
 public class USStudentRequest extends PageableRequest {
     private String studentId;
 
@@ -17,15 +19,4 @@ public class USStudentRequest extends PageableRequest {
 
     private EntityStatus studentStatus;
 
-    @Override
-    public String toString() {
-        return "page=" + getPage() +
-                "_size=" + getSize() +
-                "_orderBy=" + getOrderBy() +
-                "_sortBy=" + getSortBy() +
-                "_q=" + (getQ() != null ? getQ() : "") +
-                "_studentId=" + (studentId != null ? studentId : "") +
-                "_searchQuery=" + (searchQuery != null ? searchQuery : "") +
-                "_studentStatus=" + (studentStatus != null ? studentStatus : "");
-    }
 }

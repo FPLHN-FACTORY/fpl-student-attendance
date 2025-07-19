@@ -14,7 +14,7 @@ import udpm.hn.studentattendance.infrastructure.constants.EntityProperties;
 @AllArgsConstructor
 public class USPDDetailShiftByStudentRequest extends PageableRequest {
 
-    @Size(max = EntityProperties.LENGTH_NAME, message = "Keyword không được vượt quá 255 ký tự")
+    @Size(max = EntityProperties.LENGTH_NAME, message = "Keyword không được vượt quá " + EntityProperties.LENGTH_NAME + " ký tự")
     private String keyword;
 
     private Integer shift;
