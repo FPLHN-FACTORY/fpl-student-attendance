@@ -2,7 +2,6 @@ package udpm.hn.studentattendance.core.admin.useradmin.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
@@ -17,13 +16,10 @@ import udpm.hn.studentattendance.core.notification.service.NotificationService;
 import udpm.hn.studentattendance.entities.UserAdmin;
 import udpm.hn.studentattendance.entities.UserStaff;
 import udpm.hn.studentattendance.helpers.*;
-import udpm.hn.studentattendance.helpers.RequestTrimHelper;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.config.mailer.model.MailerDefaultRequest;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.RedisPrefixConstant;
-import udpm.hn.studentattendance.infrastructure.constants.SettingKeys;
-import udpm.hn.studentattendance.infrastructure.redis.service.RedisService;
 import com.fasterxml.jackson.core.type.TypeReference;
 import udpm.hn.studentattendance.helpers.RedisCacheHelper;
 import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
@@ -59,18 +55,14 @@ public class ADUserAdminServiceImpl implements ADUserAdminService {
         @Value("${app.config.app-name}")
         private String appName;
 
-        @Value("${spring.cache.redis.time-to-live}")
-        private long redisTTL;
-
         public PageableObject getUserAdminList(ADUserAdminRequest request) {
                 String key = RedisPrefixConstant.REDIS_PREFIX_ADMIN + "list_" + request.toString();
                 return redisCacheHelper.getOrSet(
                                 key,
                                 () -> PageableObject.of(userAdminExtendRepository
                                                 .getAllUserAdmin(PaginationHelper.createPageable(request), request)),
-                                new TypeReference<PageableObject<?>>() {
-                                },
-                                redisTTL);
+                                new TypeReference<>() {
+                                });
         }
 
         public UserAdmin getCachedUserAdminById(String id) {
@@ -83,9 +75,8 @@ public class ADUserAdminServiceImpl implements ADUserAdminService {
                 return redisCacheHelper.getOrSet(
                                 key,
                                 () -> userAdminStaffExtendRepository.getAllUserStaff(),
-                                new TypeReference<List<UserStaff>>() {
-                                },
-                                redisTTL);
+                                new TypeReference<>() {
+                                });
         }
 
         @Override
@@ -105,8 +96,6 @@ public class ADUserAdminServiceImpl implements ADUserAdminService {
 
         @Override
         public ResponseEntity<?> createUserAdmin(ADUserAdminCreateOrUpdateRequest createOrUpdateRequest) {
-                // Trim all string fields in the request
-                RequestTrimHelper.trimStringFields(createOrUpdateRequest);
 
                 Optional<UserAdmin> existUserAdmin = userAdminExtendRepository
                                 .getUserAdminByCode(createOrUpdateRequest.getStaffCode());
@@ -169,8 +158,6 @@ public class ADUserAdminServiceImpl implements ADUserAdminService {
 
         @Override
         public ResponseEntity<?> updateUserAdmin(ADUserAdminCreateOrUpdateRequest createOrUpdateRequest, String id) {
-                // Trim all string fields in the request
-                RequestTrimHelper.trimStringFields(createOrUpdateRequest);
 
                 if (!ValidateHelper.isValidFullname(createOrUpdateRequest.getStaffName())) {
                         return RouterHelper.responseError(

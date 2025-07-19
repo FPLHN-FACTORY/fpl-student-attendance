@@ -2,7 +2,6 @@ package udpm.hn.studentattendance.core.staff.attendancerecovery.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
@@ -17,17 +16,15 @@ import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
 import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.helpers.SessionHelper;
 import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
-import udpm.hn.studentattendance.helpers.ValidateHelper;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.constants.AttendanceStatus;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.RedisPrefixConstant;
 import udpm.hn.studentattendance.infrastructure.excel.model.request.EXDataRequest;
 import udpm.hn.studentattendance.infrastructure.excel.model.response.ExImportLogDetailResponse;
-import udpm.hn.studentattendance.infrastructure.redis.service.RedisService;
-import udpm.hn.studentattendance.helpers.RequestTrimHelper;
 import com.fasterxml.jackson.core.type.TypeReference;
 import udpm.hn.studentattendance.helpers.RedisCacheHelper;
+import udpm.hn.studentattendance.utils.DateTimeUtils;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -65,12 +62,9 @@ public class STAttendanceRecoveryServiceImpl implements STAttendanceRecoveryServ
 
     private final RedisInvalidationHelper redisInvalidationHelper;
 
-    @Value("${spring.cache.redis.time-to-live}")
-    private long redisTTL;
-
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
-    private static final ZoneId VN_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
+    private static final ZoneId VN_ZONE = ZoneId.of(DateTimeUtils.ZONE_ID);
 
     private final STAttendanceRecoveryHistoryLogRepository historyLogRepository;
 
@@ -84,9 +78,8 @@ public class STAttendanceRecoveryServiceImpl implements STAttendanceRecoveryServ
                 key,
                 () -> PageableObject.of(attendanceRecoveryRepository.getListAttendanceRecovery(request,
                         sessionHelper.getFacilityId(), PaginationHelper.createPageable(request))),
-                new TypeReference<PageableObject<?>>() {
-                },
-                redisTTL);
+                new TypeReference<>() {
+                });
     }
 
     @Override
@@ -122,9 +115,8 @@ public class STAttendanceRecoveryServiceImpl implements STAttendanceRecoveryServ
         return redisCacheHelper.getOrSet(
                 key,
                 () -> semesterRepository.getAllSemester(EntityStatus.ACTIVE),
-                new TypeReference<List<Semester>>() {
-                },
-                redisTTL);
+                new TypeReference<>() {
+                });
     }
 
     @Override
@@ -135,8 +127,6 @@ public class STAttendanceRecoveryServiceImpl implements STAttendanceRecoveryServ
 
     @Override
     public ResponseEntity<?> createNewEventAttendanceRecovery(STCreateOrUpdateNewEventRequest request) {
-        // Trim all string fields in the request
-        RequestTrimHelper.trimStringFields(request);
 
         Optional<Facility> facilityOptional = facilityRepository.findById(sessionHelper.getFacilityId());
         if (facilityOptional == null) {
@@ -174,8 +164,6 @@ public class STAttendanceRecoveryServiceImpl implements STAttendanceRecoveryServ
 
     @Override
     public ResponseEntity<?> updateEventAttendanceRecovery(STCreateOrUpdateNewEventRequest request, String id) {
-        // Trim all string fields in the request
-        RequestTrimHelper.trimStringFields(request);
 
         Optional<AttendanceRecovery> attendanceRecoveryOptional = attendanceRecoveryRepository.findById(id);
         if (attendanceRecoveryOptional.isPresent()) {
@@ -408,9 +396,8 @@ public class STAttendanceRecoveryServiceImpl implements STAttendanceRecoveryServ
                 cacheKey,
                 () -> PageableObject.of(historyLogRepository.getListHistory(PaginationHelper.createPageable(request), 6,
                         sessionHelper.getUserId(), sessionHelper.getFacilityId(), idImportLog)),
-                new TypeReference<PageableObject<?>>() {
-                },
-                redisTTL);
+                new TypeReference<>() {
+                });
         return (PageableObject<?>) cachedData;
     }
 

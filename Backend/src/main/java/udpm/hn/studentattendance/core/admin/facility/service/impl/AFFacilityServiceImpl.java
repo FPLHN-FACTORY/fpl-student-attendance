@@ -2,7 +2,6 @@ package udpm.hn.studentattendance.core.admin.facility.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
@@ -16,17 +15,16 @@ import udpm.hn.studentattendance.helpers.GenerateNameHelper;
 import udpm.hn.studentattendance.helpers.MailerHelper;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
 import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
-import udpm.hn.studentattendance.helpers.RequestTrimHelper;
 import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
-import udpm.hn.studentattendance.infrastructure.common.repositories.CommonUserStudentRepository;
+import udpm.hn.studentattendance.infrastructure.common.repositories.CommonPlanDateRepository;
 import udpm.hn.studentattendance.infrastructure.config.mailer.model.MailerDefaultRequest;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.RedisPrefixConstant;
-import udpm.hn.studentattendance.infrastructure.redis.service.RedisService;
 import com.fasterxml.jackson.core.type.TypeReference;
 import udpm.hn.studentattendance.helpers.RedisCacheHelper;
+import udpm.hn.studentattendance.utils.DateTimeUtils;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -42,8 +40,6 @@ public class AFFacilityServiceImpl implements AFFacilityService {
 
     private final AFFacilityExtendRepository facilityRepository;
 
-    private final CommonUserStudentRepository commonUserStudentRepository;
-
     private final MailerHelper mailerHelper;
 
     private final UserActivityLogHelper userActivityLogHelper;
@@ -52,11 +48,10 @@ public class AFFacilityServiceImpl implements AFFacilityService {
 
     private final RedisInvalidationHelper redisInvalidationHelper;
 
+    private final CommonPlanDateRepository commonPlanDateRepository;
+
     @Value("${app.config.app-name}")
     private String appName;
-
-    @Value("${spring.cache.redis.time-to-live}")
-    private long redisTTL;
 
     public PageableObject<AFFacilityResponse> getCachedFacilities(AFFacilitySearchRequest request) {
         String key = RedisPrefixConstant.REDIS_PREFIX_FACILITY + "list_" + request.toString();
@@ -64,9 +59,8 @@ public class AFFacilityServiceImpl implements AFFacilityService {
                 key,
                 () -> PageableObject.of(facilityRepository
                         .getAllFacility(PaginationHelper.createPageable(request, "createdAt"), request)),
-                new TypeReference<PageableObject<AFFacilityResponse>>() {
-                },
-                redisTTL);
+                new TypeReference<>() {
+                });
     }
 
     @Override
@@ -77,7 +71,6 @@ public class AFFacilityServiceImpl implements AFFacilityService {
 
     @Override
     public ResponseEntity<?> createFacility(AFCreateUpdateFacilityRequest request) {
-        RequestTrimHelper.trimStringFields(request);
 
         Optional<Facility> existFacility = facilityRepository.findByName(request.getFacilityName());
         if (existFacility.isPresent()) {
@@ -102,8 +95,6 @@ public class AFFacilityServiceImpl implements AFFacilityService {
 
     @Override
     public ResponseEntity<?> updateFacility(String facilityId, AFCreateUpdateFacilityRequest request) {
-        // Trim all string fields in the request
-        RequestTrimHelper.trimStringFields(request);
 
         Optional<Facility> existFacility = facilityRepository.findById(facilityId);
         if (existFacility.isEmpty()) {
@@ -138,12 +129,16 @@ public class AFFacilityServiceImpl implements AFFacilityService {
 
         Facility facility = facilityOptional.get();
 
+        if (commonPlanDateRepository.existsNotYetStartedByFacility(facility.getId())) {
+            return RouterHelper.responseError("Đang tồn tại ca chưa hoặc đang diễn ra. Không thể thay đổi trạng thái");
+        }
+
         long lastUpdatedMillis = facility.getUpdatedAt(); // epoch millis
         LocalDate lastUpdatedDate = Instant
                 .ofEpochMilli(lastUpdatedMillis)
-                .atZone(ZoneId.of("Asia/Ho_Chi_Minh")) // dùng timezone phù hợp
+                .atZone(ZoneId.of(DateTimeUtils.ZONE_ID)) // dùng timezone phù hợp
                 .toLocalDate();
-        LocalDate today = LocalDate.now(ZoneId.of("Asia/Ho_Chi_Minh"));
+        LocalDate today = LocalDate.now(ZoneId.of(DateTimeUtils.ZONE_ID));
         if (lastUpdatedDate.isEqual(today) && facility.getStatus() == EntityStatus.ACTIVE) {
             return RouterHelper.responseError("Chỉ được đổi trạng thái cơ sở ngừng hoạt động 1 lần mỗi ngày");
         }
@@ -173,8 +168,6 @@ public class AFFacilityServiceImpl implements AFFacilityService {
                         Map.of("FACILITY_NAME", entity.getName())));
                 mailerHelper.send(mailerDefaultRequest);
             }
-        } else {
-            commonUserStudentRepository.disableAllStudentDuplicateShiftByIdFacility(facility.getId());
         }
 
         userActivityLogHelper.saveLog(

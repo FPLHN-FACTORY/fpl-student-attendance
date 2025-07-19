@@ -2,7 +2,6 @@ package udpm.hn.studentattendance.core.staff.student.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
@@ -17,7 +16,6 @@ import udpm.hn.studentattendance.entities.Facility;
 import udpm.hn.studentattendance.entities.UserStudent;
 import udpm.hn.studentattendance.helpers.NotificationHelper;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
-import udpm.hn.studentattendance.helpers.RequestTrimHelper;
 import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.helpers.SessionHelper;
 import udpm.hn.studentattendance.helpers.SettingHelper;
@@ -27,7 +25,6 @@ import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.RedisPrefixConstant;
 import udpm.hn.studentattendance.infrastructure.constants.SettingKeys;
-import udpm.hn.studentattendance.infrastructure.redis.service.RedisService;
 import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
 import com.fasterxml.jackson.core.type.TypeReference;
 import udpm.hn.studentattendance.helpers.RedisCacheHelper;
@@ -56,9 +53,6 @@ public class STStudentServiceImpl implements STStudentService {
 
     private final SettingHelper settingHelper;
 
-    @Value("${spring.cache.redis.time-to-live}")
-    private long redisTTL;
-
     public PageableObject<?> getCachedStudentList(USStudentRequest studentRequest) {
         String key = RedisPrefixConstant.REDIS_PREFIX_STUDENT + "list_" + sessionHelper.getFacilityId() + "_"
                 + studentRequest.toString();
@@ -67,9 +61,8 @@ public class STStudentServiceImpl implements STStudentService {
                 () -> PageableObject.of(
                         studentExtendRepository.getAllStudentByFacility(PaginationHelper.createPageable(studentRequest),
                                 studentRequest, sessionHelper.getFacilityId())),
-                new TypeReference<PageableObject<?>>() {
-                },
-                redisTTL);
+                new TypeReference<>() {
+                });
     }
 
     @Override
@@ -94,8 +87,6 @@ public class STStudentServiceImpl implements STStudentService {
 
     @Override
     public ResponseEntity<?> createStudent(USStudentCreateUpdateRequest studentCreateUpdateRequest) {
-        // Trim all string fields in the request
-        RequestTrimHelper.trimStringFields(studentCreateUpdateRequest);
 
         if (!ValidateHelper.isValidCode(studentCreateUpdateRequest.getCode())) {
             return RouterHelper.responseError(
@@ -161,8 +152,6 @@ public class STStudentServiceImpl implements STStudentService {
 
     @Override
     public ResponseEntity<?> updateStudent(USStudentCreateUpdateRequest studentCreateUpdateRequest) {
-        // Trim all string fields in the request
-        RequestTrimHelper.trimStringFields(studentCreateUpdateRequest);
 
         if (!ValidateHelper.isValidCode(studentCreateUpdateRequest.getCode())) {
             return RouterHelper.responseError(
@@ -288,9 +277,8 @@ public class STStudentServiceImpl implements STStudentService {
                             m -> (String) m.get("studentId"),
                             m -> ((Number) m.get("hasFace")).intValue() == 1));
                 },
-                new TypeReference<Map<String, Boolean>>() {
-                },
-                redisTTL);
+                new TypeReference<>() {
+                });
     }
 
     @Override
