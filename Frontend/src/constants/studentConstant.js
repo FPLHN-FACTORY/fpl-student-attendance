@@ -8,4 +8,6 @@ export const API_ROUTES_STUDENT = {
 
   FETCH_DATA_ATTENDANCE: API_URL + '/student/attendance',
 
+  FETCH_DATA_STATISTICS: API_URL + '/student/statistics',
+
 }

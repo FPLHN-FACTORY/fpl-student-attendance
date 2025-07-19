@@ -27,11 +27,11 @@ import java.util.List;
 @DynamicUpdate
 public class UserStaff extends PrimaryEntity implements UserDetails {
 
-    @Column(name = "emailFe", length = EntityProperties.LENGTH_NAME)
+    @Column(name = "email_fe", length = EntityProperties.LENGTH_NAME)
     @Nationalized
     private String emailFe;
 
-    @Column(name = "emailFpt", length = EntityProperties.LENGTH_NAME)
+    @Column(name = "email_fpt", length = EntityProperties.LENGTH_NAME)
     @Nationalized
     private String emailFpt;
 
@@ -52,6 +52,9 @@ public class UserStaff extends PrimaryEntity implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
+        if (roles == null) {
+            return java.util.Collections.emptyList();
+        }
         List<SimpleGrantedAuthority> authorities = new ArrayList<>();
         for (Role role : roles) {
             authorities.add(new SimpleGrantedAuthority(role.getCode().name()));
@@ -66,7 +69,14 @@ public class UserStaff extends PrimaryEntity implements UserDetails {
 
     @Override
     public String getUsername() {
-        return null;
+        return code;
+    }
+
+    public String getEmail() {
+        if (emailFe != null && !emailFe.trim().isEmpty()) {
+            return emailFe;
+        }
+        return emailFpt;
     }
 
 }

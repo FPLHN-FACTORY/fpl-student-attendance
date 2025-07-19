@@ -12,7 +12,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import udpm.hn.studentattendance.infrastructure.constants.router.RouteWebsocketConstant;
+import udpm.hn.studentattendance.infrastructure.constants.RoutesConstant;
 import udpm.hn.studentattendance.infrastructure.security.router.AdminSecurityConfig;
 import udpm.hn.studentattendance.infrastructure.security.router.AuthenticationSecurityConfig;
 import udpm.hn.studentattendance.infrastructure.security.exception.CustomAccessDeniedHandler;
@@ -21,16 +21,14 @@ import udpm.hn.studentattendance.infrastructure.security.router.ExcelSecurityCon
 import udpm.hn.studentattendance.infrastructure.security.router.StaffSecurityConfig;
 import udpm.hn.studentattendance.infrastructure.security.router.StudentSecurityConfig;
 import udpm.hn.studentattendance.infrastructure.security.router.TeacherSecurityConfig;
+import udpm.hn.studentattendance.infrastructure.security.router.TestRedisSecurityConfig;
 
 import java.util.Collections;
 import java.util.List;
 
 @Configuration
 @RequiredArgsConstructor
-@EnableMethodSecurity(
-        securedEnabled = true,
-        jsr250Enabled = true
-)
+@EnableMethodSecurity(securedEnabled = true, jsr250Enabled = true)
 public class SecurityConfig {
 
     private final AuthenticationSecurityConfig authenticationSecurityConfig;
@@ -44,6 +42,8 @@ public class SecurityConfig {
     private final TeacherSecurityConfig teacherSecurityConfig;
 
     private final ExcelSecurityConfig excelSecurityConfig;
+
+    private final TestRedisSecurityConfig testSecurityConfig;
 
     @Value("${allowed.origin}")
     public String ALLOWED_ORIGIN;
@@ -66,11 +66,14 @@ public class SecurityConfig {
         http.csrf(AbstractHttpConfigurer::disable);
         http.formLogin(AbstractHttpConfigurer::disable);
         http.httpBasic(AbstractHttpConfigurer::disable);
-        http.sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.ALWAYS));
+        http.sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
         http.exceptionHandling(e -> {
             e.accessDeniedHandler(new CustomAccessDeniedHandler());
             e.authenticationEntryPoint(new CustomAuthenticationEntryPoint());
         });
+
+        // Cấu hình cho các endpoint test phải được thêm trước các cấu hình khác
+        testSecurityConfig.configure(http);
 
         // Thêm từng config routes vào đây
         authenticationSecurityConfig.configure(http);
@@ -81,21 +84,8 @@ public class SecurityConfig {
         excelSecurityConfig.configure(http);
 
         http.authorizeHttpRequests(auth -> auth
-                .requestMatchers(
-                        "/",
-                        "/index.html",
-                        "/favicon.ico",
-                        "/logo.png",
-                        "/*.js",
-                        "/*.css",
-                        "/assets/**",
-                        "/static/**",
-                        RouteWebsocketConstant.END_POINT + "/**",
-                        RouteWebsocketConstant.PREFIX_SIMPLE_BROKER + "/**",
-                        RouteWebsocketConstant.PREFIX_AD + "/**"
-                ).permitAll()
-                .anyRequest().authenticated()
-        );
+                .requestMatchers(RoutesConstant.API_PREFIX + "/**").authenticated()
+                .anyRequest().permitAll());
         return http.build();
     }
 

@@ -29,6 +29,11 @@ public class EXStaffRestController implements IEXDefaultController {
     }
 
     @Override
+    public ResponseEntity<?> exportData(EXDataRequest request) {
+        return service.exportData(request);
+    }
+
+    @Override
     public ResponseEntity<?> downloadTemplate(EXDataRequest request) {
         return service.downloadTemplate(request);
     }

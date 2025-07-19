@@ -7,6 +7,7 @@ import {
   UnorderedListOutlined,
   FilterFilled,
   DeleteFilled,
+  SearchOutlined,
 } from '@ant-design/icons-vue'
 import requestAPI from '@/services/requestApiService'
 import { ROUTE_NAMES } from '@/router/adminRoute'
@@ -20,8 +21,8 @@ import { autoAddColumnWidth } from '@/utils/utils'
 // --- Breadcrumb ---
 const breadcrumbStore = useBreadcrumbStore()
 const breadcrumb = ref([
-  { name: ROUTE_NAMES.ADMIN_PAGE, breadcrumbName: 'Quản lý' },
-  { name: ROUTE_NAMES.ADMIN_USER, breadcrumbName: 'Quản lý ban đào tạo' },
+  { name: ROUTE_NAMES.ADMIN_PAGE, breadcrumbName: 'Admin' },
+  { name: ROUTE_NAMES.ADMIN_USER, breadcrumbName: 'Quản lý Admin' },
 ])
 
 // --- Data & State ---
@@ -33,17 +34,17 @@ const loadingStore = useLoadingStore()
 const isLoading = ref(false)
 
 // Staff list for change-power modal
-const staffList = ref([])
-const selectedStaffId = ref(null)
-let currentAdminId = null
+// const staffList = ref([])
+// const selectedStaffId = ref(null)
+// let currentAdminId = null
 
 // Modals
 const modalAdd = ref(false)
 const modalAddLoading = ref(false)
 const modalEdit = ref(false)
 const modalEditLoading = ref(false)
-const modalChangePower = ref(false)
-const modalChangePowerLoading = ref(false)
+// const modalChangePower = ref(false)
+// const modalChangePowerLoading = ref(false)
 
 // Form models
 const newUser = reactive({ staffCode: '', staffName: '', email: '' })
@@ -53,15 +54,14 @@ const editUser = reactive({ id: '', staffCode: '', staffName: '', email: '' })
 const columns = ref(
   autoAddColumnWidth([
     { title: '#', dataIndex: 'rowNumber', key: 'rowNumber' },
-    { title: 'Mã ban đào tạo', dataIndex: 'userAdminCode', key: 'userAdminCode' },
-    { title: 'Tên ban đào tạo', dataIndex: 'userAdminName', key: 'userAdminName' },
+    { title: 'Mã Admin', dataIndex: 'userAdminCode', key: 'userAdminCode' },
+    { title: 'Tên Admin', dataIndex: 'userAdminName', key: 'userAdminName' },
     { title: 'Email', dataIndex: 'userAdminEmail', key: 'userAdminEmail' },
     { title: 'Trạng thái', dataIndex: 'userAdminStatus', key: 'userAdminStatus' },
     { title: 'Chức năng', key: 'actions' },
   ]),
 )
 
-// --- API Calls ---
 const fetchUsers = async () => {
   loadingStore.show()
   isLoading.value = true
@@ -96,14 +96,14 @@ const fetchUsers = async () => {
   }
 }
 
-const fetchStaffList = async () => {
-  try {
-    const res = await requestAPI.get(API_ROUTES_ADMIN.FETCH_DATA_ADMIN + '/staff')
-    staffList.value = res.data.data
-  } catch (err) {
-    message.error(err?.response?.data?.message || 'Lỗi khi tải danh sách nhân viên')
-  }
-}
+// const fetchStaffList = async () => {
+//   try {
+//     const res = await requestAPI.get(API_ROUTES_ADMIN.FETCH_DATA_ADMIN + '/staff')
+//     staffList.value = res.data.data
+//   } catch (err) {
+//     message.error(err?.response?.data?.message || 'Lỗi khi tải danh sách nhân viên')
+//   }
+// }
 
 const handleTableChange = (pageInfo) => {
   pagination.value.current = pageInfo.current
@@ -118,25 +118,32 @@ const clearNewUser = () => {
 }
 
 const handleAddUser = () => {
-  if (!newUser.staffCode || !newUser.staffName || !newUser.email) {
+   if (!newUser.staffCode || !newUser.staffName || !newUser.email) {
     return message.error('Vui lòng điền đầy đủ thông tin')
   }
-  modalAddLoading.value = true
-  requestAPI
-    .post(API_ROUTES_ADMIN.FETCH_DATA_ADMIN, newUser)
-    .then(() => {
-      message.success('Thêm ban đào tạo thành công')
-      modalAdd.value = false
-      applicationStore.loadNotification()
-      clearNewUser()
-      fetchUsers()
-    })
-    .catch((err) => {
-      message.error(err?.response?.data?.message || 'Lỗi khi thêm')
-    })
-    .finally(() => {
-      modalAddLoading.value = false
-    })
+  Modal.confirm({
+    title: 'Xác nhận thêm mới',
+    content: 'Bạn có chắc chắn muốn thêm mới tài khoản admin này?',
+    okText: 'Tiếp tục',
+    cancelText: 'Hủy bỏ',
+    onOk() {
+      loadingStore.show()
+      requestAPI
+        .post(API_ROUTES_ADMIN.FETCH_DATA_ADMIN, newUser)
+        .then((response) => {
+          message.success(response.data.message || 'Thêm tài khoản admin thành công')
+          modalAdd.value = false
+          fetchUsers()
+          clearNewUser()
+        })
+        .catch((error) => {
+          message.error(error.response?.data?.message || 'Lỗi khi thêm tài khoản admin')
+        })
+        .finally(() => {
+          loadingStore.hide()
+        })
+    },
+  })
 }
 
 const handleEditUser = (record) => {
@@ -175,7 +182,16 @@ const handleUpdateUser = () => {
       },
     })
   } else {
-    performUpdate()
+    Modal.confirm({
+      title: `Xác nhận cập nhật`,
+      type: 'info',
+      content: `Bạn có chắc muốn lưu lại thay đổi?`,
+      okText: 'Tiếp tục',
+      cancelText: 'Hủy bỏ',
+      onOk() {
+        performUpdate()
+      },
+    })
   }
 }
 
@@ -197,37 +213,37 @@ const performUpdate = () => {
     })
 }
 
-const openChangePowerModal = async (record) => {
-  currentAdminId = record.userAdminId
-  await fetchStaffList()
-  selectedStaffId.value = null
-  modalChangePower.value = true
-}
+// const openChangePowerModal = async (record) => {
+//   currentAdminId = record.userAdminId
+//   await fetchStaffList()
+//   selectedStaffId.value = null
+//   modalChangePower.value = true
+// }
 
-const handleChangePowerShift = () => {
-  const selectedStaff = staffList.value.find((staff) => staff.id === selectedStaffId.value)
-  const staffName = selectedStaff ? selectedStaff.name : 'nhân viên này'
-  Modal.confirm({
-    title: 'Xác nhận chuyển quyền',
-    content: `Bạn có chắc chắn muốn chuyển quyền ban đào tạo cho ${staffName}?
-    , nếu đông ý bạn sẽ đăng xuất ngay bây giờ`,
-    onOk() {
-      modalChangePowerLoading.value = true
-      const payload = { userAdminId: currentAdminId, userStaffId: selectedStaffId.value }
-      requestAPI
-        .post(API_ROUTES_ADMIN.FETCH_DATA_ADMIN + '/change-power', payload)
-        .then(() => {
-          message.success('Chuyển quyền thành công')
-          modalChangePower.value = false
-          fetchUsers()
-        })
-        .catch((err) => message.error(err?.response?.data?.message || 'Lỗi khi chuyển quyền'))
-        .finally(() => {
-          modalChangePowerLoading.value = false
-        })
-    },
-  })
-}
+// const handleChangePowerShift = () => {
+//   const selectedStaff = staffList.value.find((staff) => staff.id === selectedStaffId.value)
+//   const staffName = selectedStaff ? selectedStaff.name : 'nhân viên này'
+//   Modal.confirm({
+//     title: 'Xác nhận chuyển quyền',
+//     content: `Bạn có chắc chắn muốn chuyển quyền Admin cho ${staffName}?
+//     , nếu đông ý bạn sẽ đăng xuất ngay bây giờ`,
+//     onOk() {
+//       modalChangePowerLoading.value = true
+//       const payload = { userAdminId: currentAdminId, userStaffId: selectedStaffId.value }
+//       requestAPI
+//         .post(API_ROUTES_ADMIN.FETCH_DATA_ADMIN + '/change-power', payload)
+//         .then(() => {
+//           message.success('Chuyển quyền thành công')
+//           modalChangePower.value = false
+//           fetchUsers()
+//         })
+//         .catch((err) => message.error(err?.response?.data?.message || 'Lỗi khi chuyển quyền'))
+//         .finally(() => {
+//           modalChangePowerLoading.value = false
+//         })
+//     },
+//   })
+// }
 
 const handleChangeStatus = (record) => {
   if (record.isMySelf) {
@@ -253,7 +269,7 @@ const handleChangeStatus = (record) => {
 const handleDelete = (record) => {
   Modal.confirm({
     title: 'Xác nhận xóa',
-    content: `Bạn có chắc chắn muốn xóa ban đào tạo ${record.userAdminName}?`,
+    content: `Bạn có chắc chắn muốn xóa Admin ${record.userAdminName}?`,
     onOk() {
       handleDeleteUser(record.userAdminId)
     },
@@ -265,11 +281,11 @@ const handleDeleteUser = (id) => {
   requestAPI
     .delete(`${API_ROUTES_ADMIN.FETCH_DATA_ADMIN}/${id}`)
     .then(() => {
-      message.success('Xóa ban đào tạo thành công')
+      message.success('Xóa Admin thành công')
       fetchUsers()
     })
     .catch((err) => {
-      message.error(err?.response?.data?.message || 'Lỗi khi xóa ban đào tạo')
+      message.error(err?.response?.data?.message || 'Lỗi khi xóa Admin')
     })
     .finally(() => {
       loadingStore.hide()
@@ -285,6 +301,14 @@ const handleClearFilter = () => {
   fetchUsers()
 }
 
+const handleShowModalAdd = () => {
+  newUser.email = null
+  newUser.staffCode = null
+  newUser.staffName = null
+
+  modalAdd.value = true
+}
+
 onMounted(() => {
   breadcrumbStore.setRoutes(breadcrumb.value)
   fetchUsers()
@@ -293,123 +317,154 @@ onMounted(() => {
 
 <template>
   <div class="container-fluid">
+    <!-- Table -->
     <div class="row g-3">
       <div class="col-12">
-        <a-card :bordered="false" class="cart mb-3">
-          <template #title> <FilterFilled /> Bộ lọc tìm kiếm </template>
-          <div class="row g-3 filter-container">
-            <div class="col-md-6 col-sm-6">
-              <label class="label-title">Từ khoá:</label>
-              <a-input
-                v-model:value="filter.searchQuery"
-                placeholder="Nhập mã, tên hoặc email"
-                allowClear
-                @change="fetchUsers"
-              />
-            </div>
-            <div class="col-md-6 col-sm-6">
-              <label class="label-title">Trạng thái:</label>
-              <a-select
-                v-model:value="filter.status"
-                placeholder="Chọn trạng thái"
-                allowClear
-                style="width: 100%"
-                @change="fetchUsers"
-              >
-                <a-select-option :value="''">Tất cả trạng thái</a-select-option>
-                <a-select-option value="1">Hoạt động</a-select-option>
-                <a-select-option value="0">Không hoạt động</a-select-option>
-              </a-select>
-            </div>
-          </div>
-          <div class="row">
-            <div class="col-12">
-              <div class="d-flex justify-content-center flex-wrap gap-2 mt-3">
-                <a-button class="btn-light" @click="fetchUsers"> <FilterFilled /> Lọc </a-button>
-                <a-button class="btn-gray" @click="handleClearFilter"> Huỷ lọc </a-button>
+        <a-card :bordered="false" class="cart no-body-padding">
+          <a-collapse ghost>
+            <a-collapse-panel>
+              <template #header><FilterFilled /> Bộ lọc</template>
+              <div class="row g-3 filter-container">
+                <div class="col-md-8 col-sm-6">
+                  <div class="label-title">Từ khoá:</div>
+                  <a-input
+                    v-model:value="filter.searchQuery"
+                    placeholder="Nhập mã, tên hoặc email"
+                    allowClear
+                    @change="fetchUsers"
+                  >
+                    <template #prefix>
+                      <SearchOutlined />
+                    </template>
+                  </a-input>
+                </div>
+                <div class="col-md-4 col-sm-6">
+                  <div class="label-title">Trạng thái:</div>
+                  <a-select
+                    v-model:value="filter.status"
+                    placeholder="-- Tất cả trạng thái --"
+                    class="w-100"
+                    @change="fetchUsers"
+                  >
+                    <a-select-option :value="''">-- Tất cả trạng thái --</a-select-option>
+                    <a-select-option value="1">Hoạt động</a-select-option>
+                    <a-select-option value="0">Không hoạt động</a-select-option>
+                  </a-select>
+                </div>
+
+                <div class="col-12">
+                  <div class="d-flex justify-content-center flex-wrap gap-2">
+                    <a-button class="btn-light" @click="fetchUsers">
+                      <FilterFilled /> Lọc
+                    </a-button>
+                    <a-button class="btn-gray" @click="handleClearFilter"> Huỷ lọc </a-button>
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
+            </a-collapse-panel>
+          </a-collapse>
         </a-card>
       </div>
-    </div>
 
-    <!-- Table -->
-    <a-card>
-      <template #title><UnorderedListOutlined /> Danh sách Ban đào tạo</template>
-      <div class="d-flex justify-content-end mb-3 flex-wrap gap-3">
-        <a-tooltip title="Thêm mới ban đào tạo">
-          <a-button type="primary" @click="modalAdd = true"><PlusOutlined /> Thêm mới</a-button>
-        </a-tooltip>
-      </div>
-      <a-table
-        class="nowrap"
-        :dataSource="users"
-        :columns="columns"
-        rowKey="userAdminId"
-        :loading="isLoading"
-        :pagination="pagination"
-        @change="handleTableChange"
-        :scroll="{ x: 'auto' }"
-      >
-        <template #bodyCell="{ column, record }">
-          <template v-if="column.dataIndex === 'userAdminStatus'">
-            <a-switch
-              :checked="record.userAdminStatus === 1"
-              class="me-2"
-              @change="handleChangeStatus(record)"
-            />
-            <a-tag :color="record.userAdminStatus === 1 ? 'green' : 'red'">{{
-              record.userAdminStatus === 1 ? 'Đang hoạt động' : 'Ngưng hoạt động'
-            }}</a-tag>
-          </template>
+      <div class="col-12">
+        <a-card :bordered="false" class="cart">
+          <template #title><UnorderedListOutlined /> Danh sách Admin</template>
 
-          <template v-else-if="column.key === 'actions'">
-            <a-tooltip title="Sửa ban đào tạo">
-              <a-button type="text" class="btn-outline-info me-2" @click="handleEditUser(record)"
-                ><EditFilled
-              /></a-button>
-            </a-tooltip>
-            <!-- Chuyển quyền: chỉ hiện khi là chính mình -->
-            <a-tooltip title="Chuyển quyền" v-if="record.isMySelf">
+          <div class="d-flex justify-content-end mb-2 flex-wrap gap-3">
+              <a-button type="primary" @click="handleShowModalAdd"
+                ><PlusOutlined /> Thêm admin
+                </a-button
+              >
+          </div>
+
+          <a-table
+            class="nowrap"
+            :dataSource="users"
+            :columns="columns"
+            rowKey="userAdminId"
+            :loading="isLoading"
+            :pagination="pagination"
+            @change="handleTableChange"
+            :scroll="{ x: 'auto' }"
+          >
+            <template #bodyCell="{ column, record }">
+              <template v-if="column.dataIndex === 'userAdminStatus'">
+                <a-switch
+                  :checked="record.userAdminStatus === 1"
+                  :disabled="record.isMySelf"
+                  class="me-2"
+                  @change="handleChangeStatus(record)"
+                />
+                <a-tag :color="record.userAdminStatus === 1 ? 'green' : 'red'">{{
+                  record.userAdminStatus === 1 ? 'Đang hoạt động' : 'Ngưng hoạt động'
+                }}</a-tag>
+              </template>
+
+              <template v-else-if="column.key === 'actions'">
+                <a-tooltip title="Chỉnh sửa thông tin">
+                  <a-button
+                    type="text"
+                    class="btn-outline-info me-2"
+                    @click="handleEditUser(record)"
+                    ><EditFilled
+                  /></a-button>
+                </a-tooltip>
+                <!-- Chuyển quyền: chỉ hiện khi là chính mình -->
+                <!-- <a-tooltip title="Chuyển quyền" v-if="record.isMySelf">
               <a-button
                 type="text"
                 class="btn-outline-warning"
                 @click="openChangePowerModal(record)"
                 ><FilterFilled
               /></a-button>
-            </a-tooltip>
-            <template v-if="!record.isMySelf">
-              <a-tooltip title="Xóa ban đào tạo">
-                <a-button type="text" class="btn-outline-danger" @click="handleDelete(record)">
-                  <DeleteFilled />
-                </a-button>
-              </a-tooltip>
+            </a-tooltip> -->
+                <template v-if="!record.isMySelf">
+                  <a-tooltip title="Xóa Admin">
+                    <a-button type="text" class="btn-outline-danger" @click="handleDelete(record)">
+                      <DeleteFilled />
+                    </a-button>
+                  </a-tooltip>
+                </template>
+              </template>
+              <template v-else>
+                {{ record[column.dataIndex] }}
+              </template>
             </template>
-          </template>
-          <template v-else>
-            {{ record[column.dataIndex] }}
-          </template>
-        </template>
-      </a-table>
-    </a-card>
+          </a-table>
+        </a-card>
+      </div>
+    </div>
 
     <!-- Modal Thêm -->
     <a-modal
       v-model:open="modalAdd"
-      title="Thêm Ban đào tạo"
+      title="Thêm Admin"
       @ok="handleAddUser"
       :okButtonProps="{ loading: modalAddLoading }"
+      @cancel="clearNewUser"
+      @close="clearNewUser"
     >
       <a-form layout="vertical">
-        <a-form-item label="Mã ban đào tạo" required>
-          <a-input v-model:value="newUser.staffCode" placeholder="Nhập mã ban đào tạo" />
+        <a-form-item label="Mã Admin" required>
+          <a-input
+            v-model:value="newUser.staffCode"
+            placeholder="Nhập mã Admin"
+            @keyup.enter="handleAddUser"
+          />
         </a-form-item>
-        <a-form-item label="Tên ban đào tạo" required>
-          <a-input v-model:value="newUser.staffName" placeholder="Nhập tên ban đào tạo" />
+        <a-form-item label="Tên Admin" required>
+          <a-input
+            v-model:value="newUser.staffName"
+            placeholder="Nhập tên Admin"
+            @keyup.enter="handleAddUser"
+          />
         </a-form-item>
         <a-form-item label="Email" required>
-          <a-input v-model:value="newUser.email" placeholder="Nhập email" />
+          <a-input
+            v-model:value="newUser.email"
+            placeholder="Nhập email"
+            @keyup.enter="handleAddUser"
+          />
         </a-form-item>
       </a-form>
     </a-modal>
@@ -417,27 +472,39 @@ onMounted(() => {
     <!-- Modal Sửa -->
     <a-modal
       v-model:open="modalEdit"
-      title="Cập nhật Ban đào tạo"
+      title="Cập nhật Admin"
       @ok="handleUpdateUser"
       :okButtonProps="{ loading: modalEditLoading }"
     >
       <a-form layout="vertical">
-        <a-form-item label="Mã ban đào tạo" required>
-          <a-input v-model:value="editUser.staffCode" placeholder="Nhập mã ban đào tạo" />
+        <a-form-item label="Mã Admin" required>
+          <a-input
+            v-model:value="editUser.staffCode"
+            placeholder="Nhập mã Admin"
+            @keyup.enter="handleUpdateUser"
+          />
         </a-form-item>
-        <a-form-item label="Tên ban đào tạo" required>
-          <a-input v-model:value="editUser.staffName" placeholder="Nhập tên ban đào tạo" />
+        <a-form-item label="Tên Admin" required>
+          <a-input
+            v-model:value="editUser.staffName"
+            placeholder="Nhập tên Admin"
+            @keyup.enter="handleUpdateUser"
+          />
         </a-form-item>
         <a-form-item label="Email" required>
-          <a-input v-model:value="editUser.email" placeholder="Nhập email" />
+          <a-input
+            v-model:value="editUser.email"
+            placeholder="Nhập email"
+            @keyup.enter="handleUpdateUser"
+          />
         </a-form-item>
       </a-form>
     </a-modal>
 
     <!-- Modal chuyển quyền -->
-    <a-modal
+    <!-- <a-modal
       v-model:open="modalChangePower"
-      title="Chuyển quyền Ban đào tạo"
+      title="Chuyển quyền Admin"
       @ok="handleChangePowerShift"
       :okButtonProps="{ loading: modalChangePowerLoading, disabled: !selectedStaffId }"
       @cancel="
@@ -455,6 +522,6 @@ onMounted(() => {
           </a-select>
         </a-form-item>
       </a-form>
-    </a-modal>
+    </a-modal> -->
   </div>
 </template>

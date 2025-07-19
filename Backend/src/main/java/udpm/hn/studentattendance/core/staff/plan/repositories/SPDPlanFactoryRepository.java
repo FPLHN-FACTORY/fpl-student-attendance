@@ -19,7 +19,7 @@ public interface SPDPlanFactoryRepository extends PlanFactoryRepository {
 
     @Query(value = """
                 SELECT
-                    ROW_NUMBER() OVER (ORDER BY MAX(pd.created_at) DESC) as orderNumber,
+                    ROW_NUMBER() OVER (ORDER BY pf.status DESC, MAX(pd.created_at) DESC) as orderNumber,
                     pf.id,
                     pf.id_plan AS planId,
                     pl.name AS planName,
@@ -28,6 +28,7 @@ public interface SPDPlanFactoryRepository extends PlanFactoryRepository {
                     MIN(pd.start_date) AS fromDate,
                     MAX(pd.start_date) AS toDate,
                     COUNT(DISTINCT pd.id) AS totalShift,
+                    COUNT(DISTINCT CASE WHEN pd.end_date <= UNIX_TIMESTAMP(NOW()) * 1000 THEN pd.id END) AS totalCurrentShift,
                     LEAST(pf.status, p.status, f.status, pl.status) AS status,
                     (SELECT COUNT(usf.id) FROM user_student_factory usf WHERE f.id = usf.id_factory AND usf.status = 1) AS totalStudent,
                     MAX(pd.created_at) AS lastUpdated
@@ -45,8 +46,8 @@ public interface SPDPlanFactoryRepository extends PlanFactoryRepository {
                     pf.id_plan = :#{#request.idPlan} AND
                     sf.id_facility = :#{#request.idFacility} AND
                     (NULLIF(TRIM(:#{#request.keyword}), '') IS NULL OR
-                        BINARY f.name LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%') OR
-                        BINARY us.name LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%') OR
+                        f.name LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%') OR
+                        us.name LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%') OR
                         us.code LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%')) AND
                     (:#{#request.fromDate} IS NULL OR pd.start_date >= :#{#request.fromDate}) AND
                     (:#{#request.toDate} IS NULL OR pd.start_date <= :#{#request.toDate}) AND
@@ -71,8 +72,8 @@ public interface SPDPlanFactoryRepository extends PlanFactoryRepository {
                     pf.id_plan = :#{#request.idPlan} AND
                     sf.id_facility = :#{#request.idFacility} AND
                     (NULLIF(TRIM(:#{#request.keyword}), '') IS NULL OR
-                        BINARY f.name LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%') OR
-                        BINARY p.name LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%')) AND
+                        f.name LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%') OR
+                        p.name LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%')) AND
                     (:#{#request.fromDate} IS NULL OR pd.start_date >= :#{#request.fromDate}) AND
                     (:#{#request.toDate} IS NULL OR pd.start_date <= :#{#request.toDate}) AND
                     (:#{#request.status} IS NULL OR pf.status = :#{#request.status})
@@ -90,6 +91,7 @@ public interface SPDPlanFactoryRepository extends PlanFactoryRepository {
                     pl.from_date AS fromDate,
                     pl.to_date AS toDate,
                     COUNT(DISTINCT pd.id) AS totalShift,
+                    COUNT(DISTINCT CASE WHEN pd.end_date <= UNIX_TIMESTAMP(NOW()) * 1000 THEN pd.id END) AS totalCurrentShift,
                     LEAST(pf.status, p.status, f.status, pl.status) AS status
                 FROM plan_factory pf
                 JOIN plan pl ON pf.id_plan = pl.id

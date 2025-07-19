@@ -12,6 +12,7 @@ import {
   UnorderedListOutlined,
   FilterFilled,
   AlignLeftOutlined,
+  SearchOutlined,
 } from '@ant-design/icons-vue'
 import { ROUTE_NAMES } from '@/router/staffRoute'
 import { DEFAULT_PAGINATION } from '@/constants'
@@ -119,6 +120,11 @@ const clearData = () => {
   newFactory.factoryDescription = ''
   newFactory.idProject = null
   newFactory.idUserStaff = null
+
+  Object.keys(detailFactory).forEach((key) => delete detailFactory[key])
+
+  modalAdd.value = false
+  modalUpdate.value = false
 }
 
 const fetchProjects = () => {
@@ -179,24 +185,32 @@ const handleTableChange = (pageInfo) => {
 
 const submitAddFactory = () => {
   if (!newFactory.factoryName || !newFactory.idUserStaff || !newFactory.idProject) {
-    message.error('Vui lòng điền đầy đủ thông tin bắt buộc')
+    message.error('Vui lòng điền đầy đủ thông tin bắt buộc (Tên nhóm xưởng, Phụ trách xưởng, Dự án)')
     return
   }
-  loadingStore.show()
-  requestAPI
-    .post(API_ROUTES_STAFF.FETCH_DATA_FACTORY, newFactory)
-    .then((response) => {
-      message.success(response.data.message || 'Thêm nhóm xưởng thành công')
-      modalAdd.value = false
-      fetchFactories()
-      clearData()
-    })
-    .catch((error) => {
-      message.error(error.response?.data?.message || 'Lỗi khi tạo nhóm xưởng')
-    })
-    .finally(() => {
-      loadingStore.hide()
-    })
+  Modal.confirm({
+    title: 'Xác nhận thêm nhóm xưởng mới',
+    content: 'Bạn có chắc chắn muốn thêm nhóm xưởng mới này vào hệ thống không?',
+    okText: 'Thêm nhóm xưởng',
+    cancelText: 'Hủy',
+    onOk() {
+      loadingStore.show()
+      requestAPI
+        .post(API_ROUTES_STAFF.FETCH_DATA_FACTORY, newFactory)
+        .then((response) => {
+          message.success(response.data.message || 'Thêm nhóm xưởng thành công')
+          modalAdd.value = false
+          fetchFactories()
+          clearData()
+        })
+        .catch((error) => {
+          message.error(error.response?.data?.message || 'Lỗi khi tạo nhóm xưởng')
+        })
+        .finally(() => {
+          loadingStore.hide()
+        })
+    },
+  })
 }
 
 const handleUpdateFactory = (record) => {
@@ -228,6 +242,35 @@ const submitUpdateFactory = () => {
     message.error('Vui lòng điền đầy đủ thông tin bắt buộc')
     return
   }
+
+  // Check if project is changed
+  const originalFactory = factories.value.find((f) => f.id === detailFactory.id)
+  if ( originalFactory.projectId !== detailFactory.idProject) {
+    Modal.confirm({
+      title: 'Xác nhận thay đổi dự án',
+      content:
+        'Bạn đang cập nhật dự án mới. Tất cả lịch kế hoạch nhóm xưởng của dự án cũ sẽ chuyển sang kế hoạch dự án mới. Bạn có chắc chắn muốn tiếp tục?',
+      okText: 'Tiếp tục',
+      cancelText: 'Hủy bỏ',
+      onOk() {
+        performUpdate()
+      },
+    })
+  } else {
+    Modal.confirm({
+      title: `Xác nhận cập nhật`,
+      type: 'info',
+      content: `Bạn có chắc muốn lưu lại thay đổi?`,
+      okText: 'Tiếp tục',
+      cancelText: 'Hủy bỏ',
+      onOk() {
+        performUpdate()
+      },
+    })
+  }
+}
+
+const performUpdate = () => {
   loadingStore.show()
   requestAPI
     .put(API_ROUTES_STAFF.FETCH_DATA_FACTORY, detailFactory)
@@ -335,15 +378,38 @@ const configImportExcel = {
   },
   showDownloadTemplate: true,
   showHistoryLog: true,
+  showExport: false,
+  btnImport: 'Import nhóm xưởng',
+  btnExport: 'Export nhóm xưởng',
 }
 
 const handleClearFilter = () => {
-  // Clear all filter values
-  Object.keys(filter).forEach((key) => {
-    filter[key] = ''
+  Object.assign(filter, {
+    factoryName: '',
+    status: '',
+    idProject: null,
+    idStaff: null,
+    idSemester: null,
   })
   pagination.current = 1
   fetchFactories()
+}
+
+const handleShowDescription = (text) => {
+  Modal.info({
+    title: 'Mô tả nhóm xưởng',
+    type: 'info',
+    content: text || 'Không có mô tả',
+    okText: 'Đóng',
+    okButtonProps: {
+      class: 'btn-gray',
+    },
+  })
+}
+
+const handleShowModalAdd = () => {
+  clearData()
+  modalAdd.value = true
 }
 
 onMounted(() => {
@@ -357,13 +423,24 @@ onMounted(() => {
 
 <template>
   <!-- Modal Thêm nhóm xưởng -->
-  <a-modal v-model:open="modalAdd" title="Thêm nhóm xưởng" @ok="submitAddFactory">
+  <a-modal
+    v-model:open="modalAdd"
+    title="Thêm nhóm xưởng"
+    @ok="submitAddFactory"
+    :okButtonProps="{ loading: isLoading }"
+    @cancel="clearData"
+    @close="clearData"
+  >
     <a-form :model="newFactory" layout="vertical">
       <a-form-item label="Tên nhóm xưởng" required>
-        <a-input v-model:value="newFactory.factoryName" placeholder="-- Tên nhóm xưởng --" />
-      </a-form-item>
-      <a-form-item label="Mô tả nhóm xưởng" required>
         <a-input
+          v-model:value="newFactory.factoryName"
+          placeholder="-- Tên nhóm xưởng --"
+          @keyup.enter="submitAddFactory"
+        />
+      </a-form-item>
+      <a-form-item label="Mô tả nhóm xưởng">
+        <a-textarea
           v-model:value="newFactory.factoryDescription"
           placeholder="-- Mô tả nhóm xưởng --"
         />
@@ -420,13 +497,20 @@ onMounted(() => {
   </a-modal>
 
   <!-- Modal Cập nhật nhóm xưởng -->
-  <a-modal v-model:open="modalUpdate" title="Cập nhật nhóm xưởng" @ok="submitUpdateFactory">
+  <a-modal
+    v-model:open="modalUpdate"
+    title="Cập nhật nhóm xưởng"
+    @ok="submitUpdateFactory"
+    :okButtonProps="{ loading: isLoading }"
+    @cancel="clearData"
+    @close="clearData"
+  >
     <a-form :model="detailFactory" layout="vertical">
       <a-form-item label="Tên nhóm xưởng" required>
-        <a-input v-model:value="detailFactory.factoryName" />
+        <a-input v-model:value="detailFactory.factoryName" @keyup.enter="submitUpdateFactory" />
       </a-form-item>
-      <a-form-item label="Mô tả" required>
-        <a-input v-model:value="detailFactory.factoryDescription" />
+      <a-form-item label="Mô tả nhóm xưởng">
+        <a-textarea v-model:value="detailFactory.factoryDescription" />
       </a-form-item>
       <a-form-item label="Giảng viên giảng dạy" required>
         <a-select
@@ -481,88 +565,96 @@ onMounted(() => {
 
   <div class="container-fluid">
     <div class="row g-3">
-      <!-- Bộ lọc tìm kiếm -->
       <div class="col-12">
-        <a-card :bordered="false" class="cart mb-3">
-          <template #title> <FilterFilled /> Bộ lọc </template>
-          <div class="row g-2">
-            <div class="col-md-6 col-sm-12">
-              <div class="label-title">Tìm kiếm tên xưởng:</div>
-              <a-input
-                v-model:value="filter.factoryName"
-                placeholder="Tên xưởng"
-                allowClear
-                @change="onFilterChange"
-                class="w-100"
-              />
-            </div>
-            <div class="col-md-3 col-sm-9">
-              <div class="label-title">Giảng viên:</div>
-              <a-select
-                v-model:value="filter.idStaff"
-                placeholder="Chọn giảng viên"
-                allowClear
-                show-search
-                @change="onFilterChange"
-                class="w-100"
-                :filter-option="
-                  (input, option) =>
-                    (option.label || '').toLowerCase().includes(input.toLowerCase())
-                "
-              >
-                <a-select-option
-                  v-for="staff in staffs"
-                  :key="staff.id"
-                  :value="staff.id"
-                  :label="staff.code + ' - ' + staff.name"
-                >
-                  {{ staff.code + ' - ' + staff.name }}
-                </a-select-option>
-              </a-select>
-            </div>
-            <div class="col-md-3 col-sm-9">
-              <div class="label-title">Kỳ học:</div>
-              <a-select
-                v-model:value="filter.idSemester"
-                placeholder="Chọn kỳ học"
-                allowClear
-                show-search
-                @change="onFilterChange"
-                class="w-100"
-                :filter-option="
-                  (input, option) =>
-                    (option.label || '').toLowerCase().includes(input.toLowerCase())
-                "
-              >
-                <a-select-option
-                  v-for="semester in semesters"
-                  :key="semester.id"
-                  :value="semester.id"
-                  :label="semester.code"
-                >
-                  {{ semester.code }}
-                </a-select-option>
-              </a-select>
-            </div>
-          </div>
-          <div class="row">
-            <div class="col-12">
-              <div class="d-flex justify-content-center flex-wrap gap-2 mt-3">
-                <a-button class="btn-light" @click="fetchFactories">
-                  <FilterFilled /> Lọc
-                </a-button>
-                <a-button class="btn-gray" @click="handleClearFilter"> Huỷ lọc </a-button>
+        <a-card :bordered="false" class="cart no-body-padding">
+          <a-collapse ghost>
+            <a-collapse-panel>
+              <template #header><FilterFilled /> Bộ lọc</template>
+              <div class="row g-3">
+                <div class="col-md-6 col-sm-12">
+                  <div class="label-title">Từ khoá:</div>
+                  <a-input
+                    v-model:value="filter.factoryName"
+                    placeholder="Tìm theo tên nhóm xưởng"
+                    allowClear
+                    @change="onFilterChange"
+                    class="w-100"
+                  >
+                    <template #prefix>
+                      <SearchOutlined />
+                    </template>
+                  </a-input>
+                </div>
+                <div class="col-md-3 col-sm-6">
+                  <div class="label-title">Giảng viên:</div>
+                  <a-select
+                    v-model:value="filter.idStaff"
+                    placeholder="Chọn giảng viên"
+                    allowClear
+                    show-search
+                    @change="onFilterChange"
+                    class="w-100"
+                    :filter-option="
+                      (input, option) =>
+                        (option.label || '').toLowerCase().includes(input.toLowerCase())
+                    "
+                  >
+                    <a-select-option :value="null">-- Tất cả giảng viên --</a-select-option>
+                    <a-select-option
+                      v-for="staff in staffs"
+                      :key="staff.id"
+                      :value="staff.id"
+                      :label="staff.code + ' - ' + staff.name"
+                    >
+                      {{ staff.code + ' - ' + staff.name }}
+                    </a-select-option>
+                  </a-select>
+                </div>
+                <div class="col-md-3 col-sm-6">
+                  <div class="label-title">Kỳ học:</div>
+                  <a-select
+                    v-model:value="filter.idSemester"
+                    placeholder="Chọn kỳ học"
+                    allowClear
+                    show-search
+                    @change="onFilterChange"
+                    class="w-100"
+                    :filter-option="
+                      (input, option) =>
+                        (option.label || '').toLowerCase().includes(input.toLowerCase())
+                    "
+                  >
+                    <a-select-option :value="null">-- Tất cả kỳ học --</a-select-option>
+                    <a-select-option
+                      v-for="semester in semesters"
+                      :key="semester.id"
+                      :value="semester.id"
+                      :label="semester.code"
+                    >
+                      {{ semester.code }}
+                    </a-select-option>
+                  </a-select>
+                </div>
+
+                <div class="col-12">
+                  <div class="d-flex justify-content-center flex-wrap gap-2">
+                    <a-button class="btn-light" @click="fetchFactories">
+                      <FilterFilled /> Lọc
+                    </a-button>
+                    <a-button class="btn-gray" @click="handleClearFilter"> Huỷ lọc </a-button>
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
+            </a-collapse-panel>
+          </a-collapse>
         </a-card>
       </div>
 
-      <!-- Danh sách nhóm xưởng -->
       <div class="col-12">
         <a-card :bordered="false" class="cart">
           <template #title> <UnorderedListOutlined /> Danh sách nhóm xưởng </template>
-          <div class="d-flex justify-content-end mb-3 flex-wrap gap-3">
+
+          <div class="d-flex justify-content-end flex-wrap gap-3 mb-2">
             <ExcelUploadButton v-bind="configImportExcel" />
             <a-tooltip title="Đổi trạng thái tất cả nhóm xưởng kỳ trước">
               <a-button
@@ -574,9 +666,12 @@ onMounted(() => {
               </a-button>
             </a-tooltip>
             <a-tooltip title="Thêm nhóm xưởng">
-              <a-button type="primary" @click="modalAdd = true"> <PlusOutlined /> Thêm </a-button>
+              <a-button type="primary" @click="handleShowModalAdd">
+                <PlusOutlined /> Thêm nhóm xưởng
+              </a-button>
             </a-tooltip>
           </div>
+
           <a-table
             class="nowrap"
             rowKey="id"
@@ -584,13 +679,13 @@ onMounted(() => {
             :columns="columns"
             :pagination="pagination"
             @change="handleTableChange"
-            :loading="isLoading"
+            :loading="loadingStore.isLoading"
             :scroll="{ x: 'auto' }"
           >
             <template #bodyCell="{ column, record, index }">
               <template v-if="column.dataIndex">
                 <template v-if="column.dataIndex === 'rowNumber'">
-                  {{ index + 1 }}
+                  {{ (pagination.current - 1) * pagination.pageSize + index + 1 }}
                 </template>
                 <template v-else-if="column.dataIndex === 'name'">
                   <a @click="handleDetailFactory(record)">{{ record.name }}</a>
@@ -617,8 +712,14 @@ onMounted(() => {
                     </a-tag>
                   </span>
                 </template>
-                <template v-else>
-                  {{ record[column.dataIndex] }}
+                <template v-if="column.dataIndex === 'factoryDescription'">
+                  <a-typography-link 
+                    v-if="record.factoryDescription" 
+                    @click="handleShowDescription(record.factoryDescription)"
+                  >
+                    Chi tiết
+                  </a-typography-link>
+                  <span v-else>Không có mô tả</span>
                 </template>
               </template>
               <template v-else-if="column.key === 'actions'">

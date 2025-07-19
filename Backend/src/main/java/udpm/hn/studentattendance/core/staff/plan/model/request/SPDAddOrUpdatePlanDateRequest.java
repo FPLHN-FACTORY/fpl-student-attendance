@@ -31,12 +31,16 @@ public class SPDAddOrUpdatePlanDateRequest {
 
     private String link;
 
-    @Size(max = EntityProperties.LENGTH_NAME, message = "Phòng học không được vượt quá " + EntityProperties.LENGTH_NAME + " ký tự")
+    @Size(min = 2, max = EntityProperties.LENGTH_NAME, message = "Phòng học không được vượt quá " + EntityProperties.LENGTH_NAME + " ký tự")
     private String room;
 
     private Integer requiredIp = StatusType.ENABLE.getKey();
 
     private Integer requiredLocation = StatusType.ENABLE.getKey();
+
+    private Integer requiredCheckin = StatusType.ENABLE.getKey();
+
+    private Integer requiredCheckout = StatusType.ENABLE.getKey();
 
     private List<Integer> shift;
 
@@ -46,5 +50,7 @@ public class SPDAddOrUpdatePlanDateRequest {
     private Integer lateArrival;
 
     private String description;
+
+    private List<Long> customTime;
 
 }

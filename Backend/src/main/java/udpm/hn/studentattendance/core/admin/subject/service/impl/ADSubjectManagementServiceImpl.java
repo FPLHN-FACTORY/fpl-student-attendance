@@ -1,43 +1,77 @@
 package udpm.hn.studentattendance.core.admin.subject.service.impl;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import udpm.hn.studentattendance.core.admin.subject.model.request.ADSubjectCreateRequest;
 import udpm.hn.studentattendance.core.admin.subject.model.request.ADSubjectSearchRequest;
 import udpm.hn.studentattendance.core.admin.subject.model.request.ADSubjectUpdateRequest;
-import udpm.hn.studentattendance.core.admin.subject.repository.ADSubjectRepository;
+import udpm.hn.studentattendance.core.admin.subject.repository.ADSubjectExtendRepository;
 import udpm.hn.studentattendance.core.admin.subject.service.ADSubjectManagementService;
 import udpm.hn.studentattendance.entities.Subject;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
+import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
+import udpm.hn.studentattendance.helpers.RequestTrimHelper;
 import udpm.hn.studentattendance.helpers.RouterHelper;
+import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
 import udpm.hn.studentattendance.helpers.ValidateHelper;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
-import udpm.hn.studentattendance.infrastructure.common.ResponseObject;
 import udpm.hn.studentattendance.infrastructure.common.repositories.CommonUserStudentRepository;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
+import udpm.hn.studentattendance.infrastructure.constants.RedisPrefixConstant;
+import udpm.hn.studentattendance.infrastructure.redis.service.RedisService;
+import com.fasterxml.jackson.core.type.TypeReference;
+import udpm.hn.studentattendance.helpers.RedisCacheHelper;
 
 @Service
 @RequiredArgsConstructor
 public class ADSubjectManagementServiceImpl implements ADSubjectManagementService {
-    
-    private final ADSubjectRepository adminSubjectRepository;
+
+    private final ADSubjectExtendRepository adminSubjectRepository;
 
     private final CommonUserStudentRepository commonUserStudentRepository;
 
+    private final UserActivityLogHelper userActivityLogHelper;
+
+    private final RedisCacheHelper redisCacheHelper;
+
+    private final RedisInvalidationHelper redisInvalidationHelper;
+
+    @Value("${spring.cache.redis.time-to-live}")
+    private long redisTTL;
+
+    // Phương thức helper để lấy danh sách bộ môn từ cache hoặc DB
+    public PageableObject getSubjects(ADSubjectSearchRequest request) {
+        String key = RedisPrefixConstant.REDIS_PREFIX_SUBJECT + "list_" + request.toString();
+        return redisCacheHelper.getOrSet(
+                key,
+                () -> PageableObject
+                        .of(adminSubjectRepository.getAll(PaginationHelper.createPageable(request, "id"), request)),
+                new TypeReference<PageableObject<?>>() {
+                },
+                redisTTL);
+    }
+
+    public Subject getSubjectById(String id) {
+        return adminSubjectRepository.findById(id).orElse(null);
+    }
+
     @Override
     public ResponseEntity<?> getListSubject(ADSubjectSearchRequest request) {
-        Pageable pageable = PaginationHelper.createPageable(request, "id");
-        return RouterHelper.responseSuccess("Lây danh sách bộ môn thành công", PageableObject.of(adminSubjectRepository.getAll(pageable, request)));
+        PageableObject result = getSubjects(request);
+        return RouterHelper.responseSuccess("Lấy danh sách bộ môn thành công", result);
     }
 
     @Override
     public ResponseEntity<?> createSubject(ADSubjectCreateRequest request) {
+        // Trim all string fields in the request
+        RequestTrimHelper.trimStringFields(request);
+
         if (!ValidateHelper.isValidCode(request.getCode())) {
-            return RouterHelper.responseError("Mã bộ môn không hợp lệ");
+            return RouterHelper.responseError(
+                    "Mã bộ môn không hợp lệ: không có khoảng trắng, không có ký tự đặc biệt ngoài dấu chấm . và dấu gạch dưới _.");
         }
 
         Subject s = new Subject();
@@ -51,12 +85,20 @@ public class ADSubjectManagementServiceImpl implements ADSubjectManagementServic
         if (adminSubjectRepository.isExistsNameSubject(s.getName(), null)) {
             return RouterHelper.responseError("Tên bộ môn đã tồn tại trên hệ thống");
         }
+        Subject saveSubject = adminSubjectRepository.save(s);
+        userActivityLogHelper
+                .saveLog("vừa thêm 1 bộ môn mới: " + saveSubject.getCode() + " - " + saveSubject.getName());
 
-        return RouterHelper.responseSuccess("Thêm mới bộ môn thành công", adminSubjectRepository.save(s));
+        // Invalidate all caches
+        redisInvalidationHelper.invalidateAllCaches();
+
+        return RouterHelper.responseSuccess("Thêm mới bộ môn thành công", saveSubject);
     }
 
     @Override
     public ResponseEntity<?> updateSubject(String id, ADSubjectUpdateRequest request) {
+        // Trim all string fields in the request
+        RequestTrimHelper.trimStringFields(request);
 
         Subject s = adminSubjectRepository.findById(id).orElse(null);
         if (s == null) {
@@ -64,7 +106,8 @@ public class ADSubjectManagementServiceImpl implements ADSubjectManagementServic
         }
 
         if (!ValidateHelper.isValidCode(request.getCode())) {
-            return RouterHelper.responseError("Mã bộ môn không hợp lệ");
+            return RouterHelper.responseError(
+                    "Mã bộ môn không hợp lệ:  không có khoảng trắng, không có ký tự đặc biệt ngoài dấu chấm . và dấu gạch dưới _.");
         }
 
         s.setName(request.getName().trim());
@@ -78,16 +121,24 @@ public class ADSubjectManagementServiceImpl implements ADSubjectManagementServic
             return RouterHelper.responseError("Tên bộ môn đã tồn tại trên hệ thống");
         }
 
-        return RouterHelper.responseSuccess("Cập nhật bộ môn thành công", adminSubjectRepository.save(s));
+        Subject saveSubject = adminSubjectRepository.save(s);
+        userActivityLogHelper
+                .saveLog("vừa cập nhật 1 bộ môn: " + saveSubject.getCode() + " - " + saveSubject.getName());
+
+        // Invalidate all caches
+        redisInvalidationHelper.invalidateAllCaches();
+
+        return RouterHelper.responseSuccess("Cập nhật bộ môn thành công", saveSubject);
     }
 
     @Override
     public ResponseEntity<?> detailSubject(String id) {
-        Subject s = adminSubjectRepository.findById(id).orElse(null);
-        if (s == null) {
+        Subject subject = getSubjectById(id);
+        if (subject == null) {
             return RouterHelper.responseError("Không tìm thấy bộ môn");
         }
-        return RouterHelper.responseSuccess("Lấy thông tin bộ môn thành công", s);
+
+        return RouterHelper.responseSuccess("Lấy thông tin bộ môn thành công", subject);
     }
 
     @Override
@@ -103,6 +154,12 @@ public class ADSubjectManagementServiceImpl implements ADSubjectManagementServic
         if (s.getStatus() == EntityStatus.ACTIVE) {
             commonUserStudentRepository.disableAllStudentDuplicateShiftByIdSubject(s.getId());
         }
+        userActivityLogHelper
+                .saveLog("vừa thay đổi trạng thái 1 bộ môn : " + newEntity.getCode() + " - " + newEntity.getName());
+
+        // Invalidate all caches
+        redisInvalidationHelper.invalidateAllCaches();
+
         return RouterHelper.responseSuccess("Đổi trạng thái bộ môn thành công", newEntity);
     }
 

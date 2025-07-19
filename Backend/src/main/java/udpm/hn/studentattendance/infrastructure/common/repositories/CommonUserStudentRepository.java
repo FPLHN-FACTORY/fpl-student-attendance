@@ -461,7 +461,7 @@ public interface CommonUserStudentRepository extends UserStudentRepository {
             JOIN plan_factory pf2 ON pf2.id_factory = usf2.id_factory
             JOIN plan_date pd2 ON pd2.id_plan_factory = pf2.id
             WHERE
-                s2.status = 1 AND 
+                s2.status = 1 AND
                 s.status = 1 AND 
                 lp.status = 1 AND
                 pd.status = 1 AND

@@ -17,4 +17,6 @@ public class SPDModifyPlanDateAttendanceRequest {
 
     private String idUserStudent;
 
+    private Integer status;
+
 }

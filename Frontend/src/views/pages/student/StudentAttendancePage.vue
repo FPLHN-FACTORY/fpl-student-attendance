@@ -1,8 +1,8 @@
 <script setup>
 import {
   ATTENDANCE_STATUS,
-  DEFAULT_EARLY_MINUTE_CHECKIN,
   DEFAULT_PAGINATION,
+  STATUS_REQUIRED_ATTENDANCE,
   TYPE_SHIFT,
 } from '@/constants'
 import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
@@ -12,6 +12,7 @@ import requestAPI from '@/services/requestApiService'
 import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
 import { debounce, formatDate, autoAddColumnWidth } from '@/utils/utils'
 import {
+  AimOutlined,
   CheckOutlined,
   ExclamationCircleOutlined,
   FilterFilled,
@@ -24,6 +25,9 @@ import useLoadingStore from '@/stores/useLoadingStore'
 import useFaceIDStore from '@/stores/useFaceIDStore'
 import { ROUTE_NAMES_API } from '@/router/authenticationRoute'
 import useApplicationStore from '@/stores/useApplicationStore'
+import { LMap, LMarker, LTileLayer } from '@vue-leaflet/vue-leaflet'
+
+import 'leaflet/dist/leaflet.css'
 
 const applicationStore = useApplicationStore()
 const faceIDStore = useFaceIDStore()
@@ -33,10 +37,17 @@ const isLoading = ref(false)
 
 const lstData = ref([])
 
+const isShowLocation = ref(false)
 const isShowCamera = ref(false)
+
+const DEFAULT_EARLY_MINUTE_CHECKIN = ref(0)
+
+const mapRef = ref(null)
+const mapCenter = ref([0, 0])
 
 const video = ref(null)
 const canvas = ref(null)
+const axis = ref(null)
 
 const formData = reactive({
   idPlanDate: null,
@@ -62,10 +73,16 @@ const columns = ref(
   autoAddColumnWidth([
     { title: '#', dataIndex: 'orderNumber', key: 'orderNumber' },
     { title: 'Thời gian', dataIndex: 'startDate', key: 'startDate' },
-    { title: 'Ca học', dataIndex: 'shift', key: 'shift' },
+    { title: 'Ca', dataIndex: 'shift', key: 'shift' },
     { title: 'Điểm danh muộn', dataIndex: 'lateArrival', key: 'lateArrival' },
     { title: 'Nhóm xưởng', dataIndex: 'factoryName', key: 'factoryName' },
     { title: 'Giảng viên', dataIndex: 'teacherName', key: 'teacherName' },
+    {
+      title: 'Checkin/checkout bù',
+      dataIndex: 'lateAttendance',
+      key: 'lateAttendance',
+      align: 'center',
+    },
     { title: 'Trạng thái', dataIndex: 'status', key: 'status' },
     { title: '', key: 'actions' },
   ]),
@@ -78,6 +95,17 @@ const dataFilter = reactive({
   status: null,
   type: null,
 })
+
+const fetchDataSettings = () => {
+  requestAPI
+    .get(`${ROUTE_NAMES_API.FETCH_DATA_SETTINGS}`)
+    .then(({ data: response }) => {
+      DEFAULT_EARLY_MINUTE_CHECKIN.value = response.data?.['ATTENDANCE_EARLY_CHECKIN'] || 0
+    })
+    .catch((error) => {
+      message.error(error?.response?.data?.message || 'Không thể tải dữ liệu cài đặt')
+    })
+}
 
 const fetchDataList = () => {
   if (isLoading.value === true) {
@@ -98,7 +126,7 @@ const fetchDataList = () => {
       pagination.value.total = response.data.totalPages * pagination.value.pageSize
     })
     .catch((error) => {
-      message.error(error.response?.data?.message || 'Lỗi khi lấy dữ liệu')
+      message.error(error.response?.data?.message || 'Không thể tải dữ liệu. Vui lòng thử lại!')
     })
     .finally(() => {
       isLoading.value = false
@@ -123,7 +151,7 @@ const fetchDataStudentInfo = () => {
       }
     })
     .catch((error) => {
-      message.error(error.response?.data?.message || 'Lỗi khi lấy thông tin sinh viên')
+      message.error(error.response?.data?.message || 'Không thể tải thông tin sinh viên. Vui lòng thử lại!')
     })
 }
 
@@ -156,7 +184,7 @@ const handleSubmitAttendance = () => {
       fetchDataList()
     })
     .catch((error) => {
-      message.error(error.response?.data?.message || 'Lỗi khi điểm danh ca học này')
+      message.error(error.response?.data?.message || 'Điểm danh không thành công. Vui lòng thử lại!')
     })
     .finally(() => {
       loadingPage.hide()
@@ -173,7 +201,7 @@ const handleSubmitUpdateInfo = () => {
       applicationStore.loadNotification()
     })
     .catch((error) => {
-      message.error(error.response?.data?.message || 'Lỗi khi cập nhật khuôn mặt')
+      message.error(error.response?.data?.message || 'Không thể cập nhật khuôn mặt. Vui lòng thử lại!')
     })
     .finally(() => {
       loadingPage.hide()
@@ -182,15 +210,15 @@ const handleSubmitUpdateInfo = () => {
 
 const handleUpdateInfo = async () => {
   isShowCamera.value = true
-  faceIDStore.init(video, canvas, false, (descriptor) => {
+  faceIDStore.init(video, canvas, axis, false, (descriptor) => {
     isShowCamera.value = false
     formData.faceEmbedding = JSON.stringify(descriptor)
     Modal.confirm({
       title: 'Xác nhận cập nhật dữ liệu khuôn mặt',
       icon: createVNode(ExclamationCircleOutlined),
-      content: 'Không thể hoàn tác. Bạn thực sự muốn cập nhật khuôn mặt này?',
-      okText: 'Tiếp tục',
-      cancelText: 'Huỷ bỏ',
+      content: 'Việc cập nhật khuôn mặt không thể hoàn tác. Bạn có chắc chắn muốn tiếp tục không?',
+      okText: 'Cập nhật',
+      cancelText: 'Hủy',
       onOk: () => {
         handleSubmitUpdateInfo()
       },
@@ -202,8 +230,9 @@ const handleUpdateInfo = async () => {
 
 const handleCheckin = async (item) => {
   formData.idPlanDate = item.idPlanDate
+
   isShowCamera.value = true
-  faceIDStore.init(video, canvas, true, (descriptor) => {
+  faceIDStore.init(video, canvas, axis, true, (descriptor) => {
     formData.faceEmbedding = JSON.stringify(descriptor)
     handleSubmitAttendance()
   })
@@ -217,6 +246,7 @@ const getCurrentLocation = async () => {
       const { latitude, longitude } = position.coords || {}
       formData.latitude = latitude
       formData.longitude = longitude
+      mapCenter.value = [latitude, longitude]
     },
     () => {
       Modal.confirm({
@@ -233,12 +263,25 @@ const getCurrentLocation = async () => {
   )
 }
 
+const handleShowLocation = async () => {
+  if (!mapCenter.value[0] || !mapCenter.value[1]) {
+    return message.error(
+      'Vui lòng bật quyền truy cập vị trí để có thể xem thông tin vị trí hiện tại',
+    )
+  }
+
+  isShowLocation.value = true
+}
+
 onMounted(async () => {
   breadcrumbStore.setRoutes(breadcrumb.value)
-  await getCurrentLocation()
+  loadingPage.show()
   fetchDataStudentInfo()
+  fetchDataSettings()
   fetchDataList()
-  await faceIDStore.loadModels()
+  faceIDStore.loadModels()
+  await getCurrentLocation()
+  loadingPage.hide()
 })
 
 const debounceFilter = debounce(handleSubmitFilter, 100)
@@ -252,6 +295,17 @@ watch(
 </script>
 
 <template>
+  <a-modal v-model:open="isShowLocation" title="Vị trí hiện tại">
+    <div class="row">
+      <div class="col-md-12">
+        <LMap ref="mapRef" style="height: 400px" zoom="15" :center="mapCenter">
+          <LTileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution="" />
+          <LMarker v-if="mapCenter" :lat-lng="mapCenter" />
+        </LMap>
+      </div>
+    </div>
+  </a-modal>
+
   <a-modal
     v-model:open="isShowCamera"
     title="Xác nhận khuôn mặt"
@@ -262,43 +316,54 @@ watch(
       <canvas ref="canvas"></canvas>
       <video ref="video" autoplay muted></video>
       <div class="face-id-step" :class="faceIDStore.renderStyle()">
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="axis" ref="axis">
+          <div class="a-x">
+            <div class="a-x__left"></div>
+            <div class="a-x__right"></div>
+          </div>
+          <div class="a-y">
+            <div class="a-y__top"></div>
+            <div class="a-y__bottom"></div>
+          </div>
+        </div>
       </div>
+      <div class="face-background"></div>
       <div class="face-id-loading" v-show="faceIDStore.isLoading">
         <div class="bg-loading">
           <div></div>
@@ -315,71 +380,77 @@ watch(
   <div class="container-fluid">
     <div class="row g-3">
       <div class="col-12">
-        <!-- Bộ lọc tìm kiếm -->
-        <a-card :bordered="false" class="cart">
-          <template #title> <FilterFilled /> Bộ lọc </template>
-          <div class="row g-2">
-            <div class="col-md-6 col-sm-12">
-              <div class="label-title">Từ khoá:</div>
-              <a-input
-                v-model:value="dataFilter.keyword"
-                placeholder="Tìm theo nhóm xưởng, giảng viên..."
-                allowClear
-              >
-                <template #prefix>
-                  <SearchOutlined />
-                </template>
-              </a-input>
-            </div>
-            <div class="col-md-3 col-sm-6">
-              <div class="label-title">Trạng thái:</div>
-              <a-select
-                v-model:value="dataFilter.status"
-                class="w-100"
-                :dropdownMatchSelectWidth="false"
-                placeholder="-- Tất cả trạng thái --"
-                allowClear
-              >
-                <a-select-option :value="null">-- Tất cả trạng thái --</a-select-option>
-                <a-select-option v-for="o in ATTENDANCE_STATUS" :key="o.id" :value="o.id">{{
-                  o.name
-                }}</a-select-option>
-              </a-select>
-            </div>
-            <div class="col-md-3 col-sm-6">
-              <div class="label-title">Hình thức học:</div>
-              <a-select
-                v-model:value="dataFilter.type"
-                class="w-100"
-                :dropdownMatchSelectWidth="false"
-                placeholder="-- Tất cả hình thức --"
-                allowClear
-              >
-                <a-select-option :value="null">-- Tất cả hình thức --</a-select-option>
-                <a-select-option v-for="(name, id) in TYPE_SHIFT" :key="id" :value="id">
-                  {{ name }}
-                </a-select-option>
-              </a-select>
-            </div>
-            <div class="col-12">
-              <div class="d-flex justify-content-center flex-wrap gap-2 mt-3">
-                <a-button class="btn-light" @click="handleSubmitFilter">
-                  <FilterFilled /> Lọc
-                </a-button>
-                <a-button class="btn-gray" @click="handleClearFilter"> Huỷ lọc </a-button>
+        <a-card :bordered="false" class="cart no-body-padding">
+          <a-collapse ghost>
+            <a-collapse-panel>
+              <template #header><FilterFilled /> Bộ lọc</template>
+              <div class="row g-3">
+                <div class="col-md-6 col-sm-12">
+                  <div class="label-title">Từ khoá:</div>
+                  <a-input
+                    v-model:value="dataFilter.keyword"
+                    placeholder="Tìm theo nhóm xưởng, giảng viên..."
+                    allowClear
+                  >
+                    <template #prefix>
+                      <SearchOutlined />
+                    </template>
+                  </a-input>
+                </div>
+                <div class="col-md-3 col-sm-6">
+                  <div class="label-title">Trạng thái:</div>
+                  <a-select
+                    v-model:value="dataFilter.status"
+                    class="w-100"
+                    :dropdownMatchSelectWidth="false"
+                    placeholder="-- Tất cả trạng thái --"
+                  >
+                    <a-select-option :value="null">-- Tất cả trạng thái --</a-select-option>
+                    <a-select-option v-for="o in ATTENDANCE_STATUS" :key="o.id" :value="o.id">{{
+                      o.name
+                    }}</a-select-option>
+                  </a-select>
+                </div>
+                <div class="col-md-3 col-sm-6">
+                  <div class="label-title">Hình thức học:</div>
+                  <a-select
+                    v-model:value="dataFilter.type"
+                    class="w-100"
+                    :dropdownMatchSelectWidth="false"
+                    placeholder="-- Tất cả hình thức --"
+                    allowClear
+                  >
+                    <a-select-option :value="null">-- Tất cả hình thức --</a-select-option>
+                    <a-select-option v-for="(name, id) in TYPE_SHIFT" :key="id" :value="id">
+                      {{ name }}
+                    </a-select-option>
+                  </a-select>
+                </div>
+                <div class="col-12">
+                  <div class="d-flex justify-content-center flex-wrap gap-2">
+                    <a-button class="btn-light" @click="handleSubmitFilter">
+                      <FilterFilled /> Lọc
+                    </a-button>
+                    <a-button class="btn-gray" @click="handleClearFilter"> Huỷ lọc </a-button>
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
+            </a-collapse-panel>
+          </a-collapse>
         </a-card>
       </div>
 
       <div class="col-12">
         <a-card :bordered="false" class="cart">
-          <template #title> <UnorderedListOutlined /> Danh sách ca học hôm nay</template>
-
+          <template #title> <UnorderedListOutlined /> Danh sách ca hôm nay</template>
+          <template #extra>
+            <a-tooltip title="Vị trí hiện tại">
+              <AimOutlined @click="handleShowLocation" />
+            </a-tooltip>
+          </template>
           <a-table
             rowKey="id"
-            class="nowrap"
+            class="nowrap mt-2"
             :dataSource="lstData"
             :columns="columns"
             :loading="isLoading"
@@ -403,53 +474,175 @@ watch(
                   `${formatDate(record.startDate, 'HH:mm')} - ${formatDate(record.endDate, 'HH:mm')}`
                 }}
               </template>
+
               <template v-if="column.dataIndex === 'status'">
-                <a-tag color="blue" v-if="record.status === ATTENDANCE_STATUS.CHECKIN.id">{{
-                  ATTENDANCE_STATUS.CHECKIN.name
-                }}</a-tag>
-                <a-tag color="red" v-else-if="record.status === ATTENDANCE_STATUS.ABSENT.id">{{
-                  ATTENDANCE_STATUS.ABSENT.name
-                }}</a-tag>
-                <a-tag color="green" v-else-if="record.status === ATTENDANCE_STATUS.PRESENT.id">{{
-                  ATTENDANCE_STATUS.PRESENT.name
-                }}</a-tag>
-                <a-tag color="orange" v-else>{{ ATTENDANCE_STATUS.NOTCHECKIN.name }}</a-tag>
+                <span
+                  v-if="
+                    record.requiredCheckin === STATUS_REQUIRED_ATTENDANCE.ENABLE &&
+                    record.requiredCheckout === STATUS_REQUIRED_ATTENDANCE.ENABLE
+                  "
+                >
+                  <template v-if="record.status === ATTENDANCE_STATUS.CHECKIN.id">
+                    <template v-if="Date.now() <= record.startDate">
+                      <a-badge status="processing" /> {{ ATTENDANCE_STATUS.CHECKIN.name }}
+                    </template>
+                    <template v-else>
+                      <a-badge status="error" /> {{ ATTENDANCE_STATUS.NOTCHECKOUT.name }}
+                    </template>
+                  </template>
+                  <template v-else-if="record.status === ATTENDANCE_STATUS.ABSENT.id"
+                    ><a-badge status="error" /> {{ ATTENDANCE_STATUS.ABSENT.name }}</template
+                  >
+                  <template v-else-if="record.status === ATTENDANCE_STATUS.PRESENT.id"
+                    ><a-badge status="success" /> {{ ATTENDANCE_STATUS.PRESENT.name }}</template
+                  >
+                  <template v-else
+                    ><a-badge status="warning" /> {{ ATTENDANCE_STATUS.NOTCHECKIN.name }}</template
+                  >
+                </span>
+                <span v-else-if="record.requiredCheckin === STATUS_REQUIRED_ATTENDANCE.ENABLE">
+                  <a-tag color="green" v-if="record.status === ATTENDANCE_STATUS.PRESENT.id">{{
+                    ATTENDANCE_STATUS.PRESENT.name
+                  }}</a-tag>
+                  <a-tag color="orange" v-else>{{ ATTENDANCE_STATUS.NOTCHECKIN.name }}</a-tag>
+                </span>
+                <span v-else>
+                  <a-tag color="green" v-if="record.status === ATTENDANCE_STATUS.PRESENT.id">{{
+                    ATTENDANCE_STATUS.PRESENT.name
+                  }}</a-tag>
+                  <a-tag color="orange" v-else>{{ ATTENDANCE_STATUS.NOTCHECKOUT.name }}</a-tag>
+                </span>
               </template>
+
               <template v-if="column.dataIndex === 'lateArrival'">
                 <a-tag :color="record.lateArrival > 0 ? 'gold' : 'green'">
                   <ExclamationCircleOutlined /> {{ record.lateArrival + ' phút' }}
                 </a-tag>
               </template>
 
+              <template v-if="column.dataIndex === 'lateAttendance'">
+                <a-tag
+                  :color="
+                    record.totalLateAttendance > 0
+                      ? record.currentLateAttendance >= record.totalLateAttendance
+                        ? 'red'
+                        : 'green'
+                      : 'default'
+                  "
+                  >{{ record.currentLateAttendance || 0 }} /
+                  {{ record.totalLateAttendance }} lần</a-tag
+                >
+              </template>
+
               <template v-if="column.key === 'actions'">
-                <span v-if="record.status == ATTENDANCE_STATUS.NOTCHECKIN.id">
-                  <span
-                    v-if="Date.now() < record.startDate - DEFAULT_EARLY_MINUTE_CHECKIN * 60 * 1000"
-                  >
-                    <a-badge status="warning" />
-                    Chưa đến giờ checkin</span
-                  >
-                  <span v-else-if="Date.now() > record.startDate + record.lateArrival * 60 * 1000">
-                    <a-badge status="error" />
-                    Đã quá giờ checkin đầu giờ</span
-                  >
-                  <a-tooltip title="Checkin đầu giờ" v-else>
-                    <a-button
-                      type="primary"
-                      class="btn-info ms-2 border-0"
-                      @click="handleCheckin(record)"
+                <template
+                  v-if="
+                    record.requiredCheckin === STATUS_REQUIRED_ATTENDANCE.ENABLE &&
+                    record.requiredCheckout === STATUS_REQUIRED_ATTENDANCE.ENABLE
+                  "
+                >
+                  <span v-if="record.status == ATTENDANCE_STATUS.NOTCHECKIN.id">
+                    <span
+                      v-if="
+                        Date.now() < record.startDate - DEFAULT_EARLY_MINUTE_CHECKIN * 60 * 1000
+                      "
                     >
-                      <CheckOutlined /> Checkin đầu giờ
-                    </a-button>
-                  </a-tooltip>
-                </span>
-                <span v-else-if="record.status == ATTENDANCE_STATUS.CHECKIN.id">
-                  <span v-if="Date.now() > record.endDate + record.lateArrival * 60 * 1000">
+                      <a-badge status="warning" />
+                      Chưa đến giờ checkin
+                    </span>
+                    <span
+                      v-else-if="Date.now() > record.startDate + record.lateArrival * 60 * 1000"
+                    >
+                      <template v-if="record.totalLateAttendance > record.currentLateAttendance">
+                        <a-tooltip title="Checkin bù">
+                          <a-button
+                            type="primary"
+                            class="btn-primary ms-2 border-0"
+                            @click="handleCheckin(record)"
+                          >
+                            <CheckOutlined />
+                            Checkin bù
+                          </a-button>
+                        </a-tooltip>
+                      </template>
+                      <template v-else> <a-badge status="error" /> Đã quá giờ checkin</template>
+                    </span>
+                    <a-tooltip title="Checkin đầu giờ" v-else>
+                      <a-button
+                        type="primary"
+                        class="btn-info ms-2 border-0"
+                        @click="handleCheckin(record)"
+                      >
+                        <CheckOutlined />
+                        Checkin đầu giờ
+                      </a-button>
+                    </a-tooltip>
+                  </span>
+                  <span v-else-if="record.status == ATTENDANCE_STATUS.CHECKIN.id">
+                    <span v-if="Date.now() > record.endDate + record.lateArrival * 60 * 1000">
+                      <template v-if="record.totalLateAttendance > record.currentLateAttendance">
+                        <a-tooltip title="Checkout bù">
+                          <a-button
+                            type="primary"
+                            class="btn-primary ms-2 border-0"
+                            @click="handleCheckin(record)"
+                          >
+                            <CheckOutlined /> Checkout bù
+                          </a-button>
+                        </a-tooltip>
+                      </template>
+                      <template v-else> <a-badge status="error" /> Đã quá giờ checkout </template>
+                    </span>
+                    <a-tooltip
+                      title="Checkout cuối giờ"
+                      v-else-if="
+                        Date.now() >= record.endDate &&
+                        Date.now() <= record.endDate + record.lateArrival * 60 * 1000
+                      "
+                    >
+                      <a-button
+                        type="primary"
+                        class="btn-success ms-2 border-0"
+                        @click="handleCheckin(record)"
+                      >
+                        <CheckOutlined /> Checkout cuối giờ
+                      </a-button>
+                    </a-tooltip>
+                    <span v-else>
+                      <a-badge status="warning" /> Checkin đầu giờ
+                      {{ formatDate(record.timeCheckin, 'dd/MM/yyyy HH:mm') }}</span
+                    >
+                  </span>
+                  <span v-else-if="record.status == ATTENDANCE_STATUS.PRESENT.id">
+                    <a-badge status="success" />
+                    <span class="text-success">Đã điểm danh</span>
+                  </span>
+                  <span v-else>
                     <a-badge status="error" />
-                    Đã quá giờ checkin cuối giờ</span
-                  >
+                    <span class="text-danger">Chưa điểm danh</span>
+                  </span>
+                </template>
+                <template v-else-if="record.requiredCheckout != STATUS_REQUIRED_ATTENDANCE.DISABLE">
+                  <span v-if="record.status === ATTENDANCE_STATUS.PRESENT.id">
+                    <a-badge status="success" />
+                    <span class="text-success">Đã điểm danh</span>
+                  </span>
+                  <span v-else-if="Date.now() > record.endDate + record.lateArrival * 60 * 1000">
+                    <template v-if="record.totalLateAttendance > record.currentLateAttendance">
+                      <a-tooltip title="Checkout bù">
+                        <a-button
+                          type="primary"
+                          class="btn-primary ms-2 border-0"
+                          @click="handleCheckin(record)"
+                        >
+                          <CheckOutlined /> Checkout bù
+                        </a-button>
+                      </a-tooltip>
+                    </template>
+                    <template v-else> <a-badge status="error" /> Đã quá giờ checkout </template>
+                  </span>
                   <a-tooltip
-                    title="Checkin cuối giờ"
+                    title="Checkout cuối giờ"
                     v-else-if="
                       Date.now() >= record.endDate &&
                       Date.now() <= record.endDate + record.lateArrival * 60 * 1000
@@ -460,22 +653,72 @@ watch(
                       class="btn-success ms-2 border-0"
                       @click="handleCheckin(record)"
                     >
-                      <CheckOutlined /> Checkin cuối giờ
+                      <CheckOutlined /> Checkout cuối giờ
                     </a-button>
                   </a-tooltip>
-                  <span v-else>
-                    <a-badge status="warning" /> Checkin đầu giờ
-                    {{ formatDate(record.timeCheckin, 'dd/MM/yyyy HH:mm') }}</span
+                  <span v-else> <a-badge status="warning" /> Chưa đến giờ checkout</span>
+                </template>
+                <template v-else-if="record.requiredCheckin !== STATUS_REQUIRED_ATTENDANCE.DISABLE">
+                  <span v-if="record.status === ATTENDANCE_STATUS.PRESENT.id">
+                    <a-badge status="success" />
+                    <span class="text-success">Đã điểm danh</span>
+                  </span>
+                  <span
+                    v-else-if="
+                      Date.now() < record.startDate - DEFAULT_EARLY_MINUTE_CHECKIN * 60 * 1000
+                    "
                   >
-                </span>
-                <span v-else-if="record.status == ATTENDANCE_STATUS.PRESENT.id">
-                  <a-badge status="success" />
-                  <span class="text-success">Đã điểm danh</span>
-                </span>
-                <span v-else>
-                  <a-badge status="error" />
-                  <span class="text-danger"></span>
-                </span>
+                    <a-badge status="warning" />
+                    Chưa đến giờ checkin
+                  </span>
+                  <span v-else-if="Date.now() > record.startDate + record.lateArrival * 60 * 1000">
+                    <template v-if="record.totalLateAttendance > record.currentLateAttendance">
+                      <a-tooltip title="Checkin bù">
+                        <a-button
+                          type="primary"
+                          class="btn-primary ms-2 border-0"
+                          @click="handleCheckin(record)"
+                        >
+                          <CheckOutlined />
+                          Checkin bù
+                        </a-button>
+                      </a-tooltip>
+                    </template>
+                    <template v-else> <a-badge status="error" /> Đã quá giờ checkin</template>
+                  </span>
+                  <a-tooltip title="Checkin đầu giờ" v-else>
+                    <a-button
+                      type="primary"
+                      class="btn-info ms-2 border-0"
+                      @click="handleCheckin(record)"
+                    >
+                      <CheckOutlined />
+                      Checkin đầu giờ
+                    </a-button>
+                  </a-tooltip>
+                </template>
+                <template v-else>
+                  <span
+                    v-if="Date.now() < record.startDate - DEFAULT_EARLY_MINUTE_CHECKIN * 60 * 1000"
+                  >
+                    <a-badge status="warning" />
+                    Chưa đến giờ điểm danh
+                  </span>
+                  <span v-else-if="Date.now() > record.startDate + record.lateArrival * 60 * 1000">
+                    <a-badge status="error" />
+                    Đã quá giờ điểm danh
+                  </span>
+                  <a-tooltip title="Điểm danh" v-else>
+                    <a-button
+                      type="primary"
+                      class="btn-info ms-2 border-0"
+                      @click="handleCheckin(record)"
+                    >
+                      <CheckOutlined />
+                      Điểm danh
+                    </a-button>
+                  </a-tooltip>
+                </template>
               </template>
             </template>
           </a-table>

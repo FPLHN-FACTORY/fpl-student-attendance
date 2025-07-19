@@ -1,5 +1,5 @@
 import { AUTHENCATION_STORAGE_TOKEN } from '@/constants/authenticationConstant'
-import { API_URL, GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
+import { API_URL } from '@/constants/routesConstant'
 import router from '@/router'
 import { ROUTE_NAMES_API } from '@/router/authenticationRoute'
 import useAuthStore from '@/stores/useAuthStore'
@@ -45,7 +45,7 @@ requestAPI.interceptors.response.use(
         message.destroy()
         message.error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại')
         authStore.logout()
-        router.push({ name: GLOBAL_ROUTE_NAMES.SWITCH_ROLE })
+        router.push({ path: '/' })
       }
     }
     return Promise.reject(error)

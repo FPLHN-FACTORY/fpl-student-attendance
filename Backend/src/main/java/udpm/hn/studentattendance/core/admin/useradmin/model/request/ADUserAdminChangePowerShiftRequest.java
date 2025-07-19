@@ -10,4 +10,5 @@ public class ADUserAdminChangePowerShiftRequest {
     private String userAdminId;
 
     private String userStaffId;
+
 }

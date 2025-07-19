@@ -27,7 +27,7 @@ public interface ADLevelProjectRepository extends LevelProjectRepository {
                             or code LIKE CONCAT('%', :#{#request.name}, '%')
                             )
                         AND (:#{#request.status} IS NULL OR status = :#{#request.status})
-                    ORDER BY created_at DESC
+                    ORDER BY status DESC, created_at DESC
             """, countQuery = """
                     select
                         count(*)

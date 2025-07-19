@@ -30,6 +30,11 @@ public class EXStudentRestController implements IEXDefaultController {
     }
 
     @Override
+    public ResponseEntity<?> exportData(EXDataRequest request) {
+        return exStudentService.exportData(request);
+    }
+
+    @Override
     public ResponseEntity<?> downloadTemplate(EXDataRequest request) {
         return exStudentService.downloadTemplate(request);
     }

@@ -29,13 +29,13 @@ public class ADLevelProjectRestController {
     }
 
     @PostMapping
-    public ResponseEntity<?> addLevelProject(@RequestBody ADLevelProjectCreateRequest request) {
+    public ResponseEntity<?> addLevelProject(@Valid @RequestBody ADLevelProjectCreateRequest request) {
         return service.createLevelProject(request);
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<?> updateLevelProject(@PathVariable String id,
-            @RequestBody ADLevelProjectUpdateRequest request) {
+            @Valid @RequestBody ADLevelProjectUpdateRequest request) {
         return service.updateLevelProject(id, request);
     }
 

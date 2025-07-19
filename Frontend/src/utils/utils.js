@@ -1,4 +1,5 @@
 import { DEFAULT_DATE_FORMAT } from '@/constants'
+import dayjs from 'dayjs'
 import { unref } from 'vue'
 
 export const decodeBase64 = (base64String) => {
@@ -28,11 +29,42 @@ export const autoAddColumnWidth = (columns, ellipsis = false, charWidth = 10, pa
   })
 }
 
-export const dayOfWeek = (timestamp) => {
-  const date = new Date(timestamp)
-  const daysOfWeek = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy']
+export const getCurrentSemester = (semesters) => {
+  const now = Date.now()
 
-  return daysOfWeek[date.getDay()]
+  let currentSemester = semesters.find((item) => now >= item.fromDate && now <= item.toDate)
+
+  if (!currentSemester) {
+    currentSemester = semesters.reduce((closest, item) => {
+      const diffCurrent = Math.abs(item.fromDate - now)
+      const diffClosest = Math.abs(closest.fromDate - now)
+      return diffCurrent < diffClosest ? item : closest
+    })
+  }
+  return currentSemester
+}
+
+export const dayOfWeek = (timestamp) => {
+  const inputDate = new Date(timestamp)
+  const now = new Date()
+
+  const inputDateOnly = new Date(inputDate.getFullYear(), inputDate.getMonth(), inputDate.getDate())
+  const nowDateOnly = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+
+  const diffInDays = (inputDateOnly - nowDateOnly) / (1000 * 60 * 60 * 24)
+
+  const daysOfWeek = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy']
+  const dayName = daysOfWeek[inputDate.getDay()]
+
+  if (diffInDays === 0) {
+    return 'Hôm nay'
+  } else if (diffInDays === -1) {
+    return 'Hôm qua'
+  } else if (diffInDays === 1) {
+    return 'Ngày mai'
+  } else {
+    return dayName
+  }
 }
 
 export const formatDate = (timestamp, format) => {
@@ -58,6 +90,24 @@ export const formatDate = (timestamp, format) => {
   }
 
   return format.replace(/YYYY|yyyy|MM|dd|DD|HH|mm|ss/g, (matched) => map[matched])
+}
+
+export const getShiftTimeStart = (timestamp, startHour, startMinute) => {
+  return dayjs(timestamp)
+    .set('hour', startHour)
+    .set('minute', startMinute)
+    .set('second', 0)
+    .set('millisecond', 0)
+    .valueOf()
+}
+
+export const getShiftTimeEnd = (timestamp, endHour, endMinute) => {
+  return dayjs(timestamp)
+    .set('hour', endHour)
+    .set('minute', endMinute)
+    .set('second', 0)
+    .set('millisecond', 0)
+    .valueOf()
 }
 
 export const rowSelectTable = (selectedRowKeys, isDisabled = () => false) => {

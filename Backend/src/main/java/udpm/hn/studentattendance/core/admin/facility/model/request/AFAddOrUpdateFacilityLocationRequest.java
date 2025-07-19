@@ -23,7 +23,7 @@ public class AFAddOrUpdateFacilityLocationRequest {
     private String idFacility;
 
     @NotBlank(message = "Vui lòng nhập tên địa điểm")
-    @Size(max = EntityProperties.LENGTH_NAME, message = "Tên địa điểm không được vượt quá "
+    @Size(min = 2, max = EntityProperties.LENGTH_NAME, message = "Tên địa điểm không được vượt quá "
             + EntityProperties.LENGTH_NAME + " ký tự")
     private String name;
 

@@ -65,20 +65,18 @@ const lstData = ref([])
 
 const columns = ref(
   autoAddColumnWidth([
-    { title: '#', dataIndex: 'orderNumber', key: 'orderNumber' },
-    { title: 'Tên địa điểm', dataIndex: 'name', key: 'name' },
-    { title: 'Vĩ độ', dataIndex: 'latitude', key: 'latitude' },
-    { title: 'Kinh độ', dataIndex: 'longitude', key: 'longitude' },
-    { title: 'Bán kính', dataIndex: 'radius', key: 'radius' },
+    { title: '#', key: 'rowNumber' },
+    { title: 'Tên vị trí', dataIndex: 'name', key: 'name' },
+    { title: 'Mô tả', dataIndex: 'description', key: 'description' },
     { title: 'Trạng thái', dataIndex: 'status', key: 'status' },
-    { title: '', key: 'actions' },
+    { title: 'Chức năng', key: 'actions' },
   ]),
 )
 
 const breadcrumb = ref([
   {
     name: GLOBAL_ROUTE_NAMES.STAFF_PAGE,
-    breadcrumbName: 'Ban đào tạo',
+    breadcrumbName: 'Admin',
   },
   {
     name: ROUTE_NAMES.MANAGEMENT_FACILITY,
@@ -455,7 +453,9 @@ watch(mapCenter, (newCenter) => {
           class="w-100"
           v-model:value="formData.name"
           :disabled="modalAddOrUpdate.isLoading"
+          placeholder="Nhập tên địa điểm"
           allowClear
+          @keyup.enter="modalAddOrUpdate.onOk"
         />
       </a-form-item>
       <a-form-item class="col-sm-4" label="Vĩ độ" name="latitude" :rules="formRules.latitude">
@@ -465,7 +465,9 @@ watch(mapCenter, (newCenter) => {
           :min="-90"
           :max="90"
           :disabled="modalAddOrUpdate.isLoading"
+          placeholder="Nhập vĩ độ (-90 đến 90)"
           allowClear
+          @keyup.enter="modalAddOrUpdate.onOk"
         />
       </a-form-item>
 
@@ -476,7 +478,9 @@ watch(mapCenter, (newCenter) => {
           :min="-180"
           :max="180"
           :disabled="modalAddOrUpdate.isLoading"
+          placeholder="Nhập kinh độ (-180 đến 180)"
           allowClear
+          @keyup.enter="modalAddOrUpdate.onOk"
         />
       </a-form-item>
       <a-form-item class="col-sm-2" label="Bán kính (m)" name="radius" :rules="formRules.radius">
@@ -485,7 +489,9 @@ watch(mapCenter, (newCenter) => {
           v-model:value="formData.radius"
           :min="1"
           :disabled="modalAddOrUpdate.isLoading"
+          placeholder="Nhập bán kính"
           allowClear
+          @keyup.enter="modalAddOrUpdate.onOk"
         />
       </a-form-item>
       <a-form-item class="col-sm-2">
@@ -520,53 +526,56 @@ watch(mapCenter, (newCenter) => {
   <div class="container-fluid">
     <div class="row g-3">
       <div class="col-12">
-        <!-- Bộ lọc tìm kiếm -->
-        <a-card :bordered="false" class="cart">
-          <template #title> <FilterFilled /> Bộ lọc </template>
-          <div class="row g-2">
-            <div class="col-lg-6 col-md-12 col-sm-12">
-              <div class="label-title">Từ khoá:</div>
-              <a-input
-                v-model:value="dataFilter.keyword"
-                placeholder="Tìm theo địa điểm..."
-                allowClear
-              >
-                <template #prefix>
-                  <SearchOutlined />
-                </template>
-              </a-input>
-            </div>
-            <div class="col-lg-3 col-md-6 col-sm-6">
-              <div class="label-title">Trạng thái:</div>
-              <a-select
-                v-model:value="dataFilter.status"
-                class="w-100"
-                :dropdownMatchSelectWidth="false"
-                placeholder="-- Tất cả trạng thái --"
-                allowClear
-              >
-                <a-select-option :value="null">-- Tất cả trạng thái --</a-select-option>
-                <a-select-option v-for="(name, id) in STATUS_FACILITY_IP" :key="id" :value="id">
-                  {{ name }}
-                </a-select-option>
-              </a-select>
-            </div>
-            <div class="col-12">
-              <div class="d-flex justify-content-center flex-wrap gap-2 mt-3">
-                <a-button class="btn-light" @click="handleSubmitFilter">
-                  <FilterFilled /> Lọc
-                </a-button>
-                <a-button class="btn-gray" @click="handleClearFilter"> Huỷ lọc </a-button>
+        <a-card :bordered="false" class="cart no-body-padding">
+          <a-collapse ghost>
+            <a-collapse-panel>
+              <template #header><FilterFilled /> Bộ lọc</template>
+              <div class="row g-3">
+                <div class="col-lg-8 col-md-6 col-sm-6">
+                  <div class="label-title">Từ khoá:</div>
+                  <a-input
+                    v-model:value="dataFilter.keyword"
+                    placeholder="Tìm theo địa điểm..."
+                    allowClear
+                  >
+                    <template #prefix>
+                      <SearchOutlined />
+                    </template>
+                  </a-input>
+                </div>
+                <div class="col-lg-4 col-md-6 col-sm-6">
+                  <div class="label-title">Trạng thái:</div>
+                  <a-select
+                    v-model:value="dataFilter.status"
+                    class="w-100"
+                    :dropdownMatchSelectWidth="false"
+                    placeholder="-- Tất cả trạng thái --"
+                  >
+                    <a-select-option :value="null">-- Tất cả trạng thái --</a-select-option>
+                    <a-select-option v-for="(name, id) in STATUS_FACILITY_IP" :key="id" :value="id">
+                      {{ name }}
+                    </a-select-option>
+                  </a-select>
+                </div>
+                <div class="col-12">
+                  <div class="d-flex justify-content-center flex-wrap gap-2">
+                    <a-button class="btn-light" @click="handleSubmitFilter">
+                      <FilterFilled /> Lọc
+                    </a-button>
+                    <a-button class="btn-gray" @click="handleClearFilter"> Huỷ lọc </a-button>
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
+            </a-collapse-panel>
+          </a-collapse>
         </a-card>
       </div>
 
       <div class="col-12">
         <a-card :bordered="false" class="cart">
           <template #title> <UnorderedListOutlined /> Danh sách địa điểm cho phép </template>
-          <div class="d-flex justify-content-end mb-3 flex-wrap gap-3">
+
+          <div class="d-flex justify-content-end mb-2 flex-wrap gap-3">
             <a-button type="primary" @click="handleShowAdd">
               <PlusOutlined /> Thêm địa điểm mới
             </a-button>
@@ -583,16 +592,19 @@ watch(mapCenter, (newCenter) => {
               :scroll="{ x: 'auto' }"
               @change="handleTableChange"
             >
-              <template #bodyCell="{ column, record }">
-                <template v-if="column.dataIndex === 'radius'">
+              <template #bodyCell="{ column, record, index }">
+                <template v-if="column.key === 'rowNumber'">
+                  {{ (pagination.current - 1) * pagination.pageSize + index + 1 }}
+                </template>
+                <template v-else-if="column.dataIndex === 'radius'">
                   <a-tag color="purple"> {{ record.radius }}m </a-tag>
                 </template>
-                <template v-if="column.dataIndex === 'type'">
+                <template v-else-if="column.dataIndex === 'type'">
                   <a-tag color="purple">
                     {{ TYPE_FACILITY_IP[record.type] }}
                   </a-tag>
                 </template>
-                <template v-if="column.dataIndex === 'status'">
+                <template v-else-if="column.dataIndex === 'status'">
                   <a-switch
                     class="me-2"
                     :checked="record.status === 1"
@@ -602,8 +614,8 @@ watch(mapCenter, (newCenter) => {
                     record.status === 1 ? 'Đang áp dụng' : 'Không áp dụng'
                   }}</a-tag>
                 </template>
-                <template v-if="column.key === 'actions'">
-                  <a-tooltip title="Chỉnh sửa IP">
+                <template v-else-if="column.key === 'actions'">
+                  <a-tooltip title="Chỉnh sửa địa điểm">
                     <a-button class="btn-outline-info border-0" @click="handleShowUpdate(record)">
                       <EditFilled />
                     </a-button>

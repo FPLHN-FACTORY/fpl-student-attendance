@@ -1,10 +1,12 @@
 package udpm.hn.studentattendance.core.staff.project.model.request;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import udpm.hn.studentattendance.infrastructure.constants.EntityProperties;
 
 @Getter
 @Setter
@@ -12,7 +14,9 @@ import lombok.Setter;
 @NoArgsConstructor
 public class USProjectCreateOrUpdateRequest {
 
-    @NotBlank(message = "Không được bỏ trống")
+    @NotBlank(message = "Tên dự án không được bỏ trống")
+    @Size(min = 2, max = EntityProperties.LENGTH_NAME, message = "Tên dự án chỉ được tối đa "
+            + EntityProperties.LENGTH_NAME + " ký tự")
     private String name;
 
     private String description;
@@ -22,6 +26,5 @@ public class USProjectCreateOrUpdateRequest {
     private String semesterId;
 
     private String subjectFacilityId;
-
 
 }
