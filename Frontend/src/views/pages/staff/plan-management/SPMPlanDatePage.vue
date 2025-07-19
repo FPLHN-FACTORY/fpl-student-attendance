@@ -50,7 +50,13 @@ const isLoading = ref(false)
 const isShowListStudentExists = ref(false)
 const lstStudentExists = ref([])
 
-const configImportExcel = {
+const _detail = ref(null)
+const lstData = ref([])
+const lstShift = ref([])
+
+const isActive = computed(() => _detail.value?.status === STATUS_TYPE.ENABLE)
+
+const configImportExcel = reactive({
   fetchUrl: API_ROUTES_EXCEL.FETCH_IMPORT_PLAN_DATE,
   onSuccess: () => {
     fetchDataList()
@@ -59,12 +65,13 @@ const configImportExcel = {
     message.error('Không thể xử lý file excel')
   },
   data: { idPlanFactory: route.params?.id },
-  showDownloadTemplate: true,
+  showDownloadTemplate: isActive,
   showHistoryLog: true,
+  showImport: isActive,
   showExport: true,
   btnImport: 'Import ca',
   btnExport: 'Export điểm danh',
-}
+})
 
 const modalAddOrUpdate = reactive({
   isShow: false,
@@ -85,10 +92,6 @@ const modalUpdateLink = reactive({
   onOk: null,
   width: 800,
 })
-
-const _detail = ref(null)
-const lstData = ref([])
-const lstShift = ref([])
 
 const columns = ref(
   autoAddColumnWidth([
@@ -130,6 +133,8 @@ const breadcrumb = ref([
     breadcrumbName: 'Danh sách kế hoạch',
   },
 ])
+
+const countFilter = ref(0)
 
 const pagination = ref({ ...DEFAULT_PAGINATION })
 
@@ -223,6 +228,7 @@ const fetchDataList = () => {
     .then(({ data: response }) => {
       lstData.value = response.data.data
       pagination.value.total = response.data.totalPages * pagination.value.pageSize
+      countFilter.value = response.data.totalItems
     })
     .catch((error) => {
       message.error(error?.response?.data?.message || 'Không thể tải danh sách dữ liệu')
@@ -600,22 +606,24 @@ const handleShowUpdateLink = () => {
 }
 
 const handleChangeShift = (newValues) => {
-  const updated = new Set(newValues)
+  formData.shift = [newValues]
 
-  const sorted = [...updated].sort((a, b) => a - b)
+  // const updated = new Set(newValues)
 
-  for (let i = 0; i < sorted.length - 1; i++) {
-    const start = sorted[i]
-    const end = sorted[i + 1]
+  // const sorted = [...updated].sort((a, b) => a - b)
 
-    if (end - start > 1) {
-      for (let j = start + 1; j < end; j++) {
-        updated.add(j)
-      }
-    }
-  }
+  // for (let i = 0; i < sorted.length - 1; i++) {
+  //   const start = sorted[i]
+  //   const end = sorted[i + 1]
 
-  formData.shift = Array.from(updated).sort((a, b) => a - b)
+  //   if (end - start > 1) {
+  //     for (let j = start + 1; j < end; j++) {
+  //       updated.add(j)
+  //     }
+  //   }
+  // }
+
+  // formData.shift = Array.from(updated).sort((a, b) => a - b)
 }
 
 const handleShowListStudentExists = (data) => {
@@ -725,14 +733,13 @@ watch(
           @keyup.enter="modalAddOrUpdate.onOk"
         />
       </a-form-item>
-      <a-form-item class="col-sm-8" label="Ca" name="shift" :rules="formRules.shift">
+      <a-form-item class="col-sm-12" label="Ca" name="shift" :rules="formRules.shift">
         <a-select
           class="w-100"
-          placeholder="Chọn nhiều ca cùng lúc để gộp lại thành 1 ca"
+          placeholder="Chọn 1 ca học"
           v-model:value="formData.shift"
           :disabled="modalAddOrUpdate.isLoading"
           @change="handleChangeShift"
-          mode="multiple"
           allow-clear
         >
           <a-select-option v-for="o in lstShift" :key="o.id" :value="o.shift">
@@ -744,7 +751,7 @@ watch(
         </a-select>
       </a-form-item>
 
-      <a-form-item class="col-sm-4" label="Tuỳ chỉnh thời gian ca" name="timeRange">
+      <!-- <a-form-item class="col-sm-4" label="Tuỳ chỉnh thời gian ca" name="timeRange">
         <a-range-picker
           class="w-100"
           v-model:value="formData.timeRange"
@@ -753,7 +760,7 @@ watch(
           picker="time"
           :placeholder="['Bắt đầu', 'Kết thúc']"
         />
-      </a-form-item>
+      </a-form-item> -->
 
       <a-form-item class="col-sm-5" label="Hình thức học" name="type" :rules="formRules.type">
         <a-select
@@ -932,7 +939,7 @@ watch(
         <a-card :bordered="false" class="cart no-body-padding">
           <a-collapse ghost>
             <a-collapse-panel>
-              <template #header><FilterFilled /> Bộ lọc</template>
+              <template #header><FilterFilled /> Bộ lọc ({{ countFilter }})</template>
               <div class="row g-3">
                 <div class="col-xxl-4 col-lg-8 col-md-8 col-sm-12">
                   <div class="label-title">Từ khoá:</div>
@@ -1032,13 +1039,15 @@ watch(
               ><DeleteFilled /> Xoá mục đã chọn</a-button
             >
             <ExcelUploadButton v-bind="configImportExcel" />
-            <a-button class="btn btn-gray" @click="handleShowUpdateLink">
-              <LinkOutlined /> Update link online
-            </a-button>
-            <a-button class="btn btn-outline-warning" @click="handleSendMail">
-              <MailOutlined /> Gửi mail thông báo
-            </a-button>
-            <a-button type="primary" @click="handleShowAdd"> <PlusOutlined /> Thêm mới </a-button>
+            <template v-if="isActive">
+              <a-button class="btn btn-gray" @click="handleShowUpdateLink">
+                <LinkOutlined /> Update link online
+              </a-button>
+              <a-button class="btn btn-outline-warning" @click="handleSendMail">
+                <MailOutlined /> Gửi mail thông báo
+              </a-button>
+              <a-button type="primary" @click="handleShowAdd"> <PlusOutlined /> Thêm mới </a-button>
+            </template>
           </div>
 
           <div>

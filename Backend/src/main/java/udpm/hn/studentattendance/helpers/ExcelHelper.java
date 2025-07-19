@@ -3,6 +3,8 @@ package udpm.hn.studentattendance.helpers;
 import lombok.RequiredArgsConstructor;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 import udpm.hn.studentattendance.entities.Facility;
@@ -23,6 +25,8 @@ import java.util.*;
 @Component
 @RequiredArgsConstructor
 public class ExcelHelper {
+
+    private static final Logger logger = LoggerFactory.getLogger(ExcelHelper.class);
 
     public final static EntityStatus STATUS_SUCCESS = EntityStatus.ACTIVE;
 
@@ -189,7 +193,7 @@ public class ExcelHelper {
             workbook.write(out);
             return out.toByteArray();
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(), e);
             return null;
         }
     }

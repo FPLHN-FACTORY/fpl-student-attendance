@@ -33,6 +33,8 @@ const breadcrumb = ref([
   },
 ])
 
+const countFilter = ref(0)
+
 // Danh sách nhóm xưởng
 const factories = ref([])
 // Danh sách dự án, giảng viên (để hiển thị trong combobox filter)
@@ -100,6 +102,7 @@ const fetchFactoryByTeacher = () => {
       pagination.total = result.totalPages * filter.pageSize
       // Nếu trả về tổng số bản ghi, thay thế bằng: pagination.total = result.totalRecords
       pagination.current = filter.page
+      countFilter.value = result.totalItems
     })
     .catch((error) => {
       message.error(error.response?.data?.message || 'Lỗi khi lấy danh sách nhóm xưởng')
@@ -213,7 +216,7 @@ onMounted(() => {
         <a-card :bordered="false" class="cart no-body-padding">
           <a-collapse ghost>
             <a-collapse-panel>
-              <template #header><FilterFilled /> Bộ lọc</template>
+              <template #header><FilterFilled /> Bộ lọc ({{ countFilter }})</template>
               <div class="row g-3 filter-container">
                 <div class="col-xl-6 col-md-12 col-sm-12">
                   <div class="label-title">Từ khoá:</div>
@@ -288,10 +291,8 @@ onMounted(() => {
           >
             <template #bodyCell="{ column, record, index }">
               <template v-if="column.dataIndex">
-                <template
-                  v-if="column.dataIndex === 'factoryDescription'"
-                >
-                  <a-typography-link 
+                <template v-if="column.dataIndex === 'factoryDescription'">
+                  <a-typography-link
                     v-if="record.factoryDescription"
                     @click="handleShowDescription(record.factoryDescription)"
                     >Chi tiết</a-typography-link

@@ -24,6 +24,8 @@ const loadingStore = useLoadingStore()
 /* ----------------- Data & Reactive Variables ----------------- */
 const levels = ref([])
 
+const countFilter = ref(0)
+
 const filter = reactive({
   name: '',
   status: null,
@@ -91,6 +93,8 @@ const fetchLevels = () => {
       // Tổng số bản ghi
       pagination.total =
         result.totalElements || result.totalItems || result.totalPages * pagination.pageSize
+
+      countFilter.value = result.totalItems
     })
     .catch((error) => {
       message.error(error.response?.data?.message || 'Lỗi khi lấy danh sách nhóm dự án')
@@ -305,7 +309,9 @@ onMounted(() => {
     <a-descriptions bordered :column="1">
       <a-descriptions-item label="Mã">{{ detailLevel.code }}</a-descriptions-item>
       <a-descriptions-item label="Tên">{{ detailLevel.name }}</a-descriptions-item>
-      <a-descriptions-item label="Mô tả">{{ detailLevel.description || 'Không có mô tả' }}</a-descriptions-item>
+      <a-descriptions-item label="Mô tả">{{
+        detailLevel.description || 'Không có mô tả'
+      }}</a-descriptions-item>
       <a-descriptions-item label="Trạng thái">
         <a-tag :color="getStatusColor(detailLevel.status)">
           {{ getStatusText(detailLevel.status) }}
@@ -326,7 +332,7 @@ onMounted(() => {
         <a-card :bordered="false" class="cart no-body-padding">
           <a-collapse ghost>
             <a-collapse-panel>
-              <template #header><FilterFilled /> Bộ lọc</template>
+              <template #header><FilterFilled /> Bộ lọc ({{ countFilter }})</template>
               <div class="row g-3 filter-container">
                 <div class="col-md-8 col-sm-6">
                   <div class="label-title">Từ khoá:</div>

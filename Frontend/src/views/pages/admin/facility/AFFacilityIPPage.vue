@@ -27,6 +27,8 @@ const loadingStore = useLoadingStore()
 
 const isLoading = ref(false)
 
+const countFilter = ref(0)
+
 const modalAddOrUpdate = reactive({
   isShow: false,
   isLoading: false,
@@ -126,6 +128,7 @@ const fetchDataList = () => {
     .then(({ data: response }) => {
       lstData.value = response.data.data
       pagination.value.total = response.data.totalPages * pagination.value.pageSize
+      countFilter.value = response.data.totalItems
     })
     .catch((error) => {
       message.error(error?.response?.data?.message || 'Không thể tải danh sách dữ liệu')
@@ -371,7 +374,11 @@ watch(
           class="w-100"
           v-model:value="formData.ip"
           :disabled="modalAddOrUpdate.isLoading"
-          :placeholder="formData.type === Object.keys(TYPE_FACILITY_IP)[2] ? 'Nhập giá trị' : 'Nhập địa chỉ IP hoặc dải IP'"
+          :placeholder="
+            formData.type === Object.keys(TYPE_FACILITY_IP)[2]
+              ? 'Nhập giá trị'
+              : 'Nhập địa chỉ IP hoặc dải IP'
+          "
           allowClear
           @keyup.enter="modalAddOrUpdate.onOk"
         />
@@ -385,7 +392,7 @@ watch(
         <a-card :bordered="false" class="cart no-body-padding">
           <a-collapse ghost>
             <a-collapse-panel>
-              <template #header><FilterFilled /> Bộ lọc</template>
+              <template #header><FilterFilled /> Bộ lọc ({{ countFilter }})</template>
               <div class="row g-3">
                 <div class="col-lg-6 col-md-12 col-sm-12">
                   <div class="label-title">Từ khoá:</div>

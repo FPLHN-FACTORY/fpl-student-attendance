@@ -28,6 +28,8 @@ const loadingStore = useLoadingStore()
 
 const isLoading = ref(false)
 
+const countFilter = ref(0)
+
 const _detail = ref(null)
 const lstData = ref([])
 const lstShift = ref([])
@@ -121,6 +123,7 @@ const fetchDataList = () => {
     .then(({ data: response }) => {
       lstData.value = response.data.data
       pagination.value.total = response.data.totalPages * pagination.value.pageSize
+      countFilter.value = response.data.totalItems
     })
     .catch((error) => {
       message.error(error?.response?.data?.message || 'Không thể tải danh sách dữ liệu')
@@ -205,7 +208,7 @@ watch(
         <a-card :bordered="false" class="cart no-body-padding">
           <a-collapse ghost>
             <a-collapse-panel>
-              <template #header><FilterFilled /> Bộ lọc</template>
+              <template #header><FilterFilled /> Bộ lọc ({{ countFilter }})</template>
               <div class="row g-2">
                 <div class="col-xxl-4 col-lg-8 col-md-8 col-sm-12">
                   <div class="label-title">Từ khoá:</div>
@@ -315,8 +318,8 @@ watch(
             >
               <template #bodyCell="{ column, record }">
                 <template v-if="column.dataIndex === 'description'">
-                  <a-typography-link 
-                    v-if="record.description" 
+                  <a-typography-link
+                    v-if="record.description"
                     @click="handleShowDescription(record.description)"
                   >
                     Chi tiết

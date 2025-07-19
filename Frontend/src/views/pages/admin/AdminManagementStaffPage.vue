@@ -21,6 +21,8 @@ import { autoAddColumnWidth } from '@/utils/utils'
 const breadcrumbStore = useBreadcrumbStore()
 const loadingStore = useLoadingStore()
 
+const countFilter = ref(0)
+
 const breadcrumb = ref([
   {
     name: GLOBAL_ROUTE_NAMES.ADMIN_PAGE,
@@ -166,6 +168,7 @@ const fetchStaffs = () => {
     .then((response) => {
       staffs.value = response.data.data.data
       pagination.value.total = response.data.data.totalPages * pagination.value.pageSize
+      countFilter.value = response.data.data.totalItems
     })
     .catch((error) => {
       message.error(
@@ -403,7 +406,7 @@ onMounted(() => {
         <a-card :bordered="false" class="cart no-body-padding">
           <a-collapse ghost>
             <a-collapse-panel>
-              <template #header><FilterFilled /> Bộ lọc</template>
+              <template #header><FilterFilled /> Bộ lọc ({{ countFilter }})</template>
               <div class="row g-3 filter-container">
                 <!-- Input tìm kiếm theo mã, tên, email -->
                 <a-col class="col-lg-12 col-md-12 col-sm-12">

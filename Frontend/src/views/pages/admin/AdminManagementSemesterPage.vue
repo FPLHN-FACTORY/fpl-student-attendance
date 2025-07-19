@@ -22,6 +22,8 @@ import { autoAddColumnWidth } from '@/utils/utils'
 const breadcrumbStore = useBreadcrumbStore()
 const loadingStore = useLoadingStore()
 
+const countFilter = ref(0)
+
 const breadcrumb = ref([
   {
     name: GLOBAL_ROUTE_NAMES.ADMIN_PAGE,
@@ -69,14 +71,12 @@ const getSemesterByMonth = () => {
   }
 }
 
-// Thêm hàm để lưu khoảng thời gian mặc định
 const defaultDateRange = reactive({
   fromDate: dayjs().add(1, 'day'), // Ngày mai
   toDate: dayjs().add(4, 'month'), // 4 tháng sau
   semesterName: getSemesterByMonth(), // Tự động chọn học kỳ dựa trên tháng
 })
 
-// Dữ liệu cho modal Thêm/Cập Nhật (DatePicker trả về đối tượng dayjs)
 const newSemester = reactive({
   semesterName: defaultDateRange.semesterName, // Set mặc định là học kỳ hiện tại
   fromDate: defaultDateRange.fromDate,
@@ -84,7 +84,6 @@ const newSemester = reactive({
 })
 const detailSemester = ref({})
 
-// Cấu hình cột cho bảng
 const columns = ref(
   autoAddColumnWidth([
     { title: '#', key: 'rowNumber' },
@@ -139,6 +138,7 @@ const fetchSemesters = () => {
       } else {
         pagination.total = response.data.data.totalPages * pagination.pageSize
       }
+      countFilter.value = response.data.data.totalItems
     })
     .catch((error) => {
       message.error(
@@ -159,7 +159,7 @@ const handleTableChange = (pageInfo) => {
 }
 
 const handleShowModalAdd = () => {
-  newSemester.semesterName = defaultDateRange.semesterName 
+  newSemester.semesterName = defaultDateRange.semesterName
   newSemester.fromDate = defaultDateRange.fromDate
   newSemester.toDate = defaultDateRange.toDate
   modalAdd.value = true
@@ -221,7 +221,7 @@ const handleUpdateSemester = (record) => {
         fromDate: dayjs(data.fromDate),
         toDate: dayjs(data.toDate),
         semesterId: data.semesterId || data.id,
-        originalFromDate: data.fromDate, 
+        originalFromDate: data.fromDate,
       }
       modalUpdate.value = true
     })
@@ -247,8 +247,10 @@ const updateSemester = () => {
   }
 
   const originalFromDate = dayjs(detailSemester.value.originalFromDate)
-  if (isStartDateBeforeToday(originalFromDate) &&
-      !originalFromDate.isSame(detailSemester.value.fromDate, 'day')) {
+  if (
+    isStartDateBeforeToday(originalFromDate) &&
+    !originalFromDate.isSame(detailSemester.value.fromDate, 'day')
+  ) {
     message.error('Không thể thay đổi ngày bắt đầu của học kỳ đã qua')
     return
   }
@@ -339,7 +341,7 @@ const handleClearFilter = () => {
     filter[key] = ''
   })
   pagination.current = 1
-  fetchSemesters() 
+  fetchSemesters()
 }
 
 const isStartDateBeforeToday = (startDate) => {
@@ -382,7 +384,9 @@ const shouldDisableStartDate = (current) => {
   if (!current) return false
 
   if (detailSemester.value && detailSemester.value.fromDate) {
-    const originalDate = dayjs(detailSemester.value.originalFromDate || detailSemester.value.fromDate)
+    const originalDate = dayjs(
+      detailSemester.value.originalFromDate || detailSemester.value.fromDate,
+    )
 
     if (isStartDateBeforeToday(originalDate)) {
       return !current.isSame(originalDate, 'day')
@@ -406,7 +410,7 @@ onMounted(() => {
         <a-card :bordered="false" class="cart no-body-padding">
           <a-collapse ghost>
             <a-collapse-panel>
-              <template #header><FilterFilled /> Bộ lọc</template>
+              <template #header><FilterFilled /> Bộ lọc ({{ countFilter }})</template>
               <div class="row g-3 filter-container">
                 <div class="col-xl-6 col-md-12 col-sm-12">
                   <div class="label-title">Từ khoá:</div>
@@ -508,24 +512,25 @@ onMounted(() => {
                   <a-tag
                     :color="
                       isSemesterEnded(record)
-                        ? 'red'
-                        : isSemesterNotStarted(record)
                         ? 'gold'
-                        : isSemesterInProgress(record)
-                        ? 'green'
-                        : null
-                    " 
+                        : isSemesterNotStarted(record)
+                          ? 'red'
+                          : isSemesterInProgress(record)
+                            ? 'green'
+                            : null
+                    "
                   >
                     {{
                       isSemesterEnded(record)
                         ? 'Đã kết thúc'
                         : isSemesterInProgress(record)
-                        ? 'Đang diễn ra'
-                        : isSemesterNotStarted(record) && (record.semesterStatus === 'ACTIVE' || record.semesterStatus === 1)
-                        ? 'Chưa bắt đầu'
-                        : (record.semesterStatus === 'ACTIVE' || record.semesterStatus === 1)
-                        ? 'Đang hoạt động'
-                        : 'Không hoạt động'
+                          ? 'Đang diễn ra'
+                          : isSemesterNotStarted(record) &&
+                              (record.semesterStatus === 'ACTIVE' || record.semesterStatus === 1)
+                            ? 'Chưa bắt đầu'
+                            : record.semesterStatus === 'ACTIVE' || record.semesterStatus === 1
+                              ? 'Đang hoạt động'
+                              : 'Không hoạt động'
                     }}
                   </a-tag>
                 </span>
@@ -534,14 +539,20 @@ onMounted(() => {
               <template v-else-if="column.key === 'actions'">
                 <a-space>
                   <a-tooltip
-                    :title="canEditSemester(record) ? 'Sửa thông tin học kỳ' : 'Không thể sửa học kỳ đã kết thúc'"
+                    :title="
+                      canEditSemester(record)
+                        ? 'Sửa thông tin học kỳ'
+                        : 'Không thể sửa học kỳ đã kết thúc'
+                    "
                   >
                     <a-button
                       @click="handleUpdateSemester(record)"
                       type="text"
-                      :class="['btn-outline-info', 'me-2', { 'disabled': !canEditSemester(record) }]"
+                      :class="['btn-outline-info', 'me-2', { disabled: !canEditSemester(record) }]"
                       :disabled="!canEditSemester(record)"
-                      :style="!canEditSemester(record) ? { opacity: 0.5, cursor: 'not-allowed' } : {}"
+                      :style="
+                        !canEditSemester(record) ? { opacity: 0.5, cursor: 'not-allowed' } : {}
+                      "
                     >
                       <EditFilled />
                     </a-button>
@@ -627,10 +638,17 @@ onMounted(() => {
             class="w-100"
             format="DD/MM/YYYY"
             @keyup.enter="updateSemester"
-            :disabled="detailSemester.fromDate && isStartDateBeforeToday(detailSemester.originalFromDate)"
+            :disabled="
+              detailSemester.fromDate && isStartDateBeforeToday(detailSemester.originalFromDate)
+            "
             :disabledDate="shouldDisableStartDate"
           />
-          <div v-if="detailSemester.fromDate && isStartDateBeforeToday(detailSemester.originalFromDate)" class="ant-form-item-explain">
+          <div
+            v-if="
+              detailSemester.fromDate && isStartDateBeforeToday(detailSemester.originalFromDate)
+            "
+            class="ant-form-item-explain"
+          >
             <div class="ant-form-item-explain-error">Không thể chỉnh sửa ngày bắt đầu đã qua</div>
           </div>
         </a-form-item>

@@ -498,6 +498,9 @@ hr {
   border-radius: 12px !important;
   overflow: hidden;
   &-wrapper {
+    .ant-table-cell-fix-right {
+      z-index: 0;
+    }
     .ant-table-tbody {
       & > tr.ant-table-row-selected {
         & > td {

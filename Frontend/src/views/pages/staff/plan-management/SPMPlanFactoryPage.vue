@@ -38,6 +38,8 @@ const modalAdd = reactive({
   onOk: () => handleSubmitAdd(),
 })
 
+const countFilter = ref(0)
+
 const lstData = ref([])
 const lstDataAdd = ref([])
 const lstShift = ref([])
@@ -147,6 +149,7 @@ const fetchDataList = () => {
     .then(({ data: response }) => {
       lstData.value = response.data.data
       pagination.value.total = response.data.totalPages * pagination.value.pageSize
+      countFilter.value = response.data.totalItems
     })
     .catch((error) => {
       message.error(error?.response?.data?.message || 'Không thể tải danh sách dữ liệu')
@@ -527,7 +530,7 @@ watch(
         <a-card :bordered="false" class="cart no-body-padding">
           <a-collapse ghost>
             <a-collapse-panel>
-              <template #header><FilterFilled /> Bộ lọc</template>
+              <template #header><FilterFilled /> Bộ lọc ({{ countFilter }})</template>
               <div class="row g-3">
                 <div class="col-md-4 col-sm-12">
                   <div class="label-title">Từ khoá:</div>
@@ -581,7 +584,11 @@ watch(
         <a-card :bordered="false" class="cart">
           <template #title> <UnorderedListOutlined /> Danh sách phân công nhóm xưởng </template>
           <div class="d-flex justify-content-end gap-3 mb-2">
-            <a-button type="primary" @click="handleShowModalAdd">
+            <a-button
+              type="primary"
+              @click="handleShowModalAdd"
+              v-if="_detail?.status === STATUS_TYPE.ENABLE"
+            >
               <PlusOutlined /> Phân công nhóm xưởng
             </a-button>
           </div>
@@ -625,8 +632,8 @@ watch(
               <template v-if="column.dataIndex === 'status'">
                 <a-switch
                   class="me-2"
-                  :checked="record.status === 1"
-                  :disabled="_detail.status !== 1"
+                  :checked="record.status === STATUS_TYPE.ENABLE"
+                  :disabled="record.status !== record.currentStatus"
                   @change="handleChangeStatus(record.id)"
                 />
                 <a-tag :color="record.status === 1 && _detail.status === 1 ? 'green' : 'red'">{{

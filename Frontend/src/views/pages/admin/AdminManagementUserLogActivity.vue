@@ -10,11 +10,11 @@ import requestAPI from '@/services/requestApiService'
 import { API_ROUTES_ADMIN } from '@/constants/adminConstant'
 import { message } from 'ant-design-vue'
 import { FilterFilled, SearchOutlined, UnorderedListOutlined } from '@ant-design/icons-vue'
-import dayjs from 'dayjs'
 
 const breadcrumbStore = useBreadcrumbStore()
 const loadingStore = useLoadingStore()
-const isLoading = ref(false)
+
+const countFilter = ref(0)
 
 const breadcrumb = ref([
   {
@@ -110,6 +110,7 @@ const getList = async () => {
 
     // FIX 4: Tính toán pagination đúng cách
     pagination.value.total = response.data.data.totalPages * pagination.value.pageSize
+    countFilter.value = response.data.data.totalItems
   } catch (error) {
     message.error(error?.response?.data?.message || 'Lỗi khi tải danh sách')
   } finally {
@@ -219,7 +220,7 @@ watch(
         <a-card :bordered="false" class="cart no-body-padding">
           <a-collapse ghost>
             <a-collapse-panel>
-              <template #header><FilterFilled /> Bộ lọc</template>
+              <template #header><FilterFilled /> Bộ lọc ({{ countFilter }})</template>
               <div class="row g-3">
                 <div class="col-lg-4 col-md-8 col-sm-12">
                   <div class="label-title">Từ khoá:</div>
@@ -233,7 +234,7 @@ watch(
                     </template>
                   </a-input>
                 </div>
-                
+
                 <div class="col-lg-4 col-md-4 col-sm-12">
                   <div class="label-title">Khoảng ngày:</div>
                   <a-range-picker
@@ -243,7 +244,7 @@ watch(
                     @change="handleDateRangeChange"
                   />
                 </div>
-               
+
                 <div class="col-lg-4 col-md-6 col-sm-12">
                   <div class="label-title">Cơ sở:</div>
                   <a-select

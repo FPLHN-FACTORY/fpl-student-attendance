@@ -6,8 +6,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.event.ApplicationStartedEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
-import udpm.hn.studentattendance.infrastructure.redis.service.QueryCacheService;
-import udpm.hn.studentattendance.infrastructure.redis.service.RedisService;
+import udpm.hn.studentattendance.infrastructure.config.redis.service.QueryCacheService;
+import udpm.hn.studentattendance.infrastructure.config.redis.service.RedisService;
 
 @Component
 public class RedisStartupCleanerHelper {
