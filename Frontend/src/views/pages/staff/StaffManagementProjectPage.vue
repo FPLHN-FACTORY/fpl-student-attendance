@@ -12,7 +12,7 @@ import { ref, reactive, onMounted } from 'vue'
 import requestAPI from '@/services/requestApiService'
 import { API_ROUTES_STAFF } from '@/constants/staffConstant'
 import { ROUTE_NAMES } from '@/router/staffRoute'
-import { DEFAULT_PAGINATION } from '@/constants'
+import { DEFAULT_PAGINATION, STATUS_TYPE } from '@/constants'
 import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
 import useLoadingStore from '@/stores/useLoadingStore'
 import { API_ROUTES_EXCEL, GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
@@ -61,6 +61,8 @@ const pagination = reactive({
   ...DEFAULT_PAGINATION,
 })
 
+const countFilter = ref(0)
+
 // Bộ lọc và phân trang
 const filter = reactive({
   name: null,
@@ -96,20 +98,21 @@ const fetchProjects = () => {
   loadingStore.show()
   requestAPI
     .get(`${API_ROUTES_STAFF.FETCH_DATA_PROJECT}/list`, {
-     params: {
-      name: filter.name,
-      levelProjectId: filter.levelProjectId,
-      semesterId: filter.semesterId,
-      subjectId: filter.subjectId,
-      facilityId: filter.facilityId,
-      status: filter.status,
-      page: pagination.current,
-      size: pagination.pageSize,
-     } 
+      params: {
+        name: filter.name,
+        levelProjectId: filter.levelProjectId,
+        semesterId: filter.semesterId,
+        subjectId: filter.subjectId,
+        facilityId: filter.facilityId,
+        status: filter.status,
+        page: pagination.current,
+        size: pagination.pageSize,
+      },
     })
     .then((response) => {
       projects.value = response.data.data.data
       pagination.total = response.data.data.totalPages * pagination.pageSize
+      countFilter.value = response.data.data.totalItems
     })
     .catch((error) => {
       message.error(error.response?.data?.message || 'Lỗi khi lấy dữ liệu')
@@ -386,7 +389,7 @@ onMounted(() => {
         <a-card :bordered="false" class="cart no-body-padding">
           <a-collapse ghost>
             <a-collapse-panel>
-              <template #header><FilterFilled /> Bộ lọc</template>
+              <template #header><FilterFilled /> Bộ lọc ({{ countFilter }})</template>
               <div class="row g-3">
                 <div class="col-md-12 col-sm-12">
                   <div class="label-title">Từ khoá:</div>
@@ -417,8 +420,15 @@ onMounted(() => {
                         (option.label || '').toLowerCase().includes(input.toLowerCase())
                     "
                   >
-                    <a-select-option :value="null" label="-- Tất cả nhóm dự án --">-- Tất cả nhóm dự án --</a-select-option>
-                    <a-select-option v-for="level in levels" :key="level.id" :value="level.id" :label="level.name">
+                    <a-select-option :value="null" label="-- Tất cả nhóm dự án --"
+                      >-- Tất cả nhóm dự án --</a-select-option
+                    >
+                    <a-select-option
+                      v-for="level in levels"
+                      :key="level.id"
+                      :value="level.id"
+                      :label="level.name"
+                    >
                       {{ level.name }}
                     </a-select-option>
                   </a-select>
@@ -439,7 +449,9 @@ onMounted(() => {
                         (option.label || '').toLowerCase().includes(input.toLowerCase())
                     "
                   >
-                    <a-select-option :value="null" label="-- Tất cả học kỳ --">-- Tất cả học kỳ --</a-select-option>
+                    <a-select-option :value="null" label="-- Tất cả học kỳ --"
+                      >-- Tất cả học kỳ --</a-select-option
+                    >
                     <a-select-option
                       v-for="semester in allSemesters"
                       :key="semester.id"
@@ -465,7 +477,9 @@ onMounted(() => {
                         (option.label || '').toLowerCase().includes(input.toLowerCase())
                     "
                   >
-                    <a-select-option :value="null" label="-- Tất cả môn --">-- Tất cả môn --</a-select-option>
+                    <a-select-option :value="null" label="-- Tất cả môn --"
+                      >-- Tất cả môn --</a-select-option
+                    >
                     <a-select-option
                       v-for="subject in subjects"
                       :key="subject.id"
@@ -553,7 +567,8 @@ onMounted(() => {
                 <span class="nowrap">
                   <a-switch
                     class="me-2"
-                    :checked="record.status == 'ACTIVE' || record.status == 1"
+                    :checked="record.status == 'ACTIVE' || record.status == STATUS_TYPE.ENABLE"
+                    :disabled="record.status !== record.currentStatus"
                     @change="handleDeleteProject(record)"
                   />
                   <a-tag :color="record.status == 1 ? 'green' : 'red'">
@@ -614,7 +629,12 @@ onMounted(() => {
               }
             "
           >
-            <a-select-option v-for="level in levels" :key="level.id" :value="level.id" :label="level.name">
+            <a-select-option
+              v-for="level in levels"
+              :key="level.id"
+              :value="level.id"
+              :label="level.name"
+            >
               {{ level.name }}
             </a-select-option>
           </a-select>
@@ -632,7 +652,12 @@ onMounted(() => {
               }
             "
           >
-            <a-select-option v-for="semester in semesters" :key="semester.id" :value="semester.id" :label="semester.code">
+            <a-select-option
+              v-for="semester in semesters"
+              :key="semester.id"
+              :value="semester.id"
+              :label="semester.code"
+            >
               {{ semester.code }}
             </a-select-option>
           </a-select>
@@ -650,7 +675,12 @@ onMounted(() => {
               }
             "
           >
-            <a-select-option v-for="subject in subjects" :key="subject.id" :value="subject.id" :label="subject.name">
+            <a-select-option
+              v-for="subject in subjects"
+              :key="subject.id"
+              :value="subject.id"
+              :label="subject.name"
+            >
               {{ subject.name }}
             </a-select-option>
           </a-select>
@@ -714,7 +744,12 @@ onMounted(() => {
               }
             "
           >
-            <a-select-option v-for="level in levels" :key="level.id" :value="level.id" :label="level.name">
+            <a-select-option
+              v-for="level in levels"
+              :key="level.id"
+              :value="level.id"
+              :label="level.name"
+            >
               {{ level.name }}
             </a-select-option>
           </a-select>
@@ -732,7 +767,12 @@ onMounted(() => {
               }
             "
           >
-            <a-select-option v-for="semester in semesters" :key="semester.id" :value="semester.id" :label="semester.code">
+            <a-select-option
+              v-for="semester in semesters"
+              :key="semester.id"
+              :value="semester.id"
+              :label="semester.code"
+            >
               {{ semester.code }}
             </a-select-option>
           </a-select>
@@ -750,7 +790,12 @@ onMounted(() => {
               }
             "
           >
-            <a-select-option v-for="subject in subjects" :key="subject.id" :value="subject.id" :label="subject.name">
+            <a-select-option
+              v-for="subject in subjects"
+              :key="subject.id"
+              :value="subject.id"
+              :label="subject.name"
+            >
               {{ subject.name }}
             </a-select-option>
           </a-select>

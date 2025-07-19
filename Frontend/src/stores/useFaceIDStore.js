@@ -28,6 +28,7 @@ const useFaceIDStore = defineStore('faceID', () => {
   const isRunScan = ref(false)
   const isLoading = ref(true)
   const isLoadingModels = ref(false)
+  const isReady = ref(false)
 
   const step = ref(0)
   const textStep = ref('Vui lòng đợi camera...')
@@ -300,7 +301,7 @@ const useFaceIDStore = defineStore('faceID', () => {
         .expandDims()
       const result = await antispoofModel.predict(input).data()
       input.dispose()
-      return result[0] < 0.99999999
+      return result[0] < 0.99
     }
 
     const captureFace = () => {
@@ -387,8 +388,9 @@ const useFaceIDStore = defineStore('faceID', () => {
       const centerX = xRaw + wRaw / 2
       const centerY = yRaw + hRaw / 2
 
-      const margin_y = 0.1
-      const margin_x = 0.1
+      const margin_y = 0.2
+      const margin_x = 0.2
+
       const insideCenter =
         centerX > 0.5 - margin_x &&
         centerX < 0.5 + margin_x &&
@@ -414,7 +416,7 @@ const useFaceIDStore = defineStore('faceID', () => {
         const checking = await isSpoofing()
         lst_spoofing.push(checking)
       }
-      return lst_spoofing.filter((o) => o).length < 3
+      return lst_spoofing.filter((o) => !o).length > 7
     }
 
     const isReaction = async () => {
@@ -505,12 +507,6 @@ const useFaceIDStore = defineStore('faceID', () => {
       }
     }
 
-    const clearHistory = () => {
-      realHistory = []
-      liveHistory = []
-      blinkState = { blinking: false, count: 0 }
-    }
-
     const updateHistories = (face, gestures) => {
       const real = face.real ?? 0
       const live = face.live ?? 0
@@ -528,33 +524,6 @@ const useFaceIDStore = defineStore('faceID', () => {
       if (!isBlink) {
         blinkState.blinking = false
       }
-    }
-
-    const calcDelta = (arr) => {
-      let delta = 0
-      for (let i = 1; i < arr.length; i++) {
-        delta += Math.abs(arr[i] - arr[i - 1])
-      }
-      return delta
-    }
-
-    const isRealHuman = (face, options = { minConfidence: 0.6, minDelta: 0.2 }) => {
-      const real = face.real ?? 0
-      const live = face.live ?? 0
-      const confidence = face.faceScore ?? 0
-
-      const deltaReal = calcDelta(realHistory)
-      const deltaLive = calcDelta(liveHistory)
-
-      const dynamicEnough = deltaReal > options.minDelta || deltaLive > options.minDelta
-
-      return (
-        real >= options.minConfidence &&
-        live >= options.minConfidence &&
-        confidence >= options.minConfidence &&
-        blinkState.count > 0 &&
-        dynamicEnough
-      )
     }
 
     const cropFace = (face) => {
@@ -599,8 +568,6 @@ const useFaceIDStore = defineStore('faceID', () => {
     }
 
     let error = 0
-    let antispoof = 0
-    let is_fake = false
     const runTask = async () => {
       if (!faceDescriptor) {
         if (axis.value) {
@@ -627,17 +594,12 @@ const useFaceIDStore = defineStore('faceID', () => {
         }
         if (step.value === 0) {
           faceDescriptor = null
-          clearHistory()
         }
-        is_fake = false
-        antispoof = 0
+        isReady.value = false
         return renderTextStep('Vui lòng nhìn vào camera')
       }
 
-      if (is_fake) {
-        return renderTextStep('Không thể nhận diện khuôn mặt')
-      }
-
+      isReady.value = true
       error = 0
       const detection = detections.face?.[0]
       const faceBox = detection.box
@@ -650,14 +612,6 @@ const useFaceIDStore = defineStore('faceID', () => {
 
       updateHistories(detection, gestures)
 
-      if (!isRealHuman(detection)) {
-        antispoof++
-        if (antispoof > 10) {
-          return (is_fake = true)
-        }
-      }
-
-      antispoof = 0
       if (detection?.tensor) {
         human.tf.dispose(detection?.tensor)
       }
@@ -671,7 +625,6 @@ const useFaceIDStore = defineStore('faceID', () => {
         if (step.value >= 0) {
           step.value = 0
           clearDescriptor()
-          clearHistory()
         }
         return
       }
@@ -684,7 +637,7 @@ const useFaceIDStore = defineStore('faceID', () => {
 
       if (!(!isFullStep && (step.value === 1 || step.value === 2))) {
         if (!(await isLiveness())) {
-          return
+          return renderTextStep()
         }
       }
 
@@ -702,17 +655,17 @@ const useFaceIDStore = defineStore('faceID', () => {
 
       const angle = await getFaceAngle(detection)
 
-      if (angle === 0) {
-        if (human.result.gesture.some((o) => o.gesture.includes('head up'))) {
-          return renderTextStep('Vui lòng không ngẩng mặt')
-        }
-
-        if (human.result.gesture.some((o) => o.gesture.includes('head down'))) {
-          return renderTextStep('Vui lòng không cúi mặt')
-        }
-      }
-
       if (!isFullStep) {
+        if (step.value === 0 || step.value === 3) {
+          if (human.result.gesture.some((o) => o.gesture.includes('head up'))) {
+            return renderTextStep('Vui lòng không ngẩng mặt')
+          }
+
+          if (human.result.gesture.some((o) => o.gesture.includes('head down'))) {
+            return renderTextStep('Vui lòng không cúi mặt')
+          }
+        }
+
         if (await isReaction()) {
           return renderTextStep('Vui lòng không biểu cảm')
         }
@@ -731,12 +684,12 @@ const useFaceIDStore = defineStore('faceID', () => {
       if (faceDescriptor) {
         const similarity = human.match.similarity(faceDescriptor, detection.embedding)
         if (similarity < 0.5) {
-          return clearHistory()
+          return
         }
 
         renderTextStep()
 
-        await delay(800)
+        await delay(300)
         if (isFullStep) {
           if (step.value === 0 && angle === 0) {
             clearDescriptor()
@@ -790,6 +743,17 @@ const useFaceIDStore = defineStore('faceID', () => {
     requestAnimationFrame(detectLoop)
   }
 
+  const isFaceChecking = () => {
+    if (isFullStep) {
+      return {
+        ready: isReady.value && !(step.value > 0),
+      }
+    }
+    return {
+      ready: isReady.value && !(step.value > 3),
+    }
+  }
+
   const renderStyle = () => {
     if (isFullStep) {
       return {
@@ -817,6 +781,7 @@ const useFaceIDStore = defineStore('faceID', () => {
     step,
     textStep,
     isLoading,
+    isFaceChecking,
   }
 })
 

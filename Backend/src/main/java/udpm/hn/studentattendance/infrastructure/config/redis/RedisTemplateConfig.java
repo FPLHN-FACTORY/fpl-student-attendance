@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.jsontype.impl.LaissezFaireSubTypeValidator;
 import io.lettuce.core.ReadFrom;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.EnableCaching;
@@ -36,6 +38,8 @@ public class RedisTemplateConfig {
 
     private final ObjectMapper objectMapper;
 
+    private static final Logger logger = LoggerFactory.getLogger(RedisTemplateConfig.class);
+
     @Autowired
     public RedisTemplateConfig(ObjectMapper objectMapper) {
         this.objectMapper = objectMapper;
@@ -49,7 +53,15 @@ public class RedisTemplateConfig {
 
         RedisStandaloneConfiguration serverConfig = new RedisStandaloneConfiguration(redisHost,
                 Integer.parseInt(redisPort));
-        return new LettuceConnectionFactory(serverConfig, clientConfig);
+        LettuceConnectionFactory factory = new LettuceConnectionFactory(serverConfig, clientConfig);
+        factory.afterPropertiesSet();
+        try {
+            factory.getConnection().ping();
+            logger.info("Redis connected to " + redisHost + ":" + redisPort);
+        } catch (Exception e) {
+            logger.warn("Redis connection failed: " + e.getMessage());
+        }
+        return factory;
     }
 
     @Bean

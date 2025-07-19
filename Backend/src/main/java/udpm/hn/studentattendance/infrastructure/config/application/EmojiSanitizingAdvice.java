@@ -42,7 +42,7 @@ public class EmojiSanitizingAdvice extends RequestBodyAdviceAdapter {
     }
 
     private static String sanitize(String input) {
-        return input.replaceAll("[^\\p{L}\\p{N}\\s~`!@#$%^&*()_+\\-=\\[\\]{}|;:'\",.<>/?\\\\]", "");
+        return input.replaceAll("[^\\p{L}\\p{N}\\s~`!@#$%^&*()_+\\-=\\[\\]{}|;:'\",.<>/?\\\\]", "").trim();
     }
 
 }

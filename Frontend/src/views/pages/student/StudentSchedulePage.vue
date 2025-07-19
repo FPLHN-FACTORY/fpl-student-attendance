@@ -11,9 +11,16 @@ import { Modal, message } from 'ant-design-vue'
 import ExcelJS from 'exceljs'
 import { saveAs } from 'file-saver'
 import { autoAddColumnWidth, dayOfWeek, formatDate } from '@/utils/utils'
-import { CloudDownloadOutlined, FilePdfOutlined, FilterFilled, UnorderedListOutlined } from '@ant-design/icons-vue'
+import {
+  CloudDownloadOutlined,
+  FilePdfOutlined,
+  FilterFilled,
+  UnorderedListOutlined,
+} from '@ant-design/icons-vue'
 
 const breadcrumbStore = useBreadcrumbStore()
+
+const countFilter = ref(0)
 
 const breadcrumb = ref([
   { name: GLOBAL_ROUTE_NAMES.STAFF_PAGE, breadcrumbName: 'Sinh viên' },
@@ -69,6 +76,7 @@ const fetchAttendanceList = () => {
       attendanceList.value = data.data.data
       pagination.value.total = data.data.totalPages * pagination.value.pageSize
       pagination.value.current = filter.page
+      countFilter.value = data.data.totalItems
     })
     .catch((error) => {
       message.error(error.response?.data?.message || 'Lỗi khi lấy dữ liệu')
@@ -234,7 +242,7 @@ onMounted(() => {
         <a-card :bordered="false" class="cart no-body-padding">
           <a-collapse ghost>
             <a-collapse-panel>
-              <template #header><FilterFilled /> Bộ lọc</template>
+              <template #header><FilterFilled /> Bộ lọc ({{ countFilter }})</template>
               <div class="row g-3 filter-container">
                 <div class="col-md-12">
                   <div class="label-title">Lịch:</div>
@@ -278,12 +286,10 @@ onMounted(() => {
           </template>
 
           <div class="d-flex justify-content-end mb-3">
-            <a-button type="primary" @click="exportToExcel" :loading="isLoadingExport" class="me-3"
-              >
+            <a-button type="primary" @click="exportToExcel" :loading="isLoadingExport" class="me-3">
               <CloudDownloadOutlined /> Tải xuống Excel</a-button
             >
-            <a-button type="default" @click="exportToPDF" :loading="isLoadingExport"
-              >
+            <a-button type="default" @click="exportToPDF" :loading="isLoadingExport">
               <FilePdfOutlined />Tải xuống PDF</a-button
             >
           </div>
