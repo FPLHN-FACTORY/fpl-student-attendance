@@ -28,6 +28,7 @@ import udpm.hn.studentattendance.infrastructure.constants.SettingKeys;
 import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
 import com.fasterxml.jackson.core.type.TypeReference;
 import udpm.hn.studentattendance.helpers.RedisCacheHelper;
+import udpm.hn.studentattendance.helpers.RequestTrimHelper;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -87,6 +88,8 @@ public class STStudentServiceImpl implements STStudentService {
 
     @Override
     public ResponseEntity<?> createStudent(USStudentCreateUpdateRequest studentCreateUpdateRequest) {
+
+        RequestTrimHelper.trimStringFields(studentCreateUpdateRequest);
 
         if (!ValidateHelper.isValidCode(studentCreateUpdateRequest.getCode())) {
             return RouterHelper.responseError(
@@ -152,6 +155,8 @@ public class STStudentServiceImpl implements STStudentService {
 
     @Override
     public ResponseEntity<?> updateStudent(USStudentCreateUpdateRequest studentCreateUpdateRequest) {
+
+        RequestTrimHelper.trimStringFields(studentCreateUpdateRequest);
 
         if (!ValidateHelper.isValidCode(studentCreateUpdateRequest.getCode())) {
             return RouterHelper.responseError(
@@ -271,11 +276,11 @@ public class STStudentServiceImpl implements STStudentService {
         return redisCacheHelper.getOrSet(
                 key,
                 () -> {
-                    List<Map<String, Object>> faceStatus = studentExtendRepository
-                            .existFaceForAllStudents(sessionHelper.getFacilityId());
+        List<Map<String, Object>> faceStatus = studentExtendRepository
+                .existFaceForAllStudents(sessionHelper.getFacilityId());
                     return faceStatus.stream().collect(Collectors.toMap(
-                            m -> (String) m.get("studentId"),
-                            m -> ((Number) m.get("hasFace")).intValue() == 1));
+                        m -> (String) m.get("studentId"),
+                        m -> ((Number) m.get("hasFace")).intValue() == 1));
                 },
                 new TypeReference<>() {
                 });

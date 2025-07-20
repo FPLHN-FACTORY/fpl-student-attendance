@@ -20,6 +20,7 @@ import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.RedisPrefixConstant;
 import com.fasterxml.jackson.core.type.TypeReference;
 import udpm.hn.studentattendance.helpers.RedisCacheHelper;
+import udpm.hn.studentattendance.helpers.RequestTrimHelper;
 
 @Service
 @RequiredArgsConstructor
@@ -59,6 +60,8 @@ public class ADSubjectManagementServiceImpl implements ADSubjectManagementServic
     @Override
     public ResponseEntity<?> createSubject(ADSubjectCreateRequest request) {
 
+        RequestTrimHelper.trimStringFields(request);
+
         if (!ValidateHelper.isValidCode(request.getCode())) {
             return RouterHelper.responseError(
                     "Mã bộ môn không hợp lệ: không có khoảng trắng, không có ký tự đặc biệt ngoài dấu chấm . và dấu gạch dưới _.");
@@ -87,6 +90,8 @@ public class ADSubjectManagementServiceImpl implements ADSubjectManagementServic
 
     @Override
     public ResponseEntity<?> updateSubject(String id, ADSubjectUpdateRequest request) {
+
+        RequestTrimHelper.trimStringFields(request);
 
         Subject s = adminSubjectRepository.findById(id).orElse(null);
         if (s == null) {

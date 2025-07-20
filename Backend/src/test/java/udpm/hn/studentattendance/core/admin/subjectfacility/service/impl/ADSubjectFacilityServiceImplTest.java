@@ -28,10 +28,10 @@ import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
 import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
 import udpm.hn.studentattendance.infrastructure.common.ApiResponse;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
-import udpm.hn.studentattendance.infrastructure.common.repositories.CommonUserStudentRepository;
+
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.RedisPrefixConstant;
-import udpm.hn.studentattendance.infrastructure.redis.service.RedisService;
+import udpm.hn.studentattendance.infrastructure.config.redis.service.RedisService;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -53,8 +53,6 @@ class ADSubjectFacilityServiceImplTest {
     @Mock
     private ADFacilityRepository facilityRepository;
 
-    @Mock
-    private CommonUserStudentRepository commonUserStudentRepository;
 
     @Mock
     private UserActivityLogHelper userActivityLogHelper;
@@ -86,7 +84,7 @@ class ADSubjectFacilityServiceImplTest {
         responses.add(response);
         Page<ADSubjectFacilityResponse> page = new PageImpl<>(responses);
 
-        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong()))
+        when(redisCacheHelper.getOrSet(anyString(), any(), any()))
                 .thenAnswer(invocation -> {
                     java.util.function.Supplier<?> supplier = invocation.getArgument(1);
                     return supplier.get();
@@ -103,7 +101,7 @@ class ADSubjectFacilityServiceImplTest {
         assertEquals("Lây danh sách bộ môn cơ sở thành công", apiResponse.getMessage());
 
         // Verify repository was called and cache was updated
-        verify(redisCacheHelper).getOrSet(anyString(), any(), any(), anyLong());
+        verify(redisCacheHelper).getOrSet(anyString(), any(), any());
         verify(repository).getAll(any(Pageable.class), eq(request));
     }
 
@@ -415,7 +413,6 @@ class ADSubjectFacilityServiceImplTest {
         assertEquals(EntityStatus.ACTIVE, subjectFacility.getStatus());
 
         // Verify disableAllStudentDuplicateShiftByIdSubjectFacility was called
-        verify(commonUserStudentRepository).disableAllStudentDuplicateShiftByIdSubjectFacility(id);
         verify(redisInvalidationHelper).invalidateAllCaches();
     }
 

@@ -22,7 +22,7 @@ import udpm.hn.studentattendance.helpers.SessionHelper;
 import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
 import udpm.hn.studentattendance.infrastructure.common.ApiResponse;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
-import udpm.hn.studentattendance.infrastructure.common.repositories.CommonUserStudentRepository;
+
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 
 import java.util.ArrayList;
@@ -53,8 +53,7 @@ class SPDPlanFactoryServiceImplTest {
     @Mock
     private SPDFacilityShiftRepository spdFacilityShiftRepository;
 
-    @Mock
-    private CommonUserStudentRepository commonUserStudentRepository;
+
 
     @Mock
     private SessionHelper sessionHelper;

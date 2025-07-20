@@ -15,7 +15,6 @@ class StudentAttendanceApplicationTests {
     @Test
     @DisplayName("Application Context Loads Successfully")
     void contextLoads() {
-        // This test verifies that the Spring application context loads successfully
     }
 
 }

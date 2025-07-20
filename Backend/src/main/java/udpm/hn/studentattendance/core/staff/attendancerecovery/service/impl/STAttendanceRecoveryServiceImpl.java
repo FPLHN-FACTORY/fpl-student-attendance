@@ -25,6 +25,7 @@ import udpm.hn.studentattendance.infrastructure.excel.model.response.ExImportLog
 import com.fasterxml.jackson.core.type.TypeReference;
 import udpm.hn.studentattendance.helpers.RedisCacheHelper;
 import udpm.hn.studentattendance.utils.DateTimeUtils;
+import udpm.hn.studentattendance.helpers.RequestTrimHelper;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -128,6 +129,8 @@ public class STAttendanceRecoveryServiceImpl implements STAttendanceRecoveryServ
     @Override
     public ResponseEntity<?> createNewEventAttendanceRecovery(STCreateOrUpdateNewEventRequest request) {
 
+        RequestTrimHelper.trimStringFields(request);
+
         Optional<Facility> facilityOptional = facilityRepository.findById(sessionHelper.getFacilityId());
         if (facilityOptional == null) {
             return RouterHelper.responseError("Cơ sở không tồn tại", null);
@@ -164,6 +167,8 @@ public class STAttendanceRecoveryServiceImpl implements STAttendanceRecoveryServ
 
     @Override
     public ResponseEntity<?> updateEventAttendanceRecovery(STCreateOrUpdateNewEventRequest request, String id) {
+
+        RequestTrimHelper.trimStringFields(request);
 
         Optional<AttendanceRecovery> attendanceRecoveryOptional = attendanceRecoveryRepository.findById(id);
         if (attendanceRecoveryOptional.isPresent()) {

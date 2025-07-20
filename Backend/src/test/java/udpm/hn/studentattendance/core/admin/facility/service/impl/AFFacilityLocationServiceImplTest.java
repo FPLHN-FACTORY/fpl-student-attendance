@@ -27,7 +27,7 @@ import udpm.hn.studentattendance.infrastructure.common.ApiResponse;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.RedisPrefixConstant;
-import udpm.hn.studentattendance.infrastructure.redis.service.RedisService;
+import udpm.hn.studentattendance.infrastructure.config.redis.service.RedisService;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -73,7 +73,7 @@ class AFFacilityLocationServiceImplTest {
         AFFilterFacilityLocationRequest request = new AFFilterFacilityLocationRequest();
         PageableObject<AFFacilityLocationResponse> mockData = mock(PageableObject.class);
 
-        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong())).thenReturn(mockData);
+        when(redisCacheHelper.getOrSet(anyString(), any(), any())).thenReturn(mockData);
 
         // When
         ResponseEntity<?> response = facilityLocationService.getAllList(request);
@@ -101,7 +101,7 @@ class AFFacilityLocationServiceImplTest {
         PageableObject<AFFacilityLocationResponse> expected = PageableObject.of(page);
 
         // Cache miss: gọi supplier
-        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong()))
+        when(redisCacheHelper.getOrSet(anyString(), any(), any()))
                 .thenAnswer(invocation -> {
                     java.util.function.Supplier<?> supplier = invocation.getArgument(1);
                     return supplier.get();
@@ -136,7 +136,7 @@ class AFFacilityLocationServiceImplTest {
         Page<AFFacilityLocationResponse> page = new org.springframework.data.domain.PageImpl<>(locations);
 
         // Simulate deserialization error (cache error)
-        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong()))
+        when(redisCacheHelper.getOrSet(anyString(), any(), any()))
                 .thenThrow(new RuntimeException("Deserialization error"));
         // Remove unnecessary stubbing for repository
         // when(facilityLocationRepository.getAllByFilter(any(Pageable.class),
@@ -156,7 +156,7 @@ class AFFacilityLocationServiceImplTest {
         Page<AFFacilityLocationResponse> page = new org.springframework.data.domain.PageImpl<>(locations);
         PageableObject<AFFacilityLocationResponse> expected = PageableObject.of(page);
         // Cache miss: gọi supplier
-        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong()))
+        when(redisCacheHelper.getOrSet(anyString(), any(), any()))
                 .thenAnswer(invocation -> {
                     java.util.function.Supplier<?> supplier = invocation.getArgument(1);
                     return supplier.get();

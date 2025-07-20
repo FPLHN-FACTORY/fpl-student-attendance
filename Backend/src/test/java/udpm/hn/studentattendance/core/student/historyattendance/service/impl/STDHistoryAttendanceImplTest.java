@@ -30,7 +30,7 @@ import udpm.hn.studentattendance.infrastructure.common.ApiResponse;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.RoleConstant;
-import udpm.hn.studentattendance.infrastructure.redis.service.RedisService;
+import udpm.hn.studentattendance.infrastructure.config.redis.service.RedisService;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -179,7 +179,7 @@ class STDHistoryAttendanceImplTest {
     @DisplayName("Should get all factories for current student")
     void getAllFactoryByUserStudent_ShouldReturnFactories() {
         // Given
-        when(historyAttendanceFactoryExtendRepository.getAllFactoryByUser(EntityStatus.ACTIVE, "user123"))
+        when(historyAttendanceFactoryExtendRepository.getAllFactoryByUser("user123"))
                 .thenReturn(factories);
 
         // When

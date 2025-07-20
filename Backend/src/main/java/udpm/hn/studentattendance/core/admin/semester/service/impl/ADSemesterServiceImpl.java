@@ -16,6 +16,7 @@ import udpm.hn.studentattendance.helpers.RedisCacheHelper;
 import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
 import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
+import udpm.hn.studentattendance.helpers.RequestTrimHelper;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.RedisPrefixConstant;
@@ -63,6 +64,8 @@ public class ADSemesterServiceImpl implements ADSemesterService {
 
     @Override
     public ResponseEntity<?> createSemester(@Valid ADCreateUpdateSemesterRequest request) {
+
+        RequestTrimHelper.trimStringFields(request);
 
         try {
 
@@ -122,6 +125,8 @@ public class ADSemesterServiceImpl implements ADSemesterService {
 
     @Override
     public ResponseEntity<?> updateSemester(@Valid ADCreateUpdateSemesterRequest request) {
+
+        RequestTrimHelper.trimStringFields(request);
 
         Optional<Semester> existSemester = adSemesterRepository.findById(request.getSemesterId());
         if (existSemester.isEmpty()) {

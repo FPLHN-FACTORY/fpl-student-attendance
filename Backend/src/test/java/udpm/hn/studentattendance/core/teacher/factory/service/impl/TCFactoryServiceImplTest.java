@@ -29,7 +29,7 @@ import udpm.hn.studentattendance.infrastructure.common.ApiResponse;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.RestApiStatus;
-import udpm.hn.studentattendance.infrastructure.redis.service.RedisService;
+import udpm.hn.studentattendance.infrastructure.config.redis.service.RedisService;
 import udpm.hn.studentattendance.infrastructure.constants.RedisPrefixConstant;
 
 import java.util.ArrayList;
@@ -89,7 +89,7 @@ class TCFactoryServiceImplTest {
         String cacheKey = RedisPrefixConstant.REDIS_PREFIX_TEACHER_FACTORY + "factory_" + userCode + "_" + facilityId
                 + "_" + request.toString();
         PageableObject cachedData = new PageableObject();
-        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong())).thenReturn(cachedData);
+        when(redisCacheHelper.getOrSet(anyString(), any(), any())).thenReturn(cachedData);
 
         // Act
         ResponseEntity<?> response = factoryService.getAllFactoryByTeacher(request);
@@ -104,7 +104,7 @@ class TCFactoryServiceImplTest {
                 apiResponse.getMessage());
         assertEquals(cachedData, apiResponse.getData());
 
-        verify(redisCacheHelper).getOrSet(anyString(), any(), any(), anyLong());
+        verify(redisCacheHelper).getOrSet(anyString(), any(), any());
         verify(factoryExtendRepository, never()).getAllFactoryByTeacher(any(Pageable.class), anyString(), anyString(),
                 any(TCFactoryRequest.class));
     }
@@ -120,7 +120,7 @@ class TCFactoryServiceImplTest {
         when(sessionHelper.getFacilityId()).thenReturn(facilityId);
         when(sessionHelper.getUserCode()).thenReturn(userCode);
         // Fix: use thenAnswer to call supplier and return correct data
-        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong())).thenAnswer(invocation -> {
+        when(redisCacheHelper.getOrSet(anyString(), any(), any())).thenAnswer(invocation -> {
             // Simulate cache miss, call supplier
             java.util.function.Supplier<?> supplier = invocation.getArgument(1);
             return supplier.get();
@@ -141,7 +141,7 @@ class TCFactoryServiceImplTest {
         assertEquals(RestApiStatus.SUCCESS, apiResponse.getStatus());
         assertEquals("Lấy tất cả nhóm xưởng do giảng viên " + userCode + " thành công", apiResponse.getMessage());
 
-        verify(redisCacheHelper).getOrSet(anyString(), any(), any(), anyLong());
+        verify(redisCacheHelper).getOrSet(anyString(), any(), any());
         verify(factoryExtendRepository).getAllFactoryByTeacher(any(Pageable.class), eq(facilityId), eq(userCode),
                 eq(request));
         // Removed: verify(redisService).set(anyString(), any(PageableObject.class), eq(3600L));
@@ -156,7 +156,7 @@ class TCFactoryServiceImplTest {
 
         String cacheKey = RedisPrefixConstant.REDIS_PREFIX_TEACHER_FACTORY + "projects_" + facilityId;
         List<Project> cachedProjects = Arrays.asList(mock(Project.class), mock(Project.class));
-        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong())).thenReturn(cachedProjects);
+        when(redisCacheHelper.getOrSet(anyString(), any(), any())).thenReturn(cachedProjects);
 
         // Act
         ResponseEntity<?> response = factoryService.getAllProjectByFacility();
@@ -170,7 +170,7 @@ class TCFactoryServiceImplTest {
         assertEquals("Lấy tất cả dự án theo cơ sở thành công", apiResponse.getMessage());
         assertEquals(cachedProjects, apiResponse.getData());
 
-        verify(redisCacheHelper).getOrSet(anyString(), any(), any(), anyLong());
+        verify(redisCacheHelper).getOrSet(anyString(), any(), any());
         verify(projectExtendRepository, never()).getAllProjectName(anyString());
     }
 
@@ -181,7 +181,7 @@ class TCFactoryServiceImplTest {
         String facilityId = "facility-1";
         when(sessionHelper.getFacilityId()).thenReturn(facilityId);
         // Fix: use thenAnswer to call supplier and return correct data
-        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong())).thenAnswer(invocation -> {
+        when(redisCacheHelper.getOrSet(anyString(), any(), any())).thenAnswer(invocation -> {
             java.util.function.Supplier<?> supplier = invocation.getArgument(1);
             return supplier.get();
         });
@@ -200,7 +200,7 @@ class TCFactoryServiceImplTest {
         assertEquals("Lấy tất cả dự án theo cơ sở thành công", apiResponse.getMessage());
         assertEquals(projects, apiResponse.getData());
 
-        verify(redisCacheHelper).getOrSet(anyString(), any(), any(), anyLong());
+        verify(redisCacheHelper).getOrSet(anyString(), any(), any());
         verify(projectExtendRepository).getAllProjectName(facilityId);
         // Removed: verify(redisService).set(anyString(), eq(projects), eq(3600L));
     }
@@ -211,7 +211,7 @@ class TCFactoryServiceImplTest {
         // Arrange
         String cacheKey = RedisPrefixConstant.REDIS_PREFIX_TEACHER_FACTORY + "semesters_active";
         List<Semester> cachedSemesters = Arrays.asList(mock(Semester.class), mock(Semester.class));
-        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong())).thenReturn(cachedSemesters);
+        when(redisCacheHelper.getOrSet(anyString(), any(), any())).thenReturn(cachedSemesters);
 
         // Act
         ResponseEntity<?> response = factoryService.getAllSemester();
@@ -225,7 +225,7 @@ class TCFactoryServiceImplTest {
         assertEquals("Lấy tất cả học kỳ thành công", apiResponse.getMessage());
         assertEquals(cachedSemesters, apiResponse.getData());
 
-        verify(redisCacheHelper).getOrSet(anyString(), any(), any(), anyLong());
+        verify(redisCacheHelper).getOrSet(anyString(), any(), any());
         verify(semesterExtendRepository, never()).getAllSemester(any(EntityStatus.class));
     }
 
@@ -234,7 +234,7 @@ class TCFactoryServiceImplTest {
     void testGetAllSemester_WithoutCachedData() {
         // Arrange
         // Fix: use thenAnswer to call supplier and return correct data
-        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong())).thenAnswer(invocation -> {
+        when(redisCacheHelper.getOrSet(anyString(), any(), any())).thenAnswer(invocation -> {
             java.util.function.Supplier<?> supplier = invocation.getArgument(1);
             return supplier.get();
         });
@@ -253,7 +253,7 @@ class TCFactoryServiceImplTest {
         assertEquals("Lấy tất cả học kỳ thành công", apiResponse.getMessage());
         assertEquals(semesters, apiResponse.getData());
 
-        verify(redisCacheHelper).getOrSet(anyString(), any(), any(), anyLong());
+        verify(redisCacheHelper).getOrSet(anyString(), any(), any());
         verify(semesterExtendRepository).getAllSemester(EntityStatus.ACTIVE);
         // Removed: verify(redisService).set(anyString(), eq(semesters), eq(3600L));
     }

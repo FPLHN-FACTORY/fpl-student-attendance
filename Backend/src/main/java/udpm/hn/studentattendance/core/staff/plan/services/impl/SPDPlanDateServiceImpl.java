@@ -42,6 +42,7 @@ import udpm.hn.studentattendance.infrastructure.constants.StatusType;
 import udpm.hn.studentattendance.utils.DateTimeUtils;
 import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
 import udpm.hn.studentattendance.utils.ExcelUtils;
+import udpm.hn.studentattendance.helpers.RequestTrimHelper;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -161,6 +162,8 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
 
     @Override
     public ResponseEntity<?> updatePlanDate(SPDAddOrUpdatePlanDateRequest request) {
+
+        RequestTrimHelper.trimStringFields(request);
 
         request.setIdFacility(sessionHelper.getFacilityId());
         int MAX_LATE_ARRIVAL = settingHelper.getSetting(SettingKeys.SHIFT_MAX_LATE_ARRIVAL, Integer.class);
@@ -331,6 +334,8 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
 
     @Override
     public ResponseEntity<?> addPlanDate(SPDAddOrUpdatePlanDateRequest request) {
+
+        RequestTrimHelper.trimStringFields(request);
 
         request.setIdFacility(sessionHelper.getFacilityId());
 

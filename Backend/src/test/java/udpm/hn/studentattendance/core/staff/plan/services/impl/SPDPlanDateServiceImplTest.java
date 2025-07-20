@@ -24,7 +24,7 @@ import udpm.hn.studentattendance.helpers.SessionHelper;
 import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
 import udpm.hn.studentattendance.infrastructure.common.ApiResponse;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
-import udpm.hn.studentattendance.infrastructure.common.repositories.CommonUserStudentRepository;
+
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -47,8 +47,6 @@ class SPDPlanDateServiceImplTest {
     @Mock
     private SPDFacilityShiftRepository facilityShiftRepository;
 
-    @Mock
-    private CommonUserStudentRepository commonUserStudentRepository;
 
     @Mock
     private SessionHelper sessionHelper;

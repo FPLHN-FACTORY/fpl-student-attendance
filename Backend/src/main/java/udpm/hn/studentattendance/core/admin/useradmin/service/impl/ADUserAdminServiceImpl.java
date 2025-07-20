@@ -23,6 +23,7 @@ import udpm.hn.studentattendance.infrastructure.constants.RedisPrefixConstant;
 import com.fasterxml.jackson.core.type.TypeReference;
 import udpm.hn.studentattendance.helpers.RedisCacheHelper;
 import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
+import udpm.hn.studentattendance.helpers.RequestTrimHelper;
 
 import java.util.HashMap;
 import java.util.List;
@@ -97,6 +98,7 @@ public class ADUserAdminServiceImpl implements ADUserAdminService {
         @Override
         public ResponseEntity<?> createUserAdmin(ADUserAdminCreateOrUpdateRequest createOrUpdateRequest) {
 
+                RequestTrimHelper.trimStringFields(createOrUpdateRequest);
                 Optional<UserAdmin> existUserAdmin = userAdminExtendRepository
                                 .getUserAdminByCode(createOrUpdateRequest.getStaffCode());
                 Optional<UserAdmin> existUserAdmin2 = userAdminExtendRepository
@@ -159,6 +161,7 @@ public class ADUserAdminServiceImpl implements ADUserAdminService {
         @Override
         public ResponseEntity<?> updateUserAdmin(ADUserAdminCreateOrUpdateRequest createOrUpdateRequest, String id) {
 
+                RequestTrimHelper.trimStringFields(createOrUpdateRequest);
                 if (!ValidateHelper.isValidFullname(createOrUpdateRequest.getStaffName())) {
                         return RouterHelper.responseError(
                                         "Tên admin không hợp lệ: Tối thiểu 2 từ, cách nhau bởi khoảng trắng và Chỉ gồm ký tự chữ không chứa số hay ký tự đặc biệt.");

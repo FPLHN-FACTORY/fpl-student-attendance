@@ -14,13 +14,7 @@ import udpm.hn.studentattendance.core.admin.facility.repository.AFFacilityShiftR
 import udpm.hn.studentattendance.core.admin.facility.service.AFFacilityShiftService;
 import udpm.hn.studentattendance.entities.Facility;
 import udpm.hn.studentattendance.entities.FacilityShift;
-import udpm.hn.studentattendance.helpers.PaginationHelper;
-import udpm.hn.studentattendance.helpers.RedisCacheHelper;
-import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
-import udpm.hn.studentattendance.helpers.RouterHelper;
-import udpm.hn.studentattendance.helpers.SettingHelper;
-import udpm.hn.studentattendance.helpers.ShiftHelper;
-import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
+import udpm.hn.studentattendance.helpers.*;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.RedisPrefixConstant;
@@ -60,6 +54,7 @@ public class AFFacilityShiftServiceImpl implements AFFacilityShiftService {
 
     @Override
     public ResponseEntity<?> addShift(AFAddOrUpdateFacilityShiftRequest request) {
+        RequestTrimHelper.trimStringFields(request);
         int MIN_DIFF_SHIFT = settingHelper.getSetting(SettingKeys.SHIFT_MIN_DIFF, Integer.class);
 
         Facility facility = afFacilityExtendRepository.findById(request.getIdFacility()).orElse(null);
@@ -108,6 +103,7 @@ public class AFFacilityShiftServiceImpl implements AFFacilityShiftService {
 
     @Override
     public ResponseEntity<?> updateShift(AFAddOrUpdateFacilityShiftRequest request) {
+        RequestTrimHelper.trimStringFields(request);
         int MIN_DIFF_SHIFT = settingHelper.getSetting(SettingKeys.SHIFT_MIN_DIFF, Integer.class);
 
         FacilityShift facilityShift = afFacilityShiftRepository.findById(request.getId()).orElse(null);

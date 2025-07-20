@@ -34,6 +34,7 @@ import udpm.hn.studentattendance.entities.Facility;
 import udpm.hn.studentattendance.infrastructure.constants.SessionConstant;
 import udpm.hn.studentattendance.utils.AppUtils;
 import udpm.hn.studentattendance.utils.FaceRecognitionUtils;
+import udpm.hn.studentattendance.helpers.RequestTrimHelper;
 
 import java.util.Arrays;
 import java.util.List;
@@ -185,6 +186,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
     @Override
     public ResponseEntity<?> studentRegister(AuthenticationStudentRegisterRequest request) {
+        RequestTrimHelper.trimStringFields(request);
         UserStudent student = authenticationUserStudentRepository.findById(sessionHelper.getUserId()).orElse(null);
         if (student == null) {
             return RouterHelper.responseError("Không tìm thấy sinh viên");

@@ -21,6 +21,7 @@ import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.RedisPrefixConstant;
 import com.fasterxml.jackson.core.type.TypeReference;
 import udpm.hn.studentattendance.helpers.RedisCacheHelper;
+import udpm.hn.studentattendance.helpers.RequestTrimHelper;
 
 @Service
 @RequiredArgsConstructor
@@ -54,6 +55,8 @@ public class AFFacilityLocationServiceImpl implements AFFacilityLocationService 
     @Override
     public ResponseEntity<?> addLocation(AFAddOrUpdateFacilityLocationRequest request) {
 
+        RequestTrimHelper.trimStringFields(request);
+
         Facility facility = afFacilityExtendRepository.findById(request.getIdFacility()).orElse(null);
 
         if (facility == null || facility.getStatus() != EntityStatus.ACTIVE) {
@@ -83,6 +86,8 @@ public class AFFacilityLocationServiceImpl implements AFFacilityLocationService 
 
     @Override
     public ResponseEntity<?> updateLocation(AFAddOrUpdateFacilityLocationRequest request) {
+
+        RequestTrimHelper.trimStringFields(request);
 
         FacilityLocation facilityLocation = afFacilityLocationRepository.findById(request.getId()).orElse(null);
         if (facilityLocation == null) {

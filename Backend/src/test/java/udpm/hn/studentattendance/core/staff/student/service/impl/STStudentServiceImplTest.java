@@ -30,7 +30,7 @@ import udpm.hn.studentattendance.infrastructure.common.ApiResponse;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.RestApiStatus;
-import udpm.hn.studentattendance.infrastructure.redis.service.RedisService;
+import udpm.hn.studentattendance.infrastructure.config.redis.service.RedisService;
 import udpm.hn.studentattendance.helpers.SettingHelper;
 import udpm.hn.studentattendance.helpers.RedisCacheHelper;
 
@@ -98,7 +98,7 @@ public class STStudentServiceImplTest {
         Page<USStudentResponse> emptyPage = new PageImpl<>(Collections.emptyList());
         PageableObject<USStudentResponse> cachedData = PageableObject.of(emptyPage);
 
-        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong())).thenReturn(cachedData);
+        when(redisCacheHelper.getOrSet(anyString(), any(), any())).thenReturn(cachedData);
 
         // Act
         ResponseEntity<?> response = studentService.getAllStudentByFacility(request);
@@ -109,7 +109,7 @@ public class STStudentServiceImplTest {
         assertNotNull(apiResponse);
         assertEquals(RestApiStatus.SUCCESS, apiResponse.getStatus());
 
-        verify(redisCacheHelper).getOrSet(anyString(), any(), any(), anyLong());
+        verify(redisCacheHelper).getOrSet(anyString(), any(), any());
         verify(studentExtendRepository, never()).getAllStudentByFacility(any(), any(), any());
     }
 
@@ -121,7 +121,7 @@ public class STStudentServiceImplTest {
         Page<USStudentResponse> dbPage = new PageImpl<>(new ArrayList<>());
 
         // Simulate cache miss by calling supplier
-        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong()))
+        when(redisCacheHelper.getOrSet(anyString(), any(), any()))
                 .thenAnswer(invocation -> {
                     java.util.function.Supplier<?> supplier = invocation.getArgument(1);
                     return supplier.get();
@@ -138,7 +138,7 @@ public class STStudentServiceImplTest {
         assertNotNull(apiResponse);
         assertEquals(RestApiStatus.SUCCESS, apiResponse.getStatus());
 
-        verify(redisCacheHelper).getOrSet(anyString(), any(), any(), anyLong());
+        verify(redisCacheHelper).getOrSet(anyString(), any(), any());
         verify(studentExtendRepository).getAllStudentByFacility(any(Pageable.class), any(), anyString());
     }
 
@@ -361,7 +361,7 @@ public class STStudentServiceImplTest {
         Map<String, Boolean> cachedFaceStatus = new HashMap<>();
         cachedFaceStatus.put("student-1", true);
         cachedFaceStatus.put("student-2", false);
-        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong())).thenReturn(cachedFaceStatus);
+        when(redisCacheHelper.getOrSet(anyString(), any(), any())).thenReturn(cachedFaceStatus);
 
         // Act
         ResponseEntity<?> response = studentService.isExistFace();
@@ -379,7 +379,7 @@ public class STStudentServiceImplTest {
     @DisplayName("isExistFace should query database when cache miss")
     public void testIsExistFace_NoCachedData() {
         // Arrange
-        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong()))
+        when(redisCacheHelper.getOrSet(anyString(), any(), any()))
                 .thenAnswer(invocation -> {
                     java.util.function.Supplier<?> supplier = invocation.getArgument(1);
                     return supplier.get();
@@ -415,7 +415,7 @@ public class STStudentServiceImplTest {
         USStudentRequest request = new USStudentRequest();
 
         // Simulate cache error by throwing exception
-        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong()))
+        when(redisCacheHelper.getOrSet(anyString(), any(), any()))
                 .thenThrow(new RuntimeException("Deserialize error"));
 
         when(studentExtendRepository.getAllStudentByFacility(any(Pageable.class), eq(request), anyString()))
@@ -429,7 +429,7 @@ public class STStudentServiceImplTest {
     @DisplayName("Test getCachedFaceStatus should handle cache deserialization error")
     void testGetCachedFaceStatusWithCacheError() {
         // Simulate cache error by throwing exception
-        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong()))
+        when(redisCacheHelper.getOrSet(anyString(), any(), any()))
                 .thenThrow(new RuntimeException("Deserialize error"));
 
         // Mock repository and expected result

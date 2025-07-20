@@ -35,12 +35,12 @@ import udpm.hn.studentattendance.helpers.SessionHelper;
 import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
 import udpm.hn.studentattendance.infrastructure.common.ApiResponse;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
-import udpm.hn.studentattendance.infrastructure.common.repositories.CommonUserStudentRepository;
+
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.RedisPrefixConstant;
 import udpm.hn.studentattendance.infrastructure.constants.RestApiStatus;
 import udpm.hn.studentattendance.infrastructure.constants.SemesterName;
-import udpm.hn.studentattendance.infrastructure.redis.service.RedisService;
+import udpm.hn.studentattendance.infrastructure.config.redis.service.RedisService;
 import udpm.hn.studentattendance.utils.DateTimeUtils;
 
 import java.util.ArrayList;
@@ -71,8 +71,6 @@ class SPDPlanServiceImplTest {
     @Mock
     private SPDProjectRepository spdProjectRepository;
 
-    @Mock
-    private CommonUserStudentRepository commonUserStudentRepository;
 
     @Mock
     private SessionHelper sessionHelper;
@@ -106,7 +104,7 @@ class SPDPlanServiceImplTest {
 
         String cacheKey = RedisPrefixConstant.REDIS_PREFIX_PLAN + "subjects_facility=" + facilityId;
         List<SPDSubjectResponse> cachedData = Arrays.asList(mock(SPDSubjectResponse.class));
-        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong())).thenReturn(cachedData);
+        when(redisCacheHelper.getOrSet(anyString(), any(), any())).thenReturn(cachedData);
 
         // Act
         ResponseEntity<?> response = planService.getAllSubject();
@@ -119,7 +117,7 @@ class SPDPlanServiceImplTest {
         assertEquals("Lấy dữ liệu bộ môn thành công", apiResponse.getMessage());
         assertEquals(cachedData, apiResponse.getData());
 
-        verify(redisCacheHelper).getOrSet(anyString(), any(), any(), anyLong());
+        verify(redisCacheHelper).getOrSet(anyString(), any(), any());
         verify(spdSubjectRepository, never()).getAllByFacility(anyString());
     }
 
@@ -132,7 +130,7 @@ class SPDPlanServiceImplTest {
 
         String cacheKey = RedisPrefixConstant.REDIS_PREFIX_PLAN + "subjects_facility=" + facilityId;
         List<SPDSubjectResponse> dbData = Arrays.asList(mock(SPDSubjectResponse.class));
-        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong()))
+        when(redisCacheHelper.getOrSet(anyString(), any(), any()))
                 .thenAnswer(invocation -> {
                     java.util.function.Supplier<?> supplier = invocation.getArgument(1);
                     return supplier.get();
@@ -151,7 +149,7 @@ class SPDPlanServiceImplTest {
         assertEquals("Lấy dữ liệu bộ môn thành công", apiResponse.getMessage());
         assertEquals(dbData, apiResponse.getData());
 
-        verify(redisCacheHelper).getOrSet(anyString(), any(), any(), anyLong());
+        verify(redisCacheHelper).getOrSet(anyString(), any(), any());
         verify(spdSubjectRepository).getAllByFacility(facilityId);
     }
 
@@ -161,7 +159,7 @@ class SPDPlanServiceImplTest {
         // Arrange
         String cacheKey = RedisPrefixConstant.REDIS_PREFIX_LEVEL + "all";
         List<SPDLevelProjectResponse> levels = Arrays.asList(mock(SPDLevelProjectResponse.class));
-        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong()))
+        when(redisCacheHelper.getOrSet(anyString(), any(), any()))
                 .thenAnswer(invocation -> {
                     java.util.function.Supplier<?> supplier = invocation.getArgument(1);
                     return supplier.get();
@@ -179,7 +177,7 @@ class SPDPlanServiceImplTest {
         assertEquals("Lấy dữ liệu level thành công", apiResponse.getMessage());
         assertEquals(levels, apiResponse.getData());
 
-        verify(redisCacheHelper).getOrSet(anyString(), any(), any(), anyLong());
+        verify(redisCacheHelper).getOrSet(anyString(), any(), any());
         verify(spdLevelProjectRepository).getAll();
     }
 
@@ -189,7 +187,7 @@ class SPDPlanServiceImplTest {
         // Arrange
         String cacheKey = RedisPrefixConstant.REDIS_PREFIX_PLAN + "semester_names_all";
         List<String> semesterNames = Arrays.stream(SemesterName.values()).map(Enum::name).toList();
-        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong()))
+        when(redisCacheHelper.getOrSet(anyString(), any(), any()))
                 .thenAnswer(invocation -> {
                     java.util.function.Supplier<?> supplier = invocation.getArgument(1);
                     return supplier.get();
@@ -209,7 +207,7 @@ class SPDPlanServiceImplTest {
         assertEquals(semesterNames.size(), actualSemesterNames.size());
         assertEquals(semesterNames, actualSemesterNames);
 
-        verify(redisCacheHelper).getOrSet(anyString(), any(), any(), anyLong());
+        verify(redisCacheHelper).getOrSet(anyString(), any(), any());
     }
 
     @Test
@@ -229,7 +227,7 @@ class SPDPlanServiceImplTest {
         String cacheKey = RedisPrefixConstant.REDIS_PREFIX_PLAN + "list_facility=" + facilityId +
                 "_page=" + request.getPage() + "_size=" + request.getSize() +
                 "_orderBy=" + request.getOrderBy() + "_sortBy=" + request.getSortBy() + "_q=";
-        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong())).thenReturn(null);
+        when(redisCacheHelper.getOrSet(anyString(), any(), any())).thenReturn(null);
 
         // Create a simple page object
         List<SPDPlanResponse> planResponses = new ArrayList<>();
@@ -249,7 +247,7 @@ class SPDPlanServiceImplTest {
         assertEquals("Lấy danh sách dữ liệu thành công", apiResponse.getMessage());
 
         verify(spdPlanRepository).getAllByFilter(any(), any());
-        verify(redisCacheHelper).getOrSet(anyString(), any(), any(), anyLong());
+        verify(redisCacheHelper).getOrSet(anyString(), any(), any());
         assertEquals(facilityId, request.getIdFacility());
     }
 
@@ -428,7 +426,7 @@ class SPDPlanServiceImplTest {
     void testGetAllYear() {
         // Arrange
         List<Integer> years = Arrays.asList(2022, 2023);
-        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong()))
+        when(redisCacheHelper.getOrSet(anyString(), any(), any()))
                 .thenAnswer(invocation -> {
                     java.util.function.Supplier<?> supplier = invocation.getArgument(1);
                     return supplier.get();
@@ -480,7 +478,7 @@ class SPDPlanServiceImplTest {
         String facilityId = "facility-1";
         when(sessionHelper.getFacilityId()).thenReturn(facilityId);
         List<SPDProjectResponse> projects = Arrays.asList(mock(SPDProjectResponse.class));
-        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong()))
+        when(redisCacheHelper.getOrSet(anyString(), any(), any()))
                 .thenAnswer(invocation -> {
                     java.util.function.Supplier<?> supplier = invocation.getArgument(1);
                     return supplier.get();

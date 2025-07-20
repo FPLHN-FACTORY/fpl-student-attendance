@@ -6,9 +6,7 @@ import org.springframework.stereotype.Component;
 import java.lang.reflect.Field;
 import java.util.List;
 
-/**
- * Utility helper to automatically trim all string fields in request objects
- */
+
 @Slf4j
 @Component
 public class RequestTrimHelper {

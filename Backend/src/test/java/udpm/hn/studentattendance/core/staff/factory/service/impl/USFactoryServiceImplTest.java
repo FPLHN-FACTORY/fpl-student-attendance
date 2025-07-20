@@ -30,11 +30,11 @@ import udpm.hn.studentattendance.helpers.SessionHelper;
 import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
 import udpm.hn.studentattendance.infrastructure.common.ApiResponse;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
-import udpm.hn.studentattendance.infrastructure.common.repositories.CommonUserStudentRepository;
+
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.RestApiStatus;
 import udpm.hn.studentattendance.infrastructure.constants.RoleConstant;
-import udpm.hn.studentattendance.infrastructure.redis.service.RedisService;
+import udpm.hn.studentattendance.infrastructure.config.redis.service.RedisService;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -72,8 +72,6 @@ class USFactoryServiceImplTest {
         @Mock
         private NotificationService notificationService;
 
-        @Mock
-        private CommonUserStudentRepository commonUserStudentRepository;
 
         @Mock
         private SessionHelper sessionHelper;
@@ -117,7 +115,7 @@ class USFactoryServiceImplTest {
                                 .thenReturn(page);
 
                 // Mock Redis cache miss
-                when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong()))
+                when(redisCacheHelper.getOrSet(anyString(), any(), any()))
                                 .thenAnswer(invocation -> {
                                         java.util.function.Supplier<?> supplier = invocation.getArgument(1);
                                         return supplier.get();
@@ -134,7 +132,7 @@ class USFactoryServiceImplTest {
                 assertEquals("Hiển thị tất cả nhóm xưởng thành công", apiResponse.getMessage());
 
                 verify(factoryRepository).getAllFactory(any(Pageable.class), eq(facilityId), eq(request));
-                verify(redisCacheHelper).getOrSet(anyString(), any(), any(), anyLong());
+                verify(redisCacheHelper).getOrSet(anyString(), any(), any());
         }
 
         @Test
@@ -151,7 +149,7 @@ class USFactoryServiceImplTest {
                 when(projectFactoryExtendRepository.getAllProject(facilityId)).thenReturn(mockProjects);
 
                 // Mock Redis cache miss
-                when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong()))
+                when(redisCacheHelper.getOrSet(anyString(), any(), any()))
                                 .thenAnswer(invocation -> {
                                         java.util.function.Supplier<?> supplier = invocation.getArgument(1);
                                         return supplier.get();
@@ -169,7 +167,7 @@ class USFactoryServiceImplTest {
                 assertEquals(mockProjects, apiResponse.getData());
 
                 verify(projectFactoryExtendRepository).getAllProject(facilityId);
-                verify(redisCacheHelper).getOrSet(anyString(), any(), any(), anyLong());
+                verify(redisCacheHelper).getOrSet(anyString(), any(), any());
         }
 
         @Test
@@ -190,7 +188,7 @@ class USFactoryServiceImplTest {
                                 .thenReturn(mockSubjectFacilities);
 
                 // Mock Redis cache miss
-                when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong()))
+                when(redisCacheHelper.getOrSet(anyString(), any(), any()))
                                 .thenAnswer(invocation -> {
                                         java.util.function.Supplier<?> supplier = invocation.getArgument(1);
                                         return supplier.get();
@@ -211,7 +209,7 @@ class USFactoryServiceImplTest {
                                 EntityStatus.ACTIVE,
                                 EntityStatus.ACTIVE,
                                 facilityId);
-                verify(redisCacheHelper).getOrSet(anyString(), any(), any(), anyLong());
+                verify(redisCacheHelper).getOrSet(anyString(), any(), any());
         }
 
         @Test
@@ -233,7 +231,7 @@ class USFactoryServiceImplTest {
                                 .thenReturn(mockStaffs);
 
                 // Mock Redis cache miss
-                when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong()))
+                when(redisCacheHelper.getOrSet(anyString(), any(), any()))
                                 .thenAnswer(invocation -> {
                                         java.util.function.Supplier<?> supplier = invocation.getArgument(1);
                                         return supplier.get();
@@ -255,7 +253,7 @@ class USFactoryServiceImplTest {
                                 EntityStatus.ACTIVE,
                                 facilityId,
                                 RoleConstant.TEACHER);
-                verify(redisCacheHelper).getOrSet(anyString(), any(), any(), anyLong());
+                verify(redisCacheHelper).getOrSet(anyString(), any(), any());
         }
 
         @Test
@@ -289,7 +287,7 @@ class USFactoryServiceImplTest {
                 when(factoryRepository.getFactoryById(factoryId)).thenReturn(Optional.empty());
 
                 // Mock Redis cache miss
-                when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong())).thenReturn(null);
+                when(redisCacheHelper.getOrSet(anyString(), any(), any())).thenReturn(null);
 
                 // Act
                 ResponseEntity<?> response = factoryService.getDetailFactory(factoryId);
@@ -302,7 +300,7 @@ class USFactoryServiceImplTest {
                 assertEquals("Nhóm xưởng không tồn tại", apiResponse.getMessage());
 
                 verify(factoryRepository).getFactoryById(factoryId);
-                verify(redisCacheHelper, never()).getOrSet(anyString(), any(), any(), anyLong());
+                verify(redisCacheHelper, never()).getOrSet(anyString(), any(), any());
         }
 
         @Test

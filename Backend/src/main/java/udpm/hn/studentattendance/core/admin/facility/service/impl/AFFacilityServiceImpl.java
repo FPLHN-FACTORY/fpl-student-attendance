@@ -24,6 +24,7 @@ import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.RedisPrefixConstant;
 import com.fasterxml.jackson.core.type.TypeReference;
 import udpm.hn.studentattendance.helpers.RedisCacheHelper;
+import udpm.hn.studentattendance.helpers.RequestTrimHelper;
 import udpm.hn.studentattendance.utils.DateTimeUtils;
 
 import java.time.Instant;
@@ -72,6 +73,8 @@ public class AFFacilityServiceImpl implements AFFacilityService {
     @Override
     public ResponseEntity<?> createFacility(AFCreateUpdateFacilityRequest request) {
 
+        RequestTrimHelper.trimStringFields(request);
+
         Optional<Facility> existFacility = facilityRepository.findByName(request.getFacilityName());
         if (existFacility.isPresent()) {
             return RouterHelper.responseError("Tên cơ sở đã tồn tại trên hệ thống");
@@ -95,6 +98,8 @@ public class AFFacilityServiceImpl implements AFFacilityService {
 
     @Override
     public ResponseEntity<?> updateFacility(String facilityId, AFCreateUpdateFacilityRequest request) {
+
+        RequestTrimHelper.trimStringFields(request);
 
         Optional<Facility> existFacility = facilityRepository.findById(facilityId);
         if (existFacility.isEmpty()) {

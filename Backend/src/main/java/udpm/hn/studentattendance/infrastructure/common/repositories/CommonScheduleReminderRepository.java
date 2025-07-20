@@ -9,21 +9,11 @@ import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 
 import java.util.List;
 
-/**
- * Repository interface for queries related to schedule reminders
- */
+
 @Repository
 public interface CommonScheduleReminderRepository extends JpaRepository<PlanDate, String> {
 
-    /**
-     * Find plan dates that will start within the given time range
-     * 
-     * @param startTimeRange    Lower bound of start time
-     * @param endTimeRange      Upper bound of start time
-     * @param status            Status of plan dates to find (usually ACTIVE)
-     * @param planFactoryStatus Status of plan factory (usually ACTIVE)
-     * @return List of plan dates starting within the specified time range
-     */
+   
     @Query(value = """
                 SELECT pd
                 FROM PlanDate pd
@@ -45,13 +35,7 @@ public interface CommonScheduleReminderRepository extends JpaRepository<PlanDate
             EntityStatus status,
             EntityStatus planFactoryStatus);
 
-    /**
-     * Find all active students in a factory
-     * 
-     * @param factoryId The factory ID to search for
-     * @param status    The status of student factory relationships to return
-     * @return List of UserStudentFactory objects
-     */
+   
     @Query("""
                 SELECT usf
                 FROM UserStudentFactory usf
