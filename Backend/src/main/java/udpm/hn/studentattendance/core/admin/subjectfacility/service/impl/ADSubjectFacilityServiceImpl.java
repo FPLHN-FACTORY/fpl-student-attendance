@@ -24,6 +24,7 @@ import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.RedisPrefixConstant;
 import com.fasterxml.jackson.core.type.TypeReference;
 import udpm.hn.studentattendance.helpers.RedisCacheHelper;
+import udpm.hn.studentattendance.helpers.RequestTrimHelper;
 
 @Service
 @RequiredArgsConstructor
@@ -68,6 +69,8 @@ public class ADSubjectFacilityServiceImpl implements ADSubjectFacilityService {
     @Override
     public ResponseEntity<?> createSubjectFacility(ADSubjectFacilityCreateRequest request) {
 
+        RequestTrimHelper.trimStringFields(request);
+
         Facility facility = facilityRepository.findById(request.getFacilityId()).orElse(null);
         if (facility == null || facility.getStatus() == EntityStatus.INACTIVE) {
             return RouterHelper.responseError("Không tìm thấy cơ sở");
@@ -97,6 +100,8 @@ public class ADSubjectFacilityServiceImpl implements ADSubjectFacilityService {
 
     @Override
     public ResponseEntity<?> updateSubjectFacility(String id, ADSubjectFacilityUpdateRequest request) {
+
+        RequestTrimHelper.trimStringFields(request);
 
         SubjectFacility subjectFacility = repository.findById(id).orElse(null);
         if (subjectFacility == null) {
@@ -145,7 +150,7 @@ public class ADSubjectFacilityServiceImpl implements ADSubjectFacilityService {
             return RouterHelper.responseError("Không tìm thấy bộ môn cơ sở");
         }
 
-        if(commonPlanDateRepository.existsNotYetStartedBySubjectFacility(subjectFacility.getId())) {
+        if (commonPlanDateRepository.existsNotYetStartedBySubjectFacility(subjectFacility.getId())) {
             return RouterHelper.responseError("Đang tồn tại ca chưa hoặc đang diễn ra. Không thể thay đổi trạng thái");
         }
 
@@ -153,7 +158,6 @@ public class ADSubjectFacilityServiceImpl implements ADSubjectFacilityService {
                 subjectFacility.getStatus() == EntityStatus.ACTIVE ? EntityStatus.INACTIVE : EntityStatus.ACTIVE);
 
         SubjectFacility newEntity = repository.save(subjectFacility);
-
 
         String statusText = newEntity.getStatus() == EntityStatus.ACTIVE ? "Hoạt động" : "Không hoạt động";
         userActivityLogHelper.saveLog("vừa thay đổi trạng thái bộ môn cơ sở: " + newEntity.getSubject().getName()

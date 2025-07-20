@@ -41,7 +41,7 @@ import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.RedisPrefixConstant;
 import udpm.hn.studentattendance.infrastructure.constants.RoleConstant;
 import udpm.hn.studentattendance.infrastructure.constants.SettingKeys;
-import udpm.hn.studentattendance.infrastructure.redis.service.RedisService;
+import udpm.hn.studentattendance.infrastructure.config.redis.service.RedisService;
 import udpm.hn.studentattendance.template.BaseServiceTest;
 
 import java.util.ArrayList;
@@ -168,7 +168,7 @@ class ADStaffServiceImplTest extends BaseServiceTest {
         Page<ADStaffResponse> page = new PageImpl<>(staffList);
         PageableObject<ADStaffResponse> mockData = PageableObject.of(page);
 
-        when(redisCacheHelper.getOrSet(eq(cacheKey), any(), any(), anyLong())).thenReturn(mockData);
+        when(redisCacheHelper.getOrSet(eq(cacheKey), any(), any())).thenReturn(mockData);
 
         // When
         ResponseEntity<?> response = adStaffService.getAllStaffByFilter(request);
@@ -181,7 +181,7 @@ class ADStaffServiceImplTest extends BaseServiceTest {
         assertEquals(mockData, apiResponse.getData());
 
         // Verify cache was used and repository was not called
-        verify(redisCacheHelper).getOrSet(eq(cacheKey), any(), any(), anyLong());
+        verify(redisCacheHelper).getOrSet(eq(cacheKey), any(), any());
         verify(adStaffRepository, never()).getAllStaff(any(), any());
     }
 
@@ -207,7 +207,7 @@ class ADStaffServiceImplTest extends BaseServiceTest {
         Page<ADStaffResponse> page = new PageImpl<>(staffList);
         PageableObject<ADStaffResponse> expected = PageableObject.of(page);
 
-        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong()))
+        when(redisCacheHelper.getOrSet(anyString(), any(), any()))
                 .thenAnswer(invocation -> {
                     java.util.function.Supplier<?> supplier = invocation.getArgument(1);
                     return supplier.get();
@@ -225,7 +225,7 @@ class ADStaffServiceImplTest extends BaseServiceTest {
         PageableObject<ADStaffResponse> actual = (PageableObject<ADStaffResponse>) apiResponse.getData();
         assertNotNull(actual);
         assertEquals(expected.getData(), actual.getData());
-        verify(redisCacheHelper).getOrSet(anyString(), any(), any(), anyLong());
+        verify(redisCacheHelper).getOrSet(anyString(), any(), any());
         verify(adStaffRepository).getAllStaff(any(Pageable.class), eq(request));
     }
 
@@ -393,7 +393,7 @@ class ADStaffServiceImplTest extends BaseServiceTest {
         String staffId = "non-existent-id";
         String cacheKey = RedisPrefixConstant.REDIS_PREFIX_STAFF + "detail_" + staffId;
 
-        when(redisCacheHelper.getOrSet(cacheKey, () -> Optional.empty(), optionalStaffDetailTypeRef, 300L))
+        when(redisCacheHelper.getOrSet(cacheKey, () -> Optional.empty(), optionalStaffDetailTypeRef))
                 .thenReturn(Optional.empty());
         when(adStaffRepository.getDetailStaff(staffId)).thenReturn(Optional.empty());
 
@@ -479,7 +479,7 @@ class ADStaffServiceImplTest extends BaseServiceTest {
         // Given
         String cacheKey = RedisPrefixConstant.REDIS_PREFIX_STAFF + "roles";
         List<Role> cachedRoles = new ArrayList<>();
-        when(redisCacheHelper.getOrSet(cacheKey, () -> cachedRoles, listRoleTypeRef, 300L)).thenReturn(cachedRoles);
+        when(redisCacheHelper.getOrSet(cacheKey, () -> cachedRoles, listRoleTypeRef)).thenReturn(cachedRoles);
 
         // When
         ResponseEntity<?> response = adStaffService.getAllRole();
@@ -499,7 +499,7 @@ class ADStaffServiceImplTest extends BaseServiceTest {
         Role role = new Role();
         role.setId("role-1");
         roles.add(role);
-        when(redisCacheHelper.getOrSet(eq(cacheKey), any(), any(), anyLong()))
+        when(redisCacheHelper.getOrSet(eq(cacheKey), any(), any()))
                 .thenAnswer(invocation -> {
                     java.util.function.Supplier<?> supplier = invocation.getArgument(1);
                     return supplier.get();
@@ -521,7 +521,7 @@ class ADStaffServiceImplTest extends BaseServiceTest {
         // Given
         String cacheKey = RedisPrefixConstant.REDIS_PREFIX_STAFF + "facilities";
         List<Facility> cachedFacilities = new ArrayList<>();
-        when(redisCacheHelper.getOrSet(cacheKey, () -> cachedFacilities, listFacilityTypeRef, 300L))
+        when(redisCacheHelper.getOrSet(cacheKey, () -> cachedFacilities, listFacilityTypeRef))
                 .thenReturn(cachedFacilities);
 
         // When
@@ -543,7 +543,7 @@ class ADStaffServiceImplTest extends BaseServiceTest {
         facility.setId("facility-1");
         facility.setName("FPT HCM");
         facilities.add(facility);
-        when(redisCacheHelper.getOrSet(eq(cacheKey), any(), any(), anyLong()))
+        when(redisCacheHelper.getOrSet(eq(cacheKey), any(), any()))
                 .thenAnswer(invocation -> {
                     java.util.function.Supplier<?> supplier = invocation.getArgument(1);
                     return supplier.get();
@@ -567,7 +567,7 @@ class ADStaffServiceImplTest extends BaseServiceTest {
         String cacheKey = RedisPrefixConstant.REDIS_PREFIX_STAFF + "list_" + request.hashCode();
 
         // Simulate cache error by throwing exception
-        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong()))
+        when(redisCacheHelper.getOrSet(anyString(), any(), any()))
                 .thenThrow(new RuntimeException("Deserialize error"));
         when(adStaffRepository.getAllStaff(any(), eq(request))).thenReturn(mockData);
 
@@ -580,7 +580,7 @@ class ADStaffServiceImplTest extends BaseServiceTest {
     void testGetStaffListWithRedisSetError() {
         ADStaffRequest request = new ADStaffRequest();
         Page<ADStaffResponse> mockData = mock(Page.class);
-        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong()))
+        when(redisCacheHelper.getOrSet(anyString(), any(), any()))
                 .thenAnswer(invocation -> {
                     java.util.function.Supplier<?> supplier = invocation.getArgument(1);
                     return supplier.get();
@@ -610,7 +610,7 @@ class ADStaffServiceImplTest extends BaseServiceTest {
     void testGetStaffDetailWithRedisSetError() {
         String staffId = "staff-1";
         ADStaffDetailResponse staffDetail = mock(ADStaffDetailResponse.class);
-        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong()))
+        when(redisCacheHelper.getOrSet(anyString(), any(), any()))
                 .thenReturn(null)
                 .thenAnswer(invocation -> {
                     java.util.function.Supplier<?> supplier = invocation.getArgument(1);
@@ -631,7 +631,7 @@ class ADStaffServiceImplTest extends BaseServiceTest {
         String cacheKey = RedisPrefixConstant.REDIS_PREFIX_STAFF + "roles";
 
         // Simulate cache error by throwing exception
-        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong()))
+        when(redisCacheHelper.getOrSet(anyString(), any(), any()))
                 .thenThrow(new RuntimeException("Deserialize error"));
         when(adStaffRoleRepository.getAllRole()).thenReturn(roleList);
 
@@ -646,7 +646,7 @@ class ADStaffServiceImplTest extends BaseServiceTest {
         Role role = new Role();
         role.setId("role-1");
         roleList.add(role);
-        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong()))
+        when(redisCacheHelper.getOrSet(anyString(), any(), any()))
                 .thenAnswer(invocation -> {
                     java.util.function.Supplier<?> supplier = invocation.getArgument(1);
                     return supplier.get();
@@ -666,7 +666,7 @@ class ADStaffServiceImplTest extends BaseServiceTest {
         Facility facility = new Facility();
         facility.setId("facility-1");
         facilityList.add(facility);
-        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong()))
+        when(redisCacheHelper.getOrSet(anyString(), any(), any()))
                 .thenAnswer(invocation -> {
                     java.util.function.Supplier<?> supplier = invocation.getArgument(1);
                     return supplier.get();

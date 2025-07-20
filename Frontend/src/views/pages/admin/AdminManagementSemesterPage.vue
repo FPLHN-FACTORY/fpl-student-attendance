@@ -35,31 +35,25 @@ const breadcrumb = ref([
   },
 ])
 
-// Danh sách học kỳ
+
 const semesters = ref([])
-// Dùng filter để lưu trạng thái tìm kiếm & phân trang (không chứa thông tin phân trang)
 const filter = reactive({
   semesterCode: '',
   status: '',
   dateRange: null, // Giá trị RangePicker (mảng [start, end])
-  // Các tham số phân trang sẽ được lấy từ đối tượng pagination
 })
 
-// Đối tượng pagination dùng cho component a-table (đã được làm reactive)
 const pagination = reactive({
   ...DEFAULT_PAGINATION,
 })
 
-// Biến loading cho bảng và modal
 const isLoading = ref(false)
 const modalAddLoading = ref(false)
 const modalUpdateLoading = ref(false)
 
-// Modal hiển thị
 const modalAdd = ref(false)
 const modalUpdate = ref(false)
 
-// Thêm hàm để xác định học kỳ dựa trên tháng
 const getSemesterByMonth = () => {
   const currentMonth = dayjs().month() + 1 // +1 vì month() trả về 0-11
   if (currentMonth >= 1 && currentMonth <= 4) {
@@ -491,15 +485,12 @@ onMounted(() => {
               <template v-if="column.key === 'rowNumber'">
                 {{ (pagination.current - 1) * pagination.pageSize + index + 1 }}
               </template>
-              <!-- Hiển thị ngày bắt đầu -->
               <template v-else-if="column.dataIndex === 'startDate'">
                 {{ formatEpochToDate(record.startDate) }}
               </template>
-              <!-- Hiển thị ngày kết thúc -->
               <template v-else-if="column.dataIndex === 'endDate'">
                 {{ formatEpochToDate(record.endDate) }}
               </template>
-              <!-- Hiển thị trạng thái -->
               <template v-else-if="column.dataIndex === 'semesterStatus'">
                 <span class="nowrap">
                   <a-switch
@@ -535,7 +526,6 @@ onMounted(() => {
                   </a-tag>
                 </span>
               </template>
-              <!-- Các chức năng: Sửa & Đổi trạng thái -->
               <template v-else-if="column.key === 'actions'">
                 <a-space>
                   <a-tooltip
@@ -568,7 +558,6 @@ onMounted(() => {
       </div>
     </div>
 
-    <!-- Modal Thêm Học Kỳ -->
     <a-modal
       v-model:open="modalAdd"
       title="Thêm học kỳ"
@@ -612,7 +601,6 @@ onMounted(() => {
       </a-form>
     </a-modal>
 
-    <!-- Modal Cập Nhật Học Kỳ -->
     <a-modal
       v-model:open="modalUpdate"
       title="Cập nhật học kỳ"

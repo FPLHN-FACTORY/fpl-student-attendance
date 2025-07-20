@@ -9,7 +9,7 @@ import org.springframework.http.ResponseEntity;
 import udpm.hn.studentattendance.core.admin.subjectfacility.repository.ADFacilityRepository;
 import udpm.hn.studentattendance.helpers.RedisCacheHelper;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
-import udpm.hn.studentattendance.infrastructure.redis.service.RedisService;
+import udpm.hn.studentattendance.infrastructure.config.redis.service.RedisService;
 
 import java.util.Collections;
 import java.util.function.Supplier;
@@ -38,7 +38,7 @@ public class ADFacilityManagementServiceImplTest {
         String idSubject = "subject1";
         // Capture the supplier and manually invoke it to simulate cache miss
         ArgumentCaptor<Supplier> supplierCaptor = ArgumentCaptor.forClass(Supplier.class);
-        when(redisCacheHelper.getOrSet(anyString(), supplierCaptor.capture(), any(), anyLong())).thenReturn(null);
+        when(redisCacheHelper.getOrSet(anyString(), supplierCaptor.capture(), any())).thenReturn(null);
         when(repository.getFacility(idSubject)).thenReturn(Collections.emptyList());
         ResponseEntity<?> response = service.getComboboxFacility(idSubject);
         // Simulate cache miss by invoking the supplier
@@ -51,7 +51,7 @@ public class ADFacilityManagementServiceImplTest {
     void testGetListFacility() {
         // Capture the supplier and manually invoke it to simulate cache miss
         ArgumentCaptor<Supplier> supplierCaptor = ArgumentCaptor.forClass(Supplier.class);
-        when(redisCacheHelper.getOrSet(anyString(), supplierCaptor.capture(), any(), anyLong())).thenReturn(null);
+        when(redisCacheHelper.getOrSet(anyString(), supplierCaptor.capture(), any())).thenReturn(null);
         when(repository.getFacilities(EntityStatus.ACTIVE)).thenReturn(Collections.emptyList());
         ResponseEntity<?> response = service.getListFacility();
         // Simulate cache miss by invoking the supplier

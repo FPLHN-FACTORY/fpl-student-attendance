@@ -35,6 +35,7 @@ import udpm.hn.studentattendance.infrastructure.constants.ShiftType;
 import udpm.hn.studentattendance.infrastructure.constants.StatusType;
 import udpm.hn.studentattendance.utils.DateTimeUtils;
 import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
+import udpm.hn.studentattendance.helpers.RequestTrimHelper;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
@@ -94,6 +95,7 @@ public class SPDPlanFactoryServiceImpl implements SPDPlanFactoryService {
 
     @Override
     public ResponseEntity<?> createPlanFactory(SPDAddPlanFactoryRequest request) {
+        RequestTrimHelper.trimStringFields(request);
 
         int MAX_LATE_ARRIVAL = settingHelper.getSetting(SettingKeys.SHIFT_MAX_LATE_ARRIVAL, Integer.class);
 
@@ -308,7 +310,8 @@ public class SPDPlanFactoryServiceImpl implements SPDPlanFactoryService {
             return RouterHelper.responseError("Không tìm thấy nhóm xưởng trong kế hoạch này");
         }
 
-        SPDPlanFactoryResponse planFactoryResponse = spdPlanFactoryRepository.getDetail(planFactory.getId(), sessionHelper.getFacilityId()).orElse(null);
+        SPDPlanFactoryResponse planFactoryResponse = spdPlanFactoryRepository
+                .getDetail(planFactory.getId(), sessionHelper.getFacilityId()).orElse(null);
 
         if (planFactoryResponse != null && planFactoryResponse.getStatus() != EntityStatus.INACTIVE.ordinal()) {
             return RouterHelper.responseError("Không thể xoá nhóm xưởng đang triển khai trong kế hoạch này");

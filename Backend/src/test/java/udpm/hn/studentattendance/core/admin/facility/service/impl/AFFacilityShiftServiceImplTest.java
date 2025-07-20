@@ -23,7 +23,7 @@ import udpm.hn.studentattendance.helpers.SettingHelper;
 import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
-import udpm.hn.studentattendance.infrastructure.redis.service.RedisService;
+import udpm.hn.studentattendance.infrastructure.config.redis.service.RedisService;
 import udpm.hn.studentattendance.helpers.RedisCacheHelper;
 
 import java.util.Optional;
@@ -79,7 +79,7 @@ class AFFacilityShiftServiceImplTest {
     void testGetShiftListWithCache() {
         AFFilterFacilityShiftRequest request = new AFFilterFacilityShiftRequest();
         PageableObject<AFFacilityShiftResponse> cachedData = new PageableObject<>();
-        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong())).thenReturn(cachedData);
+        when(redisCacheHelper.getOrSet(anyString(), any(), any())).thenReturn(cachedData);
 
         // Gọi qua getAllList để nhận ApiResponse không null
         ResponseEntity<?> response = shiftService.getAllList(request);
@@ -105,7 +105,7 @@ class AFFacilityShiftServiceImplTest {
         shifts.add(shift);
         Page<AFFacilityShiftResponse> page = new org.springframework.data.domain.PageImpl<>(shifts);
         PageableObject<AFFacilityShiftResponse> expected = PageableObject.of(page);
-        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong()))
+        when(redisCacheHelper.getOrSet(anyString(), any(), any()))
                 .thenAnswer(invocation -> {
                     java.util.function.Supplier<?> supplier = invocation.getArgument(1);
                     return supplier.get();
@@ -136,7 +136,7 @@ class AFFacilityShiftServiceImplTest {
         shifts.add(shift);
         Page<AFFacilityShiftResponse> page = new org.springframework.data.domain.PageImpl<>(shifts);
         PageableObject<AFFacilityShiftResponse> expected = PageableObject.of(page);
-        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong()))
+        when(redisCacheHelper.getOrSet(anyString(), any(), any()))
                 .thenAnswer(invocation -> {
                     java.util.function.Supplier<?> supplier = invocation.getArgument(1);
                     return supplier.get();

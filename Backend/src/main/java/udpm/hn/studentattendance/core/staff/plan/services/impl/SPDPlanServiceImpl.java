@@ -32,6 +32,7 @@ import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.RedisPrefixConstant;
 import udpm.hn.studentattendance.infrastructure.constants.SemesterName;
 import udpm.hn.studentattendance.utils.DateTimeUtils;
+import udpm.hn.studentattendance.helpers.RequestTrimHelper;
 
 import java.util.Arrays;
 import java.util.List;
@@ -172,6 +173,8 @@ public class SPDPlanServiceImpl implements SPDPlanService {
     @Override
     public ResponseEntity<?> createPlan(SPDAddOrUpdatePlanRequest request) {
 
+        RequestTrimHelper.trimStringFields(request);
+
         Project project = spdProjectRepository.findById(request.getIdProject()).orElse(null);
 
         if (project == null
@@ -284,6 +287,8 @@ public class SPDPlanServiceImpl implements SPDPlanService {
 
     @Override
     public ResponseEntity<?> updatePlan(SPDAddOrUpdatePlanRequest request) {
+
+        RequestTrimHelper.trimStringFields(request);
 
         Plan plan = spdPlanRepository.findById(request.getId()).orElse(null);
         if (plan == null) {

@@ -11,7 +11,7 @@ import udpm.hn.studentattendance.core.admin.useradmin.repository.ADUserAdminExte
 import udpm.hn.studentattendance.core.admin.useradmin.repository.ADUserAdminStaffExtendRepository;
 import udpm.hn.studentattendance.core.notification.service.NotificationService;
 import udpm.hn.studentattendance.helpers.*;
-import udpm.hn.studentattendance.infrastructure.redis.service.RedisService;
+import udpm.hn.studentattendance.infrastructure.config.redis.service.RedisService;
 import udpm.hn.studentattendance.entities.UserAdmin;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;

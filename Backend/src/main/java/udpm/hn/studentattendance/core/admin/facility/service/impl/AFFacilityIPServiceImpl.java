@@ -24,6 +24,7 @@ import udpm.hn.studentattendance.infrastructure.constants.RedisPrefixConstant;
 import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
 import com.fasterxml.jackson.core.type.TypeReference;
 import udpm.hn.studentattendance.helpers.RedisCacheHelper;
+import udpm.hn.studentattendance.helpers.RequestTrimHelper;
 
 @Service
 @RequiredArgsConstructor
@@ -87,6 +88,8 @@ public class AFFacilityIPServiceImpl implements AFFacilityIPService {
     @Override
     public ResponseEntity<?> addIP(AFAddOrUpdateFacilityIPRequest request) {
 
+        RequestTrimHelper.trimStringFields(request);
+
         Facility facility = afFacilityExtendRepository.findById(request.getIdFacility()).orElse(null);
 
         if (facility == null || facility.getStatus() != EntityStatus.ACTIVE) {
@@ -128,6 +131,8 @@ public class AFFacilityIPServiceImpl implements AFFacilityIPService {
 
     @Override
     public ResponseEntity<?> updateIP(AFAddOrUpdateFacilityIPRequest request) {
+
+        RequestTrimHelper.trimStringFields(request);
 
         FacilityIP facilityIP = afFacilityIPRepository.findById(request.getId()).orElse(null);
         if (facilityIP == null) {
