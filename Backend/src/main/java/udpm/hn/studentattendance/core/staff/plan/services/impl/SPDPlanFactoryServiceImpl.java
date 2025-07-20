@@ -35,7 +35,6 @@ import udpm.hn.studentattendance.infrastructure.constants.ShiftType;
 import udpm.hn.studentattendance.infrastructure.constants.StatusType;
 import udpm.hn.studentattendance.utils.DateTimeUtils;
 import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
-import udpm.hn.studentattendance.helpers.RequestTrimHelper;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
@@ -95,7 +94,6 @@ public class SPDPlanFactoryServiceImpl implements SPDPlanFactoryService {
 
     @Override
     public ResponseEntity<?> createPlanFactory(SPDAddPlanFactoryRequest request) {
-        RequestTrimHelper.trimStringFields(request);
 
         int MAX_LATE_ARRIVAL = settingHelper.getSetting(SettingKeys.SHIFT_MAX_LATE_ARRIVAL, Integer.class);
 
@@ -125,18 +123,18 @@ public class SPDPlanFactoryServiceImpl implements SPDPlanFactoryService {
 
         List<List<Integer>> lstConsecutiveShift = ShiftHelper.findConsecutiveShift(request.getShift());
         if (lstConsecutiveShift.isEmpty()) {
-            return RouterHelper.responseError("Vui lòng chọn ít nhất 1 ca học");
+            return RouterHelper.responseError("Vui lòng chọn ít nhất 1 ca");
         }
 
         ShiftType type;
         try {
             type = ShiftType.fromKey(request.getType());
         } catch (Exception e) {
-            return RouterHelper.responseError("Hinh thức học không hợp lệ");
+            return RouterHelper.responseError("Hình thức không hợp lệ");
         }
 
         if (StringUtils.hasText(request.getLink()) && !ValidateHelper.isValidURL(request.getLink())) {
-            return RouterHelper.responseError("Link học online không hợp lệ");
+            return RouterHelper.responseError("Link online không hợp lệ");
         }
 
         StatusType requiredIp = StatusType.fromKey(request.getRequiredIp());
@@ -176,10 +174,10 @@ public class SPDPlanFactoryServiceImpl implements SPDPlanFactoryService {
                 FacilityShift shiftEnd = spdFacilityShiftRepository.getOneById(endShift, sessionHelper.getFacilityId())
                         .orElse(null);
                 if (shiftStart == null) {
-                    return RouterHelper.responseError("Ca học " + startShift + " không tồn tại");
+                    return RouterHelper.responseError("Ca " + startShift + " không tồn tại");
                 }
                 if (shiftEnd == null) {
-                    return RouterHelper.responseError("Ca học " + endShift + " không tồn tại");
+                    return RouterHelper.responseError("Ca " + endShift + " không tồn tại");
                 }
                 Long startDate = ShiftHelper.getShiftTimeStart(current,
                         LocalTime.of(shiftStart.getFromHour(), shiftStart.getFromMinute()));
@@ -200,7 +198,7 @@ public class SPDPlanFactoryServiceImpl implements SPDPlanFactoryService {
 
                     if (spdPlanDateRepository.isExistsShiftInFactory(planFactory.getId(), null, startDate, endDate)) {
                         spdPlanFactoryRepository.delete(planFactory);
-                        return RouterHelper.responseError("Đã tồn tại ca học diễn ra trong khoảng thời gian từ "
+                        return RouterHelper.responseError("Đã tồn tại ca diễn ra trong khoảng thời gian từ "
                                 + DateTimeUtils.convertMillisToDate(startDate, "HH:mm") + " đến "
                                 + DateTimeUtils.convertMillisToDate(endDate, "HH:mm") + " của ngày "
                                 + DateTimeUtils.convertMillisToDate(startDate));
@@ -240,7 +238,7 @@ public class SPDPlanFactoryServiceImpl implements SPDPlanFactoryService {
 
         if (lstPlanDate.isEmpty()) {
             spdPlanFactoryRepository.delete(planFactory);
-            return RouterHelper.responseError("Không có ca học nào phù hợp trong khoảng thời gian diễn ra");
+            return RouterHelper.responseError("Không có ca nào phù hợp trong khoảng thời gian diễn ra");
         }
         List<PlanDate> lstEntity = spdPlanDateRepository.saveAllAndFlush(lstPlanDate);
 

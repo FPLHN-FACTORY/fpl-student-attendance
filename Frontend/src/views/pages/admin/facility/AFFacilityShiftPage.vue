@@ -42,7 +42,7 @@ const lstData = ref([])
 const columns = ref(
   autoAddColumnWidth([
     { title: '#', dataIndex: 'orderNumber', key: 'orderNumber' },
-    { title: 'Ca học', dataIndex: 'shift', key: 'shift' },
+    { title: 'Ca', dataIndex: 'shift', key: 'shift' },
     {
       title: 'Thời gian bắt đầu',
       dataIndex: 'startTime',

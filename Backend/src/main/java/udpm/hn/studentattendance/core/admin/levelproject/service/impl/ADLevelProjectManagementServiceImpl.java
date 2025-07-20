@@ -11,7 +11,6 @@ import udpm.hn.studentattendance.core.admin.levelproject.service.ADLevelProjectM
 import udpm.hn.studentattendance.entities.LevelProject;
 import udpm.hn.studentattendance.helpers.*;
 import udpm.hn.studentattendance.helpers.RedisCacheHelper;
-import udpm.hn.studentattendance.helpers.RequestTrimHelper;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.common.repositories.CommonPlanDateRepository;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
@@ -51,7 +50,6 @@ public class ADLevelProjectManagementServiceImpl implements ADLevelProjectManage
     @Override
     public ResponseEntity<?> createLevelProject(ADLevelProjectCreateRequest request) {
 
-        RequestTrimHelper.trimStringFields(request);
 
         String code = CodeGeneratorUtils.generateCodeFromString(request.getName());
 
@@ -59,9 +57,9 @@ public class ADLevelProjectManagementServiceImpl implements ADLevelProjectManage
             return RouterHelper.responseError("Nhóm dự án đã tồn tại trong hệ thống");
         }
 
-        if (!ValidateHelper.isValidCode(request.getName())) {
+        if (!ValidateHelper.isValidFullname(request.getName())) {
             return RouterHelper.responseError(
-                    "Tên nhóm dự án không hợp lệ: không có khoảng trắng, không có ký tự đặc biệt ngoài dấu chấm . và dấu gạch dưới _.");
+                    "Tên nhóm dự án không hợp lệ: Tối thiểu 2 từ, cách nhau bởi khoảng trắng và Chỉ gồm ký tự chữ không chứa số hay ký tự đặc biệt.");
         }
 
         LevelProject lv = new LevelProject();
@@ -81,16 +79,15 @@ public class ADLevelProjectManagementServiceImpl implements ADLevelProjectManage
     @Override
     public ResponseEntity<?> updateLevelProject(String id, ADLevelProjectUpdateRequest request) {
 
-        RequestTrimHelper.trimStringFields(request);
 
         LevelProject lv = repository.findById(id).orElse(null);
         if (lv == null) {
             return RouterHelper.responseError("Nhóm dự án không tồn tại");
         }
 
-        if (!ValidateHelper.isValidCode(request.getName())) {
+        if (!ValidateHelper.isValidFullname(request.getName())) {
             return RouterHelper.responseError(
-                    "Tên nhóm dự án không hợp lệ: không có khoảng trắng, không có ký tự đặc biệt ngoài dấu chấm . và dấu gạch dưới _.");
+                    "Tên nhóm dự án không hợp lệ: Tối thiểu 2 từ, cách nhau bởi khoảng trắng và Chỉ gồm ký tự chữ không chứa số hay ký tự đặc biệt.");
         }
 
         String code = CodeGeneratorUtils.generateCodeFromString(request.getName());

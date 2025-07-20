@@ -22,7 +22,6 @@ import udpm.hn.studentattendance.entities.UserStudent;
 import udpm.hn.studentattendance.entities.UserStudentFactory;
 import udpm.hn.studentattendance.helpers.NotificationHelper;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
-import udpm.hn.studentattendance.helpers.RequestTrimHelper;
 import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.helpers.SessionHelper;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
@@ -110,7 +109,6 @@ public class USStudentFactoryServiceImpl implements USStudentFactoryService {
         @Transactional
         public ResponseEntity<?> createOrDeleteStudentFactory(
                         USStudentFactoryCreateUpdateRequest studentFactoryCreateUpdateRequest) {
-                RequestTrimHelper.trimStringFields(studentFactoryCreateUpdateRequest);
                 Optional<UserStudentFactory> existStudentFactory = studentFactoryRepository
                                 .getUserStudentFactoriesByUserStudentIdAndFactoryId(
                                                 studentFactoryCreateUpdateRequest.getStudentId(),
@@ -180,7 +178,6 @@ public class USStudentFactoryServiceImpl implements USStudentFactoryService {
 
         @Override
         public ResponseEntity<?> createStudent(USStudentFactoryAddRequest addRequest) {
-                RequestTrimHelper.trimStringFields(addRequest);
 
                 Optional<UserStudent> existUserStudentByCode = userStudentFactoryExtendRepository
                                 .getUserStudentByCode(addRequest.getStudentCode());

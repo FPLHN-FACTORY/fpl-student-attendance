@@ -169,6 +169,7 @@ const fetchSubjects = () => {
 const handleTableChange = (pageInfo) => {
   pagination.current = pageInfo.current
   pagination.pageSize = pageInfo.pageSize
+  filter.pageSize = pageInfo.pageSize
   fetchProjects()
 }
 
@@ -186,7 +187,6 @@ const handleClearFilter = () => {
   fetchProjects()
 }
 
-// Thêm hàm để lấy học kỳ gần nhất
 const getNearestActiveSemester = (semesters) => {
   const now = new Date().getTime()
   return semesters
@@ -195,7 +195,6 @@ const getNearestActiveSemester = (semesters) => {
     .shift() // Lấy học kỳ đầu tiên (gần nhất)
 }
 
-// Sửa lại hàm handleShowModalAdd để set học kỳ gần nhất
 const handleShowModalAdd = () => {
   resetForm()
   // Tìm học kỳ gần nhất và set vào newProject

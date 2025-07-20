@@ -35,12 +35,12 @@ const columns = ref(
   autoAddColumnWidth([
     { title: '#', dataIndex: 'orderNumber', key: 'orderNumber' },
     {
-      title: 'Mã học sinh',
+      title: 'Mã sinh viên',
       dataIndex: 'code',
       key: 'code',
     },
     {
-      title: 'Tên học sinh',
+      title: 'Tên sinh viên',
       dataIndex: 'name',
       key: 'name',
     },
@@ -166,7 +166,7 @@ onMounted(() => {
       </div>
     </div>
     <a-card :bordered="false" class="cart">
-      <template #title><UnorderedListOutlined /> Danh sách học sinh</template>
+      <template #title><UnorderedListOutlined /> Danh sách sinh viên</template>
       <a-table
         class="nowrap"
         :loading="loadingStore.loading"

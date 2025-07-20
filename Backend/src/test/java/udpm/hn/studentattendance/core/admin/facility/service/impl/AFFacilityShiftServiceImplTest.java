@@ -183,7 +183,7 @@ class AFFacilityShiftServiceImplTest {
         ResponseEntity<?> response = shiftService.addShift(request);
         assertEquals(HttpStatus.OK, response.getStatusCode());
         verify(afFacilityShiftRepository).save(any(FacilityShift.class));
-        verify(userActivityLogHelper).saveLog(contains("Tạo ca học mới"));
+        verify(userActivityLogHelper).saveLog(contains("Tạo ca mới"));
         verify(redisInvalidationHelper).invalidateAllCaches();
     }
 
@@ -447,7 +447,7 @@ class AFFacilityShiftServiceImplTest {
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         verify(afFacilityShiftRepository).save(any(FacilityShift.class));
-        verify(userActivityLogHelper).saveLog(contains("Cập nhật ca học"));
+        verify(userActivityLogHelper).saveLog(contains("Cập nhật ca"));
         verify(redisInvalidationHelper).invalidateAllCaches();
     }
 
@@ -478,7 +478,7 @@ class AFFacilityShiftServiceImplTest {
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         verify(afFacilityShiftRepository).delete(facilityShift);
-        verify(userActivityLogHelper).saveLog(contains("Xóa ca học"));
+        verify(userActivityLogHelper).saveLog(contains("Xóa ca"));
         verify(redisInvalidationHelper).invalidateAllCaches();
     }
 

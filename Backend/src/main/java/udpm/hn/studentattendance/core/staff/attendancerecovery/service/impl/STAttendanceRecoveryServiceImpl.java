@@ -1,7 +1,6 @@
 package udpm.hn.studentattendance.core.staff.attendancerecovery.service.impl;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
@@ -25,7 +24,6 @@ import udpm.hn.studentattendance.infrastructure.excel.model.response.ExImportLog
 import com.fasterxml.jackson.core.type.TypeReference;
 import udpm.hn.studentattendance.helpers.RedisCacheHelper;
 import udpm.hn.studentattendance.utils.DateTimeUtils;
-import udpm.hn.studentattendance.helpers.RequestTrimHelper;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -129,7 +127,6 @@ public class STAttendanceRecoveryServiceImpl implements STAttendanceRecoveryServ
     @Override
     public ResponseEntity<?> createNewEventAttendanceRecovery(STCreateOrUpdateNewEventRequest request) {
 
-        RequestTrimHelper.trimStringFields(request);
 
         Optional<Facility> facilityOptional = facilityRepository.findById(sessionHelper.getFacilityId());
         if (facilityOptional == null) {
@@ -168,7 +165,6 @@ public class STAttendanceRecoveryServiceImpl implements STAttendanceRecoveryServ
     @Override
     public ResponseEntity<?> updateEventAttendanceRecovery(STCreateOrUpdateNewEventRequest request, String id) {
 
-        RequestTrimHelper.trimStringFields(request);
 
         Optional<AttendanceRecovery> attendanceRecoveryOptional = attendanceRecoveryRepository.findById(id);
         if (attendanceRecoveryOptional.isPresent()) {
@@ -224,7 +220,7 @@ public class STAttendanceRecoveryServiceImpl implements STAttendanceRecoveryServ
                     request.getDay());
             if (validPlanDates.isEmpty()) {
                 return RouterHelper.responseError(
-                        String.format("Ngày %s - Sinh viên %s - %s không có ca học nào",
+                        String.format("Ngày %s - Sinh viên %s - %s không có ca nào",
                                 formatDate(request.getDay()),
                                 userStudent.getCode(),
                                 userStudent.getName()),

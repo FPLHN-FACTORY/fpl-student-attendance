@@ -15,8 +15,8 @@ import udpm.hn.studentattendance.infrastructure.constants.EntityProperties;
 public class ADLevelProjectUpdateRequest {
 
     @NotBlank(message = "Tên cấp độ dự án không được bỏ trống")
-    @Size(max = EntityProperties.LENGTH_CODE, message = "Tên cấp độ dự án không được vượt quá "
-            + EntityProperties.LENGTH_CODE + " ký tự")
+    @Size(min = 2, max = EntityProperties.LENGTH_NAME, message = "Tên cấp độ dự án phải có ít nhất 2 ký tự và không được vượt quá "
+            + EntityProperties.LENGTH_NAME + " ký tự")
     private String name;
 
     private String description;
