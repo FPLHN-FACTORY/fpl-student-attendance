@@ -18,6 +18,7 @@ import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
 import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
 import useLoadingStore from '@/stores/useLoadingStore'
 import { autoAddColumnWidth } from '@/utils/utils'
+import { validateFormSubmission } from '@/utils/validationUtils'
 
 const breadcrumbStore = useBreadcrumbStore()
 const loadingStore = useLoadingStore()
@@ -160,8 +161,18 @@ const handleShowModalAdd = () => {
 }
 
 const handleAddSemester = () => {
-  if (!newSemester.semesterName || !newSemester.fromDate || !newSemester.toDate) {
-    message.error('Vui lòng nhập đầy đủ thông tin')
+  // Validate required fields with whitespace check
+  const validation = validateFormSubmission(newSemester, [
+    { key: 'semesterName', label: 'Tên học kỳ' },
+  ])
+  
+  if (!validation.isValid) {
+    message.error(validation.message)
+    return
+  }
+  
+  if (!newSemester.fromDate || !newSemester.toDate) {
+    message.error('Vui lòng chọn ngày bắt đầu và ngày kết thúc')
     return
   }
   Modal.confirm({
@@ -231,12 +242,18 @@ const handleUpdateSemester = (record) => {
 }
 
 const updateSemester = () => {
-  if (
-    !detailSemester.value.semesterName ||
-    !detailSemester.value.fromDate ||
-    !detailSemester.value.toDate
-  ) {
-    message.error('Vui lòng nhập đầy đủ thông tin')
+  // Validate required fields with whitespace check
+  const validation = validateFormSubmission(detailSemester.value, [
+    { key: 'semesterName', label: 'Tên học kỳ' },
+  ])
+  
+  if (!validation.isValid) {
+    message.error(validation.message)
+    return
+  }
+  
+  if (!detailSemester.value.fromDate || !detailSemester.value.toDate) {
+    message.error('Vui lòng chọn ngày bắt đầu và ngày kết thúc')
     return
   }
 

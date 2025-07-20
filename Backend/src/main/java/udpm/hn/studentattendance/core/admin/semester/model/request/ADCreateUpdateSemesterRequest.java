@@ -20,7 +20,8 @@ public class ADCreateUpdateSemesterRequest {
         private String facilityId;
 
         @NotBlank(message = "Tên học kỳ không được để trống")
-        @Size(min = 2, max = EntityProperties.LENGTH_NAME, message = "Tên học kỳ không được quá:" + EntityProperties.LENGTH_NAME)
+        @Size(min = 2, max = EntityProperties.LENGTH_NAME, message = "Tên học kỳ phải có ít nhất 2 ký tự và không được quá:"
+                        + EntityProperties.LENGTH_NAME)
         private String semesterName;
 
         @NotNull(message = "Thời gian không được để trống")
@@ -70,6 +71,5 @@ public class ADCreateUpdateSemesterRequest {
                                 .toInstant()
                                 .toEpochMilli();
         }
-
 
 }

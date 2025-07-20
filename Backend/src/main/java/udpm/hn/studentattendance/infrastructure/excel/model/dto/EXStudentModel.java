@@ -11,7 +11,7 @@ import java.util.Objects;
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
-public class ExStudentModel {
+public class EXStudentModel {
 
     private String code;
 
@@ -20,8 +20,8 @@ public class ExStudentModel {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof ExStudentModel)) return false;
-        ExStudentModel that = (ExStudentModel) o;
+        if (!(o instanceof EXStudentModel)) return false;
+        EXStudentModel that = (EXStudentModel) o;
         return Objects.equals(code, that.code) &&
                 Objects.equals(name, that.name);
     }

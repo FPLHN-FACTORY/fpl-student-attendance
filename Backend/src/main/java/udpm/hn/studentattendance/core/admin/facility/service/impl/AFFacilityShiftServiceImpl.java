@@ -54,7 +54,6 @@ public class AFFacilityShiftServiceImpl implements AFFacilityShiftService {
 
     @Override
     public ResponseEntity<?> addShift(AFAddOrUpdateFacilityShiftRequest request) {
-        RequestTrimHelper.trimStringFields(request);
         int MIN_DIFF_SHIFT = settingHelper.getSetting(SettingKeys.SHIFT_MIN_DIFF, Integer.class);
 
         Facility facility = afFacilityExtendRepository.findById(request.getIdFacility()).orElse(null);
@@ -66,7 +65,7 @@ public class AFFacilityShiftServiceImpl implements AFFacilityShiftService {
         int diffTime = ShiftHelper.getDiffTime(request.getFromHour(), request.getFromMinute(), request.getToHour(),
                 request.getToMinute());
         if (diffTime / 1000 < MIN_DIFF_SHIFT * 60) {
-            return RouterHelper.responseError("Ca học phải diễn ra tối thiểu trong " + MIN_DIFF_SHIFT + " phút");
+            return RouterHelper.responseError("Ca phải diễn ra tối thiểu trong " + MIN_DIFF_SHIFT + " phút");
         }
 
         if (afFacilityShiftRepository.isExistsShift(request.getShift(), request.getIdFacility(), null)) {
@@ -76,7 +75,7 @@ public class AFFacilityShiftServiceImpl implements AFFacilityShiftService {
 
         if (afFacilityShiftRepository.isExistsTime(request.getIdFacility(), request.getFromHour(),
                 request.getFromMinute(), request.getToHour(), request.getToMinute(), null)) {
-            return RouterHelper.responseError("Thời gian học " + request.getFromHour() + ":" + request.getFromMinute()
+            return RouterHelper.responseError("Thời gian " + request.getFromHour() + ":" + request.getFromMinute()
                     + " đến " + request.getToHour() + ":" + request.getToMinute() + " đã tồn tại trong cơ sở "
                     + facility.getName());
         }
@@ -91,30 +90,29 @@ public class AFFacilityShiftServiceImpl implements AFFacilityShiftService {
         FacilityShift saveFacilityShift = afFacilityShiftRepository.save(facilityShift);
 
         // Log user activity
-        userActivityLogHelper.saveLog("Tạo ca học mới: " + request.getShift() + " (" + request.getFromHour() + ":"
+        userActivityLogHelper.saveLog("Tạo ca mới: " + request.getShift() + " (" + request.getFromHour() + ":"
                 + request.getFromMinute() +
                 " - " + request.getToHour() + ":" + request.getToMinute() + ") tại cơ sở " + facility.getName());
 
         // Invalidate all caches
         redisInvalidationHelper.invalidateAllCaches();
 
-        return RouterHelper.responseSuccess("Tạo mới ca học thành công", saveFacilityShift);
+        return RouterHelper.responseSuccess("Tạo mới ca thành công", saveFacilityShift);
     }
 
     @Override
     public ResponseEntity<?> updateShift(AFAddOrUpdateFacilityShiftRequest request) {
-        RequestTrimHelper.trimStringFields(request);
         int MIN_DIFF_SHIFT = settingHelper.getSetting(SettingKeys.SHIFT_MIN_DIFF, Integer.class);
 
         FacilityShift facilityShift = afFacilityShiftRepository.findById(request.getId()).orElse(null);
         if (facilityShift == null) {
-            return RouterHelper.responseError("Không tìm thấy ca học muốn cập nhật");
+            return RouterHelper.responseError("Không tìm thấy ca muốn cập nhật");
         }
 
         int diffTime = ShiftHelper.getDiffTime(request.getFromHour(), request.getFromMinute(), request.getToHour(),
                 request.getToMinute());
         if (diffTime / 1000 < MIN_DIFF_SHIFT * 60) {
-            return RouterHelper.responseError("Ca học phải diễn ra tối thiểu trong " + MIN_DIFF_SHIFT + " phút");
+            return RouterHelper.responseError("Ca phải diễn ra tối thiểu trong " + MIN_DIFF_SHIFT + " phút");
         }
 
         Facility facility = afFacilityExtendRepository.findById(request.getIdFacility()).orElse(null);
@@ -131,7 +129,7 @@ public class AFFacilityShiftServiceImpl implements AFFacilityShiftService {
 
         if (afFacilityShiftRepository.isExistsTime(request.getIdFacility(), request.getFromHour(),
                 request.getFromMinute(), request.getToHour(), request.getToMinute(), facilityShift.getId())) {
-            return RouterHelper.responseError("Thời gian học " + request.getFromHour() + ":" + request.getFromMinute()
+            return RouterHelper.responseError("Thời gian " + request.getFromHour() + ":" + request.getFromMinute()
                     + " đến " + request.getToHour() + ":" + request.getToMinute() + " đã tồn tại trong cơ sở "
                     + facility.getName());
         }
@@ -147,7 +145,7 @@ public class AFFacilityShiftServiceImpl implements AFFacilityShiftService {
         FacilityShift saveFacilityShift = afFacilityShiftRepository.save(facilityShift);
 
         // Log user activity
-        userActivityLogHelper.saveLog("Cập nhật ca học từ: " + oldShiftInfo + " thành: " + request.getShift() + " (" +
+        userActivityLogHelper.saveLog("Cập nhật ca từ: " + oldShiftInfo + " thành: " + request.getShift() + " (" +
                 request.getFromHour() + ":" + request.getFromMinute() + " - " + request.getToHour() + ":"
                 + request.getToMinute() +
                 ") tại cơ sở " + facility.getName());
@@ -155,14 +153,14 @@ public class AFFacilityShiftServiceImpl implements AFFacilityShiftService {
         // Invalidate all caches
         redisInvalidationHelper.invalidateAllCaches();
 
-        return RouterHelper.responseSuccess("Cập nhật ca học thành công", saveFacilityShift);
+        return RouterHelper.responseSuccess("Cập nhật ca thành công", saveFacilityShift);
     }
 
     @Override
     public ResponseEntity<?> deleteShift(String id) {
         FacilityShift facilityShift = afFacilityShiftRepository.findById(id).orElse(null);
         if (facilityShift == null) {
-            return RouterHelper.responseError("Không tìm thấy ca học");
+            return RouterHelper.responseError("Không tìm thấy ca");
         }
         String shiftInfo = facilityShift.getShift() + " (" + facilityShift.getFromHour() + ":"
                 + facilityShift.getFromMinute() +
@@ -172,12 +170,12 @@ public class AFFacilityShiftServiceImpl implements AFFacilityShiftService {
         afFacilityShiftRepository.delete(facilityShift);
 
         // Log user activity
-        userActivityLogHelper.saveLog("Xóa ca học: " + shiftInfo + " tại cơ sở " + facilityName);
+        userActivityLogHelper.saveLog("Xóa ca: " + shiftInfo + " tại cơ sở " + facilityName);
 
         // Invalidate all caches
         redisInvalidationHelper.invalidateAllCaches();
 
-        return RouterHelper.responseSuccess("Xoá thành công ca học: " + facilityShift.getShift());
+        return RouterHelper.responseSuccess("Xoá thành công ca: " + facilityShift.getShift());
     }
 
     @Override
@@ -198,7 +196,7 @@ public class AFFacilityShiftServiceImpl implements AFFacilityShiftService {
 
         // Log user activity
         String statusChange = oldStatus == EntityStatus.ACTIVE ? "Ngừng hoạt động" : "Kích hoạt";
-        userActivityLogHelper.saveLog(statusChange + " ca học: " + facilityShift.getShift() + " (" +
+        userActivityLogHelper.saveLog(statusChange + " ca: " + facilityShift.getShift() + " (" +
                 facilityShift.getFromHour() + ":" + facilityShift.getFromMinute() + " - " +
                 facilityShift.getToHour() + ":" + facilityShift.getToMinute() + ") tại cơ sở "
                 + facilityShift.getFacility().getName());
@@ -206,7 +204,7 @@ public class AFFacilityShiftServiceImpl implements AFFacilityShiftService {
         // Invalidate all caches
         redisInvalidationHelper.invalidateAllCaches();
 
-        return RouterHelper.responseSuccess("Thay đổi trạng thái ca học thành công", savedShift);
+        return RouterHelper.responseSuccess("Thay đổi trạng thái ca thành công", savedShift);
     }
 
 }

@@ -1,7 +1,6 @@
 package udpm.hn.studentattendance.core.admin.facility.service.impl;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import udpm.hn.studentattendance.core.admin.facility.model.request.AFAddOrUpdateFacilityLocationRequest;
@@ -21,7 +20,6 @@ import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.RedisPrefixConstant;
 import com.fasterxml.jackson.core.type.TypeReference;
 import udpm.hn.studentattendance.helpers.RedisCacheHelper;
-import udpm.hn.studentattendance.helpers.RequestTrimHelper;
 
 @Service
 @RequiredArgsConstructor
@@ -55,7 +53,6 @@ public class AFFacilityLocationServiceImpl implements AFFacilityLocationService 
     @Override
     public ResponseEntity<?> addLocation(AFAddOrUpdateFacilityLocationRequest request) {
 
-        RequestTrimHelper.trimStringFields(request);
 
         Facility facility = afFacilityExtendRepository.findById(request.getIdFacility()).orElse(null);
 
@@ -87,7 +84,6 @@ public class AFFacilityLocationServiceImpl implements AFFacilityLocationService 
     @Override
     public ResponseEntity<?> updateLocation(AFAddOrUpdateFacilityLocationRequest request) {
 
-        RequestTrimHelper.trimStringFields(request);
 
         FacilityLocation facilityLocation = afFacilityLocationRepository.findById(request.getId()).orElse(null);
         if (facilityLocation == null) {

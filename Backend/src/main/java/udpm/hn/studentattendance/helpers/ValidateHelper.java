@@ -31,7 +31,7 @@ public class ValidateHelper {
 
     private static final String PHONE_REGEX = "^0[0-9]{9,10}$";
 
-    private static final String FULLNAME_REGEX = "^[\\p{L}]+(\\s[\\p{L}]+)+$";
+    private static final String FULLNAME_REGEX = "^[\\p{L}#]+(\\s[\\p{L}#]+)+$";
 
     private static final String URL_REGEX = "^(https?)://[a-zA-Z0-9-]+(\\.[a-zA-Z0-9-]+)+([/?].*)?$";
 

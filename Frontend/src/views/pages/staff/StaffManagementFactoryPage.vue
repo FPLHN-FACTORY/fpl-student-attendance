@@ -182,6 +182,7 @@ const onFilterChange = () => {
 const handleTableChange = (pageInfo) => {
   pagination.current = pageInfo.current
   pagination.pageSize = pageInfo.pageSize
+  filter.pageSize = pageInfo.pageSize
   fetchFactories()
 }
 

@@ -47,7 +47,7 @@ public class STDScheduleAttendanceRestController {
                 .getAllListAttendanceByUserList(request);
         ByteArrayInputStream byteArrayInputStream = service.exportScheduleAttendance(list);
         HttpHeaders headers = new HttpHeaders();
-        String fileName = "lịch-học.pdf";
+        String fileName = "lịch-điểm-danh.pdf";
         headers.add("Content-Disposition",
                 "inline; filename*=UTF-8''" + URLEncoder.encode(fileName, StandardCharsets.UTF_8.toString()));
         return ResponseEntity.ok().headers(headers).contentType(MediaType.APPLICATION_PDF)

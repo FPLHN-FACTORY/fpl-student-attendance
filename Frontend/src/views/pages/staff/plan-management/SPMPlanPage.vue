@@ -735,15 +735,15 @@ watch(
                   </a-select>
                 </div>
                 <div class="col-xxl-2 col-md-4 col-sm-6">
-                  <div class="label-title">Năm học:</div>
+                  <div class="label-title">Năm:</div>
                   <a-select
                     v-model:value="dataFilter.year"
                     class="w-100"
                     :dropdownMatchSelectWidth="false"
-                    placeholder="-- Tất cả năm học --"
+                    placeholder="-- Tất cả năm --"
                     allowClear
                   >
-                    <a-select-option :value="null">-- Tất cả năm học --</a-select-option>
+                    <a-select-option :value="null">-- Tất cả năm --</a-select-option>
                     <a-select-option v-for="o in optYear" :key="o" :value="o">
                       {{ o }}
                     </a-select-option>

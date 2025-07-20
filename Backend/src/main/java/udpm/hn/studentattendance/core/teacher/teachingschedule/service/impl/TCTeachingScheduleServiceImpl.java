@@ -142,7 +142,7 @@ public class TCTeachingScheduleServiceImpl implements TCTeachingScheduleService 
         public ResponseEntity<?> getAllSubjectByStaff() {
                 List<Subject> subjects = getCachedSubjects();
                 return RouterHelper.responseSuccess(
-                                "Lấy tất cả môn học của " + sessionHelper.getUserId() + " thành công", subjects);
+                                "Lấy tất cả môn của " + sessionHelper.getUserId() + " thành công", subjects);
         }
 
         public List<PlanDate> getCachedTypes() {
@@ -301,8 +301,6 @@ public class TCTeachingScheduleServiceImpl implements TCTeachingScheduleService 
         @Override
         public ResponseEntity<?> updatePlanDate(TCTSPlanDateUpdateRequest planDateUpdateRequest) {
 
-                RequestTrimHelper.trimStringFields(planDateUpdateRequest);
-
                 Optional<PlanDate> existPlanDate = teacherTeachingScheduleExtendRepository
                                 .findById(planDateUpdateRequest.getIdPlanDate());
 
@@ -351,8 +349,8 @@ public class TCTeachingScheduleServiceImpl implements TCTeachingScheduleService 
 
                 if (hasChanges) {
                         sendUpdateNotificationToStudents(savedPlanDate,
-                                        "Thông báo cập nhật lịch học",
-                                        "Thông tin lịch học đã được cập nhật");
+                                        "Thông báo cập nhật lịch",
+                                        "Thông tin lịch đã được cập nhật");
                 }
 
                 // Invalidate related caches
@@ -487,13 +485,13 @@ public class TCTeachingScheduleServiceImpl implements TCTeachingScheduleService 
                 planDate.setLink(planDate.getType() == ShiftType.ONLINE ? planDate.getLink() : "");
                 PlanDate savedPlanDate = teacherTeachingScheduleExtendRepository.save(planDate);
 
-                String notificationType = "Thay đổi hình thức học từ " +
+                String notificationType = "Thay đổi hình thức từ " +
                                 (oldType == ShiftType.ONLINE ? "Online" : "Offline") +
                                 " sang " +
                                 (savedPlanDate.getType() == ShiftType.ONLINE ? "Online" : "Offline");
 
                 sendUpdateNotificationToStudents(savedPlanDate,
-                                "Thông báo thay đổi hình thức học",
+                                "Thông báo thay đổi hình thức",
                                 notificationType);
 
                 // Invalidate related caches

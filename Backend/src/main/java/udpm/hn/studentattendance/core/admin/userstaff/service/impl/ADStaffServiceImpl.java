@@ -4,7 +4,6 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
@@ -29,7 +28,6 @@ import udpm.hn.studentattendance.helpers.SettingHelper;
 import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
 import udpm.hn.studentattendance.helpers.ValidateHelper;
 import udpm.hn.studentattendance.helpers.RedisCacheHelper;
-import udpm.hn.studentattendance.helpers.RequestTrimHelper;
 
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
@@ -112,7 +110,6 @@ public class ADStaffServiceImpl implements ADStaffService {
     @Override
     public ResponseEntity<?> createStaff(ADCreateUpdateStaffRequest adCreateUpdateStaffRequest) {
 
-        RequestTrimHelper.trimStringFields(adCreateUpdateStaffRequest);
 
         if (!ValidateHelper.isValidCode(adCreateUpdateStaffRequest.getStaffCode())) {
             return RouterHelper.responseError(

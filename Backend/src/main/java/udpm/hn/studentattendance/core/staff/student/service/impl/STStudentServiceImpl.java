@@ -1,7 +1,6 @@
 package udpm.hn.studentattendance.core.staff.student.service.impl;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
@@ -28,7 +27,6 @@ import udpm.hn.studentattendance.infrastructure.constants.SettingKeys;
 import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
 import com.fasterxml.jackson.core.type.TypeReference;
 import udpm.hn.studentattendance.helpers.RedisCacheHelper;
-import udpm.hn.studentattendance.helpers.RequestTrimHelper;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -89,7 +87,6 @@ public class STStudentServiceImpl implements STStudentService {
     @Override
     public ResponseEntity<?> createStudent(USStudentCreateUpdateRequest studentCreateUpdateRequest) {
 
-        RequestTrimHelper.trimStringFields(studentCreateUpdateRequest);
 
         if (!ValidateHelper.isValidCode(studentCreateUpdateRequest.getCode())) {
             return RouterHelper.responseError(
@@ -156,7 +153,6 @@ public class STStudentServiceImpl implements STStudentService {
     @Override
     public ResponseEntity<?> updateStudent(USStudentCreateUpdateRequest studentCreateUpdateRequest) {
 
-        RequestTrimHelper.trimStringFields(studentCreateUpdateRequest);
 
         if (!ValidateHelper.isValidCode(studentCreateUpdateRequest.getCode())) {
             return RouterHelper.responseError(

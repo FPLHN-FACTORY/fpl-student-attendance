@@ -22,6 +22,7 @@ public interface STDHistoryAttendanceExtendRepository extends FactoryRepository 
                   PARTITION BY ft.id 
                   ORDER BY pd.start_date
                 ) AS rowNumber,
+                ft.id                   AS factoryId,
                 ft.name                 AS factoryName,
                 pd.start_date           AS planDateStartDate,
                 pd.end_date             AS planDateEndDate,
@@ -100,6 +101,7 @@ public interface STDHistoryAttendanceExtendRepository extends FactoryRepository 
                 ROW_NUMBER() OVER (
                   PARTITION BY f.id 
                 ) AS rowNumber,
+                    f.id AS factoryId,
                     pd.id,
                     pl.id AS planId,
                     pl.name AS planName,
@@ -181,7 +183,9 @@ public interface STDHistoryAttendanceExtendRepository extends FactoryRepository 
                 GROUP BY at.id_plan_date
             ) att 
               ON att.id_plan_date = pd.id
-            WHERE us.id = :userStudentId
+            WHERE 
+            us.id = :userStudentId AND 
+            ft.id = :factoryId
             ORDER BY ft.id, pd.start_date ASC
             """, nativeQuery = true)
     List<STDHistoryAttendanceResponse> getAllHistoryAttendanceByFactory(String userStudentId, String factoryId, Long nowTs);

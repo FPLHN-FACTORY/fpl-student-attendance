@@ -25,7 +25,6 @@ import udpm.hn.studentattendance.infrastructure.constants.*;
 import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
 import com.fasterxml.jackson.core.type.TypeReference;
 import udpm.hn.studentattendance.helpers.RedisCacheHelper;
-import udpm.hn.studentattendance.helpers.RequestTrimHelper;
 
 import java.util.Date;
 import java.util.HashMap;
@@ -149,7 +148,6 @@ public class USFactoryServiceImpl implements USFactoryService {
     @Override
     public ResponseEntity<?> createFactory(USFactoryCreateUpdateRequest factoryCreateUpdateRequest) {
 
-        RequestTrimHelper.trimStringFields(factoryCreateUpdateRequest);
 
         Optional<UserStaff> userStaff = staffFactoryExtendRepository
                 .findById(factoryCreateUpdateRequest.getIdUserStaff());
@@ -206,7 +204,6 @@ public class USFactoryServiceImpl implements USFactoryService {
     @Override
     public ResponseEntity<?> updateFactory(USFactoryCreateUpdateRequest req) {
 
-        RequestTrimHelper.trimStringFields(req);
 
         Factory factory = factoryRepository.findById(req.getId())
                 .orElseThrow();
