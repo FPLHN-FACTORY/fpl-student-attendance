@@ -20,14 +20,7 @@ import udpm.hn.studentattendance.core.teacher.teachingschedule.repository.TCTSSu
 import udpm.hn.studentattendance.core.teacher.teachingschedule.repository.TCTeachingScheduleExtendRepository;
 import udpm.hn.studentattendance.core.teacher.teachingschedule.service.TCTeachingScheduleService;
 import udpm.hn.studentattendance.entities.*;
-import udpm.hn.studentattendance.helpers.MailerHelper;
-import udpm.hn.studentattendance.helpers.PaginationHelper;
-import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
-import udpm.hn.studentattendance.helpers.RouterHelper;
-import udpm.hn.studentattendance.helpers.SessionHelper;
-import udpm.hn.studentattendance.helpers.SettingHelper;
-import udpm.hn.studentattendance.helpers.ShiftHelper;
-import udpm.hn.studentattendance.helpers.ValidateHelper;
+import udpm.hn.studentattendance.helpers.*;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.config.mailer.model.MailerDefaultRequest;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
@@ -35,7 +28,6 @@ import udpm.hn.studentattendance.infrastructure.constants.RedisPrefixConstant;
 import udpm.hn.studentattendance.infrastructure.constants.SettingKeys;
 import udpm.hn.studentattendance.infrastructure.constants.ShiftType;
 import udpm.hn.studentattendance.infrastructure.constants.StatusType;
-import udpm.hn.studentattendance.helpers.RedisCacheHelper;
 import udpm.hn.studentattendance.repositories.UserStudentFactoryRepository;
 
 import java.awt.*;
@@ -124,8 +116,8 @@ public class TCTeachingScheduleServiceImpl implements TCTeachingScheduleService 
                                 key,
                                 () -> teacherTsProjectExtendRepository.getAllProject(sessionHelper.getUserId(),
                                                 EntityStatus.ACTIVE),
-                        new TypeReference<>() {
-                        });
+                                new TypeReference<>() {
+                                });
         }
 
         @Override
@@ -142,25 +134,24 @@ public class TCTeachingScheduleServiceImpl implements TCTeachingScheduleService 
                                 key,
                                 () -> teacherTsSubjectExtendRepository.getAllSubjectByStaff(sessionHelper.getUserId(),
                                                 EntityStatus.ACTIVE),
-                        new TypeReference<>() {
-                        });
+                                new TypeReference<>() {
+                                });
         }
 
         @Override
         public ResponseEntity<?> getAllSubjectByStaff() {
                 List<Subject> subjects = getCachedSubjects();
                 return RouterHelper.responseSuccess(
-                                "Lấy tất cả môn học của " + sessionHelper.getUserId() + " thành công", subjects);
+                                "Lấy tất cả môn của " + sessionHelper.getUserId() + " thành công", subjects);
         }
 
         public List<PlanDate> getCachedTypes() {
                 String cacheKey = RedisPrefixConstant.REDIS_PREFIX_SCHEDULE_TEACHER + "types";
                 return redisCacheHelper.getOrSet(
                                 cacheKey,
-                        teacherTeachingScheduleExtendRepository::getAllType,
-                        new TypeReference<>() {
-                        }
-                );
+                                teacherTeachingScheduleExtendRepository::getAllType,
+                                new TypeReference<>() {
+                                });
         }
 
         @Override
@@ -358,8 +349,8 @@ public class TCTeachingScheduleServiceImpl implements TCTeachingScheduleService 
 
                 if (hasChanges) {
                         sendUpdateNotificationToStudents(savedPlanDate,
-                                        "Thông báo cập nhật lịch học",
-                                        "Thông tin lịch học đã được cập nhật");
+                                        "Thông báo cập nhật lịch",
+                                        "Thông tin lịch đã được cập nhật");
                 }
 
                 // Invalidate related caches
@@ -455,8 +446,7 @@ public class TCTeachingScheduleServiceImpl implements TCTeachingScheduleService 
                                                                 sessionHelper.getUserId(),
                                                                 PaginationHelper.createPageable(request), request)),
                                 new TypeReference<>() {
-                                }
-                );
+                                });
         }
 
         @Override
@@ -495,13 +485,13 @@ public class TCTeachingScheduleServiceImpl implements TCTeachingScheduleService 
                 planDate.setLink(planDate.getType() == ShiftType.ONLINE ? planDate.getLink() : "");
                 PlanDate savedPlanDate = teacherTeachingScheduleExtendRepository.save(planDate);
 
-                String notificationType = "Thay đổi hình thức học từ " +
+                String notificationType = "Thay đổi hình thức từ " +
                                 (oldType == ShiftType.ONLINE ? "Online" : "Offline") +
                                 " sang " +
                                 (savedPlanDate.getType() == ShiftType.ONLINE ? "Online" : "Offline");
 
                 sendUpdateNotificationToStudents(savedPlanDate,
-                                "Thông báo thay đổi hình thức học",
+                                "Thông báo thay đổi hình thức",
                                 notificationType);
 
                 // Invalidate related caches

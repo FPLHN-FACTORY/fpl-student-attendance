@@ -36,7 +36,7 @@ import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.config.mailer.model.MailerDefaultRequest;
 import udpm.hn.studentattendance.infrastructure.constants.AttendanceStatus;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
-import udpm.hn.studentattendance.infrastructure.excel.model.dto.ExStudentModel;
+import udpm.hn.studentattendance.infrastructure.excel.model.dto.EXStudentModel;
 import udpm.hn.studentattendance.repositories.FacilityRepository;
 import udpm.hn.studentattendance.utils.CodeGeneratorUtils;
 import udpm.hn.studentattendance.utils.DateTimeUtils;
@@ -210,10 +210,10 @@ public class TSStatisticsServiceImpl implements TSStatisticsService {
                         }))
                         .toList();
 
-                Set<ExStudentModel> stPStudent = lstData.stream()
-                        .map(o -> new ExStudentModel(o.getCode(), o.getName()))
+                Set<EXStudentModel> stPStudent = lstData.stream()
+                        .map(o -> new EXStudentModel(o.getCode(), o.getName()))
                         .collect(Collectors.toCollection(LinkedHashSet::new));
-                List<ExStudentModel> lstStudent = stPStudent.stream()
+                List<EXStudentModel> lstStudent = stPStudent.stream()
                         .toList();
 
                 headers.addAll(lstPlanDate);
@@ -229,7 +229,7 @@ public class TSStatisticsServiceImpl implements TSStatisticsService {
                 colorMap.put("Vắng mặt", "#ff7d7d");
 
                 int row = 1;
-                for (ExStudentModel student : lstStudent) {
+                for (EXStudentModel student : lstStudent) {
                     String studentCode = student.getCode();
                     String studentName = student.getName();
 

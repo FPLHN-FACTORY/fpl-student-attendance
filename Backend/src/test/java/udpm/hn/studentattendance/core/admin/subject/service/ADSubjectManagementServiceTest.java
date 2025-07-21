@@ -8,11 +8,13 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.ResponseEntity;
 import udpm.hn.studentattendance.core.admin.subject.model.request.ADSubjectCreateRequest;
+import udpm.hn.studentattendance.core.admin.subject.model.request.ADSubjectSearchRequest;
 import udpm.hn.studentattendance.core.admin.subject.model.request.ADSubjectUpdateRequest;
 import udpm.hn.studentattendance.core.admin.subject.repository.ADSubjectExtendRepository;
 import udpm.hn.studentattendance.entities.Subject;
 import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
 import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
+
 import udpm.hn.studentattendance.infrastructure.config.redis.service.RedisService;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -22,8 +24,7 @@ import java.util.Optional;
 class ADSubjectManagementServiceTest {
     @Mock
     private ADSubjectExtendRepository adminSubjectRepository;
-    @Mock
-    private CommonUserStudentRepository commonUserStudentRepository;
+
     @Mock
     private UserActivityLogHelper userActivityLogHelper;
     @Mock

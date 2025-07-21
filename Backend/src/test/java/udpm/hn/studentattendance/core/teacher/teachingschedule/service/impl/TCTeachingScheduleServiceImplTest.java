@@ -137,7 +137,7 @@ class TCTeachingScheduleServiceImplTest {
                 + request.toString();
 
         PageableObject<TCTeachingScheduleResponse> cachedData = new PageableObject<>();
-        when(redisCacheHelper.getOrSet(eq(cacheKey), any(), any(), eq(3600L))).thenReturn(cachedData);
+        when(redisCacheHelper.getOrSet(eq(cacheKey), any(), any())).thenReturn(cachedData);
         when(sessionHelper.getUserId()).thenReturn(userId);
 
         // Act
@@ -146,7 +146,7 @@ class TCTeachingScheduleServiceImplTest {
         // Assert
         assertNotNull(result);
         assertSame(cachedData, result);
-        verify(redisCacheHelper).getOrSet(eq(cacheKey), any(), any(), eq(3600L));
+        verify(redisCacheHelper).getOrSet(eq(cacheKey), any(), any());
         verifyNoInteractions(teachingScheduleRepository);
     }
 
@@ -167,12 +167,13 @@ class TCTeachingScheduleServiceImplTest {
         mockData.add(mockResponse);
         Page<TCTeachingScheduleResponse> page = new PageImpl<>(mockData);
         PageableObject<TCTeachingScheduleResponse> expectedPageableObject = PageableObject.of(page);
-        
+
         when(teachingScheduleRepository.getAllTeachingScheduleByStaff(eq(userId), any(Pageable.class), eq(request)))
                 .thenReturn(page);
 
-        // Mock redisCacheHelper.getOrSet to simulate cache miss and return the expected result
-        when(redisCacheHelper.getOrSet(eq(cacheKey), any(), any(), eq(3600L)))
+        // Mock redisCacheHelper.getOrSet to simulate cache miss and return the expected
+        // result
+        when(redisCacheHelper.getOrSet(eq(cacheKey), any(), any()))
                 .thenAnswer(invocation -> {
                     // Get the supplier function (second argument)
                     java.util.function.Supplier<?> supplier = invocation.getArgument(1);
@@ -204,7 +205,7 @@ class TCTeachingScheduleServiceImplTest {
         PageableObject<TCTeachingScheduleResponse> mockedResult = new PageableObject<>();
         String cacheKey = RedisPrefixConstant.REDIS_PREFIX_SCHEDULE_TEACHER + "list_" + userId + "_"
                 + request.toString();
-        when(redisCacheHelper.getOrSet(eq(cacheKey), any(), any(), eq(3600L))).thenReturn(mockedResult);
+        when(redisCacheHelper.getOrSet(eq(cacheKey), any(), any())).thenReturn(mockedResult);
 
         // Act
         ResponseEntity<?> response = teachingScheduleService.getAllTeachingScheduleByStaff(request);
@@ -217,7 +218,7 @@ class TCTeachingScheduleServiceImplTest {
         assertTrue(apiResponse.getMessage().contains("Lấy tất cả lịch dạy của"));
         assertEquals(mockedResult, apiResponse.getData());
 
-        verify(redisCacheHelper).getOrSet(eq(cacheKey), any(), any(), eq(3600L));
+        verify(redisCacheHelper).getOrSet(eq(cacheKey), any(), any());
         verifyNoInteractions(teachingScheduleRepository);
     }
 
@@ -229,7 +230,7 @@ class TCTeachingScheduleServiceImplTest {
         String cacheKey = RedisPrefixConstant.REDIS_PREFIX_SCHEDULE_TEACHER + "factories_" + userId;
 
         List<Factory> cachedFactories = new ArrayList<>();
-        when(redisCacheHelper.getOrSet(eq(cacheKey), any(), any(), eq(3600L))).thenReturn(cachedFactories);
+        when(redisCacheHelper.getOrSet(eq(cacheKey), any(), any())).thenReturn(cachedFactories);
         when(sessionHelper.getUserId()).thenReturn(userId);
 
         // Act
@@ -238,7 +239,7 @@ class TCTeachingScheduleServiceImplTest {
         // Assert
         assertNotNull(result);
         assertEquals(cachedFactories, result);
-        verify(redisCacheHelper).getOrSet(eq(cacheKey), any(), any(), eq(3600L));
+        verify(redisCacheHelper).getOrSet(eq(cacheKey), any(), any());
         verifyNoInteractions(factoryRepository);
     }
 
@@ -253,7 +254,7 @@ class TCTeachingScheduleServiceImplTest {
         // Mock the cached data
         List<Factory> mockFactories = new ArrayList<>();
         String cacheKey = RedisPrefixConstant.REDIS_PREFIX_SCHEDULE_TEACHER + "factories_" + userId;
-        when(redisCacheHelper.getOrSet(eq(cacheKey), any(), any(), eq(3600L))).thenReturn(mockFactories);
+        when(redisCacheHelper.getOrSet(eq(cacheKey), any(), any())).thenReturn(mockFactories);
 
         // Act
         ResponseEntity<?> response = teachingScheduleService.getAllFactoryByStaff();
@@ -265,7 +266,7 @@ class TCTeachingScheduleServiceImplTest {
         assertTrue(apiResponse.getMessage().contains("Lấy tất cả nhóm xửng của"));
         assertEquals(mockFactories, apiResponse.getData());
 
-        verify(redisCacheHelper).getOrSet(eq(cacheKey), any(), any(), eq(3600L));
+        verify(redisCacheHelper).getOrSet(eq(cacheKey), any(), any());
         verifyNoInteractions(factoryRepository);
     }
 
@@ -277,7 +278,7 @@ class TCTeachingScheduleServiceImplTest {
         String cacheKey = RedisPrefixConstant.REDIS_PREFIX_SCHEDULE_TEACHER + "projects_" + userId;
 
         List<Project> cachedProjects = new ArrayList<>();
-        when(redisCacheHelper.getOrSet(eq(cacheKey), any(), any(), eq(3600L))).thenReturn(cachedProjects);
+        when(redisCacheHelper.getOrSet(eq(cacheKey), any(), any())).thenReturn(cachedProjects);
         when(sessionHelper.getUserId()).thenReturn(userId);
 
         // Act
@@ -286,7 +287,7 @@ class TCTeachingScheduleServiceImplTest {
         // Assert
         assertNotNull(result);
         assertEquals(cachedProjects, result);
-        verify(redisCacheHelper).getOrSet(eq(cacheKey), any(), any(), eq(3600L));
+        verify(redisCacheHelper).getOrSet(eq(cacheKey), any(), any());
         verifyNoInteractions(projectRepository);
     }
 
@@ -301,7 +302,7 @@ class TCTeachingScheduleServiceImplTest {
         // Mock the cached data
         List<Project> mockProjects = new ArrayList<>();
         String cacheKey = RedisPrefixConstant.REDIS_PREFIX_SCHEDULE_TEACHER + "projects_" + userId;
-        when(redisCacheHelper.getOrSet(eq(cacheKey), any(), any(), eq(3600L))).thenReturn(mockProjects);
+        when(redisCacheHelper.getOrSet(eq(cacheKey), any(), any())).thenReturn(mockProjects);
 
         // Act
         ResponseEntity<?> response = teachingScheduleService.getAllProjectByStaff();
@@ -313,7 +314,7 @@ class TCTeachingScheduleServiceImplTest {
         assertTrue(apiResponse.getMessage().contains("Lấy tất cả dự án đang dạy của"));
         assertEquals(mockProjects, apiResponse.getData());
 
-        verify(redisCacheHelper).getOrSet(eq(cacheKey), any(), any(), eq(3600L));
+        verify(redisCacheHelper).getOrSet(eq(cacheKey), any(), any());
         verifyNoInteractions(projectRepository);
     }
 
@@ -325,7 +326,7 @@ class TCTeachingScheduleServiceImplTest {
         String cacheKey = RedisPrefixConstant.REDIS_PREFIX_SCHEDULE_TEACHER + "subjects_" + userId;
 
         List<Subject> cachedSubjects = new ArrayList<>();
-        when(redisCacheHelper.getOrSet(eq(cacheKey), any(), any(), eq(3600L))).thenReturn(cachedSubjects);
+        when(redisCacheHelper.getOrSet(eq(cacheKey), any(), any())).thenReturn(cachedSubjects);
         when(sessionHelper.getUserId()).thenReturn(userId);
 
         // Act
@@ -334,7 +335,7 @@ class TCTeachingScheduleServiceImplTest {
         // Assert
         assertNotNull(result);
         assertEquals(cachedSubjects, result);
-        verify(redisCacheHelper).getOrSet(eq(cacheKey), any(), any(), eq(3600L));
+        verify(redisCacheHelper).getOrSet(eq(cacheKey), any(), any());
         verifyNoInteractions(subjectRepository);
     }
 
@@ -349,7 +350,7 @@ class TCTeachingScheduleServiceImplTest {
         // Mock the cached data
         List<Subject> mockSubjects = new ArrayList<>();
         String cacheKey = RedisPrefixConstant.REDIS_PREFIX_SCHEDULE_TEACHER + "subjects_" + userId;
-        when(redisCacheHelper.getOrSet(eq(cacheKey), any(), any(), eq(3600L))).thenReturn(mockSubjects);
+        when(redisCacheHelper.getOrSet(eq(cacheKey), any(), any())).thenReturn(mockSubjects);
 
         // Act
         ResponseEntity<?> response = teachingScheduleService.getAllSubjectByStaff();
@@ -361,7 +362,7 @@ class TCTeachingScheduleServiceImplTest {
         assertTrue(apiResponse.getMessage().contains("Lấy tất cả môn học của"));
         assertEquals(mockSubjects, apiResponse.getData());
 
-        verify(redisCacheHelper).getOrSet(eq(cacheKey), any(), any(), eq(3600L));
+        verify(redisCacheHelper).getOrSet(eq(cacheKey), any(), any());
         verifyNoInteractions(subjectRepository);
     }
 
@@ -506,7 +507,7 @@ class TCTeachingScheduleServiceImplTest {
         String userId = "teacher-1";
         TCTeachingScheduleRequest request = new TCTeachingScheduleRequest();
         // Simulate cache error by calling supplier directly
-        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong()))
+        when(redisCacheHelper.getOrSet(anyString(), any(), any()))
                 .thenAnswer(invocation -> {
                     java.util.function.Supplier<?> supplier = invocation.getArgument(1);
                     return supplier.get();
@@ -523,7 +524,7 @@ class TCTeachingScheduleServiceImplTest {
     @DisplayName("Test getCachedTeachingSchedule should handle redis set exception")
     void testGetCachedTeachingScheduleWithRedisSetError() {
         TCTeachingScheduleRequest request = new TCTeachingScheduleRequest();
-        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong()))
+        when(redisCacheHelper.getOrSet(anyString(), any(), any()))
                 .thenAnswer(invocation -> {
                     java.util.function.Supplier<?> supplier = invocation.getArgument(1);
                     return supplier.get();
@@ -541,7 +542,7 @@ class TCTeachingScheduleServiceImplTest {
     @DisplayName("Test getCachedFactories should handle cache deserialization error")
     void testGetCachedFactoriesWithCacheError() {
         // Simulate cache error by calling supplier directly
-        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong()))
+        when(redisCacheHelper.getOrSet(anyString(), any(), any()))
                 .thenAnswer(invocation -> {
                     java.util.function.Supplier<?> supplier = invocation.getArgument(1);
                     return supplier.get();
@@ -558,7 +559,7 @@ class TCTeachingScheduleServiceImplTest {
     @DisplayName("Test getCachedFactories should handle redis set exception")
     void testGetCachedFactoriesWithRedisSetError() {
         List<Factory> factories = new ArrayList<>();
-        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong()))
+        when(redisCacheHelper.getOrSet(anyString(), any(), any()))
                 .thenAnswer(invocation -> {
                     java.util.function.Supplier<?> supplier = invocation.getArgument(1);
                     return supplier.get();
@@ -575,7 +576,7 @@ class TCTeachingScheduleServiceImplTest {
     @DisplayName("Test getCachedProjects should handle cache deserialization error")
     void testGetCachedProjectsWithCacheError() {
         // Simulate cache error by calling supplier directly
-        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong()))
+        when(redisCacheHelper.getOrSet(anyString(), any(), any()))
                 .thenAnswer(invocation -> {
                     java.util.function.Supplier<?> supplier = invocation.getArgument(1);
                     return supplier.get();
@@ -591,7 +592,7 @@ class TCTeachingScheduleServiceImplTest {
     @DisplayName("Test getCachedProjects should handle redis set exception")
     void testGetCachedProjectsWithRedisSetError() {
         List<Project> projects = new ArrayList<>();
-        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong()))
+        when(redisCacheHelper.getOrSet(anyString(), any(), any()))
                 .thenAnswer(invocation -> {
                     java.util.function.Supplier<?> supplier = invocation.getArgument(1);
                     return supplier.get();
@@ -608,7 +609,7 @@ class TCTeachingScheduleServiceImplTest {
     @DisplayName("Test getCachedSubjects should handle cache deserialization error")
     void testGetCachedSubjectsWithCacheError() {
         // Simulate cache error by calling supplier directly
-        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong()))
+        when(redisCacheHelper.getOrSet(anyString(), any(), any()))
                 .thenAnswer(invocation -> {
                     java.util.function.Supplier<?> supplier = invocation.getArgument(1);
                     return supplier.get();
@@ -625,7 +626,7 @@ class TCTeachingScheduleServiceImplTest {
     @DisplayName("Test getCachedSubjects should handle redis set exception")
     void testGetCachedSubjectsWithRedisSetError() {
         List<Subject> subjects = new ArrayList<>();
-        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong()))
+        when(redisCacheHelper.getOrSet(anyString(), any(), any()))
                 .thenAnswer(invocation -> {
                     java.util.function.Supplier<?> supplier = invocation.getArgument(1);
                     return supplier.get();
@@ -642,7 +643,7 @@ class TCTeachingScheduleServiceImplTest {
     @DisplayName("Test getCachedTypes should handle cache deserialization error")
     void testGetCachedTypesWithCacheError() {
         // Simulate cache error by calling supplier directly
-        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong()))
+        when(redisCacheHelper.getOrSet(anyString(), any(), any()))
                 .thenAnswer(invocation -> {
                     java.util.function.Supplier<?> supplier = invocation.getArgument(1);
                     return supplier.get();
@@ -658,7 +659,7 @@ class TCTeachingScheduleServiceImplTest {
     @DisplayName("Test getCachedTypes should handle redis set exception")
     void testGetCachedTypesWithRedisSetError() {
         List<PlanDate> types = new ArrayList<>();
-        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong()))
+        when(redisCacheHelper.getOrSet(anyString(), any(), any()))
                 .thenAnswer(invocation -> {
                     java.util.function.Supplier<?> supplier = invocation.getArgument(1);
                     return supplier.get();
@@ -676,7 +677,7 @@ class TCTeachingScheduleServiceImplTest {
     void testGetCachedCurrentTeachingScheduleWithCacheError() {
         String userId = "teacher-1";
         // Simulate cache error by calling supplier directly
-        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong()))
+        when(redisCacheHelper.getOrSet(anyString(), any(), any()))
                 .thenAnswer(invocation -> {
                     java.util.function.Supplier<?> supplier = invocation.getArgument(1);
                     return supplier.get();
@@ -694,7 +695,7 @@ class TCTeachingScheduleServiceImplTest {
     @DisplayName("Test getCachedCurrentTeachingSchedule should handle redis set exception")
     void testGetCachedCurrentTeachingScheduleWithRedisSetError() {
         TCTeachingScheduleRequest request = new TCTeachingScheduleRequest();
-        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong()))
+        when(redisCacheHelper.getOrSet(anyString(), any(), any()))
                 .thenAnswer(invocation -> {
                     java.util.function.Supplier<?> supplier = invocation.getArgument(1);
                     return supplier.get();
@@ -739,7 +740,7 @@ class TCTeachingScheduleServiceImplTest {
     @DisplayName("Test getDetailPlanDate should return error when plan date not found")
     void testGetDetailPlanDateNotFound() {
         String planDateId = "nonexistent";
-        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong())).thenReturn(null);
+        when(redisCacheHelper.getOrSet(anyString(), any(), any())).thenReturn(null);
         when(teachingScheduleRepository.getPlanDateById(planDateId)).thenReturn(Optional.empty());
 
         ResponseEntity<?> response = teachingScheduleService.getDetailPlanDate(planDateId);
@@ -888,7 +889,7 @@ class TCTeachingScheduleServiceImplTest {
     void testGetAllTeachingSchedulePresent() {
         TCTeachingScheduleRequest request = new TCTeachingScheduleRequest();
         PageableObject<TCTeachingScheduleResponse> cachedData = new PageableObject<>();
-        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong()))
+        when(redisCacheHelper.getOrSet(anyString(), any(), any()))
                 .thenReturn(cachedData);
 
         ResponseEntity<?> response = teachingScheduleService.getAllTeachingSchedulePresent(request);
@@ -903,7 +904,7 @@ class TCTeachingScheduleServiceImplTest {
     @DisplayName("Test getAllType should use cached data")
     void testGetAllType() {
         List<PlanDate> cachedTypes = new ArrayList<>();
-        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong()))
+        when(redisCacheHelper.getOrSet(anyString(), any(), any()))
                 .thenReturn(cachedTypes);
 
         ResponseEntity<?> response = teachingScheduleService.getAllType();

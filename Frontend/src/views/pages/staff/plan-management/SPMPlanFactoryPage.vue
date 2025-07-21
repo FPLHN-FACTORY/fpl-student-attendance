@@ -369,7 +369,7 @@ watch(
       </a-form-item>
       <a-form-item
         class="col-sm-12"
-        label="Ngày học trong tuần"
+        label="Ngày điểm danh trong tuần"
         name="days"
         :rules="formRules.days"
       >
@@ -401,12 +401,12 @@ watch(
           </a-select-option>
         </a-select>
       </a-form-item>
-      <a-form-item class="col-sm-4" label="Hình thức học" name="type" :rules="formRules.type">
+      <a-form-item class="col-sm-4" label="Hình thức" name="type" :rules="formRules.type">
         <a-select
           v-model:value="formDataAdd.type"
           class="w-100"
           :dropdownMatchSelectWidth="false"
-          placeholder="-- Hình thức học --"
+          placeholder="-- Hình thức --"
         >
           <a-select-option v-for="(name, id) in TYPE_SHIFT" :key="id" :value="id">
             {{ name }}
@@ -433,13 +433,13 @@ watch(
         <a-input
           class="w-100"
           v-model:value="formDataAdd.room"
-          placeholder="Địa điểm học chi tiết"
+          placeholder="Địa điểm chi tiết"
           :disabled="modalAdd.isLoading || formDataAdd.type == '1'"
           allowClear
           @keyup.enter="modalAdd.onOk"
         />
       </a-form-item>
-      <a-form-item class="col-sm-12" label="Link học online" name="link">
+      <a-form-item class="col-sm-12" label="Link online" name="link">
         <a-input
           class="w-100"
           v-model:value="formDataAdd.link"

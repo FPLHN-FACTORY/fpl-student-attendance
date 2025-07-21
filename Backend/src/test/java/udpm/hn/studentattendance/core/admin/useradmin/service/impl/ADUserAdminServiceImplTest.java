@@ -83,7 +83,7 @@ class ADUserAdminServiceImplTest extends BaseServiceTest {
 
         PageableObject<ADUserAdminResponse> mockData = mock(PageableObject.class);
 
-        when(redisCacheHelper.getOrSet(eq(cacheKey), any(), any(), anyLong())).thenReturn(mockData);
+        when(redisCacheHelper.getOrSet(eq(cacheKey), any(), any())).thenReturn(mockData);
 
         // When
         ResponseEntity<?> response = userAdminService.getAllUserAdmin(request);
@@ -109,7 +109,7 @@ class ADUserAdminServiceImplTest extends BaseServiceTest {
         responses.add(mockResponse);
         Page<ADUserAdminResponse> page = new PageImpl<>(responses);
         PageableObject<ADUserAdminResponse> pageableObject = PageableObject.of(page);
-        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong()))
+        when(redisCacheHelper.getOrSet(anyString(), any(), any()))
                 .thenAnswer(invocation -> {
                     java.util.function.Supplier<?> supplier = invocation.getArgument(1);
                     return supplier.get();
@@ -439,7 +439,7 @@ class ADUserAdminServiceImplTest extends BaseServiceTest {
         String cacheKey = RedisPrefixConstant.REDIS_PREFIX_ADMIN + "staff_list";
         List<UserStaff> cachedStaff = new ArrayList<>();
 
-        when(redisCacheHelper.getOrSet(eq(cacheKey), any(), any(), anyLong())).thenReturn(cachedStaff);
+        when(redisCacheHelper.getOrSet(eq(cacheKey), any(), any())).thenReturn(cachedStaff);
 
         // When
         ResponseEntity<?> response = userAdminService.getAllUserStaff();
@@ -464,7 +464,7 @@ class ADUserAdminServiceImplTest extends BaseServiceTest {
         staff.setId("staff-1");
         userStaffList.add(staff);
         String cacheKey = RedisPrefixConstant.REDIS_PREFIX_ADMIN + "staff_list";
-        when(redisCacheHelper.getOrSet(eq(cacheKey), any(), any(), anyLong()))
+        when(redisCacheHelper.getOrSet(eq(cacheKey), any(), any()))
                 .thenAnswer(invocation -> {
                     java.util.function.Supplier<?> supplier = invocation.getArgument(1);
                     return supplier.get();

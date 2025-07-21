@@ -22,6 +22,7 @@ import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
 import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
 import useLoadingStore from '@/stores/useLoadingStore'
 import { autoAddColumnWidth } from '@/utils/utils'
+import { validateFormSubmission } from '@/utils/validationUtils'
 
 const router = useRouter()
 const breadcrumbStore = useBreadcrumbStore()
@@ -150,8 +151,13 @@ const handleTableChange = (pageInfo) => {
 
 // Hàm thêm cơ sở
 const handleAddFacility = () => {
-  if (!newFacility.facilityName) {
-    message.error('Tên cơ sở không được để trống. Vui lòng nhập tên cơ sở!')
+  // Validate required fields with whitespace and number-only check
+  const validation = validateFormSubmission(newFacility, [
+    { key: 'facilityName', label: 'Tên cơ sở' },
+  ])
+  
+  if (!validation.isValid) {
+    message.error(validation.message)
     return
   }
 
@@ -208,8 +214,13 @@ const handleUpdateFacility = (record) => {
 
 // Hàm cập nhật cơ sở
 const updateFacility = () => {
-  if (!detailFacility.value.facilityName) {
-    message.error('Tên cơ sở không được để trống. Vui lòng nhập tên cơ sở!')
+  // Validate required fields with whitespace and number-only check
+  const validation = validateFormSubmission(detailFacility.value, [
+    { key: 'facilityName', label: 'Tên cơ sở' },
+  ])
+  
+  if (!validation.isValid) {
+    message.error(validation.message)
     return
   }
 

@@ -17,6 +17,7 @@ import { API_ROUTES_ADMIN } from '@/constants/adminConstant'
 import { ROUTE_NAMES } from '@/router/adminRoute'
 import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
 import { autoAddColumnWidth } from '@/utils/utils'
+import { validateFormSubmission } from '@/utils/validationUtils'
 
 const breadcrumbStore = useBreadcrumbStore()
 const loadingStore = useLoadingStore()
@@ -111,8 +112,13 @@ const handleTableChange = (pageInfo) => {
 }
 
 const handleAddLevelProject = () => {
-  if (!newLevel.name) {
-    message.error('Vui lòng nhập tên nhóm dự án')
+  // Validate required fields with whitespace and number-only check
+  const validation = validateFormSubmission(newLevel, [
+    { key: 'name', label: 'Tên nhóm dự án' },
+  ])
+  
+  if (!validation.isValid) {
+    message.error(validation.message)
     return
   }
   Modal.confirm({
@@ -172,8 +178,13 @@ const prepareUpdateLevel = (record) => {
 }
 
 const submitUpdateLevel = () => {
-  if (!detailLevel.name) {
-    message.error('Vui lòng nhập tên nhóm dự án')
+  // Validate required fields with whitespace and number-only check
+  const validation = validateFormSubmission(detailLevel, [
+    { key: 'name', label: 'Tên nhóm dự án' },
+  ])
+  
+  if (!validation.isValid) {
+    message.error(validation.message)
     return
   }
   Modal.confirm({
@@ -242,7 +253,7 @@ const getStatusColor = (status) => {
 const handleClearFilter = () => {
   // Clear all filter values
   Object.keys(filter).forEach((key) => {
-    filter[key] = ''
+    filter[key] = null
   })
   pagination.current = 1
   fetchLevels()

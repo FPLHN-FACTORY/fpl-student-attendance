@@ -72,10 +72,18 @@ public class AFFacilityServiceImpl implements AFFacilityService {
     @Override
     public ResponseEntity<?> createFacility(AFCreateUpdateFacilityRequest request) {
 
+
+        // Validate facility name - only allow Vietnamese letters, English letters and spaces
+        String facilityNamePattern = "^[a-zA-ZÀ-ỹ\\s]+$";
+        if (!request.getFacilityName().matches(facilityNamePattern)) {
+            return RouterHelper.responseError("Tên cơ sở chỉ được chứa chữ cái và khoảng trắng, không được chứa số hoặc ký tự đặc biệt");
+        }
+
         Optional<Facility> existFacility = facilityRepository.findByName(request.getFacilityName());
         if (existFacility.isPresent()) {
             return RouterHelper.responseError("Tên cơ sở đã tồn tại trên hệ thống");
         }
+
         String code = GenerateNameHelper.generateCodeFromName(request.getFacilityName());
         int position = facilityRepository.getLastPosition() + 1;
         Facility facility = new Facility();
@@ -96,6 +104,12 @@ public class AFFacilityServiceImpl implements AFFacilityService {
     @Override
     public ResponseEntity<?> updateFacility(String facilityId, AFCreateUpdateFacilityRequest request) {
 
+
+        String facilityNamePattern = "^[a-zA-ZÀ-ỹ\\s]+$";
+        if (!request.getFacilityName().matches(facilityNamePattern)) {
+            return RouterHelper.responseError("Tên cơ sở chỉ được chứa chữ cái và khoảng trắng, không được chứa số hoặc ký tự đặc biệt");
+        }
+
         Optional<Facility> existFacility = facilityRepository.findById(facilityId);
         if (existFacility.isEmpty()) {
             return RouterHelper.responseError("Không tìm thấy cơ sở");
@@ -113,7 +127,6 @@ public class AFFacilityServiceImpl implements AFFacilityService {
         Facility savedFacility = facilityRepository.save(facility);
         userActivityLogHelper.saveLog("vừa cập nhật cơ sở: " + oldName + " → " + savedFacility.getName());
 
-        // Invalidate all caches
         redisInvalidationHelper.invalidateAllCaches();
 
         return RouterHelper.responseSuccess("Cập nhật cơ sở thành công", savedFacility);

@@ -34,9 +34,11 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-mail:3.1.1'
     implementation 'org.springframework.boot:spring-boot-starter-logging'
     implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
 
     // Development tools
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
+//    developmentOnly 'org.springframework.boot:spring-boot-docker-compose'
 
     // Redis client
     implementation 'redis.clients:jedis:6.0.0'

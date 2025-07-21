@@ -17,6 +17,7 @@ import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
 import useLoadingStore from '@/stores/useLoadingStore'
 import useApplicationStore from '@/stores/useApplicationStore'
 import { autoAddColumnWidth } from '@/utils/utils'
+import { validateFormSubmission } from '@/utils/validationUtils'
 
 // --- Breadcrumb ---
 const breadcrumbStore = useBreadcrumbStore()
@@ -122,8 +123,15 @@ const clearNewUser = () => {
 }
 
 const handleAddUser = () => {
-  if (!newUser.staffCode || !newUser.staffName || !newUser.email) {
-    return message.error('Vui lòng điền đầy đủ thông tin')
+  // Validate required fields with whitespace check
+  const validation = validateFormSubmission(newUser, [
+    { key: 'staffCode', label: 'Mã Admin', allowOnlyNumbers: true },
+    { key: 'staffName', label: 'Tên Admin' },
+    { key: 'email', label: 'Email Admin' },
+  ])
+  
+  if (!validation.isValid) {
+    return message.error(validation.message)
   }
   Modal.confirm({
     title: 'Xác nhận thêm mới',
@@ -159,8 +167,15 @@ const handleEditUser = (record) => {
 }
 
 const handleUpdateUser = () => {
-  if (!editUser.staffCode || !editUser.staffName || !editUser.email) {
-    return message.error('Vui lòng điền đầy đủ thông tin')
+  // Validate required fields with whitespace check
+  const validation = validateFormSubmission(editUser, [
+    { key: 'staffCode', label: 'Mã Admin', allowOnlyNumbers: true },
+    { key: 'staffName', label: 'Tên Admin' },
+    { key: 'email', label: 'Email Admin' },
+  ])
+  
+  if (!validation.isValid) {
+    return message.error(validation.message)
   }
 
   // Check if editing own information
