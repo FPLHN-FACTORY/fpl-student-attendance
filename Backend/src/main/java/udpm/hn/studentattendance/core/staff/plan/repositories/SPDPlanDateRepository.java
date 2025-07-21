@@ -51,7 +51,7 @@ public interface SPDPlanDateRepository extends PlanDateRepository {
             sf.id_facility = :#{#request.idFacility} AND
             pf.id = :#{#request.idPlanFactory} AND
             (NULLIF(TRIM(:#{#request.keyword}), '') IS NULL OR pd.description LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%')) AND
-            (:#{#request.shift} IS NULL OR pd.shift = :#{#request.shift}) AND
+            (:#{#request.shift} IS NULL OR FIND_IN_SET(:#{#request.shift}, pd.shift)) AND
             (:#{#request.type} IS NULL OR pd.type = :#{#request.type}) AND
             (:#{#request.startDate} IS NULL OR (
                 DAY(FROM_UNIXTIME(pd.start_date / 1000)) = DAY(FROM_UNIXTIME(:#{#request.startDate} / 1000)) AND
@@ -95,7 +95,7 @@ public interface SPDPlanDateRepository extends PlanDateRepository {
             sf.id_facility = :#{#request.idFacility} AND
             pf.id = :#{#request.idPlanFactory} AND
             (NULLIF(TRIM(:#{#request.keyword}), '') IS NULL OR pd.description LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%')) AND
-            (:#{#request.shift} IS NULL OR pd.shift = :#{#request.shift}) AND
+            (:#{#request.shift} IS NULL OR FIND_IN_SET(:#{#request.shift}, pd.shift)) AND
             (:#{#request.type} IS NULL OR pd.type = :#{#request.type}) AND
             (:#{#request.startDate} IS NULL OR (
                 DAY(FROM_UNIXTIME(pd.start_date / 1000)) = DAY(FROM_UNIXTIME(:#{#request.startDate} / 1000)) AND
@@ -128,7 +128,7 @@ public interface SPDPlanDateRepository extends PlanDateRepository {
                 sf.id_facility = :#{#request.idFacility} AND
                 pf.id = :#{#request.idPlanFactory} AND
                 (NULLIF(TRIM(:#{#request.keyword}), '') IS NULL OR pd.description LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%')) AND
-                (:#{#request.shift} IS NULL OR pd.shift = :#{#request.shift}) AND
+                (:#{#request.shift} IS NULL OR FIND_IN_SET(:#{#request.shift}, pd.shift)) AND
                 (:#{#request.type} IS NULL OR pd.type = :#{#request.type}) AND
                 (:#{#request.startDate} IS NULL OR (
                     DATE(FROM_UNIXTIME(pd.start_date / 1000)) = DATE(FROM_UNIXTIME(:#{#request.startDate} / 1000))

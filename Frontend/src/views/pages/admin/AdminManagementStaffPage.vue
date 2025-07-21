@@ -17,6 +17,7 @@ import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
 import useLoadingStore from '@/stores/useLoadingStore'
 import ExcelUploadButton from '@/components/excel/ExcelUploadButton.vue'
 import { autoAddColumnWidth } from '@/utils/utils'
+import { validateFormSubmission } from '@/utils/validationUtils'
 
 const breadcrumbStore = useBreadcrumbStore()
 const loadingStore = useLoadingStore()
@@ -203,17 +204,22 @@ const handleTableChange = (pageInfo) => {
   fetchStaffs()
 }
 
-// Sửa lại hàm handleAddStaff để thêm domain vào email
 const handleAddStaff = () => {
-  if (
-    !newStaff.staffCode ||
-    !newStaff.name ||
-    !newStaff.emailFe ||
-    !newStaff.emailFpt ||
-    !newStaff.facilityId ||
-    newStaff.roleCodes.length === 0
-  ) {
-    message.error('Vui lòng nhập đầy đủ thông tin, bao gồm cơ sở và ít nhất một vai trò')
+  // Validate required fields with whitespace check
+  const validation = validateFormSubmission(newStaff, [
+    { key: 'staffCode', label: 'Mã nhân sự', allowOnlyNumbers: true },
+    { key: 'name', label: 'Tên nhân sự' },
+    { key: 'emailFe', label: 'Email FE' },
+    { key: 'emailFpt', label: 'Email FPT' },
+  ])
+  
+  if (!validation.isValid) {
+    message.error(validation.message)
+    return
+  }
+  
+  if (!newStaff.facilityId || newStaff.roleCodes.length === 0) {
+    message.error('Vui lòng chọn cơ sở và ít nhất một vai trò')
     return
   }
   Modal.confirm({
@@ -279,15 +285,21 @@ const handleUpdateStaff = (record) => {
 }
 
 const updateStaff = () => {
-  if (
-    !detailStaff.staffCode ||
-    !detailStaff.name ||
-    !detailStaff.emailFe ||
-    !detailStaff.emailFpt ||
-    !detailStaff.facilityId ||
-    detailStaff.roleCodes.length === 0
-  ) {
-    message.error('Vui lòng nhập đầy đủ thông tin, bao gồm cơ sở và vai trò')
+  // Validate required fields with whitespace check
+  const validation = validateFormSubmission(detailStaff, [
+    { key: 'staffCode', label: 'Mã nhân sự', allowOnlyNumbers: true },
+    { key: 'name', label: 'Tên nhân sự' },
+    { key: 'emailFe', label: 'Email FE' },
+    { key: 'emailFpt', label: 'Email FPT' },
+  ])
+  
+  if (!validation.isValid) {
+    message.error(validation.message)
+    return
+  }
+  
+  if (!detailStaff.facilityId || detailStaff.roleCodes.length === 0) {
+    message.error('Vui lòng chọn cơ sở và vai trò')
     return
   }
   Modal.confirm({

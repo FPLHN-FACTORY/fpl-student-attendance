@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Thông báo thay đổi lịch học</title>
+    <title>Thông báo thay đổi lịch</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -75,7 +75,7 @@
     {{ HEADER }}
 
     <div class="header">
-        <h2>THÔNG BÁO THAY ĐỔI LỊCH HỌC</h2>
+        <h2>THÔNG BÁO THAY ĐỔI LỊCH</h2>
     </div>
 
     <div class="content">
@@ -83,14 +83,14 @@
 
         <div class="notification-box">
             <p class="important">{{ NOTIFICATION_TYPE }}</p>
-            <p>Vui lòng xem chi tiết bên dưới và lưu ý điều chỉnh kế hoạch học tập của bạn.</p>
+            <p>Vui lòng xem chi tiết bên dưới và lưu ý điều chỉnh kế hoạch của bạn.</p>
         </div>
 
-        <p>Thông tin chi tiết về buổi học:</p>
+        <p>Thông tin chi tiết về buổi:</p>
 
         <table class="info-table">
             <tr>
-                <th>Môn học</th>
+                <th>Môn</th>
                 <td>{{ SUBJECT_NAME }}</td>
             </tr>
             <tr>
@@ -106,7 +106,7 @@
                 <td>{{ STAFF_NAME }}</td>
             </tr>
             <tr>
-                <th>Ngày học</th>
+                <th>Ngày</th>
                 <td>{{ CLASS_DATE }}</td>
             </tr>
             <tr>
@@ -114,7 +114,7 @@
                 <td>{{ START_TIME }} - {{ END_TIME }}</td>
             </tr>
             <tr>
-                <th>Ca học</th>
+                <th>Ca</th>
                 <td>{{ SHIFT }}</td>
             </tr>
             <tr>
@@ -126,7 +126,7 @@
                 <td>{{ LOCATION }}</td>
             </tr>
             <tr>
-                <th>Link học trực tuyến</th>
+                <th>Link trực tuyến</th>
                 <td>{{ LINK }}</td>
             </tr>
             <tr>
@@ -139,9 +139,9 @@
             </tr>
         </table>
 
-        <p class="important">Vui lòng lưu ý thay đổi và có mặt đúng giờ để tham gia lớp học!</p>
+        <p class="important">Vui lòng lưu ý thay đổi và có mặt đúng giờ để tham gia lớp!</p>
 
-        <p>Chúc bạn học tập tốt,</p>
+      
         <p>Hệ thống quản lý điểm danh sinh viên.</p>
     </div>
 

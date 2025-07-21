@@ -13,7 +13,8 @@ public class USFactoryCreateUpdateRequest {
     private String id;
 
     @NotBlank(message = "Tên nhóm xưởng không được để trống")
-    @Size(min = 2, max = EntityProperties.LENGTH_NAME, message = "Tên nhóm xưởng chỉ được tối đa " + EntityProperties.LENGTH_NAME + " ký tự")
+    @Size(min = 2, max = EntityProperties.LENGTH_NAME, message = "Tên nhóm xưởng phải có ít nhất 2 ký tự và chỉ được tối đa "
+            + EntityProperties.LENGTH_NAME + " ký tự")
     private String factoryName;
 
     private String factoryDescription;

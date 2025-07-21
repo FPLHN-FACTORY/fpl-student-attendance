@@ -16,6 +16,7 @@ import udpm.hn.studentattendance.entities.UserAdmin;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 import java.util.Optional;
+import udpm.hn.studentattendance.infrastructure.constants.SettingKeys;
 
 @ExtendWith(MockitoExtension.class)
 class ADUserAdminServiceTest {

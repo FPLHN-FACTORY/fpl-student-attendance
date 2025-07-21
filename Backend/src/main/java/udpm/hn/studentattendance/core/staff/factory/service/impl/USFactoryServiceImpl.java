@@ -148,6 +148,7 @@ public class USFactoryServiceImpl implements USFactoryService {
     @Override
     public ResponseEntity<?> createFactory(USFactoryCreateUpdateRequest factoryCreateUpdateRequest) {
 
+
         Optional<UserStaff> userStaff = staffFactoryExtendRepository
                 .findById(factoryCreateUpdateRequest.getIdUserStaff());
         Optional<Project> project = projectFactoryExtendRepository
@@ -202,6 +203,7 @@ public class USFactoryServiceImpl implements USFactoryService {
 
     @Override
     public ResponseEntity<?> updateFactory(USFactoryCreateUpdateRequest req) {
+
 
         Factory factory = factoryRepository.findById(req.getId())
                 .orElseThrow();

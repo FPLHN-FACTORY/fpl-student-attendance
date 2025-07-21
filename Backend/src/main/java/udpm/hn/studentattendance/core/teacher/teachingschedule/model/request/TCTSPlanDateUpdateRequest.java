@@ -19,7 +19,7 @@ public class TCTSPlanDateUpdateRequest {
 
     private String link;
 
-    @Size(min = 2, max = EntityProperties.LENGTH_NAME, message = "Phòng học không được vượt quá "
+    @Size(min = 2, max = EntityProperties.LENGTH_NAME, message = "Phòng học phải có ít nhất 2 ký tự và không được vượt quá "
             + EntityProperties.LENGTH_NAME + " ký tự")
     private String room;
 

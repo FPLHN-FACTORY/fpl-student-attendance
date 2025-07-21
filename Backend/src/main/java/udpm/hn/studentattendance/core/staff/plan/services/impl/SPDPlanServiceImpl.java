@@ -105,7 +105,7 @@ public class SPDPlanServiceImpl implements SPDPlanService {
     @Override
     public ResponseEntity<?> getListSemester() {
         List<String> data = getCachedSemesterNames();
-        return RouterHelper.responseSuccess("Lấy dữ liệu học kỳ thành công", data);
+        return RouterHelper.responseSuccess("Lấy dữ liệu kỳ thành công", data);
     }
 
     public List<Integer> getCachedYears() {
@@ -116,7 +116,7 @@ public class SPDPlanServiceImpl implements SPDPlanService {
     @Override
     public ResponseEntity<?> getAllYear() {
         List<Integer> data = getCachedYears();
-        return RouterHelper.responseSuccess("Lấy dữ liệu năm học thành công", data);
+        return RouterHelper.responseSuccess("Lấy dữ liệu năm thành công", data);
     }
 
     public PageableObject<SPDPlanResponse> getCachedPlans(SPDFilterPlanRequest request) {
@@ -171,6 +171,7 @@ public class SPDPlanServiceImpl implements SPDPlanService {
 
     @Override
     public ResponseEntity<?> createPlan(SPDAddOrUpdatePlanRequest request) {
+
 
         Project project = spdProjectRepository.findById(request.getIdProject()).orElse(null);
 
@@ -284,6 +285,7 @@ public class SPDPlanServiceImpl implements SPDPlanService {
 
     @Override
     public ResponseEntity<?> updatePlan(SPDAddOrUpdatePlanRequest request) {
+
 
         Plan plan = spdPlanRepository.findById(request.getId()).orElse(null);
         if (plan == null) {

@@ -19,6 +19,7 @@ import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
 import useLoadingStore from '@/stores/useLoadingStore'
 import ExcelUploadButton from '@/components/excel/ExcelUploadButton.vue'
 import { autoAddColumnWidth } from '@/utils/utils'
+import { validateFormSubmission } from '@/utils/validationUtils'
 
 const breadcrumbStore = useBreadcrumbStore()
 const loadingStore = useLoadingStore()
@@ -122,21 +123,22 @@ const fetchStudents = async () => {
   }
 }
 
-// Sự kiện thay đổi trang bảng: cập nhật pagination rồi gọi lại API
 const handleTableChange = (pageInfo) => {
-  // Cập nhật current và pageSize
   pagination.current = pageInfo.current
   pagination.pageSize = pageInfo.pageSize
-  // Nếu muốn đồng bộ với filter, bạn có thể cập nhật:
-  filter.page = pageInfo.current
   filter.pageSize = pageInfo.pageSize
   fetchStudents()
 }
 
-// Hàm thêm sinh viên
 const handleAddStudent = () => {
-  if (!newStudent.code || !newStudent.name || !newStudent.email) {
-    message.error('Vui lòng nhập đầy đủ thông tin sinh viên (Mã, Tên, Email)')
+  const validation = validateFormSubmission(newStudent, [
+    { key: 'code', label: 'Mã sinh viên', allowOnlyNumbers: true },
+    { key: 'name', label: 'Tên sinh viên' },
+    { key: 'email', label: 'Email sinh viên' },
+  ])
+  
+  if (!validation.isValid) {
+    message.error(validation.message)
     return
   }
   Modal.confirm({
@@ -217,8 +219,15 @@ const handleDetailStudent = (record) => {
 
 // Hàm submit cập nhật sinh viên
 const updateStudent = () => {
-  if (!detailStudent.code || !detailStudent.name || !detailStudent.email) {
-    message.error('Vui lòng nhập đầy đủ thông tin sinh viên (Mã, Tên, Email)')
+  // Validate required fields with whitespace check
+  const validation = validateFormSubmission(detailStudent, [
+    { key: 'code', label: 'Mã sinh viên', allowOnlyNumbers: true },
+    { key: 'name', label: 'Tên sinh viên' },
+    { key: 'email', label: 'Email sinh viên' },
+  ])
+  
+  if (!validation.isValid) {
+    message.error(validation.message)
     return
   }
   Modal.confirm({
@@ -287,7 +296,7 @@ const changeFaceStudent = (record) => {
           fetchStudents() // Làm mới danh sách sau khi đổi mặt
         })
         .catch((error) => {
-          message.error(error.response?.data?.message || 'Lỗi khi đổi mặt học sinh')
+          message.error(error.response?.data?.message || 'Lỗi khi đổi mặt sinh viên')
         })
         .finally(() => {
           loadingStore.hide()
@@ -560,7 +569,6 @@ onMounted(() => {
       </a-form>
     </a-modal>
 
-    <!-- Modal hiển thị chi tiết sinh viên (chỉ xem, các input disable) -->
     <a-modal v-model:open="modalDetail" title="Chi tiết sinh viên" :footer="null">
       <a-form layout="vertical">
         <a-form-item label="Mã sinh viên">

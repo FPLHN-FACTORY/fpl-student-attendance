@@ -18,6 +18,7 @@ import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
 import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
 import useLoadingStore from '@/stores/useLoadingStore'
 import { autoAddColumnWidth } from '@/utils/utils'
+import { validateFormSubmission } from '@/utils/validationUtils'
 
 const breadcrumbStore = useBreadcrumbStore()
 const loadingStore = useLoadingStore()
@@ -35,31 +36,25 @@ const breadcrumb = ref([
   },
 ])
 
-// Danh sách học kỳ
+
 const semesters = ref([])
-// Dùng filter để lưu trạng thái tìm kiếm & phân trang (không chứa thông tin phân trang)
 const filter = reactive({
   semesterCode: '',
   status: '',
   dateRange: null, // Giá trị RangePicker (mảng [start, end])
-  // Các tham số phân trang sẽ được lấy từ đối tượng pagination
 })
 
-// Đối tượng pagination dùng cho component a-table (đã được làm reactive)
 const pagination = reactive({
   ...DEFAULT_PAGINATION,
 })
 
-// Biến loading cho bảng và modal
 const isLoading = ref(false)
 const modalAddLoading = ref(false)
 const modalUpdateLoading = ref(false)
 
-// Modal hiển thị
 const modalAdd = ref(false)
 const modalUpdate = ref(false)
 
-// Thêm hàm để xác định học kỳ dựa trên tháng
 const getSemesterByMonth = () => {
   const currentMonth = dayjs().month() + 1 // +1 vì month() trả về 0-11
   if (currentMonth >= 1 && currentMonth <= 4) {
@@ -71,14 +66,12 @@ const getSemesterByMonth = () => {
   }
 }
 
-// Thêm hàm để lưu khoảng thời gian mặc định
 const defaultDateRange = reactive({
   fromDate: dayjs().add(1, 'day'), // Ngày mai
   toDate: dayjs().add(4, 'month'), // 4 tháng sau
   semesterName: getSemesterByMonth(), // Tự động chọn học kỳ dựa trên tháng
 })
 
-// Dữ liệu cho modal Thêm/Cập Nhật (DatePicker trả về đối tượng dayjs)
 const newSemester = reactive({
   semesterName: defaultDateRange.semesterName, // Set mặc định là học kỳ hiện tại
   fromDate: defaultDateRange.fromDate,
@@ -86,7 +79,6 @@ const newSemester = reactive({
 })
 const detailSemester = ref({})
 
-// Cấu hình cột cho bảng
 const columns = ref(
   autoAddColumnWidth([
     { title: '#', key: 'rowNumber' },
@@ -169,8 +161,18 @@ const handleShowModalAdd = () => {
 }
 
 const handleAddSemester = () => {
-  if (!newSemester.semesterName || !newSemester.fromDate || !newSemester.toDate) {
-    message.error('Vui lòng nhập đầy đủ thông tin')
+  // Validate required fields with whitespace check
+  const validation = validateFormSubmission(newSemester, [
+    { key: 'semesterName', label: 'Tên học kỳ' },
+  ])
+  
+  if (!validation.isValid) {
+    message.error(validation.message)
+    return
+  }
+  
+  if (!newSemester.fromDate || !newSemester.toDate) {
+    message.error('Vui lòng chọn ngày bắt đầu và ngày kết thúc')
     return
   }
   Modal.confirm({
@@ -240,12 +242,18 @@ const handleUpdateSemester = (record) => {
 }
 
 const updateSemester = () => {
-  if (
-    !detailSemester.value.semesterName ||
-    !detailSemester.value.fromDate ||
-    !detailSemester.value.toDate
-  ) {
-    message.error('Vui lòng nhập đầy đủ thông tin')
+  // Validate required fields with whitespace check
+  const validation = validateFormSubmission(detailSemester.value, [
+    { key: 'semesterName', label: 'Tên học kỳ' },
+  ])
+  
+  if (!validation.isValid) {
+    message.error(validation.message)
+    return
+  }
+  
+  if (!detailSemester.value.fromDate || !detailSemester.value.toDate) {
+    message.error('Vui lòng chọn ngày bắt đầu và ngày kết thúc')
     return
   }
 
@@ -494,15 +502,12 @@ onMounted(() => {
               <template v-if="column.key === 'rowNumber'">
                 {{ (pagination.current - 1) * pagination.pageSize + index + 1 }}
               </template>
-              <!-- Hiển thị ngày bắt đầu -->
               <template v-else-if="column.dataIndex === 'startDate'">
                 {{ formatEpochToDate(record.startDate) }}
               </template>
-              <!-- Hiển thị ngày kết thúc -->
               <template v-else-if="column.dataIndex === 'endDate'">
                 {{ formatEpochToDate(record.endDate) }}
               </template>
-              <!-- Hiển thị trạng thái -->
               <template v-else-if="column.dataIndex === 'semesterStatus'">
                 <span class="nowrap">
                   <a-switch
@@ -515,9 +520,9 @@ onMounted(() => {
                   <a-tag
                     :color="
                       isSemesterEnded(record)
-                        ? 'red'
+                        ? 'gold'
                         : isSemesterNotStarted(record)
-                          ? 'gold'
+                          ? 'red'
                           : isSemesterInProgress(record)
                             ? 'green'
                             : null
@@ -538,7 +543,6 @@ onMounted(() => {
                   </a-tag>
                 </span>
               </template>
-              <!-- Các chức năng: Sửa & Đổi trạng thái -->
               <template v-else-if="column.key === 'actions'">
                 <a-space>
                   <a-tooltip
@@ -571,7 +575,6 @@ onMounted(() => {
       </div>
     </div>
 
-    <!-- Modal Thêm Học Kỳ -->
     <a-modal
       v-model:open="modalAdd"
       title="Thêm học kỳ"
@@ -615,7 +618,6 @@ onMounted(() => {
       </a-form>
     </a-modal>
 
-    <!-- Modal Cập Nhật Học Kỳ -->
     <a-modal
       v-model:open="modalUpdate"
       title="Cập nhật học kỳ"

@@ -121,7 +121,7 @@ public class STDHistoryAttendanceImpl implements STDHistoryAttendanceService {
                         Color rowColor1 = new Color(255, 255, 255);
                         Color rowColor2 = new Color(245, 245, 245);
 
-                        Stream.of("Bài học", "Ngày học", "Ca học", "Điểm danh muộn", "Nội dung",
+                        Stream.of("Bài", "Ngày", "Ca", "Điểm danh muộn", "Nội dung",
                                         "Trạng thái")
                                         .forEach(headerTitle -> {
                                                 PdfPCell headerCell = new PdfPCell();
@@ -136,6 +136,8 @@ public class STDHistoryAttendanceImpl implements STDHistoryAttendanceService {
                         SimpleDateFormat dateFormat = new SimpleDateFormat("EEEE - dd/MM/yyyy HH:mm",
                                         new Locale("vi", "VN"));
 
+                        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("HH:mm", new Locale("vi", "VN"));
+
                         int rowIndex = 0;
                         for (STDHistoryAttendanceResponse attendanceResponse : attendanceResponses) {
                                 Color backgroundColor = (rowIndex % 2 == 0) ? rowColor1 : rowColor2;
@@ -146,8 +148,10 @@ public class STDHistoryAttendanceImpl implements STDHistoryAttendanceService {
                                 styleCell(rowNumberCell, backgroundColor);
                                 pdfTable.addCell(rowNumberCell);
 
-                                String learningDay = dateFormat
+                                String learningDayStart = dateFormat
                                                 .format(new Date(attendanceResponse.getPlanDateStartDate()));
+                                String learningDayEnd = simpleDateFormat.format(new Date(attendanceResponse.getPlanDateEndDate()));
+                                String learningDay = learningDayStart + " - " + learningDayEnd;
                                 PdfPCell learningDayCell = new PdfPCell(new Phrase(learningDay, cellFont));
                                 styleCell(learningDayCell, backgroundColor);
                                 pdfTable.addCell(learningDayCell);
@@ -199,12 +203,7 @@ public class STDHistoryAttendanceImpl implements STDHistoryAttendanceService {
                                 planDateAttendanceResponseList);
         }
 
-        /**
-         * Hàm tiện ích để style cho từng cell:
-         * - Set nền (background)
-         * - Canh giữa nội dung
-         * - Padding và viền
-         */
+
         private void styleCell(PdfPCell cell, Color backgroundColor) {
                 cell.setBackgroundColor(backgroundColor);
                 cell.setHorizontalAlignment(Element.ALIGN_CENTER);

@@ -64,6 +64,7 @@ public class ADSemesterServiceImpl implements ADSemesterService {
     @Override
     public ResponseEntity<?> createSemester(@Valid ADCreateUpdateSemesterRequest request) {
 
+
         try {
 
             LocalDateTime fromDate = Instant
@@ -122,6 +123,7 @@ public class ADSemesterServiceImpl implements ADSemesterService {
 
     @Override
     public ResponseEntity<?> updateSemester(@Valid ADCreateUpdateSemesterRequest request) {
+
 
         Optional<Semester> existSemester = adSemesterRepository.findById(request.getSemesterId());
         if (existSemester.isEmpty()) {
@@ -186,15 +188,17 @@ public class ADSemesterServiceImpl implements ADSemesterService {
             return RouterHelper.responseError("Không thể sửa học kỳ đã kết thúc");
         }
 
-        if (oldFromDate.isBefore(currentDateTime)) {
-            fromTimeSemester = semester.getFromDate();
-        }
+        boolean isOngoingSemester = oldFromDate.isBefore(currentDateTime);
 
-        if (!Objects.equals(fromTimeSemester, semester.getFromDate())
-                || !Objects.equals(toTimeSemester, semester.getToDate())) {
-            if (fromDate.isBefore(LocalDateTime.now())) {
-                return RouterHelper.responseError(
-                        "Ngày bắt đầu học kỳ không thể là ngày trong quá khứ hoặc hiện tại");
+        if (isOngoingSemester) {
+            fromTimeSemester = semester.getFromDate();
+        } else {
+            if (!Objects.equals(fromTimeSemester, semester.getFromDate())
+                    || !Objects.equals(toTimeSemester, semester.getToDate())) {
+                if (fromDate.isBefore(LocalDateTime.now())) {
+                    return RouterHelper.responseError(
+                            "Ngày bắt đầu học kỳ không thể là ngày trong quá khứ hoặc hiện tại");
+                }
             }
         }
 

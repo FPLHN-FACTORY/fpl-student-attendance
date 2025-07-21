@@ -54,7 +54,7 @@ public class STDHistoryAttendanceRestController {
         HttpHeaders headers = new HttpHeaders();
         String fileName = "lịch-sử-điểm-danh.pdf";
         headers.add("Content-Disposition",
-                "inline; filename*=UTF-8''" + URLEncoder.encode(fileName, StandardCharsets.UTF_8.toString()));
+                "inline; filename*=UTF-8''" + URLEncoder.encode(fileName, StandardCharsets.UTF_8));
         return ResponseEntity.ok().headers(headers).contentType(MediaType.APPLICATION_PDF)
                 .body(new InputStreamResource(byteArrayInputStream));
     }

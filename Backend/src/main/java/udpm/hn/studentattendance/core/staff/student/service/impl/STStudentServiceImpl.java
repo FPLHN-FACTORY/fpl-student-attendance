@@ -1,7 +1,6 @@
 package udpm.hn.studentattendance.core.staff.student.service.impl;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
@@ -88,6 +87,7 @@ public class STStudentServiceImpl implements STStudentService {
     @Override
     public ResponseEntity<?> createStudent(USStudentCreateUpdateRequest studentCreateUpdateRequest) {
 
+
         if (!ValidateHelper.isValidCode(studentCreateUpdateRequest.getCode())) {
             return RouterHelper.responseError(
                     "Mã sinh viên không hợp lệ: không có khoảng trắng, không có ký tự đặc biệt ngoài dấu chấm . và dấu gạch dưới _.");
@@ -152,6 +152,7 @@ public class STStudentServiceImpl implements STStudentService {
 
     @Override
     public ResponseEntity<?> updateStudent(USStudentCreateUpdateRequest studentCreateUpdateRequest) {
+
 
         if (!ValidateHelper.isValidCode(studentCreateUpdateRequest.getCode())) {
             return RouterHelper.responseError(
@@ -271,11 +272,11 @@ public class STStudentServiceImpl implements STStudentService {
         return redisCacheHelper.getOrSet(
                 key,
                 () -> {
-                    List<Map<String, Object>> faceStatus = studentExtendRepository
-                            .existFaceForAllStudents(sessionHelper.getFacilityId());
+        List<Map<String, Object>> faceStatus = studentExtendRepository
+                .existFaceForAllStudents(sessionHelper.getFacilityId());
                     return faceStatus.stream().collect(Collectors.toMap(
-                            m -> (String) m.get("studentId"),
-                            m -> ((Number) m.get("hasFace")).intValue() == 1));
+                        m -> (String) m.get("studentId"),
+                        m -> ((Number) m.get("hasFace")).intValue() == 1));
                 },
                 new TypeReference<>() {
                 });

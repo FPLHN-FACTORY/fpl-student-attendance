@@ -47,7 +47,7 @@ const configImportExcel = {
 const columns = ref(
   autoAddColumnWidth([
     { title: 'Buổi', dataIndex: 'orderNumber', key: 'orderNumber' },
-    { title: 'Ngày học', dataIndex: 'startDate', key: 'startDate' },
+    { title: 'Ngày điểm danh', dataIndex: 'startDate', key: 'startDate' },
     { title: 'Thời gian', key: 'time' },
     { title: 'Ca', dataIndex: 'shift', key: 'shift' },
     { title: 'Nội dung', dataIndex: 'description', key: 'description' },
@@ -163,6 +163,7 @@ const handleSubmitFilter = () => {
 const handleTableChange = (page) => {
   pagination.value.current = page.current
   pagination.value.pageSize = page.pageSize
+  filter.pageSize = page.pageSize
   fetchDataList()
 }
 
@@ -241,7 +242,7 @@ watch(
                   </a-select>
                 </div>
                 <div class="col-xxl-2 col-lg-4 col-md-4 col-sm-6">
-                  <div class="label-title">Hình thức học:</div>
+                  <div class="label-title">Hình thức:</div>
                   <a-select
                     v-model:value="dataFilter.type"
                     class="w-100"
