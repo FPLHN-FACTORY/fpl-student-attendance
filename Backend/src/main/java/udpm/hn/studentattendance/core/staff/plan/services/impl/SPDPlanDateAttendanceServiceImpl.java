@@ -8,14 +8,11 @@ import udpm.hn.studentattendance.core.staff.plan.model.request.SPDFilterPlanDate
 import udpm.hn.studentattendance.core.staff.plan.model.request.SPDModifyPlanDateAttendanceRequest;
 import udpm.hn.studentattendance.core.staff.plan.model.response.SPDPlanDateAttendanceResponse;
 import udpm.hn.studentattendance.core.staff.plan.model.response.SPDPlanDateStudentResponse;
-import udpm.hn.studentattendance.core.staff.plan.model.response.SPDPlanResponse;
 import udpm.hn.studentattendance.core.staff.plan.repositories.SPDAttendanceRepository;
 import udpm.hn.studentattendance.core.staff.plan.repositories.SPDPlanDateRepository;
 import udpm.hn.studentattendance.core.staff.plan.repositories.SPDUserStudentRepository;
 import udpm.hn.studentattendance.core.staff.plan.services.SPDPlanDateAttendanceService;
-import udpm.hn.studentattendance.core.student.schedule.repository.STDScheduleAttendanceRepository;
 import udpm.hn.studentattendance.entities.Attendance;
-import udpm.hn.studentattendance.entities.Plan;
 import udpm.hn.studentattendance.entities.PlanDate;
 import udpm.hn.studentattendance.entities.UserStudent;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
@@ -41,8 +38,6 @@ public class SPDPlanDateAttendanceServiceImpl implements SPDPlanDateAttendanceSe
     private final SPDPlanDateRepository spdPlanDateRepository;
 
     private final SPDUserStudentRepository spdUserStudentRepository;
-
-    private final STDScheduleAttendanceRepository sTDScheduleAttendanceRepository;
 
     private final UserActivityLogHelper userActivityLogHelper;
 
