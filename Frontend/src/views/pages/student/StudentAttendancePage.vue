@@ -172,6 +172,7 @@ const handleClearFilter = () => {
 const handleTableChange = (page) => {
   pagination.value.current = page.current
   pagination.value.pageSize = page.pageSize
+  filter.pageSize = page.pageSize
   fetchDataList()
 }
 
@@ -313,6 +314,9 @@ watch(
         </LMap>
       </div>
     </div>
+    <template #footer>
+      <a-button @click="isShowLocation = false">Hủy</a-button>
+    </template>
   </a-modal>
 
   <a-modal
@@ -421,7 +425,7 @@ watch(
                   </a-select>
                 </div>
                 <div class="col-md-3 col-sm-6">
-                  <div class="label-title">Hình thức học:</div>
+                  <div class="label-title">Hình thức:</div>
                   <a-select
                     v-model:value="dataFilter.type"
                     class="w-100"

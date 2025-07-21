@@ -68,7 +68,7 @@ export const TeacherRoutes = [
         name: ROUTE_NAMES.MANAGEMENT_SHIFT_FACTORY,
         component: () => import('@/views/pages/teacher/TeacherShiftFactoryPage.vue'),
         meta: {
-          name: 'Danh sách ca học',
+          name: 'Danh sách ca',
         },
       },
       {

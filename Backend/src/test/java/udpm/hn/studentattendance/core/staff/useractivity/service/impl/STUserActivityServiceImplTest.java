@@ -12,6 +12,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import udpm.hn.studentattendance.core.staff.useractivity.repository.STUserActivityFilterExtendRepository;
 import udpm.hn.studentattendance.entities.UserStaff;
+import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
 import udpm.hn.studentattendance.helpers.SessionHelper;
 import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
 import udpm.hn.studentattendance.infrastructure.common.ApiResponse;
@@ -19,7 +20,9 @@ import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.common.model.request.UALFilterRequest;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.RestApiStatus;
+import udpm.hn.studentattendance.infrastructure.config.redis.service.RedisService;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 

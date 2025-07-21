@@ -71,7 +71,7 @@ export const AdminRoutes = [
         name: ROUTE_NAMES.MANAGEMENT_FACILITY_SHIFT,
         component: () => import('@/views/pages/admin/facility/AFFacilityShiftPage.vue'),
         meta: {
-          name: 'Quản lý ca học cơ sở',
+          name: 'Quản lý ca cơ sở',
         },
       },
       {

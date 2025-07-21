@@ -14,6 +14,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.test.util.ReflectionTestUtils;
 import udpm.hn.studentattendance.core.authentication.oauth2.AuthUser;
 import udpm.hn.studentattendance.core.student.historyattendance.model.request.STDHistoryAttendanceRequest;
 import udpm.hn.studentattendance.core.student.historyattendance.model.response.STDHistoryAttendanceResponse;
@@ -26,6 +27,7 @@ import udpm.hn.studentattendance.entities.Semester;
 import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
 import udpm.hn.studentattendance.helpers.SessionHelper;
 import udpm.hn.studentattendance.infrastructure.common.ApiResponse;
+import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.RoleConstant;
 import udpm.hn.studentattendance.infrastructure.config.redis.service.RedisService;
@@ -177,7 +179,7 @@ class STDHistoryAttendanceImplTest {
     @DisplayName("Should get all factories for current student")
     void getAllFactoryByUserStudent_ShouldReturnFactories() {
         // Given
-        when(historyAttendanceFactoryExtendRepository.getAllFactoryByUser(EntityStatus.ACTIVE, "user123"))
+        when(historyAttendanceFactoryExtendRepository.getAllFactoryByUser("user123"))
                 .thenReturn(factories);
 
         // When

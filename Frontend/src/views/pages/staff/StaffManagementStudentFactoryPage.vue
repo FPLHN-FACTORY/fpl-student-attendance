@@ -212,7 +212,6 @@ const fetchAllStudents = () => {
 const handleStudentTableChange = (paginationObj) => {
   studentPagination.current = paginationObj.current
   studentPagination.pageSize = paginationObj.pageSize
-  studentFilter.page = paginationObj.current
   studentFilter.pageSize = paginationObj.pageSize
   fetchAllStudents()
 }
@@ -294,7 +293,6 @@ const handleTableChange = (pageInfo) => {
   // Cập nhật current và pageSize
   pagination.current = pageInfo.current
   pagination.pageSize = pageInfo.pageSize
-  filter.page = pageInfo.current
   filter.pageSize = pageInfo.pageSize
   fetchStudentFactories()
 }
@@ -371,7 +369,7 @@ const shiftData = ref([])
 const shiftColumns = ref(
   autoAddColumnWidth([
     { title: 'Buổi', dataIndex: 'orderNumber', key: 'orderNumber' },
-    { title: 'Ngày học', dataIndex: 'startDate', key: 'startDate' },
+    { title: 'Ngày điểm danh', dataIndex: 'startDate', key: 'startDate' },
     { title: 'Thời gian', key: 'time' },
     { title: 'Ca', dataIndex: 'shift', key: 'shift' },
     { title: 'Trạng thái điểm danh', dataIndex: 'statusAttendance', key: 'statusAttendance' },
@@ -741,10 +739,9 @@ onMounted(() => {
       </a-table>
     </a-modal>
 
-    <!-- Modal "Thêm học sinh vào nhóm xưởng" -->
     <a-modal
       v-model:open="isAddStudentModalVisible"
-      title="Thêm học sinh vào nhóm xưởng"
+      title="Thêm sinh viên vào nhóm xưởng"
       width="80%"
       @cancel="resetStudentModal"
       @ok="handleAddStudents"
@@ -761,7 +758,7 @@ onMounted(() => {
           />
         </div>
       </div>
-      <!-- Bảng danh sách tất cả sinh viên -->
+
       <a-table
         class="nowrap"
         :key="isAddStudentModalVisible"

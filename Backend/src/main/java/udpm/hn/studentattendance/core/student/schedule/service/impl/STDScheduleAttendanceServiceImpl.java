@@ -78,7 +78,7 @@ public class STDScheduleAttendanceServiceImpl implements STDScheduleAttendanceSe
                         Font cellFont = new Font(unicodeFont, 12);
 
                         Paragraph paragraph = new Paragraph(
-                                        "Lịch học của sinh viên: "
+                                        "Lịch của sinh viên: "
                                                         + sessionHelper.getUserCode()
                                                         + " - "
                                                         + sessionHelper.getUserName(),
@@ -102,7 +102,7 @@ public class STDScheduleAttendanceServiceImpl implements STDScheduleAttendanceSe
                         Color rowColor2 = new Color(245, 245, 245);
 
                         // Thêm header cho bảng
-                        Stream.of("#", "Ngày học", "Ca học", "Nhóm xưởng", "Link học", "Địa điểm",
+                        Stream.of("STT", "Ngày điểm danh", "Ca", "Nhóm xưởng", "Link", "Địa điểm",
                                         "Tên giảng viên", "Mô tả")
                                         .forEach(headerTitle -> {
                                                 PdfPCell headerCell = new PdfPCell();
@@ -117,7 +117,8 @@ public class STDScheduleAttendanceServiceImpl implements STDScheduleAttendanceSe
                         // Định dạng ngày dạy
                         SimpleDateFormat dateFormat = new SimpleDateFormat("EEEE - dd/MM/yyyy HH:mm",
                                         new Locale("vi", "VN"));
-
+                        SimpleDateFormat dateFormatEnd = new SimpleDateFormat("HH:mm",
+                                new Locale("vi", "VN"));
                         int rowIndex = 0;
                         for (STDScheduleAttendanceResponse scheduleAttendanceResponse : scheduleAttendanceResponses) {
                                 Color backgroundColor = (rowIndex % 2 == 0) ? rowColor1 : rowColor2;
@@ -130,7 +131,11 @@ public class STDScheduleAttendanceServiceImpl implements STDScheduleAttendanceSe
 
                                 String attendanceDayStart = dateFormat
                                                 .format(new Date(scheduleAttendanceResponse.getAttendanceDayStart()));
-                                PdfPCell learningDayCell = new PdfPCell(new Phrase(attendanceDayStart, cellFont));
+                                String attendanceDayEnd = dateFormatEnd
+                                                .format(new Date(scheduleAttendanceResponse.getAttendanceDayEnd()));
+                                String attendanceDay = attendanceDayStart + " - " + attendanceDayEnd;
+
+                                PdfPCell learningDayCell = new PdfPCell(new Phrase(attendanceDay, cellFont));
                                 styleCell(learningDayCell, backgroundColor);
                                 pdfTable.addCell(learningDayCell);
 
@@ -140,7 +145,6 @@ public class STDScheduleAttendanceServiceImpl implements STDScheduleAttendanceSe
                                 styleCell(shiftCell, backgroundColor);
                                 pdfTable.addCell(shiftCell);
 
-                                // Cột "Điểm danh muộn tối đa (phút)"
                                 PdfPCell factoryNameCell = new PdfPCell(
                                                 new Phrase(String.valueOf(scheduleAttendanceResponse.getFactoryName()),
                                                                 cellFont));
@@ -189,12 +193,7 @@ public class STDScheduleAttendanceServiceImpl implements STDScheduleAttendanceSe
                 return new ByteArrayInputStream(byteArrayOutputStream.toByteArray());
         }
 
-        /**
-         * Hàm tiện ích để style cho từng cell:
-         * - Set nền (background)
-         * - Canh giữa nội dung
-         * - Padding và viền
-         */
+
         private void styleCell(PdfPCell cell, Color backgroundColor) {
                 cell.setBackgroundColor(backgroundColor);
                 cell.setHorizontalAlignment(Element.ALIGN_CENTER);

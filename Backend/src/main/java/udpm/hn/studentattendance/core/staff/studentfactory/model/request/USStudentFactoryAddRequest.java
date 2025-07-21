@@ -11,7 +11,8 @@ import udpm.hn.studentattendance.infrastructure.constants.EntityProperties;
 public class USStudentFactoryAddRequest {
 
     @NotBlank(message = "Không được để trống mã sinh viên")
-    @Size(min = 2, max = EntityProperties.LENGTH_NAME, message = "Mã sih viên " + EntityProperties.LENGTH_NAME
+    @Size(min = 2, max = EntityProperties.LENGTH_NAME, message = "Mã sinh viên phải có ít nhất 2 ký tự và không được vượt quá "
+            + EntityProperties.LENGTH_NAME
             + " ký tự")
     private String studentCode;
 

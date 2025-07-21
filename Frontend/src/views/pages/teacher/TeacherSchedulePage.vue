@@ -15,6 +15,7 @@ import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
 import { ROUTE_NAMES, TeacherRoutes } from '@/router/teacherRoute'
 import { DEFAULT_DATE_FORMAT, DEFAULT_PAGINATION, TYPE_SHIFT } from '@/constants'
 import { formatDate, dayOfWeek, autoAddColumnWidth } from '@/utils/utils'
+import { validateFormSubmission } from '@/utils/validationUtils'
 import useLoadingStore from '@/stores/useLoadingStore'
 import dayjs from 'dayjs'
 import router from '@/router'
@@ -85,7 +86,7 @@ const columns = autoAddColumnWidth([
   { title: 'Dự án', dataIndex: 'projectName', key: 'projectName' },
   { title: 'Địa điểm học', dataIndex: 'room', key: 'room' },
   { title: 'Hình thức', dataIndex: 'type', key: 'type' },
-  { title: 'Link học', dataIndex: 'link', key: 'link' },
+  { title: 'Link online', dataIndex: 'link', key: 'link' },
   {
     title: 'Chi tiết / Sửa',
     dataIndex: 'description',
@@ -106,7 +107,7 @@ const columnsTeachingPresent = autoAddColumnWidth([
   { title: 'Xưởng', dataIndex: 'factoryName', key: 'factoryName' },
   { title: 'Dự án', dataIndex: 'projectName', key: 'projectName' },
   { title: 'Địa điểm học', dataIndex: 'room', key: 'room' },
-  { title: 'Link học', dataIndex: 'link', key: 'link' },
+  { title: 'Link online', dataIndex: 'link', key: 'link' },
   {
     title: 'Chi tiết / Sửa',
     dataIndex: 'description',
@@ -232,14 +233,12 @@ const fetchProjects = () => {
 
 // Phân trang
 const handlePresentTableChange = (pag) => {
-  filter.page = pag.current
   filter.pageSize = pag.pageSize
   presentPagination.value.current = pag.current
   presentPagination.value.pageSize = pag.pageSize
   fetchTeachingSchedulePresent()
 }
 const handleTableChange = (pag) => {
-  filter.page = pag.current
   filter.pageSize = pag.pageSize
   pagination.value.current = pag.current
   pagination.value.pageSize = pag.pageSize
@@ -392,9 +391,9 @@ const roomInput = ref('')
 const pendingChangeRecord = ref(null)
 function handleTypeToggle(record, checked) {
   Modal.confirm({
-    title: 'Xác nhận thay đổi hình thức học',
+    title: 'Xác nhận thay đổi hình thức',
     content: checked
-      ? 'Bạn có chắc chắn muốn chuyển sang hình thức Online và cần nhập link học không?'
+      ? 'Bạn có chắc chắn muốn chuyển sang hình thức Online và cần nhập link  không?'
       : 'Bạn có chắc chắn muốn chuyển về hình thức Offline không?',
     okText: 'Xác nhận',
     cancelText: 'Hủy',
@@ -415,8 +414,13 @@ function handleTypeToggle(record, checked) {
 }
 // 3) Khi confirm chuyển về Offline: gọi change-type với roomInput.value
 function confirmRoomModal() {
-  if (!roomInput.value) {
-    return message.error('Vui lòng nhập phòng!')
+  // Validate required fields with whitespace check (allow room codes with only numbers)
+  const validation = validateFormSubmission({ room: roomInput.value }, [
+    { key: 'room', label: 'Phòng học', allowOnlyNumbers: true },
+  ])
+  
+  if (!validation.isValid) {
+    return message.error(validation.message)
   }
   showRoomModal.value = false
   loadingStore.show()
@@ -425,8 +429,13 @@ function confirmRoomModal() {
 }
 // khi user confirm nhập link
 function confirmLinkModal() {
-  if (!linkInput.value) {
-    return message.error('Vui lòng nhập link học!')
+  // Validate required fields with whitespace check (skip number validation for URLs)
+  const validation = validateFormSubmission({ link: linkInput.value }, [
+    { key: 'link', label: 'Link online', skipNumberValidation: true },
+  ])
+  
+  if (!validation.isValid) {
+    return message.error(validation.message)
   }
   showLinkModal.value = false
   loadingStore.show()
@@ -453,7 +462,7 @@ function confirmLinkModal() {
       fetchTeachingSchedulePresent()
     })
     .catch((error) => {
-      message.error(error.response?.data?.message || 'Lỗi khi cập nhật link/kiểu học')
+      message.error(error.response?.data?.message || 'Lỗi khi cập nhật link/kiểu ')
     })
     .finally(() => loadingStore.hide())
 }
@@ -625,7 +634,7 @@ onMounted(() => {
                 <div class="col-md-4 col-sm-6">
                   <a-select
                     v-model:value="filter.shiftType"
-                    placeholder="Chọn hình thức học"
+                    placeholder="Chọn hình thức"
                     allowClear
                     class="w-100"
                     @change="fetchTeachingSchedule"
@@ -750,7 +759,7 @@ onMounted(() => {
             @keyup.enter="handleUpdatePlanDate"
           />
         </a-form-item>
-        <a-form-item label="Link học" name="link">
+        <a-form-item label="Link online" name="link">
           <a-input
             v-model:value="formUpdateData.link"
             placeholder="https://"
@@ -773,13 +782,13 @@ onMounted(() => {
     <!-- modal mới: bắt nhập link khi bật sang Online -->
     <a-modal
       v-model:open="showLinkModal"
-      title="Nhập link học để chuyển sang Online"
+      title="Nhập link để chuyển sang Online"
       @ok="confirmLinkModal"
       @cancel="showLinkModal = false"
       :okButtonProps="{ loading: isLoading }"
     >
       <a-form layout="vertical">
-        <a-form-item label="Link học">
+        <a-form-item label="Link online">
           <a-input v-model:value="linkInput" placeholder="https://" />
         </a-form-item>
       </a-form>
