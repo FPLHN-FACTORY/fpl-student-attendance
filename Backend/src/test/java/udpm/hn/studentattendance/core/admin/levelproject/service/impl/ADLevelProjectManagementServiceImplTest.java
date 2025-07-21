@@ -26,6 +26,7 @@ import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
 import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
 import udpm.hn.studentattendance.infrastructure.common.ApiResponse;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
+
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.RedisPrefixConstant;
 import udpm.hn.studentattendance.infrastructure.config.redis.service.RedisService;
@@ -46,8 +47,7 @@ class ADLevelProjectManagementServiceImplTest {
     @Mock
     private ADLevelProjectRepository repository;
 
-    @Mock
-    private CommonUserStudentRepository commonUserStudentRepository;
+
 
     @Mock
     private UserActivityLogHelper userActivityLogHelper;
@@ -86,7 +86,7 @@ class ADLevelProjectManagementServiceImplTest {
 
         PageableObject mockData = mock(PageableObject.class);
 
-        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong())).thenReturn(mockData);
+        when(redisCacheHelper.getOrSet(anyString(), any(), any())).thenReturn(mockData);
 
         // When
         ResponseEntity<?> response = levelProjectService.getListLevelProject(request);
@@ -99,7 +99,7 @@ class ADLevelProjectManagementServiceImplTest {
         assertEquals(mockData, apiResponse.getData());
 
         // Verify repository was not called
-        verify(redisCacheHelper).getOrSet(anyString(), any(), any(), anyLong());
+        verify(redisCacheHelper).getOrSet(anyString(), any(), any());
         verify(repository, never()).getAll(any(Pageable.class), any(ADLevelProjectSearchRequest.class));
     }
 
@@ -112,7 +112,7 @@ class ADLevelProjectManagementServiceImplTest {
         ADLevelProjectResponse levelProjectResponse = mock(ADLevelProjectResponse.class);
         levelProjects.add(levelProjectResponse);
         Page<ADLevelProjectResponse> page = new PageImpl<>(levelProjects);
-        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong()))
+        when(redisCacheHelper.getOrSet(anyString(), any(), any()))
                 .thenAnswer(invocation -> {
                     java.util.function.Supplier<?> supplier = invocation.getArgument(1);
                     return supplier.get();
@@ -127,7 +127,7 @@ class ADLevelProjectManagementServiceImplTest {
         ApiResponse apiResponse = (ApiResponse) response.getBody();
         assertNotNull(apiResponse);
         assertEquals("Hiển thị tất cả nhóm dự án thành công", apiResponse.getMessage());
-        verify(redisCacheHelper).getOrSet(anyString(), any(), any(), anyLong());
+        verify(redisCacheHelper).getOrSet(anyString(), any(), any());
         verify(repository).getAll(any(Pageable.class), any(ADLevelProjectSearchRequest.class));
     }
 

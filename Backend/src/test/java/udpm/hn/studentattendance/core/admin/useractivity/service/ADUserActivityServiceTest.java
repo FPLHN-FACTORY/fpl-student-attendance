@@ -29,7 +29,7 @@ class ADUserActivityServiceTest {
     @Test
     void testGetAllUserActivity() {
         UALFilterRequest request = new UALFilterRequest();
-        when(userActivityLogHelper.getAll(request)).thenReturn(new PageableObject<>(Collections.emptyList(), 0, 0));
+        when(userActivityLogHelper.getAll(request)).thenReturn(new PageableObject<>(Collections.emptyList(), 0L, 0L, 0));
         ResponseEntity<?> response = adUserActivityService.getAllUserActivity(request);
         assertNotNull(response);
         assertEquals(200, response.getStatusCodeValue());

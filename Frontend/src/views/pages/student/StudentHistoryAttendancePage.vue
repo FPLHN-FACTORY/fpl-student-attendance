@@ -40,7 +40,7 @@ const loadingExport = reactive({})
 
 const columns = autoAddColumnWidth([
   { title: '#', dataIndex: 'rowNumber', key: 'rowNumber' },
-  { title: 'Ngày học', dataIndex: 'planDateStartDate', key: 'planDateStartDate' },
+  { title: 'Ngày điểm danh', dataIndex: 'planDateStartDate', key: 'planDateStartDate' },
   { title: 'Ca', dataIndex: 'planDateShift', key: 'planDateShift' },
   {
     title: 'Điểm danh muộn',
@@ -198,7 +198,6 @@ const exportPDF = async (factoryId, factoryName) => {
 const handleClearFilter = () => {
   filter.factoryId = ''
 
-  // Find current semester when clearing filter
   const now = new Date().getTime()
   const currentSemester = semesters.value.find(
     (semester) => semester.fromDate <= now && now <= semester.toDate,
@@ -338,7 +337,7 @@ onMounted(async () => {
                   <span v-else>Không có mô tả</span>
                 </template>
                 <template v-else-if="column.dataIndex === 'checkIn'">
-                  <template v-if="record.requiredCheckIn == STATUS_REQUIRED_ATTENDANCE.ENABLE">
+                  <template v-if="record.requiredCheckIn === STATUS_REQUIRED_ATTENDANCE.ENABLE">
                     <span v-if="!record.checkIn"> <a-badge status="error" /> Chưa checkin </span>
                     <span v-else>
                       <a-badge status="success" />
@@ -351,7 +350,7 @@ onMounted(async () => {
                   </template>
                 </template>
                 <template v-else-if="column.dataIndex === 'checkOut'">
-                  <template v-if="record.requiredCheckOut == STATUS_REQUIRED_ATTENDANCE.ENABLE">
+                  <template v-if="record.requiredCheckOut === STATUS_REQUIRED_ATTENDANCE.ENABLE">
                     <span v-if="record.statusAttendance === 'CO_MAT'">
                       <a-badge status="success" />
                       {{ formatDate(record.checkOut, 'dd/MM/yyyy HH:mm') }}
@@ -395,12 +394,11 @@ onMounted(async () => {
       </div>
     </div>
 
-    <!-- Display message when no data is available -->
     <div class="row g-3 mt-3" v-if="Object.keys(groupedAttendance).length === 0 && !isLoading">
       <div class="col-12">
         <a-card :bordered="false" class="card mb-3">
           <div class="d-flex justify-content-center align-items-center p-4">
-            <a-empty description="Kỳ học này bạn chưa có lớp học nào" />
+            <a-empty description="Kỳ học này bạn chưa có nhóm xưởng nào" />
           </div>
         </a-card>
       </div>

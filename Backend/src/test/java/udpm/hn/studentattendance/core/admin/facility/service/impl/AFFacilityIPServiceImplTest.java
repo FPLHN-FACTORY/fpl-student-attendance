@@ -33,6 +33,7 @@ import udpm.hn.studentattendance.infrastructure.config.redis.service.RedisServic
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import org.mockito.ArgumentCaptor;
 import java.util.function.Supplier;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -77,7 +78,7 @@ class AFFacilityIPServiceImplTest {
         String cacheKey = RedisPrefixConstant.REDIS_PREFIX_FACILITY_IP + "list";
         PageableObject mockData = mock(PageableObject.class);
 
-        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong())).thenReturn(mockData);
+        when(redisCacheHelper.getOrSet(anyString(), any(), any())).thenReturn(mockData);
 
         // When
         ResponseEntity<?> response = facilityIPService.getAllList(request);
@@ -90,7 +91,7 @@ class AFFacilityIPServiceImplTest {
         assertEquals(mockData, apiResponse.getData());
 
         // Verify repository was not called
-        verify(redisCacheHelper).getOrSet(anyString(), any(), any(), anyLong());
+        verify(redisCacheHelper).getOrSet(anyString(), any(), any());
         verify(afFacilityIPRepository, never()).getAllByFilter(any(Pageable.class),
                 any(AFFilterFacilityIPRequest.class));
     }
@@ -106,7 +107,7 @@ class AFFacilityIPServiceImplTest {
         PageableObject<AFFacilityIPResponse> expected = PageableObject.of(page);
 
         // Cache miss: gọi supplier
-        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong()))
+        when(redisCacheHelper.getOrSet(anyString(), any(), any()))
                 .thenAnswer(invocation -> {
                     Supplier<?> supplier = invocation.getArgument(1);
                     return supplier.get();
@@ -433,7 +434,7 @@ class AFFacilityIPServiceImplTest {
         Page<AFFacilityIPResponse> page = new PageImpl<>(ipList);
 
         // Simulate deserialization error (cache error)
-        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong()))
+        when(redisCacheHelper.getOrSet(anyString(), any(), any()))
                 .thenThrow(new RuntimeException("Deserialization error"));
         // Remove unnecessary stubbing for repository
         // when(afFacilityIPRepository.getAllByFilter(any(Pageable.class),
@@ -453,7 +454,7 @@ class AFFacilityIPServiceImplTest {
         Page<AFFacilityIPResponse> page = new PageImpl<>(ipList);
         PageableObject<AFFacilityIPResponse> expected = PageableObject.of(page);
         // Cache miss: gọi supplier
-        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong()))
+        when(redisCacheHelper.getOrSet(anyString(), any(), any()))
                 .thenAnswer(invocation -> {
                     Supplier<?> supplier = invocation.getArgument(1);
                     return supplier.get();

@@ -12,6 +12,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.test.util.ReflectionTestUtils;
 import udpm.hn.studentattendance.core.staff.plan.model.request.SPDFilterPlanFactoryRequest;
 import udpm.hn.studentattendance.core.staff.plan.model.response.SPDFactoryResponse;
 import udpm.hn.studentattendance.core.staff.plan.model.response.SPDPlanFactoryResponse;
@@ -20,6 +21,8 @@ import udpm.hn.studentattendance.entities.*;
 import udpm.hn.studentattendance.helpers.SessionHelper;
 import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
 import udpm.hn.studentattendance.infrastructure.common.ApiResponse;
+import udpm.hn.studentattendance.infrastructure.common.PageableObject;
+
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 
 import java.util.ArrayList;
@@ -50,8 +53,7 @@ class SPDPlanFactoryServiceImplTest {
     @Mock
     private SPDFacilityShiftRepository spdFacilityShiftRepository;
 
-    @Mock
-    private CommonUserStudentRepository commonUserStudentRepository;
+
 
     @Mock
     private SessionHelper sessionHelper;

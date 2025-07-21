@@ -149,7 +149,6 @@ const fetchSemesters = () => {
 const handleTableChange = (pageInfo) => {
   pagination.current = pageInfo.current
   pagination.pageSize = pageInfo.pageSize
-  filter.page = pageInfo.current
   filter.pageSize = pageInfo.pageSize // Đồng bộ pageSize cho filter
   fetchFactoryByTeacher()
 }
@@ -309,7 +308,7 @@ onMounted(() => {
                 </template>
 
                 <template v-if="column.dataIndex === 'rowNumber'">
-                  {{ index + 1 }}
+                  {{ (pagination.current - 1) * pagination.pageSize + index + 1 }}
                 </template>
                 <template v-else-if="column.dataIndex === 'factoryName'">
                   <a

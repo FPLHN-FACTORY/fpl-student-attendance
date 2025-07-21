@@ -79,7 +79,7 @@ class AFFacilityShiftServiceImplTest {
     void testGetShiftListWithCache() {
         AFFilterFacilityShiftRequest request = new AFFilterFacilityShiftRequest();
         PageableObject<AFFacilityShiftResponse> cachedData = new PageableObject<>();
-        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong())).thenReturn(cachedData);
+        when(redisCacheHelper.getOrSet(anyString(), any(), any())).thenReturn(cachedData);
 
         // Gọi qua getAllList để nhận ApiResponse không null
         ResponseEntity<?> response = shiftService.getAllList(request);
@@ -105,7 +105,7 @@ class AFFacilityShiftServiceImplTest {
         shifts.add(shift);
         Page<AFFacilityShiftResponse> page = new org.springframework.data.domain.PageImpl<>(shifts);
         PageableObject<AFFacilityShiftResponse> expected = PageableObject.of(page);
-        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong()))
+        when(redisCacheHelper.getOrSet(anyString(), any(), any()))
                 .thenAnswer(invocation -> {
                     java.util.function.Supplier<?> supplier = invocation.getArgument(1);
                     return supplier.get();
@@ -136,7 +136,7 @@ class AFFacilityShiftServiceImplTest {
         shifts.add(shift);
         Page<AFFacilityShiftResponse> page = new org.springframework.data.domain.PageImpl<>(shifts);
         PageableObject<AFFacilityShiftResponse> expected = PageableObject.of(page);
-        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong()))
+        when(redisCacheHelper.getOrSet(anyString(), any(), any()))
                 .thenAnswer(invocation -> {
                     java.util.function.Supplier<?> supplier = invocation.getArgument(1);
                     return supplier.get();
@@ -183,7 +183,7 @@ class AFFacilityShiftServiceImplTest {
         ResponseEntity<?> response = shiftService.addShift(request);
         assertEquals(HttpStatus.OK, response.getStatusCode());
         verify(afFacilityShiftRepository).save(any(FacilityShift.class));
-        verify(userActivityLogHelper).saveLog(contains("Tạo ca học mới"));
+        verify(userActivityLogHelper).saveLog(contains("Tạo ca mới"));
         verify(redisInvalidationHelper).invalidateAllCaches();
     }
 
@@ -447,7 +447,7 @@ class AFFacilityShiftServiceImplTest {
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         verify(afFacilityShiftRepository).save(any(FacilityShift.class));
-        verify(userActivityLogHelper).saveLog(contains("Cập nhật ca học"));
+        verify(userActivityLogHelper).saveLog(contains("Cập nhật ca"));
         verify(redisInvalidationHelper).invalidateAllCaches();
     }
 
@@ -478,7 +478,7 @@ class AFFacilityShiftServiceImplTest {
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         verify(afFacilityShiftRepository).delete(facilityShift);
-        verify(userActivityLogHelper).saveLog(contains("Xóa ca học"));
+        verify(userActivityLogHelper).saveLog(contains("Xóa ca"));
         verify(redisInvalidationHelper).invalidateAllCaches();
     }
 

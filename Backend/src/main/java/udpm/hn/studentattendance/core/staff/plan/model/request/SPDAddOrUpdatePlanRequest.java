@@ -29,7 +29,7 @@ public class SPDAddOrUpdatePlanRequest {
     private Integer maxLateArrival;
 
     @NotBlank(message = "Vui lòng nhập tên kế hoạch")
-    @Size(min = 2, max = EntityProperties.LENGTH_NAME, message = "Tên kế hoạch không được vượt quá "
+    @Size(min = 2, max = EntityProperties.LENGTH_NAME, message = "Tên kế hoạch phải có ít nhất 2 ký tự và không được vượt quá "
             + EntityProperties.LENGTH_NAME + " ký tự")
     private String name;
 

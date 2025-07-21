@@ -17,7 +17,7 @@ import udpm.hn.studentattendance.entities.Semester;
 import udpm.hn.studentattendance.entities.Facility;
 import udpm.hn.studentattendance.entities.Factory;
 import udpm.hn.studentattendance.helpers.MailerHelper;
-import udpm.hn.studentattendance.infrastructure.excel.model.dto.ExStudentModel;
+import udpm.hn.studentattendance.infrastructure.excel.model.dto.EXStudentModel;
 import udpm.hn.studentattendance.utils.DateTimeUtils;
 import udpm.hn.studentattendance.utils.ExcelUtils;
 import udpm.hn.studentattendance.infrastructure.config.mailer.model.MailerDefaultRequest;
@@ -194,11 +194,11 @@ public class AutomaticStatisticsEmailService {
                         }))
                         .collect(Collectors.toList());
 
-                Set<ExStudentModel> stPStudent = lstData.stream()
-                        .map(o -> new ExStudentModel(o.getCode(), o.getName()))
+                Set<EXStudentModel> stPStudent = lstData.stream()
+                        .map(o -> new EXStudentModel(o.getCode(), o.getName()))
                         .collect(Collectors.toCollection(LinkedHashSet::new));
 
-                List<ExStudentModel> lstStudent = new ArrayList<>(stPStudent);
+                List<EXStudentModel> lstStudent = new ArrayList<>(stPStudent);
 
                 headers.addAll(lstPlanDate);
                 headers.addAll(Arrays.asList("Tổng", "Vắng(%)", "Điểm danh bù(lần)"));
@@ -211,7 +211,7 @@ public class AutomaticStatisticsEmailService {
                 colorMap.put("Vắng mặt", "#ff7d7d");
 
                 int row = 1;
-                for (ExStudentModel student : lstStudent) {
+                for (EXStudentModel student : lstStudent) {
                     String studentCode = student.getCode();
                     String studentName = student.getName();
 

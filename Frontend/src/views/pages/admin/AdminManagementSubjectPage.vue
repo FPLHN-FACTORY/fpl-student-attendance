@@ -19,6 +19,7 @@ import { API_ROUTES_ADMIN } from '@/constants/adminConstant'
 import { ROUTE_NAMES } from '@/router/adminRoute'
 import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
 import { autoAddColumnWidth } from '@/utils/utils'
+import { validateFormSubmission } from '@/utils/validationUtils'
 
 const router = useRouter()
 const breadcrumbStore = useBreadcrumbStore()
@@ -60,8 +61,8 @@ const detailSubject = reactive({
 const columns = ref(
   autoAddColumnWidth([
     { title: '#', key: 'rowNumber' },
-    { title: 'Tên bộ môn', dataIndex: 'name', key: 'name' },
     { title: 'Mã bộ môn', dataIndex: 'code', key: 'code' },
+    { title: 'Tên bộ môn', dataIndex: 'name', key: 'name' },
     {
       title: 'Cơ sở hoạt động',
       dataIndex: 'sizeSubjectSemester',
@@ -122,12 +123,14 @@ const showAddModal = (isOpen) => {
 }
 
 const handleAddSubject = () => {
-  if (!newSubject.name || !newSubject.name.trim()) {
-    message.error('Vui lòng nhập tên bộ môn')
-    return
-  }
-  if (!newSubject.code || !newSubject.code.trim()) {
-    message.error('Vui lòng nhập mã bộ môn')
+  // Validate required fields with whitespace check
+  const validation = validateFormSubmission(newSubject, [
+    { key: 'name', label: 'Tên bộ môn' },
+    { key: 'code', label: 'Mã bộ môn', allowOnlyNumbers: true },
+  ])
+  
+  if (!validation.isValid) {
+    message.error(validation.message)
     return
   }
 
@@ -196,12 +199,14 @@ const handleUpdateSubject = (record) => {
 }
 
 const updateSubject = () => {
-  if (!detailSubject.name) {
-    message.error('Vui lòng nhập tên bộ môn')
-    return
-  }
-  if (!detailSubject.code) {
-    message.error('Vui lòng nhập mã bộ môn')
+  // Validate required fields with whitespace check
+  const validation = validateFormSubmission(detailSubject, [
+    { key: 'name', label: 'Tên bộ môn' },
+    { key: 'code', label: 'Mã bộ môn', allowOnlyNumbers: true },
+  ])
+  
+  if (!validation.isValid) {
+    message.error(validation.message)
     return
   }
   loadingStore.show()
@@ -314,7 +319,7 @@ onMounted(() => {
                     class="w-100"
                     @change="fetchSubjects"
                   >
-                    <a-select-option :value="''">-- Tất cả trạng thái --</a-select-option>
+                    <a-select-option :value="null">-- Tất cả trạng thái --</a-select-option>
                     <a-select-option value="1">Hoạt động</a-select-option>
                     <a-select-option value="0">Không hoạt động</a-select-option>
                   </a-select>

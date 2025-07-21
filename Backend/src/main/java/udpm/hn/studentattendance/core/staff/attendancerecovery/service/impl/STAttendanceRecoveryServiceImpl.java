@@ -1,7 +1,6 @@
 package udpm.hn.studentattendance.core.staff.attendancerecovery.service.impl;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
@@ -128,6 +127,7 @@ public class STAttendanceRecoveryServiceImpl implements STAttendanceRecoveryServ
     @Override
     public ResponseEntity<?> createNewEventAttendanceRecovery(STCreateOrUpdateNewEventRequest request) {
 
+
         Optional<Facility> facilityOptional = facilityRepository.findById(sessionHelper.getFacilityId());
         if (facilityOptional == null) {
             return RouterHelper.responseError("Cơ sở không tồn tại", null);
@@ -164,6 +164,7 @@ public class STAttendanceRecoveryServiceImpl implements STAttendanceRecoveryServ
 
     @Override
     public ResponseEntity<?> updateEventAttendanceRecovery(STCreateOrUpdateNewEventRequest request, String id) {
+
 
         Optional<AttendanceRecovery> attendanceRecoveryOptional = attendanceRecoveryRepository.findById(id);
         if (attendanceRecoveryOptional.isPresent()) {
@@ -219,7 +220,7 @@ public class STAttendanceRecoveryServiceImpl implements STAttendanceRecoveryServ
                     request.getDay());
             if (validPlanDates.isEmpty()) {
                 return RouterHelper.responseError(
-                        String.format("Ngày %s - Sinh viên %s - %s không có ca học nào",
+                        String.format("Ngày %s - Sinh viên %s - %s không có ca nào",
                                 formatDate(request.getDay()),
                                 userStudent.getCode(),
                                 userStudent.getName()),

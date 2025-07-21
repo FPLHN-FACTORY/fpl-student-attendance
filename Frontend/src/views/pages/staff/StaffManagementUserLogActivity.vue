@@ -129,6 +129,7 @@ const handleSubmitFilter = () => {
 const handleTableChange = (page) => {
   pagination.value.current = page.current || 1
   pagination.value.pageSize = page.pageSize
+  dataFilter.pageSize = page.pageSize
   getList()
 }
 
