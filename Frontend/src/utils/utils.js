@@ -67,6 +67,13 @@ export const dayOfWeek = (timestamp) => {
   }
 }
 
+export const colorDayOfWeek = (timestamp) => {
+  const inputDate = new Date(timestamp)
+  const daysOfWeek = ['red', 'green', 'cyan', 'blue', 'purple', 'orange', 'pink']
+  const color = daysOfWeek[inputDate.getDay()]
+  return color
+}
+
 export const formatDate = (timestamp, format) => {
   if (!timestamp) {
     return ''
@@ -110,7 +117,7 @@ export const getShiftTimeEnd = (timestamp, endHour, endMinute) => {
     .valueOf()
 }
 
-export const rowSelectTable = (selectedRowKeys, isDisabled = () => false) => {
+export const rowSelectTable = (selectedRowKeys, isDisabled = () => false, rowKey = 'id') => {
   return {
     selectedRowKeys: unref(selectedRowKeys),
     onChange: (changableRowKeys) => {
@@ -118,7 +125,7 @@ export const rowSelectTable = (selectedRowKeys, isDisabled = () => false) => {
     },
     hideDefaultSelections: true,
     getCheckboxProps: (record) => ({
-      disabled: isDisabled(record.id),
+      disabled: isDisabled(record[rowKey]),
     }),
     selections: [
       {

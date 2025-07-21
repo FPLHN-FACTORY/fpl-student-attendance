@@ -6,14 +6,18 @@ import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
+import udpm.hn.studentattendance.core.staff.plan.model.dto.SPDPlanDateGroupDto;
 import udpm.hn.studentattendance.core.staff.plan.model.request.SPDAddOrUpdatePlanDateRequest;
 import udpm.hn.studentattendance.core.staff.plan.model.request.SPDDeletePlanDateRequest;
 import udpm.hn.studentattendance.core.staff.plan.model.request.SPDFilterPlanDateRequest;
 import udpm.hn.studentattendance.core.staff.plan.model.request.SPDUpdateLinkMeetRequest;
+import udpm.hn.studentattendance.core.staff.plan.model.response.SPDPlanDateGroupResponse;
 import udpm.hn.studentattendance.core.staff.plan.model.response.SPDPlanDateResponse;
 import udpm.hn.studentattendance.core.staff.plan.model.response.SPDPlanFactoryResponse;
 import udpm.hn.studentattendance.core.staff.plan.model.response.SPDUserStudentResponse;
@@ -96,8 +100,35 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
     public ResponseEntity<?> getAllList(SPDFilterPlanDateRequest request) {
         request.setIdFacility(sessionHelper.getFacilityId());
         Pageable pageable = PaginationHelper.createPageable(request);
-        PageableObject<SPDPlanDateResponse> data = PageableObject
-                .of(spdPlanDateRepository.getAllByFilter(pageable, request));
+        Page<SPDPlanDateGroupResponse> lstDataGroup = spdPlanDateRepository.getAllGroupByFilter(pageable, request);
+
+        List<SPDPlanDateGroupDto> lstData = new ArrayList<>();
+        List<SPDPlanDateGroupResponse> content = lstDataGroup.getContent();
+
+        for (SPDPlanDateGroupResponse item : content) {
+            SPDPlanDateGroupDto o = new SPDPlanDateGroupDto();
+            o.setOrderNumber(item.getOrderNumber());
+            o.setStartDate(item.getStartDate());
+            o.setDay(item.getDay());
+            o.setTotalShift(item.getTotalShift());
+
+            List<SPDPlanDateResponse> items = spdPlanDateRepository.getAllByFilter(item.getDay(), request);
+            Set<Integer> types = new HashSet<>();
+            for(SPDPlanDateResponse p: items) {
+                types.add(p.getType());
+            }
+            o.setTypes(types);
+            o.setStatus(item.getStatus());
+            o.setPlanDates(items);
+            lstData.add(o);
+        }
+
+        PageableObject<SPDPlanDateGroupDto> data = new PageableObject<>();
+        data.setData(lstData);
+        data.setTotalPages(lstDataGroup.getTotalPages());
+        data.setTotalItems(lstDataGroup.getTotalElements());
+        data.setCurrentPage(lstDataGroup.getNumber());
+
         return RouterHelper.responseSuccess("Lấy danh sách dữ liệu thành công", data);
     }
 
@@ -106,9 +137,12 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
     public ResponseEntity<?> deletePlanDate(String idPlanDate) {
         Optional<SPDPlanDateResponse> entity = spdPlanDateRepository.getPlanDateById(idPlanDate,
                 sessionHelper.getFacilityId());
-        if (entity.isEmpty()) {
+
+        PlanDate planDate = spdPlanDateRepository.findById(idPlanDate).orElse(null);
+        if (entity.isEmpty() || planDate == null) {
             return RouterHelper.responseError("Không tìm thấy kế hoạch chi tiết");
         }
+
         if (spdPlanDateRepository.deletePlanDateById(sessionHelper.getFacilityId(),
                 List.of(entity.get().getId())) > 0) {
 
@@ -116,8 +150,8 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
             String logMessage = String.format(
                     "vừa xóa kế hoạch chi tiết ngày %s - Nhóm xưởng: %s - Kế hoạch: %s - Ca : %s",
                     DateTimeUtils.convertMillisToDate(entity.get().getStartDate()),
-                    getFactoryNameFromPlanDate(entity.get().getId()),
-                    getPlanNameFromPlanDate(entity.get().getId()),
+                    planDate.getPlanFactory().getFactory().getName(),
+                    planDate.getPlanFactory().getPlan().getName(),
                     entity.get().getShift());
             userActivityLogHelper.saveLog(logMessage);
 
@@ -129,29 +163,26 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
 
     @Override
     public ResponseEntity<?> deleteMultiplePlanDate(SPDDeletePlanDateRequest request) {
-        if (request.getIds() == null || request.getIds().isEmpty()) {
+        if (request.getDays() == null || request.getDays().isEmpty()) {
             return RouterHelper.responseError("Vui lòng chọn ít nhất 1 mục muốn xoá.");
         }
 
-        int result = spdPlanDateRepository.deletePlanDateById(sessionHelper.getFacilityId(), request.getIds());
+        PlanFactory planFactory = spdPlanFactoryRepository.findById(request.getIdPlanFactory()).orElse(null);
+        if (planFactory == null) {
+            return RouterHelper.responseError("Không tìm thấy kế hoạch nhóm xưởng.");
+        }
+
+        int result = spdPlanDateRepository.deletePlanDateByDay(sessionHelper.getFacilityId(), request.getDays());
         if (result > 0) {
             // Enhanced logging with detailed information
-            String factoryNames = getFactoryNamesFromPlanDates(request.getIds());
-            String planNames = getPlanNamesFromPlanDates(request.getIds());
-            String timeRange = getTimeRangeFromPlanDates(request.getIds());
-            String specificSessions = getSpecificSessionsFromPlanDates(request.getIds());
-
             String logMessage = String.format(
-                    "vừa xóa %d kế hoạch chi tiết - " +
+                    "vừa xóa %d kế hoạch chi tiết ngày: %s - " +
                             "Nhóm xưởng: %s - " +
-                            "Kế hoạch: %s - " +
-                            "Thời gian: %s - " +
-                            "Các buổi học: %s",
+                            "Kế hoạch: %s",
                     result,
-                    factoryNames,
-                    planNames,
-                    timeRange,
-                    specificSessions);
+                    String.join(", ", request.getDays()),
+                    planFactory.getFactory().getName(),
+                    planFactory.getPlan().getName());
             userActivityLogHelper.saveLog(logMessage);
 
             return RouterHelper.responseSuccess("Xoá thành công " + result + " kế hoạch chi tiết.");
@@ -595,167 +626,6 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
             return null;
         }
 
-    }
-
-    // Helper methods for enhanced logging
-    private String getFactoryNameFromPlanDate(String planDateId) {
-        try {
-            Optional<SPDPlanDateResponse> planDate = spdPlanDateRepository.getPlanDateById(planDateId,
-                    sessionHelper.getFacilityId());
-            if (planDate.isPresent()) {
-                // Get factory name from PlanFactory relationship
-                PlanDate planDateEntity = spdPlanDateRepository.findById(planDateId).orElse(null);
-                if (planDateEntity != null && planDateEntity.getPlanFactory() != null
-                        && planDateEntity.getPlanFactory().getFactory() != null) {
-                    return planDateEntity.getPlanFactory().getFactory().getName();
-                }
-            }
-        } catch (Exception e) {
-            // Log error but don't fail the main operation
-        }
-        return "Nhóm xưởng";
-    }
-
-    private String getPlanNameFromPlanDate(String planDateId) {
-        try {
-            Optional<SPDPlanDateResponse> planDate = spdPlanDateRepository.getPlanDateById(planDateId,
-                    sessionHelper.getFacilityId());
-            if (planDate.isPresent()) {
-                // Get plan name from PlanFactory relationship
-                PlanDate planDateEntity = spdPlanDateRepository.findById(planDateId).orElse(null);
-                if (planDateEntity != null && planDateEntity.getPlanFactory() != null
-                        && planDateEntity.getPlanFactory().getPlan() != null) {
-                    return planDateEntity.getPlanFactory().getPlan().getName();
-                }
-            }
-        } catch (Exception e) {
-            // Log error but don't fail the main operation
-        }
-        return "Kế hoạch";
-    }
-
-    private String getFactoryNamesFromPlanDates(List<String> planDateIds) {
-        try {
-            if (planDateIds == null || planDateIds.isEmpty()) {
-                return "Nhiều nhóm xưởng";
-            }
-
-            // Get unique factory names from multiple plan dates
-            Set<String> factoryNames = new HashSet<>();
-            for (String planDateId : planDateIds) {
-                PlanDate planDateEntity = spdPlanDateRepository.findById(planDateId).orElse(null);
-                if (planDateEntity != null && planDateEntity.getPlanFactory() != null
-                        && planDateEntity.getPlanFactory().getFactory() != null) {
-                    factoryNames.add(planDateEntity.getPlanFactory().getFactory().getName());
-                }
-            }
-
-            if (factoryNames.isEmpty()) {
-                return "Nhiều nhóm xưởng";
-            } else if (factoryNames.size() == 1) {
-                return factoryNames.iterator().next();
-            } else {
-                return String.join(", ", factoryNames);
-            }
-        } catch (Exception e) {
-            return "Nhiều nhóm xưởng";
-        }
-    }
-
-    private String getPlanNamesFromPlanDates(List<String> planDateIds) {
-        try {
-            if (planDateIds == null || planDateIds.isEmpty()) {
-                return "Nhiều kế hoạch";
-            }
-
-            // Get unique plan names from multiple plan dates
-            Set<String> planNames = new HashSet<>();
-            for (String planDateId : planDateIds) {
-                PlanDate planDateEntity = spdPlanDateRepository.findById(planDateId).orElse(null);
-                if (planDateEntity != null && planDateEntity.getPlanFactory() != null
-                        && planDateEntity.getPlanFactory().getPlan() != null) {
-                    planNames.add(planDateEntity.getPlanFactory().getPlan().getName());
-                }
-            }
-
-            if (planNames.isEmpty()) {
-                return "Nhiều kế hoạch";
-            } else if (planNames.size() == 1) {
-                return planNames.iterator().next();
-            } else {
-                return String.join(", ", planNames);
-            }
-        } catch (Exception e) {
-            return "Nhiều kế hoạch";
-        }
-    }
-
-    private String getTimeRangeFromPlanDates(List<String> planDateIds) {
-        try {
-            if (planDateIds == null || planDateIds.isEmpty()) {
-                return "Không có thông tin thời gian";
-            }
-
-            Long earliestStart = null;
-            Long latestEnd = null;
-
-            for (String planDateId : planDateIds) {
-                PlanDate planDateEntity = spdPlanDateRepository.findById(planDateId).orElse(null);
-                if (planDateEntity != null) {
-                    if (earliestStart == null || planDateEntity.getStartDate() < earliestStart) {
-                        earliestStart = planDateEntity.getStartDate();
-                    }
-                    if (latestEnd == null || planDateEntity.getEndDate() > latestEnd) {
-                        latestEnd = planDateEntity.getEndDate();
-                    }
-                }
-            }
-
-            if (earliestStart != null && latestEnd != null) {
-                String startTime = DateTimeUtils.convertMillisToDate(earliestStart, "dd/MM/yyyy HH:mm");
-                String endTime = DateTimeUtils.convertMillisToDate(latestEnd, "dd/MM/yyyy HH:mm");
-                return startTime + " đến " + endTime;
-            }
-        } catch (Exception e) {
-        }
-        return "Không xác định thời gian";
-    }
-
-    private String getSpecificSessionsFromPlanDates(List<String> planDateIds) {
-        try {
-            if (planDateIds == null || planDateIds.isEmpty()) {
-                return "Không có thông tin buổi học";
-            }
-
-            List<String> sessionDetails = new ArrayList<>();
-            for (String planDateId : planDateIds) {
-                PlanDate planDateEntity = spdPlanDateRepository.findById(planDateId).orElse(null);
-                if (planDateEntity != null) {
-                    String date = DateTimeUtils.convertMillisToDate(planDateEntity.getStartDate(), "dd/MM/yyyy");
-                    String time = DateTimeUtils.convertMillisToDate(planDateEntity.getStartDate(), "HH:mm") +
-                            " - " + DateTimeUtils.convertMillisToDate(planDateEntity.getEndDate(), "HH:mm");
-                    String shift = "Ca " + planDateEntity.getShift();
-                    String type = planDateEntity.getType().name();
-                    String room = planDateEntity.getRoom() != null ? planDateEntity.getRoom() : "Không có phòng";
-
-                    String sessionInfo = String.format("%s %s (%s - %s - %s)",
-                            date, time, shift, type, room);
-                    sessionDetails.add(sessionInfo);
-                }
-            }
-
-            if (sessionDetails.isEmpty()) {
-                return "Không có thông tin buổi học";
-            } else if (sessionDetails.size() <= 3) {
-                return String.join(", ", sessionDetails);
-            } else {
-                return String.format("%s, ... và %d buổi khác",
-                        String.join(", ", sessionDetails.subList(0, 3)),
-                        sessionDetails.size() - 3);
-            }
-        } catch (Exception e) {
-        }
-        return "Không xác định buổi học";
     }
 
 }
