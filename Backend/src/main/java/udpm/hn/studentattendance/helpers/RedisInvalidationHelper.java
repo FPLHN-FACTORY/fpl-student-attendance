@@ -61,11 +61,7 @@ public class RedisInvalidationHelper {
 
             // Catch-all for any keys that might have been missed
             redisService.deletePattern("redis_*");
-        } catch (Exception e) {
-            // Log error but don't propagate exception
-            // This ensures that application functionality continues even if Redis is
-            // unavailable
-            System.err.println("Error invalidating Redis caches: " + e.getMessage());
+        } catch (Exception ignored) {
         }
     }
 }
