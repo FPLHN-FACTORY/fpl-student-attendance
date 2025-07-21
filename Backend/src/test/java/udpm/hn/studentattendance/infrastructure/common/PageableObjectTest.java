@@ -11,7 +11,7 @@ class PageableObjectTest {
     @Test
     void testAllArgsConstructorAndGetters() {
         List<String> data = Arrays.asList("a", "b");
-        PageableObject<String> po = new PageableObject<>(data, 5L, 2);
+        PageableObject<String> po = new PageableObject<>(data, 5L, 10L, 2);
         assertEquals(data, po.getData());
         assertEquals(5L, po.getTotalPages());
         assertEquals(2, po.getCurrentPage());

@@ -4,6 +4,7 @@ import useLoadingStore from '@/stores/useLoadingStore'
 import { ref, reactive, onMounted } from 'vue'
 import { DEFAULT_PAGINATION, DEFAULT_DATE_FORMAT } from '@/constants'
 import { autoAddColumnWidth, formatDate } from '@/utils/utils'
+import { validateFormSubmission } from '@/utils/validationUtils'
 import { API_ROUTES_EXCEL, GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
 import { ROUTE_NAMES } from '@/router/staffRoute'
 import requestAPI from '@/services/requestApiService'
@@ -157,8 +158,18 @@ const handleShowModalAdd = () => {
   modalAddEvent.value = true
 }
 const handleAddEvent = () => {
-  if (!newEvent.name || !newEvent.dayHappen) {
-    message.error('Vui lòng nhập đầy đủ thông tin')
+  // Validate required fields with whitespace check
+  const validation = validateFormSubmission(newEvent, [
+    { key: 'name', label: 'Tên sự kiện' },
+  ])
+  
+  if (!validation.isValid) {
+    message.error(validation.message)
+    return
+  }
+  
+  if (!newEvent.dayHappen) {
+    message.error('Vui lòng chọn ngày diễn ra')
     return
   }
   Modal.confirm({
@@ -224,8 +235,18 @@ const handleShowModalEdit = (record) => {
 }
 
 const handleEditEvent = () => {
-  if (!editEvent.name || !editEvent.day) {
-    message.error('Vui lòng nhập đầy đủ thông tin')
+  // Validate required fields with whitespace check
+  const validation = validateFormSubmission(editEvent, [
+    { key: 'name', label: 'Tên sự kiện' },
+  ])
+  
+  if (!validation.isValid) {
+    message.error(validation.message)
+    return
+  }
+  
+  if (!editEvent.day) {
+    message.error('Vui lòng chọn ngày diễn ra')
     return
   }
   Modal.confirm({

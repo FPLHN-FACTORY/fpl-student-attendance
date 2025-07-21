@@ -48,7 +48,7 @@ export const StudentRoutes = [
         component: () => import('@/views/pages/student/StudentSchedulePage.vue'),
         meta: {
           selectedKey: selectedKey++,
-          name: 'Lịch học',
+          name: 'Lịch điểm danh',
           icon: CalendarOutlined,
         },
       },

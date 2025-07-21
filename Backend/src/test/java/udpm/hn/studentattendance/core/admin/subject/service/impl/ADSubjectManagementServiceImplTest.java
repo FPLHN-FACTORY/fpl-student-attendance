@@ -24,6 +24,7 @@ import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
 import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
 import udpm.hn.studentattendance.infrastructure.common.ApiResponse;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
+
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.RedisPrefixConstant;
 import udpm.hn.studentattendance.infrastructure.config.redis.service.RedisService;
@@ -42,8 +43,8 @@ class ADSubjectManagementServiceImplTest {
     @Mock
     private ADSubjectExtendRepository adminSubjectRepository;
 
-    @Mock
-    private CommonUserStudentRepository commonUserStudentRepository;
+
+
 
     @Mock
     private UserActivityLogHelper userActivityLogHelper;
@@ -81,7 +82,7 @@ class ADSubjectManagementServiceImplTest {
                 "_status=";
         PageableObject mockData = mock(PageableObject.class);
 
-        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong())).thenReturn(mockData);
+        when(redisCacheHelper.getOrSet(anyString(), any(), any())).thenReturn(mockData);
 
         // When
         ResponseEntity<?> response = subjectService.getListSubject(request);
@@ -94,7 +95,7 @@ class ADSubjectManagementServiceImplTest {
         assertEquals(mockData, apiResponse.getData());
 
         // Verify repository was not called
-        verify(redisCacheHelper).getOrSet(anyString(), any(), any(), anyLong());
+        verify(redisCacheHelper).getOrSet(anyString(), any(), any());
         verify(adminSubjectRepository, never()).getAll(any(Pageable.class), any(ADSubjectSearchRequest.class));
     }
 
@@ -109,7 +110,7 @@ class ADSubjectManagementServiceImplTest {
         Page<ADSubjectResponse> page = new PageImpl<>(subjects);
 
         // Cache miss: call supplier
-        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong()))
+        when(redisCacheHelper.getOrSet(anyString(), any(), any()))
                 .thenAnswer(invocation -> {
                     java.util.function.Supplier<?> supplier = invocation.getArgument(1);
                     return supplier.get();
@@ -126,7 +127,7 @@ class ADSubjectManagementServiceImplTest {
         assertNotNull(apiResponse);
         assertEquals("Lấy danh sách bộ môn thành công", apiResponse.getMessage());
         // Verify repository was called and cache was updated
-        verify(redisCacheHelper).getOrSet(anyString(), any(), any(), anyLong());
+        verify(redisCacheHelper).getOrSet(anyString(), any(), any());
         verify(adminSubjectRepository).getAll(any(Pageable.class), eq(request));
     }
 
@@ -399,7 +400,6 @@ class ADSubjectManagementServiceImplTest {
         assertEquals(EntityStatus.ACTIVE, subject.getStatus());
 
         // Verify disableAllStudentDuplicateShiftByIdSubject was called
-        verify(commonUserStudentRepository).disableAllStudentDuplicateShiftByIdSubject(subjectId);
         verify(redisInvalidationHelper).invalidateAllCaches();
     }
 

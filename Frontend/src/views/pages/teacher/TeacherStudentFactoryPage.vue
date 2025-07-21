@@ -49,9 +49,7 @@ const breadcrumb = ref([
   },
 ])
 
-// Danh sách học sinh thuộc nhóm xưởng
 const students = ref([])
-// Filter & phân trang
 const filter = reactive({
   searchQuery: '',
   status: '',
@@ -68,12 +66,12 @@ const columns = ref(
   autoAddColumnWidth([
     { title: '#', dataIndex: 'rowNumber', key: 'rowNumber' },
     {
-      title: 'Mã học sinh',
+      title: 'Mã sinh viên',
       dataIndex: 'studentCode',
       key: 'studentCode',
     },
     {
-      title: 'Tên học sinh',
+      title: 'Tên sinh viên ',
       dataIndex: 'studentName',
       key: 'studentName',
     },
@@ -115,7 +113,7 @@ const countFilter = ref(0)
 const columnsDetail = ref(
   autoAddColumnWidth([
     { title: '#', dataIndex: 'orderNumber', key: 'orderNumber' },
-    { title: 'Ngày học', dataIndex: 'startDate', key: 'startDate' },
+    { title: 'Ngày điểm danh', dataIndex: 'startDate', key: 'startDate' },
     { title: 'Thời gian', dataIndex: 'time', key: 'time' },
     { title: 'Ca', dataIndex: 'shift', key: 'shift' },
     { title: 'Checkin đầu giờ', dataIndex: 'createdAt', key: 'createdAt' },
@@ -126,7 +124,6 @@ const columnsDetail = ref(
 
 const loadingStore = useLoadingStore()
 
-// Hàm lấy danh sách học sinh trong nhóm xưởng
 const fetchStudentFactory = () => {
   loadingStore.show()
   requestAPI
@@ -158,7 +155,6 @@ const fetchStudentFactory = () => {
 const handleTableChange = (pageInfo) => {
   pagination.current = pageInfo.current
   pagination.pageSize = pageInfo.pageSize
-  filter.page = pageInfo.current
   filter.pageSize = pageInfo.pageSize // Đồng bộ pageSize cho filter
   fetchStudentFactory()
 }
@@ -223,7 +219,10 @@ onMounted(() => {
           :pagination="false"
           :scroll="{ x: 'auto' }"
         >
-          <template #bodyCell="{ column, record }">
+          <template #bodyCell="{ column, record, index }">
+            <template v-if="column.dataIndex === 'orderNumber'">
+              {{ index + 1 }}
+            </template>
             <template v-if="column.dataIndex === 'startDate'">
               {{
                 `${dayOfWeek(record.startDate)}, ${formatDate(
@@ -311,7 +310,6 @@ onMounted(() => {
   </a-modal>
 
   <div class="container-fluid">
-    <!-- Danh sách học sinh trong nhóm xưởng -->
     <div class="row g-3">
       <div class="col-12">
         <a-card :bordered="false" class="cart no-body-padding">
@@ -323,7 +321,7 @@ onMounted(() => {
                   <div class="label-title">Từ khoá:</div>
                   <a-input
                     v-model:value="filter.searchQuery"
-                    placeholder="Nhập mã, tên hoặc email học sinh"
+                    placeholder="Nhập mã, tên hoặc email sinh viên"
                     allowClear
                     @change="fetchStudentFactory"
                   >
@@ -341,8 +339,8 @@ onMounted(() => {
                     @change="fetchStudentFactory"
                   >
                     <a-select-option :value="''">-- Tất cả trạng thái --</a-select-option>
-                    <a-select-option value="1">Đang học</a-select-option>
-                    <a-select-option value="0">Ngưng học</a-select-option>
+                    <a-select-option value="1">Đang hoạt động</a-select-option>
+                    <a-select-option value="0">Ngưng hoạt động</a-select-option>
                   </a-select>
                 </div>
 
@@ -362,7 +360,7 @@ onMounted(() => {
 
       <div class="col-12">
         <a-card :bordered="false" class="cart">
-          <template #title> <UnorderedListOutlined /> Danh sách học sinh </template>
+          <template #title> <UnorderedListOutlined /> Danh sách sinh viên </template>
 
           <a-table
             class="nowrap"
@@ -378,7 +376,7 @@ onMounted(() => {
               <template v-if="column.dataIndex">
                 <!-- STT -->
                 <template v-if="column.dataIndex === 'rowNumber'">
-                  {{ index + 1 }}
+                  {{ (pagination.current - 1) * pagination.pageSize + index + 1 }}
                 </template>
                 <!-- Hiển thị trạng thái -->
                 <template v-else-if="column.dataIndex === 'statusStudentFactory'">
@@ -391,8 +389,8 @@ onMounted(() => {
                   >
                     {{
                       record.statusStudentFactory === 'ACTIVE' || record.statusStudentFactory === 1
-                        ? 'Đang học'
-                        : 'Ngưng học'
+                        ? 'Đang hoạt động'
+                        : 'Ngưng hoạt động'
                     }}
                   </a-tag>
                 </template>

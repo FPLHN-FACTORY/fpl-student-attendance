@@ -26,14 +26,20 @@ import udpm.hn.studentattendance.helpers.SessionHelper;
 import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
 import udpm.hn.studentattendance.infrastructure.common.ApiResponse;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
+import udpm.hn.studentattendance.infrastructure.constants.AttendanceStatus;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.RedisPrefixConstant;
 import udpm.hn.studentattendance.infrastructure.constants.RestApiStatus;
 import udpm.hn.studentattendance.infrastructure.excel.model.request.EXDataRequest;
 import udpm.hn.studentattendance.infrastructure.excel.model.response.ExImportLogDetailResponse;
 import udpm.hn.studentattendance.core.staff.attendancerecovery.model.response.STAttendanceRecoveryResponse;
+import udpm.hn.studentattendance.infrastructure.excel.model.response.ExImportLogResponse;
 import udpm.hn.studentattendance.infrastructure.config.redis.service.RedisService;
 
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -110,7 +116,7 @@ class STAttendanceRecoveryServiceImplTest {
                 facilityId + "_" + request.toString();
 
         PageableObject<?> cachedData = new PageableObject<>();
-        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong())).thenReturn(cachedData);
+        when(redisCacheHelper.getOrSet(anyString(), any(), any())).thenReturn(cachedData);
 
         // Act
         PageableObject<?> result = attendanceRecoveryService.getCachedAttendanceRecoveryList(request);
@@ -118,7 +124,7 @@ class STAttendanceRecoveryServiceImplTest {
         // Assert
         assertNotNull(result);
         assertSame(cachedData, result);
-        verify(redisCacheHelper).getOrSet(anyString(), any(), any(), anyLong());
+        verify(redisCacheHelper).getOrSet(anyString(), any(), any());
         verifyNoInteractions(attendanceRecoveryRepository);
     }
 
@@ -133,7 +139,7 @@ class STAttendanceRecoveryServiceImplTest {
         String cacheKey = RedisPrefixConstant.REDIS_PREFIX_ATTENDANCE_RECOVERY + "list_" +
                 facilityId + "_" + request.toString();
 
-        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong()))
+        when(redisCacheHelper.getOrSet(anyString(), any(), any()))
                 .thenAnswer(invocation -> {
                     java.util.function.Supplier<?> supplier = invocation.getArgument(1);
                     return supplier.get();
@@ -148,7 +154,7 @@ class STAttendanceRecoveryServiceImplTest {
 
         // Assert
         assertNotNull(result);
-        verify(redisCacheHelper).getOrSet(anyString(), any(), any(), anyLong());
+        verify(redisCacheHelper).getOrSet(anyString(), any(), any());
         verify(attendanceRecoveryRepository).getListAttendanceRecovery(any(), eq(facilityId), any(Pageable.class));
     }
 
@@ -210,7 +216,7 @@ class STAttendanceRecoveryServiceImplTest {
         String cacheKey = RedisPrefixConstant.REDIS_PREFIX_ATTENDANCE_RECOVERY + "semesters";
         List<Semester> cachedSemesters = Arrays.asList(mock(Semester.class), mock(Semester.class));
 
-        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong())).thenReturn(cachedSemesters);
+        when(redisCacheHelper.getOrSet(anyString(), any(), any())).thenReturn(cachedSemesters);
 
         // Act
         List<Semester> result = attendanceRecoveryService.getCachedSemesters();
@@ -218,7 +224,7 @@ class STAttendanceRecoveryServiceImplTest {
         // Assert
         assertNotNull(result);
         assertSame(cachedSemesters, result);
-        verify(redisCacheHelper).getOrSet(anyString(), any(), any(), anyLong());
+        verify(redisCacheHelper).getOrSet(anyString(), any(), any());
         verifyNoInteractions(semesterRepository);
     }
 
@@ -618,7 +624,7 @@ class STAttendanceRecoveryServiceImplTest {
         when(sessionHelper.getFacilityId()).thenReturn(facilityId);
 
         PageableObject<?> cachedData = new PageableObject<>();
-        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong())).thenReturn(cachedData);
+        when(redisCacheHelper.getOrSet(anyString(), any(), any())).thenReturn(cachedData);
 
         // Act
         PageableObject<?> result = attendanceRecoveryService.getCachedHistoryLogByEvent(idImportLog, request);
@@ -626,7 +632,7 @@ class STAttendanceRecoveryServiceImplTest {
         // Assert
         assertNotNull(result);
         assertSame(cachedData, result);
-        verify(redisCacheHelper).getOrSet(anyString(), any(), any(), anyLong());
+        verify(redisCacheHelper).getOrSet(anyString(), any(), any());
     }
 
     @Test
@@ -637,7 +643,7 @@ class STAttendanceRecoveryServiceImplTest {
         EXDataRequest request = new EXDataRequest();
 
         PageableObject<?> cachedData = new PageableObject<>();
-        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong())).thenReturn(cachedData);
+        when(redisCacheHelper.getOrSet(anyString(), any(), any())).thenReturn(cachedData);
 
         // Act
         ResponseEntity<?> response = attendanceRecoveryService.getAllHistoryLogByEvent(idImportLog, request);

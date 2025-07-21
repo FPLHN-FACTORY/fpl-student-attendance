@@ -98,7 +98,7 @@ class STDScheduleAttendanceServiceImplTest {
                 + request.toString();
         PageableObject<STDScheduleAttendanceResponse> cachedData = mock(PageableObject.class);
 
-        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong())).thenReturn(cachedData);
+        when(redisCacheHelper.getOrSet(anyString(), any(), any())).thenReturn(cachedData);
 
         // When
         PageableObject<STDScheduleAttendanceResponse> result = (PageableObject<STDScheduleAttendanceResponse>) service
@@ -107,7 +107,7 @@ class STDScheduleAttendanceServiceImplTest {
         // Then
         assertNotNull(result);
         assertSame(cachedData, result);
-        verify(redisCacheHelper).getOrSet(anyString(), any(), any(), anyLong());
+        verify(redisCacheHelper).getOrSet(anyString(), any(), any());
         verifyNoInteractions(repository);
     }
 
@@ -121,7 +121,7 @@ class STDScheduleAttendanceServiceImplTest {
 
         Page<STDScheduleAttendanceResponse> page = new PageImpl<>(scheduleResponseList);
         when(repository.getAllListAttendanceByUser(any(Pageable.class), eq(request))).thenReturn(page);
-        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong()))
+        when(redisCacheHelper.getOrSet(anyString(), any(), any()))
                 .thenAnswer(invocation -> {
                     java.util.function.Supplier<?> supplier = invocation.getArgument(1);
                     return supplier.get();
@@ -132,7 +132,7 @@ class STDScheduleAttendanceServiceImplTest {
 
         // Then
         assertNotNull(result);
-        verify(redisCacheHelper).getOrSet(anyString(), any(), any(), anyLong());
+        verify(redisCacheHelper).getOrSet(anyString(), any(), any());
         verify(repository).getAllListAttendanceByUser(any(Pageable.class), eq(request));
     }
 

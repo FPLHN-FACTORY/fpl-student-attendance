@@ -35,7 +35,6 @@ public class ADSubjectManagementServiceImpl implements ADSubjectManagementServic
 
     private final RedisInvalidationHelper redisInvalidationHelper;
 
-    // Phương thức helper để lấy danh sách bộ môn từ cache hoặc DB
     public PageableObject getSubjects(ADSubjectSearchRequest request) {
         String key = RedisPrefixConstant.REDIS_PREFIX_SUBJECT + "list_" + request.toString();
         return redisCacheHelper.getOrSet(
@@ -59,11 +58,15 @@ public class ADSubjectManagementServiceImpl implements ADSubjectManagementServic
     @Override
     public ResponseEntity<?> createSubject(ADSubjectCreateRequest request) {
 
+
         if (!ValidateHelper.isValidCode(request.getCode())) {
             return RouterHelper.responseError(
                     "Mã bộ môn không hợp lệ: không có khoảng trắng, không có ký tự đặc biệt ngoài dấu chấm . và dấu gạch dưới _.");
         }
-
+        if (!ValidateHelper.isValidFullname(request.getName())) {
+            return RouterHelper.responseError(
+                    "Tên bộ môn không hợp lệ: Tối thiểu 2 từ, cách nhau bởi khoảng trắng và Chỉ gồm ký tự chữ không chứa số hay ký tự đặc biệt.");
+        }
         Subject s = new Subject();
         s.setName(request.getName().trim());
         s.setCode(request.getCode().toUpperCase());
@@ -88,6 +91,7 @@ public class ADSubjectManagementServiceImpl implements ADSubjectManagementServic
     @Override
     public ResponseEntity<?> updateSubject(String id, ADSubjectUpdateRequest request) {
 
+
         Subject s = adminSubjectRepository.findById(id).orElse(null);
         if (s == null) {
             return RouterHelper.responseError("Không tìm thấy bộ môn");
@@ -97,7 +101,10 @@ public class ADSubjectManagementServiceImpl implements ADSubjectManagementServic
             return RouterHelper.responseError(
                     "Mã bộ môn không hợp lệ:  không có khoảng trắng, không có ký tự đặc biệt ngoài dấu chấm . và dấu gạch dưới _.");
         }
-
+        if (!ValidateHelper.isValidFullname(request.getName())) {
+            return RouterHelper.responseError(
+                    "Tên bộ môn không hợp lệ: Tối thiểu 2 từ, cách nhau bởi khoảng trắng và Chỉ gồm ký tự chữ không chứa số hay ký tự đặc biệt.");
+        }
         s.setName(request.getName().trim());
         s.setCode(request.getCode().toUpperCase());
 

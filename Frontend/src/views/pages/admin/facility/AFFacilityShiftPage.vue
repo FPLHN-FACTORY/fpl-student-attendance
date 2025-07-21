@@ -43,8 +43,18 @@ const columns = ref(
   autoAddColumnWidth([
     { title: '#', dataIndex: 'orderNumber', key: 'orderNumber' },
     { title: 'Ca', dataIndex: 'shift', key: 'shift' },
-    { title: 'Thời gian bắt đầu', dataIndex: 'startTime', key: 'startTime' },
-    { title: 'Thời gian kết thúc', dataIndex: 'endTime', key: 'endTime' },
+    {
+      title: 'Thời gian bắt đầu',
+      dataIndex: 'startTime',
+      key: 'startTime',
+      align: 'center',
+    },
+    {
+      title: 'Thời gian kết thúc',
+      dataIndex: 'endTime',
+      key: 'endTime',
+      align: 'center',
+    },
     { title: 'Trạng thái', dataIndex: 'status', key: 'status' },
     { title: 'Chức năng', key: 'actions' },
   ]),
@@ -60,8 +70,6 @@ const breadcrumb = ref([
     breadcrumbName: 'Quản lý cơ sở',
   },
 ])
-
-const countFilter = ref(0)
 
 const pagination = ref({ ...DEFAULT_PAGINATION })
 
@@ -128,7 +136,6 @@ const fetchDataList = () => {
     .then(({ data: response }) => {
       lstData.value = response.data.data
       pagination.value.total = response.data.totalPages * pagination.value.pageSize
-      countFilter.value = response.data.totalItems
     })
     .catch((error) => {
       message.error(error?.response?.data?.message || 'Không thể tải danh sách dữ liệu')
@@ -410,7 +417,7 @@ watch(
         <a-card :bordered="false" class="cart no-body-padding">
           <a-collapse ghost>
             <a-collapse-panel>
-              <template #header><FilterFilled /> Bộ lọc ({{ countFilter }})</template>
+              <template #header><FilterFilled /> Bộ lọc</template>
               <div class="row g-3">
                 <div class="col-lg-6 col-md-6 col-sm-6">
                   <div class="label-title">Ca:</div>
@@ -478,6 +485,7 @@ watch(
               @change="handleTableChange"
             >
               <template #bodyCell="{ column, record, index }">
+      
                 <template v-if="column.dataIndex === 'shift'">
                   <a-tag color="purple"> Ca {{ record.shift }} </a-tag>
                 </template>
