@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 import udpm.hn.studentattendance.core.staff.plan.model.request.SPDFilterPlanDateRequest;
+import udpm.hn.studentattendance.core.staff.plan.model.response.SPDPlanDateGroupResponse;
 import udpm.hn.studentattendance.core.staff.plan.model.response.SPDPlanDateResponse;
 import udpm.hn.studentattendance.core.staff.plan.model.response.SPDUserStudentResponse;
 import udpm.hn.studentattendance.repositories.PlanDateRepository;
@@ -63,11 +64,25 @@ public interface SPDPlanDateRepository extends PlanDateRepository {
                     THEN 'DA_DIEN_RA'
                     ELSE 'CHUA_DIEN_RA'
                 END
-            ) = :#{#request.status})
+            ) = :#{#request.status}) AND
+            DATE_FORMAT(FROM_UNIXTIME(pd.start_date / 1000), '%d/%m/%Y') = :day
         ORDER BY pd.start_date ASC
-    """, countQuery = """
+    """, nativeQuery = true)
+    List<SPDPlanDateResponse> getAllByFilter(String day, SPDFilterPlanDateRequest request);
+
+    @Query(value = """
         SELECT
-            COUNT(pd.id)
+            MAX(pd.id) AS id,
+            ROW_NUMBER() OVER (ORDER BY MIN(pd.start_date)) AS orderNumber,
+            DATE_FORMAT(FROM_UNIXTIME(MIN(pd.start_date) / 1000), '%d/%m/%Y') AS day,
+            MIN(pd.start_date) AS startDate,
+            DATE(FROM_UNIXTIME(pd.start_date / 1000)) AS group_date,
+            COUNT(*) AS totalShift,
+            CASE
+                WHEN UNIX_TIMESTAMP(NOW()) * 1000 > MIN(pd.start_date)
+                THEN 'DA_DIEN_RA'
+                ELSE 'CHUA_DIEN_RA'
+            END AS status
         FROM plan_date pd
         JOIN plan_factory pf ON pd.id_plan_factory = pf.id
         JOIN factory f ON f.id = pf.id_factory
@@ -94,11 +109,44 @@ public interface SPDPlanDateRepository extends PlanDateRepository {
                     ELSE 'CHUA_DIEN_RA'
                 END
             ) = :#{#request.status})
+        GROUP BY group_date
+        ORDER BY MIN(pd.start_date) ASC
+    """, countQuery = """
+        SELECT COUNT(*) FROM (
+            SELECT
+                MAX(pd.id) AS id,
+                DATE(FROM_UNIXTIME(pd.start_date / 1000)) AS group_date
+            FROM plan_date pd
+            JOIN plan_factory pf ON pd.id_plan_factory = pf.id
+            JOIN factory f ON f.id = pf.id_factory
+            JOIN project p ON p.id = f.id_project
+            JOIN subject_facility sf ON sf.id = p.id_subject_facility
+            JOIN facility f2 ON sf.id_facility = f2.id
+            WHERE
+                pd.status = 1 AND
+                f2.status = 1 AND
+                sf.id_facility = :#{#request.idFacility} AND
+                pf.id = :#{#request.idPlanFactory} AND
+                (NULLIF(TRIM(:#{#request.keyword}), '') IS NULL OR pd.description LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%')) AND
+                (:#{#request.shift} IS NULL OR pd.shift = :#{#request.shift}) AND
+                (:#{#request.type} IS NULL OR pd.type = :#{#request.type}) AND
+                (:#{#request.startDate} IS NULL OR (
+                    DATE(FROM_UNIXTIME(pd.start_date / 1000)) = DATE(FROM_UNIXTIME(:#{#request.startDate} / 1000))
+                )) AND
+                (:#{#request.status} IS NULL OR (
+                    CASE
+                        WHEN UNIX_TIMESTAMP(NOW()) * 1000 > pd.start_date
+                        THEN 'DA_DIEN_RA'
+                        ELSE 'CHUA_DIEN_RA'
+                    END
+                ) = :#{#request.status})
+            GROUP BY group_date
+        ) AS temp
     """, nativeQuery = true)
-    Page<SPDPlanDateResponse> getAllByFilter(Pageable pageable, SPDFilterPlanDateRequest request);
+    Page<SPDPlanDateGroupResponse> getAllGroupByFilter(Pageable pageable, SPDFilterPlanDateRequest request);
 
     @Query(value = """
-        SELECT 
+        SELECT
             ROW_NUMBER() OVER (ORDER BY pd.start_date ASC) as orderNumber,
             pd.id,
             pd.start_date,
@@ -190,6 +238,22 @@ public interface SPDPlanDateRepository extends PlanDateRepository {
             UNIX_TIMESTAMP(NOW()) * 1000 <= pd.end_date
     """, countQuery = "SELECT 1", nativeQuery = true)
     int deletePlanDateById(String idFacility, List<String> idPlanDates);
+
+    @Modifying
+    @Transactional
+    @Query(value = """
+        DELETE pd
+        FROM plan_date pd
+        JOIN plan_factory pf ON pd.id_plan_factory = pf.id
+        JOIN factory f ON f.id = pf.id_factory
+        JOIN project p ON p.id = f.id_project
+        JOIN subject_facility sf ON sf.id = p.id_subject_facility
+        WHERE
+            sf.id_facility = :idFacility AND
+            DATE_FORMAT(FROM_UNIXTIME(pd.start_date / 1000), '%d/%m/%Y') IN(:days) AND
+            UNIX_TIMESTAMP(NOW()) * 1000 <= pd.end_date
+    """, countQuery = "SELECT 1", nativeQuery = true)
+    int deletePlanDateByDay(String idFacility, List<String> days);
 
     @Query(value = """
         SELECT 
