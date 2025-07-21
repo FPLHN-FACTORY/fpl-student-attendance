@@ -89,7 +89,6 @@ const fetchAttendanceList = () => {
 const handleTableChange = (pageInfo) => {
   pagination.value.current = pageInfo.current
   pagination.value.pageSize = pageInfo.pageSize
-  filter.page = pageInfo.current
   filter.pageSize = pageInfo.pageSize
   fetchAttendanceList()
 }
@@ -107,23 +106,35 @@ const handleShowDescription = (text) => {
 const exportToExcel = async () => {
   isLoadingExport.value = true
   try {
+    // Fetch all data for export
+    const { now, max } = getTimeRange()
+    const response = await requestAPI.get(API_ROUTES_STUDENT.FETCH_DATA_STUDENT_PLAN + '/list', {
+      params: {
+        now,
+        max,
+        page: 1,
+        size: 1000, // Get all data by setting a large page size
+      },
+    })
+
+    const allData = response.data.data.data
+
     const wb = new ExcelJS.Workbook()
     const ws = wb.addWorksheet('DanhSach')
 
-    // 1. Định nghĩa cột + độ rộng
     ws.columns = [
       { header: 'STT', key: 'stt', width: 6 },
       { header: 'Ngày điểm danh', key: 'day', width: 45 },
       { header: 'Ca', key: 'shift', width: 35 },
       { header: 'Nhóm xưởng', key: 'factoryName', width: 30 },
       { header: 'Dự án', key: 'projectName', width: 30 },
-      { header: 'Tên môn', key: 'subjectName', width: 30 },
+      { header: 'Link', key: 'link', width: 30 },
+      { header: 'Địa điểm', key: 'location', width: 30 },
       { header: 'Tên giảng viên', key: 'staffName', width: 30 },
       { header: 'Mô tả', key: 'description', width: 40 },
     ]
 
-    // 2. Thêm dữ liệu (giữ nguyên logic cũ của bạn)
-    attendanceList.value.forEach((item, idx) => {
+    allData.forEach((item, idx) => {
       const dayString = `${dayOfWeek(item.attendanceDayStart)}, ${formatDate(
         item.attendanceDayStart,
         DEFAULT_DATE_FORMAT,
@@ -139,13 +150,13 @@ const exportToExcel = async () => {
         shift: `Ca ${item.shift}`,
         factoryName: item.factoryName,
         projectName: item.projectName,
-        subjectName: item.subjectName,
+        link: item.link || 'Không có',
+        location: item.location || 'Không có',
         staffName: item.staffName,
-        description: item.description || '',
+        description: item.description || 'chưa có mô tả',
       })
     })
 
-    // 3. Style header
     const headerRow = ws.getRow(1)
     headerRow.font = { bold: true, size: 12 }
     headerRow.alignment = { vertical: 'middle', horizontal: 'center' }
@@ -157,12 +168,9 @@ const exportToExcel = async () => {
       }
     })
 
-    // 4. Wrap text cho cột description
     ws.getColumn('description').alignment = { wrapText: true }
+    ws.getColumn('link').alignment = { wrapText: true }
 
-    // —— BẮT ĐẦU CHO READ-ONLY —— //
-
-    // 5. Đánh dấu tất cả các ô là locked (mặc định locked=true, nhưng làm rõ lại)
     ws.eachRow((row) =>
       row.eachCell((cell) => {
         cell.protection = { locked: true }
@@ -177,14 +185,10 @@ const exportToExcel = async () => {
       formatColumns: false,
       insertRows: false,
       deleteRows: false,
-      // ... bạn có thể tắt thêm các quyền khác nếu cần
     })
 
-    // —— KẾT THÚC READ-ONLY —— //
-
-    // 7. Xuất file
     const buf = await wb.xlsx.writeBuffer()
-    saveAs(new Blob([buf]), 'lich-hoc.xlsx')
+    saveAs(new Blob([buf]), 'lich-diem-danh.xlsx')
   } catch (error) {
     message.error('Lỗi khi xuất Excel: ' + error.message)
   } finally {
@@ -203,13 +207,13 @@ const exportToPDF = () => {
         now,
         max,
         page: pagination.value.current,
-        size: pagination.value.pageSize,
+        size: 1000, // Set a large size to get all data 
       },
       responseType: 'blob',
     })
     .then((res) => {
       const blob = new Blob([res.data], { type: 'application/pdf' })
-      const fileName = 'lich-hoc.pdf'
+      const fileName = 'lich-diem-danh.pdf'
       saveAs(blob, fileName)
       message.success('Xuất file PDF thành công')
     })
@@ -260,6 +264,7 @@ onMounted(() => {
                     <a-select-option :value="14">14 ngày tới</a-select-option>
                     <a-select-option :value="30">30 ngày tới</a-select-option>
                     <a-select-option :value="90">90 ngày tới</a-select-option>
+
                   </a-select>
                 </div>
               </div>

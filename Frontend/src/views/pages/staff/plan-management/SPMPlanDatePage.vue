@@ -101,7 +101,7 @@ const columns = ref(
     { title: 'Ngày diễn ra', dataIndex: 'startDate', key: 'startDate' },
     { title: 'Số ca', dataIndex: 'totalShift', key: 'totalShift', align: 'center' },
     { title: 'Ca diễn ra', dataIndex: 'shift' },
-    { title: 'Kiểu', dataIndex: 'type' },
+    { title: 'Hình thức', dataIndex: 'type' },
     { title: 'Trạng thái', dataIndex: 'status' },
   ]),
 )
@@ -184,10 +184,10 @@ const formDataUpdateLink = reactive({
 })
 
 const formRules = reactive({
-  startDate: [{ required: true, message: 'Vui lòng chọn ngày học diễn ra!' }],
+  startDate: [{ required: true, message: 'Vui lòng chọn ngày diễn ra!' }],
   shift: [{ required: true, message: 'Vui lòng chọn ca!' }],
-  type: [{ required: true, message: 'Vui lòng chọn hình thức học!' }],
-  link: [{ required: true, message: 'Vui lòng nhập link học online!' }],
+  type: [{ required: true, message: 'Vui lòng chọn hình thức !' }],
+  link: [{ required: true, message: 'Vui lòng nhập link online!' }],
   lateArrival: [{ required: true, message: 'Vui lòng nhập thời gian điểm danh muộn tối đa!' }],
 })
 
@@ -607,7 +607,7 @@ const handleShowUpdateLink = () => {
   modalUpdateLink.isLoading = false
   modalUpdateLink.title = h('span', [
     h(LinkOutlined, { class: 'me-2 text-primary' }),
-    'Cập nhật link học online',
+    'Cập nhật link online',
   ])
   modalUpdateLink.okText = 'Lưu lại'
   modalUpdateLink.onOk = () => handleSubmitUpdateLink()
@@ -721,7 +721,7 @@ watch(
     >
       <a-form-item
         class="col-sm-4"
-        label="Ngày học diễn ra"
+        label="Ngày diễn ra"
         name="startDate"
         :rules="formRules.startDate"
       >
@@ -738,7 +738,7 @@ watch(
         <a-input
           class="w-100"
           v-model:value="formData.room"
-          placeholder="Địa điểm học chi tiết"
+          placeholder="Địa điểm chi tiết"
           :disabled="modalAddOrUpdate.isLoading || formData.type == '1'"
           allowClear
           @keyup.enter="modalAddOrUpdate.onOk"
@@ -747,7 +747,7 @@ watch(
       <a-form-item class="col-sm-12" label="Ca" name="shift" :rules="formRules.shift">
         <a-select
           class="w-100"
-          placeholder="Chọn 1 ca học"
+          placeholder="Chọn 1 ca"
           v-model:value="formData.shift"
           :disabled="modalAddOrUpdate.isLoading"
           @change="handleChangeShift"
@@ -773,12 +773,12 @@ watch(
         />
       </a-form-item> -->
 
-      <a-form-item class="col-sm-5" label="Hình thức học" name="type" :rules="formRules.type">
+      <a-form-item class="col-sm-5" label="Hình thức " name="type" :rules="formRules.type">
         <a-select
           v-model:value="formData.type"
           class="w-100"
           :dropdownMatchSelectWidth="false"
-          placeholder="-- Hình thức học --"
+          placeholder="-- Hình thức --"
           allowClear
         >
           <a-select-option v-for="(name, id) in TYPE_SHIFT" :key="id" :value="id">
@@ -815,7 +815,7 @@ watch(
           allowClear
         />
       </a-form-item>
-      <a-form-item class="col-sm-12" label="Link học online" name="link">
+      <a-form-item class="col-sm-12" label="Link online" name="link">
         <a-input
           class="w-100"
           v-model:value="formData.link"
@@ -912,7 +912,7 @@ watch(
       autocomplete="off"
       :model="formDataUpdateLink"
     >
-      <a-form-item class="col-sm-12" label="Link học online:" name="link" :rules="formRules.link">
+      <a-form-item class="col-sm-12" label="Link online:" name="link" :rules="formRules.link">
         <a-input
           class="w-100"
           v-model:value="formDataUpdateLink.link"
@@ -983,7 +983,7 @@ watch(
                   </a-select>
                 </div>
                 <div class="col-xxl-2 col-lg-4 col-md-4 col-sm-6">
-                  <div class="label-title">Hình thức học:</div>
+                  <div class="label-title">Hình thức:</div>
                   <a-select
                     v-model:value="dataFilter.type"
                     class="w-100"

@@ -1,7 +1,6 @@
 package udpm.hn.studentattendance.core.admin.facility.service.impl;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import udpm.hn.studentattendance.core.admin.facility.model.request.AFAddOrUpdateFacilityIPRequest;
@@ -87,6 +86,7 @@ public class AFFacilityIPServiceImpl implements AFFacilityIPService {
     @Override
     public ResponseEntity<?> addIP(AFAddOrUpdateFacilityIPRequest request) {
 
+
         Facility facility = afFacilityExtendRepository.findById(request.getIdFacility()).orElse(null);
 
         if (facility == null || facility.getStatus() != EntityStatus.ACTIVE) {
@@ -128,6 +128,7 @@ public class AFFacilityIPServiceImpl implements AFFacilityIPService {
 
     @Override
     public ResponseEntity<?> updateIP(AFAddOrUpdateFacilityIPRequest request) {
+
 
         FacilityIP facilityIP = afFacilityIPRepository.findById(request.getId()).orElse(null);
         if (facilityIP == null) {

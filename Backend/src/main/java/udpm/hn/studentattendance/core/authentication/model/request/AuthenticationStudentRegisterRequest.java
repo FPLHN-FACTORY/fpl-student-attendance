@@ -21,7 +21,7 @@ public class AuthenticationStudentRegisterRequest {
     @NotBlank(message = "Cơ sở không được bỏ trống")
     private String idFacility;
 
-    @Size(min = 2, max = EntityProperties.LENGTH_NAME)
+    @Size(min = 2, max = EntityProperties.LENGTH_NAME, message = "Họ và tên sinh viên phải có ít nhất 2 ký tự")
     @NotBlank(message = "Họ và tên sinh viên không được bỏ trống")
     private String name;
 

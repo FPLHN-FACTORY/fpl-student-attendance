@@ -43,9 +43,9 @@ const lstData = ref([])
 
 const columns = ref(
   autoAddColumnWidth([
-    { title: '#', key: 'rowNumber' },
+    { title: '#', dataIndex: 'orderNumber', key: 'orderNumber' },
     { title: 'Kiểu IP', dataIndex: 'type', key: 'type' },
-    { title: 'Địa chỉ IP', dataIndex: 'ip', key: 'ip' },
+    { title: 'Giá trị', dataIndex: 'ip', key: 'ip' },
     { title: 'Trạng thái', dataIndex: 'status', key: 'status' },
     { title: 'Chức năng', key: 'actions' },
   ]),

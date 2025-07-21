@@ -7,6 +7,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -22,11 +24,13 @@ import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
 import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
 import udpm.hn.studentattendance.infrastructure.common.ApiResponse;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
+
 import udpm.hn.studentattendance.infrastructure.config.mailer.model.MailerDefaultRequest;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.RedisPrefixConstant;
 import udpm.hn.studentattendance.infrastructure.config.redis.service.RedisService;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.ArrayList;
@@ -44,8 +48,7 @@ class AFFacilityServiceImplTest {
     @Mock
     private AFFacilityExtendRepository facilityRepository;
 
-    @Mock
-    private CommonUserStudentRepository commonUserStudentRepository;
+
 
     @Mock
     private MailerHelper mailerHelper;
@@ -86,7 +89,7 @@ class AFFacilityServiceImplTest {
 
         PageableObject mockData = mock(PageableObject.class);
 
-        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong())).thenReturn(mockData);
+        when(redisCacheHelper.getOrSet(anyString(), any(), any())).thenReturn(mockData);
 
         // When
         ResponseEntity<?> response = facilityService.getAllFacility(request);
@@ -99,7 +102,7 @@ class AFFacilityServiceImplTest {
         assertEquals(mockData, apiResponse.getData());
 
         // Verify repository was not called
-        verify(redisCacheHelper).getOrSet(anyString(), any(), any(), anyLong());
+        verify(redisCacheHelper).getOrSet(anyString(), any(), any());
         verify(facilityRepository, never()).getAllFacility(any(Pageable.class), any(AFFacilitySearchRequest.class));
     }
 
@@ -114,7 +117,7 @@ class AFFacilityServiceImplTest {
                 .of(new org.springframework.data.domain.PageImpl<>(facilities));
 
         // Cache miss: gọi supplier
-        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong()))
+        when(redisCacheHelper.getOrSet(anyString(), any(), any()))
                 .thenAnswer(invocation -> {
                     java.util.function.Supplier<?> supplier = invocation.getArgument(1);
                     return supplier.get();
@@ -543,7 +546,7 @@ class AFFacilityServiceImplTest {
     @DisplayName("Test getCachedFacilities should delete cache on deserialization exception")
     void testGetCachedFacilitiesDeleteCacheOnDeserializationException() {
         AFFacilitySearchRequest request = new AFFacilitySearchRequest();
-        when(redisCacheHelper.getOrSet(anyString(), any(), any(), anyLong()))
+        when(redisCacheHelper.getOrSet(anyString(), any(), any()))
                 .thenThrow(new RuntimeException("Deserialize error"));
         // Remove unnecessary stubbing for facilityRepository.getAllFacility
         // as the test expects an exception and does not need this stub
@@ -588,6 +591,5 @@ class AFFacilityServiceImplTest {
         ResponseEntity<?> response = facilityService.changeFacilityStatus(facilityId);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        verify(commonUserStudentRepository).disableAllStudentDuplicateShiftByIdFacility(facilityId);
     }
 }

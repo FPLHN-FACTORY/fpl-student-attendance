@@ -15,6 +15,7 @@ public class RedisStartupCleanerHelper {
     private static final Logger logger = LoggerFactory.getLogger(RedisStartupCleanerHelper.class);
 
     private final QueryCacheService queryCacheService;
+
     private final RedisService redisService;
 
     @Autowired

@@ -18,12 +18,12 @@ public class USStudentCreateUpdateRequest {
     private String code;
 
     @NotBlank(message = "Không được để trống mã sinh viên")
-    @Size(min = 2, max = EntityProperties.LENGTH_NAME, message = "Tên sinh viên không được vượt quá "
+    @Size(min = 2, max = EntityProperties.LENGTH_NAME, message = "Tên sinh viên phải có ít nhất 2 ký tự và không được vượt quá "
             + EntityProperties.LENGTH_NAME + " ký tự")
     private String name;
 
     @NotBlank(message = "Không được để trống email sinh viên")
-    @Size(min = 2, max = EntityProperties.LENGTH_NAME, message = "Email sinh viên không được vượt quá "
+    @Size(min = 2, max = EntityProperties.LENGTH_NAME, message = "Email sinh viên phải có ít nhất 2 ký tự và không được vượt quá "
             + EntityProperties.LENGTH_NAME + " ký tự")
     private String email;
 

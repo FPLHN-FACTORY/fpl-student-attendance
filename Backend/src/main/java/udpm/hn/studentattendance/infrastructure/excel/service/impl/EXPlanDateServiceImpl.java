@@ -39,7 +39,7 @@ import udpm.hn.studentattendance.infrastructure.constants.RestApiStatus;
 import udpm.hn.studentattendance.infrastructure.constants.RoleConstant;
 import udpm.hn.studentattendance.infrastructure.constants.ShiftType;
 import udpm.hn.studentattendance.infrastructure.constants.StatusType;
-import udpm.hn.studentattendance.infrastructure.excel.model.dto.ExStudentModel;
+import udpm.hn.studentattendance.infrastructure.excel.model.dto.EXStudentModel;
 import udpm.hn.studentattendance.infrastructure.excel.model.request.EXDataRequest;
 import udpm.hn.studentattendance.infrastructure.excel.model.request.EXImportRequest;
 import udpm.hn.studentattendance.infrastructure.excel.model.request.EXUploadRequest;
@@ -101,7 +101,8 @@ public class EXPlanDateServiceImpl implements EXPlanDateService {
         MultipartFile file = request.getFile();
 
         if (file.isEmpty()) {
-            return RouterHelper.createResponseApi(ApiResponse.error("Vui lòng tải lên file Excel"), HttpStatus.BAD_GATEWAY);
+            return RouterHelper.createResponseApi(ApiResponse.error("Vui lòng tải lên file Excel"),
+                    HttpStatus.BAD_GATEWAY);
         }
 
         try {
@@ -117,10 +118,10 @@ public class EXPlanDateServiceImpl implements EXPlanDateService {
         Map<String, Object> data = request.getData();
         Map<String, String> item = request.getItem();
 
-
         String idPlanFactory = (String) data.get("idPlanFactory");
 
-        ResponseEntity<ApiResponse> planFactory = (ResponseEntity<ApiResponse>) spdPlanDateService.getDetail(idPlanFactory);
+        ResponseEntity<ApiResponse> planFactory = (ResponseEntity<ApiResponse>) spdPlanDateService
+                .getDetail(idPlanFactory);
         if (planFactory.getBody().getData() == null) {
             return error("Không tìm thấy nhóm xưởng", null, request);
         }
@@ -150,7 +151,7 @@ public class EXPlanDateServiceImpl implements EXPlanDateService {
         try {
             addOrUpdatePlanDateRequest.setType(ShiftType.valueOf(hinhThucHoc).ordinal());
         } catch (Exception e) {
-            return error("Hình thức học không hợp lệ (ONLINE/OFFLINE)", hinhThucHoc, request);
+            return error("Hình thức không hợp lệ (ONLINE/OFFLINE)", hinhThucHoc, request);
         }
 
         try {
@@ -164,7 +165,7 @@ public class EXPlanDateServiceImpl implements EXPlanDateService {
                     .boxed()
                     .collect(Collectors.toList()));
         } catch (Exception e) {
-            return error("Ca học không hợp lệ (1, 2, 3, ...)", caBatDau + " - " + caKetThuc, request);
+            return error("Ca không hợp lệ (1, 2, 3, ...)", caBatDau + " - " + caKetThuc, request);
         }
 
         try {
@@ -174,41 +175,45 @@ public class EXPlanDateServiceImpl implements EXPlanDateService {
         }
 
         try {
-            if(!StringUtils.hasText(checkIp)) {
+            if (!StringUtils.hasText(checkIp)) {
                 throw new RuntimeException();
             }
             boolean isCheckIp = checkIp.equalsIgnoreCase("có");
-            addOrUpdatePlanDateRequest.setRequiredIp(isCheckIp ? StatusType.ENABLE.getKey() : StatusType.DISABLE.getKey());
+            addOrUpdatePlanDateRequest
+                    .setRequiredIp(isCheckIp ? StatusType.ENABLE.getKey() : StatusType.DISABLE.getKey());
         } catch (Exception e) {
             return error("Check IP không hợp lệ (Có / Không)", checkIp, request);
         }
 
         try {
-            if(!StringUtils.hasText(checkDiaDiem)) {
+            if (!StringUtils.hasText(checkDiaDiem)) {
                 throw new RuntimeException();
             }
             boolean isCheckLocation = checkDiaDiem.equalsIgnoreCase("có");
-            addOrUpdatePlanDateRequest.setRequiredLocation(isCheckLocation ? StatusType.ENABLE.getKey() : StatusType.DISABLE.getKey());
+            addOrUpdatePlanDateRequest
+                    .setRequiredLocation(isCheckLocation ? StatusType.ENABLE.getKey() : StatusType.DISABLE.getKey());
         } catch (Exception e) {
             return error("Check địa điểm không hợp lệ (Có / Không)", checkDiaDiem, request);
         }
 
         try {
-            if(!StringUtils.hasText(yeuCauCheckin)) {
+            if (!StringUtils.hasText(yeuCauCheckin)) {
                 throw new RuntimeException();
             }
             boolean isRequiredCheckin = yeuCauCheckin.equalsIgnoreCase("có");
-            addOrUpdatePlanDateRequest.setRequiredCheckin(isRequiredCheckin ? StatusType.ENABLE.getKey() : StatusType.DISABLE.getKey());
+            addOrUpdatePlanDateRequest
+                    .setRequiredCheckin(isRequiredCheckin ? StatusType.ENABLE.getKey() : StatusType.DISABLE.getKey());
         } catch (Exception e) {
             return error("Yêu cầu checkin không hợp lệ (Có / Không)", yeuCauCheckin, request);
         }
 
         try {
-            if(!StringUtils.hasText(yeuCauCheckout)) {
+            if (!StringUtils.hasText(yeuCauCheckout)) {
                 throw new RuntimeException();
             }
             boolean isRequiredCheckout = yeuCauCheckout.equalsIgnoreCase("có");
-            addOrUpdatePlanDateRequest.setRequiredCheckout(isRequiredCheckout ? StatusType.ENABLE.getKey() : StatusType.DISABLE.getKey());
+            addOrUpdatePlanDateRequest
+                    .setRequiredCheckout(isRequiredCheckout ? StatusType.ENABLE.getKey() : StatusType.DISABLE.getKey());
         } catch (Exception e) {
             return error("Yêu cầu checkout không hợp lệ (Có / Không)", yeuCauCheckout, request);
         }
@@ -217,7 +222,8 @@ public class EXPlanDateServiceImpl implements EXPlanDateService {
         addOrUpdatePlanDateRequest.setDescription(noiDungBuoiHoc);
         addOrUpdatePlanDateRequest.setLink(linkHocOnline);
 
-        ResponseEntity<ApiResponse> result = (ResponseEntity<ApiResponse>) spdPlanDateService.addPlanDate(addOrUpdatePlanDateRequest);
+        ResponseEntity<ApiResponse> result = (ResponseEntity<ApiResponse>) spdPlanDateService
+                .addPlanDate(addOrUpdatePlanDateRequest);
         ApiResponse response = result.getBody();
 
         if (response.getStatus() == RestApiStatus.SUCCESS) {
@@ -250,9 +256,11 @@ public class EXPlanDateServiceImpl implements EXPlanDateService {
     @Override
     public ResponseEntity<byte[]> downloadTemplate(EXDataRequest request) {
         try (Workbook workbook = new XSSFWorkbook();
-             ByteArrayOutputStream data = new ByteArrayOutputStream()) {
+                ByteArrayOutputStream data = new ByteArrayOutputStream()) {
             String filename = "template-import-plan-date.xlsx";
-            List<String> headers = List.of("Ngày diễn ra", "Hình thức học", "Ca bắt đầu", "Ca kết thúc", "Điểm danh muộn tối đa", "Nội dung buổi học", "Link học online", "Phòng học", "Check IP", "Check địa điểm", "Yêu cầu checkin", "Yêu cầu checkout");
+            List<String> headers = List.of("Ngày diễn ra", "Hình thức", "Ca bắt đầu", "Ca kết thúc",
+                    "Điểm danh muộn tối đa", "Nội dung buổi", "Link online", "Phòng", "Check IP", "Check địa điểm",
+                    "Yêu cầu checkin", "Yêu cầu checkout");
 
             int firstRow = 1;
             int lastRow = 500;
@@ -287,13 +295,15 @@ public class EXPlanDateServiceImpl implements EXPlanDateService {
     @Override
     public ResponseEntity<?> historyLog(EXDataRequest request) {
         Pageable pageable = PaginationHelper.createPageable(request);
-        PageableObject<ExImportLogResponse> data = PageableObject.of(importLogRepository.getListHistory(pageable, ImportLogType.PLAN_DATE.ordinal(), sessionHelper.getUserId(), sessionHelper.getFacilityId()));
+        PageableObject<ExImportLogResponse> data = PageableObject.of(importLogRepository.getListHistory(pageable,
+                ImportLogType.PLAN_DATE.ordinal(), sessionHelper.getUserId(), sessionHelper.getFacilityId()));
         return RouterHelper.responseSuccess("Lấy danh sách dữ liệu thành công", data);
     }
 
     @Override
     public ResponseEntity<?> historyLogDetail(EXDataRequest request, String id) {
-        List<ExImportLogDetailResponse> data = importLogDetailRepository.getAllList(id, sessionHelper.getUserId(), sessionHelper.getFacilityId());
+        List<ExImportLogDetailResponse> data = importLogDetailRepository.getAllList(id, sessionHelper.getUserId(),
+                sessionHelper.getFacilityId());
         return RouterHelper.responseSuccess("Lấy danh sách dữ liệu thành công", data);
     }
 
@@ -312,8 +322,10 @@ public class EXPlanDateServiceImpl implements EXPlanDateService {
             return null;
         }
 
-        if (!sessionHelper.getUserRole().contains(RoleConstant.ADMIN) && !sessionHelper.getUserRole().contains(RoleConstant.STAFF)) {
-            if (!Objects.equals(planDate.getPlanFactory().getFactory().getUserStaff().getId(), sessionHelper.getUserId())) {
+        if (!sessionHelper.getUserRole().contains(RoleConstant.ADMIN)
+                && !sessionHelper.getUserRole().contains(RoleConstant.STAFF)) {
+            if (!Objects.equals(planDate.getPlanFactory().getFactory().getUserStaff().getId(),
+                    sessionHelper.getUserId())) {
                 return null;
             }
         }
@@ -321,16 +333,17 @@ public class EXPlanDateServiceImpl implements EXPlanDateService {
         TCFilterPlanDateAttendanceRequest tcFilterPlanDateAttendanceRequest = new TCFilterPlanDateAttendanceRequest();
         tcFilterPlanDateAttendanceRequest.setIdPlanDate(planDate.getId());
         tcFilterPlanDateAttendanceRequest.setIdFacility(sessionHelper.getFacilityId());
-        List<TCPlanDateStudentResponse> lstPlanDate = tcAttendanceRepository.getAllByFilter(tcFilterPlanDateAttendanceRequest);
+        List<TCPlanDateStudentResponse> lstPlanDate = tcAttendanceRepository
+                .getAllByFilter(tcFilterPlanDateAttendanceRequest);
 
         try (Workbook workbook = new XSSFWorkbook();
-             ByteArrayOutputStream data = new ByteArrayOutputStream()) {
-            String filename =
-                    "Detail-attendance-"
-                            + DateTimeUtils.convertMillisToDate(planDate.getStartDate(), "dd-MM-yyyy")
-                            + "_Shift-" + planDate.getShift().stream().map(String::valueOf).collect(Collectors.joining("-"))
-                            + ".xlsx";
-            List<String> headers = List.of("STT", "Mã sinh viên", "Họ và tên", "Checkin đầu giờ", "Checkout cuối giờ", "Trạng thái điểm danh");
+                ByteArrayOutputStream data = new ByteArrayOutputStream()) {
+            String filename = "Detail-attendance-"
+                    + DateTimeUtils.convertMillisToDate(planDate.getStartDate(), "dd-MM-yyyy")
+                    + "_Shift-" + planDate.getShift().stream().map(String::valueOf).collect(Collectors.joining("-"))
+                    + ".xlsx";
+            List<String> headers = List.of("STT", "Mã sinh viên", "Họ và tên", "Checkin đầu giờ", "Checkout cuối giờ",
+                    "Trạng thái điểm danh");
 
             Sheet sheet = ExcelUtils.createTemplate(workbook, "Data Export", headers, new ArrayList<>());
 
@@ -349,7 +362,7 @@ public class EXPlanDateServiceImpl implements EXPlanDateService {
                 String name = o.getName();
                 String checkin = "Không yêu cầu";
                 String checkout = "Không yêu cầu";
-                String status = o.getStatus() == AttendanceStatus.PRESENT.ordinal() ? "Có mặt": "Vắng mặt";
+                String status = o.getStatus() == AttendanceStatus.PRESENT.ordinal() ? "Có mặt" : "Vắng mặt";
 
                 if (planDate.getRequiredCheckin() == StatusType.ENABLE) {
                     if (o.getStatus() == AttendanceStatus.ABSENT.ordinal()) {
@@ -401,18 +414,20 @@ public class EXPlanDateServiceImpl implements EXPlanDateService {
             return null;
         }
 
-        if (!sessionHelper.getUserRole().contains(RoleConstant.ADMIN) && !sessionHelper.getUserRole().contains(RoleConstant.STAFF)) {
+        if (!sessionHelper.getUserRole().contains(RoleConstant.ADMIN)
+                && !sessionHelper.getUserRole().contains(RoleConstant.STAFF)) {
             if (!Objects.equals(factory.getUserStaff().getId(), sessionHelper.getUserId())) {
                 return null;
             }
         }
 
-        List<TCPlanDateStudentFactoryResponse> lstData = tcStudentFactoryExtendRepository.getAllPlanDateAttendanceByIdFactory(factory.getId());
+        List<TCPlanDateStudentFactoryResponse> lstData = tcStudentFactoryExtendRepository
+                .getAllPlanDateAttendanceByIdFactory(factory.getId());
 
         try (Workbook workbook = new XSSFWorkbook();
-             ByteArrayOutputStream data = new ByteArrayOutputStream()) {
-            String filename =
-                    "PlanDate-attendance-" + CodeGeneratorUtils.generateCodeFromString(factory.getName()).toLowerCase() + ".xlsx";
+                ByteArrayOutputStream data = new ByteArrayOutputStream()) {
+            String filename = "PlanDate-attendance-"
+                    + CodeGeneratorUtils.generateCodeFromString(factory.getName()).toLowerCase() + ".xlsx";
 
             List<String> headers = new ArrayList<>(List.of("Mã sinh viên", "Họ tên sinh viên"));
 
@@ -422,14 +437,15 @@ public class EXPlanDateServiceImpl implements EXPlanDateService {
             List<String> lstPlanDate = stPlanDate.stream()
                     .sorted(Comparator.comparing(s -> {
                         String datePart = s.split(" - ")[0];
-                        return LocalDate.parse(datePart, DateTimeFormatter.ofPattern(DateTimeUtils.DATE_FORMAT.replace('/', '-')));
+                        return LocalDate.parse(datePart,
+                                DateTimeFormatter.ofPattern(DateTimeUtils.DATE_FORMAT.replace('/', '-')));
                     }))
                     .toList();
 
-            Set<ExStudentModel> stPStudent = lstData.stream()
-                    .map(o -> new ExStudentModel(o.getCode(), o.getName()))
+            Set<EXStudentModel> stPStudent = lstData.stream()
+                    .map(o -> new EXStudentModel(o.getCode(), o.getName()))
                     .collect(Collectors.toCollection(LinkedHashSet::new));
-            List<ExStudentModel> lstStudent = stPStudent.stream()
+            List<EXStudentModel> lstStudent = stPStudent.stream()
                     .toList();
 
             headers.addAll(lstPlanDate);
@@ -444,9 +460,8 @@ public class EXPlanDateServiceImpl implements EXPlanDateService {
             colorMap.put("Có mặt (bù)", "#ffd966");
             colorMap.put("Vắng mặt", "#ff7d7d");
 
-
             int row = 1;
-            for (ExStudentModel student: lstStudent) {
+            for (EXStudentModel student : lstStudent) {
                 String studentCode = student.getCode();
                 String studentName = student.getName();
 
@@ -456,14 +471,17 @@ public class EXPlanDateServiceImpl implements EXPlanDateService {
 
                 double total_absent = 0;
                 int total_recovery = 0;
-                for(String namePlanDate: lstPlanDate) {
-                    TCPlanDateStudentFactoryResponse planDate = lstData.stream().filter(s -> s.getCode().equals(studentCode) && buildCellPlanDate(s).equals(namePlanDate)).findFirst().orElse(null);
+                for (String namePlanDate : lstPlanDate) {
+                    TCPlanDateStudentFactoryResponse planDate = lstData.stream()
+                            .filter(s -> s.getCode().equals(studentCode) && buildCellPlanDate(s).equals(namePlanDate))
+                            .findFirst().orElse(null);
                     if (planDate == null || planDate.getStartDate() > DateTimeUtils.getCurrentTimeMillis()) {
                         dataCell.add(" - ");
                         continue;
                     }
                     if (planDate.getStatus() == AttendanceStatus.PRESENT.ordinal()) {
-                        if (planDate.getLateCheckin() != null && planDate.getLateCheckin() > 0 || planDate.getLateCheckout() != null && planDate.getLateCheckout() > 0) {
+                        if (planDate.getLateCheckin() != null && planDate.getLateCheckin() > 0
+                                || planDate.getLateCheckout() != null && planDate.getLateCheckout() > 0) {
                             total_recovery++;
                             total_absent += 0.5;
                             dataCell.add("Có mặt (bù)");
@@ -477,7 +495,8 @@ public class EXPlanDateServiceImpl implements EXPlanDateService {
                 }
 
                 dataCell.add(total_absent + "/" + lstPlanDate.size());
-                dataCell.add((total_absent > 0 ? Math.round(total_absent / lstPlanDate.size() * 1000) / 10.0 : 0) + "%");
+                dataCell.add(
+                        (total_absent > 0 ? Math.round(total_absent / lstPlanDate.size() * 1000) / 10.0 : 0) + "%");
                 dataCell.add(total_recovery);
 
                 ExcelUtils.insertRow(sheet, row, dataCell, colorMap);
@@ -496,7 +515,8 @@ public class EXPlanDateServiceImpl implements EXPlanDateService {
     }
 
     private String buildCellPlanDate(TCPlanDateStudentFactoryResponse o) {
-        return DateTimeUtils.convertMillisToDate(o.getStartDate(), DateTimeUtils.DATE_FORMAT.replace('/', '-')) + " - Ca " + o.getShift();
+        return DateTimeUtils.convertMillisToDate(o.getStartDate(), DateTimeUtils.DATE_FORMAT.replace('/', '-'))
+                + " - Ca " + o.getShift();
     }
 
 }

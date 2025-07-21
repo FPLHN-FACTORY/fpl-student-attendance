@@ -50,15 +50,16 @@ public class ADLevelProjectManagementServiceImpl implements ADLevelProjectManage
     @Override
     public ResponseEntity<?> createLevelProject(ADLevelProjectCreateRequest request) {
 
+
         String code = CodeGeneratorUtils.generateCodeFromString(request.getName());
 
         if (repository.isExistsLevelProject(code, null)) {
             return RouterHelper.responseError("Nhóm dự án đã tồn tại trong hệ thống");
         }
 
-        if (!ValidateHelper.isValidCode(request.getName())) {
+        if (!ValidateHelper.isValidFullname(request.getName())) {
             return RouterHelper.responseError(
-                    "Tên nhóm dự án không hợp lệ: không có khoảng trắng, không có ký tự đặc biệt ngoài dấu chấm . và dấu gạch dưới _.");
+                    "Tên nhóm dự án không hợp lệ: Tối thiểu 2 từ, cách nhau bởi khoảng trắng và Chỉ gồm ký tự chữ không chứa số hay ký tự đặc biệt.");
         }
 
         LevelProject lv = new LevelProject();
@@ -78,14 +79,15 @@ public class ADLevelProjectManagementServiceImpl implements ADLevelProjectManage
     @Override
     public ResponseEntity<?> updateLevelProject(String id, ADLevelProjectUpdateRequest request) {
 
+
         LevelProject lv = repository.findById(id).orElse(null);
         if (lv == null) {
             return RouterHelper.responseError("Nhóm dự án không tồn tại");
         }
 
-        if (!ValidateHelper.isValidCode(request.getName())) {
+        if (!ValidateHelper.isValidFullname(request.getName())) {
             return RouterHelper.responseError(
-                    "Tên nhóm dự án không hợp lệ: không có khoảng trắng, không có ký tự đặc biệt ngoài dấu chấm . và dấu gạch dưới _.");
+                    "Tên nhóm dự án không hợp lệ: Tối thiểu 2 từ, cách nhau bởi khoảng trắng và Chỉ gồm ký tự chữ không chứa số hay ký tự đặc biệt.");
         }
 
         String code = CodeGeneratorUtils.generateCodeFromString(request.getName());
@@ -128,7 +130,7 @@ public class ADLevelProjectManagementServiceImpl implements ADLevelProjectManage
             return RouterHelper.responseError("Nhóm dự án không tồn tại");
         }
 
-        if(commonPlanDateRepository.existsNotYetStartedByLevelProject(lv.getId())) {
+        if (commonPlanDateRepository.existsNotYetStartedByLevelProject(lv.getId())) {
             return RouterHelper.responseError("Đang tồn tại ca chưa hoặc đang diễn ra. Không thể thay đổi trạng thái");
         }
 
