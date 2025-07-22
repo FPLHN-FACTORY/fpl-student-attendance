@@ -65,7 +65,7 @@ const detailStudent = reactive({
 // Cấu hình cột cho bảng
 const columns = ref(
   autoAddColumnWidth([
-    { title: 'STT', dataIndex: 'index', key: 'index' },
+    { title: '#', dataIndex: 'index', key: 'index' },
     { title: 'Mã sinh viên', dataIndex: 'studentCode', key: 'studentCode' },
     { title: 'Tên sinh viên', dataIndex: 'studentName', key: 'studentName' },
     { title: 'Email', dataIndex: 'studentEmail', key: 'studentEmail' },
