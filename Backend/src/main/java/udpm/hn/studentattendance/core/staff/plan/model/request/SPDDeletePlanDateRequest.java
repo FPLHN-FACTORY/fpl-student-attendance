@@ -13,6 +13,8 @@ import java.util.List;
 @AllArgsConstructor
 public class SPDDeletePlanDateRequest {
 
-    private List<String> ids;
+    private String idPlanFactory;
+
+    private List<String> days;
 
 }

@@ -37,15 +37,16 @@ public class SPDPlanDateRestController {
         return spdPlanDateService.getAllList(request);
     }
 
-    @DeleteMapping("/{idFactory}/delete")
+    @DeleteMapping("/{idPlanFactory}/delete")
     public ResponseEntity<?> deleteMultiplePlanDate(@RequestBody SPDDeletePlanDateRequest request,
-            @PathVariable String idFactory) {
+            @PathVariable String idPlanFactory) {
+        request.setIdPlanFactory(idPlanFactory);
         return spdPlanDateService.deleteMultiplePlanDate(request);
     }
 
-    @DeleteMapping("/{idFactory}/delete/{idPlanDate}")
+    @DeleteMapping("/{idPlanFactory}/delete/{idPlanDate}")
     public ResponseEntity<?> deletePlanDate(@PathVariable("idPlanDate") String idPlanDate,
-            @PathVariable String idFactory) {
+            @PathVariable String idPlanFactory) {
         return spdPlanDateService.deletePlanDate(idPlanDate);
     }
 
