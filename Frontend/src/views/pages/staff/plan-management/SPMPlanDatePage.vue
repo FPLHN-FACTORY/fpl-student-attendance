@@ -30,6 +30,7 @@ import {
 } from '@/constants'
 import {
   autoAddColumnWidth,
+  colorDayOfWeek,
   dayOfWeek,
   debounce,
   formatDate,
@@ -95,11 +96,20 @@ const modalUpdateLink = reactive({
 
 const columns = ref(
   autoAddColumnWidth([
-    { title: 'Buổi', dataIndex: 'orderNumber', key: 'orderNumber' },
-    { title: 'Ngày điểm danh', dataIndex: 'startDate', key: 'startDate' },
-    { title: 'Thời gian', key: 'time' },
+    { title: 'Buổi', dataIndex: 'orderNumber', key: 'orderNumber', align: 'center' },
+    { title: '', dataIndex: 'day', align: 'center' },
+    { title: 'Ngày diễn ra', dataIndex: 'startDate', key: 'startDate' },
+    { title: 'Số ca', dataIndex: 'totalShift', key: 'totalShift', align: 'center' },
+    { title: 'Ca diễn ra', dataIndex: 'shift' },
+    { title: 'Hình thức', dataIndex: 'type' },
+    { title: 'Trạng thái', dataIndex: 'status' },
+  ]),
+)
+
+const columns_inner = ref(
+  autoAddColumnWidth([
     { title: 'Ca', dataIndex: 'shift', key: 'shift' },
-    { title: 'Nội dung', dataIndex: 'description', key: 'description' },
+    { title: 'Thời gian', key: 'time' },
     { title: 'Phòng', dataIndex: 'room', key: 'room' },
     { title: 'Link Online', dataIndex: 'link', key: 'link' },
     {
@@ -108,6 +118,7 @@ const columns = ref(
       key: 'lateArrival',
       align: 'center',
     },
+    { title: 'Nội dung', dataIndex: 'description', key: 'description' },
     { title: 'Trạng thái', dataIndex: 'status', key: 'status' },
     { title: '', key: 'actions' },
   ]),
@@ -272,7 +283,7 @@ const fetchDeleteMultipleItem = (ids) => {
   requestAPI
     .delete(`${API_ROUTES_STAFF.FETCH_DATA_PLAN_DATE}/${_detail.value.id}/delete`, {
       data: {
-        ids: ids,
+        days: ids,
       },
     })
     .then(({ data: response }) => {
@@ -673,11 +684,11 @@ const handleSendMail = () => {
 const selectedRowKeys = ref([])
 
 const isDisabledSelectTable = (key) => {
-  const record = lstData.value.find((item) => item.id === key)
+  const record = lstData.value.find((item) => item.day === key)
   return record?.status === 'DA_DIEN_RA'
 }
 
-const rowSelection = computed(() => rowSelectTable(selectedRowKeys, isDisabledSelectTable))
+const rowSelection = computed(() => rowSelectTable(selectedRowKeys, isDisabledSelectTable, 'day'))
 
 onMounted(() => {
   breadcrumbStore.setRoutes(breadcrumb.value)
@@ -710,7 +721,7 @@ watch(
     >
       <a-form-item
         class="col-sm-4"
-        label="Ngày điểm danh diễn ra"
+        label="Ngày diễn ra"
         name="startDate"
         :rules="formRules.startDate"
       >
@@ -1052,98 +1063,148 @@ watch(
 
           <div>
             <a-table
-              rowKey="id"
+              rowKey="day"
               class="nowrap"
               :dataSource="lstData"
               :columns="columns"
               :loading="isLoading"
               :pagination="pagination"
               :scroll="{ x: 'auto' }"
+              :expand-row-by-click="true"
               :row-selection="rowSelection"
               @change="handleTableChange"
             >
               <template #bodyCell="{ column, record }">
-                <template v-if="column.dataIndex === 'description'">
-                  <a-typography-link
-                    v-if="record.description"
-                    @click="handleShowDescription(record.description)"
-                    >Chi tiết</a-typography-link
-                  >
-                  <span v-else>Không có mô tả</span>
-                </template>
-                <template v-if="column.dataIndex === 'link'">
-                  <a v-if="record.link" target="_blank" :href="record.link">Link</a>
-                  <span v-else>--</span>
-                </template>
-                <template v-if="column.dataIndex === 'room'">
-                  <span v-if="record.room">{{ record.room }}</span>
-                  <span v-else>--</span>
-                </template>
-                <template v-if="column.dataIndex === 'lateArrival'">
-                  <a-tag color="gold">
-                    <ExclamationCircleOutlined /> {{ `${record.lateArrival} phút` }}
+                <template v-if="column.dataIndex === 'day'">
+                  <a-tag :color="colorDayOfWeek(record.startDate)">
+                    {{ dayOfWeek(record.startDate) }}
                   </a-tag>
                 </template>
                 <template v-if="column.dataIndex === 'startDate'">
-                  {{
-                    `${dayOfWeek(record.startDate)}, ${formatDate(
-                      record.startDate,
-                      DEFAULT_DATE_FORMAT,
-                    )}`
-                  }}
+                  {{ formatDate(record.startDate, DEFAULT_DATE_FORMAT) }}
                 </template>
-                <template v-if="column.key === 'time'">
-                  {{
-                    `${formatDate(record.startDate, 'HH:mm')} - ${formatDate(
-                      record.endDate,
-                      'HH:mm',
-                    )}`
-                  }}
+                <template v-if="column.dataIndex === 'totalShift'">
+                  <a-tag color="#41395b">
+                    {{ record.totalShift }}
+                  </a-tag>
                 </template>
                 <template v-if="column.dataIndex === 'shift'">
-                  <a-tag :color="record.type === 1 ? 'blue' : 'purple'">
+                  <a-tag color="purple">
                     {{
-                      `Ca ${record.shift
-                        .split(',')
-                        .map((o) => Number(o))
-                        .join(', ')} - ${TYPE_SHIFT[record.type]}`
+                      `Ca ${record.planDates
+                        .map((o) =>
+                          o.shift
+                            .split(',')
+                            .map((o) => Number(o))
+                            .join(', '),
+                        )
+                        .join(', ')}`
                     }}
                   </a-tag>
+                </template>
+                <template v-if="column.dataIndex === 'type'">
+                  <span v-for="o in record.types" :key="o">
+                    <a-tag :color="o === 1 ? 'blue' : 'purple'">
+                      {{ TYPE_SHIFT[o] }}
+                    </a-tag>
+                  </span>
                 </template>
                 <template v-if="column.dataIndex === 'status'">
                   <a-badge :status="record.status === 'DA_DIEN_RA' ? 'success' : 'default'" />
                   {{ STATUS_PLAN_DATE_DETAIL[record.status] }}
                 </template>
-                <template v-if="column.dataIndex === 'totalShift'">
-                  <a-tag>
-                    {{ record.totalShift }}
-                  </a-tag>
-                </template>
-                <template v-if="column.key === 'actions'">
-                  <template v-if="record.status !== 'DA_DIEN_RA'">
-                    <a-tooltip title="Chỉnh sửa ca">
-                      <a-button class="btn-outline-info border-0" @click="handleShowUpdate(record)">
-                        <EditFilled />
-                      </a-button>
-                    </a-tooltip>
-                    <a-tooltip title="Xoá ca">
-                      <a-button
-                        class="btn-outline-danger border-0 ms-2"
-                        @click="handleShowAlertDelete(record)"
+              </template>
+
+              <template #expandedRowRender="{ record }">
+                <a-table
+                  rowKey="id"
+                  class="nowrap expanded"
+                  :columns="columns_inner"
+                  :data-source="record.planDates"
+                  :pagination="false"
+                  :loading="isLoading"
+                  :scroll="{ x: 'auto' }"
+                >
+                  <template #bodyCell="{ column, record }">
+                    <template v-if="column.dataIndex === 'description'">
+                      <a-typography-link
+                        v-if="record.description"
+                        @click="handleShowDescription(record.description)"
+                        >Chi tiết</a-typography-link
                       >
-                        <DeleteFilled />
-                      </a-button>
-                    </a-tooltip>
+                      <span v-else>Không có mô tả</span>
+                    </template>
+                    <template v-if="column.dataIndex === 'link'">
+                      <a v-if="record.link" target="_blank" :href="record.link">Link</a>
+                      <span v-else>--</span>
+                    </template>
+                    <template v-if="column.dataIndex === 'room'">
+                      <span v-if="record.room">{{ record.room }}</span>
+                      <span v-else>--</span>
+                    </template>
+                    <template v-if="column.dataIndex === 'lateArrival'">
+                      <a-tag color="gold">
+                        <ExclamationCircleOutlined /> {{ `${record.lateArrival} phút` }}
+                      </a-tag>
+                    </template>
+
+                    <template v-if="column.key === 'time'">
+                      {{
+                        `${formatDate(record.startDate, 'HH:mm')} - ${formatDate(
+                          record.endDate,
+                          'HH:mm',
+                        )}`
+                      }}
+                    </template>
+                    <template v-if="column.dataIndex === 'shift'">
+                      <a-tag :color="record.type === 1 ? 'blue' : 'purple'">
+                        {{
+                          `Ca ${record.shift
+                            .split(',')
+                            .map((o) => Number(o))
+                            .join(', ')} - ${TYPE_SHIFT[record.type]}`
+                        }}
+                      </a-tag>
+                    </template>
+                    <template v-if="column.dataIndex === 'status'">
+                      <a-badge :status="record.status === 'DA_DIEN_RA' ? 'success' : 'default'" />
+                      {{ STATUS_PLAN_DATE_DETAIL[record.status] }}
+                    </template>
+                    <template v-if="column.dataIndex === 'totalShift'">
+                      <a-tag>
+                        {{ record.totalShift }}
+                      </a-tag>
+                    </template>
+                    <template v-if="column.key === 'actions'">
+                      <template v-if="record.status !== 'DA_DIEN_RA'">
+                        <a-tooltip title="Chỉnh sửa ca">
+                          <a-button
+                            class="btn-outline-info border-0"
+                            @click="handleShowUpdate(record)"
+                          >
+                            <EditFilled />
+                          </a-button>
+                        </a-tooltip>
+                        <a-tooltip title="Xoá ca">
+                          <a-button
+                            class="btn-outline-danger border-0 ms-2"
+                            @click="handleShowAlertDelete(record)"
+                          >
+                            <DeleteFilled />
+                          </a-button>
+                        </a-tooltip>
+                      </template>
+                      <a-tooltip title="Chi tiết điểm danh" v-else>
+                        <a-button
+                          class="btn-outline-primary border-0 me-2"
+                          @click="handleShowAttendance(record.id)"
+                        >
+                          <EyeFilled />
+                        </a-button>
+                      </a-tooltip>
+                    </template>
                   </template>
-                  <a-tooltip title="Chi tiết điểm danh" v-else>
-                    <a-button
-                      class="btn-outline-primary border-0 me-2"
-                      @click="handleShowAttendance(record.id)"
-                    >
-                      <EyeFilled />
-                    </a-button>
-                  </a-tooltip>
-                </template>
+                </a-table>
               </template>
             </a-table>
           </div>
