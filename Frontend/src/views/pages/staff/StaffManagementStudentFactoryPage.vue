@@ -741,13 +741,16 @@ onMounted(() => {
 
     <a-modal
       v-model:open="isAddStudentModalVisible"
-      title="Thêm sinh viên vào nhóm xưởng"
       width="80%"
       @cancel="resetStudentModal"
       @ok="handleAddStudents"
       :okButtonProps="{ loading: isLoading }"
       :footer="null"
     >
+      <template #title>
+        <PlusOutlined class="me-2 text-primary" />
+        Thêm sinh viên vào nhóm xưởng
+      </template>
       <div class="row g-3 filter-container" style="margin-bottom: 16px">
         <div class="col-21">
           <a-input

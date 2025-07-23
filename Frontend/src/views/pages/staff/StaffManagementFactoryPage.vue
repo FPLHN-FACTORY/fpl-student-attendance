@@ -430,12 +430,15 @@ onMounted(() => {
   <!-- Modal Thêm nhóm xưởng -->
   <a-modal
     v-model:open="modalAdd"
-    title="Thêm nhóm xưởng"
     @ok="submitAddFactory"
     :okButtonProps="{ loading: isLoading }"
     @cancel="clearData"
     @close="clearData"
   >
+    <template #title>
+      <PlusOutlined class="me-2 text-primary" />
+      Thêm nhóm xưởng
+    </template>
     <a-form :model="newFactory" layout="vertical">
       <a-form-item label="Tên nhóm xưởng" required>
         <a-input
@@ -504,12 +507,15 @@ onMounted(() => {
   <!-- Modal Cập nhật nhóm xưởng -->
   <a-modal
     v-model:open="modalUpdate"
-    title="Cập nhật nhóm xưởng"
     @ok="submitUpdateFactory"
     :okButtonProps="{ loading: isLoading }"
     @cancel="clearData"
     @close="clearData"
   >
+    <template #title>
+      <EditFilled class="me-2 text-primary" />
+      Cập nhật nhóm xưởng
+    </template>
     <a-form :model="detailFactory" layout="vertical">
       <a-form-item label="Tên nhóm xưởng" required>
         <a-input v-model:value="detailFactory.factoryName" @keyup.enter="submitUpdateFactory" />

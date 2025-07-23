@@ -58,7 +58,7 @@ const detailLevel = reactive({
 const columns = ref(
   autoAddColumnWidth([
     { title: '#', key: 'rowNumber' },
-    { title: 'Mã', dataIndex: 'code', key: 'code' },
+    { title: 'Mã nhóm dự án', dataIndex: 'code', key: 'code' },
     { title: 'Tên nhóm dự án', dataIndex: 'name', key: 'name' },
     { title: 'Mô tả', dataIndex: 'description', key: 'description' },
     { title: 'Trạng thái', dataIndex: 'status', key: 'status' },
@@ -276,10 +276,13 @@ onMounted(() => {
   <!-- Modal Thêm cấp dự án -->
   <a-modal
     v-model:open="modalAdd"
-    title="Thêm nhóm dự án"
     @ok="handleAddLevelProject"
     :okButtonProps="{ loading: loadingStore.isLoading }"
   >
+    <template #title>
+      <PlusOutlined class="me-2 text-primary" />
+      Thêm nhóm dự án
+    </template>
     <a-form :model="newLevel" layout="vertical">
       <a-form-item label="Tên nhóm dự án" required>
         <a-input
@@ -297,10 +300,13 @@ onMounted(() => {
   <!-- Modal Cập nhật cấp dự án -->
   <a-modal
     v-model:open="modalUpdate"
-    title="Cập nhật nhóm dự án"
     :okButtonProps="{ loading: loadingStore.isLoading }"
     @ok="submitUpdateLevel"
   >
+    <template #title>
+      <EditFilled class="me-2 text-primary" />
+      Cập nhật nhóm dự án
+    </template>
     <a-form :model="detailLevel" layout="vertical">
       <a-form-item label="Tên nhóm dự án" required>
         <a-input

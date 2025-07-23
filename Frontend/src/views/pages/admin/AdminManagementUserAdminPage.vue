@@ -456,12 +456,15 @@ onMounted(() => {
     <!-- Modal Thêm -->
     <a-modal
       v-model:open="modalAdd"
-      title="Thêm Admin"
       @ok="handleAddUser"
       :okButtonProps="{ loading: modalAddLoading }"
       @cancel="clearNewUser"
       @close="clearNewUser"
     >
+      <template #title>
+        <PlusOutlined class="me-2 text-primary" />
+        Thêm Admin
+      </template>
       <a-form layout="vertical">
         <a-form-item label="Mã Admin" required>
           <a-input
@@ -490,10 +493,13 @@ onMounted(() => {
     <!-- Modal Sửa -->
     <a-modal
       v-model:open="modalEdit"
-      title="Cập nhật Admin"
       @ok="handleUpdateUser"
       :okButtonProps="{ loading: modalEditLoading }"
     >
+      <template #title>
+        <EditFilled class="me-2 text-primary" />
+        Cập nhật Admin
+      </template>
       <a-form layout="vertical">
         <a-form-item label="Mã Admin" required>
           <a-input

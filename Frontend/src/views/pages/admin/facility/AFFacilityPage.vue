@@ -73,12 +73,12 @@ const detailFacility = ref({})
 const columns = ref(
   autoAddColumnWidth([
     { title: '#', dataIndex: 'facilityIndex', key: 'facilityIndex' },
+    { title: 'Mã cơ sở', dataIndex: 'facilityCode', key: 'facilityCode' },
     {
       title: 'Tên cơ sở',
       dataIndex: 'facilityName',
       key: 'facilityName',
     },
-    { title: 'Mã cơ sở', dataIndex: 'facilityCode', key: 'facilityCode' },
     {
       title: 'Trạng thái',
       dataIndex: 'facilityStatus',
@@ -496,10 +496,13 @@ onMounted(() => {
     <!-- Modal Thêm cơ sở -->
     <a-modal
       v-model:open="modalAdd"
-      title="Thêm cơ sở"
       @ok="handleAddFacility"
       :okButtonProps="{ loading: modalAddLoading }"
     >
+      <template #title>
+        <PlusOutlined class="me-2 text-primary" />
+        Thêm cơ sở
+      </template>
       <a-form layout="vertical" @submit.prevent="handleAddFacility">
         <a-form-item label="Tên cơ sở" required>
           <a-input v-model:value="newFacility.facilityName" placeholder="--Tên cơ sở--" />
@@ -510,10 +513,13 @@ onMounted(() => {
     <!-- Modal Cập nhật cơ sở -->
     <a-modal
       v-model:open="modalUpdate"
-      title="Cập nhật cơ sở"
       @ok="updateFacility"
       :okButtonProps="{ loading: modalUpdateLoading }"
     >
+      <template #title>
+        <EditFilled class="me-2 text-primary" />
+        Cập nhật cơ sở
+      </template>
       <a-form layout="vertical" @submit.prevent="updateFacility">
         <a-form-item label="Tên cơ sở" required>
           <a-input v-model:value="detailFacility.facilityName" placeholder="--Tên cơ sở--" />

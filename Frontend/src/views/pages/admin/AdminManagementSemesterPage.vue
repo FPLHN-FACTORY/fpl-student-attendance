@@ -577,12 +577,15 @@ onMounted(() => {
 
     <a-modal
       v-model:open="modalAdd"
-      title="Thêm học kỳ"
       @ok="handleAddSemester"
       :okButtonProps="{ loading: modalAddLoading }"
       @cancel="clearFormAdd"
       @close="clearFormAdd"
     >
+      <template #title>
+        <PlusOutlined class="me-2 text-primary" />
+        Thêm học kỳ
+      </template>
       <a-form layout="vertical">
         <a-form-item label="Tên học kỳ" required>
           <a-select
@@ -620,10 +623,13 @@ onMounted(() => {
 
     <a-modal
       v-model:open="modalUpdate"
-      title="Cập nhật học kỳ"
       @ok="updateSemester"
       :okButtonProps="{ loading: modalUpdateLoading }"
     >
+      <template #title>
+        <EditFilled class="me-2 text-primary" />
+        Cập nhật học kỳ
+      </template>
       <a-form layout="vertical">
         <a-form-item label="Tên học kỳ" required>
           <a-select
