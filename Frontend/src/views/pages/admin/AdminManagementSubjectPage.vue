@@ -429,12 +429,15 @@ onMounted(() => {
     <!-- Modal Thêm bộ môn -->
     <a-modal
       v-model:open="modalAdd"
-      title="Thêm bộ môn"
       @ok="handleAddSubject"
       :okButtonProps="{ loading: loadingStore.isLoading }"
       @cancel="clearFormAdd"
       @close="clearFormAdd"
     >
+      <template #title>
+        <PlusOutlined class="me-2 text-primary" />
+        Thêm bộ môn
+      </template>
       <a-form layout="vertical">
         <a-form-item label="Mã bộ môn" required>
           <a-input
@@ -478,10 +481,13 @@ onMounted(() => {
     <!-- Modal Cập nhật bộ môn -->
     <a-modal
       v-model:open="modalUpdate"
-      title="Cập nhật bộ môn"
       @ok="updateSubject"
       :okButtonProps="{ loading: loadingStore.isLoading }"
     >
+      <template #title>
+        <EditFilled class="me-2 text-primary" />
+        Cập nhật bộ môn
+      </template>
       <a-form layout="vertical">
         <a-form-item label="Mã bộ môn" required>
           <a-input

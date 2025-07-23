@@ -598,12 +598,15 @@ onMounted(() => {
     <!-- Modal thêm dự án -->
     <a-modal
       v-model:open="modalAdd"
-      title="Thêm dự án"
       @ok="handleAddProject"
       :okButtonProps="{ loading: isLoading }"
       @cancel="resetForm"
       @close="resetForm"
     >
+      <template #title>
+        <PlusOutlined class="me-2 text-primary" />
+        Thêm dự án
+      </template>
       <a-form layout="vertical">
         <a-form-item label="Tên dự án" required>
           <a-input
@@ -713,12 +716,15 @@ onMounted(() => {
     <!-- Modal sửa dự án -->
     <a-modal
       v-model:open="modalEdit"
-      title="Cập nhật dự án"
       @ok="handleUpdateProject"
       :okButtonProps="{ loading: isLoading }"
       @cancel="resetForm"
       @close="resetForm"
     >
+      <template #title>
+        <EditFilled class="me-2 text-primary" />
+        Cập nhật dự án
+      </template>
       <a-form layout="vertical">
         <a-form-item label="Tên dự án" required>
           <a-input

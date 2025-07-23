@@ -6,6 +6,7 @@ import {
   ExclamationCircleOutlined,
   CheckOutlined,
   DownloadOutlined,
+  EditFilled,
 } from '@ant-design/icons-vue'
 import { message, Modal } from 'ant-design-vue'
 import requestAPI from '@/services/requestApiService'
@@ -737,11 +738,14 @@ onMounted(() => {
     <!-- Modal cập nhật -->
     <a-modal
       v-model:open="isUpdateModalVisible"
-      title="Cập nhật buổi dạy"
       :okButtonProps="{ loading: isLoading }"
       @ok="handleUpdatePlanDate"
       @cancel="isUpdateModalVisible = false"
     >
+      <template #title>
+        <EditFilled class="me-2 text-primary" />
+        Cập nhật buổi dạy
+      </template>
       <a-form layout="vertical" :model="formUpdateData" :rules="formUpdateRules">
         <a-form-item label="Nội dung ca" name="description">
           <a-textarea
