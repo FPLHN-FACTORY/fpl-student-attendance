@@ -287,7 +287,7 @@ onMounted(() => {
         <a-card :bordered="false" class="cart">
           <template #title>
             <UnorderedListOutlined />
-            Lịch sắp tới
+            Lịch diễn ra
           </template>
 
           <div class="d-flex justify-content-end mb-3">

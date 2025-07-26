@@ -17,21 +17,21 @@ public class GlobalRestExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse> handleException(Exception ex) {
-        logger.error(ex.getMessage(), ex);
+        logger.error(ex.getMessage());
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(ApiResponse.error("Có lỗi xảy ra. Vui lòng thử lại sau ít phút", ex.getMessage()));
     }
 
     @ExceptionHandler(BindException.class)
     public ResponseEntity<ApiResponse> handleValidationExceptions(BindException e) {
-        logger.error(e.getMessage(), e);
+        logger.error(e.getMessage());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(ApiResponse.error(e.getBindingResult().getAllErrors().get(0).getDefaultMessage()));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiResponse> handleValidationException(MethodArgumentNotValidException ex) {
-        logger.error(ex.getMessage(), ex);
+        logger.error(ex.getMessage());
         String errorMessage = ex.getBindingResult().getAllErrors().get(0).getDefaultMessage();
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(ApiResponse.error(errorMessage));
