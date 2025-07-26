@@ -44,7 +44,6 @@ public class UserStudent extends PrimaryEntity implements Serializable {
     private String faceEmbedding;
 
     @ManyToOne
-    @JsonIgnore
     @JoinColumn(name = "id_facility")
     private Facility facility;
 
