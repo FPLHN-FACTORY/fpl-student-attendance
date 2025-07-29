@@ -72,8 +72,6 @@ public class AFFacilityServiceImpl implements AFFacilityService {
     @Override
     public ResponseEntity<?> createFacility(AFCreateUpdateFacilityRequest request) {
 
-
-        // Validate facility name - only allow Vietnamese letters, English letters and spaces
         String facilityNamePattern = "^[a-zA-ZÀ-ỹ\\s]+$";
         if (!request.getFacilityName().matches(facilityNamePattern)) {
             return RouterHelper.responseError("Tên cơ sở chỉ được chứa chữ cái và khoảng trắng, không được chứa số hoặc ký tự đặc biệt");

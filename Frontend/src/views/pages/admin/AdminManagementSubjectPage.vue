@@ -123,7 +123,6 @@ const showAddModal = (isOpen) => {
 }
 
 const handleAddSubject = () => {
-  // Validate required fields with whitespace check
   const validation = validateFormSubmission(newSubject, [
     { key: 'name', label: 'Tên bộ môn' },
     { key: 'code', label: 'Mã bộ môn', allowOnlyNumbers: true },
@@ -199,7 +198,6 @@ const handleUpdateSubject = (record) => {
 }
 
 const updateSubject = () => {
-  // Validate required fields with whitespace check
   const validation = validateFormSubmission(detailSubject, [
     { key: 'name', label: 'Tên bộ môn' },
     { key: 'code', label: 'Mã bộ môn', allowOnlyNumbers: true },

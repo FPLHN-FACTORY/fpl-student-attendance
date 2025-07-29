@@ -453,7 +453,7 @@ onMounted(() => {
           placeholder="-- Mô tả nhóm xưởng --"
         />
       </a-form-item>
-      <a-form-item label="Giảng viên giảng dạy" required>
+      <a-form-item label="Giảng viên quản lý" required>
         <a-select
           v-if="staffs.length > 0"
           v-model:value="newFactory.idUserStaff"
@@ -523,7 +523,7 @@ onMounted(() => {
       <a-form-item label="Mô tả nhóm xưởng">
         <a-textarea v-model:value="detailFactory.factoryDescription" />
       </a-form-item>
-      <a-form-item label="Giảng viên giảng dạy" required>
+      <a-form-item label="Giảng viên quản lý" required>
         <a-select
           v-if="staffs.length > 0"
           v-model:value="detailFactory.idUserStaff"
