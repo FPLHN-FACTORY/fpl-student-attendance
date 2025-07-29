@@ -47,7 +47,7 @@ const LoadingScreen: React.FC<Props> = ({ navigation }) => {
       const accessToken = await getToken(SECURE_CONSTANT.ACCESS_TOKEN)
 
       const retry = (msg: string) => {
-        showError(msg)
+        showError(msg, 2000)
         if (retryCount < maxRetry) {
           retryCount++
           setTimeout(fetchData, 2000)

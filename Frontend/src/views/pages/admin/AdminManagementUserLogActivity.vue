@@ -27,7 +27,6 @@ const breadcrumb = ref([
   },
 ])
 
-// FIX 1: Loại bỏ autoAddColumnWidth wrapper và đảm bảo columns được định nghĩa đúng
 const columns = ref(
   autoAddColumnWidth([
     { title: '#', dataIndex: 'rowNumber', key: 'rowNumber', width: 80 },

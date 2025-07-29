@@ -27,7 +27,7 @@ const applicationStore = useApplicationStore()
 const breadcrumbStore = useBreadcrumbStore()
 const breadcrumb = ref([
   { name: GLOBAL_ROUTE_NAMES.TEACHER_PAGE, breadcrumbName: 'Giảng viên' },
-  { name: ROUTE_NAMES.TEACHING_SCHEDULE, breadcrumbName: 'Lịch giảng dạy' },
+  { name: ROUTE_NAMES.TEACHING_SCHEDULE, breadcrumbName: 'Lịch quản lý' },
 ])
 
 // Store loading
@@ -61,18 +61,16 @@ const computedEndDate = computed(() => {
   return type === 'future' ? dayjs().add(days, 'day') : dayjs()
 })
 
-// Dữ liệu lịch dạy hôm nay
 const teachingSchedulePresent = ref([])
 const presentPagination = ref({ ...DEFAULT_PAGINATION })
-// Dữ liệu lịch dạy và phân trang
+
 const teachingScheduleRecords = ref([])
 const pagination = ref({ ...DEFAULT_PAGINATION })
 
-// Cột hiển thị trong table lịch dạy chung
 const columns = autoAddColumnWidth([
   { title: '#', dataIndex: 'indexs', key: 'indexs' },
   {
-    title: 'Ngày dạy',
+    title: 'Ngày quản lý',
     dataIndex: 'startTeaching',
     key: 'startTeaching',
   },
@@ -85,7 +83,7 @@ const columns = autoAddColumnWidth([
   },
   { title: 'Nhóm Xưởng', dataIndex: 'factoryName', key: 'factoryName' },
   { title: 'Dự án', dataIndex: 'projectName', key: 'projectName' },
-  { title: 'Địa điểm học', dataIndex: 'room', key: 'room' },
+  { title: 'Địa điểm', dataIndex: 'room', key: 'room' },
   { title: 'Hình thức', dataIndex: 'type', key: 'type' },
   { title: 'Link online', dataIndex: 'link', key: 'link' },
   {
@@ -95,7 +93,6 @@ const columns = autoAddColumnWidth([
   },
 ])
 
-// Cột hiển thị cho table lịch dạy hôm nay
 const columnsTeachingPresent = autoAddColumnWidth([
   { title: '#', dataIndex: 'indexs', key: 'indexs' },
   { title: 'Thời gian', key: 'time' },
@@ -107,7 +104,7 @@ const columnsTeachingPresent = autoAddColumnWidth([
   },
   { title: 'Xưởng', dataIndex: 'factoryName', key: 'factoryName' },
   { title: 'Dự án', dataIndex: 'projectName', key: 'projectName' },
-  { title: 'Địa điểm học', dataIndex: 'room', key: 'room' },
+  { title: 'Địa điểm ', dataIndex: 'room', key: 'room' },
   { title: 'Link online', dataIndex: 'link', key: 'link' },
   {
     title: 'Chi tiết / Sửa',
@@ -132,7 +129,6 @@ const prepareFilterParams = (params) => {
   return copy
 }
 
-// Lấy dữ liệu lịch dạy hôm nay
 const fetchTeachingSchedulePresent = () => {
   loadingStore.show()
   requestAPI
@@ -150,14 +146,13 @@ const fetchTeachingSchedulePresent = () => {
       presentPagination.value.current = result.page || presentPagination.value.current
     })
     .catch((error) => {
-      message.error(error.response?.data?.message || 'Lỗi khi tải dữ liệu lịch dạy hôm nay')
+      message.error(error.response?.data?.message || 'Lỗi khi tải dữ liệu lịch quản lý hôm nay')
     })
     .finally(() => {
       loadingStore.hide()
     })
 }
 
-// Lấy dữ liệu lịch dạy chung
 const fetchTeachingSchedule = () => {
   loadingStore.show()
   const { durationOption, ...rest } = filter
@@ -180,7 +175,7 @@ const fetchTeachingSchedule = () => {
       countFilter.value = result.totalItems
     })
     .catch((error) => {
-      message.error(error.response?.data?.message || 'Lỗi khi tải dữ liệu lịch dạy')
+      message.error(error.response?.data?.message || 'Lỗi khi tải dữ liệu lịch quản lý')
     })
     .finally(() => {
       loadingStore.hide()
@@ -413,11 +408,9 @@ function handleTypeToggle(record, checked) {
     },
   })
 }
-// 3) Khi confirm chuyển về Offline: gọi change-type với roomInput.value
 function confirmRoomModal() {
-  // Validate required fields with whitespace check (allow room codes with only numbers)
   const validation = validateFormSubmission({ room: roomInput.value }, [
-    { key: 'room', label: 'Phòng học', allowOnlyNumbers: true },
+    { key: 'room', label: 'Phòng ', allowOnlyNumbers: true },
   ])
   
   if (!validation.isValid) {
@@ -425,12 +418,10 @@ function confirmRoomModal() {
   }
   showRoomModal.value = false
   loadingStore.show()
-  // Gọi chung hàm, ghi đè room mới
   handleChangeType(pendingChangeRecord.value, roomInput.value)
 }
-// khi user confirm nhập link
+
 function confirmLinkModal() {
-  // Validate required fields with whitespace check (skip number validation for URLs)
   const validation = validateFormSubmission({ link: linkInput.value }, [
     { key: 'link', label: 'Link online', skipNumberValidation: true },
   ])
@@ -499,11 +490,10 @@ onMounted(() => {
 
 <template>
   <div class="container-fluid">
-    <!-- Lịch dạy hôm nay -->
     <div class="row g-4 mb-3">
       <div class="col-12">
         <a-card :bordered="false" class="cart">
-          <template #title><UnorderedListOutlined /> Lịch dạy hôm nay</template>
+          <template #title><UnorderedListOutlined /> Lịch quản lý hôm nay</template>
           <a-table
             :dataSource="teachingSchedulePresent"
             :columns="columnsTeachingPresent"
@@ -561,7 +551,7 @@ onMounted(() => {
                   }}</a-typography-link>
                 </template>
                 <template v-else-if="column.dataIndex === 'description'">
-                  <a-tooltip title="Xem, sửa chi tiết buổi dạy">
+                  <a-tooltip title="Xem, sửa chi tiết buổi quản lý">
                     <a-typography-link @click="handleShowDescription(record)"
                       >Chi tiết</a-typography-link
                     >
@@ -592,14 +582,13 @@ onMounted(() => {
       </div>
     </div>
 
-    <!-- Danh sách lịch dạy chung -->
     <div class="row g-4">
       <div class="col-12">
         <a-card :bordered="false" class="cart">
           <template #title>
             <div class="d-flex justify-content-between align-items-center">
               <div>
-                <UnorderedListOutlined /> Danh sách lịch dạy
+                <UnorderedListOutlined /> Danh sách lịch quản lý
                 <span v-if="filter.durationOption">
                   ({{ formatDate(computedStartDate, DEFAULT_DATE_FORMAT) }}
                   –
@@ -714,7 +703,7 @@ onMounted(() => {
                   </a-tag>
                 </template>
                 <template v-else-if="column.dataIndex === 'description'">
-                  <a-tooltip title="Xem, sửa chi tiết buổi dạy">
+                  <a-tooltip title="Xem, sửa chi tiết buổi quản lý">
                     <a-typography-link @click="handleShowDescription(record)"
                       >Chi tiết</a-typography-link
                     >
@@ -744,7 +733,7 @@ onMounted(() => {
     >
       <template #title>
         <EditFilled class="me-2 text-primary" />
-        Cập nhật buổi dạy
+        Cập nhật buổi quản lý
       </template>
       <a-form layout="vertical" :model="formUpdateData" :rules="formUpdateRules">
         <a-form-item label="Nội dung ca" name="description">
@@ -772,7 +761,7 @@ onMounted(() => {
             @keyup.enter="handleUpdatePlanDate"
           />
         </a-form-item>
-        <a-form-item label="Địa điểm học" name="room">
+        <a-form-item label="Địa điểm " name="room">
           <a-input
             v-model:value="formUpdateData.room"
             placeholder="Nhập phòng"

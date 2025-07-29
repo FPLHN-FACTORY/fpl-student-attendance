@@ -1,3 +1,5 @@
+export const SECRET_KEY = import.meta.env.VITE_SECRET_KEY
+
 export const DEFAULT_DATE_FORMAT = 'DD/MM/YYYY'
 
 export const DEFAULT_LATE_ARRIVAL = 15

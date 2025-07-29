@@ -3,7 +3,6 @@ import { RootStackParamList } from '@/types/RootStackParamList'
 import {
   getFeatureViewAnimation,
   lightenColor,
-  logout,
   LOWER_HEADER_HEIGHT,
   UPPER_HEADER_HEIGHT,
   UPPER_HEADER_PADDING_TOP,
@@ -20,6 +19,9 @@ import HistoryTab from '@/views/dashboard/tab/HistoryTab'
 import CalendarTab from '@/views/dashboard/tab/CalendarTab'
 import AttendanceTab from '@/views/dashboard/tab/AttendanceTab'
 import useDoubleBackPressExit from '@/components/useDoubleBackPressExit'
+import requestAPI from '@/services/requestApiService'
+import { API_ROUTES_NOTIFICATION } from '@/constants/ApiRoutes'
+import { Badge } from 'react-native-paper'
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Dashboard'>
 
@@ -30,13 +32,17 @@ type FeatureTab = typeof FEATURE_ATTENDANCE | typeof FEATURE_CALENDAR | typeof F
 const DashboardScreen: React.FC<Props> = ({ navigation }) => {
   useDoubleBackPressExit()
 
-  const handleLogout = async () => {
-    await logout()
-    navigation.replace('Login')
-  }
+  const [totalNotification, setTotalNotification] = useState(0)
 
   const handleChangeFeature = (feature: FeatureTab) => {
     setActiveTab(feature)
+    countNotification()
+  }
+
+  const countNotification = () => {
+    requestAPI.get(API_ROUTES_NOTIFICATION.FETCH_COUNT).then(({ data: response }) => {
+      setTotalNotification(response?.data || 0)
+    })
   }
 
   const studentInfo = useGlobalStore((state) => state.studentInfo)
@@ -54,7 +60,7 @@ const DashboardScreen: React.FC<Props> = ({ navigation }) => {
   const featureAnimation = {
     height: animatedValue.interpolate({
       inputRange: [0, 30],
-      outputRange: [65, 40],
+      outputRange: [80, 40],
       extrapolate: 'clamp',
     }),
     width: animatedValue.interpolate({
@@ -115,6 +121,7 @@ const DashboardScreen: React.FC<Props> = ({ navigation }) => {
 
   const showMenuRef = useRef(true)
   useEffect(() => {
+    countNotification()
     animatedValue.addListener(({ value }) => {
       showMenuRef.current = !(value === 100)
     })
@@ -137,10 +144,11 @@ const DashboardScreen: React.FC<Props> = ({ navigation }) => {
         <View style={styles.upperHeader}>
           <Image source={logoUDPM} resizeMode="contain" style={styles.logo} />
 
-          <TouchableOpacity style={styles.bell}>
+          <TouchableOpacity style={styles.bell} onPress={() => navigation.navigate('Notification')}>
             <Image source={require('../../assets/dashboard/bell.png')} style={styles.icon24} />
+            {totalNotification > 0 && <Badge style={styles.badge}>{totalNotification}</Badge>}
           </TouchableOpacity>
-          <TouchableOpacity onPress={handleLogout}>
+          <TouchableOpacity onPress={() => navigation.navigate('Detail')}>
             <Image source={{ uri: studentInfo.image }} style={styles.avatar} />
           </TouchableOpacity>
         </View>
@@ -254,8 +262,8 @@ const styles = StyleSheet.create({
     height: 24,
   },
   icon32: {
-    width: 32,
-    height: 32,
+    width: 48,
+    height: 48,
   },
   header: {
     position: 'absolute',
@@ -291,7 +299,7 @@ const styles = StyleSheet.create({
   lowerHeader: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     width: '100%',
     height: LOWER_HEADER_HEIGHT,
     paddingHorizontal: 16,
@@ -308,6 +316,8 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     marginTop: 8,
     textAlign: 'center',
+    flex: 1,
+    width: '100%',
   },
   featureActive: {
     borderWidth: 0,
@@ -328,5 +338,10 @@ const styles = StyleSheet.create({
     borderTopStartRadius: 20,
     borderTopEndRadius: 20,
     overflow: 'hidden',
+  },
+  badge: {
+    position: 'absolute',
+    top: -5,
+    right: -10,
   },
 })

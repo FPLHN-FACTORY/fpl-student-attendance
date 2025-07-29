@@ -1,24 +1,35 @@
 import { Colors } from '@/constants/Colors'
 import { ItemAttendance } from '@/types/ItemAttendance'
+import { RootStackParamList } from '@/types/RootStackParamList'
 import { formatDate, getCheckinAction, getShift, getStatus } from '@/utils'
+import { useGlobalStore } from '@/utils/GlobalStore'
+import { useNavigation } from '@react-navigation/native'
+import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { useState } from 'react'
 import { StyleSheet, TouchableOpacity, View } from 'react-native'
 import { Button, Icon, Text } from 'react-native-paper'
 
 type Props = {
   item: ItemAttendance
+  onSuccess: () => void
   earlyMinuteCheckin: number
 }
 
-export const CollapseItemAttendance = ({ item, earlyMinuteCheckin }: Props) => {
+export const CollapseItemAttendance = ({ item, earlyMinuteCheckin, onSuccess }: Props) => {
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>()
+
   const [collapsed, setCollapsed] = useState(false)
 
   const { textStatus, colorStatus } = getStatus(item)
   const { shiftName, shiftType, shiftColor } = getShift(item)
   const { text: textButton, disabled: disableButton } = getCheckinAction(item, earlyMinuteCheckin)
+  const setOnCallbackAttendance = useGlobalStore((state) => state.setOnCallbackAttendance)
 
   const handleCheckin = (item: ItemAttendance) => {
-    console.log('checkin:', item.idPlanDate)
+    setOnCallbackAttendance(onSuccess)
+    navigation.navigate('Attendance', {
+      idPlanDate: item.idPlanDate,
+    })
   }
 
   return (

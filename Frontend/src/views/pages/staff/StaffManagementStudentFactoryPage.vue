@@ -146,7 +146,7 @@ const fetchExistingStudents = () => {
     })
 }
 
-/* -------------------- Danh sách tất cả sinh viên (modal thêm học sinh) -------------------- */
+/* -------------------- Danh sách tất cả sinh viên (modal thêm sinh viên) -------------------- */
 const studentFilter = reactive({
   searchQuery: '',
   page: 1,

@@ -3,6 +3,8 @@ import Constants from 'expo-constants'
 export const DEFAULT_DATE_FORMAT = 'DD/MM/YYYY'
 
 export const SERVER_DOMAIN = Constants.expoConfig?.extra?.SERVER_DOMAIN
+export const CLIENT_DOMAIN = Constants.expoConfig?.extra?.CLIENT_DOMAIN
+export const SECRET_KEY = Constants.expoConfig?.extra?.SECRET_KEY
 
 export const API_URL = SERVER_DOMAIN + '/api/v1'
 

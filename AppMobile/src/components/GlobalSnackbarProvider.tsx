@@ -70,7 +70,9 @@ export const GlobalSnackbarProvider: React.FC<{ children: React.ReactNode }> = (
       >
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
           {iconMap[type]}
-          <Text style={{ color: 'white', marginLeft: 8, marginRight: 5 }}>{message}</Text>
+          <Text style={{ color: 'white', marginLeft: 8, marginRight: 5, fontSize: 11 }}>
+            {message}
+          </Text>
         </View>
       </Snackbar>
     </SnackbarContext.Provider>

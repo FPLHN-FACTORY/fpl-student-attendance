@@ -5,6 +5,8 @@ import { getToken, saveToken } from '../utils/secureStorageUtils'
 import { RefreshTokenResponse } from '../types/RefreshTokenResponse'
 import { API_ROUTES } from '../constants/ApiRoutes'
 import { Alert } from 'react-native'
+import { navigate } from '@/types/navigationRef'
+import { logout } from '@/utils'
 
 const requestAPI: AxiosInstance = axios.create({
   baseURL: API_URL,
@@ -40,7 +42,8 @@ requestAPI.interceptors.response.use(
           },
         )
 
-        await saveToken(data.data.accessToken, data.data.refreshToken)
+        await saveToken(SECURE_CONSTANT.ACCESS_TOKEN, data.data.accessToken)
+        await saveToken(SECURE_CONSTANT.REFRESH_TOKEN, data.data.refreshToken)
         if (originalRequest.headers) {
           ;(originalRequest.headers as AxiosHeaders).set(
             'Authorization',
@@ -50,7 +53,15 @@ requestAPI.interceptors.response.use(
 
         return requestAPI(originalRequest)
       } catch (e) {
-        Alert.alert('Lỗi', 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại')
+        Alert.alert('Lỗi', 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại', [
+          {
+            text: 'OK',
+            onPress: async () => {
+              await logout()
+              setTimeout(() => navigate('Login'), 100)
+            },
+          },
+        ])
       }
     }
 

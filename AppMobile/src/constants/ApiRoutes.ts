@@ -14,3 +14,13 @@ export const API_ROUTES = {
   FETCH_DATA_STUDENT_ATTENDANCE: API_URL + '/student/attendance',
   FETCH_DATA_STUDENT_STATISTICS: API_URL + '/student/statistics',
 }
+
+export const API_ROUTES_NOTIFICATION = {
+  FETCH_COUNT: API_URL + '/notification/count',
+  FETCH_LIST: API_URL + '/notification/list',
+  FETCH_DELETE: API_URL + '/notification/delete',
+  FETCH_DELETE_ALL: API_URL + '/notification/delete-all',
+  FETCH_MARK_READ: API_URL + '/notification/mark-read',
+  FETCH_MARK_UNREAD: API_URL + '/notification/mark-unread',
+  FETCH_MARK_READ_ALL: API_URL + '/notification/mark-read-all',
+}

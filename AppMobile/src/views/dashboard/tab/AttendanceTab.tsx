@@ -92,7 +92,7 @@ const AttendanceTab: React.FC<Props> = ({ animatedValue, showMenuRef }) => {
         setTotalPage(response.data.totalPages)
       })
       .catch((error) => {
-        showError(error.response?.data?.message || 'Không thể tải dữ liệu. Vui lòng thử lại!')
+        showError(error.response?.data?.message || 'Không thể tải dữ liệu. Vui lòng thử lại!', 2000)
       })
       .finally(() => {
         InteractionManager.runAfterInteractions(() => {
@@ -110,7 +110,7 @@ const AttendanceTab: React.FC<Props> = ({ animatedValue, showMenuRef }) => {
         DEFAULT_EARLY_MINUTE_CHECKIN.current = response.data?.['ATTENDANCE_EARLY_CHECKIN'] || 0
       })
       .catch((error) => {
-        showError(error?.response?.data?.message || 'Không thể tải dữ liệu cài đặt')
+        showError(error?.response?.data?.message || 'Không thể tải dữ liệu cài đặt', 2000)
       })
       .finally(() => {
         InteractionManager.runAfterInteractions(() => {
@@ -120,8 +120,12 @@ const AttendanceTab: React.FC<Props> = ({ animatedValue, showMenuRef }) => {
   }, [])
 
   useEffect(() => {
+    handleRefresh()
+  }, [dataFilter])
+
+  useEffect(() => {
     fetchDataList()
-  }, [currentPage, dataFilter, refreshTrigger])
+  }, [currentPage, refreshTrigger])
 
   const handleMomentumScrollEnd = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent
@@ -243,6 +247,7 @@ const AttendanceTab: React.FC<Props> = ({ animatedValue, showMenuRef }) => {
             <CollapseItemAttendance
               key={item.idPlanDate}
               item={item}
+              onSuccess={handleRefresh}
               earlyMinuteCheckin={DEFAULT_EARLY_MINUTE_CHECKIN.current}
             />
           ))}

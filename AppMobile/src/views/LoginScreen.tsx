@@ -10,20 +10,24 @@ import { Button, Text } from 'react-native-paper'
 import { Colors } from '../constants/Colors'
 import useDoubleBackPressExit from '../components/useDoubleBackPressExit'
 import { useGlobalSnackbar } from '@/components/GlobalSnackbarProvider'
-import { decodeBase64Utf8 } from '@/utils'
+import { decodeBase64Utf8, decodeToken } from '@/utils'
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { RootStackParamList } from '@/types/RootStackParamList'
 import requestAPI from '@/services/requestApiService'
 import { API_ROUTES } from '@/constants/ApiRoutes'
 import { saveToken } from '@/utils/secureStorageUtils'
 import Select from '@/components/form/Select'
+import { PayloadJWT } from '@/types/PayloadJWT'
+import { useLoading } from '@/components/loading/LoadingContext'
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Login'>
 
 const LoginScreen: React.FC<Props> = ({ navigation }) => {
   useDoubleBackPressExit()
 
-  const { showError, showSuccess, showWarning } = useGlobalSnackbar()
+  const { showLoading, hideLoading } = useLoading()
+
+  const { showError } = useGlobalSnackbar()
 
   const lstFacilities = useRef(useGlobalStore((state) => state.lstFacilities)).current
   const [facility, setFacility] = useState('')
@@ -64,7 +68,7 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
         const decoded = JSON.parse(decodeBase64Utf8(params.authencation_error))
         message = decoded.message || 'Đăng nhập thất bại'
       } catch (e) {}
-      return message && showError(message)
+      return message && showError(message, 2000)
     }
 
     try {
@@ -72,6 +76,10 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
       const access_token = authencation_token?.accessToken
       const refresh_token = authencation_token?.refreshToken
 
+      saveToken(SECURE_CONSTANT.ACCESS_TOKEN, access_token)
+      saveToken(SECURE_CONSTANT.REFRESH_TOKEN, refresh_token)
+
+      showLoading()
       requestAPI
         .get(API_ROUTES.FETCH_DATA_STUDENT_INFO, {
           headers: {
@@ -83,23 +91,24 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
           const userData = response?.data
           setStudentInfo(userData)
 
-          await saveToken(SECURE_CONSTANT.ACCESS_TOKEN, access_token)
-          await saveToken(SECURE_CONSTANT.REFRESH_TOKEN, refresh_token)
-
           if (userData.faceEmbedding !== 'OK') {
-            showWarning('Vui lòng cập nhật sinh trắc học', 2000)
             return navigation.replace('UpdateFace')
           }
 
-          showSuccess('Đăng nhập thành công', 2000)
           navigation.replace('Dashboard')
         })
         .catch(() => {
-          showWarning('Vui lòng đăng ký thông tin sinh viên', 2000)
-          navigation.replace('Register')
+          const dataLogin = decodeToken(access_token) as PayloadJWT
+          navigation.replace('Register', {
+            code: dataLogin?.code,
+            name: dataLogin?.name,
+          })
+        })
+        .finally(() => {
+          hideLoading()
         })
     } catch (e) {
-      showError('Có lỗi xảy ra. Vui lòng thử lại sau ít phút')
+      showError('Có lỗi xảy ra. Vui lòng thử lại sau ít phút', 2000)
     }
   }, [response])
 

@@ -14,6 +14,7 @@ import { Colors } from '@/constants/Colors'
 import { ItemCalendar } from '@/types/ItemCalendar'
 import { ItemHistory } from '@/types/ItemHistory'
 import { Semester } from '@/types/Semester'
+import { useGlobalStore } from './GlobalStore'
 
 export const UPPER_HEADER_HEIGHT = 64
 export const UPPER_HEADER_PADDING_TOP = 4
@@ -26,7 +27,7 @@ export const getFeatureViewAnimation = (animatedValue: Animated.Value, outputX: 
   const translateY = {
     translateY: animatedValue.interpolate({
       inputRange: [0, 100],
-      outputRange: [0, -80],
+      outputRange: [0, -50],
       extrapolate: 'clamp',
     }),
   }
@@ -107,7 +108,7 @@ export const hasInternet = async () => {
 
 export const logout = async () => {
   await deleteToken(SECURE_CONSTANT.ACCESS_TOKEN)
-  await deleteToken(SECURE_CONSTANT.ACCESS_TOKEN)
+  await deleteToken(SECURE_CONSTANT.REFRESH_TOKEN)
 }
 
 export const lightenColor = (hex: string, percent: number): string => {
@@ -372,4 +373,18 @@ export const getStatusAttendance = (item: ItemHistory) => {
     colorStatus = isPresent ? Colors.success : Colors.error
   }
   return { txtStatus, colorStatus }
+}
+
+export const capitalizeFirstLetter = (str: string | undefined) => {
+  if (!str) return ''
+  return str.charAt(0).toUpperCase() + str.slice(1)
+}
+
+export const capitalizeWords = (str: string | undefined) => {
+  if (!str) return ''
+  return str
+    .toLowerCase()
+    .split(' ')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ')
 }

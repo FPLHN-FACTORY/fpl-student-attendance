@@ -91,7 +91,7 @@ const CalendarTab: React.FC<Props> = ({ animatedValue, showMenuRef }) => {
         setTotalPage(response.data.totalPages)
       })
       .catch((error) => {
-        showError(error.response?.data?.message || 'Không thể tải dữ liệu. Vui lòng thử lại!')
+        showError(error.response?.data?.message || 'Không thể tải dữ liệu. Vui lòng thử lại!', 2000)
       })
       .finally(() => {
         InteractionManager.runAfterInteractions(() => {
@@ -102,8 +102,12 @@ const CalendarTab: React.FC<Props> = ({ animatedValue, showMenuRef }) => {
   }
 
   useEffect(() => {
+    handleRefresh()
+  }, [dataFilter])
+
+  useEffect(() => {
     fetchDataList()
-  }, [currentPage, dataFilter, refreshTrigger])
+  }, [currentPage, refreshTrigger])
 
   const handleMomentumScrollEnd = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent
