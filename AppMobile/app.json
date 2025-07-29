@@ -9,7 +9,9 @@
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "extra": {
-      "SERVER_DOMAIN": "https://sfacetrack.ttmanga.com"
+      "SERVER_DOMAIN": "https://server1.fptudpm.site",
+      "CLIENT_DOMAIN": "https://client.fptudpm.site",
+      "SECRET_KEY": "idhfnke-aksfne-emgks"
     },
     "splash": {
       "image": "./assets/splash-icon.png",

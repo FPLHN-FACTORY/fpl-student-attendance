@@ -24,14 +24,14 @@ public class GlobalRestExceptionHandler {
 
     @ExceptionHandler(BindException.class)
     public ResponseEntity<ApiResponse> handleValidationExceptions(BindException e) {
-        logger.error(e.getMessage());
+        logger.error(e.getMessage(), e);
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(ApiResponse.error(e.getBindingResult().getAllErrors().get(0).getDefaultMessage()));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiResponse> handleValidationException(MethodArgumentNotValidException ex) {
-        logger.error(ex.getMessage());
+        logger.error(ex.getMessage(), ex);
         String errorMessage = ex.getBindingResult().getAllErrors().get(0).getDefaultMessage();
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(ApiResponse.error(errorMessage));

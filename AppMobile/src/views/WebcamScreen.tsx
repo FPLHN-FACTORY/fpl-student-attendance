@@ -1,64 +1,34 @@
 import { RootStackParamList } from '@/types/RootStackParamList'
-import { logout, UPPER_HEADER_HEIGHT, UPPER_HEADER_PADDING_TOP } from '@/utils'
+import { UPPER_HEADER_HEIGHT, UPPER_HEADER_PADDING_TOP } from '@/utils'
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { View, StyleSheet, StatusBar, AppState } from 'react-native'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
-import useDoubleBackPressExit from '@/components/useDoubleBackPressExit'
 import { IconButton, Text } from 'react-native-paper'
 import { Colors } from '@/constants/Colors'
 import { WebView } from 'react-native-webview'
 import { CLIENT_DOMAIN, SECRET_KEY } from '@/constants'
-import ModalConfirm from '@/components/ModalConfirm'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef } from 'react'
 import type { WebView as WebViewType } from 'react-native-webview'
 import { PermissionStatus } from 'expo-camera'
 import useCheckPermissionCamera from '@/components/useCheckPermissionCamera'
-import requestAPI from '@/services/requestApiService'
-import { API_ROUTES } from '@/constants/ApiRoutes'
-import { useLoading } from '@/components/loading/LoadingContext'
-import { useGlobalSnackbar } from '@/components/GlobalSnackbarProvider'
+import useBackPressGoBack from '@/components/useBackPressGoBack'
+import { useGlobalStore } from '@/utils/GlobalStore'
 
-type Props = NativeStackScreenProps<RootStackParamList, 'UpdateFace'>
+type Props = NativeStackScreenProps<RootStackParamList, 'Webcam'>
 
-const UpdateFaceScreen: React.FC<Props> = ({ navigation }) => {
-  useDoubleBackPressExit()
-
-  const { showLoading, hideLoading } = useLoading()
-
-  const { showSuccess, showError } = useGlobalSnackbar()
+const WebcamScreen: React.FC<Props> = ({ navigation }) => {
+  useBackPressGoBack(navigation)
 
   const webviewRef = useRef<WebViewType>(null)
-
-  const [visible, setVisible] = useState(false)
-  const [descriptors, setDescriptors] = useState([])
-
-  const handleLogout = async () => {
-    await logout()
-    navigation.replace('Login')
-  }
+  const setDataWebcam = useGlobalStore((state) => state.setDataWebcam)
 
   const insets = useSafeAreaInsets()
 
-  const handleSubmit = () => {
-    setVisible(false)
-    showLoading()
-    requestAPI
-      .put(`${API_ROUTES.FETCH_DATA_STUDENT_UPDATE_FACEID}`, {
-        faceEmbedding: JSON.stringify(descriptors),
-      })
-      .then(({ data: response }) => {
-        showSuccess(response.message, 2000)
-        navigation.replace('Dashboard')
-      })
-      .catch((error) => {
-        showError(error.response?.data?.message, 2000)
-      })
-      .finally(() => {
-        hideLoading()
-      })
+  const handleBack = () => {
+    navigation.goBack()
   }
 
-  const status = useCheckPermissionCamera(handleLogout)
+  const status = useCheckPermissionCamera(handleBack)
 
   useEffect(() => {
     const subscription = AppState.addEventListener('change', (nextAppState) => {
@@ -83,26 +53,15 @@ const UpdateFaceScreen: React.FC<Props> = ({ navigation }) => {
               icon="chevron-left"
               size={24}
               iconColor={Colors.primary}
-              onPress={handleLogout}
+              onPress={handleBack}
               style={{ backgroundColor: '#ffffff21' }}
             />
             <Text variant="titleMedium" style={styles.title}>
-              Vui lòng cập nhật khuôn mặt
+              Vui lòng xác nhận khuôn mặt
             </Text>
           </View>
         </View>
       </SafeAreaView>
-
-      <ModalConfirm
-        isShow={visible}
-        title="Xác nhận đăng ký khuôn mặt"
-        onOk={handleSubmit}
-        onCancel={() => {
-          setVisible(false)
-        }}
-      >
-        <Text>Bạn có chắc muốn đăng ký dữ liệu khuôn mặt này?</Text>
-      </ModalConfirm>
 
       <View style={styles.containerWebcam}>
         {status === PermissionStatus.GRANTED && (
@@ -113,8 +72,11 @@ const UpdateFaceScreen: React.FC<Props> = ({ navigation }) => {
               try {
                 const data = JSON.parse(nativeEvent?.data)
                 if (data?.descriptors) {
-                  setDescriptors(data.descriptors)
-                  setVisible(true)
+                  setDataWebcam({
+                    descriptors: data.descriptors,
+                    image: data.image,
+                  })
+                  handleBack()
                 }
               } catch (error) {}
             }}
@@ -125,7 +87,7 @@ const UpdateFaceScreen: React.FC<Props> = ({ navigation }) => {
   )
 }
 
-export default UpdateFaceScreen
+export default WebcamScreen
 
 const styles = StyleSheet.create({
   container: {

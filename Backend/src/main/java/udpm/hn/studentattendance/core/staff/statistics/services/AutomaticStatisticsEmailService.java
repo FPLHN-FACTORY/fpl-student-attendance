@@ -98,7 +98,7 @@ public class AutomaticStatisticsEmailService {
                 new String[0];
 
         logger.info("Sending daily statistics for " + facilities.size() + " facilities");
-
+        logger.info("Admin:" + adminEmails);
         for (Facility facility : facilities) {
             try {
                 byte[] file = createFileStatisticsForFacility(
@@ -128,7 +128,7 @@ public class AutomaticStatisticsEmailService {
                 dataMail.put("FACILITY_NAME", facility.getName());
                 dataMail.put("FROM_DATE", DateTimeUtils.convertMillisToDate(startOfYesterday));
                 dataMail.put("TO_DATE", DateTimeUtils.convertMillisToDate(endOfYesterday));
-
+                dataMail.put("STAFF_NAME", "Hệ Thống Điểm Danh, Chấm Công");
                 Map<String, byte[]> filesMail = new HashMap<>();
                 String fileName = facility.getCode() + "_" +
                         DateTimeUtils.convertMillisToDate(startOfYesterday, "dd-MM-yyyy") + "_" +

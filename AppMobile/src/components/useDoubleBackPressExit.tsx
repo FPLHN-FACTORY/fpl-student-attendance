@@ -16,7 +16,7 @@ const useDoubleBackPressExit = (): void => {
       }
 
       backPressTimestamp.current = now
-      showMessage('Nhấn lần nữa để thoát')
+      showMessage('Nhấn lần nữa để thoát', 2000)
       return true
     }
 

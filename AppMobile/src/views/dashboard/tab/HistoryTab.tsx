@@ -109,7 +109,7 @@ const HistoryTab: React.FC<Props> = ({ animatedValue, showMenuRef }) => {
         setTotalPage(response.data.totalPages)
       })
       .catch((error) => {
-        showError(error.response?.data?.message || 'Không thể tải dữ liệu. Vui lòng thử lại!')
+        showError(error.response?.data?.message || 'Không thể tải dữ liệu. Vui lòng thử lại!', 2000)
       })
       .finally(() => {
         InteractionManager.runAfterInteractions(() => {
@@ -131,7 +131,7 @@ const HistoryTab: React.FC<Props> = ({ animatedValue, showMenuRef }) => {
         setCurrentIdFactory(idFactory)
       })
       .catch((error) => {
-        showError(error?.response?.data?.message || 'Không thể tải dữ liệu cài đặt')
+        showError(error?.response?.data?.message || 'Không thể tải dữ liệu cài đặt', 2000)
       })
       .finally(() => {
         InteractionManager.runAfterInteractions(() => {
@@ -141,8 +141,12 @@ const HistoryTab: React.FC<Props> = ({ animatedValue, showMenuRef }) => {
   }, [dataFilter.semesterId])
 
   useEffect(() => {
+    handleRefresh()
+  }, [dataFilter.factoryId])
+
+  useEffect(() => {
     fetchDataList()
-  }, [currentPage, dataFilter.factoryId, refreshTrigger])
+  }, [currentPage, refreshTrigger])
 
   const handleMomentumScrollEnd = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent

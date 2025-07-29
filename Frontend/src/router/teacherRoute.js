@@ -41,7 +41,7 @@ export const TeacherRoutes = [
         component: () => import('@/views/pages/teacher/TeacherSchedulePage.vue'),
         meta: {
           selectedKey: selectedKey++,
-          name: 'Lịch giảng dạy',
+          name: 'Lịch quản lý',
           icon: CalendarOutlined,
         },
       },
