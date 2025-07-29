@@ -15,8 +15,9 @@ import java.util.List;
 public interface STDScheduleAttendanceRepository extends FacilityRepository {
 
     @Query(value = """
+        SELECT * FROM(
             SELECT
-                       ROW_NUMBER() OVER (ORDER BY pd.start_date ASC) AS indexs,
+                       ROW_NUMBER() OVER (ORDER BY pd.start_date ASC ) AS indexs,
                        pd.id AS id,
                        pd.start_date AS attendanceDayStart,
                        pd.end_date AS attendanceDayEnd,
@@ -47,8 +48,10 @@ public interface STDScheduleAttendanceRepository extends FacilityRepository {
                             WHERE id_user_student = :#{#request.idStudent}
                         )
                     AND pd.start_date BETWEEN :#{#request.now} AND :#{#request.max}
-            ORDER BY pd.start_date
-            """, countQuery = """
+            ORDER BY pd.start_date ASC
+        ) AS sub
+        ORDER BY indexs
+    """, countQuery = """
             SELECT COUNT(*) FROM plan_date pd
             LEFT JOIN plan_factory pdf ON pdf.id = pd.id_plan_factory
                    JOIN plan pl ON pl.id = pdf.id_plan
