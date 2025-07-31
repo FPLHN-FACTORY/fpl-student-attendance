@@ -1,6 +1,6 @@
 <script setup>
-import { ref, computed, onMounted, reactive } from 'vue'
-import { autoAddColumnWidth, dayOfWeek, formatDate } from '@/utils/utils'
+import { ref, onMounted, reactive, watch } from 'vue'
+import { autoAddColumnWidth, dayOfWeek, formatDate, getCurrentSemester } from '@/utils/utils'
 import {
   FilterFilled,
   UnorderedListOutlined,
@@ -33,7 +33,6 @@ const filter = reactive({
 
 const countFilter = ref(0)
 
-const attendanceRecords = ref([])
 const isLoading = ref(false)
 const paginations = ref({})
 const loadingExport = reactive({})
@@ -41,7 +40,7 @@ const loadingExport = reactive({})
 const columns = autoAddColumnWidth([
   { title: '#', dataIndex: 'rowNumber', key: 'rowNumber' },
   { title: 'Ngày điểm danh', dataIndex: 'planDateStartDate', key: 'planDateStartDate' },
-  { title: 'Ca', dataIndex: 'planDateShift', key: 'planDateShift' },
+  { title: 'Ca', dataIndex: 'shift', key: 'shift' },
   {
     title: 'Điểm danh muộn',
     dataIndex: 'lateArrival',
@@ -53,52 +52,64 @@ const columns = autoAddColumnWidth([
   { title: 'Trạng thái', dataIndex: 'statusAttendance', key: 'statusAttendance' },
 ])
 
-const semesters = ref([])
-const factories = ref([])
+const lstSemesters = ref([])
+const lstFactories = ref([])
+const lstGroupFactory = ref([])
+
+const fetchAttendanceHistory = async (factoryId) => {
+  const factory = lstFactories.value.find((o) => o.id === factoryId)
+  const group = lstGroupFactory.value.find((o) => o.id === factory.id)
+
+  group && (group.isLoading = true)
+  requestAPI
+    .get(API_ROUTES_STUDENT.FETCH_DATA_HISTORY_ATTENDANCE, {
+      params: {
+        semesterId: filter.semesterId,
+        factoryId: factory.id,
+        page: paginations.value[factory.id].current,
+        size: paginations.value[factory.id].pageSize,
+      },
+    })
+    .then(({ data: response }) => {
+      if (!group) {
+        lstGroupFactory.value.push({
+          id: factory.id,
+          name: factory.name,
+          isLoading: false,
+          data: response.data,
+        })
+      } else {
+        group.data = response.data
+      }
+      countFilter.value = lstGroupFactory.value.reduce((sum, group) => {
+        return sum + (group.data?.totalItems || 0)
+      }, 0)
+      paginations.value[factory.id].total =
+        response.data.totalPages * paginations.value[factory.id].pageSize
+    })
+    .catch((error) => {
+      message.error('Không thể tải dữ liệu nhóm xưởng:' + factory.name)
+    })
+    .finally(() => {
+      group && (group.isLoading = false)
+    })
+}
 
 const fetchAllAttendanceHistory = async () => {
+  const lstIdFactories = lstFactories.value.filter((o) =>
+    filter.factoryId ? o.id === filter.factoryId : o.id,
+  )
+
+  paginations.value = {}
+  lstGroupFactory.value = []
+  countFilter.value = 0
+
   loadingStore.show()
-  try {
-    const firstResponse = await requestAPI.get(API_ROUTES_STUDENT.FETCH_DATA_HISTORY_ATTENDANCE, {
-      params: { ...filter, page: 1 },
-    })
-    const firstPageData = firstResponse.data.data.data
-    const totalPages = firstResponse.data.data.totalPages
-
-    if (totalPages === 1) {
-      attendanceRecords.value = firstPageData
-    } else {
-      const promises = []
-      for (let page = 2; page <= totalPages; page++) {
-        promises.push(
-          requestAPI.get(API_ROUTES_STUDENT.FETCH_DATA_HISTORY_ATTENDANCE, {
-            params: { ...filter, page },
-          }),
-        )
-      }
-      const responses = await Promise.all(promises)
-      const allData = responses.reduce((acc, res) => {
-        return acc.concat(res.data.data.data)
-      }, firstPageData)
-      attendanceRecords.value = allData
-    }
-
-    const grouped = groupBy(attendanceRecords.value)
-    paginations.value = {}
-    for (const factoryId in grouped) {
-      paginations.value[factoryId] = {
-        ...DEFAULT_PAGINATION,
-        total: grouped[factoryId].length,
-      }
-    }
-    countFilter.value = Object.values(paginations.value).filter(
-      (v) => typeof v === 'object' && v !== null && !Array.isArray(v),
-    ).length
-  } catch (error) {
-    message.error(error.response?.data?.message || 'Lỗi khi tải dữ liệu lịch sử điểm danh')
-  } finally {
-    loadingStore.hide()
-  }
+  lstIdFactories.forEach((factory) => {
+    paginations.value[factory.id] = { ...DEFAULT_PAGINATION }
+    fetchAttendanceHistory(factory.id)
+  })
+  loadingStore.hide()
 }
 
 const handleShowDescription = (text) => {
@@ -117,18 +128,11 @@ const fetchSemesters = () => {
   requestAPI
     .get(API_ROUTES_STUDENT.FETCH_DATA_HISTORY_ATTENDANCE + '/semesters')
     .then((response) => {
-      semesters.value = response.data.data
-
-      // Find current semester and set it as default
-      const now = new Date().getTime()
-      const currentSemester = semesters.value.find(
-        (semester) => semester.fromDate <= now && now <= semester.toDate,
-      )
-      if (currentSemester) {
-        filter.semesterId = currentSemester.id
+      lstSemesters.value = response.data.data
+      const semester = getCurrentSemester(lstSemesters.value)
+      if (semester) {
+        filter.semesterId = semester.id
       }
-
-      fetchAllAttendanceHistory()
     })
     .catch((error) => {
       message.error(error.response?.data?.message || 'Lỗi khi tải dữ liệu học kỳ')
@@ -136,39 +140,22 @@ const fetchSemesters = () => {
 }
 
 const fetchFactories = () => {
+  filter.factoryId = ''
   requestAPI
-    .get(API_ROUTES_STUDENT.FETCH_DATA_HISTORY_ATTENDANCE + '/factories')
+    .get(API_ROUTES_STUDENT.FETCH_DATA_HISTORY_ATTENDANCE + '/factories/' + filter.semesterId)
     .then((response) => {
-      factories.value = response.data.data
+      lstFactories.value = response.data.data
+      fetchAllAttendanceHistory()
     })
     .catch((error) => {
       message.error(error.response?.data?.message || 'Lỗi khi tải dữ liệu xưởng')
     })
 }
 
-const groupBy = (array) => {
-  return array.reduce((result, currentItem) => {
-    const groupKey = currentItem.factoryId || 'Chưa xác định'
-    if (!result[groupKey]) {
-      result[groupKey] = []
-    }
-    result[groupKey].push(currentItem)
-    return result
-  }, {})
-}
-
-const groupedAttendance = computed(() => {
-  return groupBy(attendanceRecords.value)
-})
-
 const handleTableChange = (factoryId, pagination) => {
   paginations.value[factoryId].current = pagination.current
   paginations.value[factoryId].pageSize = pagination.pageSize
-}
-
-const getFactoryName = (factoryId) => {
-  const factory = factories.value.find((f) => f.id === factoryId)
-  return factory ? factory.name : 'Chưa xác định'
+  fetchAttendanceHistory(factoryId)
 }
 
 const exportPDF = async (factoryId, factoryName) => {
@@ -195,27 +182,33 @@ const exportPDF = async (factoryId, factoryName) => {
   }
 }
 
+const handleSubmitFilter = () => {
+  fetchAllAttendanceHistory()
+}
+
 const handleClearFilter = () => {
   filter.factoryId = ''
-
-  const now = new Date().getTime()
-  const currentSemester = semesters.value.find(
-    (semester) => semester.fromDate <= now && now <= semester.toDate,
-  )
-  if (currentSemester) {
-    filter.semesterId = currentSemester.id
-  } else {
-    filter.semesterId = ''
-  }
-
-  fetchAllAttendanceHistory()
+  filter.semesterId = getCurrentSemester(lstSemesters.value).id
 }
 
 onMounted(async () => {
   breadcrumbStore.setRoutes(breadcrumb.value)
-  await fetchSemesters()
-  await fetchFactories()
+  fetchSemesters()
 })
+
+watch(
+  () => filter.semesterId,
+  (newVal) => {
+    fetchFactories()
+  },
+)
+
+watch(
+  () => filter.factoryId,
+  (newVal) => {
+    fetchAllAttendanceHistory()
+  },
+)
 </script>
 
 <template>
@@ -233,10 +226,9 @@ onMounted(async () => {
                     v-model:value="filter.semesterId"
                     placeholder="Chọn học kỳ"
                     class="w-100"
-                    @change="fetchAllAttendanceHistory"
                   >
                     <a-select-option
-                      v-for="semester in semesters"
+                      v-for="semester in lstSemesters"
                       :key="semester.id"
                       :value="semester.id"
                     >
@@ -251,11 +243,10 @@ onMounted(async () => {
                     placeholder="Chọn xưởng"
                     class="w-100"
                     allowClear
-                    @change="fetchAllAttendanceHistory"
                   >
                     <a-select-option :value="''">-- Tất cả xưởng --</a-select-option>
                     <a-select-option
-                      v-for="factory in factories"
+                      v-for="factory in lstFactories"
                       :key="factory.id"
                       :value="factory.id"
                     >
@@ -265,7 +256,7 @@ onMounted(async () => {
                 </div>
                 <div class="col-12">
                   <div class="d-flex justify-content-center flex-wrap gap-2">
-                    <a-button class="btn-light" @click="fetchAllAttendanceHistory">
+                    <a-button class="btn-light" @click="handleSubmitFilter">
                       <FilterFilled /> Lọc
                     </a-button>
                     <a-button class="btn-gray" @click="handleClearFilter"> Huỷ lọc </a-button>
@@ -276,18 +267,18 @@ onMounted(async () => {
           </a-collapse>
         </a-card>
       </div>
-      <div class="col-12" v-for="(records, factoryId) in groupedAttendance" :key="factoryId">
+      <div class="col-12" v-for="(records, id) in lstGroupFactory" :key="id">
         <a-card :bordered="false" class="card">
           <template #title>
             <UnorderedListOutlined />
             Nhóm:
-            {{ getFactoryName(factoryId) }}
+            {{ records.name }}
           </template>
           <template #extra>
             <a-button
               type="primary"
-              :loading="loadingExport[factoryId]"
-              @click="exportPDF(factoryId, getFactoryName(factoryId))"
+              :loading="loadingExport[records.id]"
+              @click="exportPDF(records.id, records.name)"
             >
               <FilePdfOutlined /> Tải xuống PDF
             </a-button>
@@ -295,12 +286,12 @@ onMounted(async () => {
 
           <a-table
             class="nowrap"
-            :dataSource="records"
+            :dataSource="records.data.data"
             :columns="columns"
-            :rowKey="(record) => record.planDateId"
-            :pagination="paginations[factoryId]"
-            @change="(pagination, filters, sorter) => handleTableChange(factoryId, pagination)"
-            :loading="isLoading"
+            :rowKey="planDateId"
+            :pagination="paginations[records.id]"
+            @change="(pagination, filters, sorter) => handleTableChange(records.id, pagination)"
+            :loading="records.isLoading"
             :scroll="{ x: 'auto' }"
           >
             <template #bodyCell="{ column, record }">
@@ -310,11 +301,11 @@ onMounted(async () => {
                   {{ formatDate(record.planDateStartDate, 'dd/MM/yyyy HH:mm') }} -
                   {{ formatDate(record.planDateEndDate, 'HH:mm') }}
                 </template>
-                <template v-else-if="column.dataIndex === 'planDateShift'">
+                <template v-else-if="column.dataIndex === 'shift'">
                   <a-tag color="purple">
                     Ca
                     {{
-                      record.planDateShift
+                      record.shift
                         .split(',')
                         .map((o) => Number(o))
                         .join(', ')
@@ -394,7 +385,7 @@ onMounted(async () => {
       </div>
     </div>
 
-    <div class="row g-3 mt-3" v-if="Object.keys(groupedAttendance).length === 0 && !isLoading">
+    <div class="row g-3 mt-3" v-if="lstGroupFactory.length === 0 && !isLoading">
       <div class="col-12">
         <a-card :bordered="false" class="card mb-3">
           <div class="d-flex justify-content-center align-items-center p-4">
