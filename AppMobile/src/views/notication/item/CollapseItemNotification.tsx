@@ -1,3 +1,4 @@
+import { Colors } from '@/constants/Colors'
 import { ItemNotification } from '@/types/ItemNotification'
 import { formatDate } from '@/utils'
 import { StyleSheet, useWindowDimensions, View } from 'react-native'
@@ -20,7 +21,15 @@ export const CollapseItemNotification = ({ index, item, onOption }: Props) => {
           <Text variant="bodySmall" style={{ opacity: 0.5, fontSize: 11 }}>
             {formatDate(item.createdAt, 'dd/MM/yyyy HH:mm')}
           </Text>
-          <RenderHTML contentWidth={width} source={{ html: `<div>${item.message}</div>` }} />
+          <RenderHTML
+            contentWidth={width}
+            tagsStyles={{
+              div: {
+                color: Colors.primary,
+              },
+            }}
+            source={{ html: `<div>${item.message}</div>` }}
+          />
         </View>
         <IconButton icon="dots-horizontal" size={20} onPress={onOption} />
       </View>
