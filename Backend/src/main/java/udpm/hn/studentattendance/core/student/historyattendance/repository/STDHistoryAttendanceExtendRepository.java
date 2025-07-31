@@ -4,14 +4,12 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
-import udpm.hn.studentattendance.core.staff.plan.model.response.SPDPlanDateAttendanceResponse;
 import udpm.hn.studentattendance.core.student.historyattendance.model.request.STDHistoryAttendanceRequest;
 import udpm.hn.studentattendance.core.student.historyattendance.model.response.STDHistoryAttendanceResponse;
 import udpm.hn.studentattendance.core.student.historyattendance.model.response.STDHistoryPlanDateAttendanceResponse;
 import udpm.hn.studentattendance.repositories.FactoryRepository;
 
 import java.util.List;
-import java.util.Optional;
 
 @Repository
 public interface STDHistoryAttendanceExtendRepository extends FactoryRepository {
@@ -26,13 +24,14 @@ public interface STDHistoryAttendanceExtendRepository extends FactoryRepository 
                 ft.name                 AS factoryName,
                 pd.start_date           AS planDateStartDate,
                 pd.end_date             AS planDateEndDate,
-                pd.shift                AS planDateShift,
+                pd.shift                AS shift,
                 ft.id                   AS factoryId,
                 pd.id                   AS planDateId,
                 a.created_at            AS checkIn,
                 a.updated_at            AS checkOut,
                 pd.required_checkin    AS requiredCheckIn,
                 pd.required_checkout   AS requiredCheckOut,
+                pd.type,
                 CASE
                   WHEN :nowTs < pd.start_date THEN 'CHUA_DIEN_RA'
                   WHEN :nowTs > pd.start_date AND :nowTs < pd.end_date THEN 'DANG_DIEN_RA'
@@ -145,8 +144,9 @@ public interface STDHistoryAttendanceExtendRepository extends FactoryRepository 
                 p.name  AS projectName,
                 pd.start_date AS planDateStartDate,
                 pd.end_date AS planDateEndDate,
-                pd.shift AS planDateShift,
+                pd.shift,
                 ft.id AS factoryId,
+                pd.type,
                 CASE
                     WHEN :nowTs < pd.start_date THEN 'CHUA_DIEN_RA'
                     WHEN :nowTs > pd.start_date AND :nowTs < pd.end_date THEN 'DANG_DIEN_RA'

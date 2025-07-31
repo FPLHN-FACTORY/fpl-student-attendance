@@ -12,9 +12,9 @@ const THRESHOLD_EMOTIONS = 0.8
 const MIN_BRIGHTNESS = 60
 const MAX_BRIGHTNESS = 190
 const THRESHOLD_LIGHT = 60
-const SIZE_CAMERA = 224
+const SIZE_CAMERA = 480
 const SKIP_FRAME = 10
-const ANTISPOOF = true
+const ANTISPOOF = false
 
 const useFaceIDStore = defineStore('faceID', () => {
   let isFullStep = false
@@ -22,6 +22,7 @@ const useFaceIDStore = defineStore('faceID', () => {
   let canvas = null
   let axis = null
   let onSuccess = null
+  let isShowError = true
 
   let human = null
 
@@ -68,10 +69,26 @@ const useFaceIDStore = defineStore('faceID', () => {
   }
 
   const init = async (v, c, a, fullStep, callback) => {
-    isFullStep = fullStep
+    setup(v, c, a, fullStep)
+    setFullStep(fullStep)
+    setCallback(callback)
+  }
+
+  const setup = async (v, c, a) => {
     video = v
     canvas = c
     axis = a
+  }
+
+  const setShowError = (type) => {
+    isShowError = type
+  }
+
+  const setFullStep = (type) => {
+    isFullStep = type
+  }
+
+  const setCallback = (callback) => {
     onSuccess = callback
   }
 
@@ -97,16 +114,18 @@ const useFaceIDStore = defineStore('faceID', () => {
         detectFace()
       }
     } catch (err) {
-      Modal.confirm({
-        title: `Cảnh báo`,
-        type: 'error',
-        content: `Không thể kết nối tới Webcam. Vui lòng tải lại trang.`,
-        okText: 'Thử lại',
-        cancelText: 'Hủy bỏ',
-        onOk() {
-          window.location.reload()
-        },
-      })
+      if (isShowError) {
+        Modal.confirm({
+          title: `Cảnh báo`,
+          type: 'error',
+          content: `Không thể kết nối tới Webcam. Vui lòng tải lại trang.`,
+          okText: 'Thử lại',
+          cancelText: 'Hủy bỏ',
+          onOk() {
+            window.location.reload()
+          },
+        })
+      }
     }
   }
 
@@ -143,7 +162,9 @@ const useFaceIDStore = defineStore('faceID', () => {
         human = new Human({ ...Config, backend })
         break
       } catch {
-        message.error('Không thể khởi chạy camera')
+        if (isShowError) {
+          message.error('Không thể khởi chạy camera')
+        }
       }
     }
 
@@ -362,9 +383,9 @@ const useFaceIDStore = defineStore('faceID', () => {
       }
       renderTextStep('Xác minh hoàn tất')
       captureFace()
-      stopVideo()
       typeof onSuccess == 'function' && onSuccess(toRaw(lstDescriptor.value))
-      isRunScan.value = false
+      lstDescriptor.value = []
+      faceDescriptor = null
     }
 
     const delay = (ms) => new Promise((res) => setTimeout(res, ms))
@@ -489,7 +510,7 @@ const useFaceIDStore = defineStore('faceID', () => {
 
     const getBestEmbedding = async () => {
       while (true) {
-        renderTextStep('Đang lấy dữ liệu. Vui lòng giữ nguyên...')
+        renderTextStep('Vui lòng giữ nguyên...')
         const result = await human.detect(video.value)
         const face = result.face?.[0]
 
@@ -652,8 +673,10 @@ const useFaceIDStore = defineStore('faceID', () => {
         return rollback(txtValidSize)
       }
 
-      if (!isInsideCenter(faceBoxRaw)) {
-        return rollback('Vui lòng căn chỉnh khuôn mặt vào giữa')
+      if (!isFullStep) {
+        if (!isInsideCenter(faceBoxRaw)) {
+          return rollback('Vui lòng căn chỉnh khuôn mặt vào giữa')
+        }
       }
 
       if (!faceDescriptor) {
@@ -677,19 +700,19 @@ const useFaceIDStore = defineStore('faceID', () => {
         }
       }
 
-      if (avgBrightness < MIN_BRIGHTNESS) {
-        return renderTextStep('Camera quá tối, Vui lòng tăng độ sáng')
-      }
-
-      if (avgBrightness > MAX_BRIGHTNESS) {
-        return renderTextStep('Camera quá sáng, Vui lòng giảm độ sáng')
-      }
-
-      if (!(await isLightBalance(faceBox))) {
-        return renderTextStep('Ánh sáng không đều. Vui lòng thử lại')
-      }
-
       if (!isFullStep) {
+        if (avgBrightness < MIN_BRIGHTNESS) {
+          return renderTextStep('Camera quá tối, Vui lòng tăng độ sáng')
+        }
+
+        if (avgBrightness > MAX_BRIGHTNESS) {
+          return renderTextStep('Camera quá sáng, Vui lòng giảm độ sáng')
+        }
+
+        if (!(await isLightBalance(faceBox))) {
+          return renderTextStep('Ánh sáng không đều. Vui lòng thử lại')
+        }
+
         if (step.value === 0 || step.value === 3) {
           if (human.result.gesture.some((o) => o.gesture.includes('head up'))) {
             return renderTextStep('Vui lòng không ngẩng mặt')
@@ -808,6 +831,10 @@ const useFaceIDStore = defineStore('faceID', () => {
 
   return {
     init,
+    setup,
+    setFullStep,
+    setCallback,
+    setShowError,
     loadModels,
     startVideo,
     stopVideo,

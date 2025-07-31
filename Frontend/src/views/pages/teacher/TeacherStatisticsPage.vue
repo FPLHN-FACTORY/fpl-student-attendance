@@ -96,7 +96,7 @@ const formRules = reactive({
 
 const stats = ref([
   {
-    title: 'Lịch dạy hôm nay',
+    title: 'Lịch quản lý hôm nay',
     value: 0,
     icon: CalendarOutlined,
   },

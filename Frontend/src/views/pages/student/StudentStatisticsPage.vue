@@ -132,35 +132,28 @@ const fetchDataAllStats = () => {
       },
     })
     .then(({ data: response }) => {
-      // Update statistics from stdStatisticsStatResponse
+      
       if (response.data.stdStatisticsStatResponse) {
         Object.assign(dataStats, response.data.stdStatisticsStatResponse)
-      }      // Update chart data from factoryChartResponse
+      }      
 
-
-      // Update pie chart data from attendanceChartResponses
       const attendanceData = response.data.attendanceChartResponses || { totalPresent: 0, totalAbsent: 0, totalShift: 0 }
 
-      // Calculate semester totals for attendance and absence
       dataStats.totalAttendance = attendanceData.totalPresent || (attendanceData.totalShift - attendanceData.totalAbsent) || 0
       dataStats.totalAbsent = attendanceData.totalAbsent || 0
       dataStats.totalShift = attendanceData.totalShift || 0
-      // Update pie chart with total attendance and absence data
       pieChartData.value.labels = ['Điểm danh', 'Vắng mặt']
       pieChartData.value.datasets[0].data = [dataStats.totalAttendance, dataStats.totalAbsent]
 
       const factoryChartData = response.data.factoryChartResponse
-      lineChartData.value.labels = ['-', factoryChartData.map((o) => o.factoryName), '-']
-      lineChartData.value.datasets[0].data = [
-        0,
-        factoryChartData.map((o) => o.attendancePercentage),
-        0,
-      ]
-      lineChartData.value.datasets[1].data = [
-        0,
-        factoryChartData.map((o) => 100 - o.attendancePercentage),
-        0,
-      ]
+      
+      const factoryNames = factoryChartData.map((o) => o.factoryName)
+      const attendancePercentages = factoryChartData.map((o) => o.attendancePercentage)
+      const absencePercentages = factoryChartData.map((o) => 100 - o.attendancePercentage)
+      
+      lineChartData.value.labels = ['-', ...factoryNames, '-']
+      lineChartData.value.datasets[0].data = [0, ...attendancePercentages, 0]
+      lineChartData.value.datasets[1].data = [0, ...absencePercentages, 0]
     })
     .catch((error) => {
       message.error(error?.response?.data?.message || 'Không thể tải dữ liệu thống kê')
@@ -193,7 +186,6 @@ const fetchDataSemester = () => {
 }
 
 const handleClearFilter = () => {
-  // Tự động chọn học kỳ hiện tại khi clear filter
   let defaultSemesterId = null
   if (lstSemester.value && lstSemester.value.length > 0) {
     const currentSemester = getCurrentSemester(lstSemester.value)
@@ -213,10 +205,8 @@ const handleSubmitFilter = () => {
 onMounted(async () => {
   breadcrumbStore.setRoutes(breadcrumb.value)
 
-  // Fetch semester data first, then fetch stats after semester is selected
   await fetchDataSemester()
 
-  // Fetch stats data after semester is selected
   if (dataFilter.idSemester) {
     fetchDataAllStats()
   }
@@ -225,10 +215,10 @@ onMounted(async () => {
 watch(
   dataStats,
   (data) => {
-    stats.value[0].value = data.factory || 0     // Nhóm xưởng
-    stats.value[1].value = data.pass || 0        // Hoàn thành
-    stats.value[2].value = data.fail || 0        // Không đạt
-    stats.value[3].value = data.process || 0     // Đang diễn ra
+    stats.value[0].value = data.factory || 0     
+    stats.value[1].value = data.pass || 0        
+    stats.value[2].value = data.fail || 0       
+    stats.value[3].value = data.process || 0     
   },
   { deep: true },
 )
