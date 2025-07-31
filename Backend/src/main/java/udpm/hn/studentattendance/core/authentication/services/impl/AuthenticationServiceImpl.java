@@ -2,6 +2,7 @@ package udpm.hn.studentattendance.core.authentication.services.impl;
 
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -65,6 +66,9 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
     private final AuthenticationUserStudentRepository authenticationUserStudentRepository;
 
+    @Value("${app.config.face.threshold_register}")
+    private double FACE_THRESHOLD_REGISTER;
+
     @Override
     public RedirectView authorSwitch(String role, String redirectUri, String facilityId) {
         httpSession.setAttribute(SessionConstant.LOGIN_ROLE, role);
@@ -104,14 +108,9 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 .parseValue(settings.get(SettingKeys.ATTENDANCE_EARLY_CHECKIN));
         Integer expirationMinuteLogin = (Integer) SettingHelper
                 .parseValue(settings.get(SettingKeys.EXPIRATION_MINUTE_LOGIN));
-        Double faceThresholdCheckin = (Double) SettingHelper
-                .parseValue(settings.get(SettingKeys.FACE_THRESHOLD_CHECKIN));
-        Double faceThresholdRegister = (Double) SettingHelper
-                .parseValue(settings.get(SettingKeys.FACE_THRESHOLD_REGISTER));
 
         if (disableCheckEmailFPTStaff == null || disableCheckEmailFPTStudent == null || shiftMinDiff == null
-                || shiftMaxLateArrival == null || attendanceEarlyCheckin == null || expirationMinuteLogin == null
-                || faceThresholdCheckin == null || faceThresholdRegister == null) {
+                || shiftMaxLateArrival == null || attendanceEarlyCheckin == null || expirationMinuteLogin == null) {
             return RouterHelper.responseError("Vui lòng nhập đầy đủ các trường bắt buộc");
         }
 
@@ -129,14 +128,6 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
         if (expirationMinuteLogin < 60) {
             return RouterHelper.responseError("Thời hạn phiên đăng nhập không hợp lệ");
-        }
-
-        if (faceThresholdCheckin == 0 || faceThresholdCheckin > 1) {
-            return RouterHelper.responseError("Độ khắt khe checkin/checkout không hợp lệ");
-        }
-
-        if (faceThresholdRegister == 0 || faceThresholdRegister > 1) {
-            return RouterHelper.responseError("Độ khắt khe đăng ký mặt không hợp lệ");
         }
 
         for (Map.Entry<SettingKeys, String> entry : settings.entrySet()) {
@@ -307,17 +298,15 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         double[] firstFace = embeddings.get(0);
         double[] lastFace = embeddings.get(embeddings.size() - 1);
 
-        double threshold_register = settingHelper.getSetting(SettingKeys.FACE_THRESHOLD_REGISTER, Double.class);
-
-        double[] resultFace = FaceRecognitionUtils.isSameFaceAndResult(lstFaceEmbeddings, lastFace, threshold_register);
+        double[] resultFace = FaceRecognitionUtils.isSameFaceAndResult(lstFaceEmbeddings, lastFace, FACE_THRESHOLD_REGISTER);
 
         if (resultFace == null) {
             boolean isSameFirst = FaceRecognitionUtils.isSameFaceAndResult(lstFaceEmbeddings, firstFace,
-                    threshold_register) == null;
+                    FACE_THRESHOLD_REGISTER) == null;
             return !isSameFirst;
         }
 
-        return FaceRecognitionUtils.isSameFace(resultFace, firstFace, threshold_register);
+        return FaceRecognitionUtils.isSameFace(resultFace, firstFace, FACE_THRESHOLD_REGISTER);
     }
 
 }
