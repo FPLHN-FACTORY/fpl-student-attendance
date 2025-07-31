@@ -1,0 +1,6 @@
+# Ignore tất cả
+*
+
+# Nhưng giữ lại thư mục AppMobile
+!/AppMobile/
+!/AppMobile/**/*
