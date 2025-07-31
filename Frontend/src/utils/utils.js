@@ -178,3 +178,11 @@ export const rowSelectTable = (selectedRowKeys, isDisabled = () => false, rowKey
     ],
   }
 }
+
+export const isProbablyMobile = () => {
+  return (
+    window.innerWidth <= 768 &&
+    navigator.maxTouchPoints > 1 &&
+    window.matchMedia('(orientation: portrait)').matches
+  )
+}
