@@ -7,7 +7,7 @@ import {
   StyleSheet,
   View,
 } from 'react-native'
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import requestAPI from '@/services/requestApiService'
 import { API_ROUTES } from '@/constants/ApiRoutes'
 import { useGlobalSnackbar } from '@/components/GlobalSnackbarProvider'
@@ -33,7 +33,7 @@ const HistoryTab: React.FC<Props> = ({ animatedValue, showMenuRef }) => {
   const { showLoading, hideLoading } = useLoading()
   const { showError } = useGlobalSnackbar()
 
-  const lstSemester = useRef(useGlobalStore((state) => state.lstSemester)).current
+  const lstSemester = useGlobalStore((state) => state.lstSemester)
 
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPage, setTotalPage] = useState(0)

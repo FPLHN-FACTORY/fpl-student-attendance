@@ -56,6 +56,7 @@ const CustomInputText: React.FC<Props> = ({
         <TextInput
           style={styles.input}
           placeholder={placeholder}
+          placeholderTextColor="#999999"
           value={value}
           onChangeText={onChange}
           secureTextEntry={secureTextEntry}
@@ -102,6 +103,7 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     fontSize: 14,
+    color: Colors.text,
   },
 })
 

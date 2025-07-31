@@ -36,9 +36,8 @@ const RegisterScreen: React.FC<Props> = ({ route, navigation }) => {
   const setStudentInfo = useGlobalStore((state) => state.setStudentInfo)
 
   const [visible, setVisible] = useState(false)
-  const [descriptors, setDescriptors] = useState([])
 
-  const lstFacilities = useRef(useGlobalStore((state) => state.lstFacilities)).current
+  const lstFacilities = useGlobalStore((state) => state.lstFacilities)
   const [facility, setFacility] = useState(lstFacilities?.[0]?.id)
   const [code, setCode] = useState<string>(userCode)
   const [name, setName] = useState<string>(userName)
