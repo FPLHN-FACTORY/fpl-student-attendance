@@ -7,7 +7,7 @@ import { View, StyleSheet, StatusBar, ScrollView, Image } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useGlobalStore } from '@/utils/GlobalStore'
 import { Button, Icon, IconButton, Text } from 'react-native-paper'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import ModalConfirm from '@/components/ModalConfirm'
 import Select from '@/components/form/Select'
 import { PieChart } from 'react-native-chart-kit'
@@ -24,7 +24,7 @@ const DetailScreen: React.FC<Props> = ({ navigation }) => {
   const { showError } = useGlobalSnackbar()
 
   const [visible, setVisible] = useState(false)
-  const lstSemester = useRef(useGlobalStore((state) => state.lstSemester)).current
+  const lstSemester = useGlobalStore((state) => state.lstSemester)
   const [semester, setSemester] = useState(getCurrentSemester(lstSemester)?.id)
 
   const [statistic, setStatistic] = useState({

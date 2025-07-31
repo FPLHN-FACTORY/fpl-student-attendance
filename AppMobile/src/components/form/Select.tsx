@@ -66,7 +66,9 @@ const Select: React.FC<Props> = ({
           keyExtractor={(item) => item.value}
           renderItem={({ item }) => (
             <TouchableOpacity style={styles.option} onPress={() => handleDown(item)}>
-              <Text style={{ marginRight: 10 }}>{item.label}</Text>
+              <Text style={{ marginRight: 10, color: '#333333', fontWeight: 500, flex: 1 }}>
+                {item.label}
+              </Text>
               {item.value === selectedItem?.value && (
                 <Ionicons name="checkmark-sharp" size={20} color={Colors.primary} />
               )}
@@ -113,7 +115,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingTop: 10,
-    paddingBottom: 5,
+    paddingBottom: 10,
     paddingLeft: 20,
     paddingRight: 20,
   },

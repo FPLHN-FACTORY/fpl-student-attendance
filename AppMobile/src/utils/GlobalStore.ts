@@ -1,4 +1,7 @@
 import { create } from 'zustand'
+import { persist, createJSONStorage } from 'zustand/middleware'
+import AsyncStorage from '@react-native-async-storage/async-storage'
+
 import { UserStudent } from '../types/UserStudent'
 import { Facility } from '../types/Facility'
 import { Semester } from '@/types/Semester'
@@ -17,18 +20,26 @@ type StoreState = {
   setOnCallbackAttendance: (val: () => void) => void
 }
 
-export const useGlobalStore = create<StoreState>((set) => ({
-  lstFacilities: [],
-  lstSemester: [],
-  studentInfo: {},
-  dataWebcam: {
-    descriptors: [],
-    image: '',
-  },
-  onCallbackAttendance: () => {},
-  setLstFacilities: (val) => set({ lstFacilities: val }),
-  setLstSemester: (val) => set({ lstSemester: val }),
-  setStudentInfo: (val) => set({ studentInfo: val }),
-  setDataWebcam: (val) => set({ dataWebcam: val }),
-  setOnCallbackAttendance: (val) => set({ onCallbackAttendance: val }),
-}))
+export const useGlobalStore = create<StoreState>()(
+  persist(
+    (set) => ({
+      lstFacilities: [],
+      lstSemester: [],
+      studentInfo: {} as UserStudent,
+      dataWebcam: {
+        descriptors: [],
+        image: '',
+      },
+      onCallbackAttendance: () => {},
+      setLstFacilities: (val) => set({ lstFacilities: val }),
+      setLstSemester: (val) => set({ lstSemester: val }),
+      setStudentInfo: (val) => set({ studentInfo: val }),
+      setDataWebcam: (val) => set({ dataWebcam: val }),
+      setOnCallbackAttendance: (val) => set({ onCallbackAttendance: val }),
+    }),
+    {
+      name: 'global-store',
+      storage: createJSONStorage(() => AsyncStorage),
+    },
+  ),
+)
