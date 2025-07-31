@@ -1,6 +1,6 @@
 import * as AuthSession from 'expo-auth-session'
 import { useAuthRequest } from 'expo-auth-session'
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { View, StyleSheet, Image } from 'react-native'
 import { SECURE_CONSTANT, SERVER_DOMAIN } from '../constants'
 import { useGlobalStore } from '../utils/GlobalStore'
@@ -29,7 +29,7 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
 
   const { showError } = useGlobalSnackbar()
 
-  const lstFacilities = useRef(useGlobalStore((state) => state.lstFacilities)).current
+  const lstFacilities = useGlobalStore((state) => state.lstFacilities)
   const [facility, setFacility] = useState('')
   const setStudentInfo = useGlobalStore((state) => state.setStudentInfo)
 
