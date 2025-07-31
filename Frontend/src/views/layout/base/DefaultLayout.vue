@@ -66,8 +66,6 @@ const formDataSettings = reactive({
   SHIFT_MAX_LATE_ARRIVAL: 0,
   ATTENDANCE_EARLY_CHECKIN: 0,
   EXPIRATION_MINUTE_LOGIN: 0,
-  FACE_THRESHOLD_CHECKIN: 0,
-  FACE_THRESHOLD_REGISTER: 0,
 })
 
 const formRefSettings = ref(null)
@@ -158,11 +156,7 @@ const ruleRequired = [{ required: true, message: 'Vui lòng không bỏ trống 
 const fetchUpdateSettings = () => {
   modalSettings.isLoading = true
   requestAPI
-    .put(`${API_ROUTES_ADMIN.FETCH_DATA_SETTINGS}`, {
-      ...formDataSettings,
-      FACE_THRESHOLD_CHECKIN: parseFloat(formDataSettings.FACE_THRESHOLD_CHECKIN).toFixed(2),
-      FACE_THRESHOLD_REGISTER: parseFloat(formDataSettings.FACE_THRESHOLD_REGISTER).toFixed(2),
-    })
+    .put(`${API_ROUTES_ADMIN.FETCH_DATA_SETTINGS}`, formDataSettings)
     .then(({ data: response }) => {
       message.success(response.message)
       modalSettings.isShow = false
@@ -376,44 +370,6 @@ watch(
           :disabled="modalSettings.isLoading"
           placeholder="Tối thiểu 60"
           @keyup.enter="modalSettings.onOk"
-        />
-      </a-form-item>
-      <a-form-item
-        label="Độ khắt khe checkin/checkout:"
-        name="FACE_THRESHOLD_CHECKIN"
-        :rules="ruleRequired"
-      >
-        <a-slider
-          class="w-100"
-          :min="0"
-          :max="1"
-          :step="0.01"
-          v-model:value="formDataSettings.FACE_THRESHOLD_CHECKIN"
-          :disabled="modalSettings.isLoading"
-          :marks="{
-            0: 'Thấp',
-            0.5: 'Trung bình',
-            1: 'Cao',
-          }"
-        />
-      </a-form-item>
-      <a-form-item
-        label="Độ khắt khe đăng ký mặt:"
-        name="FACE_THRESHOLD_REGISTER"
-        :rules="ruleRequired"
-      >
-        <a-slider
-          class="w-100"
-          :min="0"
-          :max="1"
-          :step="0.01"
-          v-model:value="formDataSettings.FACE_THRESHOLD_REGISTER"
-          :disabled="modalSettings.isLoading"
-          :marks="{
-            0: 'Thấp',
-            0.5: 'Trung bình',
-            1: 'Cao',
-          }"
         />
       </a-form-item>
     </a-form>

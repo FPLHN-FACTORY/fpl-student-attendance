@@ -95,14 +95,6 @@ public class DBGenerator {
             settingHelper.save(SettingKeys.EXPIRATION_MINUTE_LOGIN, "1440");
         }
 
-        if (settings.get(SettingKeys.FACE_THRESHOLD_CHECKIN) == null) {
-            settingHelper.save(SettingKeys.FACE_THRESHOLD_CHECKIN, "0.5");
-        }
-
-        if (settings.get(SettingKeys.FACE_THRESHOLD_REGISTER) == null) {
-            settingHelper.save(SettingKeys.FACE_THRESHOLD_REGISTER, "0.65");
-        }
-
     }
 
     private void generateFacility() {
