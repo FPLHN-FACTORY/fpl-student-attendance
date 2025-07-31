@@ -2,6 +2,7 @@ package udpm.hn.studentattendance.core.student.attendance.service.impl;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -65,6 +66,9 @@ public class SAAttendanceServiceImpl implements SAAttendanceService {
     private final SimpMessagingTemplate messagingTemplate;
 
     private final SettingHelper settingHelper;
+
+    @Value("${app.config.face.threshold_checkin}")
+    private double FACE_THRESHOLD_CHECKIN;
 
     @Override
     public ResponseEntity<?> getAllList(SAFilterAttendanceRequest request) {
@@ -204,9 +208,7 @@ public class SAAttendanceServiceImpl implements SAAttendanceService {
         List<double[]> inputEmbedding = FaceRecognitionUtils.parseEmbeddings(request.getFaceEmbedding());
         double[] storedEmbedding = FaceRecognitionUtils.parseEmbedding(userStudent.getFaceEmbedding());
 
-        double threshold_checkin = settingHelper.getSetting(SettingKeys.FACE_THRESHOLD_CHECKIN, Double.class);
-
-        boolean isMatch = FaceRecognitionUtils.isSameFaces(inputEmbedding, storedEmbedding, threshold_checkin);
+        boolean isMatch = FaceRecognitionUtils.isSameFaces(inputEmbedding, storedEmbedding, FACE_THRESHOLD_CHECKIN);
         if (!isMatch) {
             return RouterHelper.responseError("Xác thực khuôn mặt thất bại");
         }

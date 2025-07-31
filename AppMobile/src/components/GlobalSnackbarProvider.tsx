@@ -39,7 +39,8 @@ export const GlobalSnackbarProvider: React.FC<{ children: React.ReactNode }> = (
   }
 
   const snackbarStyle: ViewStyle = {
-    backgroundColor: Colors.primary,
+    backgroundColor: '#333333',
+    borderRadius: 20,
   }
 
   const action =
@@ -70,7 +71,7 @@ export const GlobalSnackbarProvider: React.FC<{ children: React.ReactNode }> = (
       >
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
           {iconMap[type]}
-          <Text style={{ color: 'white', marginLeft: 8, marginRight: 5, fontSize: 11 }}>
+          <Text style={{ color: 'white', marginLeft: 8, marginRight: 5, fontSize: 13 }}>
             {message}
           </Text>
         </View>

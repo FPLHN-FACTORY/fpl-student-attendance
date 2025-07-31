@@ -17,6 +17,11 @@ onMounted(async () => {
   <div class="video-container">
     <canvas ref="canvas"></canvas>
     <video ref="video" :class="faceIDStore.isFaceChecking()" autoplay muted></video>
+    <div class="counter" v-show="faceIDStore.count">
+      <span class="n">3</span>
+      <span class="n">2</span>
+      <span class="n">1</span>
+    </div>
     <div class="face-id-step" :class="faceIDStore.renderStyle()">
       <div class="dot"></div>
       <div class="dot"></div>

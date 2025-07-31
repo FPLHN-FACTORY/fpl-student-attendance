@@ -1,3 +1,5 @@
+import { backend } from '@tensorflow/tfjs'
+
 export default {
   async: true,
   modelBasePath: '/models/human',
