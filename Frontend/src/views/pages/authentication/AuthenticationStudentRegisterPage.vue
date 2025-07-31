@@ -11,6 +11,7 @@ import { ROUTE_NAMES_API } from '@/router/authenticationRoute'
 import { message, Modal } from 'ant-design-vue'
 import { BASE_URL, GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
 import useFaceIDStore from '@/stores/useFaceIDStore'
+import WebcamFaceID from '@/components/faceid/WebcamFaceID.vue'
 
 const router = useRouter()
 
@@ -19,9 +20,6 @@ const loadingPage = useLoadingStore()
 const faceIDStore = useFaceIDStore()
 
 const isShowCamera = ref(false)
-const video = ref(null)
-const canvas = ref(null)
-const axis = ref(null)
 
 const formData = reactive({
   idFacility: null,
@@ -97,11 +95,11 @@ const fetchSubmitRegister = () => {
 onMounted(async () => {
   document.body.classList.add('bg-login')
   fetchDataFacility()
-  faceIDStore.init(video, canvas, axis, false, (descriptor) => {
+  faceIDStore.setFullStep(false)
+  faceIDStore.setCallback((descriptor) => {
     formData.faceEmbedding = JSON.stringify(descriptor)
     isShowCamera.value = false
   })
-  await faceIDStore.loadModels()
 })
 </script>
 
@@ -112,69 +110,7 @@ onMounted(async () => {
     @cancel="faceIDStore.stopVideo()"
     :footer="null"
   >
-    <div class="video-container">
-      <canvas ref="canvas"></canvas>
-      <video ref="video" :class="faceIDStore.isFaceChecking()" autoplay muted></video>
-      <div class="face-id-step" :class="faceIDStore.renderStyle()">
-        <div class="dot"></div>
-        <div class="dot"></div>
-        <div class="dot"></div>
-        <div class="dot"></div>
-        <div class="dot"></div>
-        <div class="dot"></div>
-        <div class="dot"></div>
-        <div class="dot"></div>
-        <div class="dot"></div>
-        <div class="dot"></div>
-        <div class="dot"></div>
-        <div class="dot"></div>
-        <div class="dot"></div>
-        <div class="dot"></div>
-        <div class="dot"></div>
-        <div class="dot"></div>
-        <div class="dot"></div>
-        <div class="dot"></div>
-        <div class="dot"></div>
-        <div class="dot"></div>
-        <div class="dot"></div>
-        <div class="dot"></div>
-        <div class="dot"></div>
-        <div class="dot"></div>
-        <div class="dot"></div>
-        <div class="dot"></div>
-        <div class="dot"></div>
-        <div class="dot"></div>
-        <div class="dot"></div>
-        <div class="dot"></div>
-        <div class="dot"></div>
-        <div class="dot"></div>
-        <div class="dot"></div>
-        <div class="dot"></div>
-        <div class="dot"></div>
-        <div class="dot"></div>
-        <div class="axis" ref="axis">
-          <div class="a-x">
-            <div class="a-x__left"></div>
-            <div class="a-x__right"></div>
-          </div>
-          <div class="a-y">
-            <div class="a-y__top"></div>
-            <div class="a-y__bottom"></div>
-          </div>
-        </div>
-      </div>
-      <div class="face-background"></div>
-      <div class="face-id-loading" v-show="faceIDStore.isLoading">
-        <div class="bg-loading">
-          <div></div>
-          <div></div>
-          <div></div>
-        </div>
-      </div>
-    </div>
-    <div class="face-id-text" v-show="faceIDStore.textStep != null">
-      {{ faceIDStore.textStep }}
-    </div>
+    <WebcamFaceID />
   </a-modal>
 
   <div class="container">

@@ -28,6 +28,7 @@ import useApplicationStore from '@/stores/useApplicationStore'
 import { LMap, LMarker, LTileLayer } from '@vue-leaflet/vue-leaflet'
 
 import 'leaflet/dist/leaflet.css'
+import WebcamFaceID from '@/components/faceid/WebcamFaceID.vue'
 
 const applicationStore = useApplicationStore()
 const faceIDStore = useFaceIDStore()
@@ -220,7 +221,9 @@ const handleSubmitUpdateInfo = () => {
 
 const handleUpdateInfo = async () => {
   isShowCamera.value = true
-  faceIDStore.init(video, canvas, axis, false, (descriptor) => {
+
+  faceIDStore.setFullStep(false)
+  faceIDStore.setCallback((descriptor) => {
     isShowCamera.value = false
     formData.faceEmbedding = JSON.stringify(descriptor)
     Modal.confirm({
@@ -234,6 +237,7 @@ const handleUpdateInfo = async () => {
       },
     })
   })
+
   await nextTick()
   await faceIDStore.startVideo()
 }
@@ -242,10 +246,12 @@ const handleCheckin = async (item) => {
   formData.idPlanDate = item.idPlanDate
 
   isShowCamera.value = true
-  faceIDStore.init(video, canvas, axis, true, (descriptor) => {
+  faceIDStore.setFullStep(true)
+  faceIDStore.setCallback((descriptor) => {
     formData.faceEmbedding = JSON.stringify(descriptor)
     handleSubmitAttendance()
   })
+
   await nextTick()
   await faceIDStore.startVideo()
 }
@@ -289,7 +295,6 @@ onMounted(async () => {
   fetchDataStudentInfo()
   fetchDataSettings()
   fetchDataList()
-  faceIDStore.loadModels()
   await getCurrentLocation()
   loadingPage.hide()
 })
@@ -325,69 +330,7 @@ watch(
     @cancel="faceIDStore.stopVideo()"
     :footer="null"
   >
-    <div class="video-container">
-      <canvas ref="canvas"></canvas>
-      <video ref="video" :class="faceIDStore.isFaceChecking()" autoplay muted></video>
-      <div class="face-id-step" :class="faceIDStore.renderStyle()">
-        <div class="dot"></div>
-        <div class="dot"></div>
-        <div class="dot"></div>
-        <div class="dot"></div>
-        <div class="dot"></div>
-        <div class="dot"></div>
-        <div class="dot"></div>
-        <div class="dot"></div>
-        <div class="dot"></div>
-        <div class="dot"></div>
-        <div class="dot"></div>
-        <div class="dot"></div>
-        <div class="dot"></div>
-        <div class="dot"></div>
-        <div class="dot"></div>
-        <div class="dot"></div>
-        <div class="dot"></div>
-        <div class="dot"></div>
-        <div class="dot"></div>
-        <div class="dot"></div>
-        <div class="dot"></div>
-        <div class="dot"></div>
-        <div class="dot"></div>
-        <div class="dot"></div>
-        <div class="dot"></div>
-        <div class="dot"></div>
-        <div class="dot"></div>
-        <div class="dot"></div>
-        <div class="dot"></div>
-        <div class="dot"></div>
-        <div class="dot"></div>
-        <div class="dot"></div>
-        <div class="dot"></div>
-        <div class="dot"></div>
-        <div class="dot"></div>
-        <div class="dot"></div>
-        <div class="axis" ref="axis">
-          <div class="a-x">
-            <div class="a-x__left"></div>
-            <div class="a-x__right"></div>
-          </div>
-          <div class="a-y">
-            <div class="a-y__top"></div>
-            <div class="a-y__bottom"></div>
-          </div>
-        </div>
-      </div>
-      <div class="face-background"></div>
-      <div class="face-id-loading" v-show="faceIDStore.isLoading">
-        <div class="bg-loading">
-          <div></div>
-          <div></div>
-          <div></div>
-        </div>
-      </div>
-    </div>
-    <div class="face-id-text" v-show="faceIDStore.textStep != null">
-      {{ faceIDStore.textStep }}
-    </div>
+    <WebcamFaceID />
   </a-modal>
 
   <div class="container-fluid">

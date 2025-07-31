@@ -17,7 +17,7 @@ public class GlobalRestExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse> handleException(Exception ex) {
-        logger.error(ex.getMessage(), ex);
+        logger.error(ex.getMessage());
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(ApiResponse.error("Có lỗi xảy ra. Vui lòng thử lại sau ít phút", ex.getMessage()));
     }

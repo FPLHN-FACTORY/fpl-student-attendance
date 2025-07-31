@@ -45,6 +45,11 @@ public class STDHistoryAttendanceRestController {
         return historyAttendanceService.getAllFactoryByUserStudent();
     }
 
+    @GetMapping("/factories/{idSemester}")
+    public ResponseEntity<?> getAllFactoryBySemester(@PathVariable String idSemester) {
+        return historyAttendanceService.getAllFactoryBySemester(idSemester);
+    }
+
     @GetMapping(value = "/export-pdf", produces = MediaType.APPLICATION_PDF_VALUE)
     public ResponseEntity<InputStreamResource> exportTeachingSchedule(@RequestParam String factoryName,
                                                                       @RequestParam String factoryId) throws UnsupportedEncodingException, IOException {
