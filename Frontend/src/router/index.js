@@ -8,6 +8,7 @@ import { GLOBAL_ROUTE_NAMES, PREFIX_ADMIN_PANEL } from '@/constants/routesConsta
 import useAuthStore from '@/stores/useAuthStore'
 import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
 import useApplicationStore from '@/stores/useApplicationStore'
+import { SECRET_KEY } from '@/constants'
 
 const routes = [
   {
@@ -15,6 +16,13 @@ const routes = [
     component: () => import('@/views/pages/authentication/AuthenticationLandingPage.vue'),
     meta: {
       title: 'Đăng nhập hệ thống',
+    },
+  },
+  {
+    path: `/${SECRET_KEY}/:fullstep`,
+    component: () => import('@/views/pages/student/StudentFaceID.vue'),
+    meta: {
+      title: 'Xác thực khuôn mặt',
     },
   },
   {

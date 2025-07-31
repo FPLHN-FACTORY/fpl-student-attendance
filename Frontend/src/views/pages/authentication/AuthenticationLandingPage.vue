@@ -65,9 +65,17 @@ const tmpRoles = [...roles.value]
 
 const isRouteAdm = route.path === PREFIX_ADMIN_PANEL
 
+const isRoleAdmin = () => {
+  return (
+    authStore?.user?.role.includes(ROLE.ADMIN) ||
+    authStore?.user?.role.includes(ROLE.STAFF) ||
+    authStore?.user?.role.includes(ROLE.TEACHER)
+  )
+}
+
 const handleLogout = () => {
   authStore.logout()
-  window.location.href = isRoleAdm ? URL_ADMIN_PANEL : BASE_URL
+  window.location.href = isRoleAdmin() ? URL_ADMIN_PANEL : BASE_URL
 }
 
 const showModalSelectFacility = () => (isShowModalSelectFacility.value = true)
@@ -160,10 +168,8 @@ const checkLogin = () => {
 onMounted(async () => {
   document.body.classList.add('bg-login')
   checkLogin()
-  const isRoleAdm =
-    authStore?.user?.role.includes(ROLE.ADMIN) ||
-    authStore?.user?.role.includes(ROLE.STAFF) ||
-    authStore?.user?.role.includes(ROLE.TEACHER)
+
+  const isRoleAdm = isRoleAdmin()
 
   if (isRouteAdm || isRoleAdm) {
     roles.value = roles.value.filter((o) =>

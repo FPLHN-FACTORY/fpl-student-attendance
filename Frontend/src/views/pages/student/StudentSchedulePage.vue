@@ -47,7 +47,7 @@ const columns = autoAddColumnWidth([
   { title: 'Link', dataIndex: 'link', key: 'link' },
   { title: 'Địa điểm', dataIndex: 'location', key: 'location' },
   { title: 'Tên giảng viên', dataIndex: 'staffName', key: 'staffName' },
-  { title: 'Mô tả', dataIndex: 'description', key: 'description' },
+  { title: 'Mô tả', dataIndex: 'description', key: 'description', width: 500 },
 ])
 
 const getTimeRange = () => {
@@ -106,7 +106,6 @@ const handleShowDescription = (text) => {
 const exportToExcel = async () => {
   isLoadingExport.value = true
   try {
-    // Fetch all data for export
     const { now, max } = getTimeRange()
     const response = await requestAPI.get(API_ROUTES_STUDENT.FETCH_DATA_STUDENT_PLAN + '/list', {
       params: {
@@ -287,7 +286,7 @@ onMounted(() => {
         <a-card :bordered="false" class="cart">
           <template #title>
             <UnorderedListOutlined />
-            Lịch sắp tới
+            Lịch diễn ra
           </template>
 
           <div class="d-flex justify-content-end mb-3">
@@ -334,18 +333,19 @@ onMounted(() => {
                   }}
                 </a-tag>
               </template>
-              <template v-if="column.dataIndex === 'description'">
+              <template v-else-if="column.dataIndex === 'description'">
                 <a-typography-link
                   v-if="record.description"
                   @click="handleShowDescription(record.description)"
-                  >Chi tiết</a-typography-link
+                  >Xem mô tả</a-typography-link
                 >
                 <span v-else>Không có mô tả</span>
               </template>
               <template v-else-if="column.dataIndex === 'link'">
                 <a v-if="record.link" :href="record.link" target="_blank">{{ record.link }}</a>
+                <span v-else>Không có link</span>
               </template>
-              <template v-if="column.dataIndex === 'factoryName'">
+              <template v-else-if="column.dataIndex === 'factoryName'">
                 <a-badge status="processing" :text="record.factoryName" />
               </template>
             </template>

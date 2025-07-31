@@ -85,6 +85,13 @@ public class STDHistoryAttendanceImpl implements STDHistoryAttendanceService {
         }
 
         @Override
+        public ResponseEntity<?> getAllFactoryBySemester(String idSemester) {
+                List<Factory> factories = historyAttendanceFactoryExtendRepository.getAllByUserStudentAndSemester(
+                        sessionHelper.getUserId(), idSemester);
+                return RouterHelper.responseSuccess("Lấy dữ liệu nhóm xưởng thành công", factories);
+        }
+
+        @Override
         public ByteArrayInputStream exportHistoryAttendance(List<STDHistoryAttendanceResponse> attendanceResponses,
                         String factoryName) {
                 Document document = new Document();
@@ -157,7 +164,7 @@ public class STDHistoryAttendanceImpl implements STDHistoryAttendanceService {
                                 pdfTable.addCell(learningDayCell);
 
                                 PdfPCell shiftCell = new PdfPCell(
-                                                new Phrase(String.valueOf(attendanceResponse.getPlanDateShift()),
+                                                new Phrase(String.valueOf(attendanceResponse.getShift()),
                                                                 cellFont));
                                 styleCell(shiftCell, backgroundColor);
                                 pdfTable.addCell(shiftCell);

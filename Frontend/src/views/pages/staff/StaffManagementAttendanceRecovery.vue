@@ -577,12 +577,15 @@ onMounted(() => {
 
   <a-modal
     v-model:open="modalAddEvent"
-    title="Thêm sự kiện khôi phục điểm danh"
     :okButtonProps="{ loading: modalAddLoading }"
     @ok="handleAddEvent"
     @cancel="clearData"
     @close="clearData"
   >
+    <template #title>
+      <PlusOutlined class="me-2 text-primary" />
+      Thêm sự kiện khôi phục điểm danh
+    </template>
     <a-form :model="newEvent" layout="vertical">
       <a-form-item label="Tên sự kiện" required>
         <a-input v-model:value="newEvent.name" placeholder="Nhập tên sự kiện" />
@@ -603,12 +606,15 @@ onMounted(() => {
 
   <a-modal
     v-model:open="modalEditEvent"
-    title="Sửa sự kiện khôi phục điểm danh"
     :okButtonProps="{ loading: modalUpdateLoading }"
     @ok="handleEditEvent"
     @cancel="clearData"
     @close="clearData"
   >
+    <template #title>
+      <EditFilled class="me-2 text-primary" />
+      Sửa sự kiện khôi phục điểm danh
+    </template>
     <a-form :model="editEvent" layout="vertical">
       <a-form-item label="Tên sự kiện" required>
         <a-input v-model:value="editEvent.name" placeholder="Nhập tên sự kiện" />

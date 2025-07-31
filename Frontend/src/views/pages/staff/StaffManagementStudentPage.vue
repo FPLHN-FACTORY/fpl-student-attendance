@@ -65,7 +65,7 @@ const detailStudent = reactive({
 // Cấu hình cột cho bảng
 const columns = ref(
   autoAddColumnWidth([
-    { title: 'STT', dataIndex: 'index', key: 'index' },
+    { title: '#', dataIndex: 'index', key: 'index' },
     { title: 'Mã sinh viên', dataIndex: 'studentCode', key: 'studentCode' },
     { title: 'Tên sinh viên', dataIndex: 'studentName', key: 'studentName' },
     { title: 'Email', dataIndex: 'studentEmail', key: 'studentEmail' },
@@ -504,12 +504,15 @@ onMounted(() => {
     <!-- Modal thêm sinh viên -->
     <a-modal
       v-model:open="modalAdd"
-      title="Thêm sinh viên"
       @ok="handleAddStudent"
       :okButtonProps="{ loading: isLoading }"
       @cancel="clearNewStudentForm"
       @close="clearNewStudentForm"
     >
+      <template #title>
+        <PlusOutlined class="me-2 text-primary" />
+        Thêm sinh viên
+      </template>
       <a-form layout="vertical">
         <a-form-item label="Mã sinh viên" required>
           <a-input
@@ -538,12 +541,15 @@ onMounted(() => {
     <!-- Modal cập nhật sinh viên -->
     <a-modal
       v-model:open="modalUpdate"
-      title="Cập nhật sinh viên"
       @ok="updateStudent"
       :okButtonProps="{ loading: isLoading }"
       @cancel="clearUpdateStudentForm"
       @close="clearUpdateStudentForm"
     >
+      <template #title>
+        <EditFilled class="me-2 text-primary" />
+        Cập nhật sinh viên
+      </template>
       <a-form layout="vertical">
         <a-form-item label="Mã sinh viên" required>
           <a-input

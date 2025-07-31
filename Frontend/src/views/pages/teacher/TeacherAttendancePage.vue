@@ -13,24 +13,21 @@ import { Client } from '@stomp/stompjs'
 import { ATTENDANCE_STATUS, STATUS_REQUIRED_ATTENDANCE } from '@/constants'
 import { autoAddColumnWidth, formatDate } from '@/utils/utils'
 
-// Lấy planDateId từ query
 const route = useRoute()
 const planDateId = route.query.idPlanDate
 
 const breadcrumbStore = useBreadcrumbStore()
 const loadingStore = useLoadingStore()
 
-// Breadcrumb
 const breadcrumb = ref([
   { name: GLOBAL_ROUTE_NAMES.TEACHER_PAGE, breadcrumbName: 'Giảng viên' },
-  { name: ROUTE_NAMES.MANAGEMENT_SCHEDULE, breadcrumbName: 'Lịch giảng dạy' },
+  { name: ROUTE_NAMES.MANAGEMENT_SCHEDULE, breadcrumbName: 'Lịch quản lý' },
   { name: ROUTE_NAMES.MANAGEMENT_STUDENT_ATTENDANCE, breadcrumbName: 'Điểm danh' },
 ])
 
-// Danh sách students
+
 const students = ref([])
 
-// Cột bảng
 const columns = ref(
   autoAddColumnWidth([
     { title: '#', dataIndex: 'orderNumber', key: 'orderNumber' },
@@ -54,7 +51,6 @@ const columns = ref(
   ]),
 )
 
-// Fetch students + trạng thái hiện tại
 const fetchStudentAttendance = async () => {
   loadingStore.show()
   try {
@@ -73,7 +69,6 @@ const fetchStudentAttendance = async () => {
   }
 }
 
-// Khi switch thay đổi: chỉ cập nhật client
 const handleChangeStatus = (record, checked) => {
   if (!checked) {
     return (record.status =
@@ -140,7 +135,6 @@ const connectSocket = () => {
   client.activate()
 }
 
-// onMounted
 onMounted(() => {
   breadcrumbStore.setRoutes(breadcrumb.value)
   fetchStudentAttendance()
@@ -158,7 +152,7 @@ onMounted(() => {
             gian đó, hệ thống sẽ khóa chức năng điểm danh.
           </p>
           <p class="p-attention">
-            2. Mặc định trạng thái điểm danh của sinh viên là Có mặt. Giảng viên chuyển từ có mặt
+            2. Mặc định trạng thái điểm danh của sinh viên là Vắng mặt. Giảng viên chuyển từ có mặt
             thành vắng mặt nếu SV vi phạm một trong các nội quy như ra ngoài không lý do, mất trật
             tự ...
           </p>

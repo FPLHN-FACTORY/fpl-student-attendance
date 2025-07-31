@@ -430,12 +430,15 @@ onMounted(() => {
   <!-- Modal Thêm nhóm xưởng -->
   <a-modal
     v-model:open="modalAdd"
-    title="Thêm nhóm xưởng"
     @ok="submitAddFactory"
     :okButtonProps="{ loading: isLoading }"
     @cancel="clearData"
     @close="clearData"
   >
+    <template #title>
+      <PlusOutlined class="me-2 text-primary" />
+      Thêm nhóm xưởng
+    </template>
     <a-form :model="newFactory" layout="vertical">
       <a-form-item label="Tên nhóm xưởng" required>
         <a-input
@@ -450,7 +453,7 @@ onMounted(() => {
           placeholder="-- Mô tả nhóm xưởng --"
         />
       </a-form-item>
-      <a-form-item label="Giảng viên giảng dạy" required>
+      <a-form-item label="Giảng viên quản lý" required>
         <a-select
           v-if="staffs.length > 0"
           v-model:value="newFactory.idUserStaff"
@@ -504,12 +507,15 @@ onMounted(() => {
   <!-- Modal Cập nhật nhóm xưởng -->
   <a-modal
     v-model:open="modalUpdate"
-    title="Cập nhật nhóm xưởng"
     @ok="submitUpdateFactory"
     :okButtonProps="{ loading: isLoading }"
     @cancel="clearData"
     @close="clearData"
   >
+    <template #title>
+      <EditFilled class="me-2 text-primary" />
+      Cập nhật nhóm xưởng
+    </template>
     <a-form :model="detailFactory" layout="vertical">
       <a-form-item label="Tên nhóm xưởng" required>
         <a-input v-model:value="detailFactory.factoryName" @keyup.enter="submitUpdateFactory" />
@@ -517,7 +523,7 @@ onMounted(() => {
       <a-form-item label="Mô tả nhóm xưởng">
         <a-textarea v-model:value="detailFactory.factoryDescription" />
       </a-form-item>
-      <a-form-item label="Giảng viên giảng dạy" required>
+      <a-form-item label="Giảng viên quản lý" required>
         <a-select
           v-if="staffs.length > 0"
           v-model:value="detailFactory.idUserStaff"

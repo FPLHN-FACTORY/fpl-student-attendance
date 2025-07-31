@@ -577,12 +577,15 @@ onMounted(() => {
 
     <a-modal
       v-model:open="modalAdd"
-      title="Thêm học kỳ"
       @ok="handleAddSemester"
       :okButtonProps="{ loading: modalAddLoading }"
       @cancel="clearFormAdd"
       @close="clearFormAdd"
     >
+      <template #title>
+        <PlusOutlined class="me-2 text-primary" />
+        Thêm học kỳ
+      </template>
       <a-form layout="vertical">
         <a-form-item label="Tên học kỳ" required>
           <a-select
@@ -620,10 +623,13 @@ onMounted(() => {
 
     <a-modal
       v-model:open="modalUpdate"
-      title="Cập nhật học kỳ"
       @ok="updateSemester"
       :okButtonProps="{ loading: modalUpdateLoading }"
     >
+      <template #title>
+        <EditFilled class="me-2 text-primary" />
+        Cập nhật học kỳ
+      </template>
       <a-form layout="vertical">
         <a-form-item label="Tên học kỳ" required>
           <a-select
@@ -644,17 +650,25 @@ onMounted(() => {
             format="DD/MM/YYYY"
             @keyup.enter="updateSemester"
             :disabled="
-              detailSemester.fromDate && isStartDateBeforeToday(detailSemester.originalFromDate)
+              (detailSemester.fromDate && isStartDateBeforeToday(detailSemester.originalFromDate)) ||
+              isSemesterInProgress(detailSemester)
             "
             :disabledDate="shouldDisableStartDate"
           />
           <div
             v-if="
-              detailSemester.fromDate && isStartDateBeforeToday(detailSemester.originalFromDate)
+              (detailSemester.fromDate && isStartDateBeforeToday(detailSemester.originalFromDate)) ||
+              isSemesterInProgress(detailSemester)
             "
             class="ant-form-item-explain"
           >
-            <div class="ant-form-item-explain-error">Không thể chỉnh sửa ngày bắt đầu đã qua</div>
+            <div class="ant-form-item-explain-error">
+              {{ 
+                isSemesterInProgress(detailSemester) 
+                  ? 'Không thể chỉnh sửa ngày bắt đầu của học kỳ đang diễn ra'
+                  : 'Không thể chỉnh sửa ngày bắt đầu đã qua'
+              }}
+            </div>
           </div>
         </a-form-item>
         <a-form-item label="Ngày kết thúc" required>

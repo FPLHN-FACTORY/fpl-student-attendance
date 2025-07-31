@@ -70,12 +70,10 @@ const filter = reactive({
 
 const pagination = ref({ ...DEFAULT_PAGINATION })
 
-// Biến loading cho bảng và modal
 const isLoading = ref(false)
 const modalAddLoading = ref(false)
 const modalUpdateLoading = ref(false)
 
-// Modal hiển thị
 const modalAdd = ref(false)
 const modalUpdate = ref(false)
 
@@ -574,12 +572,15 @@ onMounted(() => {
     <!-- Modal Thêm nhân sự -->
     <a-modal
       v-model:open="modalAdd"
-      title="Thêm nhân sự"
       @ok="handleAddStaff"
       :okButtonProps="{ loading: modalAddLoading }"
       @cancel="clearNewStaffForm"
       @close="clearNewStaffForm"
     >
+      <template #title>
+        <PlusOutlined class="me-2 text-primary" />
+        Thêm nhân sự
+      </template>
       <a-form layout="vertical">
         <a-form-item label="Mã nhân sự" required>
           <a-input
@@ -650,10 +651,13 @@ onMounted(() => {
 
     <a-modal
       v-model:open="modalUpdate"
-      title="Cập nhật nhân sự"
       @ok="updateStaff"
       :okButtonProps="{ loading: modalUpdateLoading }"
     >
+      <template #title>
+        <EditFilled class="me-2 text-primary" />
+        Cập nhật nhân sự
+      </template>
       <a-form layout="vertical">
         <a-form-item label="Mã nhân sự" required>
           <a-input

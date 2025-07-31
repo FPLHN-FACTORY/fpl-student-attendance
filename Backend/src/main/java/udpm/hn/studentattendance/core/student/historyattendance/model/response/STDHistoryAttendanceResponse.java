@@ -10,7 +10,7 @@ public interface STDHistoryAttendanceResponse {
 
     Long getPlanDateEndDate();
 
-    String getPlanDateShift();
+    String getShift();
 
     String getStatusAttendance();
 
@@ -21,6 +21,8 @@ public interface STDHistoryAttendanceResponse {
     Integer getLateArrival();
 
     String getFactoryId();
+
+    Integer getType();
 
     Long getCheckIn();
 
