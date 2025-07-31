@@ -16,7 +16,7 @@ public class ADCreateUpdateStaffRequest {
     @Length(max = EntityProperties.LENGTH_NAME, message = "Tên chỉ được tối đa " + EntityProperties.LENGTH_NAME + " ký tự")
     private String name;
 
-    @NotBlank(message = "Mã nhân viên không được để trống")
+    @NotBlank(message = "Mã nhân sự không được để trống")
     @Length(max = EntityProperties.LENGTH_CODE, message = "Mã nhân viên chỉ được tối đa " + EntityProperties.LENGTH_CODE + " ký tự")
     private String staffCode;
 

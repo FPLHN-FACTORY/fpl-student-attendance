@@ -650,17 +650,25 @@ onMounted(() => {
             format="DD/MM/YYYY"
             @keyup.enter="updateSemester"
             :disabled="
-              detailSemester.fromDate && isStartDateBeforeToday(detailSemester.originalFromDate)
+              (detailSemester.fromDate && isStartDateBeforeToday(detailSemester.originalFromDate)) ||
+              isSemesterInProgress(detailSemester)
             "
             :disabledDate="shouldDisableStartDate"
           />
           <div
             v-if="
-              detailSemester.fromDate && isStartDateBeforeToday(detailSemester.originalFromDate)
+              (detailSemester.fromDate && isStartDateBeforeToday(detailSemester.originalFromDate)) ||
+              isSemesterInProgress(detailSemester)
             "
             class="ant-form-item-explain"
           >
-            <div class="ant-form-item-explain-error">Không thể chỉnh sửa ngày bắt đầu đã qua</div>
+            <div class="ant-form-item-explain-error">
+              {{ 
+                isSemesterInProgress(detailSemester) 
+                  ? 'Không thể chỉnh sửa ngày bắt đầu của học kỳ đang diễn ra'
+                  : 'Không thể chỉnh sửa ngày bắt đầu đã qua'
+              }}
+            </div>
           </div>
         </a-form-item>
         <a-form-item label="Ngày kết thúc" required>
