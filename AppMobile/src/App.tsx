@@ -1,3 +1,6 @@
+import { enableScreens } from 'react-native-screens'
+enableScreens()
+
 import { NavigationContainer } from '@react-navigation/native'
 import { RootStackParamList } from './types/RootStackParamList'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'

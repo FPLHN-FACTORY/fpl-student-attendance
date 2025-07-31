@@ -33,6 +33,8 @@ const RegisterScreen: React.FC<Props> = ({ route, navigation }) => {
 
   const webviewRef = useRef<WebViewType>(null)
 
+  const setStudentInfo = useGlobalStore((state) => state.setStudentInfo)
+
   const [visible, setVisible] = useState(false)
   const [descriptors, setDescriptors] = useState([])
 
@@ -51,6 +53,24 @@ const RegisterScreen: React.FC<Props> = ({ route, navigation }) => {
 
   const insets = useSafeAreaInsets()
 
+  const fetchDatUser = async () => {
+    showLoading()
+    requestAPI
+      .get(API_ROUTES.FETCH_DATA_STUDENT_INFO)
+      .then(async ({ data: response }) => {
+        const userData = response?.data
+        setStudentInfo(userData)
+        navigation.replace('Dashboard')
+      })
+      .catch(async () => {
+        showError('Vui lòng đăng nhập lại', 2000)
+        handleLogout()
+      })
+      .finally(() => {
+        hideLoading()
+      })
+  }
+
   const handleSubmit = () => {
     setVisible(false)
     showLoading()
@@ -65,7 +85,8 @@ const RegisterScreen: React.FC<Props> = ({ route, navigation }) => {
         showSuccess(response.message, 2000)
         await saveToken(SECURE_CONSTANT.ACCESS_TOKEN, response.data.accessToken)
         await saveToken(SECURE_CONSTANT.REFRESH_TOKEN, response.data.refreshToken)
-        navigation.replace('Dashboard')
+
+        await fetchDatUser()
       })
       .catch((error) => {
         showError(error.response?.data?.message || 'Có lỗi xảy ra. Vui lòng thử lại', 2000)
