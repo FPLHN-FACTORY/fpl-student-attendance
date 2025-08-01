@@ -31,12 +31,14 @@ const useFaceIDStore = defineStore('faceID', () => {
   const isLoading = ref(true)
   const isLoadingModels = ref(false)
   const isReady = ref(false)
+  const isSuccess = ref(false)
 
   const step = ref(0)
   const textStep = ref('Vui lòng đợi camera...')
   const dataImage = ref(null)
-  const count = ref(false)
+  const count = ref(0)
   const embedding = ref(null)
+  const prevEmbedding = ref(null)
   const lstDescriptor = ref([])
 
   const renderTextStep = async (text) => {
@@ -49,7 +51,7 @@ const useFaceIDStore = defineStore('faceID', () => {
         case 0:
           return (textStep.value = 'Vui lòng nhìn thẳng')
         case 1:
-          return (textStep.value = 'Vui lòng giữ nguyên')
+          return (textStep.value = 'Xác minh hoàn tất')
         default:
           return (textStep.value = 'Vui lòng nhìn vào camera')
       }
@@ -65,7 +67,7 @@ const useFaceIDStore = defineStore('faceID', () => {
       case 3:
         return (textStep.value = 'Vui lòng nhìn thẳng')
       case 4:
-        return (textStep.value = 'Vui lòng giữ nguyên')
+        return (textStep.value = 'Xác minh hoàn tất')
       default:
         return (textStep.value = 'Vui lòng nhìn vào camera')
     }
@@ -358,9 +360,8 @@ const useFaceIDStore = defineStore('faceID', () => {
     }
 
     const pushDescriptor = async (max) => {
-      count.value = false
+      count.value = 0
       const descriptor = normalize(Array.from(embedding.value))
-
       if (!descriptor.length) {
         return rollback()
       }
@@ -378,34 +379,32 @@ const useFaceIDStore = defineStore('faceID', () => {
         return (step.value = 0)
       }
 
-      if (
-        cosineSimilarity(
-          lstDescriptor.value[0],
-          lstDescriptor.value[lstDescriptor.value.length - 1],
-        ) < 0.75
-      ) {
+      const similarity = human.match.similarity(
+        lstDescriptor.value[0],
+        lstDescriptor.value[lstDescriptor.value.length - 1],
+      )
+
+      if (similarity < 0.75) {
         return rollback('Vui lòng xác nhận lại')
       }
+
+      isSuccess.value = true
       renderTextStep('Xác minh hoàn tất')
       captureFace()
-      typeof onSuccess == 'function' && onSuccess(toRaw(lstDescriptor.value))
+      try {
+        typeof onSuccess == 'function' && onSuccess(toRaw(lstDescriptor.value))
+      } catch (error) {
+        console.error(error)
+      }
+
+      await delay(3000)
       lstDescriptor.value = []
       faceDescriptor = null
+      step.value = 0
+      isSuccess.value = false
     }
 
     const delay = (ms) => new Promise((res) => setTimeout(res, ms))
-
-    const cosineSimilarity = (vec1, vec2) => {
-      let dot = 0,
-        normA = 0,
-        normB = 0
-      for (let i = 0; i < vec1.length; i++) {
-        dot += vec1[i] * vec2[i]
-        normA += vec1[i] * vec1[i]
-        normB += vec2[i] * vec2[i]
-      }
-      return dot / (Math.sqrt(normA) * Math.sqrt(normB))
-    }
 
     const isLiveness = async () => {
       let lst_spoofing = []
@@ -482,33 +481,59 @@ const useFaceIDStore = defineStore('faceID', () => {
       return progress.filter((o) => o).length > 2
     }
 
-    const getBestEmbedding = async () => {
-      embedding.value = null
-      while (count.value) {
-        renderTextStep('Vui lòng giữ nguyên...')
-        const result = await human.detect(video.value)
-        const face = result.face?.[0]
+    const getEmbedding = async () => {
+      const result = await human.detect(video.value)
+      const face = result.face?.[0]
 
-        if (!face) {
-          return (embedding.value = [])
-        }
-
-        if (!(await cropFace(face)) || !isInsideCenter(face.boxRaw)) {
-          continue
-        }
-
-        if (await isInvalidSize(face)) {
-          return (embedding.value = [])
-        }
-
-        const result2 = await human.detect(canvas.value)
-        const face2 = result2.face?.[0]
-
-        if (!face2) {
-          return []
-        }
-        return (embedding.value = face2.embedding)
+      if (
+        !face ||
+        !(await cropFace(face)) ||
+        !isInsideCenter(face.boxRaw) ||
+        (!isFullStep && (await isInvalidSize(face)))
+      ) {
+        return []
       }
+
+      const result2 = await human.detect(canvas.value)
+      const face2 = result2.face?.[0]
+
+      if (!face2) {
+        return []
+      }
+      return face2.embedding
+    }
+
+    const getBestEmbedding = async (startCount, endCount, callbackError) => {
+      await delay(1000)
+      embedding.value = null
+      count.value = startCount
+      while (count.value > endCount) {
+        renderTextStep('Vui lòng giữ nguyên...')
+
+        const [_, currentEmbedding] = await Promise.all([delay(1000), getEmbedding()])
+
+        if (!currentEmbedding || currentEmbedding.length === 0) {
+          embedding.value = null
+          callbackError && callbackError()
+          return (count.value = 0)
+        }
+
+        if (prevEmbedding.value && !isSameEmbedding(prevEmbedding.value, currentEmbedding)) {
+          embedding.value = null
+          renderTextStep('Vui lòng không cử động')
+          callbackError && callbackError()
+          return (count.value = 0)
+        }
+
+        prevEmbedding.value = currentEmbedding
+        embedding.value = currentEmbedding
+        count.value -= 1
+      }
+    }
+
+    const isSameEmbedding = (prevEmbedding, currentEmbedding) => {
+      const similarity = human.match.similarity(prevEmbedding, currentEmbedding)
+      return similarity >= 0.95
     }
 
     const getFaceBox = (face) => {
@@ -718,22 +743,16 @@ const useFaceIDStore = defineStore('faceID', () => {
       }
 
       if (faceDescriptor) {
-        // const similarity = human.match.similarity(faceDescriptor, detection.embedding)
-        // if (similarity < 0.5) {
-        //   return
-        // }
-
         isReady.value = true
-        count.value = false
+        count.value = 0
 
         renderTextStep()
 
         if (isFullStep) {
           if (step.value === 0 && angle === 0) {
             clearDescriptor()
-            count.value = true
-            getBestEmbedding()
-            await delay(3000)
+            prevEmbedding.value = null
+            await getBestEmbedding(3, 1)
             if (!embedding.value || embedding.length < 1) {
               return
             }
@@ -741,17 +760,21 @@ const useFaceIDStore = defineStore('faceID', () => {
             return (step.value = 1)
           }
           if (step.value === 1) {
-            step.value = 2
-            getBestEmbedding()
+            await getBestEmbedding(1, 0, () => {
+              step.value = 0
+            })
+            if (!embedding.value || embedding.length < 1) {
+              return
+            }
             await pushDescriptor(2)
+            step.value = 2
             return await submit()
           }
         } else {
           if (step.value === 0 && angle === 0) {
             clearDescriptor()
-            count.value = true
-            getBestEmbedding()
-            await delay(3000)
+            prevEmbedding.value = null
+            await getBestEmbedding(3, 0)
             if (!embedding.value || embedding.length < 1) {
               return
             }
@@ -765,9 +788,8 @@ const useFaceIDStore = defineStore('faceID', () => {
             return (step.value = 3)
           }
           if (step.value === 3 && angle === 0) {
-            count.value = true
-            getBestEmbedding()
-            await delay(3000)
+            prevEmbedding.value = null
+            await getBestEmbedding(3, 1)
             if (!embedding.value || embedding.length < 1) {
               return
             }
@@ -802,22 +824,11 @@ const useFaceIDStore = defineStore('faceID', () => {
     requestAnimationFrame(detectLoop)
   }
 
-  const isFaceChecking = () => {
-    if (isFullStep) {
-      return {
-        ready: isReady.value && !(step.value > 0),
-      }
-    }
-    return {
-      ready: isReady.value && !(step.value > 3),
-    }
-  }
-
   const renderStyle = () => {
     if (isFullStep) {
       return {
         checking: step.value > 0,
-        fullStep: step.value > 0,
+        fullStep: isSuccess.value,
       }
     }
     return {
@@ -825,7 +836,7 @@ const useFaceIDStore = defineStore('faceID', () => {
       step1: step.value > 0,
       step2: step.value > 1,
       step3: step.value > 2,
-      step4: step.value > 3,
+      step4: isSuccess.value,
     }
   }
 
@@ -844,7 +855,8 @@ const useFaceIDStore = defineStore('faceID', () => {
     step,
     textStep,
     isLoading,
-    isFaceChecking,
+    isReady,
+    isSuccess,
     count,
   }
 })
