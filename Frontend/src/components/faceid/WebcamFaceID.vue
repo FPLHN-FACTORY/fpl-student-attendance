@@ -14,14 +14,15 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="video-container">
+  <div class="video-container" :class="{ success: faceIDStore.isSuccess }">
     <canvas ref="canvas"></canvas>
-    <video ref="video" :class="faceIDStore.isFaceChecking()" autoplay muted></video>
-    <div class="counter" v-show="faceIDStore.count">
-      <span class="n">3</span>
-      <span class="n">2</span>
-      <span class="n">1</span>
-    </div>
+    <video ref="video" :class="{ ready: faceIDStore.isReady }" autoplay muted></video>
+    <transition name="fade-scale" mode="out-in">
+      <div class="counter" v-if="faceIDStore.count > 0" :key="faceIDStore.count">
+        {{ faceIDStore.count }}
+      </div>
+    </transition>
+
     <div class="face-id-step" :class="faceIDStore.renderStyle()">
       <div class="dot"></div>
       <div class="dot"></div>

@@ -31,7 +31,7 @@ const dataStats = reactive({
   fail: 0,
   process: 0,
   complete: 0,
-  notStarted: 0
+  notStarted: 0,
 })
 
 const lstSemester = ref([])
@@ -108,7 +108,7 @@ const pieChartData = ref({
       backgroundColor: ['#52c41a', '#ff4d4f'],
       data: [],
       borderWidth: 0,
-    }
+    },
   ],
 })
 
@@ -132,32 +132,35 @@ const fetchDataAllStats = () => {
       },
     })
     .then(({ data: response }) => {
-      
       if (response.data.stdStatisticsStatResponse) {
         Object.assign(dataStats, response.data.stdStatisticsStatResponse)
-      }      
+      }
 
-      const attendanceData = response.data.attendanceChartResponses || { totalPresent: 0, totalAbsent: 0, totalShift: 0 }
+      const attendanceData = response.data.attendanceChartResponses || {
+        totalPresent: 0,
+        totalAbsent: 0,
+        totalShift: 0,
+      }
 
-      dataStats.totalAttendance = attendanceData.totalPresent || (attendanceData.totalShift - attendanceData.totalAbsent) || 0
+      dataStats.totalAttendance =
+        attendanceData.totalPresent || attendanceData.totalShift - attendanceData.totalAbsent || 0
       dataStats.totalAbsent = attendanceData.totalAbsent || 0
       dataStats.totalShift = attendanceData.totalShift || 0
       pieChartData.value.labels = ['Điểm danh', 'Vắng mặt']
       pieChartData.value.datasets[0].data = [dataStats.totalAttendance, dataStats.totalAbsent]
 
       const factoryChartData = response.data.factoryChartResponse
-      
+
       const factoryNames = factoryChartData.map((o) => o.factoryName)
       const attendancePercentages = factoryChartData.map((o) => o.attendancePercentage)
       const absencePercentages = factoryChartData.map((o) => 100 - o.attendancePercentage)
-      
+
       lineChartData.value.labels = ['-', ...factoryNames, '-']
       lineChartData.value.datasets[0].data = [0, ...attendancePercentages, 0]
       lineChartData.value.datasets[1].data = [0, ...absencePercentages, 0]
     })
     .catch((error) => {
       message.error(error?.response?.data?.message || 'Không thể tải dữ liệu thống kê')
-      console.error('Error fetching statistics:', error)
     })
     .finally(() => {
       loadingStore.hide()
@@ -175,7 +178,6 @@ const fetchDataSemester = () => {
         if (currentSemester) {
           dataFilter.idSemester = currentSemester.id
         } else {
-
           dataFilter.idSemester = response.data[0].id
         }
       }
@@ -215,10 +217,10 @@ onMounted(async () => {
 watch(
   dataStats,
   (data) => {
-    stats.value[0].value = data.factory || 0     
-    stats.value[1].value = data.pass || 0        
-    stats.value[2].value = data.fail || 0       
-    stats.value[3].value = data.process || 0     
+    stats.value[0].value = data.factory || 0
+    stats.value[1].value = data.pass || 0
+    stats.value[2].value = data.fail || 0
+    stats.value[3].value = data.process || 0
   },
   { deep: true },
 )
@@ -236,7 +238,6 @@ watch(
 <template>
   <div class="container-fluid">
     <div class="row g-3">
-
       <!-- Filter Section -->
       <div class="col-12">
         <div class="row g-2" :style="{ maxWidth: '500px' }">
@@ -306,11 +307,11 @@ watch(
 
           <ChartLine :height="310" :data="lineChartData"></ChartLine>
           <div class="mt-2 d-flex justify-content-end">
-              <a-tag color="blue">Nhóm xưởng: {{dataStats.factory }}</a-tag>
-              <a-tag color="warning">Chưa diễn ra: {{ dataStats.notStarted }}</a-tag>
-              <a-tag color="processing">Đang diễn ra: {{ dataStats.process }}</a-tag>
-              <a-tag color="success">Kết thúc: {{ dataStats.complete }}</a-tag>
-            </div>
+            <a-tag color="blue">Nhóm xưởng: {{ dataStats.factory }}</a-tag>
+            <a-tag color="warning">Chưa diễn ra: {{ dataStats.notStarted }}</a-tag>
+            <a-tag color="processing">Đang diễn ra: {{ dataStats.process }}</a-tag>
+            <a-tag color="success">Kết thúc: {{ dataStats.complete }}</a-tag>
+          </div>
         </a-card>
       </div>
     </div>
