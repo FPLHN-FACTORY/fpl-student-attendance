@@ -85,7 +85,7 @@ public interface SAAttendanceRepository extends AttendanceRepository {
                 us.code LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%') OR
                 us.name LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%')
             )) AND
-            (COALESCE(:#{#request.status}, 0) = 0 OR a.status = :#{#request.status}) AND
+            (COALESCE(:#{#request.status}, 0) = 0 OR a.attendance_status = :#{#request.status}) AND
             (:#{#request.type} IS NULL OR pd.type = :#{#request.type}) AND
             DATE(FROM_UNIXTIME(pd.start_date / 1000)) = CURDATE() AND
             usf.id_user_student = :#{#request.idUserStudent}
@@ -128,7 +128,7 @@ public interface SAAttendanceRepository extends AttendanceRepository {
                 us.code LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%') OR
                 us.name LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%')
             )) AND
-            (COALESCE(:#{#request.status}, 0) = 0 OR a.status = :#{#request.status}) AND
+            (COALESCE(:#{#request.status}, 0) = 0 OR a.attendance_status = :#{#request.status}) AND
             (:#{#request.type} IS NULL OR pd.type = :#{#request.type}) AND
             DATE(FROM_UNIXTIME(pd.start_date / 1000)) = CURDATE() AND
             usf.id_user_student = :#{#request.idUserStudent}
