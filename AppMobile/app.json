@@ -14,9 +14,7 @@
       "SECRET_KEY": "idhfnke-aksfne-emgks"
     },
     "splash": {
-      "image": "./assets/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#41395a"
     },
     "ios": {
       "supportsTablet": true
