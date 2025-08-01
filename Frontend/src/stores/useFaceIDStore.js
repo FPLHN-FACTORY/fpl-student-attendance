@@ -327,7 +327,7 @@ const useFaceIDStore = defineStore('faceID', () => {
         .expandDims()
       const result = await antispoofModel.predict(input).data()
       input.dispose()
-      return result[0] < (isMobile ? 0.8 : 0.99999999)
+      return result[0] < (isMobile ? 0 : 0.99999999)
     }
 
     const captureFace = () => {
@@ -402,6 +402,7 @@ const useFaceIDStore = defineStore('faceID', () => {
       faceDescriptor = null
       step.value = 0
       isSuccess.value = false
+      renderTextStep()
     }
 
     const delay = (ms) => new Promise((res) => setTimeout(res, ms))
@@ -533,7 +534,7 @@ const useFaceIDStore = defineStore('faceID', () => {
 
     const isSameEmbedding = (prevEmbedding, currentEmbedding) => {
       const similarity = human.match.similarity(prevEmbedding, currentEmbedding)
-      return similarity >= 0.95
+      return similarity >= isMobile ? 0.8 : 0.9
     }
 
     const getFaceBox = (face) => {
@@ -757,11 +758,13 @@ const useFaceIDStore = defineStore('faceID', () => {
               return
             }
             await pushDescriptor(1)
-            return (step.value = 1)
+            step.value = 1
+            return renderTextStep()
           }
           if (step.value === 1) {
             await getBestEmbedding(1, 0, () => {
               step.value = 0
+              renderTextStep()
             })
             if (!embedding.value || embedding.length < 1) {
               return
@@ -779,13 +782,16 @@ const useFaceIDStore = defineStore('faceID', () => {
               return
             }
             await pushDescriptor(1)
-            return (step.value = 1)
+            step.value = 1
+            return renderTextStep()
           }
           if (step.value === 1 && angle === -1) {
-            return (step.value = 2)
+            step.value = 2
+            return renderTextStep()
           }
           if (step.value === 2 && angle === 1) {
-            return (step.value = 3)
+            step.value = 3
+            return renderTextStep()
           }
           if (step.value === 3 && angle === 0) {
             prevEmbedding.value = null
