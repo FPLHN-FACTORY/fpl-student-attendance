@@ -51,7 +51,7 @@ const useFaceIDStore = defineStore('faceID', () => {
         case 0:
           return (textStep.value = 'Vui lòng nhìn thẳng')
         case 1:
-          return (textStep.value = 'Xác minh hoàn tất')
+          return (textStep.value = 'Vui lòng giữ nguyên...')
         default:
           return (textStep.value = 'Vui lòng nhìn vào camera')
       }
@@ -67,7 +67,7 @@ const useFaceIDStore = defineStore('faceID', () => {
       case 3:
         return (textStep.value = 'Vui lòng nhìn thẳng')
       case 4:
-        return (textStep.value = 'Xác minh hoàn tất')
+        return (textStep.value = 'Vui lòng giữ nguyên...')
       default:
         return (textStep.value = 'Vui lòng nhìn vào camera')
     }
