@@ -11,7 +11,7 @@
     "extra": {
       "SERVER_DOMAIN": "https://server.fptudpm.site",
       "CLIENT_DOMAIN": "https://fptudpm.site",
-      "SECRET_KEY": "idhfnke-aksfne-emgks"
+      "SECRET_KEY": "ldhfnke-aksfne-emgkse"
     },
     "splash": {
       "backgroundColor": "#41395a"
