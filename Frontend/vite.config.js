@@ -6,11 +6,6 @@ import vueDevTools from 'vite-plugin-vue-devtools'
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd())
   return {
-    server: {
-      host: '0.0.0.0',
-      allowedHosts: 'all',
-      origin: env.VITE_BASE_URL,
-    },
     plugins: [vue(), vueDevTools()],
     resolve: {
       alias: {
