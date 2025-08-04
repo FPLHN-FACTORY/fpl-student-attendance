@@ -286,7 +286,7 @@ watch(
           </template>
           <template #extra>
             <div class="mt-2">
-              <a-tag color="blue">Tổng số buổi: {{ dataStats.totalShift }}</a-tag>
+              <a-tag color="blue">Tổng số ca: {{ dataStats.totalShift }}</a-tag>
             </div>
           </template>
 

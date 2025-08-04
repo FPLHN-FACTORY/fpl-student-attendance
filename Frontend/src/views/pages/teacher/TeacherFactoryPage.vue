@@ -74,7 +74,7 @@ const columns = ref(
       align: 'center',
     },
     {
-      title: 'Số buổi quản lý',
+      title: 'Số ca quản lý',
       dataIndex: 'totalShift',
       key: 'totalShift',
       align: 'center',

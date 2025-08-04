@@ -71,13 +71,13 @@ const columns = ref(
     { title: 'Tên sinh viên', dataIndex: 'studentName', key: 'studentName' },
     { title: 'Email sinh viên', dataIndex: 'studentEmail', key: 'studentEmail' },
     {
-      title: 'Số buổi đã nghỉ',
+      title: 'Số ca vắng mặt',
       dataIndex: 'totalAbsentShift',
       key: 'totalAbsentShift',
       align: 'center',
     },
     {
-      title: 'Tỉ lệ nghỉ',
+      title: 'Tỉ lệ vắng mặt',
       dataIndex: 'percenAbsentShift',
       key: 'percenAbsentShift',
       align: 'center',

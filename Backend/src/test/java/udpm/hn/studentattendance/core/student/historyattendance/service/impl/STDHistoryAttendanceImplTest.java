@@ -297,8 +297,13 @@ class STDHistoryAttendanceImplTest {
             }
 
             @Override
-            public String getPlanDateShift() {
+            public String getShift() {
                 return "Morning";
+            }
+
+            @Override
+            public Integer getType() {
+                return 1;
             }
 
             @Override
@@ -369,8 +374,13 @@ class STDHistoryAttendanceImplTest {
             }
 
             @Override
-            public String getPlanDateShift() {
+            public String getShift() {
                 return "Afternoon";
+            }
+
+            @Override
+            public Integer getType() {
+                return 2;
             }
 
             @Override
