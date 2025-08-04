@@ -293,7 +293,6 @@ const handleTableChange = (pageInfo) => {
   // Cập nhật current và pageSize
   pagination.current = pageInfo.current
   pagination.pageSize = pageInfo.pageSize
-  filter.pageSize = pageInfo.pageSize
   fetchStudentFactories()
 }
 
@@ -441,7 +440,7 @@ const handleClearFilter = () => {
     page: 1,
     pageSize: 5,
   })
-  pagination.current = 1
+  // Không reset về trang 1 khi hủy lọc để giữ nguyên dữ liệu hiện tại
   fetchStudentFactories()
 }
 

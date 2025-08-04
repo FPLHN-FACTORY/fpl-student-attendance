@@ -89,7 +89,6 @@ const fetchAttendanceList = () => {
 const handleTableChange = (pageInfo) => {
   pagination.value.current = pageInfo.current
   pagination.value.pageSize = pageInfo.pageSize
-  filter.pageSize = pageInfo.pageSize
   fetchAttendanceList()
 }
 
@@ -206,7 +205,7 @@ const exportToPDF = () => {
         now,
         max,
         page: pagination.value.current,
-        size: 1000, // Set a large size to get all data 
+        size: 1000, // Set a large size to get all data
       },
       responseType: 'blob',
     })
@@ -228,7 +227,7 @@ const exportToPDF = () => {
 const handleClearFilter = () => {
   filter.plan = 7
   filter.page = 1
-  pagination.value.current = 1
+  // Không reset về trang 1 khi hủy lọc để giữ nguyên dữ liệu hiện tại
   fetchAttendanceList()
 }
 
