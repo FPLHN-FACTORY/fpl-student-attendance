@@ -26,7 +26,13 @@ public interface STProjectExtendRepository extends ProjectRepository {
                         sem.code AS nameSemester,
                         p.description AS description,
                         LEAST(p.status, lp.status, sf.status, s.status, sem.status, f.status) AS status,
-                        p.status AS currentStatus
+                        p.status AS currentStatus,
+                        (SELECT COUNT(DISTINCT pd.id)
+                            FROM plan_date pd
+                            JOIN plan_factory pf ON pd.id_plan_factory = pf.id
+                            JOIN factory ft ON pf.id_factory = ft.id
+                            WHERE ft.id_project = p.id
+                        ) AS totalPlanDate
                     FROM project p
                     JOIN level_project lp ON p.id_level_project = lp.id
                     JOIN subject_facility sf ON p.id_subject_facility = sf.id
@@ -101,7 +107,13 @@ public interface STProjectExtendRepository extends ProjectRepository {
             s.id AS semesterId,
             sf.id as subjectFacilityId,
             LEAST(p.status, lp.status, sf.status, s.status, sb.status, f.status) AS status,
-            p.status AS currentStatus
+            p.status AS currentStatus,
+            (SELECT COUNT(DISTINCT pd.id)
+                FROM plan_date pd
+                JOIN plan_factory pf ON pd.id_plan_factory = pf.id
+                JOIN factory ft ON pf.id_factory = ft.id
+                WHERE ft.id_project = p.id
+            ) AS totalPlanDate
         FROM project p
         JOIN semester s ON p.id_semester = s.id
         JOIN subject_facility sf ON p.id_subject_facility = sf.id
@@ -139,4 +151,14 @@ public interface STProjectExtendRepository extends ProjectRepository {
                 AND s.id = :semesterId
             """)
     List<Project> getAllProjectBySemester(String facilityId, String semesterId);
+
+    @Query(value = """
+        SELECT COUNT(DISTINCT pd.id)
+        FROM plan_date pd
+        JOIN plan_factory pf ON pd.id_plan_factory = pf.id
+        JOIN factory ft ON pf.id_factory = ft.id
+        WHERE ft.id_project = :idProject
+    """, nativeQuery = true)
+    int getTotalPlanDate(String idProject);
+
 }

@@ -63,6 +63,7 @@ const detailFactory = reactive({
   projectName: '',
   subjectCode: '',
   staffName: '',
+  totalPlanDate: 0,
 })
 
 const columns = ref(
@@ -232,6 +233,7 @@ const handleUpdateFactory = (record) => {
       detailFactory.projectName = data.nameProject
       detailFactory.subjectCode = data.subjectCode
       detailFactory.staffName = data.staffName
+      detailFactory.totalPlanDate = data.totalPlanDate
       modalUpdate.value = true
     })
     .catch((error) => {
@@ -496,7 +498,7 @@ onMounted(() => {
             :value="item.id"
             :label="item.projectName"
           >
-            {{ item.projectName + ' - ' + item.levelProjectName + '(' + item.semesterCode + ')' }}
+            {{ item.projectName + ' - ' + item.levelProjectName + ' - ' + item.semesterCode }}
           </a-select-option>
         </a-select>
         <div v-else>Cơ sở chưa có dự án nào!</div>
@@ -523,7 +525,8 @@ onMounted(() => {
       <a-form-item label="Mô tả nhóm xưởng">
         <a-textarea v-model:value="detailFactory.factoryDescription" />
       </a-form-item>
-      <a-form-item label="Giảng viên quản lý" required>
+
+      <a-form-item label="Giảng viên quản lý" required v-if="detailFactory.totalPlanDate < 1">
         <a-select
           v-if="staffs.length > 0"
           v-model:value="detailFactory.idUserStaff"
@@ -547,7 +550,7 @@ onMounted(() => {
         </a-select>
         <div v-else>Cơ sở chưa có giảng viên nào!</div>
       </a-form-item>
-      <a-form-item label="Dự án" required>
+      <a-form-item label="Dự án" required v-if="detailFactory.totalPlanDate < 1">
         <a-select
           v-if="projects.length > 0"
           v-model:value="detailFactory.idProject"
@@ -566,7 +569,7 @@ onMounted(() => {
             :value="item.id"
             :label="item.projectName"
           >
-            {{ item.projectName + ' - ' + item.levelProjectName + '(' + item.semesterCode + ')' }}
+            {{ item.projectName + ' - ' + item.levelProjectName + ' - ' + item.semesterCode }}
           </a-select-option>
         </a-select>
         <div v-else>Cơ sở chưa có dự án nào!</div>

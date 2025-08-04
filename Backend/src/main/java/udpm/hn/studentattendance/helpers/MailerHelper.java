@@ -49,6 +49,10 @@ public class MailerHelper {
 
     public final static String TEMPLATE_STATISTICS_DAILY = "statistics-staff.html";
 
+    public final static String TEMPLATE_SUPPORT = "support.html";
+
+    public final static String TEMPLATE_SUPPORT_CONFIRMATION = "support-confirmation.html";
+
     public final static String HEADER_DEFAULT = "";
 
     public final static String FOOTER_DEFAULT = """

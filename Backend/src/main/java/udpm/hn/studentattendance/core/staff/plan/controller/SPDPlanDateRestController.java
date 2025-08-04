@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 import udpm.hn.studentattendance.core.staff.plan.model.request.SPDAddOrUpdatePlanDateRequest;
 import udpm.hn.studentattendance.core.staff.plan.model.request.SPDDeletePlanDateRequest;
 import udpm.hn.studentattendance.core.staff.plan.model.request.SPDFilterPlanDateRequest;
+import udpm.hn.studentattendance.core.staff.plan.model.request.SPDSearchTeacherRequest;
 import udpm.hn.studentattendance.core.staff.plan.model.request.SPDUpdateLinkMeetRequest;
 import udpm.hn.studentattendance.core.staff.plan.services.SPDPlanDateService;
 import udpm.hn.studentattendance.infrastructure.constants.router.RouteStaffConstant;
@@ -70,6 +71,11 @@ public class SPDPlanDateRestController {
     @PostMapping("/{idPlanFactory}/send-mail")
     public ResponseEntity<?> sendMail(@PathVariable String idPlanFactory) {
         return spdPlanDateService.sendMail(idPlanFactory);
+    }
+
+    @GetMapping("/search-teacher")
+    public ResponseEntity<?> searchTeacher(@Valid SPDSearchTeacherRequest request) {
+        return spdPlanDateService.searchTeacher(request);
     }
 
 }

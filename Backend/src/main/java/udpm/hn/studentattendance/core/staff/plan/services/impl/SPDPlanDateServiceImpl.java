@@ -16,15 +16,19 @@ import udpm.hn.studentattendance.core.staff.plan.model.dto.SPDPlanDateGroupDto;
 import udpm.hn.studentattendance.core.staff.plan.model.request.SPDAddOrUpdatePlanDateRequest;
 import udpm.hn.studentattendance.core.staff.plan.model.request.SPDDeletePlanDateRequest;
 import udpm.hn.studentattendance.core.staff.plan.model.request.SPDFilterPlanDateRequest;
+import udpm.hn.studentattendance.core.staff.plan.model.request.SPDSearchTeacherRequest;
 import udpm.hn.studentattendance.core.staff.plan.model.request.SPDUpdateLinkMeetRequest;
 import udpm.hn.studentattendance.core.staff.plan.model.response.SPDPlanDateGroupResponse;
 import udpm.hn.studentattendance.core.staff.plan.model.response.SPDPlanDateResponse;
 import udpm.hn.studentattendance.core.staff.plan.model.response.SPDPlanFactoryResponse;
+import udpm.hn.studentattendance.core.staff.plan.model.response.SPDTeacherResponse;
 import udpm.hn.studentattendance.core.staff.plan.model.response.SPDUserStudentResponse;
 import udpm.hn.studentattendance.core.staff.plan.repositories.SPDFacilityShiftRepository;
 import udpm.hn.studentattendance.core.staff.plan.repositories.SPDPlanDateRepository;
 import udpm.hn.studentattendance.core.staff.plan.repositories.SPDPlanFactoryRepository;
+import udpm.hn.studentattendance.core.staff.plan.repositories.SPDUserStaffRepository;
 import udpm.hn.studentattendance.core.staff.plan.repositories.SPDUserStudentRepository;
+import udpm.hn.studentattendance.entities.UserStaff;
 import udpm.hn.studentattendance.helpers.MailerHelper;
 import udpm.hn.studentattendance.helpers.SettingHelper;
 import udpm.hn.studentattendance.core.staff.plan.services.SPDPlanDateService;
@@ -40,6 +44,7 @@ import udpm.hn.studentattendance.helpers.ShiftHelper;
 import udpm.hn.studentattendance.helpers.ValidateHelper;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.config.mailer.model.MailerDefaultRequest;
+import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.SettingKeys;
 import udpm.hn.studentattendance.infrastructure.constants.ShiftType;
 import udpm.hn.studentattendance.infrastructure.constants.StatusType;
@@ -72,6 +77,8 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
     private final SPDFacilityShiftRepository spdFacilityShiftRepository;
 
     private final SPDUserStudentRepository spdUserStudentRepository;
+
+    private final SPDUserStaffRepository spdUserStaffRepository;
 
     private final SessionHelper sessionHelper;
 
@@ -292,6 +299,23 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
         if (StringUtils.hasText(request.getLink()) && !ValidateHelper.isValidURL(request.getLink())) {
             return RouterHelper.responseError("Link online không hợp lệ");
         }
+        UserStaff teacher = null;
+        if (StringUtils.hasText(request.getIdTeacher())) {
+            teacher = spdUserStaffRepository.findById(request.getIdTeacher()).orElse(null);
+            if (teacher == null || teacher.getStatus() == EntityStatus.INACTIVE) {
+                return RouterHelper.responseError("Không tìm thấy giảng viên dạy thay");
+            }
+
+            if (!isDisableCheckExistsTeacherOnShift) {
+                if (spdPlanDateRepository.isExistsTeacherOnShift(teacher.getId(), startDate, endDate,
+                        planDate.getId())) {
+                    return RouterHelper.responseError("Giảng viên " + teacher.getName() + " - "
+                            + teacher.getCode() + " đã đứng lớp tại ca " + request.getShift()
+                            + " trong ngày "
+                            + DateTimeUtils.convertMillisToDate(startDate));
+                }
+            }
+        }
 
         StatusType requiredIp = StatusType.fromKey(request.getRequiredIp());
         StatusType requiredLocation = StatusType.fromKey(request.getRequiredLocation());
@@ -323,6 +347,8 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
         planDate.setRequiredCheckout(requiredCheckout);
         planDate.setDescription(request.getDescription());
         planDate.setLateArrival(request.getLateArrival());
+        planDate.setUserStaff(teacher);
+        System.out.println(teacher);
 
         PlanDate newEntity = spdPlanDateRepository.save(planDate);
 
@@ -452,7 +478,7 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
         if (!isDisableCheckExistsTeacherOnShift) {
             if (spdPlanDateRepository.isExistsTeacherOnShift(factory.getUserStaff().getId(), startDate, endDate,
                     null)) {
-                return RouterHelper.responseError("Giảng viên " + factory.getUserStaff().getName() + " - "
+                return RouterHelper.responseError("Giảng viên dạy thay " + factory.getUserStaff().getName() + " - "
                         + factory.getUserStaff().getCode() + " đã đứng lớp tại ca " + request.getShift()
                         + " trong ngày "
                         + DateTimeUtils.convertMillisToDate(startDate));
@@ -625,7 +651,12 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
         } catch (IOException e) {
             return null;
         }
+    }
 
+    @Override
+    public ResponseEntity<?> searchTeacher(SPDSearchTeacherRequest request) {
+        List<SPDTeacherResponse> results = spdUserStaffRepository.getAllStaffByKeyword(sessionHelper.getFacilityId(), request.getKeyword());
+        return RouterHelper.responseSuccess("Tìm thấy " + results.size() + " kết quả", results);
     }
 
 }

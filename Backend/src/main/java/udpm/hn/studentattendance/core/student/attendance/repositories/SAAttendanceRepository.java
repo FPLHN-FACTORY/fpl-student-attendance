@@ -56,7 +56,7 @@ public interface SAAttendanceRepository extends AttendanceRepository {
         JOIN plan_factory pf ON f.id = pf.id_factory
         JOIN plan p ON p.id = pf.id_plan
         JOIN plan_date pd ON pd.id_plan_factory = pf.id
-        LEFT JOIN user_staff us ON f.id_user_staff = us.id
+        LEFT JOIN user_staff us ON us.id = COALESCE(pd.id_user_staff, f.id_user_staff)
         LEFT JOIN attendance a ON pd.id = a.id_plan_date AND a.id_user_student = usf.id_user_student
         WHERE
             pd.status = 1 AND
@@ -98,7 +98,7 @@ public interface SAAttendanceRepository extends AttendanceRepository {
         JOIN factory f ON usf.id_factory = f.id
         JOIN plan_factory pf ON f.id = pf.id_factory
         JOIN plan_date pd ON pd.id_plan_factory = pf.id
-        LEFT JOIN user_staff us ON f.id_user_staff = us.id
+        LEFT JOIN user_staff us ON us.id = COALESCE(pd.id_user_staff, f.id_user_staff)
         LEFT JOIN attendance a ON pd.id = a.id_plan_date AND a.id_user_student = usf.id_user_student
         WHERE
             pd.status = 1 AND

@@ -10,7 +10,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Type;
 
 @ControllerAdvice
-public class EmojiSanitizingAdvice extends RequestBodyAdviceAdapter {
+public class RequestSanitizingAdvice extends RequestBodyAdviceAdapter {
 
     @Override
     public boolean supports(MethodParameter methodParameter, Type targetType,
@@ -42,7 +42,7 @@ public class EmojiSanitizingAdvice extends RequestBodyAdviceAdapter {
     }
 
     private static String sanitize(String input) {
-        return input.replaceAll("[^\\p{L}\\p{N}\\s~`!@#$%^&*()_+\\-=\\[\\]{}|;:'\",.<>/?\\\\]", "").trim();
+        return input.replaceAll("[^\\p{L}\\p{N}\\s~`!@#$%^&*()_+\\-=\\[\\]{}|;:'\",.<>/?\\\\]", "").replaceAll("\\s+", " ").trim();
     }
 
 }
