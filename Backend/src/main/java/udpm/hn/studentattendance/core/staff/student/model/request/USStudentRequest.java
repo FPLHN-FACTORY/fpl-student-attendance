@@ -17,6 +17,6 @@ public class USStudentRequest extends PageableRequest {
     @Size(max = EntityProperties.LENGTH_NAME, message = "Từ khóa không được quá:" + EntityProperties.LENGTH_NAME)
     private String searchQuery;
 
-    private EntityStatus studentStatus;
+    private Integer studentStatus;
 
 }

@@ -155,7 +155,6 @@ const fetchStudentFactory = () => {
 const handleTableChange = (pageInfo) => {
   pagination.current = pageInfo.current
   pagination.pageSize = pageInfo.pageSize
-  filter.pageSize = pageInfo.pageSize // Đồng bộ pageSize cho filter
   fetchStudentFactory()
 }
 
@@ -164,8 +163,7 @@ const handleClearFilter = () => {
   filter.searchQuery = ''
   filter.status = ''
 
-  // Reset pagination
-  pagination.current = 1
+  // Không reset về trang 1 khi hủy lọc để giữ nguyên dữ liệu hiện tại
   filter.page = 1
 
   // Refetch with cleared filters but preserved factoryId

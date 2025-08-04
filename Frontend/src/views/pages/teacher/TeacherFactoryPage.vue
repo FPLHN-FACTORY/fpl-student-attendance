@@ -149,7 +149,6 @@ const fetchSemesters = () => {
 const handleTableChange = (pageInfo) => {
   pagination.current = pageInfo.current
   pagination.pageSize = pageInfo.pageSize
-  filter.pageSize = pageInfo.pageSize // Đồng bộ pageSize cho filter
   fetchFactoryByTeacher()
 }
 
@@ -179,8 +178,7 @@ const handleClearFilter = () => {
   filter.projectId = ''
   filter.semesterId = null
 
-  // Reset pagination to first page
-  pagination.current = 1
+  // Không reset về trang 1 khi hủy lọc để giữ nguyên dữ liệu hiện tại
   filter.page = 1
 
   // Fetch with cleared filters

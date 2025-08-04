@@ -15,7 +15,7 @@ const MAX_BRIGHTNESS = 190
 const THRESHOLD_LIGHT = 60
 const SIZE_CAMERA = 480
 const SKIP_FRAME = 5
-const ANTISPOOF = true
+const ANTISPOOF = false
 
 const useFaceIDStore = defineStore('faceID', () => {
   let isFullStep = false
@@ -603,24 +603,24 @@ const useFaceIDStore = defineStore('faceID', () => {
     }
 
     const isInvalidSize = async (face) => {
-      if (isFullStep) {
-        return null
-      }
+      // if (isFullStep) {
+      //   return null
+      // }
 
-      const boxRaw = face.boxRaw
-      const [x1, y1, x2, y2] = boxRaw
+      // const boxRaw = face.boxRaw
+      // const [x1, y1, x2, y2] = boxRaw
 
-      const width = x2 - x1
-      const height = y2 - y1
-      const area = width * height
+      // const width = x2 - x1
+      // const height = y2 - y1
+      // const area = width * height
 
-      if (width < 0 || height < 0 || area > 4.5) {
-        return 'Khuôn mặt ở quá gần. Vui lòng đưa mặt ra xa'
-      }
+      // if (width < 0 || height < 0 || area > 4.5) {
+      //   return 'Khuôn mặt ở quá gần. Vui lòng đưa mặt ra xa'
+      // }
 
-      if (area < 0.5) {
-        return 'Khuôn mặt ở quá xa. Vui lòng đưa mặt lại gần'
-      }
+      // if (area < 0.5) {
+      //   return 'Khuôn mặt ở quá xa. Vui lòng đưa mặt lại gần'
+      // }
 
       return null
     }
