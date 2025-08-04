@@ -33,6 +33,8 @@ public class ValidateHelper {
 
     private static final String FULLNAME_REGEX = "^[\\p{L}#]+(\\s[\\p{L}#]+)+$";
 
+    private static final String NAME_REGEX = "^[\\p{L}\\d\\s_#-]+$";
+
     private static final String URL_REGEX = "^(https?)://[a-zA-Z0-9-]+(\\.[a-zA-Z0-9-]+)+([/?].*)?$";
 
     private static final String EMAIL_GMAIL_REGEX = "^[a-zA-Z0-9._%+-]+@gmail\\.com$";
@@ -53,6 +55,11 @@ public class ValidateHelper {
 
     public static boolean isValidFullname(String name) {
         Pattern pattern = Pattern.compile(FULLNAME_REGEX);
+        return name != null && pattern.matcher(name).matches();
+    }
+
+    public static boolean isValidName(String name) {
+        Pattern pattern = Pattern.compile(NAME_REGEX);
         return name != null && pattern.matcher(name).matches();
     }
 

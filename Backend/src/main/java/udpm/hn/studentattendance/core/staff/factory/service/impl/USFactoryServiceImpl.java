@@ -19,6 +19,7 @@ import udpm.hn.studentattendance.helpers.PaginationHelper;
 import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.helpers.SessionHelper;
 import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
+import udpm.hn.studentattendance.helpers.ValidateHelper;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.common.repositories.CommonPlanDateRepository;
 import udpm.hn.studentattendance.infrastructure.constants.*;
@@ -154,10 +155,9 @@ public class USFactoryServiceImpl implements USFactoryService {
         Optional<Project> project = projectFactoryExtendRepository
                 .findById(factoryCreateUpdateRequest.getIdProject());
 
-        String namePattern = "^[a-zA-ZÀ-ỹ\\s_#-]+$";
-        if (!factoryCreateUpdateRequest.getFactoryName().matches(namePattern)) {
+        if (!ValidateHelper.isValidName(factoryCreateUpdateRequest.getFactoryName())) {
             return RouterHelper
-                    .responseError("Tên nhóm xưởng không hợp lệ: Chỉ được chứa ký tự chữ và các ký tự đặc biệt _ - #");
+                    .responseError("Tên nhóm xưởng không hợp lệ: Chỉ được chứa ký tự chữ, số và các ký tự đặc biệt _ - #");
         }
 
         if (userStaff.isEmpty()) {
@@ -204,23 +204,12 @@ public class USFactoryServiceImpl implements USFactoryService {
     @Override
     public ResponseEntity<?> updateFactory(USFactoryCreateUpdateRequest req) {
 
-
         Factory factory = factoryRepository.findById(req.getId())
-                .orElseThrow();
+                .orElse(null);
         UserStaff newStaff = staffFactoryExtendRepository.findById(req.getIdUserStaff())
-                .orElseThrow();
+                .orElse(null);
         Project newProject = projectFactoryExtendRepository.findById(req.getIdProject())
-                .orElseThrow();
-
-        if (factoryRepository.isExistNameAndProject(req.getFactoryName(), newProject.getId(), factory.getId())) {
-            return RouterHelper.responseError("Nhóm xưởng đã tồn tại trong dự án này");
-        }
-
-        String namePattern = "^[a-zA-ZÀ-ỹ\\s_#-]+$";
-        if (!req.getFactoryName().matches(namePattern)) {
-            return RouterHelper
-                    .responseError("Tên nhóm xưởng không hợp lệ: Chỉ được chứa ký tự chữ và các ký tự đặc biệt _ - #");
-        }
+                .orElse(null);
 
         if (newStaff == null) {
             return RouterHelper.responseError("Giảng viên không tồn tại");
@@ -232,30 +221,43 @@ public class USFactoryServiceImpl implements USFactoryService {
             return RouterHelper.responseError("Nhóm xưởng không tồn tại");
         }
 
-        String oldProjectId = factory.getProject().getId();
-        String newProjectId = newProject.getId();
-        if (!oldProjectId.equals(newProjectId)) {
-            Plan oldPlan = projectPlanExtendRepository.getPlanByProjectId(oldProjectId);
-            Plan newPlan = projectPlanExtendRepository.getPlanByProjectId(newProjectId);
-            if (newPlan == null) {
-                projectPlanExtendRepository.deleteAllAttendanceAndPlanDateAndPlanFactoryByPlan(oldPlan.getId());
-            } else if (oldPlan != null && newPlan != null) {
-                boolean associationExists = factoryPlanExtendRepository
-                        .existsByFactoryIdAndPlanId(factory.getId(), newPlan.getId());
-                if (!associationExists) {
-                    PlanFactory pf = factoryPlanExtendRepository.getPlanFactoryByFactoryId(factory.getId());
-                    pf.setPlan(newPlan);
-                    factoryPlanExtendRepository.save(pf);
-                }
-            }
+        if (factoryRepository.isExistNameAndProject(req.getFactoryName(), newProject.getId(), factory.getId())) {
+            return RouterHelper.responseError("Nhóm xưởng đã tồn tại trong dự án này");
         }
+
+        if (!ValidateHelper.isValidName(req.getFactoryName())) {
+            return RouterHelper
+                    .responseError("Tên nhóm xưởng không hợp lệ: Chỉ được chứa ký tự chữ, số và các ký tự đặc biệt _ - #");
+        }
+
+        int totalPlanDate = factoryRepository.getTotalPlanDate(factory.getId());
+
+//        String oldProjectId = factory.getProject().getId();
+//        String newProjectId = newProject.getId();
+//        if (totalPlanDate > 0 && !oldProjectId.equals(newProjectId)) {
+//            Plan oldPlan = projectPlanExtendRepository.getPlanByProjectId(oldProjectId);
+//            Plan newPlan = projectPlanExtendRepository.getPlanByProjectId(newProjectId);
+//            if (newPlan == null) {
+//                projectPlanExtendRepository.deleteAllAttendanceAndPlanDateAndPlanFactoryByPlan(oldPlan.getId());
+//            } else if (oldPlan != null) {
+//                boolean associationExists = factoryPlanExtendRepository
+//                        .existsByFactoryIdAndPlanId(factory.getId(), newPlan.getId());
+//                if (!associationExists) {
+//                    PlanFactory pf = factoryPlanExtendRepository.getPlanFactoryByFactoryId(factory.getId());
+//                    pf.setPlan(newPlan);
+//                    factoryPlanExtendRepository.save(pf);
+//                }
+//            }
+//        }
 
         String oldName = factory.getName();
         UserStaff oldStaff = factory.getUserStaff();
         factory.setName(req.getFactoryName());
         factory.setDescription(req.getFactoryDescription());
-        factory.setUserStaff(newStaff);
-        factory.setProject(newProject);
+
+        factory.setProject(totalPlanDate > 0 ? factory.getProject() : newProject);
+
+        factory.setUserStaff(totalPlanDate > 0 ? factory.getUserStaff() : newStaff);
         Factory saveFactory = factoryRepository.save(factory);
 
         Map<String, Object> dataNotification = new HashMap<>();
