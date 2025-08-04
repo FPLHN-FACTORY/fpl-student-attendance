@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, watch, reactive, h, computed, unref } from 'vue'
+import { ref, onMounted, watch, reactive, h, computed } from 'vue'
 import {
   PlusOutlined,
   FilterFilled,
@@ -40,6 +40,7 @@ import {
 } from '@/utils/utils'
 import dayjs from 'dayjs'
 import ExcelUploadButton from '@/components/excel/ExcelUploadButton.vue'
+import 'vue-multiselect/dist/vue-multiselect.css'
 
 const route = useRoute()
 const router = useRouter()
@@ -54,6 +55,9 @@ const lstStudentExists = ref([])
 const _detail = ref(null)
 const lstData = ref([])
 const lstShift = ref([])
+const lstTeacher = ref([])
+const teacher = ref(null)
+const loadingTeacher = ref(false)
 
 const isActive = computed(() => _detail.value?.status === STATUS_TYPE.ENABLE)
 
@@ -119,6 +123,7 @@ const columns_inner = ref(
       align: 'center',
     },
     { title: 'Nội dung', dataIndex: 'description', key: 'description' },
+    { title: 'Giảng viên thay thế', dataIndex: 'nameTeacher', key: 'nameTeacher' },
     { title: 'Trạng thái', dataIndex: 'status', key: 'status' },
     { title: '', key: 'actions' },
   ]),
@@ -176,6 +181,7 @@ const formData = reactive({
   endDate: null,
   lateArrival: DEFAULT_LATE_ARRIVAL,
   timeRange: [],
+  idTeacher: null,
 })
 
 const formDataUpdateLink = reactive({
@@ -188,6 +194,7 @@ const formRules = reactive({
   shift: [{ required: true, message: 'Vui lòng chọn ca!' }],
   type: [{ required: true, message: 'Vui lòng chọn hình thức !' }],
   link: [{ required: true, message: 'Vui lòng nhập link online!' }],
+  room: [{ required: true, message: 'Vui lòng nhập địa điểm!' }],
   lateArrival: [{ required: true, message: 'Vui lòng nhập thời gian điểm danh muộn tối đa!' }],
 })
 
@@ -399,6 +406,32 @@ const fetchUpdateLink = () => {
     })
 }
 
+const fetchTeacherOptions = async (keyword) => {
+  if (!keyword) {
+    return
+  }
+
+  loadingTeacher.value = true
+  requestAPI
+    .get(`${API_ROUTES_STAFF.FETCH_DATA_PLAN_DATE}/search-teacher`, {
+      params: {
+        keyword,
+      },
+    })
+    .then(({ data: response }) => {
+      lstTeacher.value = response.data.map((o) => ({
+        label: `${o.code} - ${o.name}`,
+        value: o.id,
+      }))
+    })
+    .catch((error) => {
+      message.error(error?.response?.data?.message || 'Không thể tải danh sách dữ liệu giảng viên')
+    })
+    .finally(() => {
+      loadingTeacher.value = false
+    })
+}
+
 const fetchSendMail = () => {
   loadingStore.show()
   requestAPI
@@ -449,6 +482,8 @@ const handleShowAdd = () => {
   modalAddOrUpdate.okText = 'Thêm ngay'
   modalAddOrUpdate.onOk = () => handleSubmitAdd()
 
+  lstTeacher.value = []
+
   formData.id = null
   formData.startDate = dayjs()
   formData.shift = []
@@ -462,6 +497,7 @@ const handleShowAdd = () => {
   formData.lateArrival = DEFAULT_LATE_ARRIVAL
   formData.description = null
   formData.timeRange = []
+  formData.idTeacher = null
 }
 
 const handleShowUpdate = (item) => {
@@ -477,6 +513,8 @@ const handleShowUpdate = (item) => {
   modalAddOrUpdate.okText = 'Lưu lại'
   modalAddOrUpdate.onOk = () => handleSubmitUpdate()
 
+  lstTeacher.value = item.idTeacher ? [{ label: item.nameTeacher, value: item.idTeacher }] : []
+
   formData.id = item.id
   formData.startDate = dayjs(item.startDate)
   formData.endDate = dayjs(item.endDate)
@@ -490,6 +528,7 @@ const handleShowUpdate = (item) => {
   formData.requiredCheckout = item.requiredCheckout || STATUS_TYPE.DISABLE
   formData.lateArrival = item.lateArrival
   formData.description = item.description
+  formData.idTeacher = item.idTeacher
 
   handleUpdateTimeRange()
 }
@@ -704,6 +743,12 @@ watch(
   },
   { deep: true },
 )
+watch(
+  () => teacher.value,
+  (val) => {
+    formData.idTeacher = val?.value || null
+  },
+)
 </script>
 
 <template>
@@ -734,7 +779,12 @@ watch(
           :disabled="modalAddOrUpdate.isLoading"
         />
       </a-form-item>
-      <a-form-item class="col-sm-8" label="Phòng">
+      <a-form-item
+        class="col-sm-8"
+        label="Phòng"
+        name="room"
+        :rules="formData.type == '1' ? false : formRules.room"
+      >
         <a-input
           class="w-100"
           v-model:value="formData.room"
@@ -815,7 +865,12 @@ watch(
           allowClear
         />
       </a-form-item>
-      <a-form-item class="col-sm-12" label="Link online" name="link">
+      <a-form-item
+        class="col-sm-12"
+        label="Link online"
+        name="link"
+        :rules="formData.type == '1' ? formRules.link : false"
+      >
         <a-input
           class="w-100"
           v-model:value="formData.link"
@@ -825,6 +880,24 @@ watch(
           @keyup.enter="modalAddOrUpdate.onOk"
         />
       </a-form-item>
+
+      <a-form-item class="col-sm-12" label="Giảng viên thay thế" v-if="formData.id">
+        <VueMultiselect
+          v-model="teacher"
+          :options="lstTeacher"
+          :searchable="true"
+          :loading="loadingTeacher"
+          :internal-search="false"
+          label="label"
+          track-by="value"
+          placeholder="Nhập tên, email hoặc mã giảng viên..."
+          @search-change="fetchTeacherOptions"
+        >
+          <template #noOptions> Không có giảng viên nào </template>
+          <template #noResult> Không tìm thấy giảng viên nào </template>
+        </VueMultiselect>
+      </a-form-item>
+
       <a-form-item class="col-sm-12" label="Điều kiện điểm danh">
         <div class="row g-3">
           <div class="col-sm-6">
@@ -1140,6 +1213,10 @@ watch(
                     </template>
                     <template v-if="column.dataIndex === 'room'">
                       <span v-if="record.room">{{ record.room }}</span>
+                      <span v-else>--</span>
+                    </template>
+                    <template v-if="column.dataIndex === 'nameTeacher'">
+                      <span v-if="record.nameTeacher">{{ record.nameTeacher }}</span>
                       <span v-else>--</span>
                     </template>
                     <template v-if="column.dataIndex === 'lateArrival'">

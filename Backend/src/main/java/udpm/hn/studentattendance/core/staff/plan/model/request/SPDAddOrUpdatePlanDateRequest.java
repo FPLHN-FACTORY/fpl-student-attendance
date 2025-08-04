@@ -50,4 +50,6 @@ public class SPDAddOrUpdatePlanDateRequest {
 
     private List<Long> customTime;
 
+    private String idTeacher;
+
 }

@@ -36,7 +36,7 @@ public interface STDScheduleAttendanceRepository extends FacilityRepository {
                    JOIN plan pl ON pl.id = pdf.id_plan
                    JOIN factory ft ON pdf.id_factory = ft.id
                    JOIN project p ON ft.id_project = p.id
-                   JOIN user_staff us ON ft.id_user_staff = us.id
+                   JOIN user_staff us ON us.id = COALESCE(pd.id_user_staff, ft.id_user_staff)
                    JOIN subject_facility sf ON p.id_subject_facility = sf.id
                    JOIN subject s ON sf.id_subject = s.id
                    JOIN level_project lp ON lp.id = p.id_level_project
@@ -57,7 +57,7 @@ public interface STDScheduleAttendanceRepository extends FacilityRepository {
                    JOIN plan pl ON pl.id = pdf.id_plan
                    JOIN factory ft ON pdf.id_factory = ft.id
                    JOIN project p ON ft.id_project = p.id
-                   JOIN user_staff us ON ft.id_user_staff = us.id
+                   JOIN user_staff us ON us.id = COALESCE(pd.id_user_staff, ft.id_user_staff)
                    JOIN subject_facility sf ON p.id_subject_facility = sf.id
                    JOIN subject s ON sf.id_subject = s.id
                    JOIN facility f ON f.id = sf.id_facility
@@ -92,7 +92,7 @@ public interface STDScheduleAttendanceRepository extends FacilityRepository {
                    JOIN plan pl ON pl.id = pdf.id_plan
                    JOIN factory ft ON pdf.id_factory = ft.id
                    JOIN project p ON ft.id_project = p.id
-                   JOIN user_staff us ON ft.id_user_staff = us.id
+                   JOIN user_staff us ON us.id = COALESCE(pd.id_user_staff, ft.id_user_staff)
                    JOIN subject_facility sf ON p.id_subject_facility = sf.id
                    JOIN subject s ON sf.id_subject = s.id
                    JOIN level_project lp ON lp.id = p.id_level_project

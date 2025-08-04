@@ -551,6 +551,15 @@ span.disabled {
   opacity: 0.6;
 }
 
+.multiselect__input,
+.multiselect__single {
+  background: #f6f8fa !important;
+}
+.multiselect__tags {
+  border: 1px solid #c7c2d9 !important;
+  background: #f6f8fa !important;
+}
+
 @import url(color.scss);
 @import url(face-id.scss);
 @import url(animations.scss);

@@ -21,6 +21,7 @@ import udpm.hn.studentattendance.repositories.UserStudentRepository;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 @Service
@@ -85,15 +86,21 @@ public class TeacherStudentAttendanceServiceImpl implements TeacherStudentAttend
 
             if (planDate == null
                     || userStudent == null
-                    || !planDate.getPlanFactory().getFactory().getUserStaff().getId()
-                    .equals(sessionHelper.getUserId())) {
+                    || (!planDate.getPlanFactory().getFactory().getUserStaff().getId()
+                    .equals(sessionHelper.getUserId()) && !Objects.equals(planDate.getUserStaff().getId(), sessionHelper.getUserId()))) {
                 continue;
             }
 
-            Attendance attendance = null;
+            Attendance attendance;
 
             if (req.getIdAttendance() != null) {
                 attendance = repository.findById(req.getIdAttendance()).orElse(null);
+            } else {
+                Attendance newEntity = new Attendance();
+                newEntity.setPlanDate(planDate);
+                newEntity.setUserStudent(userStudent);
+                newEntity.setAttendanceStatus(AttendanceStatus.NOTCHECKIN);
+                attendance = repository.save(newEntity);
             }
 
             if (req.getStatus() == AttendanceStatus.PRESENT.ordinal()) {

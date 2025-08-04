@@ -35,4 +35,8 @@ public interface SPDPlanDateResponse extends IsIdentify, HasOrderNumber {
 
     Integer getRequiredCheckout();
 
+    String getIdTeacher();
+
+    String getNameTeacher();
+
 }
