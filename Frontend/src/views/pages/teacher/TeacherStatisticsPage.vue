@@ -194,7 +194,7 @@ const columns = ref(
     { title: 'Dự án', dataIndex: 'projectName', key: 'projectName' },
     { title: 'Nhóm dự án', dataIndex: 'levelProject', key: 'levelProject' },
     { title: 'Bộ môn', dataIndex: 'subjectName', key: 'subjectName' },
-    { title: 'Số buổi', dataIndex: 'totalShift', key: 'totalShift' },
+    { title: 'Số ca', dataIndex: 'totalShift', key: 'totalShift' },
     { title: 'Số sinh viên', dataIndex: 'totalStudent', key: 'totalStudent' },
     { title: 'Tiến độ', dataIndex: 'process', key: 'process' },
     { title: '', dataIndex: 'status', key: 'status' },
