@@ -30,4 +30,6 @@ public interface USProjectResponse {
 
     String getSubjectFacilityId();
 
+    Integer getTotalPlanDate();
+
 }
