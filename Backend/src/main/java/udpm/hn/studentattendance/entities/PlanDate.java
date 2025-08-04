@@ -1,6 +1,7 @@
 package udpm.hn.studentattendance.entities;
 
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
@@ -73,5 +74,10 @@ public class PlanDate extends PrimaryEntity implements Serializable {
     @JoinColumn(name = "id_plan_factory")
     @OnDelete(action = OnDeleteAction.CASCADE)
     private PlanFactory planFactory;
+
+    @ManyToOne
+    @JsonIgnore
+    @JoinColumn(name = "id_user_staff")
+    private UserStaff userStaff;
 
 }

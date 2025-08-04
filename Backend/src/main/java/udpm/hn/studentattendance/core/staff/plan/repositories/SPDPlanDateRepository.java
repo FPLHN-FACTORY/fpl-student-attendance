@@ -34,6 +34,8 @@ public interface SPDPlanDateRepository extends PlanDateRepository {
             pd.required_ip,
             pd.required_checkin,
             pd.required_checkout,
+            us.id AS idTeacher,
+            CONCAT(us.code, ' - ', us.name) AS nameTeacher,
             CASE
                 WHEN UNIX_TIMESTAMP(NOW()) * 1000 > pd.start_date
                 THEN 'DA_DIEN_RA'
@@ -45,6 +47,7 @@ public interface SPDPlanDateRepository extends PlanDateRepository {
         JOIN project p ON p.id = f.id_project
         JOIN subject_facility sf ON sf.id = p.id_subject_facility
         JOIN facility f2 ON sf.id_facility = f2.id
+        LEFT JOIN user_staff us ON pd.id_user_staff = us.id
         WHERE
             pd.status = 1 AND
             f2.status = 1 AND

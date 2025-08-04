@@ -37,10 +37,4 @@ public class GlobalRestExceptionHandler {
                 .body(ApiResponse.error(errorMessage));
     }
 
-    @ExceptionHandler(RestApiException.class)
-    public ResponseEntity<ApiResponse> handleValidationException(RestApiException ex) {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(ApiResponse.error(ex.getMessage()));
-    }
-
 }

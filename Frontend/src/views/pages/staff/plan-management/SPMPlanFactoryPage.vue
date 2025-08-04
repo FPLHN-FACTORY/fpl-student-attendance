@@ -56,7 +56,7 @@ const columns = ref(
     },
     { title: 'Giảng viên', dataIndex: 'staffName', key: 'staffName' },
     { title: 'Thời gian thực tế', key: 'time' },
-    { title: 'Số buổi', dataIndex: 'totalShift', key: 'totalShift' },
+    { title: 'Số ca', dataIndex: 'totalShift', key: 'totalShift' },
     {
       title: 'Số sinh viên',
       dataIndex: 'totalStudent',
