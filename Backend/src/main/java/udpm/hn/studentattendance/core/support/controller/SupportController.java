@@ -16,7 +16,6 @@ import java.util.List;
 @RestController
 @RequestMapping(RoutesConstant.PREFIX_API_SUPPORT)
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
 public class SupportController {
 
     private final SupportService supportService;
