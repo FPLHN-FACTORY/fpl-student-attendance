@@ -28,7 +28,12 @@ public interface USFactoryExtendRepository extends FactoryRepository {
                 ft.description AS factoryDescription,
                 p.id as projectId,
                 ft.status AS currentStatus,
-                LEAST(ft.status, p.status, lp.status, sf.status, sub.status, s.status, f.status) as factoryStatus
+                LEAST(ft.status, p.status, lp.status, sf.status, sub.status, s.status, f.status) as factoryStatus,
+                (SELECT COUNT(DISTINCT pd.id)
+                            FROM plan_date pd
+                            JOIN plan_factory pf ON pd.id_plan_factory = pf.id
+                            WHERE pf.id_factory = ft.id
+                        ) AS totalPlanDate
             FROM factory ft
             JOIN project p ON p.id = ft.id_project
             JOIN level_project lp ON lp.id = p.id_level_project
@@ -79,7 +84,12 @@ public interface USFactoryExtendRepository extends FactoryRepository {
                 ft.description AS factoryDescription,
                 p.id as projectId,
                 ft.status AS currentStatus,
-                LEAST(ft.status, p.status, lp.status, sf.status, sub.status, s.status, f.status) as factoryStatus
+                LEAST(ft.status, p.status, lp.status, sf.status, sub.status, s.status, f.status) as factoryStatus,
+                (SELECT COUNT(DISTINCT pd.id)
+                            FROM plan_date pd
+                            JOIN plan_factory pf ON pd.id_plan_factory = pf.id
+                            WHERE pf.id_factory = ft.id
+                        ) AS totalPlanDate
             FROM factory ft
             JOIN project p ON p.id = ft.id_project
             JOIN level_project lp ON lp.id = p.id_level_project
@@ -231,4 +241,13 @@ public interface USFactoryExtendRepository extends FactoryRepository {
                 ORDER BY us.name
             """, nativeQuery = true)
     List<USPlanDateStudentFactoryResponse> getAllPlanDateAttendanceByIdFactory(String idFactory);
+
+    @Query(value = """
+        SELECT COUNT(DISTINCT pd.id)
+        FROM plan_date pd
+        JOIN plan_factory pf ON pd.id_plan_factory = pf.id
+        WHERE pf.id_factory = :idFactory
+    """, nativeQuery = true)
+    int getTotalPlanDate(String idFactory);
+
 }
