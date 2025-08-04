@@ -12,7 +12,7 @@ import java.io.IOException;
 import java.util.Arrays;
 
 @Component
-public class EmojiSanitizingFilter extends OncePerRequestFilter {
+public class RequestSanitizingFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
@@ -28,7 +28,7 @@ public class EmojiSanitizingFilter extends OncePerRequestFilter {
             public String[] getParameterValues(String name) {
                 String[] values = super.getParameterValues(name);
                 if (values == null) return null;
-                return Arrays.stream(values).map(EmojiSanitizingFilter::sanitize).toArray(String[]::new);
+                return Arrays.stream(values).map(RequestSanitizingFilter::sanitize).toArray(String[]::new);
             }
         };
 
@@ -37,7 +37,7 @@ public class EmojiSanitizingFilter extends OncePerRequestFilter {
 
     private static String sanitize(String input) {
         if (input == null) return null;
-        return input.replaceAll("[^\\p{L}\\p{N}\\s~`!@#$%^&*()_+\\-=\\[\\]{}|;:'\",.<>/?\\\\]", "").trim();
+        return input.replaceAll("[^\\p{L}\\p{N}\\s~`!@#$%^&*()_+\\-=\\[\\]{}|;:'\",.<>/?\\\\]", "").replaceAll("\\s+", " ").trim();
     }
 
 }
