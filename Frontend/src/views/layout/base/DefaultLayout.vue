@@ -25,6 +25,7 @@ import {
 } from '@/constants/routesConstant'
 import useApplicationStore from '@/stores/useApplicationStore'
 import ExcelUploadList from '@/components/excel/ExcelUploadList.vue'
+import SupportButton from '@/components/support/SupportButton.vue'
 import { autoAddColumnWidth, formatDate } from '@/utils/utils'
 import { DEFAULT_DATE_FORMAT, DEFAULT_PAGINATION, ROLE } from '@/constants'
 import requestAPI from '@/services/requestApiService'
@@ -624,6 +625,7 @@ watch(
         </a-breadcrumb>
         <router-view />
         <ExcelUploadList />
+        <SupportButton />
       </a-layout-content>
     </a-layout>
   </a-layout>
