@@ -113,12 +113,12 @@ public class ADStaffServiceImpl implements ADStaffService {
 
         if (!ValidateHelper.isValidCode(adCreateUpdateStaffRequest.getStaffCode())) {
             return RouterHelper.responseError(
-                    "Mã nhân viên không hợp lệ: Không có khoảng trắng, không có ký tự đặc biệt ngoài dấu chấm . và dấu gạch dưới _.");
+                    "Mã nhân sự không hợp lệ: Không có khoảng trắng, không có ký tự đặc biệt ngoài dấu chấm . và dấu gạch dưới _.");
         }
 
         if (!ValidateHelper.isValidFullname(adCreateUpdateStaffRequest.getName())) {
             return RouterHelper.responseError(
-                    "Tên nhân viên không hợp lệ: Tối thiểu 2 từ, cách nhau bởi khoảng trắng và Chỉ gồm ký tự chữ không chứa số hay ký tự đặc biệt.");
+                    "Tên nhân sự không hợp lệ: Tối thiểu 2 từ, cách nhau bởi khoảng trắng và Chỉ gồm ký tự chữ không chứa số hay ký tự đặc biệt.");
         }
 
         if (!settingHelper.getSetting(SettingKeys.DISABLED_CHECK_EMAIL_FPT_STAFF, Boolean.class)) {
@@ -137,7 +137,7 @@ public class ADStaffServiceImpl implements ADStaffService {
                 adCreateUpdateStaffRequest.getEmailFe(),
                 adCreateUpdateStaffRequest.getEmailFpt());
         if (staffExist != null) {
-            return RouterHelper.responseError("Nhân viên đã tồn tại");
+            return RouterHelper.responseError("Nhân sự đã tồn tại");
         }
 
         UserStaff staff = new UserStaff();
@@ -189,12 +189,11 @@ public class ADStaffServiceImpl implements ADStaffService {
             notificationService.add(notificationAddRequest);
         }
 
-        userActivityLogHelper.saveLog("vừa thêm 1 nhân viên mới: " + staff.getName() + " (" + staff.getCode() + ")");
+        userActivityLogHelper.saveLog("vừa thêm 1 nhân sự mới: " + staff.getName() + " (" + staff.getCode() + ")");
 
-        // Invalidate all caches
         redisInvalidationHelper.invalidateAllCaches();
 
-        return RouterHelper.responseSuccess("Thêm nhân viên mới thành công");
+        return RouterHelper.responseSuccess("Thêm nhân sự mới thành công");
     }
 
     @Override
@@ -202,35 +201,30 @@ public class ADStaffServiceImpl implements ADStaffService {
 
         if (!ValidateHelper.isValidCode(adCreateUpdateStaffRequest.getStaffCode())) {
             return RouterHelper.responseError(
-                    "Mã nhân viên không hợp lệ: Không có khoảng trắng, không có ký tự đặc biệt ngoài dấu chấm . và dấu gạch dưới _.");
+                    "Mã nhân sự không hợp lệ: Không có khoảng trắng, không có ký tự đặc biệt ngoài dấu chấm . và dấu gạch dưới _.");
         }
 
         if (!ValidateHelper.isValidFullname(adCreateUpdateStaffRequest.getName())) {
             return RouterHelper.responseError(
-                    "Tên nhân viên không hợp lệ: Tối thiểu 2 từ, cách nhau bởi khoảng trắng và Chỉ gồm ký tự chữ không chứa số hay ký tự đặc biệt.");
+                    "Tên nhân sự không hợp lệ: Tối thiểu 2 từ, cách nhau bởi khoảng trắng và Chỉ gồm ký tự chữ không chứa số hay ký tự đặc biệt.");
         }
 
-        // Kiểm tra nhân viên tồn tại
         Optional<UserStaff> opt = adStaffRepository.findById(id);
         if (opt.isEmpty()) {
-            return RouterHelper.responseError("Không tìm thấy nhân viên");
+            return RouterHelper.responseError("Không tìm thấy nhân sự");
         }
         UserStaff current = opt.get();
 
-        // 2. Check trùng code
         if (adStaffRepository.isExistCodeUpdate(adCreateUpdateStaffRequest.getStaffCode(), current.getCode())) {
-            return RouterHelper.responseError("Mã nhân viên đã tồn tại");
+            return RouterHelper.responseError("Mã nhân sự đã tồn tại");
         }
-        // 3. Check trùng email FE
         if (adStaffRepository.isExistEmailFeUpdate(adCreateUpdateStaffRequest.getEmailFe(), current.getEmailFe())) {
-            return RouterHelper.responseError("Đã có nhân viên khác dùng email fe này");
+            return RouterHelper.responseError("Đã có nhân sự khác dùng email fe này");
         }
-        // 4. Check trùng email FPT
         if (adStaffRepository.isExistEmailFptUpdate(adCreateUpdateStaffRequest.getEmailFpt(), current.getEmailFpt())) {
-            return RouterHelper.responseError("Đã có nhân viên khác dùng email fpt này");
+            return RouterHelper.responseError("Đã có nhân sự khác dùng email fpt này");
         }
 
-        // Kiểm tra định dạng email
         if (!settingHelper.getSetting(SettingKeys.DISABLED_CHECK_EMAIL_FPT_STAFF, Boolean.class)) {
             if (!ValidateHelper.isValidEmailFE(adCreateUpdateStaffRequest.getEmailFe().trim())) {
                 return RouterHelper.responseError("Không chứa khoảng trắng và kết thúc bằng @fe.edu.vn");
@@ -240,7 +234,6 @@ public class ADStaffServiceImpl implements ADStaffService {
             }
         }
 
-        // Cập nhật thông tin nhân viên
         UserStaff staff = opt.get();
         staff.setName(adCreateUpdateStaffRequest.getName().trim());
         staff.setCode(adCreateUpdateStaffRequest.getStaffCode().trim());
@@ -248,7 +241,6 @@ public class ADStaffServiceImpl implements ADStaffService {
         staff.setEmailFpt(adCreateUpdateStaffRequest.getEmailFpt().trim());
         adStaffRepository.save(staff);
 
-        // Kiểm tra cơ sở
         Optional<Facility> existFacility = adminStaffFacilityRepository
                 .findById(adCreateUpdateStaffRequest.getFacilityId().trim());
         if (existFacility.isEmpty()) {
@@ -256,12 +248,10 @@ public class ADStaffServiceImpl implements ADStaffService {
         }
         Facility facility = existFacility.get();
 
-        // Xử lý vai trò
         List<Role> currentRoles = adStaffRoleRepository.findAllByUserStaffId(staff.getId());
         List<String> newRoleCodes = adCreateUpdateStaffRequest.getRoleCodes();
         RoleConstant[] roleConstants = RoleConstant.values();
 
-        // Xóa vai trò không còn trong danh sách mới
         for (Role role : currentRoles) {
             int currentRoleOrdinal = role.getCode().ordinal();
             String currentRoleString = String.valueOf(currentRoleOrdinal);
@@ -280,7 +270,6 @@ public class ADStaffServiceImpl implements ADStaffService {
             }
         }
 
-        // Cập nhật hoặc tạo mới vai trò
         for (String roleCode : newRoleCodes) {
             RoleConstant roleConstant;
             try {
@@ -321,19 +310,18 @@ public class ADStaffServiceImpl implements ADStaffService {
             notificationService.add(notificationAddRequest);
         }
 
-        userActivityLogHelper.saveLog("vừa cập nhật nhân viên: " + staff.getName() + " (" + staff.getCode() + ")");
+        userActivityLogHelper.saveLog("vừa cập nhật nhân sự: " + staff.getName() + " (" + staff.getCode() + ")");
 
-        // Invalidate all caches
         redisInvalidationHelper.invalidateAllCaches();
 
-        return RouterHelper.responseSuccess("Cập nhật nhân viên thành công");
+        return RouterHelper.responseSuccess("Cập nhật nhân sự thành công");
     }
 
     @Override
     public ResponseEntity<?> changeStaffStatus(String staffId) {
         Optional<UserStaff> existStaff = adStaffRepository.findById(staffId);
         if (existStaff.isEmpty()) {
-            return RouterHelper.responseError("Nhân viên không tồn tại");
+            return RouterHelper.responseError("Nhân sự không tồn tại");
         }
 
         UserStaff staff = existStaff.get();
@@ -341,16 +329,15 @@ public class ADStaffServiceImpl implements ADStaffService {
         staff.setStatus(staff.getStatus() == EntityStatus.ACTIVE ? EntityStatus.INACTIVE : EntityStatus.ACTIVE);
         String newStatus = staff.getStatus() == EntityStatus.ACTIVE ? "Hoạt động" : "Không hoạt động";
 
-        List<Role> staffRoles = adStaffRoleRepository.findAllByUserStaffId(staffId);
-        staffRoles.forEach(staffRole -> staffRole
-                .setStatus(staff.getStatus() == EntityStatus.ACTIVE ? EntityStatus.INACTIVE : EntityStatus.ACTIVE));
-        adStaffRoleRepository.saveAll(staffRoles);
+//        List<Role> staffRoles = adStaffRoleRepository.findAllByUserStaffId(staffId);
+//        staffRoles.forEach(staffRole -> staffRole
+//                .setStatus(staff.getStatus() == EntityStatus.ACTIVE ? EntityStatus.INACTIVE : EntityStatus.ACTIVE));
+//        adStaffRoleRepository.saveAll(staffRoles);
 
         adStaffRepository.save(staff);
-        userActivityLogHelper.saveLog("vừa thay đổi trạng thái nhân viên " + staff.getName() + " (" + staff.getCode()
+        userActivityLogHelper.saveLog("vừa thay đổi trạng thái nhân sự " + staff.getName() + " (" + staff.getCode()
                 + ") từ " + oldStatus + " thành " + newStatus);
 
-        // Invalidate all caches
         redisInvalidationHelper.invalidateAllCaches();
 
         return RouterHelper.responseSuccess("Thay đổi trạng thái nhân sự thành công");
@@ -358,7 +345,7 @@ public class ADStaffServiceImpl implements ADStaffService {
 
     @Override
     public ResponseEntity<?> getStaffById(String staffId) {
-        ADStaffDetailResponse staffDetail = getStaffDetail(staffId);
+        Optional<ADStaffDetailResponse> staffDetail = adStaffRepository.getDetailStaff(staffId);
         if (staffDetail != null) {
             return RouterHelper.responseSuccess("Xem chi tiết nhân sự thành công", staffDetail);
         }

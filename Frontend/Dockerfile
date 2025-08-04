@@ -11,6 +11,7 @@ ENV VITE_BASE_URL="https://fplstudentattendance.site/"
 ENV VITE_BASE_API_URL="https://fplstudentattendance.site/"
 ENV VITE_PREFIX_API="/api/v1"
 ENV VITE_PREFIX_ADMIN_PANEL="/admin-panel"
+ENV VITE_SECRET_KEY=ldhfnke-aksfne-emgkse
 
 # Copy package và cài dependencies
 COPY package.json package-lock.json ./

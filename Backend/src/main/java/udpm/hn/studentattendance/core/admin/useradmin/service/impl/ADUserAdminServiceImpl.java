@@ -166,7 +166,7 @@ public class ADUserAdminServiceImpl implements ADUserAdminService {
 
                 Optional<UserAdmin> opt = userAdminExtendRepository.findById(id);
                 if (opt.isEmpty()) {
-                        return RouterHelper.responseError("Không tìm thấy nhân viên");
+                        return RouterHelper.responseError("Không tìm thấy nhân sự");
                 }
                 UserAdmin current = opt.get();
 
@@ -284,7 +284,7 @@ public class ADUserAdminServiceImpl implements ADUserAdminService {
                 boolean emailFptExists = userAdminList.stream()
                                 .anyMatch(a -> a.getEmail().equalsIgnoreCase(userStaff.get().getEmailFpt()));
                 if (emailFeExists || emailFptExists) {
-                        return RouterHelper.responseError("Nhân viên này đã có quyền admin");
+                        return RouterHelper.responseError("Nhân sụ này đã có quyền admin");
                 }
                 if (userStaff.isPresent()) {
                         UserAdmin oldAdmin = userAdminExtendRepository
@@ -315,7 +315,7 @@ public class ADUserAdminServiceImpl implements ADUserAdminService {
         @Override
         public ResponseEntity<?> getAllUserStaff() {
                 List<UserStaff> userStaffList = getAllUserStaffList();
-                return RouterHelper.responseSuccess("Lấy thành công danh sách nhân viên", userStaffList);
+                return RouterHelper.responseSuccess("Lấy thành công danh sách nhân sự", userStaffList);
         }
 
         @Override

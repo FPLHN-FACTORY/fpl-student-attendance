@@ -48,3 +48,7 @@ export const API_ROUTES_NOTIFICATION = {
   FETCH_MARK_UNREAD: API_URL + '/notification/mark-unread',
   FETCH_MARK_READ_ALL: API_URL + '/notification/mark-read-all',
 }
+
+export const API_ROUTES_SUPPORT = {
+  FETCH_SEND_SUPPORT: API_URL + '/support/send-mail',
+}
