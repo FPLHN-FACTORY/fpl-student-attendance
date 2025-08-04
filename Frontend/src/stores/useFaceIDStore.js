@@ -14,7 +14,7 @@ const MIN_BRIGHTNESS = 60
 const MAX_BRIGHTNESS = 190
 const THRESHOLD_LIGHT = 60
 const SIZE_CAMERA = 480
-const SKIP_FRAME = 10
+const SKIP_FRAME = 5
 const ANTISPOOF = true
 
 const useFaceIDStore = defineStore('faceID', () => {
@@ -376,7 +376,8 @@ const useFaceIDStore = defineStore('faceID', () => {
 
     const submit = async () => {
       if (!lstDescriptor.value.length) {
-        return (step.value = 0)
+        step.value = 0
+        return renderTextStep()
       }
 
       const similarity = human.match.similarity(
@@ -795,7 +796,7 @@ const useFaceIDStore = defineStore('faceID', () => {
           }
           if (step.value === 3 && angle === 0) {
             prevEmbedding.value = null
-            await getBestEmbedding(3, 1)
+            await getBestEmbedding(3, 0)
             if (!embedding.value || embedding.length < 1) {
               return
             }
@@ -809,8 +810,10 @@ const useFaceIDStore = defineStore('faceID', () => {
 
     let frameCount = 0
     let isProgress = false
+    let detectTimeoutId = null
     const detectLoop = async () => {
-      if (!isRunScan.value) return
+      if (!isRunScan.value) return clearTimeout(detectTimeoutId)
+
       if (isLoadingModels.value && video.value?.readyState === 4 && frameCount % SKIP_FRAME === 0) {
         if (!isProgress) {
           isProgress = true
@@ -820,14 +823,15 @@ const useFaceIDStore = defineStore('faceID', () => {
             isProgress = false
           }
         }
-        isLoading.value && (isLoading.value = false)
+        if (isLoading.value) {
+          isLoading.value = false
+        }
       }
 
       frameCount++
-      requestAnimationFrame(detectLoop)
+      detectTimeoutId = setTimeout(detectLoop, 0)
     }
-
-    requestAnimationFrame(detectLoop)
+    detectLoop()
   }
 
   const renderStyle = () => {
