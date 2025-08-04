@@ -310,7 +310,7 @@ public class TCTeachingScheduleServiceImpl implements TCTeachingScheduleService 
 
                 PlanDate planDate = existPlanDate.get();
                 if (!Objects.equals(planDate.getPlanFactory().getFactory().getUserStaff().getId(),
-                                sessionHelper.getUserId())) {
+                                sessionHelper.getUserId()) && !Objects.equals(planDate.getUserStaff().getId(), sessionHelper.getUserId())) {
                         return RouterHelper.responseError("Lịch dạy không phải của bạn");
                 }
 
@@ -465,7 +465,7 @@ public class TCTeachingScheduleServiceImpl implements TCTeachingScheduleService 
 
                 PlanDate planDate = existPlanDate.get();
                 if (!Objects.equals(planDate.getPlanFactory().getFactory().getUserStaff().getId(),
-                                sessionHelper.getUserId())) {
+                                sessionHelper.getUserId()) && !Objects.equals(planDate.getUserStaff().getId(), sessionHelper.getUserId())) {
                         return RouterHelper.responseError("Lịch dạy không phải của bạn");
                 }
 
