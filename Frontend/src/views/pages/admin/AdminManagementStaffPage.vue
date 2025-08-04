@@ -210,12 +210,12 @@ const handleAddStaff = () => {
     { key: 'emailFe', label: 'Email FE' },
     { key: 'emailFpt', label: 'Email FPT' },
   ])
-  
+
   if (!validation.isValid) {
     message.error(validation.message)
     return
   }
-  
+
   if (!newStaff.facilityId || newStaff.roleCodes.length === 0) {
     message.error('Vui lòng chọn cơ sở và ít nhất một vai trò')
     return
@@ -290,12 +290,12 @@ const updateStaff = () => {
     { key: 'emailFe', label: 'Email FE' },
     { key: 'emailFpt', label: 'Email FPT' },
   ])
-  
+
   if (!validation.isValid) {
     message.error(validation.message)
     return
   }
-  
+
   if (!detailStaff.facilityId || detailStaff.roleCodes.length === 0) {
     message.error('Vui lòng chọn cơ sở và vai trò')
     return
@@ -387,7 +387,7 @@ const handleClearFilter = () => {
   Object.keys(filter).forEach((key) => {
     filter[key] = ''
   })
-  pagination.value.current = 1
+  // Không reset về trang 1 khi hủy lọc để giữ nguyên dữ liệu hiện tại
   fetchStaffs()
 }
 

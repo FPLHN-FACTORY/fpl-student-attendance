@@ -412,7 +412,7 @@ function confirmRoomModal() {
   const validation = validateFormSubmission({ room: roomInput.value }, [
     { key: 'room', label: 'Phòng ', allowOnlyNumbers: true },
   ])
-  
+
   if (!validation.isValid) {
     return message.error(validation.message)
   }
@@ -425,7 +425,7 @@ function confirmLinkModal() {
   const validation = validateFormSubmission({ link: linkInput.value }, [
     { key: 'link', label: 'Link online', skipNumberValidation: true },
   ])
-  
+
   if (!validation.isValid) {
     return message.error(validation.message)
   }
@@ -466,7 +466,7 @@ const handleClearFilter = () => {
       filter[key] = ''
     }
   })
-  pagination.value.current = 1
+  // Không reset về trang 1 khi hủy lọc để giữ nguyên dữ liệu hiện tại
   fetchTeachingSchedule()
 }
 
