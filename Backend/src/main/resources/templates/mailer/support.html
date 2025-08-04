@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yêu cầu hỗ trợ</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+
+        .container {
+            background-color: #ffffff;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .header .subtitle {
+            color: #7f8c8d;
+            font-size: 14px;
+            margin-top: 8px;
+        }
+
+        .content {
+            margin-bottom: 30px;
+        }
+
+        .info-section {
+            margin-bottom: 30px;
+        }
+
+        .info-section h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-size: 16px;
+            font-weight: 600;
+            border-bottom: 1px solid #ecf0f1;
+            padding-bottom: 8px;
+        }
+
+        .info-item {
+            margin-bottom: 12px;
+            display: flex;
+            align-items: flex-start;
+        }
+
+        .info-label {
+            font-weight: 500;
+            color: #34495e;
+            min-width: 100px;
+            flex-shrink: 0;
+        }
+
+        .info-value {
+            color: #2c3e50;
+            margin-left: 10px;
+        }
+
+        .message-box {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 6px;
+            border: 1px solid #e9ecef;
+            margin-top: 15px;
+            color: #495057;
+            line-height: 1.7;
+        }
+
+        .footer {
+            text-align: center;
+            color: #95a5a6;
+            font-size: 13px;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #ecf0f1;
+        }
+
+        .attachments {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            border: 1px solid #e9ecef;
+            margin-top: 15px;
+        }
+
+        .attachment-item {
+            margin: 8px 0;
+            color: #6c757d;
+            font-size: 14px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            background-color: #e9ecef;
+            color: #495057;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .status-new {
+            background-color: #d4edda;
+            color: #155724;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Yêu cầu hỗ trợ mới</h1>
+            <div class="subtitle">Hệ thống quản lý điểm danh sinh viên</div>
+        </div>
+
+        <div class="content">
+            <div class="info-section">
+                <h3>Thông tin yêu cầu</h3>
+                <div class="info-item">
+                    <span class="info-label">Tiêu đề:</span>
+                    <span class="info-value">{{ TITLE }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Người gửi:</span>
+                    <span class="info-value">{{ SENDER_NAME }} ({{ SENDER_EMAIL }})</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Mã người dùng:</span>
+                    <span class="info-value">{{ USER_CODE }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Vai trò:</span>
+                    <span class="info-value"><span class="badge">{{ USER_ROLE }}</span></span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Thời gian:</span>
+                    <span class="info-value">{{ TIMESTAMP }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Trạng thái:</span>
+                    <span class="info-value"><span class="badge status-new">Mới</span></span>
+                </div>
+            </div>
+
+            <div class="info-section">
+                <h3>Nội dung yêu cầu</h3>
+                <div class="message-box">
+                    {{ MESSAGE }}
+                </div>
+            </div>
+
+            {{ ATTACHMENTS_SECTION }}
+        </div>
+
+    </div>
+</body>
+
+</html>

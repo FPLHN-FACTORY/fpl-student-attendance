@@ -16,6 +16,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import udpm.hn.studentattendance.core.staff.plan.model.request.SPDDeletePlanDateRequest;
 import udpm.hn.studentattendance.core.staff.plan.model.request.SPDFilterPlanDateRequest;
 import udpm.hn.studentattendance.core.staff.plan.model.response.SPDPlanDateResponse;
+import udpm.hn.studentattendance.core.staff.plan.model.response.SPDPlanDateGroupResponse;
 import udpm.hn.studentattendance.core.staff.plan.model.response.SPDPlanFactoryResponse;
 import udpm.hn.studentattendance.core.staff.plan.repositories.SPDFacilityShiftRepository;
 import udpm.hn.studentattendance.core.staff.plan.repositories.SPDPlanDateRepository;
@@ -24,7 +25,6 @@ import udpm.hn.studentattendance.helpers.SessionHelper;
 import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
 import udpm.hn.studentattendance.infrastructure.common.ApiResponse;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
-
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -46,7 +46,6 @@ class SPDPlanDateServiceImplTest {
 
     @Mock
     private SPDFacilityShiftRepository facilityShiftRepository;
-
 
     @Mock
     private SessionHelper sessionHelper;
@@ -119,8 +118,8 @@ class SPDPlanDateServiceImplTest {
 
         when(sessionHelper.getFacilityId()).thenReturn(facilityId);
 
-        Page<SPDPlanDateResponse> page = new PageImpl<>(new ArrayList<>());
-        when(planDateRepository.getAllByFilter(any(Pageable.class), eq(request))).thenReturn(page);
+        Page<SPDPlanDateGroupResponse> page = new PageImpl<>(new ArrayList<>());
+        when(planDateRepository.getAllGroupByFilter(any(), eq(request))).thenReturn(page);
 
         // Act
         ResponseEntity<?> response = planDateService.getAllList(request);
@@ -132,7 +131,7 @@ class SPDPlanDateServiceImplTest {
         assertEquals("Lấy danh sách dữ liệu thành công", apiResponse.getMessage());
 
         assertEquals(facilityId, request.getIdFacility());
-        verify(planDateRepository).getAllByFilter(any(Pageable.class), eq(request));
+        verify(planDateRepository).getAllGroupByFilter(any(), eq(request));
     }
 
     @Test
@@ -199,7 +198,7 @@ class SPDPlanDateServiceImplTest {
         when(sessionHelper.getFacilityId()).thenReturn(facilityId);
 
         SPDDeletePlanDateRequest request = new SPDDeletePlanDateRequest();
-        request.setIds(planDateIds);
+        request.setDays(planDateIds);
 
         when(planDateRepository.deletePlanDateById(facilityId, planDateIds)).thenReturn(2);
         doNothing().when(userActivityLogHelper).saveLog(anyString());
@@ -222,7 +221,7 @@ class SPDPlanDateServiceImplTest {
     void testDeleteMultiplePlanDate_NoIds() {
         // Arrange
         SPDDeletePlanDateRequest request = new SPDDeletePlanDateRequest();
-        request.setIds(new ArrayList<>());
+        request.setDays(new ArrayList<>());
 
         // Act
         ResponseEntity<?> response = planDateService.deleteMultiplePlanDate(request);

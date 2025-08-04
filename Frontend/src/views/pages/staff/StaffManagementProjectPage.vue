@@ -247,7 +247,9 @@ const handleAddProject = () => {
 
 async function handleEditProject(record) {
   try {
+    loadingStore.show()
     const { data } = await requestAPI.get(`${API_ROUTES_STAFF.FETCH_DATA_PROJECT}/${record.id}`)
+    loadingStore.hide()
     Object.assign(detailProject, data.data)
     oldSemesterId.value = data.data.semesterId
     modalEdit.value = true
@@ -759,7 +761,8 @@ onMounted(() => {
             </a-select-option>
           </a-select>
         </a-form-item>
-        <a-form-item label="Học kỳ" required>
+
+        <a-form-item label="Học kỳ" required v-if="detailProject.totalPlanDate < 1">
           <a-select
             v-model:value="detailProject.semesterId"
             placeholder="Chọn học kỳ"

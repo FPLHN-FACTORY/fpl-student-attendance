@@ -83,13 +83,13 @@ const columns = ref(
       align: 'center',
     },
     {
-      title: 'Số buổi đã nghỉ',
+      title: 'Số ca vắng mặt',
       dataIndex: 'totalAbsentShift',
       key: 'totalAbsentShift',
       align: 'center',
     },
     {
-      title: 'Tỉ lệ nghỉ',
+      title: 'Tỉ lệ vắng mặt',
       dataIndex: 'percenAbsentShift',
       key: 'percenAbsentShift',
       align: 'center',

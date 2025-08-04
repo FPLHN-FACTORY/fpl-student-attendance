@@ -36,7 +36,7 @@ public interface TCTeachingScheduleExtendRepository extends PlanDateRepository {
                 plan_date pd
                 JOIN plan_factory pf ON pf.id = pd.id_plan_factory
                 JOIN factory ft ON ft.id = pf.id_factory
-                JOIN user_staff us ON us.id = ft.id_user_staff
+                JOIN user_staff us ON us.id = COALESCE(pd.id_user_staff, ft.id_user_staff)
                 JOIN project p ON p.id = ft.id_project
                 JOIN subject_facility sf ON sf.id = p.id_subject_facility
                 JOIN facility f ON f.id = sf.id_facility
@@ -57,7 +57,7 @@ public interface TCTeachingScheduleExtendRepository extends PlanDateRepository {
                 plan_date pd
                 JOIN plan_factory pf ON pf.id = pd.id_plan_factory
                 JOIN factory ft ON ft.id = pf.id_factory
-                JOIN user_staff us ON us.id = ft.id_user_staff
+                JOIN user_staff us ON us.id = COALESCE(pd.id_user_staff, ft.id_user_staff)
                 JOIN project p ON p.id = ft.id_project
                 JOIN subject_facility sf ON sf.id = p.id_subject_facility
                 JOIN subject sb ON sb.id = sf.id_subject
@@ -94,7 +94,7 @@ public interface TCTeachingScheduleExtendRepository extends PlanDateRepository {
                                     plan_date pd
                                     JOIN plan_factory pf ON pf.id = pd.id_plan_factory
                                     JOIN factory ft ON ft.id = pf.id_factory
-                                    JOIN user_staff us ON us.id = ft.id_user_staff
+                                    JOIN user_staff us ON us.id = COALESCE(pd.id_user_staff, ft.id_user_staff)
                                     JOIN project p ON p.id = ft.id_project
                                     JOIN subject_facility sf ON sf.id = p.id_subject_facility
                                     JOIN subject sb ON sb.id = sf.id_subject
@@ -117,7 +117,7 @@ public interface TCTeachingScheduleExtendRepository extends PlanDateRepository {
                 plan_date pd
                 JOIN plan_factory pf ON pf.id = pd.id_plan_factory
                 JOIN factory ft ON ft.id = pf.id_factory
-                JOIN user_staff us ON us.id = ft.id_user_staff
+                JOIN user_staff us ON us.id = COALESCE(pd.id_user_staff, ft.id_user_staff)
                 JOIN project p ON p.id = ft.id_project
                 JOIN subject_facility sf ON sf.id = p.id_subject_facility
                 JOIN subject sb ON sb.id = sf.id_subject
@@ -176,7 +176,7 @@ public interface TCTeachingScheduleExtendRepository extends PlanDateRepository {
                 plan_date pd
                 JOIN plan_factory pf ON pf.id = pd.id_plan_factory
                 JOIN factory ft ON ft.id = pf.id_factory
-                JOIN user_staff us ON us.id = ft.id_user_staff
+                JOIN user_staff us ON us.id = COALESCE(pd.id_user_staff, ft.id_user_staff)
                 JOIN project p ON p.id = ft.id_project
                 JOIN subject_facility sf ON sf.id = p.id_subject_facility
                 JOIN subject sb ON sb.id = sf.id_subject

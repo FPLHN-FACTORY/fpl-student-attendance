@@ -55,8 +55,7 @@ public interface TeacherStudentAttendanceRepository extends AttendanceRepository
                  f2.status = 1 AND
                  sf.status = 1 AND
                  f2.id = :idFacility
-        ) AND
-        pd.start_date <= UNIX_TIMESTAMP(NOW()) * 1000
+        )
     ORDER BY
         us.name ASC 
 """, nativeQuery = true)
