@@ -148,16 +148,15 @@ public class USFactoryServiceImpl implements USFactoryService {
     @Override
     public ResponseEntity<?> createFactory(USFactoryCreateUpdateRequest factoryCreateUpdateRequest) {
 
-
         Optional<UserStaff> userStaff = staffFactoryExtendRepository
                 .findById(factoryCreateUpdateRequest.getIdUserStaff());
         Optional<Project> project = projectFactoryExtendRepository
                 .findById(factoryCreateUpdateRequest.getIdProject());
 
-        String namePattern = "^[a-zA-ZÀ-ỹ\\s_#-]+$";
+        String namePattern = "^[a-zA-ZÀ-ỹ0-9\\s_#-]+$";
         if (!factoryCreateUpdateRequest.getFactoryName().matches(namePattern)) {
             return RouterHelper
-                    .responseError("Tên nhóm xưởng không hợp lệ: Chỉ được chứa ký tự chữ và các ký tự đặc biệt _ - #");
+                    .responseError("Tên nhóm xưởng không hợp lệ: Chỉ được chứa ký tự chữ, số và các ký tự đặc biệt _ - #");
         }
 
         if (userStaff.isEmpty()) {
@@ -216,10 +215,10 @@ public class USFactoryServiceImpl implements USFactoryService {
             return RouterHelper.responseError("Nhóm xưởng đã tồn tại trong dự án này");
         }
 
-        String namePattern = "^[a-zA-ZÀ-ỹ\\s_#-]+$";
+        String namePattern = "^[a-zA-ZÀ-ỹ0-9\\s_#-]+$";
         if (!req.getFactoryName().matches(namePattern)) {
             return RouterHelper
-                    .responseError("Tên nhóm xưởng không hợp lệ: Chỉ được chứa ký tự chữ và các ký tự đặc biệt _ - #");
+                    .responseError("Tên nhóm xưởng không hợp lệ: Chỉ được chứa ký tự chữ, số và các ký tự đặc biệt _ - #");
         }
 
         if (newStaff == null) {
