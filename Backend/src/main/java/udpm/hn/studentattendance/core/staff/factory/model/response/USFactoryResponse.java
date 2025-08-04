@@ -21,4 +21,6 @@ public interface USFactoryResponse {
 
     String getProjectId();
 
+    Integer getTotalPlanDate();
+
 }

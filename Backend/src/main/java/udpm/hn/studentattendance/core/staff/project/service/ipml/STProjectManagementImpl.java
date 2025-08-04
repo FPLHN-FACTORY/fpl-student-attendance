@@ -52,10 +52,9 @@ public class STProjectManagementImpl implements STProjectManagementService {
     @Override
     public ResponseEntity<?> createProject(USProjectCreateOrUpdateRequest request) {
 
-        String namePattern = "^[a-zA-ZÀ-ỹ\\s_#-]+$";
-        if (!request.getName().matches(namePattern)) {
+        if (!ValidateHelper.isValidName(request.getName())) {
             return RouterHelper
-                    .responseError("Tên dự án không hợp lệ: Chỉ được chứa ký tự chữ và các ký tự đặc biệt _ - #");
+                    .responseError("Tên dự án không hợp lệ: Chỉ được chứa ký tự chữ, số và các ký tự đặc biệt _ - #");
         }
 
         String[] words = request.getName().trim().split("\\s+");
@@ -113,10 +112,9 @@ public class STProjectManagementImpl implements STProjectManagementService {
             return RouterHelper.responseError("Không tìm thấy dự án");
         }
 
-        String namePattern = "^[a-zA-ZÀ-ỹ\\s_#-]+$";
-        if (!request.getName().matches(namePattern)) {
+        if (!ValidateHelper.isValidName(request.getName())) {
             return RouterHelper
-                    .responseError("Tên dự án không hợp lệ: Chỉ được chứa ký tự chữ và các ký tự đặc biệt _ - #");
+                    .responseError("Tên dự án không hợp lệ: Chỉ được chứa ký tự chữ, số và các ký tự đặc biệt _ - #");
         }
 
         String[] words = request.getName().trim().split("\\s+");
@@ -155,8 +153,11 @@ public class STProjectManagementImpl implements STProjectManagementService {
         project.setName(request.getName().trim());
         project.setDescription(request.getDescription());
         project.setLevelProject(levelProject);
-        project.setSemester(semester);
         project.setSubjectFacility(subjectFacility);
+
+        int totalPlanDate = projectManagementRepository.getTotalPlanDate(project.getId());
+        project.setSemester(totalPlanDate > 0 ? project.getSemester() : semester);
+
         projectManagementRepository.save(project);
 
         userActivityLogHelper.saveLog("vừa cập nhật dự án: " + oldName + " → " + project.getName());

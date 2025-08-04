@@ -49,11 +49,14 @@ public class TeacherStudentAttendanceServiceImpl implements TeacherStudentAttend
             Optional<String> optAttId = repository.findAttendanceIdByPlanDateAndStudent(planDateId, studentId);
             Attendance attendance;
             if (optAttId.isPresent()) {
-                attendance = repository.findById(optAttId.get()).orElseThrow();
+                attendance = repository.findById(optAttId.get()).orElse(null);
             } else {
                 attendance = new Attendance();
-                attendance.setUserStudent(userStudentRepository.findById(studentId).orElseThrow());
-                attendance.setPlanDate(planDateRepository.findById(planDateId).orElseThrow());
+                attendance.setUserStudent(userStudentRepository.findById(studentId).orElse(null));
+                attendance.setPlanDate(planDateRepository.findById(planDateId).orElse(null));
+            }
+            if (attendance == null) {
+                continue;
             }
             attendance.setAttendanceStatus(AttendanceStatus.PRESENT);
             results.add(repository.save(attendance));
