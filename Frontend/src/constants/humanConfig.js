@@ -1,5 +1,3 @@
-import { backend } from '@tensorflow/tfjs'
-
 export default {
   async: true,
   modelBasePath: '/models/human',
@@ -12,8 +10,8 @@ export default {
       rotation: true,
       inputSize: 448,
       maxDetected: 1,
-      iouThreshold: 0.3,
-      minConfidence: 0.3,
+      iouThreshold: 0.2,
+      minConfidence: 0.7,
       square: true,
     },
     iris: { enabled: false },
@@ -21,8 +19,8 @@ export default {
     embedding: { enabled: true },
     emotion: { enabled: true },
     mesh: { enabled: true },
-    antispoof: { enabled: true },
-    liveness: { enabled: true },
+    antispoof: { enabled: false },
+    liveness: { enabled: false },
   },
   body: { enabled: false },
   hand: { enabled: false },
