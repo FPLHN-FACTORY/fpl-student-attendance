@@ -509,7 +509,12 @@ watch(
                     <span
                       v-else-if="Date.now() > record.startDate + record.lateArrival * 60 * 1000"
                     >
-                      <template v-if="record.totalLateAttendance > record.currentLateAttendance">
+                      <template
+                        v-if="
+                          record.totalLateAttendance > record.currentLateAttendance &&
+                          Date.now() <= record.endDate
+                        "
+                      >
                         <a-tooltip title="Checkin bù">
                           <a-button
                             type="primary"
@@ -536,7 +541,12 @@ watch(
                   </span>
                   <span v-else-if="record.status == ATTENDANCE_STATUS.CHECKIN.id">
                     <span v-if="Date.now() > record.endDate + record.lateArrival * 60 * 1000">
-                      <template v-if="record.totalLateAttendance > record.currentLateAttendance">
+                      <template
+                        v-if="
+                          record.totalLateAttendance > record.currentLateAttendance &&
+                          Date.now() <= record.endDate + record.lateArrival * 60 * 1000 * 2
+                        "
+                      >
                         <a-tooltip title="Checkout bù">
                           <a-button
                             type="primary"
@@ -584,7 +594,12 @@ watch(
                     <span class="text-success">Đã điểm danh</span>
                   </span>
                   <span v-else-if="Date.now() > record.endDate + record.lateArrival * 60 * 1000">
-                    <template v-if="record.totalLateAttendance > record.currentLateAttendance">
+                    <template
+                      v-if="
+                        record.totalLateAttendance > record.currentLateAttendance &&
+                        Date.now() <= record.endDate + record.lateArrival * 60 * 1000 * 2
+                      "
+                    >
                       <a-tooltip title="Checkout bù">
                         <a-button
                           type="primary"
@@ -628,7 +643,12 @@ watch(
                     Chưa đến giờ checkin
                   </span>
                   <span v-else-if="Date.now() > record.startDate + record.lateArrival * 60 * 1000">
-                    <template v-if="record.totalLateAttendance > record.currentLateAttendance">
+                    <template
+                      v-if="
+                        record.totalLateAttendance > record.currentLateAttendance &&
+                        Date.now() <= record.endDate
+                      "
+                    >
                       <a-tooltip title="Checkin bù">
                         <a-button
                           type="primary"
