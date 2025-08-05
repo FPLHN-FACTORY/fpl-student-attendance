@@ -19,8 +19,9 @@ import Select from '@/components/form/Select'
 import EmptyData from '@/components/EmptyData'
 import { CollapseItemCalendar } from '../item/CollapseItemCalendar'
 import { ItemCalendar } from '@/types/ItemCalendar'
-import { getTimeRange } from '@/utils'
+import { countNotification, getTimeRange } from '@/utils'
 import { useLoading } from '@/components/loading/LoadingContext'
+import { useGlobalStore } from '@/utils/GlobalStore'
 
 interface Props {
   animatedValue: Animated.Value
@@ -55,6 +56,11 @@ const CalendarTab: React.FC<Props> = ({ animatedValue, showMenuRef }) => {
       outputRange: [Colors.background, '#ffffff'],
       extrapolate: 'clamp',
     }),
+  }
+
+  const setTotalNotification = useGlobalStore((state) => state.setTotalNotification)
+  const getTotalNotification = () => {
+    countNotification((data) => setTotalNotification(data || 0))
   }
 
   const fetchDataList = async () => {
@@ -126,6 +132,7 @@ const CalendarTab: React.FC<Props> = ({ animatedValue, showMenuRef }) => {
 
   const handleRefresh = () => {
     if (loadMorePage) return
+    getTotalNotification()
     setCurrentPage(1)
     setRefreshTrigger((prev) => prev + 1)
   }

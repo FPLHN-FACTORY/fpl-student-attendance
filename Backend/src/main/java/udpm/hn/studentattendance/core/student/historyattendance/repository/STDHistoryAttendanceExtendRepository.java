@@ -10,6 +10,7 @@ import udpm.hn.studentattendance.core.student.historyattendance.model.response.S
 import udpm.hn.studentattendance.repositories.FactoryRepository;
 
 import java.util.List;
+import java.util.Map;
 
 @Repository
 public interface STDHistoryAttendanceExtendRepository extends FactoryRepository {
@@ -17,8 +18,7 @@ public interface STDHistoryAttendanceExtendRepository extends FactoryRepository 
     @Query(value = """
              SELECT
                 ROW_NUMBER() OVER (
-                  PARTITION BY ft.id 
-                  ORDER BY pd.start_date
+                  ORDER BY pd.start_date DESC
                 ) AS rowNumber,
                 ft.id                   AS factoryId,
                 ft.name                 AS factoryName,
@@ -51,19 +51,16 @@ public interface STDHistoryAttendanceExtendRepository extends FactoryRepository 
             JOIN factory ft         ON pf.id_factory     = ft.id
             JOIN user_student_factory usf
                                    ON usf.id_factory    = ft.id
-            JOIN user_student us    ON usf.id_user_student = us.id
+                                   AND usf.status = 1
             LEFT JOIN attendance a  ON a.id_plan_date     = pd.id
-                                   AND a.id_user_student = us.id
+                                   AND a.id_user_student = usf.id_user_student
                                    AND a.status = 1
-            WHERE us.id = :userStudentId
-              AND (usf.status = 1
-                   OR (usf.status = 0
-                       AND pd.start_date <= usf.updated_at))
+            WHERE usf.id_user_student = :userStudentId
               AND (:#{#attendanceRequest.semesterId} IS NULL
                    OR s.id = :#{#attendanceRequest.semesterId})
               AND (:#{#attendanceRequest.factoryId}  IS NULL
                    OR ft.id = :#{#attendanceRequest.factoryId})
-            ORDER  BY ft.id, pd.start_date
+            ORDER  BY pd.start_date DESC
             """,
             countQuery = """
                     SELECT COUNT(*)
@@ -75,12 +72,8 @@ public interface STDHistoryAttendanceExtendRepository extends FactoryRepository 
                                            AND s.status = 1
                     JOIN factory ft         ON pf.id_factory     = ft.id
                     JOIN user_student_factory usf
-                                           ON usf.id_factory    = ft.id
-                    JOIN user_student us    ON usf.id_user_student = us.id
-                    WHERE us.id = :userStudentId
-                      AND (usf.status = 1
-                           OR (usf.status = 0
-                               AND pd.start_date <= usf.updated_at))
+                                           ON usf.id_factory    = ft.id AND usf.status = 1
+                    WHERE usf.id_user_student = :userStudentId
                       AND (:#{#attendanceRequest.semesterId} IS NULL
                            OR s.id = :#{#attendanceRequest.semesterId})
                       AND (:#{#attendanceRequest.factoryId}  IS NULL
@@ -94,6 +87,27 @@ public interface STDHistoryAttendanceExtendRepository extends FactoryRepository 
             STDHistoryAttendanceRequest attendanceRequest,
             Long nowTs
     );
+
+    @Query(value = """
+        SELECT
+            COUNT(*) AS totalShift,
+            SUM(CASE WHEN a.attendance_status = 3 THEN 1 ELSE 0 END) AS totalPresent,
+            SUM(CASE WHEN pd.start_date <= UNIX_TIMESTAMP(NOW()) * 1000 AND (a.id IS NULL OR a.attendance_status != 3) THEN 1 ELSE 0 END) AS totalAbsent
+        FROM plan_date pd
+        JOIN plan_factory pf ON pd.id_plan_factory = pf.id
+        JOIN plan pl ON pf.id_plan = pl.id
+        JOIN project p ON pl.id_project = p.id
+        JOIN semester s ON p.id_semester = s.id AND s.status = 1
+        JOIN factory ft ON pf.id_factory = ft.id
+        JOIN user_student_factory usf ON usf.id_factory = ft.id AND usf.status = 1
+        LEFT JOIN attendance a ON a.id_plan_date = pd.id AND a.id_user_student = usf.id_user_student
+        WHERE usf.id_user_student = :userStudentId
+          AND (:#{#attendanceRequest.semesterId} IS NULL
+               OR s.id = :#{#attendanceRequest.semesterId})
+          AND (:#{#attendanceRequest.factoryId} IS NULL
+               OR ft.id = :#{#attendanceRequest.factoryId})
+    """, nativeQuery = true)
+    Map<String, Object> getAttendanceSummary(String userStudentId, STDHistoryAttendanceRequest attendanceRequest);
 
     @Query(value = """
                SELECT

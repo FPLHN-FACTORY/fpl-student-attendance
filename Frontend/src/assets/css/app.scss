@@ -49,7 +49,6 @@ hr {
 }
 
 @media (min-width: 576px) {
-
   .container-sm,
   .container {
     max-width: 540px;
@@ -57,7 +56,6 @@ hr {
 }
 
 @media (min-width: 768px) {
-
   .container-md,
   .container-sm,
   .container {
@@ -66,7 +64,6 @@ hr {
 }
 
 @media (min-width: 992px) {
-
   .container-lg,
   .container-md,
   .container-sm,
@@ -76,7 +73,6 @@ hr {
 }
 
 @media (min-width: 1200px) {
-
   .container-xl,
   .container-lg,
   .container-md,
@@ -87,7 +83,6 @@ hr {
 }
 
 @media (min-width: 1400px) {
-
   .container-xxl,
   .container-xl,
   .container-lg,
@@ -99,7 +94,10 @@ hr {
 }
 
 .ant-select {
-  &:not(.ant-select-disabled):not(.ant-select-customize-input):not(.ant-pagination-size-changer):hover &-selector {
+  &:not(.ant-select-disabled):not(.ant-select-customize-input):not(
+      .ant-pagination-size-changer
+    ):hover
+    &-selector {
     border-color: #73589b;
   }
 }
@@ -113,7 +111,6 @@ hr {
 }
 
 .ant-pagination {
-
   .ant-pagination-item-active {
     a {
       color: #fff;
@@ -129,7 +126,7 @@ hr {
   }
 }
 
-.ant-spin-nested-loading>div>.ant-spin.fullscreen-spin {
+.ant-spin-nested-loading > div > .ant-spin.fullscreen-spin {
   position: fixed;
   top: 0;
   left: 0;
@@ -227,7 +224,7 @@ hr {
         color: #2a1f41;
       }
 
-      &+& {
+      & + & {
         margin-top: 0.2rem;
       }
 
@@ -271,7 +268,7 @@ hr {
     transition: 0.3s all;
   }
 
-  .ant-layout-sider-collapsed+.sider-content {
+  .ant-layout-sider-collapsed + .sider-content {
     transform: translateX(250px);
   }
 }
@@ -421,7 +418,7 @@ hr {
         padding-inline: 16px;
         visibility: hidden;
 
-        .anticon+span {
+        .anticon + span {
           opacity: 1;
         }
       }
@@ -512,7 +509,7 @@ hr {
   }
 
   &-content {
-    &>&-box {
+    & > &-box {
       padding-top: 0px !important;
       padding-bottom: 1rem !important;
     }
@@ -523,12 +520,12 @@ hr {
   &.no-body-padding {
     overflow: hidden;
 
-    &>.ant-card-body {
+    & > .ant-card-body {
       padding: 0px;
       overflow: hidden;
     }
 
-    .ant-collapse-item-active>.ant-collapse-header {
+    .ant-collapse-item-active > .ant-collapse-header {
       background: #f3f3f5;
       border-radius: 0;
     }
@@ -549,18 +546,18 @@ hr {
       0px 1px 2px 0px rgba(209, 217, 224, 0.7);
   }
 
-  &>&-head {
+  & > &-head {
     background: #f3f3f5;
     font-weight: 700;
     margin-bottom: 0;
     font-size: 1rem;
   }
 
-  &.card-white>&-head {
+  &.card-white > &-head {
     background: #fff;
   }
 
-  &>&-body {
+  & > &-body {
     padding-top: 10px;
   }
 }
@@ -575,7 +572,7 @@ hr {
     }
 
     tr.ant-table-expanded-row {
-      &>td {
+      & > td {
         background: #fff !important;
       }
     }
@@ -585,12 +582,12 @@ hr {
     }
 
     .ant-table-tbody {
-      &>tr.ant-table-row-selected {
-        &>td {
+      & > tr.ant-table-row-selected {
+        & > td {
           background: #e3dcec;
         }
 
-        &:hover>td {
+        &:hover > td {
           background: #dbcfec;
         }
       }
@@ -606,7 +603,7 @@ hr {
       width: 100%;
       z-index: 1;
 
-      &>tr>th {
+      & > tr > th {
         background: #f8f9fa;
         padding: 12px 16px;
       }
@@ -638,7 +635,6 @@ span.disabled {
   background: #f6f8fa !important;
 }
 
-@import url(color.scss);
 @import url(face-id.scss);
 @import url(animations.scss);
 @import url(button.scss);
@@ -646,3 +642,4 @@ span.disabled {
 @import url(widget.scss);
 @import url(chart.scss);
 @import url(responsive.scss);
+@import url(color.scss);

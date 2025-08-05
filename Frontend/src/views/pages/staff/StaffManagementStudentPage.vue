@@ -88,12 +88,17 @@ const breadcrumb = ref([
 /* ----------------- Methods ----------------- */
 // Lấy danh sách sinh viên từ backend, truyền phân trang động
 const fetchStudents = async () => {
+  isLoading.value = true
   loadingStore.show()
   const params = {
     ...filter,
     page: pagination.current,
     size: pagination.pageSize,
   }
+
+
+  console.log('Fetching students with params:', params)
+
   try {
     const [stuRes, faceRes] = await Promise.all([
       requestAPI.get(API_ROUTES_STAFF.FETCH_DATA_STUDENT, { params }),
@@ -119,14 +124,32 @@ const fetchStudents = async () => {
   } catch (error) {
     message.error(error.response?.data?.message || 'Lỗi khi lấy danh sách sinh viên')
   } finally {
+    isLoading.value = false
     loadingStore.hide()
   }
 }
 
+// Debounce timer
+let searchTimeout = null
+
 const handleTableChange = (pageInfo) => {
   pagination.current = pageInfo.current
   pagination.pageSize = pageInfo.pageSize
-  filter.pageSize = pageInfo.pageSize
+  fetchStudents()
+}
+
+const handleSearchChange = () => {
+  if (searchTimeout) {
+    clearTimeout(searchTimeout)
+  }
+  searchTimeout = setTimeout(() => {
+    pagination.current = 1
+    fetchStudents()
+  }, 500)
+}
+
+const handleStatusChange = () => {
+  pagination.current = 1
   fetchStudents()
 }
 
@@ -136,7 +159,7 @@ const handleAddStudent = () => {
     { key: 'name', label: 'Tên sinh viên' },
     { key: 'email', label: 'Email sinh viên' },
   ])
-  
+
   if (!validation.isValid) {
     message.error(validation.message)
     return
@@ -225,7 +248,7 @@ const updateStudent = () => {
     { key: 'name', label: 'Tên sinh viên' },
     { key: 'email', label: 'Email sinh viên' },
   ])
-  
+
   if (!validation.isValid) {
     message.error(validation.message)
     return
@@ -327,11 +350,11 @@ const clearNewStudentForm = () => {
 
 const handleClearFilter = () => {
   // Clear all filter values
-  Object.keys(filter).forEach((key) => {
-    filter[key] = ''
-  })
+  filter.searchQuery = ''
+  filter.studentStatus = null
+  // Reset về trang 1 khi hủy lọc để tránh lỗi dữ liệu
   pagination.current = 1
-  fetchStudents() // or whatever your fetch function is named
+  fetchStudents()
 }
 
 const clearUpdateStudentForm = () => {
@@ -373,7 +396,7 @@ onMounted(() => {
                     v-model:value="filter.searchQuery"
                     placeholder="Tìm kiếm theo mã, tên, email"
                     allowClear
-                    @change="fetchStudents"
+                    @change="handleSearchChange"
                   >
                     <template #prefix>
                       <SearchOutlined />
@@ -387,11 +410,11 @@ onMounted(() => {
                     v-model:value="filter.studentStatus"
                     placeholder="-- Tất cả trạng thái --"
                     class="w-100"
-                    @change="fetchStudents"
+                    @change="handleStatusChange"
                   >
                     <a-select-option :value="''">-- Tất cả trạng thái --</a-select-option>
-                    <a-select-option value="ACTIVE">Hoạt động</a-select-option>
-                    <a-select-option value="INACTIVE">Không hoạt động</a-select-option>
+                    <a-select-option :value="1">-- Hoạt động --</a-select-option>
+                    <a-select-option :value="0">-- Không hoạt động --</a-select-option>
                   </a-select>
                 </div>
 
