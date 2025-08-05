@@ -21,6 +21,8 @@ import FilterModal from '@/components/FilterModal'
 import Select from '@/components/form/Select'
 import CustomInputText from '@/components/form/CustomInputText'
 import EmptyData from '@/components/EmptyData'
+import { useGlobalStore } from '@/utils/GlobalStore'
+import { countNotification } from '@/utils'
 
 interface Props {
   animatedValue: Animated.Value
@@ -58,6 +60,11 @@ const AttendanceTab: React.FC<Props> = ({ animatedValue, showMenuRef }) => {
       outputRange: [Colors.background, '#ffffff'],
       extrapolate: 'clamp',
     }),
+  }
+
+  const setTotalNotification = useGlobalStore((state) => state.setTotalNotification)
+  const getTotalNotification = () => {
+    countNotification((data) => setTotalNotification(data || 0))
   }
 
   const fetchDataList = async () => {
@@ -144,6 +151,7 @@ const AttendanceTab: React.FC<Props> = ({ animatedValue, showMenuRef }) => {
 
   const handleRefresh = () => {
     if (loadMorePage) return
+    getTotalNotification()
     setCurrentPage(1)
     setRefreshTrigger((prev) => prev + 1)
   }
