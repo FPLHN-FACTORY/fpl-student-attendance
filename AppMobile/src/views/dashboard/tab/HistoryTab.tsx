@@ -17,7 +17,7 @@ import ScrollViewContent from '../ScrollViewContent'
 import FilterModal from '@/components/FilterModal'
 import Select from '@/components/form/Select'
 import EmptyData from '@/components/EmptyData'
-import { getCurrentSemester } from '@/utils'
+import { countNotification, getCurrentSemester } from '@/utils'
 import { useLoading } from '@/components/loading/LoadingContext'
 import { useGlobalStore } from '@/utils/GlobalStore'
 import { CollapseItemHistory } from '../item/CollapseItemHistory'
@@ -65,6 +65,11 @@ const HistoryTab: React.FC<Props> = ({ animatedValue, showMenuRef }) => {
       outputRange: [Colors.background, '#ffffff'],
       extrapolate: 'clamp',
     }),
+  }
+
+  const setTotalNotification = useGlobalStore((state) => state.setTotalNotification)
+  const getTotalNotification = () => {
+    countNotification((data) => setTotalNotification(data || 0))
   }
 
   const fetchDataList = async () => {
@@ -165,6 +170,7 @@ const HistoryTab: React.FC<Props> = ({ animatedValue, showMenuRef }) => {
 
   const handleRefresh = () => {
     if (loadMorePage) return
+    getTotalNotification()
     setCurrentPage(1)
     setRefreshTrigger((prev) => prev + 1)
   }
