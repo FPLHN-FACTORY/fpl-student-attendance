@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, watch, reactive } from 'vue'
+import { ref, onMounted, watch, reactive, nextTick } from 'vue'
 import {
   PlusOutlined,
   FilterFilled,
@@ -106,6 +106,8 @@ const formRules = reactive({
   days: [{ required: true, message: 'Vui lòng chọn ít nhất 1 ngày trong tuần!' }],
   shift: [{ required: true, message: 'Vui lòng chọn 1 ca!' }],
   type: [{ required: true, message: 'Vui lòng chọn 1 hình thức!' }],
+  link: [{ required: true, message: 'Vui lòng nhập link online!' }],
+  room: [{ required: true, message: 'Vui lòng nhập địa điểm!' }],
   lateArrival: [{ required: true, message: 'Vui lòng nhập mục này!' }],
 })
 
@@ -320,6 +322,11 @@ const handleDelete = (id) => {
   })
 }
 
+const handleChangeType = async () => {
+  await nextTick()
+  formRefAdd.value?.clearValidate(['room', 'link'])
+}
+
 onMounted(() => {
   breadcrumbStore.setRoutes(breadcrumb.value)
   fetchDataDetail()
@@ -407,6 +414,7 @@ watch(
           class="w-100"
           :dropdownMatchSelectWidth="false"
           placeholder="-- Hình thức --"
+          @change="handleChangeType"
         >
           <a-select-option v-for="(name, id) in TYPE_SHIFT" :key="id" :value="id">
             {{ name }}
@@ -429,7 +437,12 @@ watch(
           @keyup.enter="modalAdd.onOk"
         />
       </a-form-item>
-      <a-form-item class="col-sm-4" label="Phòng">
+      <a-form-item
+        class="col-sm-4"
+        label="Phòng"
+        name="room"
+        :rules="formDataAdd.type == '1' ? false : formRules.room"
+      >
         <a-input
           class="w-100"
           v-model:value="formDataAdd.room"
@@ -439,7 +452,12 @@ watch(
           @keyup.enter="modalAdd.onOk"
         />
       </a-form-item>
-      <a-form-item class="col-sm-12" label="Link online" name="link">
+      <a-form-item
+        class="col-sm-12"
+        label="Link online"
+        name="link"
+        :rules="formDataAdd.type == '1' ? formRules.link : false"
+      >
         <a-input
           class="w-100"
           v-model:value="formDataAdd.link"
