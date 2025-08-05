@@ -26,6 +26,7 @@ import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
 import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.helpers.SessionHelper;
 import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
+import udpm.hn.studentattendance.helpers.ValidateHelper;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.common.repositories.CommonPlanDateRepository;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
@@ -172,8 +173,11 @@ public class SPDPlanServiceImpl implements SPDPlanService {
     @Override
     public ResponseEntity<?> createPlan(SPDAddOrUpdatePlanRequest request) {
 
-
         Project project = spdProjectRepository.findById(request.getIdProject()).orElse(null);
+
+        if (!ValidateHelper.isValidName(request.getName())) {
+            return RouterHelper.responseError("Tên kế hoạch chỉ được chứa ký tự chữ, số và các ký tự đặc biệt _ - #");
+        }
 
         if (project == null
                 || project.getStatus() != EntityStatus.ACTIVE
@@ -286,7 +290,6 @@ public class SPDPlanServiceImpl implements SPDPlanService {
     @Override
     public ResponseEntity<?> updatePlan(SPDAddOrUpdatePlanRequest request) {
 
-
         Plan plan = spdPlanRepository.findById(request.getId()).orElse(null);
         if (plan == null) {
             return RouterHelper.responseError("Không tìm thấy kế hoạch muốn cập nhật");
@@ -297,6 +300,10 @@ public class SPDPlanServiceImpl implements SPDPlanService {
         if (project == null
                 || !Objects.equals(project.getSubjectFacility().getFacility().getId(), sessionHelper.getFacilityId())) {
             return RouterHelper.responseError("Không tìm thấy dự án");
+        }
+
+        if (!ValidateHelper.isValidName(request.getName())) {
+            return RouterHelper.responseError("Tên kế hoạch chỉ được chứa ký tự chữ, số và các ký tự đặc biệt _ - #");
         }
 
         if (plan.getStatus() == EntityStatus.ACTIVE

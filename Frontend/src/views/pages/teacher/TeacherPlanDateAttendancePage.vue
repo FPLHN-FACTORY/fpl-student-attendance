@@ -193,7 +193,7 @@ watch(
                     placeholder="-- Tất cả trạng thái --"
                   >
                     <a-select-option :value="null">-- Tất cả trạng thái --</a-select-option>
-                    <a-select-option :value="1">Có mặt</a-select-option>
+                    <a-select-option :value="3">Có mặt</a-select-option>
                     <a-select-option :value="0">Vắng mặt</a-select-option>
                   </a-select>
                 </div>
