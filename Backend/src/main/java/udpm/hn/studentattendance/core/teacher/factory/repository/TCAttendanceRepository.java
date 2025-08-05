@@ -56,7 +56,12 @@ public interface TCAttendanceRepository extends AttendanceRepository {
                 us.code LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%') OR
                 us.name LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%')
             )) AND
-            (COALESCE(:#{#request.status}, 0) = 0 OR a.status = :#{#request.status}) AND
+            (
+              :#{#request.status} IS NULL
+              OR (:#{#request.status} = 3 AND a.attendance_status = 3)
+              OR (:#{#request.status} = 0 AND (a.attendance_status != 3 OR a.id IS NULL))
+              OR (:#{#request.status} != 0 AND :#{#request.status} != 3)
+            ) AND
             pd.start_date <= UNIX_TIMESTAMP(NOW()) * 1000 AND
             pd.id = :#{#request.idPlanDate}
         ORDER BY
@@ -90,7 +95,12 @@ public interface TCAttendanceRepository extends AttendanceRepository {
                 us.code LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%') OR
                 us.name LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%')
             )) AND
-            (COALESCE(:#{#request.status}, 0) = 0 OR a.status = :#{#request.status}) AND
+            (
+              :#{#request.status} IS NULL
+              OR (:#{#request.status} = 3 AND a.attendance_status = 3)
+              OR (:#{#request.status} = 0 AND (a.attendance_status != 3 OR a.id IS NULL))
+              OR (:#{#request.status} != 0 AND :#{#request.status} != 3)
+            ) AND
             pd.start_date <= UNIX_TIMESTAMP(NOW()) * 1000 AND
             pd.id = :#{#request.idPlanDate}
     """, nativeQuery = true)
@@ -133,7 +143,12 @@ public interface TCAttendanceRepository extends AttendanceRepository {
                 us.code LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%') OR
                 us.name LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%')
             )) AND
-            (COALESCE(:#{#request.status}, 0) = 0 OR a.status = :#{#request.status}) AND
+            (
+              :#{#request.status} IS NULL
+              OR (:#{#request.status} = 3 AND a.attendance_status = 3)
+              OR (:#{#request.status} = 0 AND (a.attendance_status != 3 OR a.id IS NULL))
+              OR (:#{#request.status} != 0 AND :#{#request.status} != 3)
+            ) AND
             pd.start_date <= UNIX_TIMESTAMP(NOW()) * 1000 AND
             pd.id = :#{#request.idPlanDate}
         ORDER BY
