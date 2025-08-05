@@ -155,17 +155,17 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
 
             // Enhanced logging with detailed information
             String logMessage = String.format(
-                    "vừa xóa kế hoạch chi tiết ngày %s - Nhóm xưởng: %s - Kế hoạch: %s - Ca : %s",
+                    "vừa xóa 1 ca ngày %s - Nhóm xưởng: %s - Kế hoạch: %s - Ca : %s",
                     DateTimeUtils.convertMillisToDate(entity.get().getStartDate()),
                     planDate.getPlanFactory().getFactory().getName(),
                     planDate.getPlanFactory().getPlan().getName(),
                     entity.get().getShift());
             userActivityLogHelper.saveLog(logMessage);
 
-            return RouterHelper.responseSuccess("Xoá thành công kế hoạch chi tiết.");
+            return RouterHelper.responseSuccess("Xoá ca thành công.");
         }
 
-        return RouterHelper.responseError("Không thể xoá kế hoạch chi tiết này");
+        return RouterHelper.responseError("Không thể xoá ca này");
     }
 
     @Override
@@ -183,7 +183,7 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
         if (result > 0) {
             // Enhanced logging with detailed information
             String logMessage = String.format(
-                    "vừa xóa %d kế hoạch chi tiết ngày: %s - " +
+                    "vừa xóa %d ca ngày: %s - " +
                             "Nhóm xưởng: %s - " +
                             "Kế hoạch: %s",
                     result,
@@ -192,9 +192,9 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
                     planFactory.getPlan().getName());
             userActivityLogHelper.saveLog(logMessage);
 
-            return RouterHelper.responseSuccess("Xoá thành công " + result + " kế hoạch chi tiết.");
+            return RouterHelper.responseSuccess("Xoá thành công " + result + " ca.");
         }
-        return RouterHelper.responseError("Không có kế hoạch nào cần xoá");
+        return RouterHelper.responseError("Không có ca nào cần xoá");
     }
 
     @Override
@@ -213,11 +213,11 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
                 || !Objects.equals(
                         planDate.getPlanFactory().getFactory().getProject().getSubjectFacility().getFacility().getId(),
                         request.getIdFacility())) {
-            return RouterHelper.responseError("Không tìm thấy kế hoạch chi tiết");
+            return RouterHelper.responseError("Không tìm thấy ca");
         }
 
         if (DateTimeUtils.getCurrentTimeMillis() > planDate.getEndDate()) {
-            return RouterHelper.responseError("Không thể cập nhật kế hoạch đã diễn ra");
+            return RouterHelper.responseError("Không thể cập nhật ca đã diễn ra");
         }
 
         // Store original values for logging
@@ -276,11 +276,23 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
                     + DateTimeUtils.convertMillisToDate(planDate.getPlanFactory().getPlan().getToDate()));
         }
 
+        if (StringUtils.hasText(request.getRoom()) && type == ShiftType.OFFLINE) {
+            if (!ValidateHelper.isValidName(request.getRoom())) {
+                return RouterHelper.responseError("Tên phòng chỉ được chứa ký tự chữ, số và các ký tự đặc biệt _ - #");
+            }
+            if (spdPlanDateRepository.isExistsRoomOnShift(request.getRoom(), startDate, endDate, planDate.getId())) {
+                return RouterHelper.responseError("Địa điểm " + request.getRoom() + " đã được sử dụng vào ca " + request.getShift()
+                        + " trong ngày "
+                        + DateTimeUtils.convertMillisToDate(startDate));
+            }
+        }
+
+
         Factory factory = planDate.getPlanFactory().getFactory();
 
         if (spdPlanDateRepository.isExistsShiftInFactory(planDate.getPlanFactory().getId(), planDate.getId(), startDate,
                 endDate)) {
-            return RouterHelper.responseError("Đã tồn tại ca  diễn ra trong khoảng thời gian từ "
+            return RouterHelper.responseError("Đã tồn tại ca diễn ra trong khoảng thời gian từ "
                     + DateTimeUtils.convertMillisToDate(startDate, "HH:mm") + " đến "
                     + DateTimeUtils.convertMillisToDate(endDate, "HH:mm") + " của ngày "
                     + DateTimeUtils.convertMillisToDate(startDate));
@@ -299,6 +311,7 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
         if (StringUtils.hasText(request.getLink()) && !ValidateHelper.isValidURL(request.getLink())) {
             return RouterHelper.responseError("Link online không hợp lệ");
         }
+
         UserStaff teacher = null;
         if (StringUtils.hasText(request.getIdTeacher())) {
             teacher = spdUserStaffRepository.findById(request.getIdTeacher()).orElse(null);
@@ -383,7 +396,7 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
         }
 
         userActivityLogHelper.saveLog(logMessage.toString());
-        return RouterHelper.responseSuccess("Cập nhật kế hoạch thành công", newEntity);
+        return RouterHelper.responseSuccess("Cập nhật ca thành công", newEntity);
     }
 
     @Override
@@ -468,6 +481,18 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
                             + " đến " + DateTimeUtils.convertMillisToDate(plan.getToDate()));
         }
 
+        if (StringUtils.hasText(request.getRoom()) && type == ShiftType.OFFLINE) {
+            if (!ValidateHelper.isValidName(request.getRoom())) {
+                return RouterHelper.responseError("Tên phòng chỉ được chứa ký tự chữ, số và các ký tự đặc biệt _ - #");
+            }
+            if (spdPlanDateRepository.isExistsRoomOnShift(request.getRoom(), startDate, endDate,
+                    null)) {
+                return RouterHelper.responseError("Địa điểm " + request.getRoom() + " đã được sử dụng vào ca " + request.getShift()
+                        + " trong ngày "
+                        + DateTimeUtils.convertMillisToDate(startDate));
+            }
+        }
+
         if (spdPlanDateRepository.isExistsShiftInFactory(planFactory.getId(), null, startDate, endDate)) {
             return RouterHelper.responseError("Đã tồn tại ca diễn ra trong khoảng thời gian từ "
                     + DateTimeUtils.convertMillisToDate(startDate, "HH:mm") + " đến "
@@ -526,7 +551,7 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
 
         // Enhanced logging with detailed information
         String logMessage = String.format(
-                "vừa thêm kế hoạch chi tiết ngày %s - Nhóm xưởng: %s - Kế hoạch: %s - Ca: %s - Thời gian: %s-%s",
+                "vừa thêm mới ca ngày %s - Nhóm xưởng: %s - Kế hoạch: %s - Ca: %s - Thời gian: %s-%s",
                 DateTimeUtils.convertMillisToDate(newEntity.getStartDate()),
                 factory.getName(),
                 plan.getName(),
@@ -535,7 +560,7 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
                 DateTimeUtils.convertMillisToDate(endDate, "HH:mm"));
         userActivityLogHelper.saveLog(logMessage);
 
-        return RouterHelper.responseSuccess("Thêm kế hoạch thành công", newEntity);
+        return RouterHelper.responseSuccess("Thêm mới ca thành công", newEntity);
     }
 
     @Override

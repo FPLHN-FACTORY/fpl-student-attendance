@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, watch, reactive, h, computed } from 'vue'
+import { ref, onMounted, watch, reactive, h, computed, nextTick } from 'vue'
 import {
   PlusOutlined,
   FilterFilled,
@@ -720,6 +720,11 @@ const handleSendMail = () => {
   })
 }
 
+const handleChangeType = async () => {
+  await nextTick()
+  formRefAddOrUpdate.value?.clearValidate(['room', 'link'])
+}
+
 const selectedRowKeys = ref([])
 
 const isDisabledSelectTable = (key) => {
@@ -829,7 +834,7 @@ watch(
           class="w-100"
           :dropdownMatchSelectWidth="false"
           placeholder="-- Hình thức --"
-          allowClear
+          @change="handleChangeType"
         >
           <a-select-option v-for="(name, id) in TYPE_SHIFT" :key="id" :value="id">
             {{ name }}
@@ -1183,7 +1188,9 @@ watch(
                   </span>
                 </template>
                 <template v-if="column.dataIndex === 'status'">
-                  <a-badge :status="record.status === 'DA_DIEN_RA' ? 'success' : 'default'" />
+                  <a-badge status="success" v-if="record.status === 'DA_DIEN_RA'" />
+                  <a-badge status="default" v-if="record.status === 'CHUA_DIEN_RA'" />
+                  <a-badge status="processing" v-if="record.status === 'DANG_DIEN_RA'" />
                   {{ STATUS_PLAN_DATE_DETAIL[record.status] }}
                 </template>
               </template>
@@ -1244,7 +1251,9 @@ watch(
                       </a-tag>
                     </template>
                     <template v-if="column.dataIndex === 'status'">
-                      <a-badge :status="record.status === 'DA_DIEN_RA' ? 'success' : 'default'" />
+                      <a-badge status="success" v-if="record.status === 'DA_DIEN_RA'" />
+                      <a-badge status="default" v-if="record.status === 'CHUA_DIEN_RA'" />
+                      <a-badge status="processing" v-if="record.status === 'DANG_DIEN_RA'" />
                       {{ STATUS_PLAN_DATE_DETAIL[record.status] }}
                     </template>
                     <template v-if="column.dataIndex === 'totalShift'">
