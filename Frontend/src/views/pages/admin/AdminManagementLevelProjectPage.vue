@@ -116,7 +116,7 @@ const handleAddLevelProject = () => {
   const validation = validateFormSubmission(newLevel, [
     { key: 'name', label: 'Tên nhóm dự án' },
   ])
-  
+
   if (!validation.isValid) {
     message.error(validation.message)
     return
@@ -182,7 +182,7 @@ const submitUpdateLevel = () => {
   const validation = validateFormSubmission(detailLevel, [
     { key: 'name', label: 'Tên nhóm dự án' },
   ])
-  
+
   if (!validation.isValid) {
     message.error(validation.message)
     return
@@ -255,7 +255,7 @@ const handleClearFilter = () => {
   Object.keys(filter).forEach((key) => {
     filter[key] = null
   })
-  pagination.current = 1
+  // Không reset về trang 1 khi hủy lọc để giữ nguyên dữ liệu hiện tại
   fetchLevels()
 }
 

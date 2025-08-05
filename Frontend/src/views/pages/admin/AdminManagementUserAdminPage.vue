@@ -129,7 +129,7 @@ const handleAddUser = () => {
     { key: 'staffName', label: 'Tên Admin' },
     { key: 'email', label: 'Email Admin' },
   ])
-  
+
   if (!validation.isValid) {
     return message.error(validation.message)
   }
@@ -173,7 +173,7 @@ const handleUpdateUser = () => {
     { key: 'staffName', label: 'Tên Admin' },
     { key: 'email', label: 'Email Admin' },
   ])
-  
+
   if (!validation.isValid) {
     return message.error(validation.message)
   }
@@ -316,7 +316,7 @@ const handleClearFilter = () => {
   Object.keys(filter).forEach((key) => {
     filter[key] = ''
   })
-  pagination.value.current = 1
+  // Không reset về trang 1 khi hủy lọc để giữ nguyên dữ liệu hiện tại
   fetchUsers()
 }
 

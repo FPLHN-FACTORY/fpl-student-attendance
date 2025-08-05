@@ -138,7 +138,7 @@ const handleClearFilter = () => {
   Object.keys(filter).forEach((key) => {
     filter[key] = ''
   })
-  pagination.current = 1
+  // Không reset về trang 1 khi hủy lọc để giữ nguyên dữ liệu hiện tại
   fetchAttendanceRecovery()
 }
 
@@ -162,12 +162,12 @@ const handleAddEvent = () => {
   const validation = validateFormSubmission(newEvent, [
     { key: 'name', label: 'Tên sự kiện' },
   ])
-  
+
   if (!validation.isValid) {
     message.error(validation.message)
     return
   }
-  
+
   if (!newEvent.dayHappen) {
     message.error('Vui lòng chọn ngày diễn ra')
     return
@@ -239,12 +239,12 @@ const handleEditEvent = () => {
   const validation = validateFormSubmission(editEvent, [
     { key: 'name', label: 'Tên sự kiện' },
   ])
-  
+
   if (!validation.isValid) {
     message.error(validation.message)
     return
   }
-  
+
   if (!editEvent.day) {
     message.error('Vui lòng chọn ngày diễn ra')
     return

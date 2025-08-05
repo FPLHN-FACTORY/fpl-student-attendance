@@ -82,10 +82,10 @@ const fetchAttendanceHistory = async (factoryId) => {
         group.data = response.data
       }
       countFilter.value = lstGroupFactory.value.reduce((sum, group) => {
-        return sum + (group.data?.totalItems || 0)
+        return sum + (group.data?.page?.totalItems || 0)
       }, 0)
       paginations.value[factory.id].total =
-        response.data.totalPages * paginations.value[factory.id].pageSize
+        response.data.page.totalPages * paginations.value[factory.id].pageSize
     })
     .catch((error) => {
       message.error('Không thể tải dữ liệu nhóm xưởng:' + factory.name)
@@ -284,9 +284,21 @@ watch(
             </a-button>
           </template>
 
+          <div class="my-2">
+            Đã vắng
+            <strong class="gray-text" :class="{ 'text-danger': records.data.totalAbsent > 0 }">{{
+              records.data.totalAbsent
+            }}</strong
+            >, có mặt
+            <strong class="gray-text" :class="{ 'text-success': records.data.totalPresent > 0 }">{{
+              records.data.totalPresent
+            }}</strong>
+            trong tổng số <strong class="gray-text">{{ records.data.totalShift }}</strong
+            >.
+          </div>
           <a-table
             class="nowrap"
-            :dataSource="records.data.data"
+            :dataSource="records.data.page.data"
             :columns="columns"
             :rowKey="planDateId"
             :pagination="paginations[records.id]"

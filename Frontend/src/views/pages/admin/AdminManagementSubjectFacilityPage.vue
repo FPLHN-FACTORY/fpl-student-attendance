@@ -355,7 +355,7 @@ const handleClearFilter = () => {
   Object.keys(filter).forEach((key) => {
     filter[key] = ''
   })
-  pagination.current = 1
+  // Không reset về trang 1 khi hủy lọc để giữ nguyên dữ liệu hiện tại
   fetchSubjectFacility()
 }
 

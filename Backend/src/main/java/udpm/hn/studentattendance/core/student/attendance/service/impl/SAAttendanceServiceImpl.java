@@ -149,6 +149,9 @@ public class SAAttendanceServiceImpl implements SAAttendanceService {
         boolean isRecovery = attendanceRecovery != null
                 && attendanceRecovery.getTotalLateAttendance() > attendanceRecovery.getCurrentLateAttendance();
 
+        boolean isCanCompensateCheckin = isRecovery && DateTimeUtils.getCurrentTimeMillis() <= planDate.getEndDate();
+        boolean isCanCompensateCheckout = isRecovery && DateTimeUtils.getCurrentTimeMillis() <= planDate.getEndDate() + planDate.getLateArrival() * 60 * 1000 * 2;
+
         Long lateCheckin = null;
         Long lateCheckout = null;
 
@@ -164,7 +167,7 @@ public class SAAttendanceServiceImpl implements SAAttendanceService {
 
                 if (DateTimeUtils.getCurrentTimeMillis() > planDate.getStartDate()
                         + planDate.getLateArrival() * 60 * 1000) {
-                    if (!isRecovery) {
+                    if (!isCanCompensateCheckin) {
                         return RouterHelper
                                 .responseError("Đã quá giờ " + (isEnableCheckin ? "checkin đầu giờ" : "điểm danh"));
                     }
@@ -179,7 +182,7 @@ public class SAAttendanceServiceImpl implements SAAttendanceService {
 
                 if (DateTimeUtils.getCurrentTimeMillis() > planDate.getEndDate()
                         + planDate.getLateArrival() * 60 * 1000) {
-                    if (!isRecovery) {
+                    if (!isCanCompensateCheckout) {
                         return RouterHelper.responseError("Đã quá giờ checkout cuối giờ");
                     }
                     lateCheckout = Calendar.getInstance().getTimeInMillis();
@@ -197,7 +200,7 @@ public class SAAttendanceServiceImpl implements SAAttendanceService {
             }
 
             if (DateTimeUtils.getCurrentTimeMillis() > planDate.getEndDate() + planDate.getLateArrival() * 60 * 1000) {
-                if (!isRecovery) {
+                if (!isCanCompensateCheckout) {
                     return RouterHelper.responseError("Đã quá giờ checkout cuối giờ");
                 }
                 attendance.setLateCheckout(Calendar.getInstance().getTimeInMillis());

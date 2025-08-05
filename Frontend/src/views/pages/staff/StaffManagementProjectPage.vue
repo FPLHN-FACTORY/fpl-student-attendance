@@ -111,7 +111,12 @@ const fetchProjects = () => {
     })
     .then((response) => {
       projects.value = response.data.data.data
-      pagination.total = response.data.data.totalPages * pagination.pageSize
+      // Sử dụng totalItems thay vì tính toán từ totalPages
+      if (response.data.data.totalItems !== undefined) {
+        pagination.total = response.data.data.totalItems
+      } else {
+        pagination.total = response.data.data.totalPages * pagination.pageSize
+      }
       countFilter.value = response.data.data.totalItems
     })
     .catch((error) => {
@@ -169,7 +174,6 @@ const fetchSubjects = () => {
 const handleTableChange = (pageInfo) => {
   pagination.current = pageInfo.current
   pagination.pageSize = pageInfo.pageSize
-  filter.pageSize = pageInfo.pageSize
   fetchProjects()
 }
 
@@ -183,7 +187,7 @@ const handleClearFilter = () => {
     levelProjectId: null,
     facilityId: null,
   })
-  pagination.current = 1
+  // Không reset về trang 1 khi hủy lọc để giữ nguyên dữ liệu hiện tại
   fetchProjects()
 }
 
@@ -549,7 +553,7 @@ onMounted(() => {
             rowKey="id"
             :pagination="pagination"
             :scroll="{ x: 'auto' }"
-            :loading="loadingStore.isLoading"
+            :loading="isLoading"
             @change="handleTableChange"
           >
             <template #bodyCell="{ column, record }">
