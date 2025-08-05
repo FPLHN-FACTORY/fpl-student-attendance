@@ -11,6 +11,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
+import udpm.hn.studentattendance.core.student.historyattendance.model.dto.STDHistoryAttendanceDto;
 import udpm.hn.studentattendance.core.student.historyattendance.model.request.STDHistoryAttendanceRequest;
 import udpm.hn.studentattendance.core.student.historyattendance.model.response.STDHistoryAttendanceResponse;
 import udpm.hn.studentattendance.core.student.historyattendance.model.response.STDHistoryPlanDateAttendanceResponse;
@@ -33,6 +34,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.stream.Stream;
 
 @Service
@@ -62,11 +64,27 @@ public class STDHistoryAttendanceImpl implements STDHistoryAttendanceService {
                                 : historyAttendanceRequest.getSemesterId());
 
                 Pageable pageable = PaginationHelper.createPageable(historyAttendanceRequest, "createdAt");
-                PageableObject list = PageableObject.of(historyAttendanceExtendRepository
+                PageableObject<STDHistoryAttendanceResponse> list = PageableObject.of(historyAttendanceExtendRepository
                                 .getAllFactoryAttendance(sessionHelper.getCurrentUser().getId(), pageable,
                                                 historyAttendanceRequest, System.currentTimeMillis()));
+
+                Map<String, Object> summary = historyAttendanceExtendRepository.getAttendanceSummary(
+                        sessionHelper.getCurrentUser().getId(),
+                        historyAttendanceRequest
+                );
+
+                int totalShift = ((Number) summary.getOrDefault("totalShift", 0)).intValue();
+                int totalPresent = ((Number) summary.getOrDefault("totalPresent", 0)).intValue();
+                int totalAbsent = ((Number) summary.getOrDefault("totalAbsent", 0)).intValue();
+
+                STDHistoryAttendanceDto data = new STDHistoryAttendanceDto();
+                data.setPage(list);
+                data.setTotalShift(totalShift);
+                data.setTotalAbsent(totalAbsent);
+                data.setTotalPresent(totalPresent);
+
                 return RouterHelper.responseSuccess("Lấy tất cả lịch sử điểm danh của sinh viên "
-                                + sessionHelper.getCurrentUser().getCode() + " thành công", list);
+                                + sessionHelper.getCurrentUser().getCode() + " thành công", data);
         }
 
         @Override

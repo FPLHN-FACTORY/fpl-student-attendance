@@ -45,6 +45,16 @@ const HistoryTab: React.FC<Props> = ({ animatedValue, showMenuRef }) => {
 
   const [refreshTrigger, setRefreshTrigger] = useState(0)
 
+  const [totalStats, setTotalStats] = useState<{
+    totalShift: number
+    totalPresent: number
+    totalAbsent: number
+  }>({
+    totalShift: 0,
+    totalPresent: 0,
+    totalAbsent: 0,
+  })
+
   const DEFAULT_TITLE = 'Lịch sử'
 
   const semester = getCurrentSemester(lstSemester)
@@ -103,15 +113,20 @@ const HistoryTab: React.FC<Props> = ({ animatedValue, showMenuRef }) => {
       .then(({ data: response }) => {
         setLstData((prev) => {
           const combined =
-            currentPage === 1 ? [...response.data.data] : [...prev, ...response.data.data]
+            currentPage === 1 ? [...response.data.page.data] : [...prev, ...response.data.page.data]
           const uniqueData = combined.filter(
             (item, index, self) =>
               index === self.findIndex((t) => t.planDateId === item.planDateId),
           )
           return uniqueData
         })
-        setTotalItems(response.data.totalItems)
-        setTotalPage(response.data.totalPages)
+        setTotalStats({
+          totalShift: response.data?.totalShift || 0,
+          totalPresent: response.data?.totalPresent || 0,
+          totalAbsent: response.data?.totalAbsent || 0,
+        })
+        setTotalItems(response.data.page.totalItems)
+        setTotalPage(response.data.page.totalPages)
       })
       .catch((error) => {
         showError(error.response?.data?.message || 'Không thể tải dữ liệu. Vui lòng thử lại!', 2000)
@@ -249,8 +264,33 @@ const HistoryTab: React.FC<Props> = ({ animatedValue, showMenuRef }) => {
         onRefresh={handleRefresh}
         onMomentumScrollEnd={handleMomentumScrollEnd}
       >
-        {lstData.length > 0 &&
-          lstData.map((item) => <CollapseItemHistory key={item.planDateId} item={item} />)}
+        {lstData.length > 0 && (
+          <>
+            <View
+              style={{
+                marginBottom: 10,
+                paddingHorizontal: 15,
+                flexDirection: 'row',
+                flexWrap: 'wrap',
+              }}
+            >
+              <Text>Đã vắng </Text>
+              <Text style={[styles.grayText, totalStats.totalAbsent > 0 && styles.textDanger]}>
+                {totalStats.totalAbsent}
+              </Text>
+              <Text>, có mặt </Text>
+              <Text style={[styles.grayText, totalStats.totalPresent > 0 && styles.textSuccess]}>
+                {totalStats.totalPresent}
+              </Text>
+              <Text> trong tổng số </Text>
+              <Text style={styles.grayText}>{totalStats.totalShift}</Text>
+              <Text>.</Text>
+            </View>
+            {lstData.map((item) => (
+              <CollapseItemHistory key={item.planDateId} item={item} />
+            ))}
+          </>
+        )}
       </ScrollViewContent>
       {lstData.length < 1 && <EmptyData text="Không có ca nào" />}
     </View>
@@ -283,5 +323,15 @@ const styles = StyleSheet.create({
   },
   button: {
     flex: 1,
+  },
+  grayText: {
+    color: Colors.primary,
+    fontWeight: 'bold',
+  },
+  textDanger: {
+    color: 'red',
+  },
+  textSuccess: {
+    color: 'green',
   },
 })
