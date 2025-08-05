@@ -127,7 +127,7 @@ const handleSubmitFilter = () => {
 }
 
 const handleTableChange = (page) => {
-  pagination.value.current = page.current || 1
+  pagination.value.current = page.current
   pagination.value.pageSize = page.pageSize
   dataFilter.pageSize = page.pageSize
   getList()
@@ -142,7 +142,7 @@ const handleClearFilter = () => {
     fromDate: null, // Clear fromDate
     toDate: null, // Clear toDate
   })
-  pagination.value.current = 1
+  // Không reset về trang 1 khi hủy lọc để giữ nguyên dữ liệu hiện tại
   getList()
 }
 
@@ -157,7 +157,7 @@ const handleDateRangeChange = (range) => {
     dataFilter.fromDate = null
     dataFilter.toDate = null
   }
-  // Đặt lại trang về 1 và gọi lại API
+  // Reset về trang 1 khi thay đổi filter để tránh lỗi dữ liệu
   pagination.value.current = 1
   getList()
 }

@@ -16,6 +16,7 @@ const THRESHOLD_LIGHT = 60
 const SIZE_CAMERA = 480
 const SKIP_FRAME = 5
 const ANTISPOOF = true
+const CHECK_DISTANCE = true
 
 const useFaceIDStore = defineStore('faceID', () => {
   let isFullStep = false
@@ -260,7 +261,12 @@ const useFaceIDStore = defineStore('faceID', () => {
       return brightnessDiff <= THRESHOLD_LIGHT
     }
 
-    const getFaceAngle = async (face) => {
+    const getFaceAngle = async () => {
+      const face = human.result?.face?.[0]
+      if (!face) {
+        return
+      }
+
       const { yaw, pitch } = face.rotation?.angle || {}
 
       const yawDeg = toDegrees(yaw)
@@ -540,9 +546,8 @@ const useFaceIDStore = defineStore('faceID', () => {
 
     const getFaceBox = (face) => {
       const mesh = face.mesh
-      if (!mesh || mesh.length < 468) {
-        return false
-      }
+      if (!mesh || mesh.length < 468) return false
+
       const leftCheek = mesh[234]
       const rightCheek = mesh[454]
       const topEye = Math.min(mesh[159][1], mesh[386][1])
@@ -559,25 +564,39 @@ const useFaceIDStore = defineStore('faceID', () => {
       sy -= padding
       ey += padding
 
+      const vw = video.value.videoWidth
+      const vh = video.value.videoHeight
+
+      sx = Math.max(0, Math.min(sx, vw))
+      ex = Math.max(0, Math.min(ex, vw))
+      sy = Math.max(0, Math.min(sy, vh))
+      ey = Math.max(0, Math.min(ey, vh))
+
       const width = ex - sx
       const height = ey - sy
       const size = Math.max(width, height)
 
       const centerX = (sx + ex) / 2
       const centerY = (sy + ey) / 2
-      sx = centerX - size / 2
-      sy = centerY - size / 2
 
       return {
-        size,
         sx,
         sy,
+        ex,
+        ey,
         width,
         height,
+        size,
+        centerX,
+        centerY,
       }
     }
 
     const cropFace = async (face) => {
+      if (face.score < 1) {
+        return false
+      }
+
       const { size, sx, sy } = getFaceBox(face)
 
       canvas.value.width = video.value.videoWidth
@@ -603,23 +622,20 @@ const useFaceIDStore = defineStore('faceID', () => {
     }
 
     const isInvalidSize = async (face) => {
-      if (isFullStep) {
+      if (isFullStep || !CHECK_DISTANCE) {
         return null
       }
+      const { width, height } = getFaceBox(face)
+      const faceArea = width * height
+      const videoArea = video.value.videoWidth * video.value.videoHeight
+      const ratio = faceArea / videoArea
 
-      const boxRaw = face.boxRaw
-      const [x1, y1, x2, y2] = boxRaw
-
-      const width = x2 - x1
-      const height = y2 - y1
-      const area = width * height
-
-      if (width < 0 || height < 0 || area > 4.5) {
-        return 'Khuôn mặt ở quá gần. Vui lòng đưa mặt ra xa'
+      if (ratio < 0.25) {
+        return 'Vui lòng đưa mặt lại gần hơn'
       }
 
-      if (area < 0.5) {
-        return 'Khuôn mặt ở quá xa. Vui lòng đưa mặt lại gần'
+      if (ratio > 0.5) {
+        return 'Vui lòng đưa mặt ra xa hơn'
       }
 
       return null
@@ -662,19 +678,19 @@ const useFaceIDStore = defineStore('faceID', () => {
       const faceBox = detection.box
       const faceBoxRaw = detection.boxRaw
 
-      const angle = await getFaceAngle(detection)
+      const angle = await getFaceAngle()
 
       if (!(await cropFace(detection))) {
         return
       }
 
       if (!isFullStep && step.value !== 1 && step.value !== 2) {
+        if (!isInsideCenter(faceBoxRaw)) {
+          return rollback('Vui lòng căn chỉnh khuôn mặt vào giữa')
+        }
         const txtValidSize = await isInvalidSize(detection)
         if (txtValidSize !== null) {
           return rollback(txtValidSize)
-        }
-        if (!isInsideCenter(faceBoxRaw)) {
-          return rollback('Vui lòng căn chỉnh khuôn mặt vào giữa')
         }
       }
 
@@ -700,19 +716,19 @@ const useFaceIDStore = defineStore('faceID', () => {
       }
 
       if (!isFullStep) {
-        if (avgBrightness < MIN_BRIGHTNESS) {
-          return renderTextStep('Camera quá tối, Vui lòng tăng độ sáng')
-        }
-
-        if (avgBrightness > MAX_BRIGHTNESS) {
-          return renderTextStep('Camera quá sáng, Vui lòng giảm độ sáng')
-        }
-
-        if (!(await isLightBalance(faceBox))) {
-          return renderTextStep('Ánh sáng không đều. Vui lòng thử lại')
-        }
-
         if (step.value === 0 || step.value === 3) {
+          if (avgBrightness < MIN_BRIGHTNESS) {
+            return renderTextStep('Camera quá tối, Vui lòng tăng độ sáng')
+          }
+
+          if (avgBrightness > MAX_BRIGHTNESS) {
+            return renderTextStep('Camera quá sáng, Vui lòng giảm độ sáng')
+          }
+
+          if (!(await isLightBalance(faceBox))) {
+            return renderTextStep('Ánh sáng không đều. Vui lòng thử lại')
+          }
+
           const { pitch } = detection.rotation?.angle || {}
           if (
             human.result.gesture.some((o) => o.gesture.includes('head up')) &&
@@ -727,10 +743,10 @@ const useFaceIDStore = defineStore('faceID', () => {
           ) {
             return renderTextStep('Vui lòng không cúi mặt')
           }
-        }
 
-        if (await isReaction()) {
-          return renderTextStep('Vui lòng không biểu cảm')
+          if (await isReaction()) {
+            return renderTextStep('Vui lòng không biểu cảm')
+          }
         }
 
         if (await isCheckingGlasses()) {
@@ -811,6 +827,7 @@ const useFaceIDStore = defineStore('faceID', () => {
     let frameCount = 0
     let isProgress = false
     let detectTimeoutId = null
+    let detectAxiesTimeoutId = null
     const detectLoop = async () => {
       if (!isRunScan.value) return clearTimeout(detectTimeoutId)
 
@@ -831,6 +848,18 @@ const useFaceIDStore = defineStore('faceID', () => {
       frameCount++
       detectTimeoutId = setTimeout(detectLoop, 0)
     }
+    const detectAxies = async () => {
+      if (!isRunScan.value) return clearTimeout(detectAxiesTimeoutId)
+
+      if (isLoadingModels.value && video.value?.readyState === 4) {
+        await getFaceAngle()
+        if (isLoading.value) {
+          isLoading.value = false
+        }
+      }
+      detectAxiesTimeoutId = setTimeout(detectAxies, 0)
+    }
+    detectAxies()
     detectLoop()
   }
 

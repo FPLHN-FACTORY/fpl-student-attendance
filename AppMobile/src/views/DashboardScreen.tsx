@@ -1,6 +1,7 @@
 import { Colors } from '@/constants/Colors'
 import { RootStackParamList } from '@/types/RootStackParamList'
 import {
+  countNotification,
   getFeatureViewAnimation,
   lightenColor,
   LOWER_HEADER_HEIGHT,
@@ -19,8 +20,6 @@ import HistoryTab from '@/views/dashboard/tab/HistoryTab'
 import CalendarTab from '@/views/dashboard/tab/CalendarTab'
 import AttendanceTab from '@/views/dashboard/tab/AttendanceTab'
 import useDoubleBackPressExit from '@/components/useDoubleBackPressExit'
-import requestAPI from '@/services/requestApiService'
-import { API_ROUTES_NOTIFICATION } from '@/constants/ApiRoutes'
 import { Badge } from 'react-native-paper'
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Dashboard'>
@@ -32,17 +31,16 @@ type FeatureTab = typeof FEATURE_ATTENDANCE | typeof FEATURE_CALENDAR | typeof F
 const DashboardScreen: React.FC<Props> = ({ navigation }) => {
   useDoubleBackPressExit()
 
-  const [totalNotification, setTotalNotification] = useState(0)
+  const totalNotification = useGlobalStore((state) => state.totalNotification)
+  const setTotalNotification = useGlobalStore((state) => state.setTotalNotification)
 
   const handleChangeFeature = (feature: FeatureTab) => {
     setActiveTab(feature)
-    countNotification()
+    getTotalNotification()
   }
 
-  const countNotification = () => {
-    requestAPI.get(API_ROUTES_NOTIFICATION.FETCH_COUNT).then(({ data: response }) => {
-      setTotalNotification(response?.data || 0)
-    })
+  const getTotalNotification = () => {
+    countNotification((data) => setTotalNotification(data || 0))
   }
 
   const studentInfo = useGlobalStore((state) => state.studentInfo)
@@ -121,7 +119,7 @@ const DashboardScreen: React.FC<Props> = ({ navigation }) => {
 
   const showMenuRef = useRef(true)
   useEffect(() => {
-    countNotification()
+    getTotalNotification()
     animatedValue.addListener(({ value }) => {
       showMenuRef.current = !(value === 100)
     })

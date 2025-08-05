@@ -15,6 +15,8 @@ import { ItemCalendar } from '@/types/ItemCalendar'
 import { ItemHistory } from '@/types/ItemHistory'
 import { Semester } from '@/types/Semester'
 import { useGlobalStore } from './GlobalStore'
+import requestAPI from '@/services/requestApiService'
+import { API_ROUTES_NOTIFICATION } from '@/constants/ApiRoutes'
 
 export const UPPER_HEADER_HEIGHT = 64
 export const UPPER_HEADER_PADDING_TOP = 4
@@ -213,6 +215,10 @@ export const getCheckinAction = (record: ItemAttendance, DEFAULT_EARLY_MINUTE_CH
   const reqCheckin = record.requiredCheckin !== STATUS_REQUIRED_ATTENDANCE.DISABLE
   const reqCheckout = record.requiredCheckout !== STATUS_REQUIRED_ATTENDANCE.DISABLE
 
+  const isCanCompensateCheckin = canLate && now <= record.endDate
+  const isCanCompensateCheckout =
+    canLate && now <= record.endDate + record.lateArrival * 60 * 1000 * 2
+
   if (
     record.requiredCheckin === STATUS_REQUIRED_ATTENDANCE.ENABLE &&
     record.requiredCheckout === STATUS_REQUIRED_ATTENDANCE.ENABLE
@@ -222,7 +228,7 @@ export const getCheckinAction = (record: ItemAttendance, DEFAULT_EARLY_MINUTE_CH
         return make('Chưa đến giờ checkin', true, Colors.primary)
       }
       if (isTooLateCheckin) {
-        if (canLate) {
+        if (isCanCompensateCheckin) {
           return make('Checkin bù', false, Colors.warning)
         } else {
           return make('Đã quá giờ checkin', true, Colors.error)
@@ -233,7 +239,7 @@ export const getCheckinAction = (record: ItemAttendance, DEFAULT_EARLY_MINUTE_CH
 
     if (record.status === ATTENDANCE_STATUS.CHECKIN.id) {
       if (isTooLateCheckout) {
-        if (canLate) {
+        if (isCanCompensateCheckout) {
           return make('Checkout bù', false, Colors.warning)
         } else {
           return make('Đã quá giờ checkout', true, Colors.error)
@@ -261,7 +267,7 @@ export const getCheckinAction = (record: ItemAttendance, DEFAULT_EARLY_MINUTE_CH
       return make('Đã điểm danh', true, Colors.success)
     }
     if (isTooLateCheckout) {
-      if (canLate) {
+      if (isCanCompensateCheckout) {
         return make('Checkout bù', false, Colors.warning)
       } else {
         return make('Đã quá giờ checkout', true, Colors.error)
@@ -281,7 +287,7 @@ export const getCheckinAction = (record: ItemAttendance, DEFAULT_EARLY_MINUTE_CH
       return make('Chưa đến giờ checkin', true, Colors.warning)
     }
     if (isTooLateCheckin) {
-      if (canLate) {
+      if (isCanCompensateCheckin) {
         return make('Checkin bù', false, Colors.warning)
       } else {
         return make('Đã quá giờ checkin', true, Colors.error)
@@ -387,4 +393,10 @@ export const capitalizeWords = (str: string | undefined) => {
     .split(' ')
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join(' ')
+}
+
+export const countNotification = (callback: (response: number) => void) => {
+  requestAPI.get(API_ROUTES_NOTIFICATION.FETCH_COUNT).then(({ data: response }) => {
+    callback(response?.data || 0)
+  })
 }

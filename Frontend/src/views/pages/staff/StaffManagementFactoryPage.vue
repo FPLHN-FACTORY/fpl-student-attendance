@@ -183,7 +183,6 @@ const onFilterChange = () => {
 const handleTableChange = (pageInfo) => {
   pagination.current = pageInfo.current
   pagination.pageSize = pageInfo.pageSize
-  filter.pageSize = pageInfo.pageSize
   fetchFactories()
 }
 
@@ -398,7 +397,7 @@ const handleClearFilter = () => {
     idStaff: null,
     idSemester: null,
   })
-  pagination.current = 1
+  // Không reset về trang 1 khi hủy lọc để giữ nguyên dữ liệu hiện tại
   fetchFactories()
 }
 
