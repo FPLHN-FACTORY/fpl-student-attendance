@@ -165,12 +165,12 @@ const handleAddSemester = () => {
   const validation = validateFormSubmission(newSemester, [
     { key: 'semesterName', label: 'Tên học kỳ' },
   ])
-  
+
   if (!validation.isValid) {
     message.error(validation.message)
     return
   }
-  
+
   if (!newSemester.fromDate || !newSemester.toDate) {
     message.error('Vui lòng chọn ngày bắt đầu và ngày kết thúc')
     return
@@ -246,12 +246,12 @@ const updateSemester = () => {
   const validation = validateFormSubmission(detailSemester.value, [
     { key: 'semesterName', label: 'Tên học kỳ' },
   ])
-  
+
   if (!validation.isValid) {
     message.error(validation.message)
     return
   }
-  
+
   if (!detailSemester.value.fromDate || !detailSemester.value.toDate) {
     message.error('Vui lòng chọn ngày bắt đầu và ngày kết thúc')
     return
@@ -351,7 +351,7 @@ const handleClearFilter = () => {
   Object.keys(filter).forEach((key) => {
     filter[key] = ''
   })
-  pagination.current = 1
+  // Không reset về trang 1 khi hủy lọc để giữ nguyên dữ liệu hiện tại
   fetchSemesters()
 }
 
@@ -663,8 +663,8 @@ onMounted(() => {
             class="ant-form-item-explain"
           >
             <div class="ant-form-item-explain-error">
-              {{ 
-                isSemesterInProgress(detailSemester) 
+              {{
+                isSemesterInProgress(detailSemester)
                   ? 'Không thể chỉnh sửa ngày bắt đầu của học kỳ đang diễn ra'
                   : 'Không thể chỉnh sửa ngày bắt đầu đã qua'
               }}

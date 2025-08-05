@@ -51,4 +51,6 @@ docker-compose*.yaml
 Makefile
 makefile
 
+### Docsumentation ###
 TechGuide
+docs

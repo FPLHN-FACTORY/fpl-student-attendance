@@ -15,7 +15,7 @@ const uploadLoading = ref(false)
 const formData = reactive({
   title: '',
   message: '',
-  files: []
+  files: [],
 })
 
 const handleSupport = () => {
@@ -24,15 +24,14 @@ const handleSupport = () => {
 
 const beforeUpload = (file) => {
   uploadLoading.value = true
-  
-  // Add file to fileList with a small delay to show loading
+
   setTimeout(() => {
     fileList.value = [...fileList.value, file]
     formData.files = [...formData.files, file]
     uploadLoading.value = false
   }, 300)
-  
-  return false // Prevent automatic upload
+
+  return false
 }
 
 const removeFile = (file) => {
@@ -40,8 +39,8 @@ const removeFile = (file) => {
   const newFileList = fileList.value.slice()
   newFileList.splice(index, 1)
   fileList.value = newFileList
-  
-  const fileIndex = formData.files.findIndex(f => f.uid === file.uid)
+
+  const fileIndex = formData.files.findIndex((f) => f.uid === file.uid)
   if (fileIndex !== -1) {
     formData.files.splice(fileIndex, 1)
   }
@@ -55,24 +54,22 @@ const formatFileSize = (size) => {
 }
 
 const handleSubmit = () => {
-  // Validate form
   if (!formData.title) {
     message.error('Vui lòng nhập tiêu đề')
     return
   }
-  
+
   if (!formData.message) {
     message.error('Vui lòng nhập nội dung')
     return
   }
-  
-  // Show confirmation modal
+
   Modal.confirm({
     title: 'Xác nhận gửi yêu cầu hỗ trợ',
     content: 'Bạn có chắc chắn muốn gửi yêu cầu hỗ trợ này?',
     okText: 'Gửi',
     cancelText: 'Hủy',
-    onOk: sendSupportRequest
+    onOk: sendSupportRequest,
   })
 }
 
@@ -80,28 +77,24 @@ const sendSupportRequest = async () => {
   try {
     submitting.value = true
     loadingStore.show()
-    
-    // Create FormData object for file upload
+
     const formSubmit = new FormData()
     formSubmit.append('title', formData.title)
     formSubmit.append('message', formData.message)
-    
-    // Append all files
-    formData.files.forEach(file => {
+
+    formData.files.forEach((file) => {
       formSubmit.append('files', file)
     })
-    
+
     const response = await requestAPI.post(API_ROUTES_SUPPORT.FETCH_SEND_SUPPORT, formSubmit, {
       headers: {
-        'Content-Type': 'multipart/form-data'
-      }
+        'Content-Type': 'multipart/form-data',
+      },
     })
-    
-    // Handle success
+
     message.success('Yêu cầu hỗ trợ đã được gửi thành công!')
     resetForm()
     showModal.value = false
-    
   } catch (error) {
     message.error(error.response?.data?.message || 'Có lỗi xảy ra khi gửi yêu cầu hỗ trợ')
   } finally {
@@ -125,19 +118,21 @@ const handleCancel = () => {
 
 <template>
   <div class="support-button-container">
-    <a-button
-      type="default"
-      shape="circle"
-      size="large"
-      class="support-button"
-      @click="handleSupport"
-      aria-label="Hỗ trợ khách hàng"
-    >
-      <CustomerServiceOutlined />
-    </a-button>
+    <a-tooltip title="Hỗ trợ người dùng" placement="left" :mouseEnterDelay="0.5">
+      <a-button
+        type="default"
+        shape="circle"
+        size="large"
+        class="support-button"
+        @click="handleSupport"
+        aria-label="Hỗ trợ khách hàng"
+      >
+        <CustomerServiceOutlined />
+      </a-button>
+    </a-tooltip>
 
     <a-modal
-      v-model:visible="showModal"
+      v-model:open="showModal"
       :confirm-loading="submitting"
       @cancel="handleCancel"
       @ok="handleSubmit"
@@ -152,37 +147,37 @@ const handleCancel = () => {
         </div>
       </template>
       <a-form layout="vertical">
-          <a-form-item label="Tiêu đề" required>
-            <a-input 
-              v-model:value="formData.title" 
-              placeholder="Nhập tiêu đề yêu cầu"
-              :maxLength="255"
-            />
-          </a-form-item>
-          
-          <a-form-item label="Nội dung" required>
-            <a-textarea 
-              v-model:value="formData.message" 
-              placeholder="Mô tả chi tiết vấn đề của bạn..."
-              :rows="6"
-            />
-          </a-form-item>
-          
-          <a-form-item label="Tệp đính kèm (tối đa 5 tệp)">
-            <a-spin :spinning="uploadLoading" size="small">
-              <a-upload
-                :file-list="fileList"
-                :before-upload="beforeUpload"
-                :multiple="true"
-                :disabled="fileList.length >= 5 || uploadLoading"
-                :show-upload-list="false"
-              >
-                <a-button :disabled="fileList.length >= 5 || uploadLoading">
-                  <PaperClipOutlined /> Tải lên tệp
-                </a-button>
-              </a-upload>
-            </a-spin>
-          
+        <a-form-item label="Tiêu đề" required>
+          <a-input
+            v-model:value="formData.title"
+            placeholder="Nhập tiêu đề yêu cầu"
+            :maxLength="255"
+          />
+        </a-form-item>
+
+        <a-form-item label="Nội dung" required>
+          <a-textarea
+            v-model:value="formData.message"
+            placeholder="Mô tả chi tiết vấn đề của bạn..."
+            :rows="6"
+          />
+        </a-form-item>
+
+        <a-form-item label="Tệp đính kèm (tối đa 5 tệp)">
+          <a-spin :spinning="uploadLoading" size="small">
+            <a-upload
+              :file-list="fileList"
+              :before-upload="beforeUpload"
+              :multiple="true"
+              :disabled="fileList.length >= 5 || uploadLoading"
+              :show-upload-list="false"
+            >
+              <a-button :disabled="fileList.length >= 5 || uploadLoading">
+                <PaperClipOutlined /> Tải lên tệp
+              </a-button>
+            </a-upload>
+          </a-spin>
+
           <!-- Display files -->
           <div class="file-list" v-if="fileList.length > 0">
             <div v-for="(file, index) in fileList" :key="index" class="file-item">
@@ -191,18 +186,12 @@ const handleCancel = () => {
                 <span class="file-name">{{ file.name }}</span>
                 <span class="file-size">({{ formatFileSize(file.size) }})</span>
               </div>
-              <a-button 
-                type="text" 
-                size="small"
-                danger 
-                @click="removeFile(file)" 
-                title="Xóa tệp"
-              >
+              <a-button type="text" size="small" danger @click="removeFile(file)" title="Xóa tệp">
                 <DeleteOutlined />
               </a-button>
             </div>
           </div>
-          
+
           <div class="upload-hint" v-if="fileList.length >= 5">
             Đã đạt giới hạn số lượng tệp tải lên
           </div>
@@ -230,7 +219,7 @@ const handleCancel = () => {
 
 .modal-title .anticon {
   font-size: 18px;
-  color: #666; /* Changed from blue to a neutral gray color */
+  color: #666;
 }
 
 .support-button {
@@ -313,7 +302,7 @@ const handleCancel = () => {
     width: 50px;
     height: 50px;
   }
-  
+
   .file-name {
     max-width: 200px;
   }
@@ -329,7 +318,7 @@ const handleCancel = () => {
     width: 45px;
     height: 45px;
   }
-  
+
   .file-name {
     max-width: 150px;
   }

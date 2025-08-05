@@ -12,12 +12,14 @@ type StoreState = {
   lstSemester: Semester[]
   studentInfo: UserStudent
   dataWebcam: DataWebcam
+  totalNotification: number
   onCallbackAttendance: () => void
   setLstFacilities: (val: Facility[]) => void
   setLstSemester: (val: Semester[]) => void
   setStudentInfo: (val: UserStudent) => void
   setDataWebcam: (val: DataWebcam) => void
   setOnCallbackAttendance: (val: () => void) => void
+  setTotalNotification: (val: number) => void
 }
 
 export const useGlobalStore = create<StoreState>()(
@@ -30,12 +32,14 @@ export const useGlobalStore = create<StoreState>()(
         descriptors: [],
         image: '',
       },
+      totalNotification: 0,
       onCallbackAttendance: () => {},
       setLstFacilities: (val) => set({ lstFacilities: val }),
       setLstSemester: (val) => set({ lstSemester: val }),
       setStudentInfo: (val) => set({ studentInfo: val }),
       setDataWebcam: (val) => set({ dataWebcam: val }),
       setOnCallbackAttendance: (val) => set({ onCallbackAttendance: val }),
+      setTotalNotification: (val) => set({ totalNotification: val }),
     }),
     {
       name: 'global-store',

@@ -1,6 +1,11 @@
 import { Colors } from '@/constants/Colors'
 import { RootStackParamList } from '@/types/RootStackParamList'
-import { lightenColor, UPPER_HEADER_HEIGHT, UPPER_HEADER_PADDING_TOP } from '@/utils'
+import {
+  countNotification,
+  lightenColor,
+  UPPER_HEADER_HEIGHT,
+  UPPER_HEADER_PADDING_TOP,
+} from '@/utils'
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { LinearGradient } from 'expo-linear-gradient'
 import {
@@ -30,6 +35,7 @@ import EmptyData from '@/components/EmptyData'
 import { CollapseItemNotification } from './notication/item/CollapseItemNotification'
 import DraggableBottom, { DraggableBottomRef } from '@/components/DraggableBottom'
 import ModalConfirm from '@/components/ModalConfirm'
+import { useGlobalStore } from '@/utils/GlobalStore'
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Notification'>
 
@@ -52,20 +58,18 @@ const NotificationScreen: React.FC<Props> = ({ navigation }) => {
 
   const [isShow, setIsShow] = useState(false)
   const [visibleModal, setVisibleModal] = useState(false)
-  const [currentIdItem, setCurrentIdItem] = useState<string | null>(null)
+  const [currentItem, setCurrentItem] = useState<ItemNotification>()
   const bottomSheetRef = useRef<DraggableBottomRef>(null)
 
   const lstStatus = {
     1: 'Thông báo mới',
     0: 'Đã đọc',
   }
+  const totalNotification = useGlobalStore((state) => state.totalNotification)
+  const setTotalNotification = useGlobalStore((state) => state.setTotalNotification)
 
-  const [totalNotification, setTotalNotification] = useState(0)
-
-  const countNotification = () => {
-    requestAPI.get(API_ROUTES_NOTIFICATION.FETCH_COUNT).then(({ data: response }) => {
-      setTotalNotification(response?.data || 0)
-    })
+  const getTotalNotification = () => {
+    countNotification((data) => setTotalNotification(data || 0))
   }
 
   const fetchDataList = async () => {
@@ -122,7 +126,7 @@ const NotificationScreen: React.FC<Props> = ({ navigation }) => {
             status: 0,
           })),
         )
-        countNotification()
+        getTotalNotification()
       })
       .catch((error) => {
         showError(error?.response?.data?.message || 'Không thể đánh dấu đã đọc tất cả', 2000)
@@ -136,13 +140,14 @@ const NotificationScreen: React.FC<Props> = ({ navigation }) => {
     showLoading()
     requestAPI
       .put(API_ROUTES_NOTIFICATION.FETCH_MARK_READ, {
-        ids: [currentIdItem],
+        ids: [currentItem?.id],
       })
       .then(({ data: response }) => {
-        const item = lstData.find((o) => o.id === currentIdItem)
+        const item = lstData.find((o) => o.id === currentItem?.id)
         if (item) {
           item.status = 0
         }
+        setTotalNotification(totalNotification - 1)
       })
       .catch((error) => {
         showError(
@@ -160,13 +165,14 @@ const NotificationScreen: React.FC<Props> = ({ navigation }) => {
     showLoading()
     requestAPI
       .put(API_ROUTES_NOTIFICATION.FETCH_MARK_UNREAD, {
-        ids: [currentIdItem],
+        ids: [currentItem?.id],
       })
       .then(({ data: response }) => {
-        const item = lstData.find((o) => o.id === currentIdItem)
+        const item = lstData.find((o) => o.id === currentItem?.id)
         if (item) {
           item.status = 1
         }
+        setTotalNotification(totalNotification + 1)
       })
       .catch((error) => {
         showError(
@@ -211,7 +217,7 @@ const NotificationScreen: React.FC<Props> = ({ navigation }) => {
 
   const handleRefresh = () => {
     if (loadMorePage) return
-    countNotification()
+    getTotalNotification()
     setCurrentPage(1)
     setRefreshTrigger((prev) => prev + 1)
   }
@@ -221,12 +227,12 @@ const NotificationScreen: React.FC<Props> = ({ navigation }) => {
   }
 
   const handleShowOption = (item: ItemNotification) => {
-    setCurrentIdItem(item.id)
+    setCurrentItem(item)
     setIsShow(true)
   }
 
   useEffect(() => {
-    countNotification()
+    getTotalNotification()
   }, [])
 
   return (
@@ -254,12 +260,14 @@ const NotificationScreen: React.FC<Props> = ({ navigation }) => {
             </Text>
           </View>
 
-          <IconButton
-            icon="check-all"
-            size={24}
-            iconColor="#ffffff"
-            onPress={() => setVisibleModal(true)}
-          />
+          {totalNotification > 0 && (
+            <IconButton
+              icon="check-all"
+              size={24}
+              iconColor="#ffffff"
+              onPress={() => setVisibleModal(true)}
+            />
+          )}
         </View>
       </SafeAreaView>
 
@@ -278,13 +286,33 @@ const NotificationScreen: React.FC<Props> = ({ navigation }) => {
         isShow={isShow}
         onClose={() => setIsShow(false)}
       >
-        <View style={{ flex: 1, marginBottom: 20 }}>
-          <TouchableOpacity onPress={markRead}>
-            <Text style={styles.itemOption}> Đánh dấu đã đọc</Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={markUnread}>
-            <Text style={styles.itemOption}> Đánh dấu chưa đọc</Text>
-          </TouchableOpacity>
+        <View
+          style={{
+            flex: 1,
+            height: 120,
+          }}
+        >
+          {currentItem?.status === 1 ? (
+            <TouchableOpacity
+              onPress={markRead}
+              style={{
+                flex: 1,
+                height: 50,
+              }}
+            >
+              <Text style={styles.itemOption}> Đánh dấu đã đọc</Text>
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity
+              onPress={markUnread}
+              style={{
+                flex: 1,
+                height: 50,
+              }}
+            >
+              <Text style={styles.itemOption}> Đánh dấu chưa đọc</Text>
+            </TouchableOpacity>
+          )}
         </View>
       </DraggableBottom>
 

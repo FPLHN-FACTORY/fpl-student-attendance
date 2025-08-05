@@ -127,7 +127,7 @@ const handleAddSubject = () => {
     { key: 'name', label: 'Tên bộ môn' },
     { key: 'code', label: 'Mã bộ môn', allowOnlyNumbers: true },
   ])
-  
+
   if (!validation.isValid) {
     message.error(validation.message)
     return
@@ -202,7 +202,7 @@ const updateSubject = () => {
     { key: 'name', label: 'Tên bộ môn' },
     { key: 'code', label: 'Mã bộ môn', allowOnlyNumbers: true },
   ])
-  
+
   if (!validation.isValid) {
     message.error(validation.message)
     return
@@ -276,7 +276,7 @@ const handleClearFilter = () => {
   Object.keys(filter).forEach((key) => {
     filter[key] = ''
   })
-  pagination.current = 1
+  // Không reset về trang 1 khi hủy lọc để giữ nguyên dữ liệu hiện tại
   fetchSubjects()
 }
 
