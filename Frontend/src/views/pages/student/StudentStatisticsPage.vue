@@ -72,12 +72,12 @@ const lineChartData = ref({
   datasets: [
     {
       label: 'Tỷ lệ điểm danh (%)',
-      borderColor: '#52c41a',
+      borderColor: '#8bc34a',
       backgroundColor: 'rgba(82, 196, 26, 0.1)',
       fill: true,
       tension: 0.2,
       borderWidth: 3,
-      pointBackgroundColor: '#52c41a',
+      pointBackgroundColor: '#8bc34a',
       pointBorderColor: '#fff',
       pointBorderWidth: 2,
       pointRadius: 6,
@@ -86,12 +86,12 @@ const lineChartData = ref({
     },
     {
       label: 'Tỷ lệ vắng (%)',
-      borderColor: '#ff4d4f',
+      borderColor: '#e91e63',
       backgroundColor: 'rgba(255, 77, 79, 0.1)',
       fill: true,
       tension: 0.2,
       borderWidth: 3,
-      pointBackgroundColor: '#ff4d4f',
+      pointBackgroundColor: '#e91e63',
       pointBorderColor: '#fff',
       pointBorderWidth: 2,
       pointRadius: 6,
@@ -105,7 +105,7 @@ const pieChartData = ref({
   labels: [],
   datasets: [
     {
-      backgroundColor: ['#52c41a', '#ff4d4f'],
+      backgroundColor: ['#8bc34a', '#e91e63'],
       data: [],
       borderWidth: 0,
     },
