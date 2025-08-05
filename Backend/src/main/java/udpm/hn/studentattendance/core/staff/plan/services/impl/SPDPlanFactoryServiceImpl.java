@@ -133,6 +133,10 @@ public class SPDPlanFactoryServiceImpl implements SPDPlanFactoryService {
             return RouterHelper.responseError("Hình thức không hợp lệ");
         }
 
+        if (StringUtils.hasText(request.getRoom()) && type == ShiftType.OFFLINE && !ValidateHelper.isValidName(request.getRoom())) {
+            return RouterHelper.responseError("Tên phòng chỉ được chứa ký tự chữ, số và các ký tự đặc biệt _ - #");
+        }
+
         if (StringUtils.hasText(request.getLink()) && !ValidateHelper.isValidURL(request.getLink())) {
             return RouterHelper.responseError("Link online không hợp lệ");
         }
