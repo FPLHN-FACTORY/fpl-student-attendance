@@ -17,40 +17,50 @@ import java.util.Optional;
 @Repository
 public interface USStudentExtendRepository extends UserStudentRepository {
     @Query(value = """
-            SELECT
-                 us.id as studentId,
-                 us.name as studentName,
-                 us.code as studentCode,
-                 us.email as studentEmail,
-                 us.status as studentStatus
-            FROM user_student us
-            LEFT JOIN facility f ON f.id = us.id_facility
-            WHERE
-                 (
-                   (:#{#studentRequest.searchQuery} IS NULL OR TRIM(:#{#studentRequest.searchQuery}) = '')
-                   OR us.name LIKE concat('%', TRIM(:#{#studentRequest.searchQuery}), '%')
-                   OR us.code LIKE concat('%', TRIM(:#{#studentRequest.searchQuery}), '%')
-                   OR us.email LIKE concat('%', TRIM(:#{#studentRequest.searchQuery}), '%')
-                 )
-                 AND f.id = :facilityId
-                 AND (:#{#studentRequest.studentStatus} IS NULL OR us.status = :#{#studentRequest.studentStatus})
-            ORDER BY  us.status DESC, us.created_at DESC
-            """, countQuery = """
-            SELECT COUNT(*)
-            FROM user_student us
-            LEFT JOIN facility f ON f.id = us.id_facility
-            WHERE
-                 (
-                   (:#{#studentRequest.searchQuery} IS NULL OR TRIM(:#{#studentRequest.searchQuery}) = '')
-                   OR us.name LIKE concat('%', TRIM(:#{#studentRequest.searchQuery}), '%')
-                   OR us.code LIKE concat('%', TRIM(:#{#studentRequest.searchQuery}), '%')
-                   OR us.email LIKE concat('%', TRIM(:#{#studentRequest.searchQuery}), '%')
-                 )
-                 AND f.id = :facilityId
-                 AND (:#{#studentRequest.studentStatus} IS NULL OR us.status = :#{#studentRequest.studentStatus})
-            """, nativeQuery = true)
-    Page<USStudentResponse> getAllStudentByFacility(Pageable pageable, USStudentRequest studentRequest,
-                                                    String facilityId);
+    SELECT
+         us.id as studentId,
+         us.name as studentName,
+         us.code as studentCode,
+         us.email as studentEmail,
+         us.status as studentStatus,
+         us.face_embedding as faceEmbedding
+    FROM user_student us
+    LEFT JOIN facility f ON f.id = us.id_facility
+    WHERE
+         (
+           (:#{#studentRequest.searchQuery} IS NULL OR TRIM(:#{#studentRequest.searchQuery}) = '')
+           OR us.name LIKE concat('%', TRIM(:#{#studentRequest.searchQuery}), '%')
+           OR us.code LIKE concat('%', TRIM(:#{#studentRequest.searchQuery}), '%')
+           OR us.email LIKE concat('%', TRIM(:#{#studentRequest.searchQuery}), '%')
+         )
+         AND f.id = :facilityId
+         AND (:#{#studentRequest.studentStatus} IS NULL OR us.status = :#{#studentRequest.studentStatus})
+         AND (
+             (:#{#studentRequest.isHasFace} IS NULL)
+             OR (:#{#studentRequest.isHasFace} = true AND us.face_embedding IS NOT NULL)
+             OR (:#{#studentRequest.isHasFace} = false AND us.face_embedding IS NULL)
+         )
+    ORDER BY  us.status DESC, us.created_at DESC
+    """, countQuery = """
+    SELECT COUNT(*)
+    FROM user_student us
+    LEFT JOIN facility f ON f.id = us.id_facility
+    WHERE
+         (
+           (:#{#studentRequest.searchQuery} IS NULL OR TRIM(:#{#studentRequest.searchQuery}) = '')
+           OR us.name LIKE concat('%', TRIM(:#{#studentRequest.searchQuery}), '%')
+           OR us.code LIKE concat('%', TRIM(:#{#studentRequest.searchQuery}), '%')
+           OR us.email LIKE concat('%', TRIM(:#{#studentRequest.searchQuery}), '%')
+         )
+         AND f.id = :facilityId
+         AND (:#{#studentRequest.studentStatus} IS NULL OR us.status = :#{#studentRequest.studentStatus})
+         AND (
+             (:#{#studentRequest.isHasFace} IS NULL)
+             OR (:#{#studentRequest.isHasFace} = true AND us.face_embedding IS NOT NULL)
+             OR (:#{#studentRequest.isHasFace} = false AND us.face_embedding IS NULL)
+         )
+    """, nativeQuery = true)
+    Page<USStudentResponse> getAllStudentByFacility(Pageable pageable, USStudentRequest studentRequest, String facilityId);
     @Query(value = """
             SELECT
                  us.id as studentId,

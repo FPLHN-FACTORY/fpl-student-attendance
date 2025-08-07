@@ -33,6 +33,7 @@ const students = ref([])
 const filter = reactive({
   searchQuery: '',
   studentStatus: '',
+  isHasFace: null,
 })
 
 // Dữ liệu phân trang, sử dụng cấu trúc từ DEFAULT_PAGINATION
@@ -108,13 +109,11 @@ const fetchStudents = async () => {
     const list = stuRes.data.data.data // danh sách sinh viên
     const faceMap = faceRes.data.data // map studentId -> hasFace
 
-    // gán thêm hasFace vào từng object dựa trên studentId
     students.value = list.map((student) => ({
       ...student,
       hasFace: faceMap[student.studentId] || false,
     }))
 
-    // cập nhật tổng bản ghi
     if (stuRes.data.data.totalRecords !== undefined) {
       pagination.total = stuRes.data.data.totalRecords
     } else {
@@ -152,6 +151,12 @@ const handleStatusChange = () => {
   pagination.current = 1
   fetchStudents()
 }
+
+const handleFaceChange = () => {
+  pagination.current = 1
+  fetchStudents()
+}
+
 
 const handleAddStudent = () => {
   const validation = validateFormSubmission(newStudent, [
@@ -352,6 +357,7 @@ const handleClearFilter = () => {
   // Clear all filter values
   filter.searchQuery = ''
   filter.studentStatus = null
+  filter.isHasFace = null
   // Reset về trang 1 khi hủy lọc để tránh lỗi dữ liệu
   pagination.current = 1
   fetchStudents()
@@ -404,7 +410,7 @@ onMounted(() => {
                   </a-input>
                 </div>
                 <!-- Combobox trạng thái -->
-                <div class="col-md-6 col-sm-12">
+                <div class="col-md-3 col-sm-12">
                   <div class="label-title">Trạng thái:</div>
                   <a-select
                     v-model:value="filter.studentStatus"
@@ -417,7 +423,17 @@ onMounted(() => {
                     <a-select-option :value="0">-- Không hoạt động --</a-select-option>
                   </a-select>
                 </div>
-
+                <div class="col-md-3 col-sm-12">
+                  <div class="label-title">Đăng Ký FaceID: </div>
+                  <a-select v-model:value="filter.isHasFace"
+                  placeholder="-- Tất cả --"
+                  class="w-100"
+                  @change="handleFaceChange">
+                    <a-select-option :value="null">-- Tất cả --</a-select-option>
+                    <a-select-option :value="true">Đã đăng ký</a-select-option>
+                    <a-select-option :value="false">Chưa đăng ký</a-select-option>
+                  </a-select>
+                </div>
                 <div class="col-12">
                   <div class="d-flex justify-content-center flex-wrap gap-2">
                     <a-button class="btn-light" @click="fetchStudents">
