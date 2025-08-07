@@ -263,7 +263,7 @@ public class SAAttendanceServiceImpl implements SAAttendanceService {
 
             return response;
         } catch (Exception e) {
-            return RouterHelper.responseError("Thông tin khuôn mặt không hợp lệ");
+            return RouterHelper.responseError("Thông tin khuôn mặt không hợp lệ. Vui lòng thử lại");
         }
     }
 

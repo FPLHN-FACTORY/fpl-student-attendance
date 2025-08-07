@@ -72,7 +72,7 @@ public class AuthenticationRestController {
     }
 
     @PutMapping(RouteAuthenticationConstant.API_STUDENT_UPDATE_FACE_ID)
-    public ResponseEntity<?> studentUpdateFaceID(@RequestParam("image") MultipartFile image) {
+    public ResponseEntity<?> studentUpdateFaceID(@RequestPart("image") MultipartFile image) {
         return authenticationService.studentUpdateFaceID(image);
     }
 

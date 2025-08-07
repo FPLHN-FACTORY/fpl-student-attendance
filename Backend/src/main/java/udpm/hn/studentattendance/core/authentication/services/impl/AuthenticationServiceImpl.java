@@ -230,7 +230,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
             return RouterHelper.responseSuccess("Đăng ký thông tin sinh viên thành công", new AuthenticationToken(accessToken, refreshToken));
         } catch (Exception e) {
-            return RouterHelper.responseError("Thông tin khuôn mặt không hợp lệ");
+            return RouterHelper.responseError("Thông tin khuôn mặt không hợp lệ. Vui lòng thử lại");
         }
     }
 
@@ -286,7 +286,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             return RouterHelper.responseSuccess("Cập nhật khuôn mặt thành công",
                     authenticationUserStudentRepository.save(student));
         } catch (Exception e) {
-            return RouterHelper.responseError("Thông tin khuôn mặt không hợp lệ");
+            return RouterHelper.responseError("Thông tin khuôn mặt không hợp lệ. Vui lòng thử lại");
         }
     }
 
