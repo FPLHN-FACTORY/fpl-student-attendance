@@ -17,9 +17,11 @@ public class USFactoryRequest extends PageableRequest {
     private String idFacility;
 
     @Size(max = EntityProperties.LENGTH_NAME, message = "Tên nhóm xưởng không được vượt quá " + EntityProperties.LENGTH_NAME + " ký tự")
-    private String factoryName; // dùng thay cho searchQuery
+    private String factoryName;
 
     private String idSemester;
+
+    private String idUserStaff;
 
     private Integer status;
 

@@ -39,7 +39,7 @@ public interface STDSFactoryAttendanceBarChartRepository extends FactoryReposito
     SELECT 
         COUNT(*) AS totalShift,
         COUNT(CASE WHEN attendance_status = 3 THEN 1 END) AS totalPresent,
-        COUNT(CASE WHEN attendance_status IS NULL THEN 1 END) AS totalAbsent
+        COUNT(CASE WHEN attendance_status != 3 OR attendance_status IS NULL THEN 1 END) AS totalAbsent
     FROM attendance_summary
     """, nativeQuery = true)
     Optional<STDStatisticsAttendanceChartResponse> getAttendanceBarChart(String userId, String semesterId);

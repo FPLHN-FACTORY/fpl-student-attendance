@@ -14,4 +14,6 @@ public interface USStudentResponse {
 
     Integer getStudentStatus();
 
+    String getFaceEmbedding();
+
 }

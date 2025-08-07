@@ -37,6 +37,7 @@ const filter = reactive({
   idProject: null,
   status: null,
   idSemester: null,
+  idUserStaff: null,
 })
 
 const pagination = reactive({
@@ -394,7 +395,7 @@ const handleClearFilter = () => {
     factoryName: '',
     status: '',
     idProject: null,
-    idStaff: null,
+    idUserStaff: null,
     idSemester: null,
   })
   // Không reset về trang 1 khi hủy lọc để giữ nguyên dữ liệu hiện tại
@@ -584,7 +585,7 @@ onMounted(() => {
             <a-collapse-panel>
               <template #header><FilterFilled /> Bộ lọc ({{ countFilter }})</template>
               <div class="row g-3">
-                <div class="col-md-6 col-sm-12">
+                <div class="col-md-12 col-sm-12">
                   <div class="label-title">Từ khoá:</div>
                   <a-input
                     v-model:value="filter.factoryName"
@@ -597,20 +598,6 @@ onMounted(() => {
                       <SearchOutlined />
                     </template>
                   </a-input>
-                </div>
-                <div class="col-md-3 col-sm-6">
-                  <div class="label-title">Trạng thái:</div>
-                  <a-select
-                    v-model:value="filter.status"
-                    class="w-100"
-                    @change="onFilterChange"
-                    :dropdownMatchSelectWidth="false"
-                    placeholder="-- Tất cả trạng thái --"
-                  >
-                    <a-select-option :value="null">-- Tất cả trạng thái --</a-select-option>
-                    <a-select-option :value="1">Đang triển khai</a-select-option>
-                    <a-select-option :value="0">Ngừng triển khai</a-select-option>
-                  </a-select>
                 </div>
                 <div class="col-md-3 col-sm-6">
                   <div class="label-title">Kỳ học:</div>
@@ -634,6 +621,71 @@ onMounted(() => {
                       :label="semester.code"
                     >
                       {{ semester.code }}
+                    </a-select-option>
+                  </a-select>
+                </div>
+                <div class="col-md-3 col-sm-6">
+                  <div class="label-title">Trạng thái:</div>
+                  <a-select
+                    v-model:value="filter.status"
+                    class="w-100"
+                    @change="onFilterChange"
+                    :dropdownMatchSelectWidth="false"
+                    placeholder="-- Tất cả trạng thái --"
+                  >
+                    <a-select-option :value="null">-- Tất cả trạng thái --</a-select-option>
+                    <a-select-option :value="1">Đang triển khai</a-select-option>
+                    <a-select-option :value="0">Ngừng triển khai</a-select-option>
+                  </a-select>
+                </div>
+
+                <div class="col-md-3 col-sm-6">
+                  <div class="label-title">Dự án:</div>
+                  <a-select
+                    v-model:value="filter.idProject"
+                    placeholder="Chọn dự án"
+                    allowClear
+                    show-search
+                    @change="onFilterChange"
+                    class="w-100"
+                    :filter-option="
+                      (input, option) =>
+                        (option.label || '').toLowerCase().includes(input.toLowerCase())
+                    "
+                  >
+                    <a-select-option :value="null">-- Tất cả dự án --</a-select-option>
+                    <a-select-option
+                      v-for="project in projects"
+                      :key="project.id"
+                      :value="project.id"
+                      :label="project.projectName"
+                    >
+                      {{ project.projectName + ' - ' + project.levelProjectName + ' - ' + project.semesterCode }}
+                    </a-select-option>
+                  </a-select>
+                </div>
+                <div class="col-md-3 col-sm-6">
+                  <div class="label-title">Giảng viên:</div>
+                  <a-select
+                    v-model:value="filter.idUserStaff"
+                    placeholder="Chọn giảng viên"
+                    allowClear
+                    show-search
+                    @change="onFilterChange"
+                    class="w-100"
+                    :filter-option="
+                      (input, option) =>
+                        (option.label || '').toLowerCase().includes(input.toLowerCase())
+                    "
+                  >
+                    <a-select-option :value="null">-- Tất cả giảng viên --</a-select-option>
+                    <a-select-option
+                      v-for="staff in staffs"
+                      :key="staff.id"
+                      :value="staff.id"
+                      :label="staff.name"
+                    >
+                      {{ staff.code + ' - ' + staff.name }}
                     </a-select-option>
                   </a-select>
                 </div>

@@ -137,7 +137,7 @@ export const StaffRoutes = [
         name: ROUTE_NAMES.MANAGEMENT_STUDENT_FACTORY,
         component: () => import('@/views/pages/staff/StaffManagementStudentFactoryPage.vue'),
         meta: {
-          name: 'Chi tiết điểm danh',
+          name: 'Quản lý sinh viên xưởng',
         },
       },
     ],

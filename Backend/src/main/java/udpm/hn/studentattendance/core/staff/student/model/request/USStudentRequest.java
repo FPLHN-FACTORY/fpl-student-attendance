@@ -19,4 +19,7 @@ public class USStudentRequest extends PageableRequest {
 
     private Integer studentStatus;
 
+    private Boolean isHasFace;  // Phải là Boolean, không phải String
+
+
 }

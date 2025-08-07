@@ -49,7 +49,8 @@ public interface USFactoryExtendRepository extends FactoryRepository {
                 AND (:#{#staffFactoryRequest.idSemester} IS NULL OR s.id = :#{#staffFactoryRequest.idSemester})
                 AND (:#{#staffFactoryRequest.status} IS NULL OR LEAST(ft.status, p.status, lp.status, sf.status, sub.status, s.status, f.status) = :#{#staffFactoryRequest.status})
                 AND (:#{#staffFactoryRequest.factoryName} IS NULL OR
-                    CONCAT(ft.name, ' ', us.code, ' ', us.name , ' ', p.name) LIKE CONCAT('%', TRIM(:#{#staffFactoryRequest.factoryName}), '%'))
+                    ft.name LIKE CONCAT('%', TRIM(:#{#staffFactoryRequest.factoryName}), '%'))
+                AND (:#{#staffFactoryRequest.idUserStaff} IS NULL OR us.id = :#{#staffFactoryRequest.idUserStaff})
             ORDER BY LEAST(ft.status, p.status, lp.status, sf.status, sub.status, s.status, f.status) DESC, ft.created_at DESC
             """, countQuery = """
                 SELECT COUNT(*)
@@ -67,7 +68,8 @@ public interface USFactoryExtendRepository extends FactoryRepository {
             AND (:#{#staffFactoryRequest.idProject} IS NULL OR p.id = :#{#staffFactoryRequest.idProject})
             AND (:#{#staffFactoryRequest.idSemester} IS NULL OR s.id = :#{#staffFactoryRequest.idSemester})
             AND (:#{#staffFactoryRequest.factoryName} IS NULL OR
-                CONCAT(ft.name, ' ', us.code, ' ', us.name , ' ', p.name) LIKE CONCAT('%', TRIM(:#{#staffFactoryRequest.factoryName}), '%'))
+                ft.name LIKE CONCAT('%', TRIM(:#{#staffFactoryRequest.factoryName}), '%'))
+            AND (:#{#staffFactoryRequest.idUserStaff} IS NULL OR us.id = :#{#staffFactoryRequest.idUserStaff})
             AND (:#{#staffFactoryRequest.status} IS NULL OR LEAST(ft.status, p.status, lp.status, sf.status, sub.status, s.status, f.status) = :#{#staffFactoryRequest.status})
                 """, nativeQuery = true)
     Page<USFactoryResponse> getAllFactory(Pageable pageable, String facilityId,
