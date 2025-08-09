@@ -19,7 +19,4 @@ public class SACheckinAttendanceRequest {
 
     private Double longitude;
 
-    @NotBlank(message = "Không tìm thấy dữ liệu khuôn mặt")
-    private String faceEmbedding;
-
 }

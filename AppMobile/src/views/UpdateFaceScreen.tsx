@@ -1,5 +1,5 @@
 import { RootStackParamList } from '@/types/RootStackParamList'
-import { logout, UPPER_HEADER_HEIGHT, UPPER_HEADER_PADDING_TOP } from '@/utils'
+import { base64ToBlob, logout, UPPER_HEADER_HEIGHT, UPPER_HEADER_PADDING_TOP } from '@/utils'
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { View, StyleSheet, StatusBar, AppState } from 'react-native'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -30,7 +30,7 @@ const UpdateFaceScreen: React.FC<Props> = ({ navigation }) => {
   const webviewRef = useRef<WebViewType>(null)
 
   const [visible, setVisible] = useState(false)
-  const [descriptors, setDescriptors] = useState([])
+  const [image, setImage] = useState('')
 
   const handleLogout = async () => {
     await logout()
@@ -42,9 +42,14 @@ const UpdateFaceScreen: React.FC<Props> = ({ navigation }) => {
   const handleSubmit = () => {
     setVisible(false)
     showLoading()
+    const data = new FormData()
+    data.append('image', base64ToBlob(image))
+
     requestAPI
-      .put(`${API_ROUTES.FETCH_DATA_STUDENT_UPDATE_FACEID}`, {
-        faceEmbedding: JSON.stringify(descriptors),
+      .put(`${API_ROUTES.FETCH_DATA_STUDENT_UPDATE_FACEID}`, data, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
       })
       .then(({ data: response }) => {
         showSuccess(response.message, 2000)
@@ -113,7 +118,7 @@ const UpdateFaceScreen: React.FC<Props> = ({ navigation }) => {
               try {
                 const data = JSON.parse(nativeEvent?.data)
                 if (data?.descriptors) {
-                  setDescriptors(data.descriptors)
+                  setImage(data.image)
                   setVisible(true)
                 }
               } catch (error) {}

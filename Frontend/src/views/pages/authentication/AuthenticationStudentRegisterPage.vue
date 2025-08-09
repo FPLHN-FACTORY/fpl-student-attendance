@@ -12,6 +12,7 @@ import { message, Modal } from 'ant-design-vue'
 import { BASE_URL, GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
 import useFaceIDStore from '@/stores/useFaceIDStore'
 import WebcamFaceID from '@/components/faceid/WebcamFaceID.vue'
+import { base64ToBlob } from '@/utils/utils'
 
 const router = useRouter()
 
@@ -25,7 +26,7 @@ const formData = reactive({
   idFacility: null,
   name: authStore.user.name,
   code: authStore.user.code,
-  faceEmbedding: null,
+  image: null,
 })
 
 const lstFacility = ref([])
@@ -39,7 +40,7 @@ const formRules = reactive({
   idFacility: [{ required: true, message: 'Vui lòng chọn 1 cơ sở!' }],
   name: [{ required: true, message: 'Vui lòng nhập họ và tên!' }],
   code: [{ required: true, message: 'Vui lòng nhập mã số sinh viên!' }],
-  faceEmbedding: [{ required: true, message: 'Vui lòng đăng ký khuôn mặt!' }],
+  image: [{ required: true, message: 'Vui lòng chụp ảnh khuôn mặt!' }],
 })
 
 const handleShowCamera = async () => {
@@ -72,8 +73,20 @@ const fetchDataFacility = async () => {
 
 const fetchSubmitRegister = () => {
   loadingPage.show()
+
+  const data = new FormData()
+  Object.entries(formData).forEach(([key, value]) => {
+    if (key === 'image') return
+    data.append(key, value)
+  })
+  data.append('image', base64ToBlob(formData.image))
+
   requestAPI
-    .put(`${ROUTE_NAMES_API.FETCH_DATA_REGISTER}`, formData)
+    .put(`${ROUTE_NAMES_API.FETCH_DATA_REGISTER}`, data, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    })
     .then(({ data: response }) => {
       message.success(response.message)
       authStore.updateUser({
@@ -97,7 +110,7 @@ onMounted(async () => {
   fetchDataFacility()
   faceIDStore.setFullStep(false)
   faceIDStore.setCallback((descriptor) => {
-    formData.faceEmbedding = JSON.stringify(descriptor)
+    formData.image = faceIDStore.dataImage
     isShowCamera.value = false
   })
 })
@@ -169,8 +182,8 @@ onMounted(async () => {
             <a-form-item
               class="col-md-12"
               label="Xác thực khuôn mặt:"
-              name="faceEmbedding"
-              :rules="formRules.faceEmbedding"
+              name="image"
+              :rules="formRules.image"
             >
               <div class="face-id-input" @click="handleShowCamera">
                 <svg

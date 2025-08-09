@@ -6,10 +6,10 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.view.RedirectView;
 import udpm.hn.studentattendance.core.authentication.model.request.AuthenticationToken;
 import udpm.hn.studentattendance.core.authentication.model.request.AuthenticationStudentRegisterRequest;
-import udpm.hn.studentattendance.core.authentication.model.request.AuthenticationStudentUpdateFaceIDRequest;
 import udpm.hn.studentattendance.core.authentication.oauth2.AuthUser;
 import udpm.hn.studentattendance.core.authentication.repositories.AuthenticationFacilityRepository;
 import udpm.hn.studentattendance.core.authentication.repositories.AuthenticationSemesterRepository;
@@ -26,6 +26,7 @@ import udpm.hn.studentattendance.helpers.NotificationHelper;
 import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.helpers.SessionHelper;
 import udpm.hn.studentattendance.helpers.SettingHelper;
+import udpm.hn.studentattendance.infrastructure.common.services.OnnxService;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.RoleConstant;
 import udpm.hn.studentattendance.infrastructure.constants.SettingKeys;
@@ -54,6 +55,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
     private final JwtUtil jwtUtil;
 
+    private final OnnxService onnxService;
+
     private final NotificationService notificationService;
 
     private final AuthenticationFacilityRepository authenticationFacilityRepository;
@@ -68,6 +71,9 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
     @Value("${app.config.face.threshold_register}")
     private double FACE_THRESHOLD_REGISTER;
+
+    @Value("${app.config.face.threshold_antispoof}")
+    private double FACE_THRESHOLD_ANTIS_POOF;
 
     @Override
     public RedirectView authorSwitch(String role, String redirectUri, String facilityId) {
@@ -175,7 +181,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     }
 
     @Override
-    public ResponseEntity<?> studentRegister(AuthenticationStudentRegisterRequest request) {
+    public ResponseEntity<?> studentRegister(AuthenticationStudentRegisterRequest request, MultipartFile image) {
+
         UserStudent student = authenticationUserStudentRepository.findById(sessionHelper.getUserId()).orElse(null);
         if (student == null) {
             return RouterHelper.responseError("Không tìm thấy sinh viên");
@@ -195,28 +202,36 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             return RouterHelper.responseError("Mã số sinh viên đã tồn tại trên cơ sở này");
         }
 
-        if (request.getFaceEmbedding() == null || request.getFaceEmbedding().isEmpty()) {
+        try {
+            if (image == null || image.isEmpty()) {
+                throw new RuntimeException();
+            }
+
+            float antiSpoof = onnxService.antiSpoof(image.getBytes());
+            if (antiSpoof < FACE_THRESHOLD_ANTIS_POOF) {
+                return RouterHelper.responseError("Ảnh quá mờ hoặc không thể nhận diện. Vui lòng thử lại");
+            }
+
+            float[] faceEmbedding = onnxService.getEmbedding(image.getBytes());
+
+            if (isFaceExists(facility.getId(), faceEmbedding)) {
+                return RouterHelper.responseError("Dữ liệu khuôn mặt đã tồn tại trên hệ thống");
+            }
+
+            student.setFacility(facility);
+            student.setCode(request.getCode());
+            student.setName(request.getName());
+            student.setFaceEmbedding(Arrays.toString(faceEmbedding));
+            authenticationUserStudentRepository.save(student);
+
+            String accessToken = jwtUtil.generateToken(student.getEmail(),
+                    sessionHelper.buildAuthUser(student, Set.of(RoleConstant.STUDENT), student.getFacility().getId()));
+            String refreshToken = jwtUtil.generateRefreshToken(accessToken);
+
+            return RouterHelper.responseSuccess("Đăng ký thông tin sinh viên thành công", new AuthenticationToken(accessToken, refreshToken));
+        } catch (Exception e) {
             return RouterHelper.responseError("Thông tin khuôn mặt không hợp lệ");
         }
-
-        List<double[]> faceEmbeddings = FaceRecognitionUtils.parseEmbeddings(request.getFaceEmbedding());
-
-        if (faceEmbeddings.isEmpty() || isFaceExists(facility.getId(), faceEmbeddings)) {
-            return RouterHelper.responseError("Dữ liệu ảnh quá mờ hoặc đã tồn tại khuôn mặt trên hệ thống");
-        }
-
-        student.setFacility(facility);
-        student.setCode(request.getCode());
-        student.setName(request.getName());
-        student.setFaceEmbedding(Arrays.toString(faceEmbeddings.get(faceEmbeddings.size() - 1)));
-        authenticationUserStudentRepository.save(student);
-
-        String accessToken = jwtUtil.generateToken(student.getEmail(),
-                sessionHelper.buildAuthUser(student, Set.of(RoleConstant.STUDENT), student.getFacility().getId()));
-        String refreshToken = jwtUtil.generateRefreshToken(accessToken);
-
-        return RouterHelper.responseSuccess("Đăng ký thông tin sinh viên thành công",
-                new AuthenticationToken(accessToken, refreshToken));
     }
 
     @Override
@@ -236,7 +251,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     }
 
     @Override
-    public ResponseEntity<?> studentUpdateFaceID(AuthenticationStudentUpdateFaceIDRequest request) {
+    public ResponseEntity<?> studentUpdateFaceID(MultipartFile image) {
         UserStudent student = authenticationUserStudentRepository.findById(sessionHelper.getUserId()).orElse(null);
         if (student == null) {
             return RouterHelper.responseError("Không tìm thấy sinh viên");
@@ -246,24 +261,33 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             return RouterHelper.responseError("Không thể cập nhật khuôn mặt tài khoản này");
         }
 
-        if (request.getFaceEmbedding() == null || request.getFaceEmbedding().isEmpty()) {
+        try {
+            if (image == null || image.isEmpty()) {
+                throw new RuntimeException();
+            }
+
+            float antiSpoof = onnxService.antiSpoof(image.getBytes());
+            if (antiSpoof < FACE_THRESHOLD_ANTIS_POOF) {
+                return RouterHelper.responseError("Ảnh quá mờ hoặc không thể nhận diện. Vui lòng thử lại");
+            }
+
+            float[] faceEmbedding = onnxService.getEmbedding(image.getBytes());
+            if (isFaceExists(sessionHelper.getFacilityId(), faceEmbedding)) {
+                return RouterHelper.responseError("Dữ liệu khuôn mặt đã tồn tại trên hệ thống");
+            }
+
+            student.setFaceEmbedding(Arrays.toString(faceEmbedding));
+
+            NotificationAddRequest notificationAddRequest = new NotificationAddRequest();
+            notificationAddRequest.setType(NotificationHelper.TYPE_SUCCESS_UPDATE_FACE_ID);
+            notificationAddRequest.setIdUser(student.getId());
+            notificationService.add(notificationAddRequest);
+
+            return RouterHelper.responseSuccess("Cập nhật khuôn mặt thành công",
+                    authenticationUserStudentRepository.save(student));
+        } catch (Exception e) {
             return RouterHelper.responseError("Thông tin khuôn mặt không hợp lệ");
         }
-
-        List<double[]> faceEmbeddings = FaceRecognitionUtils.parseEmbeddings(request.getFaceEmbedding());
-        if (isFaceExists(sessionHelper.getFacilityId(), faceEmbeddings)) {
-            return RouterHelper.responseError("Mặt quá mờ hoặc đã tồn tại trên hệ thống. Vui lòng thử lại");
-        }
-
-        student.setFaceEmbedding(Arrays.toString(faceEmbeddings.get(faceEmbeddings.size() - 1)));
-
-        NotificationAddRequest notificationAddRequest = new NotificationAddRequest();
-        notificationAddRequest.setType(NotificationHelper.TYPE_SUCCESS_UPDATE_FACE_ID);
-        notificationAddRequest.setIdUser(student.getId());
-        notificationService.add(notificationAddRequest);
-
-        return RouterHelper.responseSuccess("Cập nhật khuôn mặt thành công",
-                authenticationUserStudentRepository.save(student));
     }
 
     @Override
@@ -286,27 +310,16 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         return RouterHelper.responseSuccess("Lấy dữ liệu avatar thành công", AppUtils.imageUrlToBase64(urlImage));
     }
 
-    private boolean isFaceExists(String idFacility, List<double[]> embeddings) {
+    private boolean isFaceExists(String idFacility, float[] embedding) {
         List<String> lstRawFaceEmbeddings = authenticationUserStudentRepository.getAllFaceEmbedding(idFacility);
-        List<double[]> lstFaceEmbeddings = lstRawFaceEmbeddings.stream().map(FaceRecognitionUtils::parseEmbedding)
+        List<float[]> lstFaceEmbeddings = lstRawFaceEmbeddings.stream().map(FaceRecognitionUtils::parseEmbedding)
                 .toList();
 
         if (lstFaceEmbeddings.isEmpty()) {
             return false;
         }
 
-        double[] firstFace = embeddings.get(0);
-        double[] lastFace = embeddings.get(embeddings.size() - 1);
-
-        double[] resultFace = FaceRecognitionUtils.isSameFaceAndResult(lstFaceEmbeddings, lastFace, FACE_THRESHOLD_REGISTER);
-
-        if (resultFace == null) {
-            boolean isSameFirst = FaceRecognitionUtils.isSameFaceAndResult(lstFaceEmbeddings, firstFace,
-                    FACE_THRESHOLD_REGISTER) == null;
-            return !isSameFirst;
-        }
-
-        return FaceRecognitionUtils.isSameFace(resultFace, firstFace, FACE_THRESHOLD_REGISTER);
+        return FaceRecognitionUtils.isSameFaces(lstFaceEmbeddings, embedding, FACE_THRESHOLD_REGISTER);
     }
 
 }

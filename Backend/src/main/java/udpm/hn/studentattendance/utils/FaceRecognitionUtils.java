@@ -11,15 +11,15 @@ public class FaceRecognitionUtils {
 
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
-    public static double[] parseEmbedding(String embeddingStr) {
+    public static float[] parseEmbedding(String embeddingStr) {
         try {
-            return objectMapper.readValue(embeddingStr, double[].class);
+            return objectMapper.readValue(embeddingStr, float[].class);
         } catch (JsonProcessingException e) {
-            return new double[0];
+            return new float[0];
         }
     }
 
-    public static List<double[]> parseEmbeddings(String embeddingsStr) {
+    public static List<float[]> parseEmbeddings(String embeddingsStr) {
         try {
             return objectMapper.readValue(embeddingsStr, new TypeReference<>() {});
         } catch (JsonProcessingException e) {
@@ -27,7 +27,7 @@ public class FaceRecognitionUtils {
         }
     }
 
-    public static double cosineSimilarity(double[] vec1, double[] vec2) {
+    public static double cosineSimilarity(float[] vec1, float[] vec2) {
         double dot = 0;
         double normA = 0;
         double normB = 0;
@@ -41,8 +41,8 @@ public class FaceRecognitionUtils {
         return dot / (Math.sqrt(normA) * Math.sqrt(normB));
     }
 
-    public static boolean isSameFaces(List<double[]> emb1, double[] emb2, double threshold) {
-        for (double[] input : emb1) {
+    public static boolean isSameFaces(List<float[]> emb1, float[] emb2, double threshold) {
+        for (float[] input : emb1) {
             if (isSameFace(input, emb2, threshold)) {
                 return true;
             }
@@ -50,8 +50,8 @@ public class FaceRecognitionUtils {
         return false;
     }
 
-    public static double[] isSameFaceAndResult(List<double[]> emb1, double[] emb2, double threshold) {
-        for (double[] input : emb1) {
+    public static float[] isSameFaceAndResult(List<float[]> emb1, float[] emb2, double threshold) {
+        for (float[] input : emb1) {
             if (isSameFace(input, emb2, threshold)) {
                 return input;
             }
@@ -59,7 +59,7 @@ public class FaceRecognitionUtils {
         return null;
     }
 
-    public static boolean isSameFace(double[] emb1, double[] emb2, double threshold) {
+    public static boolean isSameFace(float[] emb1, float[] emb2, double threshold) {
         return cosineSimilarity(emb1, emb2) > threshold;
     }
 

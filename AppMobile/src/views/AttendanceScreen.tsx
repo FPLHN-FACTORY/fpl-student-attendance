@@ -1,5 +1,5 @@
 import { RootStackParamList } from '@/types/RootStackParamList'
-import { UPPER_HEADER_HEIGHT, UPPER_HEADER_PADDING_TOP } from '@/utils'
+import { base64ToBlob, UPPER_HEADER_HEIGHT, UPPER_HEADER_PADDING_TOP } from '@/utils'
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { View, StyleSheet, StatusBar, AppState } from 'react-native'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -40,14 +40,19 @@ const AttendanceScreen: React.FC<Props> = ({ route, navigation }) => {
 
   const insets = useSafeAreaInsets()
 
-  const handleAttendance = (descriptors: []) => {
+  const handleAttendance = (image: string) => {
     showLoading()
+    const data = new FormData()
+    data.append('image', base64ToBlob(image))
+    data.append('idPlanDate', idPlanDate)
+    data.append('latitude', location?.coords.latitude?.toString() ?? '')
+    data.append('longitude', location?.coords.longitude?.toString() ?? '')
+
     requestAPI
-      .post(`${API_ROUTES.FETCH_DATA_STUDENT_ATTENDANCE}/checkin`, {
-        idPlanDate,
-        latitude: location?.coords.latitude,
-        longitude: location?.coords.longitude,
-        faceEmbedding: JSON.stringify(descriptors),
+      .post(`${API_ROUTES.FETCH_DATA_STUDENT_ATTENDANCE}/checkin`, data, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
       })
       .then(({ data: response }) => {
         showSuccess(response.message, 2000)
@@ -108,7 +113,7 @@ const AttendanceScreen: React.FC<Props> = ({ route, navigation }) => {
               try {
                 const data = JSON.parse(nativeEvent?.data)
                 if (data?.descriptors) {
-                  handleAttendance(data?.descriptors)
+                  handleAttendance(data?.image)
                 }
               } catch (error) {}
             }}
