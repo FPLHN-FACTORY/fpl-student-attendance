@@ -13,6 +13,7 @@ import ai.djl.translate.TranslateException;
 import ai.djl.translate.Translator;
 import ai.djl.translate.TranslatorContext;
 import jakarta.annotation.PreDestroy;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import javax.imageio.ImageIO;
@@ -20,6 +21,7 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.nio.file.Paths;
 
 import ai.djl.ndarray.types.Shape;
@@ -36,7 +38,11 @@ public class OnnxService {
     private final static int SIZE_ANTISPOOF = 224;
     private static final int SIZE_ARCFACE = 112;
 
-    public OnnxService() throws IOException, ModelNotFoundException, MalformedModelException {
+    private String modelPath;
+
+    public OnnxService(@Value("${app.config.path.model}") String modelPath) throws IOException, ModelNotFoundException, MalformedModelException, URISyntaxException {
+        this.modelPath = modelPath;
+
         Translator<byte[], float[]> translatorAntiSpoof = new Translator<>() {
             @Override
             public NDList processInput(TranslatorContext ctx, byte[] input) throws IOException {
@@ -82,8 +88,9 @@ public class OnnxService {
 
         Criteria<byte[], float[]> criteria = Criteria.builder()
                 .setTypes(byte[].class, float[].class)
-                .optModelPath(Paths.get("src/main/resources/model/antiSpoof.onnx"))
+                .optModelPath(Paths.get(this.modelPath + "/antiSpoof.onnx").toAbsolutePath())
                 .optEngine("OnnxRuntime")
+                .optOption("device", "cpu")
                 .optTranslator(translatorAntiSpoof)
                 .build();
 
@@ -92,8 +99,9 @@ public class OnnxService {
 
         Criteria<byte[], float[]> criteriaArcFace = Criteria.builder()
                 .setTypes(byte[].class, float[].class)
-                .optModelPath(Paths.get("src/main/resources/model/embedding.onnx"))
+                .optModelPath(Paths.get(this.modelPath + "/embedding.onnx").toAbsolutePath())
                 .optEngine("OnnxRuntime")
+                .optOption("device", "cpu")
                 .optTranslator(translatorArcFace)
                 .build();
 
