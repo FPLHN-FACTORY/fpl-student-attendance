@@ -477,8 +477,8 @@ const useFaceIDStore = defineStore('faceID', () => {
             o.gesture.includes('blink right eye'),
         ) &&
           Math.abs(pitch) > 0.2) ||
-        Math.abs(roll) > 0.05 ||
-        Math.abs(yaw) > 0.05
+        Math.abs(roll) > 0.07 ||
+        Math.abs(yaw) > 0.07
       ) {
         return []
       }
@@ -618,11 +618,11 @@ const useFaceIDStore = defineStore('faceID', () => {
       const videoArea = video.value.videoWidth * video.value.videoHeight
       const ratio = faceArea / videoArea
 
-      if (ratio < 0.8) {
+      if (ratio < 0.6) {
         return 'Vui lòng đưa mặt lại gần hơn'
       }
 
-      if (ratio > 1) {
+      if (ratio > 8) {
         return 'Vui lòng đưa mặt ra xa hơn'
       }
 
@@ -674,11 +674,11 @@ const useFaceIDStore = defineStore('faceID', () => {
 
       if (isFullStep || (!isFullStep && (step.value === 0 || step.value === 3))) {
         if (!isInsideCenter(faceBoxRaw)) {
-          return rollback('Vui lòng căn chỉnh khuôn mặt vào giữa')
+          return renderTextStep('Vui lòng căn chỉnh khuôn mặt vào giữa')
         }
         const txtValidSize = await isInvalidSize(detection)
         if (txtValidSize !== null) {
-          return rollback(txtValidSize)
+          return renderTextStep(txtValidSize)
         }
       }
 
@@ -732,7 +732,7 @@ const useFaceIDStore = defineStore('faceID', () => {
           return renderTextStep('Vui lòng không cúi mặt')
         }
 
-        if (Math.abs(roll) > 0.05) {
+        if (Math.abs(roll) > 0.07) {
           return renderTextStep('Vui lòng không nghiêng đầu')
         }
 
@@ -802,7 +802,7 @@ const useFaceIDStore = defineStore('faceID', () => {
           if (step.value === 2 && angle === 1) {
             step.value = 3
             renderTextStep()
-            return delay(1000)
+            return delay(2000)
           }
           if (step.value === 3 && angle === 0) {
             prevEmbedding.value = null
@@ -840,7 +840,7 @@ const useFaceIDStore = defineStore('faceID', () => {
       }
 
       frameCount++
-      detectTimeoutId = setTimeout(detectLoop, 10)
+      detectTimeoutId = setTimeout(detectLoop, 0)
     }
     const detectAxies = async () => {
       if (!isRunScan.value) return clearTimeout(detectAxiesTimeoutId)
@@ -851,7 +851,7 @@ const useFaceIDStore = defineStore('faceID', () => {
           isLoading.value = false
         }
       }
-      detectAxiesTimeoutId = setTimeout(detectAxies, 10)
+      detectAxiesTimeoutId = setTimeout(detectAxies, 0)
     }
     detectAxies()
     detectLoop()

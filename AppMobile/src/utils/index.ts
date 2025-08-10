@@ -14,9 +14,9 @@ import { Colors } from '@/constants/Colors'
 import { ItemCalendar } from '@/types/ItemCalendar'
 import { ItemHistory } from '@/types/ItemHistory'
 import { Semester } from '@/types/Semester'
-import { useGlobalStore } from './GlobalStore'
 import requestAPI from '@/services/requestApiService'
 import { API_ROUTES_NOTIFICATION } from '@/constants/ApiRoutes'
+import * as FileSystem from 'expo-file-system'
 
 export const UPPER_HEADER_HEIGHT = 64
 export const UPPER_HEADER_PADDING_TOP = 4
@@ -401,21 +401,24 @@ export const countNotification = (callback: (response: number) => void) => {
   })
 }
 
-export const base64ToBlob = (base64: string, contentType = 'image/jpeg') => {
-  const byteCharacters = atob(base64.split(',')[1])
-  const byteArrays = []
+export const base64ToFile = async (base64: string) => {
+  const [header, data] = base64.split(',')
+  const contentType = header.split(':')[1].split(';')[0]
+  const ext = contentType.split('/')[1] || 'jpg'
+  const filename = `upload.${ext}`
+  const path = FileSystem.cacheDirectory + filename
 
-  for (let offset = 0; offset < byteCharacters.length; offset += 512) {
-    const slice = byteCharacters.slice(offset, offset + 512)
+  await FileSystem.writeAsStringAsync(path, data, { encoding: FileSystem.EncodingType.Base64 })
 
-    const byteNumbers = new Array(slice.length)
-    for (let i = 0; i < slice.length; i++) {
-      byteNumbers[i] = slice.charCodeAt(i)
-    }
-
-    const byteArray = new Uint8Array(byteNumbers)
-    byteArrays.push(byteArray)
+  return {
+    uri: path,
+    type: contentType,
+    name: filename,
   }
+}
 
-  return new Blob(byteArrays, { type: contentType })
+export const unlinkBase64ToFile = async (uri: string) => {
+  try {
+    await FileSystem.deleteAsync(uri, { idempotent: true })
+  } catch {}
 }

@@ -71,7 +71,7 @@ const WebcamScreen: React.FC<Props> = ({ navigation }) => {
             onMessage={({ nativeEvent }) => {
               try {
                 const data = JSON.parse(nativeEvent?.data)
-                if (data?.descriptors) {
+                if (data?.image) {
                   setDataWebcam({
                     image: data.image,
                   })

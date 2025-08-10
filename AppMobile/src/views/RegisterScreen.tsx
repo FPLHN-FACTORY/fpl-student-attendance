@@ -1,5 +1,11 @@
 import { RootStackParamList } from '@/types/RootStackParamList'
-import { base64ToBlob, logout, UPPER_HEADER_HEIGHT, UPPER_HEADER_PADDING_TOP } from '@/utils'
+import {
+  base64ToFile,
+  logout,
+  unlinkBase64ToFile,
+  UPPER_HEADER_HEIGHT,
+  UPPER_HEADER_PADDING_TOP,
+} from '@/utils'
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { View, StyleSheet, StatusBar, AppState, TouchableOpacity, Image } from 'react-native'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -70,11 +76,13 @@ const RegisterScreen: React.FC<Props> = ({ route, navigation }) => {
       })
   }
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     setVisible(false)
     showLoading()
+
+    const file = await base64ToFile(dataWebcam.image)
     const data = new FormData()
-    data.append('image', base64ToBlob(dataWebcam.image))
+    data.append('image', file as any)
     data.append('idFacility', facility)
     data.append('code', code)
     data.append('name', name)
@@ -98,6 +106,7 @@ const RegisterScreen: React.FC<Props> = ({ route, navigation }) => {
       .finally(() => {
         hideLoading()
         clearDataWebcam()
+        unlinkBase64ToFile(file.uri)
       })
   }
 

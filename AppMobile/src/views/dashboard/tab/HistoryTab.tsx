@@ -268,10 +268,10 @@ const HistoryTab: React.FC<Props> = ({ animatedValue, showMenuRef }) => {
           <>
             <View
               style={{
-                marginBottom: 10,
                 paddingHorizontal: 15,
                 flexDirection: 'row',
-                flexWrap: 'wrap',
+                justifyContent: 'space-between',
+                gap: 10,
               }}
             >
               <View style={styles.stats}>
@@ -281,7 +281,6 @@ const HistoryTab: React.FC<Props> = ({ animatedValue, showMenuRef }) => {
                 </Text>
               </View>
               <View style={styles.stats}>
-                {' '}
                 <Text>Có mặt: </Text>
                 <Text style={[styles.grayText, totalStats.totalPresent > 0 && styles.textSuccess]}>
                   {totalStats.totalPresent}
@@ -342,8 +341,11 @@ const styles = StyleSheet.create({
     color: Colors.success,
   },
   stats: {
+    flex: 1,
+    flexDirection: 'row',
     padding: 10,
-    borderRadius: 20,
-    backgroundColor: Colors.gray,
+    borderRadius: 10,
+    textAlign: 'center',
+    backgroundColor: '#ffffff',
   },
 })

@@ -1,5 +1,10 @@
 import { RootStackParamList } from '@/types/RootStackParamList'
-import { base64ToBlob, UPPER_HEADER_HEIGHT, UPPER_HEADER_PADDING_TOP } from '@/utils'
+import {
+  base64ToFile,
+  unlinkBase64ToFile,
+  UPPER_HEADER_HEIGHT,
+  UPPER_HEADER_PADDING_TOP,
+} from '@/utils'
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { View, StyleSheet, StatusBar, AppState } from 'react-native'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -40,10 +45,12 @@ const AttendanceScreen: React.FC<Props> = ({ route, navigation }) => {
 
   const insets = useSafeAreaInsets()
 
-  const handleAttendance = (image: string) => {
+  const handleAttendance = async (image: string) => {
     showLoading()
+
+    const file = await base64ToFile(image)
     const data = new FormData()
-    data.append('image', base64ToBlob(image))
+    data.append('image', file as any)
     data.append('idPlanDate', idPlanDate)
     data.append('latitude', location?.coords.latitude?.toString() ?? '')
     data.append('longitude', location?.coords.longitude?.toString() ?? '')
@@ -60,10 +67,11 @@ const AttendanceScreen: React.FC<Props> = ({ route, navigation }) => {
         handleBack()
       })
       .catch((error) => {
-        showError(error.response?.data?.message, 2000)
+        showError(error.response?.data?.message || 'Có lỗi xảy ra. Vui lòng thử lại', 2000)
       })
       .finally(() => {
         hideLoading()
+        unlinkBase64ToFile(file.uri)
       })
   }
 
@@ -112,7 +120,7 @@ const AttendanceScreen: React.FC<Props> = ({ route, navigation }) => {
             onMessage={({ nativeEvent }) => {
               try {
                 const data = JSON.parse(nativeEvent?.data)
-                if (data?.descriptors) {
+                if (data?.image) {
                   handleAttendance(data?.image)
                 }
               } catch (error) {}

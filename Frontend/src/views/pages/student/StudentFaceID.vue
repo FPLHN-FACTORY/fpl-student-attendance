@@ -12,7 +12,6 @@ const isFullStep = route.params?.fullstep == 'true'
 const handleSubmit = (descriptors) => {
   window.ReactNativeWebView.postMessage(
     JSON.stringify({
-      descriptors,
       image: faceIDStore.dataImage,
     }),
   )

@@ -1,5 +1,11 @@
 import { RootStackParamList } from '@/types/RootStackParamList'
-import { base64ToBlob, logout, UPPER_HEADER_HEIGHT, UPPER_HEADER_PADDING_TOP } from '@/utils'
+import {
+  base64ToFile,
+  logout,
+  unlinkBase64ToFile,
+  UPPER_HEADER_HEIGHT,
+  UPPER_HEADER_PADDING_TOP,
+} from '@/utils'
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { View, StyleSheet, StatusBar, AppState } from 'react-native'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -39,11 +45,12 @@ const UpdateFaceScreen: React.FC<Props> = ({ navigation }) => {
 
   const insets = useSafeAreaInsets()
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     setVisible(false)
     showLoading()
     const data = new FormData()
-    data.append('image', base64ToBlob(image))
+    const file = await base64ToFile(image)
+    data.append('image', file as any)
 
     requestAPI
       .put(`${API_ROUTES.FETCH_DATA_STUDENT_UPDATE_FACEID}`, data, {
@@ -56,10 +63,11 @@ const UpdateFaceScreen: React.FC<Props> = ({ navigation }) => {
         navigation.replace('Dashboard')
       })
       .catch((error) => {
-        showError(error.response?.data?.message, 2000)
+        showError(error.response?.data?.message || 'Có lỗi xảy ra. Vui lòng thử lại', 2000)
       })
       .finally(() => {
         hideLoading()
+        unlinkBase64ToFile(file.uri)
       })
   }
 
@@ -117,7 +125,7 @@ const UpdateFaceScreen: React.FC<Props> = ({ navigation }) => {
             onMessage={({ nativeEvent }) => {
               try {
                 const data = JSON.parse(nativeEvent?.data)
-                if (data?.descriptors) {
+                if (data?.image) {
                   setImage(data.image)
                   setVisible(true)
                 }
