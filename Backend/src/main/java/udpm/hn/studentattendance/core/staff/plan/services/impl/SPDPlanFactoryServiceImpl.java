@@ -10,6 +10,7 @@ import udpm.hn.studentattendance.core.staff.plan.model.request.SPDAddPlanFactory
 import udpm.hn.studentattendance.core.staff.plan.model.request.SPDFilterPlanFactoryRequest;
 import udpm.hn.studentattendance.core.staff.plan.model.response.SPDFactoryResponse;
 import udpm.hn.studentattendance.core.staff.plan.model.response.SPDPlanFactoryResponse;
+import udpm.hn.studentattendance.core.staff.plan.model.response.SPDUserStudentResponse;
 import udpm.hn.studentattendance.core.staff.plan.repositories.SPDFacilityShiftRepository;
 import udpm.hn.studentattendance.core.staff.plan.repositories.SPDFactoryRepository;
 import udpm.hn.studentattendance.core.staff.plan.repositories.SPDPlanDateRepository;
@@ -133,8 +134,9 @@ public class SPDPlanFactoryServiceImpl implements SPDPlanFactoryService {
             return RouterHelper.responseError("Hình thức không hợp lệ");
         }
 
-        if (StringUtils.hasText(request.getRoom()) && type == ShiftType.OFFLINE && !ValidateHelper.isValidName(request.getRoom())) {
-            return RouterHelper.responseError("Tên phòng chỉ được chứa ký tự chữ, số và các ký tự đặc biệt _ - #");
+
+        if (type == ShiftType.ONLINE && !StringUtils.hasText(request.getLink())) {
+            return RouterHelper.responseError("Link online không được bỏ trống");
         }
 
         if (StringUtils.hasText(request.getLink()) && !ValidateHelper.isValidURL(request.getLink())) {
@@ -151,7 +153,7 @@ public class SPDPlanFactoryServiceImpl implements SPDPlanFactoryService {
 
         if (spdPlanFactoryRepository.isExistsFactoryInPlan(factory.getId())) {
             return RouterHelper
-                    .responseError("Nhóm xưởng " + factory.getName() + " đã được triển khai trong một kế hoạch này");
+                    .responseError("Nhóm xưởng " + factory.getName() + " đã được triển khai trong kế hoạch này");
         }
 
         PlanFactory planFactory = spdPlanFactoryRepository.save(new PlanFactory(plan, factory));
@@ -200,6 +202,18 @@ public class SPDPlanFactoryServiceImpl implements SPDPlanFactoryService {
                         continue;
                     }
 
+                    if (StringUtils.hasText(request.getRoom()) && type == ShiftType.OFFLINE) {
+                        if (!ValidateHelper.isValidName(request.getRoom())) {
+                            return RouterHelper.responseError("Tên phòng chỉ được chứa ký tự chữ, số và các ký tự đặc biệt _ - #");
+                        }
+                        if (spdPlanDateRepository.isExistsRoomOnShift(request.getRoom(), startDate, endDate,
+                                null)) {
+                            return RouterHelper.responseError("Địa điểm " + request.getRoom() + " đã được sử dụng vào ca " + request.getShift()
+                                    + " trong ngày "
+                                    + DateTimeUtils.convertMillisToDate(startDate));
+                        }
+                    }
+
                     if (spdPlanDateRepository.isExistsShiftInFactory(planFactory.getId(), null, startDate, endDate)) {
                         spdPlanFactoryRepository.delete(planFactory);
                         return RouterHelper.responseError("Đã tồn tại ca diễn ra trong khoảng thời gian từ "
@@ -216,6 +230,14 @@ public class SPDPlanFactoryServiceImpl implements SPDPlanFactoryService {
                                     + factory.getUserStaff().getCode() + " đã đứng lớp tại ca " + request.getShift()
                                     + " trong ngày " + DateTimeUtils.convertMillisToDate(startDate));
                         }
+                    }
+
+                    List<SPDUserStudentResponse> lstStudentExists = spdPlanDateRepository
+                            .getListExistsStudentOnShift(planFactory.getFactory().getId(), startDate, endDate, null);
+                    if (!lstStudentExists.isEmpty()) {
+                        return RouterHelper.responseError(
+                                "Không thể tạo ca do có sinh viên đang thuộc nhóm xưởng khác có cùng thời gian",
+                                lstStudentExists);
                     }
 
                     String link = StringUtils.hasText(request.getLink()) ? request.getLink().trim() : null;

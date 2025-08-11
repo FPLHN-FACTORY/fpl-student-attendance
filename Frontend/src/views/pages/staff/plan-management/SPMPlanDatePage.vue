@@ -337,7 +337,7 @@ const fetchAddItem = () => {
       const data = error?.response?.data?.data
       if (data) {
         handleShowListStudentExists(data)
-        return message.error(error?.response?.data?.message || 'Không thể cập nhật mục này')
+        return message.error(error?.response?.data?.message || 'Không thể thêm mới mục này')
       }
       message.error(error?.response?.data?.message || 'Không thể thêm mới mục này')
     })
