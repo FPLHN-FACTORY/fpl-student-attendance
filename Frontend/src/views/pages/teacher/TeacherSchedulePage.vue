@@ -30,6 +30,8 @@ const breadcrumb = ref([
   { name: ROUTE_NAMES.TEACHING_SCHEDULE, breadcrumbName: 'Lịch quản lý' },
 ])
 
+const title = ref('7 ngày tới')
+
 // Store loading
 const loadingStore = useLoadingStore()
 const isLoading = ref(false)
@@ -584,7 +586,7 @@ onMounted(() => {
           <template #title>
             <div class="d-flex justify-content-between align-items-center">
               <div>
-                <UnorderedListOutlined /> Danh sách lịch quản lý
+                <UnorderedListOutlined /> {{ title }}
                 <span v-if="filter.durationOption">
                   ({{ formatDate(computedStartDate, DEFAULT_DATE_FORMAT) }}
                   –
@@ -607,10 +609,16 @@ onMounted(() => {
                   <a-select
                     v-model:value="filter.durationOption"
                     class="w-100"
-                    @change="fetchTeachingSchedule"
+                    @change="
+                      (_, option) => {
+                        title = option.label
+                        fetchTeachingSchedule()
+                      }
+                    "
                   >
                     <a-select-option
                       v-for="opt in durationOptions"
+                      :label="opt.label"
                       :key="opt.value"
                       :value="opt.value"
                       >{{ opt.label }}</a-select-option

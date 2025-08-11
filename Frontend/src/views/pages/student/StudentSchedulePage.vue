@@ -20,6 +20,8 @@ import {
 
 const breadcrumbStore = useBreadcrumbStore()
 
+const title = ref('7 ngày tới')
+
 const countFilter = ref(0)
 
 const breadcrumb = ref([
@@ -251,16 +253,27 @@ onMounted(() => {
                     v-model:value="filter.plan"
                     placeholder="Chọn khoảng thời gian"
                     class="w-100"
-                    @change="fetchAttendanceList"
+                    @change="
+                      (_, option) => {
+                        title = option.label
+                        fetchAttendanceList()
+                      }
+                    "
                   >
-                    <a-select-option :value="-90">90 ngày trước</a-select-option>
-                    <a-select-option :value="-30">30 ngày trước</a-select-option>
-                    <a-select-option :value="-14">14 ngày trước</a-select-option>
-                    <a-select-option :value="-7">7 ngày trước</a-select-option>
-                    <a-select-option :value="7">7 ngày tới</a-select-option>
-                    <a-select-option :value="14">14 ngày tới</a-select-option>
-                    <a-select-option :value="30">30 ngày tới</a-select-option>
-                    <a-select-option :value="90">90 ngày tới</a-select-option>
+                    <a-select-option :value="-90" label="90 ngày trước"
+                      >90 ngày trước</a-select-option
+                    >
+                    <a-select-option :value="-30" label="30 ngày trước"
+                      >30 ngày trước</a-select-option
+                    >
+                    <a-select-option :value="-14" label="14 ngày trước"
+                      >14 ngày trước</a-select-option
+                    >
+                    <a-select-option :value="-7" label="7 ngày trước">7 ngày trước</a-select-option>
+                    <a-select-option :value="7" label="7 ngày tới">7 ngày tới</a-select-option>
+                    <a-select-option :value="14" label="14 ngày tới">14 ngày tới</a-select-option>
+                    <a-select-option :value="30" label="30 ngày tới">30 ngày tới</a-select-option>
+                    <a-select-option :value="90" label="90 ngày tới">90 ngày tới</a-select-option>
                   </a-select>
                 </div>
               </div>
@@ -283,7 +296,7 @@ onMounted(() => {
         <a-card :bordered="false" class="cart">
           <template #title>
             <UnorderedListOutlined />
-            Lịch diễn ra
+            {{ title }}
           </template>
 
           <div class="d-flex justify-content-end mb-3">

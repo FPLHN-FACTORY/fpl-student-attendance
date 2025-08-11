@@ -208,7 +208,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             }
 
             float antiSpoof = onnxService.antiSpoof(image.getBytes());
-            if (antiSpoof < FACE_THRESHOLD_ANTIS_POOF) {
+            boolean isDepthReal = onnxService.isDepthReal(image.getBytes());
+            if (antiSpoof < FACE_THRESHOLD_ANTIS_POOF || !isDepthReal) {
                 return RouterHelper.responseError("Ảnh quá mờ hoặc không thể nhận diện. Vui lòng thử lại");
             }
 
@@ -267,7 +268,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             }
 
             float antiSpoof = onnxService.antiSpoof(image.getBytes());
-            if (antiSpoof < FACE_THRESHOLD_ANTIS_POOF) {
+            boolean isDepthReal = onnxService.isDepthReal(image.getBytes());
+            if (antiSpoof < FACE_THRESHOLD_ANTIS_POOF || !isDepthReal) {
                 return RouterHelper.responseError("Ảnh quá mờ hoặc không thể nhận diện. Vui lòng thử lại");
             }
 

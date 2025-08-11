@@ -4,18 +4,16 @@ import { ref, toRaw } from 'vue'
 import * as tf from '@tensorflow/tfjs'
 import Human from '@vladmandic/human'
 import Config from '@/constants/humanConfig'
-import { isProbablyMobile } from '@/utils/utils'
 
 const THRESHOLD_P = 0.2
 const THRESHOLD_X = 0.1
 const THRESHOLD_Y = 0.12
 const THRESHOLD_EMOTIONS = 0.8
 const MIN_BRIGHTNESS = 80
-const MAX_BRIGHTNESS = 160
+const MAX_BRIGHTNESS = 170
 const THRESHOLD_LIGHT = 60
 const SIZE_CAMERA = 480
 const SKIP_FRAME = 5
-const ANTISPOOF = false
 const CHECK_DISTANCE = true
 
 const useFaceIDStore = defineStore('faceID', () => {
@@ -148,7 +146,6 @@ const useFaceIDStore = defineStore('faceID', () => {
 
   let maskModel
   let glassesModel
-  let antispoofModel
   const loadModels = async () => {
     const preferBackends = ['webgpu', 'webgl', 'cpu']
     for (const backend of preferBackends) {
@@ -201,21 +198,6 @@ const useFaceIDStore = defineStore('faceID', () => {
 
       if (!glassesModel) {
         models.push(loadGlassModel())
-      }
-    }
-
-    if (ANTISPOOF) {
-      const loadAntispoofModel = async () => {
-        try {
-          antispoofModel = await tf.loadLayersModel('indexeddb://antispoof-model')
-        } catch (err) {
-          antispoofModel = await tf.loadLayersModel('/models/antispoof/model.json')
-          await antispoofModel.save('indexeddb://antispoof-model')
-        }
-      }
-
-      if (!antispoofModel) {
-        models.push(loadAntispoofModel())
       }
     }
 
@@ -323,19 +305,6 @@ const useFaceIDStore = defineStore('faceID', () => {
       return !(result[0] > 0.6)
     }
 
-    const isMobile = isProbablyMobile()
-    const isSpoofing = async () => {
-      const input = tf.browser
-        .fromPixels(canvas.value)
-        .resizeNearestNeighbor([224, 224])
-        .toFloat()
-        .div(255)
-        .expandDims()
-      const result = await antispoofModel.predict(input).data()
-      input.dispose()
-      return result[0] < (isMobile ? 0 : 0.99999999)
-    }
-
     const captureFace = () => {
       dataImage.value = canvas.value.toDataURL('image/png')
     }
@@ -413,23 +382,6 @@ const useFaceIDStore = defineStore('faceID', () => {
     }
 
     const delay = (ms) => new Promise((res) => setTimeout(res, ms))
-
-    const isLiveness = async () => {
-      let lst_spoofing = []
-
-      while (lst_spoofing.length < 4) {
-        const result = await human.detect(video.value)
-        const face = result?.face?.[0]
-
-        if (!face) {
-          return false
-        }
-
-        const checking = await isSpoofing()
-        lst_spoofing.push(checking)
-      }
-      return lst_spoofing.filter((o) => !o).length > 1
-    }
 
     const isReaction = async () => {
       let progress = []
@@ -695,12 +647,6 @@ const useFaceIDStore = defineStore('faceID', () => {
       const avgBrightness = await getAverageBrightness(faceImageData)
       if (avgBrightness === 0) {
         return
-      }
-
-      if (ANTISPOOF && !(!isFullStep && (step.value === 1 || step.value === 2))) {
-        if (!(await isLiveness())) {
-          return
-        }
       }
 
       if (isFullStep || (!isFullStep && (step.value === 0 || step.value === 3))) {

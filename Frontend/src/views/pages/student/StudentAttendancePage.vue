@@ -194,6 +194,7 @@ const handleSubmitAttendance = () => {
     })
     .then(({ data: response }) => {
       message.success(response.message)
+      isShowCamera.value = false
       fetchDataList()
     })
     .catch((error) => {
@@ -203,7 +204,6 @@ const handleSubmitAttendance = () => {
     })
     .finally(() => {
       loadingPage.hide()
-      isShowCamera.value = false
     })
 }
 
@@ -220,6 +220,7 @@ const handleSubmitUpdateInfo = () => {
     })
     .then(({ data: response }) => {
       message.success(response.message)
+      isShowCamera.value = false
       applicationStore.loadNotification()
     })
     .catch((error) => {
@@ -234,10 +235,8 @@ const handleSubmitUpdateInfo = () => {
 
 const handleUpdateInfo = async () => {
   isShowCamera.value = true
-
   faceIDStore.setFullStep(false)
   faceIDStore.setCallback((descriptor) => {
-    isShowCamera.value = false
     formData.image = faceIDStore.dataImage
     Modal.confirm({
       title: 'Xác nhận cập nhật dữ liệu khuôn mặt',
@@ -247,6 +246,9 @@ const handleUpdateInfo = async () => {
       cancelText: 'Hủy',
       onOk: () => {
         handleSubmitUpdateInfo()
+      },
+      onCancel: () => {
+        isShowCamera.value = false
       },
     })
   })
