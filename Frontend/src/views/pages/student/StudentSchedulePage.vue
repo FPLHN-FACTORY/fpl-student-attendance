@@ -33,7 +33,6 @@ const isLoadingExport = ref(false)
 const attendanceList = ref([])
 const filter = reactive({
   page: 1,
-  pageSize: 5,
   plan: 7, // Mặc định 7 ngày tới
 })
 const pagination = ref({ ...DEFAULT_PAGINATION })
@@ -74,7 +73,7 @@ const fetchAttendanceList = () => {
     })
     .then(({ data }) => {
       attendanceList.value = data.data.data
-      pagination.value.total = data.data.totalPages * pagination.value.pageSize
+      pagination.value.total = data.data.totalItems
       pagination.value.current = filter.page
       countFilter.value = data.data.totalItems
     })
@@ -262,7 +261,6 @@ onMounted(() => {
                     <a-select-option :value="14">14 ngày tới</a-select-option>
                     <a-select-option :value="30">30 ngày tới</a-select-option>
                     <a-select-option :value="90">90 ngày tới</a-select-option>
-
                   </a-select>
                 </div>
               </div>

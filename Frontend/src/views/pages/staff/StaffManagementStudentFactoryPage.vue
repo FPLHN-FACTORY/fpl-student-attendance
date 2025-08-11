@@ -58,7 +58,6 @@ const filter = reactive({
   searchQuery: '',
   status: null,
   page: 1,
-  pageSize: 5,
 })
 const pagination = reactive({
   ...DEFAULT_PAGINATION,
@@ -106,7 +105,7 @@ const fetchStudentFactories = () => {
       if (result.totalRecords !== undefined) {
         pagination.total = result.totalRecords
       } else {
-        pagination.total = result.totalPages * filter.pageSize
+        pagination.total = result.totalItems
       }
       pagination.current = filter.page
       countFilter.value = result.totalItems
@@ -150,7 +149,6 @@ const fetchExistingStudents = () => {
 const studentFilter = reactive({
   searchQuery: '',
   page: 1,
-  pageSize: 5,
 })
 const studentPagination = reactive({
   ...DEFAULT_PAGINATION,
@@ -196,7 +194,7 @@ const fetchAllStudents = () => {
       if (result.totalRecords !== undefined) {
         studentPagination.total = result.totalRecords
       } else {
-        studentPagination.total = result.totalPages * studentFilter.pageSize
+        studentPagination.total = result.totalItems
       }
       studentPagination.current = studentFilter.page
       updateAllStudentsCheckStatus()
@@ -363,7 +361,7 @@ const isAddStudentModalVisible = ref(false)
 // State cho modal chi tiết ca
 const shiftModalVisible = ref(false)
 const shiftFilter = reactive({ startDate: null, status: '' })
-const shiftPagination = reactive({ current: 1, pageSize: 5, total: 0 })
+const shiftPagination = reactive({ ...DEFAULT_PAGINATION })
 const shiftData = ref([])
 const shiftColumns = ref(
   autoAddColumnWidth([
@@ -406,7 +404,7 @@ function fetchShiftDetails() {
     .then((res) => {
       const result = res.data.data
       shiftData.value = result.data
-      shiftPagination.total = result.totalRecords || result.totalPages * shiftPagination.pageSize
+      shiftPagination.total = result.totalItems
     })
     .catch((error) => {
       message.error(error.response?.data?.message || 'Lỗi khi lấy chi tiết ca')
@@ -438,7 +436,6 @@ const handleClearFilter = () => {
     searchQuery: '',
     status: null,
     page: 1,
-    pageSize: 5,
   })
   // Không reset về trang 1 khi hủy lọc để giữ nguyên dữ liệu hiện tại
   fetchStudentFactories()

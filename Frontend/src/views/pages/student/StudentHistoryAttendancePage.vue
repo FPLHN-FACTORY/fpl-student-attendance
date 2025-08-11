@@ -28,7 +28,6 @@ const filter = reactive({
   semesterId: '',
   factoryId: '',
   page: 1,
-  pageSize: 5,
 })
 
 const countFilter = ref(0)
@@ -84,8 +83,7 @@ const fetchAttendanceHistory = async (factoryId) => {
       countFilter.value = lstGroupFactory.value.reduce((sum, group) => {
         return sum + (group.data?.page?.totalItems || 0)
       }, 0)
-      paginations.value[factory.id].total =
-        response.data.page.totalPages * paginations.value[factory.id].pageSize
+      paginations.value[factory.id].total = response.data.page.totalItems
     })
     .catch((error) => {
       message.error('Không thể tải dữ liệu nhóm xưởng:' + factory.name)
