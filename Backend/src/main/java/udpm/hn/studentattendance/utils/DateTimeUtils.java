@@ -87,6 +87,10 @@ public class DateTimeUtils {
         return now.toInstant().toEpochMilli();
     }
 
+    public static Long getCurrentTimeSecond() {
+        return getCurrentTimeMillis() / 1000;
+    }
+
     public static long toStartOfDay(long timestamp) {
         LocalDateTime dateTime = Instant.ofEpochMilli(timestamp)
                 .atZone(ZoneId.of(ZONE_ID))

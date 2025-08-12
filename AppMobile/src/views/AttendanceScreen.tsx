@@ -1,6 +1,7 @@
 import { RootStackParamList } from '@/types/RootStackParamList'
 import {
   base64ToFile,
+  generateSignature,
   unlinkBase64ToFile,
   UPPER_HEADER_HEIGHT,
   UPPER_HEADER_PADDING_TOP,
@@ -59,6 +60,7 @@ const AttendanceScreen: React.FC<Props> = ({ route, navigation }) => {
       .post(`${API_ROUTES.FETCH_DATA_STUDENT_ATTENDANCE}/checkin`, data, {
         headers: {
           'Content-Type': 'multipart/form-data',
+          'X-Signature': generateSignature(idPlanDate, file.size),
         },
       })
       .then(({ data: response }) => {

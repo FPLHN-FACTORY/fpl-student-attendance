@@ -1,6 +1,7 @@
 import { DEFAULT_DATE_FORMAT } from '@/constants'
 import dayjs from 'dayjs'
 import { unref } from 'vue'
+import cryptoJS from 'crypto-js'
 
 export const decodeBase64 = (base64String) => {
   const fixedBase64 = base64String.replace(/ /g, '+')
@@ -204,4 +205,10 @@ export const base64ToBlob = (base64, contentType = 'image/jpeg') => {
   }
 
   return new Blob(byteArrays, { type: contentType })
+}
+
+export const generateSignature = (key, data) => {
+  const timestamp = Math.floor(Date.now() / 1000)
+  const toSign = data + '|' + timestamp
+  return cryptoJS.HmacSHA256(toSign, key).toString(cryptoJS.enc.Hex)
 }

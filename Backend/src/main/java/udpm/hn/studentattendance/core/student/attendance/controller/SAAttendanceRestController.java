@@ -5,6 +5,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
@@ -29,8 +30,10 @@ public class SAAttendanceRestController {
     @PostMapping("/checkin")
     public ResponseEntity<?> checkin(
             @ModelAttribute SACheckinAttendanceRequest request,
-            @RequestPart(value = "image", required = false) MultipartFile image
+            @RequestPart(value = "image", required = false) MultipartFile image,
+            @RequestHeader(value = "X-Signature", required = false) String signature
     ) {
+        request.setSignature(signature);
         return saAttendanceService.checkin(request, image);
     }
 

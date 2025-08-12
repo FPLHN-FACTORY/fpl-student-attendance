@@ -42,8 +42,12 @@ import udpm.hn.studentattendance.utils.DateTimeUtils;
 import udpm.hn.studentattendance.utils.FaceRecognitionUtils;
 import udpm.hn.studentattendance.utils.GeoUtils;
 
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -77,6 +81,8 @@ public class SAAttendanceServiceImpl implements SAAttendanceService {
 
     @Value("${app.config.face.threshold_antispoof}")
     private double FACE_THRESHOLD_ANTIS_POOF;
+
+    private int TIME_LIVE_SIGN = 5;
 
     @Override
     public ResponseEntity<?> getAllList(SAFilterAttendanceRequest request) {
@@ -221,9 +227,26 @@ public class SAAttendanceServiceImpl implements SAAttendanceService {
                 throw new RuntimeException();
             }
 
-            float antiSpoof = onnxService.antiSpoof(image.getBytes());
-            boolean isDepthReal = onnxService.isDepthReal(image.getBytes());
-            if (antiSpoof < FACE_THRESHOLD_ANTIS_POOF || !isDepthReal) {
+            Set<String> serverSignature = new HashSet<>();
+            for(int i = 0; i < TIME_LIVE_SIGN; i++) {
+                long timestamp = DateTimeUtils.getCurrentTimeSecond() - i;
+                String toSign = image.getSize() + "|" + timestamp;
+                Mac mac = Mac.getInstance("HmacSHA256");
+                mac.init(new SecretKeySpec(request.getIdPlanDate().getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
+                byte[] hash = mac.doFinal(toSign.getBytes(StandardCharsets.UTF_8));
+                StringBuilder sb = new StringBuilder();
+                for (byte b : hash) {
+                    sb.append(String.format("%02x", b));
+                }
+                String signature = sb.toString();
+                serverSignature.add(signature);
+            }
+
+            if (!serverSignature.contains(request.getSignature())) {
+                throw new RuntimeException();
+            }
+
+            if (onnxService.isFake(image.getBytes(), FACE_THRESHOLD_ANTIS_POOF)) {
                 return RouterHelper.responseError("Ảnh quá mờ hoặc không thể nhận diện. Vui lòng thử lại");
             }
 

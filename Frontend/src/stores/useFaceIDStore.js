@@ -4,6 +4,7 @@ import { ref, toRaw } from 'vue'
 import * as tf from '@tensorflow/tfjs'
 import Human from '@vladmandic/human'
 import Config from '@/constants/humanConfig'
+import { isProbablyMobile } from '@/utils/utils'
 
 const THRESHOLD_P = 0.2
 const THRESHOLD_X = 0.1
@@ -474,7 +475,7 @@ const useFaceIDStore = defineStore('faceID', () => {
 
     const isSameEmbedding = (prevEmbedding, currentEmbedding) => {
       const similarity = human.match.similarity(prevEmbedding, currentEmbedding)
-      return similarity >= isMobile ? 0.8 : 0.9
+      return similarity >= isProbablyMobile() ? 0.8 : 0.9
     }
 
     const getFaceBox = (face) => {

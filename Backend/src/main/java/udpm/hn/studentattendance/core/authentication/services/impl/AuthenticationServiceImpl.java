@@ -207,9 +207,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 throw new RuntimeException();
             }
 
-            float antiSpoof = onnxService.antiSpoof(image.getBytes());
-            boolean isDepthReal = onnxService.isDepthReal(image.getBytes());
-            if (antiSpoof < FACE_THRESHOLD_ANTIS_POOF || !isDepthReal) {
+            if (onnxService.isFake(image.getBytes(), FACE_THRESHOLD_ANTIS_POOF)) {
                 return RouterHelper.responseError("Ảnh quá mờ hoặc không thể nhận diện. Vui lòng thử lại");
             }
 
@@ -267,9 +265,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 throw new RuntimeException();
             }
 
-            float antiSpoof = onnxService.antiSpoof(image.getBytes());
-            boolean isDepthReal = onnxService.isDepthReal(image.getBytes());
-            if (antiSpoof < FACE_THRESHOLD_ANTIS_POOF || !isDepthReal) {
+            if (onnxService.isFake(image.getBytes(), FACE_THRESHOLD_ANTIS_POOF)) {
                 return RouterHelper.responseError("Ảnh quá mờ hoặc không thể nhận diện. Vui lòng thử lại");
             }
 

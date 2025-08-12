@@ -17,6 +17,7 @@ import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import udpm.hn.studentattendance.helpers.RouterHelper;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
@@ -296,6 +297,12 @@ public class OnnxService {
         } finally {
             depthPredictorPool.put(predictor);
         }
+    }
+
+    public boolean isFake(byte[] imgBytes, double threshold) throws TranslateException, InterruptedException {
+        float antiSpoof = antiSpoof(imgBytes);
+        boolean isDepthReal = isDepthReal(imgBytes);
+        return (antiSpoof < 0.999 && (antiSpoof < threshold || !isDepthReal));
     }
 
 }

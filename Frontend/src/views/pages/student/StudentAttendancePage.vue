@@ -10,7 +10,13 @@ import { API_ROUTES_STUDENT } from '@/constants/studentConstant'
 import { ROUTE_NAMES } from '@/router/studentRoute'
 import requestAPI from '@/services/requestApiService'
 import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
-import { debounce, formatDate, autoAddColumnWidth, base64ToBlob } from '@/utils/utils'
+import {
+  debounce,
+  formatDate,
+  autoAddColumnWidth,
+  base64ToBlob,
+  generateSignature,
+} from '@/utils/utils'
 import {
   AimOutlined,
   CheckOutlined,
@@ -184,12 +190,14 @@ const handleSubmitAttendance = () => {
     if (key === 'image') return
     data.append(key, value)
   })
-  data.append('image', base64ToBlob(formData.image))
+  const dataImage = base64ToBlob(formData.image)
+  data.append('image', dataImage)
 
   requestAPI
     .post(`${API_ROUTES_STUDENT.FETCH_DATA_ATTENDANCE}/checkin`, data, {
       headers: {
         'Content-Type': 'multipart/form-data',
+        'X-Signature': generateSignature(formData.idPlanDate, dataImage.size),
       },
     })
     .then(({ data: response }) => {
