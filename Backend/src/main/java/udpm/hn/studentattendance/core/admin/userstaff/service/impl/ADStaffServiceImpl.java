@@ -110,7 +110,6 @@ public class ADStaffServiceImpl implements ADStaffService {
     @Override
     public ResponseEntity<?> createStaff(ADCreateUpdateStaffRequest adCreateUpdateStaffRequest) {
 
-
         if (!ValidateHelper.isValidCode(adCreateUpdateStaffRequest.getStaffCode())) {
             return RouterHelper.responseError(
                     "Mã nhân sự không hợp lệ: Không có khoảng trắng, không có ký tự đặc biệt ngoài dấu chấm . và dấu gạch dưới _.");
@@ -329,10 +328,11 @@ public class ADStaffServiceImpl implements ADStaffService {
         staff.setStatus(staff.getStatus() == EntityStatus.ACTIVE ? EntityStatus.INACTIVE : EntityStatus.ACTIVE);
         String newStatus = staff.getStatus() == EntityStatus.ACTIVE ? "Hoạt động" : "Không hoạt động";
 
-//        List<Role> staffRoles = adStaffRoleRepository.findAllByUserStaffId(staffId);
-//        staffRoles.forEach(staffRole -> staffRole
-//                .setStatus(staff.getStatus() == EntityStatus.ACTIVE ? EntityStatus.INACTIVE : EntityStatus.ACTIVE));
-//        adStaffRoleRepository.saveAll(staffRoles);
+        // List<Role> staffRoles = adStaffRoleRepository.findAllByUserStaffId(staffId);
+        // staffRoles.forEach(staffRole -> staffRole
+        // .setStatus(staff.getStatus() == EntityStatus.ACTIVE ? EntityStatus.INACTIVE :
+        // EntityStatus.ACTIVE));
+        // adStaffRoleRepository.saveAll(staffRoles);
 
         adStaffRepository.save(staff);
         userActivityLogHelper.saveLog("vừa thay đổi trạng thái nhân sự " + staff.getName() + " (" + staff.getCode()
@@ -346,8 +346,8 @@ public class ADStaffServiceImpl implements ADStaffService {
     @Override
     public ResponseEntity<?> getStaffById(String staffId) {
         Optional<ADStaffDetailResponse> staffDetail = adStaffRepository.getDetailStaff(staffId);
-        if (staffDetail != null) {
-            return RouterHelper.responseSuccess("Xem chi tiết nhân sự thành công", staffDetail);
+        if (staffDetail.isPresent()) {
+            return RouterHelper.responseSuccess("Xem chi tiết nhân sự thành công", staffDetail.get());
         }
         return RouterHelper.responseError("Nhân sự không tồn tại");
     }

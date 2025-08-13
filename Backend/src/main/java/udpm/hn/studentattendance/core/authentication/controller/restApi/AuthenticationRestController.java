@@ -3,13 +3,16 @@ package udpm.hn.studentattendance.core.authentication.controller.restApi;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 import udpm.hn.studentattendance.core.authentication.model.request.AuthenticationStudentRegisterRequest;
-import udpm.hn.studentattendance.core.authentication.model.request.AuthenticationStudentUpdateFaceIDRequest;
 import udpm.hn.studentattendance.core.authentication.model.request.AuthenticationToken;
 import udpm.hn.studentattendance.infrastructure.constants.SettingKeys;
 import udpm.hn.studentattendance.infrastructure.constants.router.RouteAdminConstant;
@@ -62,13 +65,15 @@ public class AuthenticationRestController {
     }
 
     @PutMapping(RouteAuthenticationConstant.API_STUDENT_REGISTER)
-    public ResponseEntity<?> studentRegister(@RequestBody AuthenticationStudentRegisterRequest requestBody) {
-        return authenticationService.studentRegister(requestBody);
+    public ResponseEntity<?> studentRegister(
+            @ModelAttribute AuthenticationStudentRegisterRequest request,
+            @RequestPart(value = "image", required = false) MultipartFile image) {
+        return authenticationService.studentRegister(request, image);
     }
 
     @PutMapping(RouteAuthenticationConstant.API_STUDENT_UPDATE_FACE_ID)
-    public ResponseEntity<?> studentUpdateFaceID(@RequestBody AuthenticationStudentUpdateFaceIDRequest requestBody) {
-        return authenticationService.studentUpdateFaceID(requestBody);
+    public ResponseEntity<?> studentUpdateFaceID(@RequestPart("image") MultipartFile image) {
+        return authenticationService.studentUpdateFaceID(image);
     }
 
     @GetMapping(RouteAuthenticationConstant.API_STUDENT_INFO)

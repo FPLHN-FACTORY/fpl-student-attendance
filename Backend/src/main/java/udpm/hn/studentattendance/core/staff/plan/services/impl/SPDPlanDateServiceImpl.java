@@ -308,6 +308,10 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
             }
         }
 
+        if (type == ShiftType.ONLINE && !StringUtils.hasText(request.getLink())) {
+            return RouterHelper.responseError("Link online không được bỏ trống");
+        }
+
         if (StringUtils.hasText(request.getLink()) && !ValidateHelper.isValidURL(request.getLink())) {
             return RouterHelper.responseError("Link online không hợp lệ");
         }
@@ -339,10 +343,10 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
         }
 
         List<SPDUserStudentResponse> lstStudentExists = spdPlanDateRepository
-                .getListExistsStudentOnShift(planDate.getPlanFactory().getFactory().getId(), startDate, endDate, null);
+                .getListExistsStudentOnShift(planDate.getPlanFactory().getFactory().getId(), startDate, endDate, planDate.getId());
         if (!lstStudentExists.isEmpty()) {
             return RouterHelper.responseError(
-                    "Không thể tạo ca do có sinh viên đang thuộc nhóm xưởng khác có cùng thời gian",
+                    "Không thể cập nhật ca do có sinh viên đang thuộc nhóm xưởng khác có cùng thời gian",
                     lstStudentExists);
         }
 
@@ -361,7 +365,6 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
         planDate.setDescription(request.getDescription());
         planDate.setLateArrival(request.getLateArrival());
         planDate.setUserStaff(teacher);
-        System.out.println(teacher);
 
         PlanDate newEntity = spdPlanDateRepository.save(planDate);
 
@@ -493,6 +496,14 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
             }
         }
 
+        if (type == ShiftType.ONLINE && !StringUtils.hasText(request.getLink())) {
+            return RouterHelper.responseError("Link online không được bỏ trống");
+        }
+
+        if (StringUtils.hasText(request.getLink()) && !ValidateHelper.isValidURL(request.getLink())) {
+            return RouterHelper.responseError("Link online không hợp lệ");
+        }
+
         if (spdPlanDateRepository.isExistsShiftInFactory(planFactory.getId(), null, startDate, endDate)) {
             return RouterHelper.responseError("Đã tồn tại ca diễn ra trong khoảng thời gian từ "
                     + DateTimeUtils.convertMillisToDate(startDate, "HH:mm") + " đến "
@@ -508,10 +519,6 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
                         + " trong ngày "
                         + DateTimeUtils.convertMillisToDate(startDate));
             }
-        }
-
-        if (StringUtils.hasText(request.getLink()) && !ValidateHelper.isValidURL(request.getLink())) {
-            return RouterHelper.responseError("Link online không hợp lệ");
         }
 
         StatusType requiredIp = StatusType.fromKey(request.getRequiredIp());

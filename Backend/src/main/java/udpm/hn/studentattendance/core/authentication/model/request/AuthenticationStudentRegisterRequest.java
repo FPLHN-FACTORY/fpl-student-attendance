@@ -25,7 +25,4 @@ public class AuthenticationStudentRegisterRequest {
     @NotBlank(message = "Họ và tên sinh viên không được bỏ trống")
     private String name;
 
-    @NotBlank(message = "Thông tin khuôn mặt không được bỏ trống")
-    private String faceEmbedding;
-
 }

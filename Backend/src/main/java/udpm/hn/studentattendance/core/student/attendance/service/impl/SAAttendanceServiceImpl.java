@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
+import org.springframework.web.multipart.MultipartFile;
 import udpm.hn.studentattendance.core.student.attendance.model.request.SACheckinAttendanceRequest;
 import udpm.hn.studentattendance.core.student.attendance.model.request.SAFilterAttendanceRequest;
 import udpm.hn.studentattendance.core.student.attendance.model.response.SAAttendanceRecoveryResponse;
@@ -29,6 +30,7 @@ import udpm.hn.studentattendance.helpers.SessionHelper;
 import udpm.hn.studentattendance.helpers.SettingHelper;
 import udpm.hn.studentattendance.helpers.ValidateHelper;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
+import udpm.hn.studentattendance.infrastructure.common.services.OnnxService;
 import udpm.hn.studentattendance.infrastructure.config.websocket.model.message.AttendanceMessage;
 import udpm.hn.studentattendance.infrastructure.constants.AttendanceStatus;
 import udpm.hn.studentattendance.infrastructure.constants.SettingKeys;
@@ -40,7 +42,12 @@ import udpm.hn.studentattendance.utils.DateTimeUtils;
 import udpm.hn.studentattendance.utils.FaceRecognitionUtils;
 import udpm.hn.studentattendance.utils.GeoUtils;
 
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Calendar;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -48,6 +55,8 @@ import java.util.Set;
 @Service
 @RequiredArgsConstructor
 public class SAAttendanceServiceImpl implements SAAttendanceService {
+
+    private final OnnxService onnxService;
 
     private final SessionHelper sessionHelper;
 
@@ -70,6 +79,11 @@ public class SAAttendanceServiceImpl implements SAAttendanceService {
     @Value("${app.config.face.threshold_checkin}")
     private double FACE_THRESHOLD_CHECKIN;
 
+    @Value("${app.config.face.threshold_antispoof}")
+    private double FACE_THRESHOLD_ANTIS_POOF;
+
+    private int TIME_LIVE_SIGN = 5;
+
     @Override
     public ResponseEntity<?> getAllList(SAFilterAttendanceRequest request) {
         request.setIdFacility(sessionHelper.getFacilityId());
@@ -83,7 +97,7 @@ public class SAAttendanceServiceImpl implements SAAttendanceService {
     }
 
     @Override
-    public ResponseEntity<?> checkin(SACheckinAttendanceRequest request) {
+    public ResponseEntity<?> checkin(SACheckinAttendanceRequest request, MultipartFile image) {
         PlanDate planDate = planDateRepository.findById(request.getIdPlanDate()).orElse(null);
         if (planDate == null
                 || !Objects.equals(
@@ -205,44 +219,76 @@ public class SAAttendanceServiceImpl implements SAAttendanceService {
                 }
                 attendance.setLateCheckout(Calendar.getInstance().getTimeInMillis());
             }
-
         }
 
-        List<double[]> inputEmbedding = FaceRecognitionUtils.parseEmbeddings(request.getFaceEmbedding());
-        double[] storedEmbedding = FaceRecognitionUtils.parseEmbedding(userStudent.getFaceEmbedding());
 
-        boolean isMatch = FaceRecognitionUtils.isSameFaces(inputEmbedding, storedEmbedding, FACE_THRESHOLD_CHECKIN);
-        if (!isMatch) {
-            return RouterHelper.responseError("Xác thực khuôn mặt thất bại");
-        }
+        try {
+            if (image == null || image.isEmpty()) {
+                throw new RuntimeException();
+            }
 
-        ResponseEntity<?> response;
+            Set<String> serverSignature = new HashSet<>();
+            for(int i = 0; i < TIME_LIVE_SIGN; i++) {
+                long timestamp = DateTimeUtils.getCurrentTimeSecond() - i;
+                String toSign = image.getSize() + "|" + timestamp;
+                Mac mac = Mac.getInstance("HmacSHA256");
+                mac.init(new SecretKeySpec(request.getIdPlanDate().getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
+                byte[] hash = mac.doFinal(toSign.getBytes(StandardCharsets.UTF_8));
+                StringBuilder sb = new StringBuilder();
+                for (byte b : hash) {
+                    sb.append(String.format("%02x", b));
+                }
+                String signature = sb.toString();
+                serverSignature.add(signature);
+            }
 
-        if (attendance != null) {
-            if (attendance.getAttendanceStatus() == AttendanceStatus.CHECKIN || !isEnableCheckin || !isEnableCheckout) {
+            if (!serverSignature.contains(request.getSignature())) {
+                throw new RuntimeException();
+            }
+
+            if (onnxService.isFake(image.getBytes(), FACE_THRESHOLD_ANTIS_POOF)) {
+                return RouterHelper.responseError("Ảnh quá mờ hoặc không thể nhận diện. Vui lòng thử lại");
+            }
+
+            float[] faceEmbedding = onnxService.getEmbedding(image.getBytes());
+
+            float[] storedEmbedding = FaceRecognitionUtils.parseEmbedding(userStudent.getFaceEmbedding());
+
+            boolean isMatch = FaceRecognitionUtils.isSameFace(faceEmbedding, storedEmbedding, FACE_THRESHOLD_CHECKIN);
+            if (!isMatch) {
+                return RouterHelper.responseError("Xác thực khuôn mặt thất bại");
+            }
+
+            ResponseEntity<?> response;
+
+            if (attendance != null) {
+                if (attendance.getAttendanceStatus() == AttendanceStatus.CHECKIN || !isEnableCheckin || !isEnableCheckout) {
+                    response = RouterHelper.responseSuccess("Điểm danh thành công",
+                            markPresent(attendance, planDate, userStudent));
+                } else {
+                    return RouterHelper.responseError("Không thể checkin/checkout ca này");
+                }
+            } else if (!isEnableCheckin || !isEnableCheckout) {
                 response = RouterHelper.responseSuccess("Điểm danh thành công",
                         markPresent(attendance, planDate, userStudent));
             } else {
-                return RouterHelper.responseError("Không thể checkin/checkout ca này");
+                attendance = new Attendance();
+                attendance.setAttendanceStatus(AttendanceStatus.CHECKIN);
+                attendance.setUserStudent(userStudent);
+                attendance.setPlanDate(planDate);
+                attendance.setLateCheckin(lateCheckin);
+                attendance.setLateCheckout(lateCheckout);
+
+                Attendance entity = attendanceRepository.save(attendance);
+                sendMessageWS(planDate, userStudent);
+
+                response = RouterHelper.responseSuccess("Checkin đầu giờ thành công", entity);
             }
-        } else if (!isEnableCheckin || !isEnableCheckout) {
-            response = RouterHelper.responseSuccess("Điểm danh thành công",
-                    markPresent(attendance, planDate, userStudent));
-        } else {
-            attendance = new Attendance();
-            attendance.setAttendanceStatus(AttendanceStatus.CHECKIN);
-            attendance.setUserStudent(userStudent);
-            attendance.setPlanDate(planDate);
-            attendance.setLateCheckin(lateCheckin);
-            attendance.setLateCheckout(lateCheckout);
 
-            Attendance entity = attendanceRepository.save(attendance);
-            sendMessageWS(planDate, userStudent);
-
-            response = RouterHelper.responseSuccess("Checkin đầu giờ thành công", entity);
+            return response;
+        } catch (Exception e) {
+            return RouterHelper.responseError("Thông tin khuôn mặt không hợp lệ. Vui lòng thử lại");
         }
-
-        return response;
     }
 
     private Attendance markPresent(Attendance attendance, PlanDate planDate, UserStudent userStudent) {

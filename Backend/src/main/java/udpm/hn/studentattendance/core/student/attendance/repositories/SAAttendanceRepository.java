@@ -85,7 +85,14 @@ public interface SAAttendanceRepository extends AttendanceRepository {
                 us.code LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%') OR
                 us.name LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%')
             )) AND
-            (COALESCE(:#{#request.status}, 0) = 0 OR a.attendance_status = :#{#request.status}) AND
+            (
+              :#{#request.status} IS NULL
+              OR (:#{#request.status} = 0 AND a.id IS NULL)
+              OR (:#{#request.status} = 1 AND (a.attendance_status != 3 OR a.id IS NULL) AND UNIX_TIMESTAMP(NOW()) * 1000 > pd.end_date)
+              OR (:#{#request.status} = 2 AND UNIX_TIMESTAMP(NOW()) * 1000 >= pd.start_date AND UNIX_TIMESTAMP(NOW()) * 1000 <= pd.end_date)
+              OR (:#{#request.status} = 3 AND a.attendance_status = 3)
+              OR (:#{#request.status} = 4 AND (a.attendance_status != 3 AND a.id IS NOT NULL))
+            ) AND
             (:#{#request.type} IS NULL OR pd.type = :#{#request.type}) AND
             DATE(FROM_UNIXTIME(pd.start_date / 1000)) = CURDATE() AND
             usf.id_user_student = :#{#request.idUserStudent}
@@ -128,7 +135,14 @@ public interface SAAttendanceRepository extends AttendanceRepository {
                 us.code LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%') OR
                 us.name LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%')
             )) AND
-            (COALESCE(:#{#request.status}, 0) = 0 OR a.attendance_status = :#{#request.status}) AND
+            (
+              :#{#request.status} IS NULL
+              OR (:#{#request.status} = 0 AND a.id IS NULL)
+              OR (:#{#request.status} = 1 AND (a.attendance_status != 3 OR a.id IS NULL) AND UNIX_TIMESTAMP(NOW()) * 1000 > pd.end_date)
+              OR (:#{#request.status} = 2 AND UNIX_TIMESTAMP(NOW()) * 1000 >= pd.start_date AND UNIX_TIMESTAMP(NOW()) * 1000 <= pd.end_date)
+              OR (:#{#request.status} = 3 AND a.attendance_status = 3)
+              OR (:#{#request.status} = 4 AND (a.attendance_status != 3 AND a.id IS NOT NULL))
+            ) AND
             (:#{#request.type} IS NULL OR pd.type = :#{#request.type}) AND
             DATE(FROM_UNIXTIME(pd.start_date / 1000)) = CURDATE() AND
             usf.id_user_student = :#{#request.idUserStudent}
