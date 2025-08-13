@@ -45,9 +45,6 @@ class ADSemesterServiceImplTest {
     @Mock
     private ADSemesterRepository adSemesterRepository;
 
-    
-
-
     @Mock
     private UserActivityLogHelper userActivityLogHelper;
 
@@ -65,8 +62,7 @@ class ADSemesterServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        ReflectionTestUtils.setField(adSemesterService, "redisTTL", 3600L);
-        // Removed unnecessary stubbing for redisCacheHelper.getOrSet
+        // Remove the problematic redisTTL field setting
     }
 
     @Test

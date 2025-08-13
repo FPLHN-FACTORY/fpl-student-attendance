@@ -100,8 +100,7 @@ class STAttendanceRecoveryServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        ReflectionTestUtils.setField(attendanceRecoveryService, "redisTTL", 3600L);
-        // Removed unnecessary stubbing for redisCacheHelper.getOrSet
+        // Remove the problematic redisTTL field setting
     }
 
     @Test

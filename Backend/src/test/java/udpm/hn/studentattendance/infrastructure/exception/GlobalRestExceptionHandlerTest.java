@@ -21,8 +21,16 @@ class GlobalRestExceptionHandlerTest {
     }
 
     @Test
-    void testHandleRestApiException() {
-        RestApiException exception = new RestApiException("Test error");
+    void testHandleMethodArgumentNotValidException() {
+        org.springframework.web.bind.MethodArgumentNotValidException exception = mock(
+                org.springframework.web.bind.MethodArgumentNotValidException.class);
+        org.springframework.validation.ObjectError objectError = mock(org.springframework.validation.ObjectError.class);
+        org.springframework.validation.BindingResult bindingResult = mock(
+                org.springframework.validation.BindingResult.class);
+
+        when(objectError.getDefaultMessage()).thenReturn("Validation error");
+        when(bindingResult.getAllErrors()).thenReturn(java.util.List.of(objectError));
+        when(exception.getBindingResult()).thenReturn(bindingResult);
 
         ResponseEntity<udpm.hn.studentattendance.infrastructure.common.ApiResponse> response = handler
                 .handleValidationException(exception);

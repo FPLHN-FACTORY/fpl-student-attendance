@@ -10,7 +10,13 @@ import { API_ROUTES_STUDENT } from '@/constants/studentConstant'
 import { ROUTE_NAMES } from '@/router/studentRoute'
 import requestAPI from '@/services/requestApiService'
 import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
-import { debounce, formatDate, autoAddColumnWidth } from '@/utils/utils'
+import {
+  debounce,
+  formatDate,
+  autoAddColumnWidth,
+  base64ToBlob,
+  generateSignature,
+} from '@/utils/utils'
 import {
   AimOutlined,
   CheckOutlined,
@@ -46,15 +52,11 @@ const DEFAULT_EARLY_MINUTE_CHECKIN = ref(0)
 const mapRef = ref(null)
 const mapCenter = ref([0, 0])
 
-const video = ref(null)
-const canvas = ref(null)
-const axis = ref(null)
-
 const formData = reactive({
   idPlanDate: null,
   latitude: null,
   longitude: null,
-  faceEmbedding: null,
+  image: null,
 })
 
 const breadcrumbStore = useBreadcrumbStore()
@@ -173,7 +175,6 @@ const handleClearFilter = () => {
 const handleTableChange = (page) => {
   pagination.value.current = page.current
   pagination.value.pageSize = page.pageSize
-  filter.pageSize = page.pageSize
   fetchDataList()
 }
 
@@ -184,10 +185,24 @@ const handleSubmitFilter = () => {
 
 const handleSubmitAttendance = () => {
   loadingPage.show()
+  const data = new FormData()
+  Object.entries(formData).forEach(([key, value]) => {
+    if (key === 'image') return
+    data.append(key, value)
+  })
+  const dataImage = base64ToBlob(formData.image)
+  data.append('image', dataImage)
+
   requestAPI
-    .post(`${API_ROUTES_STUDENT.FETCH_DATA_ATTENDANCE}/checkin`, formData)
+    .post(`${API_ROUTES_STUDENT.FETCH_DATA_ATTENDANCE}/checkin`, data, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+        'X-Signature': generateSignature(formData.idPlanDate, dataImage.size),
+      },
+    })
     .then(({ data: response }) => {
       message.success(response.message)
+      isShowCamera.value = false
       fetchDataList()
     })
     .catch((error) => {
@@ -197,16 +212,23 @@ const handleSubmitAttendance = () => {
     })
     .finally(() => {
       loadingPage.hide()
-      isShowCamera.value = false
     })
 }
 
 const handleSubmitUpdateInfo = () => {
   loadingPage.show()
+  const data = new FormData()
+  data.append('image', base64ToBlob(formData.image))
+
   requestAPI
-    .put(`${ROUTE_NAMES_API.FETCH_DATA_UPDATE_FACEID}`, formData)
+    .put(`${ROUTE_NAMES_API.FETCH_DATA_UPDATE_FACEID}`, data, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    })
     .then(({ data: response }) => {
       message.success(response.message)
+      isShowCamera.value = false
       applicationStore.loadNotification()
     })
     .catch((error) => {
@@ -221,11 +243,9 @@ const handleSubmitUpdateInfo = () => {
 
 const handleUpdateInfo = async () => {
   isShowCamera.value = true
-
   faceIDStore.setFullStep(false)
   faceIDStore.setCallback((descriptor) => {
-    isShowCamera.value = false
-    formData.faceEmbedding = JSON.stringify(descriptor)
+    formData.image = faceIDStore.dataImage
     Modal.confirm({
       title: 'Xác nhận cập nhật dữ liệu khuôn mặt',
       icon: createVNode(ExclamationCircleOutlined),
@@ -234,6 +254,9 @@ const handleUpdateInfo = async () => {
       cancelText: 'Hủy',
       onOk: () => {
         handleSubmitUpdateInfo()
+      },
+      onCancel: () => {
+        isShowCamera.value = false
       },
     })
   })
@@ -248,7 +271,7 @@ const handleCheckin = async (item) => {
   isShowCamera.value = true
   faceIDStore.setFullStep(true)
   faceIDStore.setCallback((descriptor) => {
-    formData.faceEmbedding = JSON.stringify(descriptor)
+    formData.image = faceIDStore.dataImage
     handleSubmitAttendance()
   })
 

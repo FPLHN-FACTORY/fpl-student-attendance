@@ -1,9 +1,10 @@
 import { DEFAULT_DATE_FORMAT } from '@/constants'
 import dayjs from 'dayjs'
 import { unref } from 'vue'
+import cryptoJS from 'crypto-js'
 
 export const decodeBase64 = (base64String) => {
-  const fixedBase64 = base64String
+  const fixedBase64 = base64String.replace(/ /g, '+')
   const byteArray = Uint8Array.from(atob(fixedBase64), (c) => c.charCodeAt(0))
   return new TextDecoder('utf-8').decode(byteArray)
 }
@@ -185,4 +186,29 @@ export const isProbablyMobile = () => {
     navigator.maxTouchPoints > 1 &&
     window.matchMedia('(orientation: portrait)').matches
   )
+}
+
+export const base64ToBlob = (base64, contentType = 'image/jpeg') => {
+  const byteCharacters = atob(base64.split(',')[1])
+  const byteArrays = []
+
+  for (let offset = 0; offset < byteCharacters.length; offset += 512) {
+    const slice = byteCharacters.slice(offset, offset + 512)
+
+    const byteNumbers = new Array(slice.length)
+    for (let i = 0; i < slice.length; i++) {
+      byteNumbers[i] = slice.charCodeAt(i)
+    }
+
+    const byteArray = new Uint8Array(byteNumbers)
+    byteArrays.push(byteArray)
+  }
+
+  return new Blob(byteArrays, { type: contentType })
+}
+
+export const generateSignature = (key, data) => {
+  const timestamp = Math.floor(Date.now() / 1000)
+  const toSign = data + '|' + timestamp
+  return cryptoJS.HmacSHA256(toSign, key).toString(cryptoJS.enc.Hex)
 }

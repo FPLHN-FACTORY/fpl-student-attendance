@@ -63,7 +63,7 @@ class AFFacilityLocationServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        ReflectionTestUtils.setField(facilityLocationService, "redisTTL", 3600L);
+        // Remove the problematic redisTTL field setting
     }
 
     @Test

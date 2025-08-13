@@ -159,9 +159,7 @@ const handleShowModalAdd = () => {
 }
 const handleAddEvent = () => {
   // Validate required fields with whitespace check
-  const validation = validateFormSubmission(newEvent, [
-    { key: 'name', label: 'Tên sự kiện' },
-  ])
+  const validation = validateFormSubmission(newEvent, [{ key: 'name', label: 'Tên sự kiện' }])
 
   if (!validation.isValid) {
     message.error(validation.message)
@@ -236,9 +234,7 @@ const handleShowModalEdit = (record) => {
 
 const handleEditEvent = () => {
   // Validate required fields with whitespace check
-  const validation = validateFormSubmission(editEvent, [
-    { key: 'name', label: 'Tên sự kiện' },
-  ])
+  const validation = validateFormSubmission(editEvent, [{ key: 'name', label: 'Tên sự kiện' }])
 
   if (!validation.isValid) {
     message.error(validation.message)
@@ -537,7 +533,7 @@ onMounted(() => {
                 <a-tag v-else> Chưa có sinh viên </a-tag>
               </template>
               <template v-else-if="column.key === 'action'">
-                <div class="d-flex flex-wrap gap-2">
+                <div class="d-flex gap-2">
                   <a-tooltip>
                     <template #title>Sửa thông tin khôi phục điểm danh</template>
                     <a-button
@@ -549,13 +545,16 @@ onMounted(() => {
                     </a-button>
                   </a-tooltip>
                   <template v-if="record.idImportLog !== null">
-                    <a-button
-                      type="text"
-                      class="btn-gray"
-                      @click="handleShowImportHistory(record.idImportLog)"
-                    >
-                      <HistoryOutlined class="text-primary" /> Lịch sử import
-                    </a-button>
+                    <a-tooltip>
+                      <template #title>Lịch sử import</template>
+                      <a-button
+                        type="text"
+                        class="btn-gray"
+                        @click="handleShowImportHistory(record.idImportLog)"
+                      >
+                        <HistoryOutlined class="text-primary" />
+                      </a-button>
+                    </a-tooltip>
                   </template>
                   <div class="excel-upload-wrapper">
                     <ExcelUploadButton

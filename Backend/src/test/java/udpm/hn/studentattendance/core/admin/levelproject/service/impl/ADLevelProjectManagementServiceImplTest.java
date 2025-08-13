@@ -47,8 +47,6 @@ class ADLevelProjectManagementServiceImplTest {
     @Mock
     private ADLevelProjectRepository repository;
 
-
-
     @Mock
     private UserActivityLogHelper userActivityLogHelper;
 
@@ -66,8 +64,7 @@ class ADLevelProjectManagementServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        ReflectionTestUtils.setField(levelProjectService, "redisTTL", 3600L);
-        // Removed unnecessary stubbing for redisCacheHelper.getOrSet
+        // Remove the problematic redisTTL field setting
     }
 
     @Test

@@ -46,7 +46,6 @@ const filter = reactive({
   projectId: '',
   semesterId: null,
   page: 1,
-  pageSize: 5,
 })
 const pagination = reactive({
   ...DEFAULT_PAGINATION,
@@ -99,7 +98,7 @@ const fetchFactoryByTeacher = () => {
       const result = response.data.data
       factories.value = result.data
       // Nếu API trả về tổng số trang, sử dụng:
-      pagination.total = result.totalPages * filter.pageSize
+      pagination.total = result.totalItems
       // Nếu trả về tổng số bản ghi, thay thế bằng: pagination.total = result.totalRecords
       pagination.current = filter.page
       countFilter.value = result.totalItems

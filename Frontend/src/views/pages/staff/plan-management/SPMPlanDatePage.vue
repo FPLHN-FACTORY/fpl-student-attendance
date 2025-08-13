@@ -337,7 +337,7 @@ const fetchAddItem = () => {
       const data = error?.response?.data?.data
       if (data) {
         handleShowListStudentExists(data)
-        return message.error(error?.response?.data?.message || 'Không thể cập nhật mục này')
+        return message.error(error?.response?.data?.message || 'Không thể thêm mới mục này')
       }
       message.error(error?.response?.data?.message || 'Không thể thêm mới mục này')
     })
@@ -1262,7 +1262,7 @@ watch(
                       </a-tag>
                     </template>
                     <template v-if="column.key === 'actions'">
-                      <template v-if="record.status !== 'DA_DIEN_RA'">
+                      <template v-if="record.status === 'CHUA_DIEN_RA'">
                         <a-tooltip title="Chỉnh sửa ca">
                           <a-button
                             class="btn-outline-info border-0"

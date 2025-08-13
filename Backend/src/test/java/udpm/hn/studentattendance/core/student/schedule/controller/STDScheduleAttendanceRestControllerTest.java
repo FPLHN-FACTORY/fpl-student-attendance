@@ -42,7 +42,7 @@ class STDScheduleAttendanceRestControllerTest {
                 .thenReturn(ResponseEntity.ok().build());
         ResponseEntity<?> response = stdScheduleAttendanceRestController.getListProject(request);
         assertNotNull(response);
-        assertEquals(200, response.getStatusCodeValue());
+        assertEquals(200, response.getStatusCode().value());
     }
 
     @Test
@@ -59,7 +59,7 @@ class STDScheduleAttendanceRestControllerTest {
         ResponseEntity<InputStreamResource> response = stdScheduleAttendanceRestController
                 .exportTeachingSchedule(request);
         assertNotNull(response);
-        assertEquals(200, response.getStatusCodeValue());
+        assertEquals(200, response.getStatusCode().value());
         assertEquals("application/pdf", response.getHeaders().getContentType().toString());
     }
 }

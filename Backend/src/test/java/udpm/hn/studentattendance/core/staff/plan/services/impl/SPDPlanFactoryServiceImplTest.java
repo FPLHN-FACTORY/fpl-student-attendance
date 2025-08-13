@@ -53,8 +53,6 @@ class SPDPlanFactoryServiceImplTest {
     @Mock
     private SPDFacilityShiftRepository spdFacilityShiftRepository;
 
-
-
     @Mock
     private SessionHelper sessionHelper;
 

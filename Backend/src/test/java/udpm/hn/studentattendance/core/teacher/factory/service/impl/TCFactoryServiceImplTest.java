@@ -70,9 +70,7 @@ class TCFactoryServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        // Set redisTTL value
-        ReflectionTestUtils.setField(factoryService, "redisTTL", 3600L);
-        // Removed unnecessary stubbing for redisCacheHelper.getOrSet
+        // Remove the problematic redisTTL field setting
     }
 
     @Test
@@ -144,7 +142,8 @@ class TCFactoryServiceImplTest {
         verify(redisCacheHelper).getOrSet(anyString(), any(), any());
         verify(factoryExtendRepository).getAllFactoryByTeacher(any(Pageable.class), eq(facilityId), eq(userCode),
                 eq(request));
-        // Removed: verify(redisService).set(anyString(), any(PageableObject.class), eq(3600L));
+        // Removed: verify(redisService).set(anyString(), any(PageableObject.class),
+        // eq(3600L));
     }
 
     @Test

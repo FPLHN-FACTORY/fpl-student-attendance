@@ -43,7 +43,6 @@ class SupportServiceImplTest {
         request.setMessage("This is a test message");
 
         when(sessionHelper.getUserCode()).thenReturn("USER001");
-        when(sessionHelper.getUserName()).thenReturn("Test User");
         when(sessionHelper.getUserEmail()).thenReturn("user@test.com");
         when(sessionHelper.getUserRole())
                 .thenReturn(java.util.Set.of(udpm.hn.studentattendance.infrastructure.constants.RoleConstant.STUDENT));
@@ -53,7 +52,7 @@ class SupportServiceImplTest {
 
         // Then
         assertNotNull(response);
-        assertEquals(200, response.getStatusCodeValue());
+        assertEquals(200, response.getStatusCode().value());
         ApiResponse apiResponse = (ApiResponse) response.getBody();
         assertNotNull(apiResponse);
         assertEquals("SUCCESS", apiResponse.getStatus().name());
@@ -67,7 +66,6 @@ class SupportServiceImplTest {
         request.setMessage("This is a test message with files");
 
         when(sessionHelper.getUserCode()).thenReturn("USER001");
-        when(sessionHelper.getUserName()).thenReturn("Test User");
         when(sessionHelper.getUserEmail()).thenReturn("user@test.com");
         when(sessionHelper.getUserRole())
                 .thenReturn(java.util.Set.of(udpm.hn.studentattendance.infrastructure.constants.RoleConstant.STUDENT));
@@ -77,7 +75,7 @@ class SupportServiceImplTest {
 
         // Then
         assertNotNull(response);
-        assertEquals(200, response.getStatusCodeValue());
+        assertEquals(200, response.getStatusCode().value());
     }
 
     @Test
@@ -94,7 +92,7 @@ class SupportServiceImplTest {
 
         // Then
         assertNotNull(response);
-        assertEquals(400, response.getStatusCodeValue());
+        assertEquals(400, response.getStatusCode().value());
         ApiResponse apiResponse = (ApiResponse) response.getBody();
         assertNotNull(apiResponse);
         assertEquals("ERROR", apiResponse.getStatus().name());

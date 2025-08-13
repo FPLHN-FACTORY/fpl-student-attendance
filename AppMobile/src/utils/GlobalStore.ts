@@ -29,7 +29,6 @@ export const useGlobalStore = create<StoreState>()(
       lstSemester: [],
       studentInfo: {} as UserStudent,
       dataWebcam: {
-        descriptors: [],
         image: '',
       },
       totalNotification: 0,

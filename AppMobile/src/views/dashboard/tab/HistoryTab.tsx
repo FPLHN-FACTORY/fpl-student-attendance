@@ -268,23 +268,29 @@ const HistoryTab: React.FC<Props> = ({ animatedValue, showMenuRef }) => {
           <>
             <View
               style={{
-                marginBottom: 10,
                 paddingHorizontal: 15,
                 flexDirection: 'row',
-                flexWrap: 'wrap',
+                justifyContent: 'space-between',
+                gap: 10,
               }}
             >
-              <Text>Đã vắng </Text>
-              <Text style={[styles.grayText, totalStats.totalAbsent > 0 && styles.textDanger]}>
-                {totalStats.totalAbsent}
-              </Text>
-              <Text>, có mặt </Text>
-              <Text style={[styles.grayText, totalStats.totalPresent > 0 && styles.textSuccess]}>
-                {totalStats.totalPresent}
-              </Text>
-              <Text> trong tổng số </Text>
-              <Text style={styles.grayText}>{totalStats.totalShift}</Text>
-              <Text>.</Text>
+              <View style={styles.stats}>
+                <Text>Đã vắng: </Text>
+                <Text style={[styles.grayText, totalStats.totalAbsent > 0 && styles.textDanger]}>
+                  {totalStats.totalAbsent}
+                </Text>
+              </View>
+              <View style={styles.stats}>
+                <Text>Có mặt: </Text>
+                <Text style={[styles.grayText, totalStats.totalPresent > 0 && styles.textSuccess]}>
+                  {totalStats.totalPresent}
+                </Text>
+              </View>
+
+              <View style={styles.stats}>
+                <Text> Tổng ca: </Text>
+                <Text style={styles.grayText}>{totalStats.totalShift}</Text>
+              </View>
             </View>
             {lstData.map((item) => (
               <CollapseItemHistory key={item.planDateId} item={item} />
@@ -329,9 +335,17 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   textDanger: {
-    color: 'red',
+    color: Colors.error,
   },
   textSuccess: {
-    color: 'green',
+    color: Colors.success,
+  },
+  stats: {
+    flex: 1,
+    flexDirection: 'row',
+    padding: 10,
+    borderRadius: 10,
+    textAlign: 'center',
+    backgroundColor: '#ffffff',
   },
 })

@@ -75,9 +75,7 @@ public class STStudentServiceImplTest {
     private STStudentServiceImpl studentService;
 
     @BeforeEach
-    public void setUp() {
-        ReflectionTestUtils.setField(studentService, "redisTTL", 3600L);
-
+    void setUp() {
         // Default behavior for session helper
         when(sessionHelper.getFacilityId()).thenReturn("facility-1");
 

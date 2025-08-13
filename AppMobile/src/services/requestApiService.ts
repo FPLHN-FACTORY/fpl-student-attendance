@@ -10,7 +10,7 @@ import { logout } from '@/utils'
 
 const requestAPI: AxiosInstance = axios.create({
   baseURL: API_URL,
-  timeout: 10000,
+  timeout: 15000,
 })
 
 requestAPI.interceptors.request.use(async (config: CustomAxiosRequestConfig) => {

@@ -95,6 +95,9 @@ class SAAttendanceServiceImplTest {
         @Mock
         private SettingHelper settingHelper;
 
+        @Mock
+        private org.springframework.web.multipart.MultipartFile mockImage;
+
         @InjectMocks
         private SAAttendanceServiceImpl attendanceService;
 
@@ -157,7 +160,7 @@ class SAAttendanceServiceImplTest {
                 when(planDateRepository.findById(planDateId)).thenReturn(Optional.empty());
 
                 // When
-                ResponseEntity<?> response = attendanceService.checkin(request);
+                ResponseEntity<?> response = attendanceService.checkin(request, mockImage);
 
                 // Then
                 assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
@@ -205,7 +208,7 @@ class SAAttendanceServiceImplTest {
                                 .thenReturn(Optional.empty());
 
                 // When
-                ResponseEntity<?> response = attendanceService.checkin(request);
+                ResponseEntity<?> response = attendanceService.checkin(request, mockImage);
 
                 // Then
                 assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
@@ -254,7 +257,7 @@ class SAAttendanceServiceImplTest {
                         appUtilsMock.when(() -> AppUtils.getClientIP(any())).thenReturn(clientIp);
 
                         // When
-                        ResponseEntity<?> response = attendanceService.checkin(request);
+                        ResponseEntity<?> response = attendanceService.checkin(request, mockImage);
 
                         // Then
                         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
@@ -283,7 +286,7 @@ class SAAttendanceServiceImplTest {
                 when(planDateRepository.findById(planDateId)).thenReturn(Optional.of(planDate));
 
                 // When
-                ResponseEntity<?> response = attendanceService.checkin(request);
+                ResponseEntity<?> response = attendanceService.checkin(request, mockImage);
 
                 // Then
                 assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
@@ -313,7 +316,7 @@ class SAAttendanceServiceImplTest {
                                 .thenReturn(Optional.empty());
 
                 // When
-                ResponseEntity<?> response = attendanceService.checkin(request);
+                ResponseEntity<?> response = attendanceService.checkin(request, mockImage);
 
                 // Then
                 assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
@@ -347,7 +350,7 @@ class SAAttendanceServiceImplTest {
                 when(AppUtils.getClientIP(httpServletRequest)).thenReturn(null);
 
                 // When
-                ResponseEntity<?> response = attendanceService.checkin(request);
+                ResponseEntity<?> response = attendanceService.checkin(request, mockImage);
 
                 // Then
                 assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
@@ -387,7 +390,7 @@ class SAAttendanceServiceImplTest {
                 when(facilityIPRepository.getAllIP(facilityId)).thenReturn(allowedIPs);
 
                 // When
-                ResponseEntity<?> response = attendanceService.checkin(request);
+                ResponseEntity<?> response = attendanceService.checkin(request, mockImage);
 
                 // Then
                 assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
@@ -423,7 +426,7 @@ class SAAttendanceServiceImplTest {
                                 .thenReturn(Optional.of(userStudentFactory));
 
                 // When
-                ResponseEntity<?> response = attendanceService.checkin(request);
+                ResponseEntity<?> response = attendanceService.checkin(request, mockImage);
 
                 // Then
                 assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
@@ -459,7 +462,7 @@ class SAAttendanceServiceImplTest {
                 when(facilityLocationRepository.getAllList(facilityId)).thenReturn(Collections.emptyList());
 
                 // When
-                ResponseEntity<?> response = attendanceService.checkin(request);
+                ResponseEntity<?> response = attendanceService.checkin(request, mockImage);
 
                 // Then
                 assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
@@ -492,7 +495,7 @@ class SAAttendanceServiceImplTest {
                                 .thenReturn(Optional.of(userStudentFactory));
 
                 // When
-                ResponseEntity<?> response = attendanceService.checkin(request);
+                ResponseEntity<?> response = attendanceService.checkin(request, mockImage);
 
                 // Then
                 assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
@@ -529,7 +532,7 @@ class SAAttendanceServiceImplTest {
                                 .thenReturn(Optional.of(existingAttendance));
 
                 // When
-                ResponseEntity<?> response = attendanceService.checkin(request);
+                ResponseEntity<?> response = attendanceService.checkin(request, mockImage);
 
                 // Then
                 assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
@@ -566,7 +569,7 @@ class SAAttendanceServiceImplTest {
                                 .thenReturn(Optional.of(existingAttendance));
 
                 // When
-                ResponseEntity<?> response = attendanceService.checkin(request);
+                ResponseEntity<?> response = attendanceService.checkin(request, mockImage);
 
                 // Then
                 assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
@@ -603,7 +606,7 @@ class SAAttendanceServiceImplTest {
                                 .thenReturn(Optional.empty());
 
                 // When
-                ResponseEntity<?> response = attendanceService.checkin(request);
+                ResponseEntity<?> response = attendanceService.checkin(request, mockImage);
 
                 // Then
                 assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
@@ -643,7 +646,7 @@ class SAAttendanceServiceImplTest {
                                 .thenReturn(Optional.empty());
 
                 // When
-                ResponseEntity<?> response = attendanceService.checkin(request);
+                ResponseEntity<?> response = attendanceService.checkin(request, mockImage);
 
                 // Then
                 assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
@@ -680,7 +683,7 @@ class SAAttendanceServiceImplTest {
                                 .thenReturn(Optional.empty());
 
                 // When
-                ResponseEntity<?> response = attendanceService.checkin(request);
+                ResponseEntity<?> response = attendanceService.checkin(request, mockImage);
 
                 // Then
                 assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
@@ -720,7 +723,7 @@ class SAAttendanceServiceImplTest {
                                 .thenReturn(Optional.empty());
 
                 // When
-                ResponseEntity<?> response = attendanceService.checkin(request);
+                ResponseEntity<?> response = attendanceService.checkin(request, mockImage);
 
                 // Then
                 assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
@@ -760,7 +763,7 @@ class SAAttendanceServiceImplTest {
                                 .thenReturn(Optional.of(existingAttendance));
 
                 // When
-                ResponseEntity<?> response = attendanceService.checkin(request);
+                ResponseEntity<?> response = attendanceService.checkin(request, mockImage);
 
                 // Then
                 assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
@@ -800,7 +803,7 @@ class SAAttendanceServiceImplTest {
                                 .thenReturn(Optional.of(existingAttendance));
 
                 // When
-                ResponseEntity<?> response = attendanceService.checkin(request);
+                ResponseEntity<?> response = attendanceService.checkin(request, mockImage);
 
                 // Then
                 assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());

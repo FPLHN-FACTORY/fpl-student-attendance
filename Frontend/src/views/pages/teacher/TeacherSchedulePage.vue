@@ -30,6 +30,8 @@ const breadcrumb = ref([
   { name: ROUTE_NAMES.TEACHING_SCHEDULE, breadcrumbName: 'Lịch quản lý' },
 ])
 
+const title = ref('7 ngày tới')
+
 // Store loading
 const loadingStore = useLoadingStore()
 const isLoading = ref(false)
@@ -45,7 +47,6 @@ const filter = reactive({
   shiftType: '',
   durationOption: 'future_7', // mặc định là 7 ngày tới
   page: 1,
-  pageSize: 5,
 })
 
 // Tính toán startDate và endDate dựa trên durationOption (trả về dayjs objects)
@@ -141,8 +142,7 @@ const fetchTeachingSchedulePresent = () => {
     .then((response) => {
       const result = response.data.data
       teachingSchedulePresent.value = result.data
-      presentPagination.value.total =
-        result.totalRecords || result.totalPages * presentPagination.value.pageSize
+      presentPagination.value.total = result.totalItems
       presentPagination.value.current = result.page || presentPagination.value.current
     })
     .catch((error) => {
@@ -170,7 +170,7 @@ const fetchTeachingSchedule = () => {
     .then((response) => {
       const result = response.data.data
       teachingScheduleRecords.value = result.data
-      pagination.value.total = result.totalRecords || result.totalPages * filter.pageSize
+      pagination.value.total = result.totalItems
       pagination.value.current = filter.page
       countFilter.value = result.totalItems
     })
@@ -229,13 +229,11 @@ const fetchProjects = () => {
 
 // Phân trang
 const handlePresentTableChange = (pag) => {
-  filter.pageSize = pag.pageSize
   presentPagination.value.current = pag.current
   presentPagination.value.pageSize = pag.pageSize
   fetchTeachingSchedulePresent()
 }
 const handleTableChange = (pag) => {
-  filter.pageSize = pag.pageSize
   pagination.value.current = pag.current
   pagination.value.pageSize = pag.pageSize
   fetchTeachingSchedule()
@@ -320,7 +318,7 @@ const handleUpdatePlanDate = () => {
 // Xuất PDF
 const handleExportPDF = () => {
   loadingStore.show()
-  const { durationOption, page, pageSize, ...rest } = filter
+  const { durationOption, page, ...rest } = filter
   const params = {
     ...prepareFilterParams(rest),
     startDate: computedStartDate.value.valueOf(),
@@ -588,7 +586,7 @@ onMounted(() => {
           <template #title>
             <div class="d-flex justify-content-between align-items-center">
               <div>
-                <UnorderedListOutlined /> Danh sách lịch quản lý
+                <UnorderedListOutlined /> {{ title }}
                 <span v-if="filter.durationOption">
                   ({{ formatDate(computedStartDate, DEFAULT_DATE_FORMAT) }}
                   –
@@ -611,10 +609,16 @@ onMounted(() => {
                   <a-select
                     v-model:value="filter.durationOption"
                     class="w-100"
-                    @change="fetchTeachingSchedule"
+                    @change="
+                      (_, option) => {
+                        title = option.label
+                        fetchTeachingSchedule()
+                      }
+                    "
                   >
                     <a-select-option
                       v-for="opt in durationOptions"
+                      :label="opt.label"
                       :key="opt.value"
                       :value="opt.value"
                       >{{ opt.label }}</a-select-option

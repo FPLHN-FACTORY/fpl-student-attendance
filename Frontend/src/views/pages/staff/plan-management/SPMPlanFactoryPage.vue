@@ -40,6 +40,9 @@ const modalAdd = reactive({
 
 const countFilter = ref(0)
 
+const isShowListStudentExists = ref(false)
+const lstStudentExists = ref([])
+
 const lstData = ref([])
 const lstDataAdd = ref([])
 const lstShift = ref([])
@@ -65,6 +68,16 @@ const columns = ref(
     { title: 'Tiến độ', dataIndex: 'process' },
     { title: 'Trạng thái', dataIndex: 'status', key: 'status' },
     { title: '', key: 'actions' },
+  ]),
+)
+
+const columns_student = ref(
+  autoAddColumnWidth([
+    { title: 'Mã sinh viên', dataIndex: 'code', key: 'code' },
+    { title: 'Tên sinh viên', dataIndex: 'name', key: 'name' },
+    { title: 'Email', dataIndex: 'email', key: 'email' },
+    { title: 'Nhóm xưởng', dataIndex: 'factoryName', key: 'factoryName' },
+    { title: 'Kế hoạch', dataIndex: 'planName', key: 'planName' },
   ]),
 )
 
@@ -197,6 +210,13 @@ const fetchSubmitCreate = () => {
       fetchDataList()
     })
     .catch((error) => {
+      const data = error?.response?.data?.data
+      if (data) {
+        handleShowListStudentExists(data)
+        return message.error(
+          error?.response?.data?.message || 'Không thể thêm mới nhóm xưởng vào kế hoạch',
+        )
+      }
       message.error(error?.response?.data?.message || 'Không thể thêm nhóm xưởng vào kế hoạch')
     })
     .finally(() => {
@@ -325,6 +345,11 @@ const handleDelete = (id) => {
 const handleChangeType = async () => {
   await nextTick()
   formRefAdd.value?.clearValidate(['room', 'link'])
+}
+
+const handleShowListStudentExists = (data) => {
+  lstStudentExists.value = data || []
+  isShowListStudentExists.value = true
 }
 
 onMounted(() => {
@@ -540,6 +565,25 @@ watch(
         </div>
       </a-form-item>
     </a-form>
+  </a-modal>
+
+  <a-modal v-model:open="isShowListStudentExists" :width="1000" :footer="null">
+    <template #title
+      ><InfoCircleFilled class="text-primary" /> Danh sách sinh viên bị trùng ca
+    </template>
+    <div class="row g-2">
+      <div class="col-12">
+        <a-table
+          rowKey="id"
+          class="nowrap"
+          :dataSource="lstStudentExists"
+          :columns="columns_student"
+          :pagination="false"
+          :scroll="{ x: 'auto' }"
+        >
+        </a-table>
+      </div>
+    </div>
   </a-modal>
 
   <div class="container-fluid">

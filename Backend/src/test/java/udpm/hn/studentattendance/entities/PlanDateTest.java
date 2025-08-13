@@ -30,10 +30,22 @@ class PlanDateTest {
         PlanFactory planFactory = new PlanFactory();
         planFactory.setId("1");
         List<Integer> shifts = List.of(1, 2);
-        PlanDate planDate = new PlanDate(
-                "desc", 1000L, 2000L, shifts, 5, "link", "room",
-                ShiftType.ONLINE, StatusType.DISABLE, StatusType.DISABLE,
-                StatusType.DISABLE, StatusType.DISABLE, planFactory);
+
+        PlanDate planDate = new PlanDate();
+        planDate.setDescription("desc");
+        planDate.setStartDate(1000L);
+        planDate.setEndDate(2000L);
+        planDate.setShift(shifts);
+        planDate.setLateArrival(5);
+        planDate.setLink("link");
+        planDate.setRoom("room");
+        planDate.setType(ShiftType.ONLINE);
+        planDate.setRequiredLocation(StatusType.DISABLE);
+        planDate.setRequiredIp(StatusType.DISABLE);
+        planDate.setRequiredCheckin(StatusType.DISABLE);
+        planDate.setRequiredCheckout(StatusType.DISABLE);
+        planDate.setPlanFactory(planFactory);
+
         assertEquals("desc", planDate.getDescription());
         assertEquals(1000L, planDate.getStartDate());
         assertEquals(2000L, planDate.getEndDate());

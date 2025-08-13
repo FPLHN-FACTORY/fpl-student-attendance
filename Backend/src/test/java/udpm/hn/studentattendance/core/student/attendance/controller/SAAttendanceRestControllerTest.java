@@ -37,9 +37,11 @@ class SAAttendanceRestControllerTest {
     void testCheckin() {
         udpm.hn.studentattendance.core.student.attendance.model.request.SACheckinAttendanceRequest request = mock(
                 udpm.hn.studentattendance.core.student.attendance.model.request.SACheckinAttendanceRequest.class);
-        when(saAttendanceService.checkin(request)).thenReturn(ResponseEntity.ok().build());
-        ResponseEntity<?> response = saAttendanceRestController.checkin(request);
+        org.springframework.web.multipart.MultipartFile image = mock(org.springframework.web.multipart.MultipartFile.class);
+        String signature = "test-signature";
+        when(saAttendanceService.checkin(request, image)).thenReturn(ResponseEntity.ok().build());
+        ResponseEntity<?> response = saAttendanceRestController.checkin(request, image, signature);
         assertNotNull(response);
-        verify(saAttendanceService).checkin(request);
+        verify(saAttendanceService).checkin(request, image);
     }
 }

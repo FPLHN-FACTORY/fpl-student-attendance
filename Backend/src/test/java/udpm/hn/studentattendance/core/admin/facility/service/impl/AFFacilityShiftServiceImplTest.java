@@ -61,7 +61,6 @@ class AFFacilityShiftServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        ReflectionTestUtils.setField(shiftService, "redisTTL", 3600L);
         ReflectionTestUtils.setField(shiftService, "MIN_DIFF_SHIFT", 10); // 10 phút tối thiểu
     }
 

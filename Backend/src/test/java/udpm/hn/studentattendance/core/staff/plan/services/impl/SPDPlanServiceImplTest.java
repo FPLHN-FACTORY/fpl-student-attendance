@@ -71,7 +71,6 @@ class SPDPlanServiceImplTest {
     @Mock
     private SPDProjectRepository spdProjectRepository;
 
-
     @Mock
     private SessionHelper sessionHelper;
 
@@ -92,7 +91,7 @@ class SPDPlanServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        ReflectionTestUtils.setField(planService, "redisTTL", 3600L);
+        // Remove the problematic redisTTL field setting
     }
 
     @Test

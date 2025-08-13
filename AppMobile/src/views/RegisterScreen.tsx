@@ -1,5 +1,11 @@
 import { RootStackParamList } from '@/types/RootStackParamList'
-import { logout, UPPER_HEADER_HEIGHT, UPPER_HEADER_PADDING_TOP } from '@/utils'
+import {
+  base64ToFile,
+  logout,
+  unlinkBase64ToFile,
+  UPPER_HEADER_HEIGHT,
+  UPPER_HEADER_PADDING_TOP,
+} from '@/utils'
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { View, StyleSheet, StatusBar, AppState, TouchableOpacity, Image } from 'react-native'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -70,15 +76,22 @@ const RegisterScreen: React.FC<Props> = ({ route, navigation }) => {
       })
   }
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     setVisible(false)
     showLoading()
+
+    const file = await base64ToFile(dataWebcam.image)
+    const data = new FormData()
+    data.append('image', file as any)
+    data.append('idFacility', facility)
+    data.append('code', code)
+    data.append('name', name)
+
     requestAPI
-      .put(`${API_ROUTES.FETCH_DATA_REGISTER}`, {
-        idFacility: facility,
-        code,
-        name,
-        faceEmbedding: JSON.stringify(dataWebcam.descriptors),
+      .put(`${API_ROUTES.FETCH_DATA_REGISTER}`, data, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
       })
       .then(async ({ data: response }) => {
         showSuccess(response.message, 2000)
@@ -93,6 +106,7 @@ const RegisterScreen: React.FC<Props> = ({ route, navigation }) => {
       .finally(() => {
         hideLoading()
         clearDataWebcam()
+        unlinkBase64ToFile(file.uri)
       })
   }
 
@@ -102,7 +116,6 @@ const RegisterScreen: React.FC<Props> = ({ route, navigation }) => {
 
   const clearDataWebcam = () => {
     setDataWebcam({
-      descriptors: [],
       image: '',
     })
   }
@@ -200,13 +213,7 @@ const RegisterScreen: React.FC<Props> = ({ route, navigation }) => {
         />
         <Button
           mode="contained"
-          disabled={
-            !facility ||
-            !code ||
-            !name ||
-            !dataWebcam.descriptors ||
-            dataWebcam.descriptors.length < 1
-          }
+          disabled={!facility || !code || !name || !dataWebcam.image || dataWebcam.image.length < 1}
           style={styles.button}
           onPress={() => setVisible(true)}
         >

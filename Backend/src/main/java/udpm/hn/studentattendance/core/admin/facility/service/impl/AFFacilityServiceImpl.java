@@ -74,7 +74,8 @@ public class AFFacilityServiceImpl implements AFFacilityService {
 
         String facilityNamePattern = "^[a-zA-ZÀ-ỹ\\s]+$";
         if (!request.getFacilityName().matches(facilityNamePattern)) {
-            return RouterHelper.responseError("Tên cơ sở chỉ được chứa chữ cái và khoảng trắng, không được chứa số hoặc ký tự đặc biệt");
+            return RouterHelper.responseError(
+                    "Tên cơ sở chỉ được chứa chữ cái và khoảng trắng, không được chứa số hoặc ký tự đặc biệt");
         }
 
         Optional<Facility> existFacility = facilityRepository.findByName(request.getFacilityName());
@@ -102,10 +103,10 @@ public class AFFacilityServiceImpl implements AFFacilityService {
     @Override
     public ResponseEntity<?> updateFacility(String facilityId, AFCreateUpdateFacilityRequest request) {
 
-
         String facilityNamePattern = "^[a-zA-ZÀ-ỹ\\s]+$";
         if (!request.getFacilityName().matches(facilityNamePattern)) {
-            return RouterHelper.responseError("Tên cơ sở chỉ được chứa chữ cái và khoảng trắng, không được chứa số hoặc ký tự đặc biệt");
+            return RouterHelper.responseError(
+                    "Tên cơ sở chỉ được chứa chữ cái và khoảng trắng, không được chứa số hoặc ký tự đặc biệt");
         }
 
         Optional<Facility> existFacility = facilityRepository.findById(facilityId);

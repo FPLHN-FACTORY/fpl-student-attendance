@@ -72,9 +72,6 @@ class STDScheduleAttendanceServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        // Set up TTL value using reflection
-        ReflectionTestUtils.setField(service, "redisTTL", 3600L);
-
         // Create a search request
         request = new STDScheduleAttendanceSearchRequest();
         request.setPage(1);

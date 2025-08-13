@@ -14,9 +14,10 @@ import { Colors } from '@/constants/Colors'
 import { ItemCalendar } from '@/types/ItemCalendar'
 import { ItemHistory } from '@/types/ItemHistory'
 import { Semester } from '@/types/Semester'
-import { useGlobalStore } from './GlobalStore'
 import requestAPI from '@/services/requestApiService'
 import { API_ROUTES_NOTIFICATION } from '@/constants/ApiRoutes'
+import * as FileSystem from 'expo-file-system'
+import cryptoJS from 'crypto-js'
 
 export const UPPER_HEADER_HEIGHT = 64
 export const UPPER_HEADER_PADDING_TOP = 4
@@ -399,4 +400,35 @@ export const countNotification = (callback: (response: number) => void) => {
   requestAPI.get(API_ROUTES_NOTIFICATION.FETCH_COUNT).then(({ data: response }) => {
     callback(response?.data || 0)
   })
+}
+
+export const base64ToFile = async (base64: string) => {
+  const [header, data] = base64.split(',')
+  const contentType = header.split(':')[1].split(';')[0]
+  const ext = contentType.split('/')[1] || 'jpg'
+  const filename = `upload.${ext}`
+  const path = FileSystem.cacheDirectory + filename
+
+  await FileSystem.writeAsStringAsync(path, data, { encoding: FileSystem.EncodingType.Base64 })
+  const sizeInBytes =
+    Math.ceil((data.length * 3) / 4) - (data.endsWith('==') ? 2 : data.endsWith('=') ? 1 : 0)
+
+  return {
+    uri: path,
+    type: contentType,
+    name: filename,
+    size: sizeInBytes,
+  }
+}
+
+export const unlinkBase64ToFile = async (uri: string) => {
+  try {
+    await FileSystem.deleteAsync(uri, { idempotent: true })
+  } catch {}
+}
+
+export const generateSignature = (key: string, data: any) => {
+  const timestamp = Math.floor(Date.now() / 1000)
+  const toSign = data + '|' + timestamp
+  return cryptoJS.HmacSHA256(toSign, key).toString(cryptoJS.enc.Hex)
 }

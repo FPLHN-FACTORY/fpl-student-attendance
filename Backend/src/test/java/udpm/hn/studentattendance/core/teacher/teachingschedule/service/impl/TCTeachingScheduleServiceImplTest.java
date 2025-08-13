@@ -108,8 +108,6 @@ class TCTeachingScheduleServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        ReflectionTestUtils.setField(teachingScheduleService, "redisTTL", 3600L);
-
         // Default behavior for session helper
         when(sessionHelper.getUserId()).thenReturn("teacher-1");
         when(sessionHelper.getUserName()).thenReturn("Teacher Name");

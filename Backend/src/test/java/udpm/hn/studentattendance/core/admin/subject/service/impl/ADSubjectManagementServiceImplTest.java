@@ -43,9 +43,6 @@ class ADSubjectManagementServiceImplTest {
     @Mock
     private ADSubjectExtendRepository adminSubjectRepository;
 
-
-
-
     @Mock
     private UserActivityLogHelper userActivityLogHelper;
 
@@ -63,8 +60,7 @@ class ADSubjectManagementServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        ReflectionTestUtils.setField(subjectService, "redisTTL", 3600L);
-        // Removed unnecessary stubbing for redisCacheHelper.getOrSet
+        // Remove the problematic redisTTL field setting
     }
 
     @Test

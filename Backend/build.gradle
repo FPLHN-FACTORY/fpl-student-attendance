@@ -38,7 +38,7 @@ dependencies {
 
     // Development tools
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
-//    developmentOnly 'org.springframework.boot:spring-boot-docker-compose'
+//  developmentOnly 'org.springframework.boot:spring-boot-docker-compose'
 
     // Redis client
     implementation 'redis.clients:jedis:6.0.0'
@@ -75,6 +75,12 @@ dependencies {
 
     // Object mapping
     implementation 'org.mapstruct:mapstruct:1.5.5.Final'
+
+    //
+    implementation 'ai.djl:api:0.32.0'
+    implementation 'ai.djl.onnxruntime:onnxruntime-engine:0.32.0'
+    implementation 'ai.djl.onnxruntime:onnxruntime-native-auto:1.3.0'
+    implementation 'com.microsoft.onnxruntime:onnxruntime-extensions:0.13.0'
 
     // Testing
     testImplementation 'org.springframework.boot:spring-boot-starter-test'

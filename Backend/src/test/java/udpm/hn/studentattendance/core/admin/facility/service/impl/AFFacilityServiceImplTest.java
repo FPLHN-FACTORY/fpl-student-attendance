@@ -48,8 +48,6 @@ class AFFacilityServiceImplTest {
     @Mock
     private AFFacilityExtendRepository facilityRepository;
 
-
-
     @Mock
     private MailerHelper mailerHelper;
 
@@ -70,7 +68,6 @@ class AFFacilityServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        ReflectionTestUtils.setField(facilityService, "redisTTL", 3600L);
         ReflectionTestUtils.setField(facilityService, "appName", "Student Attendance App");
         // Removed unnecessary stubbing for redisCacheHelper.getOrSet
     }

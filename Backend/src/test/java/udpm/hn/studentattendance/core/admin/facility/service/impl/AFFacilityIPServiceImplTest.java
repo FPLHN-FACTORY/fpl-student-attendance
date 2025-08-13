@@ -66,7 +66,6 @@ class AFFacilityIPServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        ReflectionTestUtils.setField(facilityIPService, "redisTTL", 3600L);
         // Removed unnecessary stubbing for redisCacheHelper.getOrSet
     }
 

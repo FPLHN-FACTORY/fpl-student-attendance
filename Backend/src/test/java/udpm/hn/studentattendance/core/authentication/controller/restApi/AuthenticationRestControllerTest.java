@@ -6,6 +6,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.multipart.MultipartFile;
 import udpm.hn.studentattendance.core.authentication.model.request.AuthenticationStudentRegisterRequest;
 import udpm.hn.studentattendance.core.authentication.model.request.AuthenticationStudentUpdateFaceIDRequest;
 import udpm.hn.studentattendance.core.authentication.model.request.AuthenticationToken;
@@ -19,6 +20,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
 
 class AuthenticationRestControllerTest {
     @Mock
@@ -38,7 +40,7 @@ class AuthenticationRestControllerTest {
         token.setRefreshToken("refresh");
         when(authenticationService.refreshToken("refresh")).thenReturn((ResponseEntity) ResponseEntity.ok("ok"));
         ResponseEntity<?> res = controller.refreshToken(token);
-        assertEquals(200, res.getStatusCodeValue());
+        assertEquals(200, res.getStatusCode().value());
         assertEquals("ok", res.getBody());
     }
 
@@ -48,7 +50,7 @@ class AuthenticationRestControllerTest {
         req.put("url_image", "url");
         when(authenticationService.getAvatar("url")).thenReturn((ResponseEntity) ResponseEntity.ok("avatar"));
         ResponseEntity<?> res = controller.getAvatar(req);
-        assertEquals(200, res.getStatusCodeValue());
+        assertEquals(200, res.getStatusCode().value());
         assertEquals("avatar", res.getBody());
     }
 
@@ -56,7 +58,7 @@ class AuthenticationRestControllerTest {
     void testGetSettings() {
         when(authenticationService.getSettings()).thenReturn((ResponseEntity) ResponseEntity.ok("settings"));
         ResponseEntity<?> res = controller.getSettings();
-        assertEquals(200, res.getStatusCodeValue());
+        assertEquals(200, res.getStatusCode().value());
         assertEquals("settings", res.getBody());
     }
 
@@ -65,7 +67,7 @@ class AuthenticationRestControllerTest {
         Map<SettingKeys, String> req = new HashMap<>();
         when(authenticationService.saveSettings(req)).thenReturn((ResponseEntity) ResponseEntity.ok("saved"));
         ResponseEntity<?> res = controller.saveSettings(req);
-        assertEquals(200, res.getStatusCodeValue());
+        assertEquals(200, res.getStatusCode().value());
         assertEquals("saved", res.getBody());
     }
 
@@ -73,7 +75,7 @@ class AuthenticationRestControllerTest {
     void testGetAllFacility() {
         when(authenticationService.getAllFacility()).thenReturn((ResponseEntity) ResponseEntity.ok("facilities"));
         ResponseEntity<?> res = controller.getAllFacility();
-        assertEquals(200, res.getStatusCodeValue());
+        assertEquals(200, res.getStatusCode().value());
         assertEquals("facilities", res.getBody());
     }
 
@@ -81,7 +83,7 @@ class AuthenticationRestControllerTest {
     void testGetAllSemester() {
         when(authenticationService.getAllSemester()).thenReturn((ResponseEntity) ResponseEntity.ok("semesters"));
         ResponseEntity<?> res = controller.getAllSemester();
-        assertEquals(200, res.getStatusCodeValue());
+        assertEquals(200, res.getStatusCode().value());
         assertEquals("semesters", res.getBody());
     }
 
@@ -91,25 +93,28 @@ class AuthenticationRestControllerTest {
         req.put("role", "admin");
         when(authenticationService.getInfoUser("admin")).thenReturn((ResponseEntity) ResponseEntity.ok("info"));
         ResponseEntity<?> res = controller.getInfoUser(req);
-        assertEquals(200, res.getStatusCodeValue());
+        assertEquals(200, res.getStatusCode().value());
         assertEquals("info", res.getBody());
     }
 
     @Test
     void testStudentRegister() {
         AuthenticationStudentRegisterRequest req = new AuthenticationStudentRegisterRequest();
-        when(authenticationService.studentRegister(req)).thenReturn((ResponseEntity) ResponseEntity.ok("registered"));
-        ResponseEntity<?> res = controller.studentRegister(req);
-        assertEquals(200, res.getStatusCodeValue());
+        MultipartFile image = mock(MultipartFile.class);
+        when(authenticationService.studentRegister(req, image))
+                .thenReturn((ResponseEntity) ResponseEntity.ok("registered"));
+        ResponseEntity<?> res = controller.studentRegister(req, image);
+        assertEquals(200, res.getStatusCode().value());
         assertEquals("registered", res.getBody());
     }
 
     @Test
     void testStudentUpdateFaceID() {
-        AuthenticationStudentUpdateFaceIDRequest req = new AuthenticationStudentUpdateFaceIDRequest();
-        when(authenticationService.studentUpdateFaceID(req)).thenReturn((ResponseEntity) ResponseEntity.ok("updated"));
-        ResponseEntity<?> res = controller.studentUpdateFaceID(req);
-        assertEquals(200, res.getStatusCodeValue());
+        MultipartFile image = mock(MultipartFile.class);
+        when(authenticationService.studentUpdateFaceID(image))
+                .thenReturn((ResponseEntity) ResponseEntity.ok("updated"));
+        ResponseEntity<?> res = controller.studentUpdateFaceID(image);
+        assertEquals(200, res.getStatusCode().value());
         assertEquals("updated", res.getBody());
     }
 
@@ -117,7 +122,7 @@ class AuthenticationRestControllerTest {
     void testStudentInfo() {
         when(authenticationService.studentInfo()).thenReturn((ResponseEntity) ResponseEntity.ok("studentInfo"));
         ResponseEntity<?> res = controller.studentInfo();
-        assertEquals(200, res.getStatusCodeValue());
+        assertEquals(200, res.getStatusCode().value());
         assertEquals("studentInfo", res.getBody());
     }
 }

@@ -8,14 +8,13 @@ import { isProbablyMobile } from '@/utils/utils'
 
 const THRESHOLD_P = 0.2
 const THRESHOLD_X = 0.1
-const THRESHOLD_Y = 0.15
+const THRESHOLD_Y = 0.12
 const THRESHOLD_EMOTIONS = 0.8
-const MIN_BRIGHTNESS = 60
-const MAX_BRIGHTNESS = 190
+const MIN_BRIGHTNESS = 80
+const MAX_BRIGHTNESS = 170
 const THRESHOLD_LIGHT = 60
 const SIZE_CAMERA = 480
 const SKIP_FRAME = 5
-const ANTISPOOF = true
 const CHECK_DISTANCE = true
 
 const useFaceIDStore = defineStore('faceID', () => {
@@ -148,7 +147,6 @@ const useFaceIDStore = defineStore('faceID', () => {
 
   let maskModel
   let glassesModel
-  let antispoofModel
   const loadModels = async () => {
     const preferBackends = ['webgpu', 'webgl', 'cpu']
     for (const backend of preferBackends) {
@@ -201,21 +199,6 @@ const useFaceIDStore = defineStore('faceID', () => {
 
       if (!glassesModel) {
         models.push(loadGlassModel())
-      }
-    }
-
-    if (ANTISPOOF) {
-      const loadAntispoofModel = async () => {
-        try {
-          antispoofModel = await tf.loadLayersModel('indexeddb://antispoof-model')
-        } catch (err) {
-          antispoofModel = await tf.loadLayersModel('/models/antispoof/model.json')
-          await antispoofModel.save('indexeddb://antispoof-model')
-        }
-      }
-
-      if (!antispoofModel) {
-        models.push(loadAntispoofModel())
       }
     }
 
@@ -301,7 +284,7 @@ const useFaceIDStore = defineStore('faceID', () => {
 
     const isWithMask = async () => {
       const input = tf.browser
-        .fromPixels(video.value)
+        .fromPixels(canvas.value)
         .resizeNearestNeighbor([224, 224])
         .toFloat()
         .div(255)
@@ -313,7 +296,7 @@ const useFaceIDStore = defineStore('faceID', () => {
 
     const isWithGlasses = async () => {
       const input = tf.browser
-        .fromPixels(video.value)
+        .fromPixels(canvas.value)
         .resizeNearestNeighbor([224, 224])
         .toFloat()
         .div(255)
@@ -321,19 +304,6 @@ const useFaceIDStore = defineStore('faceID', () => {
       const result = await glassesModel.predict(input).data()
       input.dispose()
       return !(result[0] > 0.6)
-    }
-
-    const isMobile = isProbablyMobile()
-    const isSpoofing = async () => {
-      const input = tf.browser
-        .fromPixels(video.value)
-        .resizeNearestNeighbor([224, 224])
-        .toFloat()
-        .div(255)
-        .expandDims()
-      const result = await antispoofModel.predict(input).data()
-      input.dispose()
-      return result[0] < (isMobile ? 0 : 0.99999999)
     }
 
     const captureFace = () => {
@@ -391,7 +361,7 @@ const useFaceIDStore = defineStore('faceID', () => {
         lstDescriptor.value[lstDescriptor.value.length - 1],
       )
 
-      if (similarity < 0.75) {
+      if (similarity < 0.7) {
         return rollback('Vui lòng xác nhận lại')
       }
 
@@ -413,23 +383,6 @@ const useFaceIDStore = defineStore('faceID', () => {
     }
 
     const delay = (ms) => new Promise((res) => setTimeout(res, ms))
-
-    const isLiveness = async () => {
-      let lst_spoofing = []
-
-      while (lst_spoofing.length < 4) {
-        const result = await human.detect(video.value)
-        const face = result?.face?.[0]
-
-        if (!face) {
-          return false
-        }
-
-        const checking = await isSpoofing()
-        lst_spoofing.push(checking)
-      }
-      return lst_spoofing.filter((o) => !o).length > 1
-    }
 
     const isReaction = async () => {
       let progress = []
@@ -453,42 +406,6 @@ const useFaceIDStore = defineStore('faceID', () => {
       return progress.filter((o) => o).length > 2
     }
 
-    const isCheckingGlasses = async () => {
-      let progress = []
-      let i = 0
-      while (i < 4) {
-        i++
-        const result = await human.detect(video.value)
-        const face = result?.face?.[0]
-
-        if (!face) {
-          return false
-        }
-
-        const checking = await isWithGlasses()
-        progress.push(checking)
-      }
-      return progress.filter((o) => o).length > 2
-    }
-
-    const isCheckingMask = async () => {
-      let progress = []
-      let i = 0
-      while (i < 4) {
-        i++
-        const result = await human.detect(video.value)
-        const face = result?.face?.[0]
-
-        if (!face) {
-          return false
-        }
-
-        const checking = await isWithMask()
-        progress.push(checking)
-      }
-      return progress.filter((o) => o).length > 2
-    }
-
     const getEmbedding = async () => {
       const result = await human.detect(video.value)
       const face = result.face?.[0]
@@ -498,6 +415,23 @@ const useFaceIDStore = defineStore('faceID', () => {
         !(await cropFace(face)) ||
         !isInsideCenter(face.boxRaw) ||
         (!isFullStep && (await isInvalidSize(face)))
+      ) {
+        return []
+      }
+
+      const { pitch, roll, yaw } = face.rotation?.angle || {}
+
+      if (
+        (human.result.gesture.some(
+          (o) =>
+            o.gesture.includes('head up') ||
+            o.gesture.includes('head down') ||
+            o.gesture.includes('blink left eye') ||
+            o.gesture.includes('blink right eye'),
+        ) &&
+          Math.abs(pitch) > 0.2) ||
+        Math.abs(roll) > 0.07 ||
+        Math.abs(yaw) > 0.07
       ) {
         return []
       }
@@ -541,7 +475,7 @@ const useFaceIDStore = defineStore('faceID', () => {
 
     const isSameEmbedding = (prevEmbedding, currentEmbedding) => {
       const similarity = human.match.similarity(prevEmbedding, currentEmbedding)
-      return similarity >= isMobile ? 0.8 : 0.9
+      return similarity >= isProbablyMobile() ? 0.8 : 0.9
     }
 
     const getFaceBox = (face) => {
@@ -550,19 +484,26 @@ const useFaceIDStore = defineStore('faceID', () => {
 
       const leftCheek = mesh[234]
       const rightCheek = mesh[454]
-      const topEye = Math.min(mesh[159][1], mesh[386][1])
+
+      const yValues = mesh.map((p) => p[1])
+      const minY = Math.min(...yValues)
+
       const bottomLip = Math.max(mesh[14][1], mesh[17][1])
 
       let sx = leftCheek[0]
       let ex = rightCheek[0]
-      let sy = topEye
+      let sy = minY
       let ey = bottomLip
 
       const padding = 0
-      sx -= padding
-      ex += padding
-      sy -= padding
-      ey += padding
+      const paddingTop = 0
+      const paddingBottom = 80
+      const paddingLeft = 35
+      const paddingRight = 35
+      sx -= padding + paddingLeft
+      ex += padding + paddingRight
+      sy -= padding + paddingTop
+      ey += padding + paddingBottom
 
       const vw = video.value.videoWidth
       const vh = video.value.videoHeight
@@ -622,7 +563,7 @@ const useFaceIDStore = defineStore('faceID', () => {
     }
 
     const isInvalidSize = async (face) => {
-      if (isFullStep || !CHECK_DISTANCE) {
+      if (!CHECK_DISTANCE) {
         return null
       }
       const { width, height } = getFaceBox(face)
@@ -630,11 +571,11 @@ const useFaceIDStore = defineStore('faceID', () => {
       const videoArea = video.value.videoWidth * video.value.videoHeight
       const ratio = faceArea / videoArea
 
-      if (ratio < 0.25) {
+      if (ratio < 0.6) {
         return 'Vui lòng đưa mặt lại gần hơn'
       }
 
-      if (ratio > 0.5) {
+      if (ratio > 8) {
         return 'Vui lòng đưa mặt ra xa hơn'
       }
 
@@ -684,13 +625,13 @@ const useFaceIDStore = defineStore('faceID', () => {
         return
       }
 
-      if (!isFullStep && step.value !== 1 && step.value !== 2) {
+      if (isFullStep || (!isFullStep && (step.value === 0 || step.value === 3))) {
         if (!isInsideCenter(faceBoxRaw)) {
-          return rollback('Vui lòng căn chỉnh khuôn mặt vào giữa')
+          return renderTextStep('Vui lòng căn chỉnh khuôn mặt vào giữa')
         }
         const txtValidSize = await isInvalidSize(detection)
         if (txtValidSize !== null) {
-          return rollback(txtValidSize)
+          return renderTextStep(txtValidSize)
         }
       }
 
@@ -709,52 +650,51 @@ const useFaceIDStore = defineStore('faceID', () => {
         return
       }
 
-      if (ANTISPOOF && !(!isFullStep && (step.value === 1 || step.value === 2))) {
-        if (!(await isLiveness())) {
-          return renderTextStep()
+      if (isFullStep || (!isFullStep && (step.value === 0 || step.value === 3))) {
+        if (avgBrightness < MIN_BRIGHTNESS) {
+          return renderTextStep('Camera quá tối, Vui lòng tăng độ sáng')
+        }
+
+        if (avgBrightness > MAX_BRIGHTNESS) {
+          return renderTextStep('Camera quá sáng, Vui lòng giảm độ sáng')
+        }
+
+        if (!(await isLightBalance(faceBox))) {
+          return renderTextStep('Ánh sáng không đều. Vui lòng thử lại')
+        }
+
+        const { pitch, roll } = detection.rotation?.angle || {}
+
+        if (
+          human.result.gesture.some((o) => o.gesture.includes('head up')) &&
+          Math.abs(pitch) > 0.2
+        ) {
+          return renderTextStep('Vui lòng không ngẩng mặt')
+        }
+
+        if (
+          human.result.gesture.some((o) => o.gesture.includes('head down')) &&
+          Math.abs(pitch) > 0.2
+        ) {
+          return renderTextStep('Vui lòng không cúi mặt')
+        }
+
+        if (Math.abs(roll) > 0.07) {
+          return renderTextStep('Vui lòng không nghiêng đầu')
+        }
+
+        if (await isReaction()) {
+          return renderTextStep('Vui lòng không biểu cảm')
         }
       }
 
       if (!isFullStep) {
-        if (step.value === 0 || step.value === 3) {
-          if (avgBrightness < MIN_BRIGHTNESS) {
-            return renderTextStep('Camera quá tối, Vui lòng tăng độ sáng')
-          }
-
-          if (avgBrightness > MAX_BRIGHTNESS) {
-            return renderTextStep('Camera quá sáng, Vui lòng giảm độ sáng')
-          }
-
-          if (!(await isLightBalance(faceBox))) {
-            return renderTextStep('Ánh sáng không đều. Vui lòng thử lại')
-          }
-
-          const { pitch } = detection.rotation?.angle || {}
-          if (
-            human.result.gesture.some((o) => o.gesture.includes('head up')) &&
-            Math.abs(pitch) > 0.2
-          ) {
-            return renderTextStep('Vui lòng không ngẩng mặt')
-          }
-
-          if (
-            human.result.gesture.some((o) => o.gesture.includes('head down')) &&
-            Math.abs(pitch) > 0.2
-          ) {
-            return renderTextStep('Vui lòng không cúi mặt')
-          }
-
-          if (await isReaction()) {
-            return renderTextStep('Vui lòng không biểu cảm')
-          }
-        }
-
-        if (await isCheckingGlasses()) {
+        if (await isWithGlasses()) {
           step.value = 0
           return renderTextStep('Vui lòng không nhắm mắt hoặc đeo kính')
         }
 
-        if (await isCheckingMask()) {
+        if (await isWithMask()) {
           step.value = 0
           return renderTextStep('Vui lòng không đeo khẩu trang')
         }
@@ -808,7 +748,8 @@ const useFaceIDStore = defineStore('faceID', () => {
           }
           if (step.value === 2 && angle === 1) {
             step.value = 3
-            return renderTextStep()
+            renderTextStep()
+            return delay(2000)
           }
           if (step.value === 3 && angle === 0) {
             prevEmbedding.value = null

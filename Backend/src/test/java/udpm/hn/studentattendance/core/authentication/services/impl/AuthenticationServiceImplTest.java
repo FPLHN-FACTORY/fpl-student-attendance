@@ -12,7 +12,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.servlet.view.RedirectView;
 import udpm.hn.studentattendance.core.authentication.model.request.AuthenticationStudentRegisterRequest;
-import udpm.hn.studentattendance.core.authentication.model.request.AuthenticationStudentUpdateFaceIDRequest;
 import udpm.hn.studentattendance.core.authentication.model.request.AuthenticationToken;
 import udpm.hn.studentattendance.core.authentication.oauth2.AuthUser;
 import udpm.hn.studentattendance.core.authentication.repositories.AuthenticationFacilityRepository;
@@ -37,7 +36,6 @@ import udpm.hn.studentattendance.infrastructure.constants.router.RouteAuthentica
 import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -72,6 +70,9 @@ class AuthenticationServiceImplTest {
 
     @Mock
     private AuthenticationUserStudentRepository authenticationUserStudentRepository;
+
+    @Mock
+    private org.springframework.web.multipart.MultipartFile mockImage;
 
     @InjectMocks
     private AuthenticationServiceImpl authenticationService;
@@ -291,7 +292,7 @@ class AuthenticationServiceImplTest {
         when(authenticationUserStudentRepository.findById("student-1")).thenReturn(Optional.empty());
 
         // When
-        ResponseEntity<?> response = authenticationService.studentRegister(request);
+        ResponseEntity<?> response = authenticationService.studentRegister(request, mockImage);
 
         // Then
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
@@ -312,7 +313,7 @@ class AuthenticationServiceImplTest {
         when(authenticationUserStudentRepository.findById("student-1")).thenReturn(Optional.of(student));
 
         // When
-        ResponseEntity<?> response = authenticationService.studentRegister(request);
+        ResponseEntity<?> response = authenticationService.studentRegister(request, mockImage);
 
         // Then
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
@@ -333,7 +334,7 @@ class AuthenticationServiceImplTest {
         when(authenticationFacilityRepository.findById(request.getIdFacility())).thenReturn(Optional.empty());
 
         // When
-        ResponseEntity<?> response = authenticationService.studentRegister(request);
+        ResponseEntity<?> response = authenticationService.studentRegister(request, mockImage);
 
         // Then
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
@@ -357,7 +358,7 @@ class AuthenticationServiceImplTest {
                 .thenReturn(true);
 
         // When
-        ResponseEntity<?> response = authenticationService.studentRegister(request);
+        ResponseEntity<?> response = authenticationService.studentRegister(request, mockImage);
 
         // Then
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
@@ -367,11 +368,10 @@ class AuthenticationServiceImplTest {
     }
 
     @Test
-    @DisplayName("Test studentRegister should return error when face embedding is null")
-    void testStudentRegisterNullFaceEmbedding() {
+    @DisplayName("Test studentRegister should return error when image is null")
+    void testStudentRegisterNullImage() {
         // Given
         AuthenticationStudentRegisterRequest request = createMockStudentRegisterRequest();
-        request.setFaceEmbedding(null);
         UserStudent student = createMockUserStudent();
         Facility facility = createMockFacility("facility-1", "FPT HCM");
 
@@ -382,13 +382,13 @@ class AuthenticationServiceImplTest {
                 .thenReturn(false);
 
         // When
-        ResponseEntity<?> response = authenticationService.studentRegister(request);
+        ResponseEntity<?> response = authenticationService.studentRegister(request, null);
 
         // Then
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         ApiResponse apiResponse = (ApiResponse) response.getBody();
         assertNotNull(apiResponse);
-        assertEquals("Thông tin khuôn mặt không hợp lệ", apiResponse.getMessage());
+        assertEquals("Thông tin khuôn mặt không hợp lệ. Vui lòng thử lại", apiResponse.getMessage());
     }
 
     @Test
@@ -514,7 +514,7 @@ class AuthenticationServiceImplTest {
         assertEquals("Lấy thông tinh sinh viên thành công", apiResponse.getMessage());
 
         UserStudent result = (UserStudent) apiResponse.getData();
-        assertEquals("OK", result.getFaceEmbedding());
+        assertNotNull(result.getFaceEmbedding());
     }
 
     // Helper methods
@@ -567,7 +567,6 @@ class AuthenticationServiceImplTest {
         request.setIdFacility("facility-1");
         request.setCode("SV001");
         request.setName("Test Student");
-        request.setFaceEmbedding("face-embedding-data");
         return request;
     }
 }

@@ -53,7 +53,6 @@ class ADSubjectFacilityServiceImplTest {
     @Mock
     private ADFacilityRepository facilityRepository;
 
-
     @Mock
     private UserActivityLogHelper userActivityLogHelper;
 
@@ -71,8 +70,7 @@ class ADSubjectFacilityServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        ReflectionTestUtils.setField(subjectFacilityService, "redisTTL", 3600L);
-        // Removed unnecessary stubbing for redisCacheHelper.getOrSet
+        // Remove the problematic redisTTL field setting
     }
 
     @Test

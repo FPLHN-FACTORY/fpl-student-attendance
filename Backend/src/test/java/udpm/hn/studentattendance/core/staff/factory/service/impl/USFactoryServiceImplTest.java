@@ -72,7 +72,6 @@ class USFactoryServiceImplTest {
         @Mock
         private NotificationService notificationService;
 
-
         @Mock
         private SessionHelper sessionHelper;
 
@@ -96,9 +95,7 @@ class USFactoryServiceImplTest {
 
         @BeforeEach
         void setUp() {
-                // Set Redis TTL value
-                ReflectionTestUtils.setField(factoryService, "redisTTL", 3600L);
-                // Removed unnecessary stubbing for redisCacheHelper.getOrSet
+                // Remove the problematic redisTTL field setting
         }
 
         @Test
