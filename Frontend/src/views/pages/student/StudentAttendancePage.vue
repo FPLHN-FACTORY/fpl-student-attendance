@@ -243,7 +243,7 @@ const handleSubmitUpdateInfo = () => {
 
 const handleUpdateInfo = async () => {
   isShowCamera.value = true
-  faceIDStore.setFullStep(true)
+  faceIDStore.setFullStep(false)
   faceIDStore.setCallback((descriptor) => {
     formData.image = faceIDStore.dataImage
     Modal.confirm({

@@ -297,8 +297,8 @@ public class OnnxService {
             float sat = hsv[1];
 
             if (sat > 0.1) {
-                //da quá đỏ
-                if (hue >= 0 && hue <= 15) return true;
+//                //da quá đỏ
+//                if (hue >= 0 && hue <= 15) return true;
                 //da quá vàng
                 if (hue >= 30 && hue <= 75) return true;
                 //da quá xanh

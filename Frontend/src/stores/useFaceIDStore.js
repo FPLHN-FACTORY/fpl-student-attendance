@@ -330,10 +330,8 @@ const useFaceIDStore = defineStore('faceID', () => {
     }
 
     const rollback = (text) => {
-      if (step.value != 3) {
-        lstDescriptor.value.pop()
-        step.value = Math.max(0, step.value - 1)
-      }
+      lstDescriptor.value.pop()
+      step.value = Math.max(0, step.value - 1)
       renderTextStep(text)
     }
 
@@ -629,11 +627,11 @@ const useFaceIDStore = defineStore('faceID', () => {
 
       if (isFullStep || (!isFullStep && (step.value === 0 || step.value === 3))) {
         if (!isInsideCenter(faceBoxRaw)) {
-          return rollback('Vui lòng căn chỉnh khuôn mặt vào giữa')
+          return renderTextStep('Vui lòng căn chỉnh khuôn mặt vào giữa')
         }
         const txtValidSize = await isInvalidSize(detection)
         if (txtValidSize !== null) {
-          return rollback(txtValidSize)
+          return renderTextStep(txtValidSize)
         }
       }
 
