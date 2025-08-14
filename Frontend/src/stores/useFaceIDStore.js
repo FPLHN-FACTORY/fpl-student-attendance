@@ -330,8 +330,10 @@ const useFaceIDStore = defineStore('faceID', () => {
     }
 
     const rollback = (text) => {
-      lstDescriptor.value.pop()
-      step.value = Math.max(0, step.value - 1)
+      if (step.value != 3) {
+        lstDescriptor.value.pop()
+        step.value = Math.max(0, step.value - 1)
+      }
       renderTextStep(text)
     }
 
@@ -571,11 +573,11 @@ const useFaceIDStore = defineStore('faceID', () => {
       const videoArea = video.value.videoWidth * video.value.videoHeight
       const ratio = faceArea / videoArea
 
-      if (ratio < 0.6) {
+      if (ratio < 0.5) {
         return 'Vui lòng đưa mặt lại gần hơn'
       }
 
-      if (ratio > 8) {
+      if (ratio > 0.7) {
         return 'Vui lòng đưa mặt ra xa hơn'
       }
 
@@ -627,11 +629,11 @@ const useFaceIDStore = defineStore('faceID', () => {
 
       if (isFullStep || (!isFullStep && (step.value === 0 || step.value === 3))) {
         if (!isInsideCenter(faceBoxRaw)) {
-          return renderTextStep('Vui lòng căn chỉnh khuôn mặt vào giữa')
+          return rollback('Vui lòng căn chỉnh khuôn mặt vào giữa')
         }
         const txtValidSize = await isInvalidSize(detection)
         if (txtValidSize !== null) {
-          return renderTextStep(txtValidSize)
+          return rollback(txtValidSize)
         }
       }
 
@@ -682,13 +684,13 @@ const useFaceIDStore = defineStore('faceID', () => {
         if (Math.abs(roll) > 0.07) {
           return renderTextStep('Vui lòng không nghiêng đầu')
         }
-
-        if (await isReaction()) {
-          return renderTextStep('Vui lòng không biểu cảm')
-        }
       }
 
       if (!isFullStep) {
+        if (await isReaction()) {
+          return renderTextStep('Vui lòng không biểu cảm')
+        }
+
         if (await isWithGlasses()) {
           step.value = 0
           return renderTextStep('Vui lòng không nhắm mắt hoặc đeo kính')

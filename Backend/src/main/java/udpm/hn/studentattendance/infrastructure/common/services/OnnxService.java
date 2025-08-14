@@ -23,9 +23,12 @@ import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
@@ -165,30 +168,25 @@ public class OnnxService {
                     throw new IllegalStateException("Unexpected NDArray shape: " + Arrays.toString(shape));
                 }
 
-                float minPred = Float.MAX_VALUE;
-                float maxPred = Float.MIN_VALUE;
+                float minPred = Float.MAX_VALUE, maxPred = Float.MIN_VALUE;
                 for (float v : flat) {
                     if (v < minPred) minPred = v;
                     if (v > maxPred) maxPred = v;
                 }
                 float origRange = maxPred - minPred;
 
-                float rangeNorm = maxPred - minPred;
-                if (rangeNorm != 0) {
+                if (origRange != 0) {
                     for (int i = 0; i < flat.length; i++) {
-                        flat[i] = (flat[i] - minPred) / rangeNorm;
+                        flat[i] = (flat[i] - minPred) / origRange;
                     }
                 }
 
                 double sum = 0, sumSq = 0, gradSum = 0;
-                float min = Float.MAX_VALUE, max = Float.MIN_VALUE;
                 for (int y = 0; y < H; y++) {
                     for (int x = 0; x < W; x++) {
                         float v = flat[y * W + x];
                         sum += v;
                         sumSq += v * v;
-                        if (v < min) min = v;
-                        if (v > max) max = v;
                         if (x < W - 1) gradSum += Math.abs(v - flat[y * W + (x + 1)]);
                         if (y < H - 1) gradSum += Math.abs(v - flat[(y + 1) * W + x]);
                     }
@@ -198,7 +196,7 @@ public class OnnxService {
                 float variance = (float) ((sumSq / (H * W)) - (mean * mean));
                 float gradScore = (float) (gradSum / ((W - 1) * H + (H - 1) * W));
 
-                return new float[] {variance, origRange, gradScore};
+                return new float[]{variance, origRange, gradScore, (float) mean};
             }
             @Override
             public Batchifier getBatchifier() { return null; }
@@ -270,7 +268,66 @@ public class OnnxService {
         return out;
     }
 
-    public float antiSpoof(byte[] imgBytes) throws InterruptedException, TranslateException {
+    public static boolean isColorFake(byte[] imgBytes) throws IOException {
+        try (ByteArrayInputStream bais = new ByteArrayInputStream(imgBytes)) {
+            BufferedImage image = ImageIO.read(bais);
+            image = cropWithPadding(image, 350);
+
+            long sumR = 0, sumG = 0, sumB = 0;
+            int count = 0;
+
+            for (int y = 0; y < image.getHeight(); y++) {
+                for (int x = 0; x < image.getWidth(); x++) {
+                    Color c = new Color(image.getRGB(x, y), true);
+                    sumR += c.getRed();
+                    sumG += c.getGreen();
+                    sumB += c.getBlue();
+                    count++;
+                }
+            }
+
+            if (count == 0) return true;
+
+            int avgR = (int) (sumR / count);
+            int avgG = (int) (sumG / count);
+            int avgB = (int) (sumB / count);
+
+            float[] hsv = Color.RGBtoHSB(avgR, avgG, avgB, null);
+            float hue = hsv[0] * 360;
+            float sat = hsv[1];
+
+            if (sat > 0.1) {
+                //da quá đỏ
+                if (hue >= 0 && hue <= 15) return true;
+                //da quá vàng
+                if (hue >= 30 && hue <= 75) return true;
+                //da quá xanh
+                if (hue >= 120 && hue <= 240) return true;
+            }
+            return false;
+        }
+    }
+
+    public static BufferedImage cropWithPadding(BufferedImage src, int padding) {
+        if (padding < 1) {
+            return src;
+        }
+        int w = src.getWidth();
+        int h = src.getHeight();
+        int side = Math.min(w, h) - 2 * padding;
+        if (side <= 0) {
+            return src;
+        }
+        int x = (w - side) / 2;
+        int y = (h - side) / 2;
+        BufferedImage dest = new BufferedImage(side, side, src.getType());
+        Graphics g = dest.getGraphics();
+        g.drawImage(src, 0, 0, side, side, x, y, x + side, y + side, null);
+        g.dispose();
+        return dest;
+    }
+
+    public float antiSpoof(byte[] imgBytes) throws InterruptedException, TranslateException, IOException {
         Predictor<byte[], float[]> predictor = antiSpoofPredictorPool.take();
         try {
             float[] result = predictor.predict(imgBytes);
@@ -293,13 +350,19 @@ public class OnnxService {
         Predictor<byte[], float[]> predictor = depthPredictorPool.take();
         try {
             float[] result = predictor.predict(imgBytes);
-            return result[0] > 0.06 && result[1] > 800 && result[2] > 0.0035;
+            return result[0] > 0.06 && result[0] < 0.12
+                    && result[1] > 2000
+                    && result[2] > 0.0035
+                    && result[3] > 0.2 && result[3] < 0.8;
         } finally {
             depthPredictorPool.put(predictor);
         }
     }
 
-    public boolean isFake(byte[] imgBytes, double threshold) throws TranslateException, InterruptedException {
+    public boolean isFake(byte[] imgBytes, double threshold) throws IOException, TranslateException, InterruptedException {
+        if (isColorFake(imgBytes)) {
+            return true;
+        }
         float antiSpoof = antiSpoof(imgBytes);
         boolean isDepthReal = isDepthReal(imgBytes);
         return (antiSpoof < 0.999 && (antiSpoof < threshold || !isDepthReal));
