@@ -108,7 +108,6 @@ public class ADLevelProjectManagementServiceImpl implements ADLevelProjectManage
         return RouterHelper.responseSuccess("Cập nhật nhóm dự án thành công", updatedLevel);
     }
 
-    // Phương thức helper để lấy thông tin chi tiết cấp độ dự án từ cache hoặc DB
     public LevelProject getLevelProjectById(String id) {
         return repository.findById(id).orElse(null);
     }
