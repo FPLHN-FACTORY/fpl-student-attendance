@@ -571,11 +571,11 @@ const useFaceIDStore = defineStore('faceID', () => {
       const videoArea = video.value.videoWidth * video.value.videoHeight
       const ratio = faceArea / videoArea
 
-      if (ratio < 0.6) {
+      if (ratio < 0.5) {
         return 'Vui lòng đưa mặt lại gần hơn'
       }
 
-      if (ratio > 8) {
+      if (ratio > 0.7) {
         return 'Vui lòng đưa mặt ra xa hơn'
       }
 
@@ -682,13 +682,13 @@ const useFaceIDStore = defineStore('faceID', () => {
         if (Math.abs(roll) > 0.07) {
           return renderTextStep('Vui lòng không nghiêng đầu')
         }
-
-        if (await isReaction()) {
-          return renderTextStep('Vui lòng không biểu cảm')
-        }
       }
 
       if (!isFullStep) {
+        if (await isReaction()) {
+          return renderTextStep('Vui lòng không biểu cảm')
+        }
+
         if (await isWithGlasses()) {
           step.value = 0
           return renderTextStep('Vui lòng không nhắm mắt hoặc đeo kính')
