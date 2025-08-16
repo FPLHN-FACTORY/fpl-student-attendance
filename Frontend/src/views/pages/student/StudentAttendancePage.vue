@@ -269,7 +269,7 @@ const handleCheckin = async (item) => {
   formData.idPlanDate = item.idPlanDate
 
   isShowCamera.value = true
-  faceIDStore.setFullStep(true)
+  faceIDStore.setFullStep(false)
   faceIDStore.setCallback((descriptor) => {
     formData.image = faceIDStore.dataImage
     handleSubmitAttendance()

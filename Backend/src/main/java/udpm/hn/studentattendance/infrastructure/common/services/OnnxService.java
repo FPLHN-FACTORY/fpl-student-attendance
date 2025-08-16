@@ -350,8 +350,9 @@ public class OnnxService {
         Predictor<byte[], float[]> predictor = depthPredictorPool.take();
         try {
             float[] result = predictor.predict(imgBytes);
-            return result[0] > 0.06 && result[0] < 0.12
-                    && result[1] > 2000
+            System.out.println(Arrays.toString(result));
+            return result[0] > 0.06 && result[0] < 0.14
+                    && result[1] > 1900
                     && result[2] > 0.0035
                     && result[3] > 0.2 && result[3] < 0.8;
         } finally {
@@ -360,12 +361,20 @@ public class OnnxService {
     }
 
     public boolean isFake(byte[] imgBytes, double threshold) throws IOException, TranslateException, InterruptedException {
+
         if (isColorFake(imgBytes)) {
+            System.out.println("isColorFake");
             return true;
         }
+
         float antiSpoof = antiSpoof(imgBytes);
+        if (antiSpoof >= 0.9) {
+            return false;
+        }
+
+        System.out.println("antiSpoof: " + antiSpoof);
         boolean isDepthReal = isDepthReal(imgBytes);
-        return (antiSpoof < 0.999 && (antiSpoof < threshold || !isDepthReal));
+        return antiSpoof < threshold || !isDepthReal;
     }
 
 }

@@ -41,7 +41,6 @@ const breadcrumb = ref([
 
 // Danh sách cơ sở
 const facilities = ref([])
-
 const countFilter = ref(0)
 
 // Biến lọc gửi lên API (không chứa thông tin phân trang)
@@ -155,7 +154,7 @@ const handleAddFacility = () => {
   const validation = validateFormSubmission(newFacility, [
     { key: 'facilityName', label: 'Tên cơ sở' },
   ])
-  
+
   if (!validation.isValid) {
     message.error(validation.message)
     return
@@ -218,7 +217,7 @@ const updateFacility = () => {
   const validation = validateFormSubmission(detailFacility.value, [
     { key: 'facilityName', label: 'Tên cơ sở' },
   ])
-  
+
   if (!validation.isValid) {
     message.error(validation.message)
     return
