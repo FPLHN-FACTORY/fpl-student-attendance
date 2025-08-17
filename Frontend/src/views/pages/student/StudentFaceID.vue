@@ -13,6 +13,7 @@ const handleSubmit = (descriptors) => {
   window.ReactNativeWebView.postMessage(
     JSON.stringify({
       image: faceIDStore.dataImage,
+      canvas: faceIDStore.dataCanvas,
     }),
   )
 }

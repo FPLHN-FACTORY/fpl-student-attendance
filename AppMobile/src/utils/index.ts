@@ -406,7 +406,7 @@ export const base64ToFile = async (base64: string) => {
   const [header, data] = base64.split(',')
   const contentType = header.split(':')[1].split(';')[0]
   const ext = contentType.split('/')[1] || 'jpg'
-  const filename = `upload.${ext}`
+  const filename = `upload_${Date.now()}.${ext}`
   const path = FileSystem.cacheDirectory + filename
 
   await FileSystem.writeAsStringAsync(path, data, { encoding: FileSystem.EncodingType.Base64 })

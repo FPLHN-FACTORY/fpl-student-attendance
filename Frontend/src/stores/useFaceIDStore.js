@@ -13,9 +13,9 @@ const THRESHOLD_P = 0.2
 const THRESHOLD_X = 0.1
 const THRESHOLD_Y = 0.12
 const THRESHOLD_EMOTIONS = 0.8
-const MIN_BRIGHTNESS = isMobile ? 40 : 45
+const MIN_BRIGHTNESS = isMobile ? 40 : 50
 const MAX_BRIGHTNESS = isMobile ? 70 : 95
-const THRESHOLD_LIGHT = 35
+const THRESHOLD_LIGHT = 40
 const SIZE_CAMERA = 480
 const SKIP_FRAME = 5
 const CHECK_DISTANCE = true
@@ -40,6 +40,7 @@ const useFaceIDStore = defineStore('faceID', () => {
   const step = ref(0)
   const textStep = ref('Vui lòng đợi camera...')
   const dataImage = ref(null)
+  const dataCanvas = ref(null)
   const count = ref(0)
   const embedding = ref(null)
   const prevEmbedding = ref(null)
@@ -245,7 +246,7 @@ const useFaceIDStore = defineStore('faceID', () => {
   const detectFace = async () => {
     let faceDescriptor = null
 
-    const ctx = canvas.value.getContext('2d')
+    const ctx = canvas.value.getContext('2d', { willReadFrequently: true })
 
     const aX = axis.value.querySelectorAll('.a-x > div')
     const aY = axis.value.querySelectorAll('.a-y > div')
@@ -408,7 +409,7 @@ const useFaceIDStore = defineStore('faceID', () => {
       renderTextStep(text)
     }
 
-    const pushDescriptor = async (max) => {
+    const pushDescriptor = async () => {
       count.value = 0
       const descriptor = normalize(Array.from(embedding.value))
       if (!descriptor.length) {
@@ -416,11 +417,6 @@ const useFaceIDStore = defineStore('faceID', () => {
       }
 
       lstDescriptor.value.push(descriptor)
-
-      if (max !== lstDescriptor.value.length) {
-        step.value = 0
-        return clearDescriptor()
-      }
     }
 
     const submit = async () => {
@@ -488,9 +484,9 @@ const useFaceIDStore = defineStore('faceID', () => {
         !(await cropFace(face)) ||
         !isInsideCenter(face.boxRaw) ||
         (await isInvalidSize(face)) ||
-        !(await isLightBalance())
-        //  || (await isLightTooBright()) ||
-        // (await isLightTooDark())
+        !(await isLightBalance()) ||
+        (await isLightTooBright()) ||
+        (await isLightTooDark())
       ) {
         return []
       }
@@ -543,6 +539,12 @@ const useFaceIDStore = defineStore('faceID', () => {
           return (count.value = 0)
         }
 
+        const cvs = document.createElement('canvas')
+        cvs.width = video.value.videoWidth
+        cvs.height = video.value.videoHeight
+        const ctx = cvs.getContext('2d')
+        ctx.drawImage(video.value, 0, 0, cvs.width, cvs.height)
+        dataCanvas.value = cvs.toDataURL('image/png')
         prevEmbedding.value = currentEmbedding
         embedding.value = currentEmbedding
         count.value -= 1
@@ -850,7 +852,7 @@ const useFaceIDStore = defineStore('faceID', () => {
             if (!embedding.value || embedding.length < 1) {
               return
             }
-            await pushDescriptor(1)
+            await pushDescriptor()
             step.value = 1
             return renderTextStep()
           }
@@ -863,7 +865,7 @@ const useFaceIDStore = defineStore('faceID', () => {
             if (!embedding.value || embedding.length < 1) {
               return
             }
-            await pushDescriptor(2)
+            await pushDescriptor()
             step.value = 2
             return await submit()
           }
@@ -876,7 +878,7 @@ const useFaceIDStore = defineStore('faceID', () => {
             if (!embedding.value || embedding.length < 1) {
               return
             }
-            await pushDescriptor(1)
+            await pushDescriptor()
             step.value = 1
             return renderTextStep()
           }
@@ -887,7 +889,7 @@ const useFaceIDStore = defineStore('faceID', () => {
           if (step.value === 2 && angle === 1 && isReal) {
             step.value = 3
             renderTextStep()
-            return delay(2000)
+            return await delay(2000)
           }
           if (step.value === 3 && angle === 0) {
             prevEmbedding.value = null
@@ -895,7 +897,7 @@ const useFaceIDStore = defineStore('faceID', () => {
             if (!embedding.value || embedding.length < 1) {
               return
             }
-            await pushDescriptor(2)
+            await pushDescriptor()
             step.value = 4
             return await submit()
           }
@@ -971,6 +973,7 @@ const useFaceIDStore = defineStore('faceID', () => {
     detectFace,
     renderStyle,
     dataImage,
+    dataCanvas,
     step,
     textStep,
     isLoading,

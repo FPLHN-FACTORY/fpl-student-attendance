@@ -130,7 +130,18 @@ public class ADStaffServiceImpl implements ADStaffService {
                 return RouterHelper
                         .responseError("Email FPT không được chứa khoảng trắng và phải kết thúc bằng @fpt.edu.vn");
             }
+        } else {
+            if (!ValidateHelper.isValidEmail(adCreateUpdateStaffRequest.getEmailFe().trim())) {
+                return RouterHelper
+                        .responseError("Email FE không hợp lệ");
+            }
+            if (!ValidateHelper.isValidEmail(adCreateUpdateStaffRequest.getEmailFpt().trim())) {
+                return RouterHelper
+                        .responseError("Email FPT không hợp lệ");
+            }
         }
+
+
 
         UserStaff staffExist = isStaffExist(
                 adCreateUpdateStaffRequest.getStaffCode(),
@@ -231,6 +242,15 @@ public class ADStaffServiceImpl implements ADStaffService {
             }
             if (!ValidateHelper.isValidEmailFPT(adCreateUpdateStaffRequest.getEmailFpt().trim())) {
                 return RouterHelper.responseError("Không chứa khoảng trắng và kết thúc bằng @fpt.edu.vn");
+            }
+        } else {
+            if (!ValidateHelper.isValidEmail(adCreateUpdateStaffRequest.getEmailFe().trim())) {
+                return RouterHelper
+                        .responseError("Email FE không hợp lệ");
+            }
+            if (!ValidateHelper.isValidEmail(adCreateUpdateStaffRequest.getEmailFpt().trim())) {
+                return RouterHelper
+                        .responseError("Email FPT không hợp lệ");
             }
         }
 

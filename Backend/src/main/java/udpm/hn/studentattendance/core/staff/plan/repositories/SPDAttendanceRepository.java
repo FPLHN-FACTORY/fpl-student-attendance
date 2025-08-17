@@ -87,11 +87,17 @@ public interface SPDAttendanceRepository extends AttendanceRepository {
                     pf.id AS factoryId,
                     f.name AS factoryName,
                     pd.required_checkin,
-                    pd.required_checkout
+                    pd.required_checkout,
+                    LEAST(pf.status, p.status, f.status, pl.status, s.status, lp.status, s2.status) AS status
                 FROM plan_date pd
                 JOIN plan_factory pf ON pd.id_plan_factory = pf.id
                 JOIN plan pl ON pf.id_plan = pl.id
                 JOIN factory f ON pf.id_factory = f.id
+                JOIN project p ON p.id = f.id_project
+                JOIN subject_facility sf ON sf.id = p.id_subject_facility
+                JOIN subject s ON sf.id_subject = s.id
+                JOIN level_project lp ON p.id_level_project = lp.id
+                JOIN semester s2 ON p.id_semester = s2.id
                 WHERE
                     pd.status = 1 AND
                     pd.id = :idPlanDate
