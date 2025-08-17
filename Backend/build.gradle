@@ -99,7 +99,8 @@ tasks.withType(JavaCompile) {
 }
 
 // Common test configuration
-def commonTestConfig = { Test task ->
+def commonTestConfig = {
+    Test task ->
     task.useJUnitPlatform()
     task.systemProperty "file.encoding", "UTF-8"
     task.jvmArgs = ['-Dfile.encoding=UTF-8', '-Dsun.jnu.encoding=UTF-8', '-Duser.language=en', '-Duser.country=US']
