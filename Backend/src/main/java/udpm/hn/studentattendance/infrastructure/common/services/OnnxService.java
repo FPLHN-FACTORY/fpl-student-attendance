@@ -4,6 +4,7 @@ import ai.djl.MalformedModelException;
 import ai.djl.inference.Predictor;
 import ai.djl.ndarray.NDArray;
 import ai.djl.ndarray.NDList;
+import ai.djl.ndarray.types.DataType;
 import ai.djl.ndarray.types.Shape;
 import ai.djl.repository.zoo.Criteria;
 import ai.djl.repository.zoo.ModelNotFoundException;
@@ -26,8 +27,10 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -45,10 +48,12 @@ public class OnnxService {
     private ZooModel<byte[], float[]> antiSpoofModel;
     private ZooModel<byte[], float[]> arcFaceModel;
     private ZooModel<byte[], float[]> depthModel;
+    private ZooModel<float[], float[]> readDepthModel;
 
     private BlockingQueue<Predictor<byte[], float[]>> antiSpoofPredictorPool;
     private BlockingQueue<Predictor<byte[], float[]>> arcFacePredictorPool;
     private BlockingQueue<Predictor<byte[], float[]>> depthPredictorPool;
+    private BlockingQueue<Predictor<float[], float[]>> readDepthPredictorPool;
 
     private final int POOL_SIZE = Runtime.getRuntime().availableProcessors();
 
@@ -57,15 +62,18 @@ public class OnnxService {
         antiSpoofModel = ModelZoo.loadModel(buildAntiSpoofCriteria());
         arcFaceModel = ModelZoo.loadModel(buildArcFaceCriteria());
         depthModel = ModelZoo.loadModel(buildDepthCriteria());
+        readDepthModel = ModelZoo.loadModel(buildReadDepthCriteria());
 
         antiSpoofPredictorPool = new ArrayBlockingQueue<>(POOL_SIZE);
         arcFacePredictorPool = new ArrayBlockingQueue<>(POOL_SIZE);
         depthPredictorPool = new ArrayBlockingQueue<>(POOL_SIZE);
+        readDepthPredictorPool = new ArrayBlockingQueue<>(POOL_SIZE);
 
         for (int i = 0; i < POOL_SIZE; i++) {
             antiSpoofPredictorPool.add(antiSpoofModel.newPredictor());
             arcFacePredictorPool.add(arcFaceModel.newPredictor());
             depthPredictorPool.add(depthModel.newPredictor());
+            readDepthPredictorPool.add(readDepthModel.newPredictor());
         }
     }
 
@@ -74,9 +82,11 @@ public class OnnxService {
         antiSpoofPredictorPool.forEach(Predictor::close);
         arcFacePredictorPool.forEach(Predictor::close);
         depthPredictorPool.forEach(Predictor::close);
+        readDepthPredictorPool.forEach(Predictor::close);
         antiSpoofModel.close();
         arcFaceModel.close();
         depthModel.close();
+        readDepthModel.close();
     }
 
     private Criteria<byte[], float[]> buildAntiSpoofCriteria() {
@@ -194,9 +204,10 @@ public class OnnxService {
 
                 double mean = sum / (H * W);
                 float variance = (float) ((sumSq / (H * W)) - (mean * mean));
+                float std = (float) Math.sqrt(variance + 1e-6f);
                 float gradScore = (float) (gradSum / ((W - 1) * H + (H - 1) * W));
 
-                return new float[]{variance, origRange, gradScore, (float) mean};
+                return new float[]{variance, origRange, gradScore, (float) mean, std};
             }
             @Override
             public Batchifier getBatchifier() { return null; }
@@ -204,7 +215,31 @@ public class OnnxService {
 
         return Criteria.builder()
                 .setTypes(byte[].class, float[].class)
-                .optModelPath(Paths.get(modelPath, "midas.onnx").toAbsolutePath())
+                .optModelPath(Paths.get(modelPath, "depth.onnx").toAbsolutePath())
+                .optEngine("OnnxRuntime")
+                .optOption("executionProvider", "CPUExecutionProvider")
+                .optOption("device", "cpu")
+                .optTranslator(translator)
+                .build();
+    }
+
+    private Criteria<float[], float[]> buildReadDepthCriteria() {
+        Translator<float[], float[]> translator = new Translator<>() {
+            @Override
+            public NDList processInput(TranslatorContext ctx, float[] input) {
+                return new NDList(ctx.getNDManager().create(input, new Shape(1, input.length)));
+            }
+            @Override
+            public float[] processOutput(TranslatorContext ctx, NDList list) {
+                return list.get(1).toFloatArray();
+            }
+            @Override
+            public Batchifier getBatchifier() { return null; }
+        };
+
+        return Criteria.builder()
+                .setTypes(float[].class, float[].class)
+                .optModelPath(Paths.get(modelPath, "read_depth.onnx").toAbsolutePath())
                 .optEngine("OnnxRuntime")
                 .optOption("executionProvider", "CPUExecutionProvider")
                 .optOption("device", "cpu")
@@ -297,10 +332,8 @@ public class OnnxService {
             float sat = hsv[1];
 
             if (sat > 0.1) {
-//                //da quá đỏ
-//                if (hue >= 0 && hue <= 15) return true;
-                //da quá vàng
-                if (hue >= 30 && hue <= 75) return true;
+                //da quá vàng đỏ hoặc vàng
+                if ((hue >= 0 && hue <= 10) || (hue >= 35 && hue <= 60)) return true;
                 //da quá xanh
                 if (hue >= 120 && hue <= 240) return true;
             }
@@ -327,13 +360,32 @@ public class OnnxService {
         return dest;
     }
 
-    public float antiSpoof(byte[] imgBytes) throws InterruptedException, TranslateException, IOException {
+    public static boolean softmax(float[] logits) {
+        double e0 = Math.exp(logits[1]);
+        double e1 = Math.exp(logits[0]);
+        double sum = e0 + e1;
+        double probReal = e0 / sum;
+        double probFake = e1 / sum;
+        return probReal > probFake;
+    }
+
+    public float antiSpoof(byte[] imgBytes) throws InterruptedException, TranslateException {
         Predictor<byte[], float[]> predictor = antiSpoofPredictorPool.take();
         try {
             float[] result = predictor.predict(imgBytes);
             return result[0];
         } finally {
             antiSpoofPredictorPool.put(predictor);
+        }
+    }
+
+    public boolean isDepthReal(float[] features) throws InterruptedException, TranslateException {
+        Predictor<float[], float[]> predictor = readDepthPredictorPool.take();
+        try {
+            float[] result = predictor.predict(features);
+            return softmax(result);
+        } finally {
+            readDepthPredictorPool.put(predictor);
         }
     }
 
@@ -346,21 +398,35 @@ public class OnnxService {
         }
     }
 
-    public boolean isDepthReal(byte[] imgBytes) throws InterruptedException, TranslateException {
+    public float[] getDepth(byte[] imgBytes) throws InterruptedException, TranslateException {
         Predictor<byte[], float[]> predictor = depthPredictorPool.take();
         try {
             float[] result = predictor.predict(imgBytes);
             System.out.println(Arrays.toString(result));
-            return result[0] > 0.06 && result[0] < 0.14
-                    && result[1] > 1900
-                    && result[2] > 0.0035
-                    && result[3] > 0.2 && result[3] < 0.8;
+            return result;
         } finally {
             depthPredictorPool.put(predictor);
         }
     }
 
-    public boolean isFake(byte[] imgBytes, double threshold) throws IOException, TranslateException, InterruptedException {
+    public boolean rule1(float[] depth) {
+        return (depth[0] > 0.06 && depth[0] < 0.14) && depth[1] > 1900 && depth[2] > 0.0035 && depth[3] > 0.2 && depth[3] < 0.8 && depth[4] > 0.25 && depth[4] <= 0.31;
+    }
+
+    public boolean rule2(float[] depth) {
+        return (depth[0] >= 0.06 && depth[0] <= 0.14) && (depth[1] >= 2100 && depth[1] <= 3000) && (depth[2] >= 0.0035 && depth[2] <= 0.005) && (depth[3] >= 0.7 && depth[3] <= 0.85) && (depth[4] >= 0.25 && depth[4] <= 0.37);
+    }
+
+    public boolean rule3(float[] depth) {
+        return (depth[0] > 0.05 && depth[0] < 0.15) && depth[1] > 2000 && depth[2] > 0.003 && depth[3] > 0.65 && depth[3] < 0.85 && depth[4] > 0.2 && depth[4] < 0.4;
+    }
+
+    public boolean rule4(float[] depth) {
+        return (depth[0] >= 0.05 && depth[0] <= 0.15) && (depth[1] >= 1800 && depth[1] <= 3000) && (depth[2] >= 0.003 && depth[2] <= 0.005) && (depth[3] >= 0.7 && depth[3] <= 0.85) && (depth[4] >= 0.25 && depth[4] <= 0.38);
+    }
+
+
+    public boolean isFake(byte[] imgBytes, double threshold) throws TranslateException, InterruptedException, IOException {
 
         if (isColorFake(imgBytes)) {
             System.out.println("isColorFake");
@@ -368,13 +434,31 @@ public class OnnxService {
         }
 
         float antiSpoof = antiSpoof(imgBytes);
-        if (antiSpoof >= 0.9) {
+        if (antiSpoof > 0.99) {
             return false;
         }
-
         System.out.println("antiSpoof: " + antiSpoof);
-        boolean isDepthReal = isDepthReal(imgBytes);
-        return antiSpoof < threshold || !isDepthReal;
+
+        float[] depth = getDepth(imgBytes);
+        float[] features = new float[depth.length + 1];
+        System.arraycopy(depth, 0, features, 0, depth.length);
+        features[depth.length] = antiSpoof;
+
+        boolean isDepthReal = isDepthReal(features);
+
+        List<Boolean> checking = new ArrayList<>();
+        checking.add(rule1(depth));
+        checking.add(rule2(depth));
+        checking.add(rule3(depth));
+        checking.add(rule4(depth));
+        checking.add(isDepthReal);
+
+        boolean isReal = checking.stream().filter(Boolean::booleanValue).count() >= 2;
+        System.out.println(checking);
+
+        boolean isFake = antiSpoof < threshold || !isReal;
+        System.out.println("=> " + (isFake ? "Fake" : "real"));
+        return isFake;
     }
 
 }

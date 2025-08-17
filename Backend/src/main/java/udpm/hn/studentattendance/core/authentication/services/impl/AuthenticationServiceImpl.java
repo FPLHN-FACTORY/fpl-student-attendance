@@ -265,10 +265,6 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 throw new RuntimeException();
             }
 
-            if (onnxService.isFake(image.getBytes(), FACE_THRESHOLD_ANTIS_POOF)) {
-                return RouterHelper.responseError("Ảnh quá mờ hoặc không thể nhận diện. Vui lòng thử lại");
-            }
-
             float[] faceEmbedding = onnxService.getEmbedding(image.getBytes());
             if (isFaceExists(sessionHelper.getFacilityId(), faceEmbedding)) {
                 return RouterHelper.responseError("Dữ liệu khuôn mặt đã tồn tại trên hệ thống");

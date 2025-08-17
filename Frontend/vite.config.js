@@ -6,6 +6,9 @@ import vueDevTools from 'vite-plugin-vue-devtools'
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd())
   return {
+    server: {
+      allowedHosts: ['client.fptudpm.site'],
+    },
     plugins: [vue(), vueDevTools()],
     resolve: {
       alias: {
