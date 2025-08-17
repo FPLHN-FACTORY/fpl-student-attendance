@@ -47,6 +47,8 @@ public class MailerHelper {
 
     public final static String TEMPLATE_UPCOMING_SCHEDULE_PLAN_DATE = "upcoming-schedule-plandate.html";
 
+    public final static String TEMPLATE_WEEKLY_SCHEDULE_REMINDER = "weekly-schedule-reminder.html";
+
     public final static String TEMPLATE_STATISTICS_DAILY = "statistics-staff.html";
 
     public final static String TEMPLATE_SUPPORT = "support.html";
