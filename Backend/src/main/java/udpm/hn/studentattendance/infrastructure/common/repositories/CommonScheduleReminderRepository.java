@@ -9,11 +9,9 @@ import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 
 import java.util.List;
 
-
 @Repository
 public interface CommonScheduleReminderRepository extends JpaRepository<PlanDate, String> {
 
-   
     @Query(value = """
                 SELECT pd
                 FROM PlanDate pd
@@ -35,7 +33,6 @@ public interface CommonScheduleReminderRepository extends JpaRepository<PlanDate
             EntityStatus status,
             EntityStatus planFactoryStatus);
 
-   
     @Query("""
                 SELECT usf
                 FROM UserStudentFactory usf
@@ -46,4 +43,19 @@ public interface CommonScheduleReminderRepository extends JpaRepository<PlanDate
                 AND usf.factory.status = :status
             """)
     List<UserStudentFactory> findStudentsByFactoryIdAndStatus(String factoryId, EntityStatus status);
+
+    @Query(value = """
+                SELECT
+                us.email_fpt
+                FROM user_staff us
+                JOIN student_attendance.role r on us.id = r.id_user_staff
+                JOIN student_attendance.factory f on us.id = f.id_user_staff
+                WHERE
+                r.code = 3
+                AND f.id = :factoryId
+                AND us.status = 1
+                AND r.status = 1
+                AND f.status = 1
+            """, nativeQuery = true)
+    List<String> findTeachersByFactoryId(String factoryId);
 }
