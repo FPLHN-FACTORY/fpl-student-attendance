@@ -148,7 +148,7 @@ public class ADStaffServiceImpl implements ADStaffService {
                 adCreateUpdateStaffRequest.getEmailFe(),
                 adCreateUpdateStaffRequest.getEmailFpt());
         if (staffExist != null) {
-            return RouterHelper.responseError("Nhân sự đã tồn tại");
+            return RouterHelper.responseError("Nhân sự đã tồn tại: " + staffExist.getName() + " - " + staffExist.getCode());
         }
 
         UserStaff staff = new UserStaff();
@@ -204,7 +204,7 @@ public class ADStaffServiceImpl implements ADStaffService {
 
         redisInvalidationHelper.invalidateAllCaches();
 
-        return RouterHelper.responseSuccess("Thêm nhân sự mới thành công");
+        return RouterHelper.responseSuccess("Thêm nhân sự mới thành công: " + staff.getName() + " - " + staff.getCode());
     }
 
     @Override

@@ -181,7 +181,7 @@ public class EXFactoryServiceImpl implements EXFactoryService {
     @Override
     public ResponseEntity<?> downloadTemplate(EXDataRequest request) {
         String filename = "template-import-factory.xlsx";
-        List<String> headers = List.of("Tên Nhóm Xưởng", "Mô Tả", "Dự Án", "Giảng Viên");
+        List<String> headers = List.of("Tên nhóm Xưởng", "Mô tả", "Dự án", "Giảng viên");
 
         var projects = projectFactoryExtendRepository.getAllProject(sessionHelper.getFacilityId());
         List<String> projectNames = projects.stream().map(p -> p.getProjectName()).collect(Collectors.toList());
@@ -239,7 +239,6 @@ public class EXFactoryServiceImpl implements EXFactoryService {
 
         final int MAX_ROWS = 100;
         Workbook workbook = new XSSFWorkbook();
-        // Bắt buộc Excel tính lại công thức khi mở
         workbook.setForceFormulaRecalculation(true);
         Sheet sheet = workbook.createSheet(sheetName);
 
@@ -266,6 +265,7 @@ public class EXFactoryServiceImpl implements EXFactoryService {
             cell.setCellStyle(headerStyle);
             sheet.setDefaultColumnStyle(i, wrapStyle);
         }
+
         // Cột ẩn lưu Project ID
         int projectIdColIdx = headers.size();
         Cell projIdHeader = headerRow.createCell(projectIdColIdx);
@@ -273,7 +273,7 @@ public class EXFactoryServiceImpl implements EXFactoryService {
         projIdHeader.setCellStyle(headerStyle);
         sheet.setDefaultColumnStyle(projectIdColIdx, wrapStyle);
 
-        // --- Dữ liệu mẫu (nếu có) ---
+        // --- Dữ liệu mẫu ---
         int rowIndex = 1;
         for (Map<String, String> rowData : data) {
             Row row = sheet.createRow(rowIndex++);
@@ -307,14 +307,16 @@ public class EXFactoryServiceImpl implements EXFactoryService {
         Name projectNameList = workbook.createName();
         projectNameList.setNameName("ProjectNameList");
         projectNameList.setRefersToFormula("DropdownData!$A$1:$A$" + projectNames.size());
+
         Name projectIdList = workbook.createName();
         projectIdList.setNameName("ProjectIdList");
         projectIdList.setRefersToFormula("DropdownData!$B$1:$B$" + projectIds.size());
+
         Name staffNameList = workbook.createName();
         staffNameList.setNameName("StaffList");
         staffNameList.setRefersToFormula("DropdownData!$C$1:$C$" + staffList.size());
 
-        // --- Thiết lập validation cho các cột ---
+        // --- Validation ---
         DataValidationHelper dvHelper = sheet.getDataValidationHelper();
 
         // 1) Project dropdown (cột C, index=2)
@@ -356,21 +358,22 @@ public class EXFactoryServiceImpl implements EXFactoryService {
             String excelRow = String.valueOf(r + 1);
             Cell pidCell = row.createCell(projectIdColIdx);
             pidCell.setCellFormula(String.format(
-                    "IF($C$%s<>\"\",VLOOKUP($C$%s,DropdownData!$A$1:$B$%d,2,FALSE),\"\")",
+                    "IF(C%s<>\"\",VLOOKUP(C%s,DropdownData!$A$1:$B$%d,2,FALSE),\"\")",
                     excelRow, excelRow, projectNames.size()));
             pidCell.setCellStyle(wrapStyle);
         }
 
-        // Ẩn cột ID và sheet phụ
+        // --- Ẩn cột ID và sheet phụ ---
         sheet.setColumnHidden(projectIdColIdx, true);
         workbook.setSheetHidden(workbook.getSheetIndex(dropdownSheet), true);
 
-        // Xuất ra mảng byte
+        // --- Xuất ra byte array ---
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
             workbook.write(baos);
             workbook.close();
             return baos.toByteArray();
         }
     }
+
 
 }
