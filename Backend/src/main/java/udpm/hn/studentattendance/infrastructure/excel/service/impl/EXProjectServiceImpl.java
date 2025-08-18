@@ -84,7 +84,7 @@ public class EXProjectServiceImpl implements EXProjectService {
 
         String nameProject = item.get("TEN_DU_AN");
         String description = item.get("MO_TA");
-        String levelRaw = item.get("CAP_DU_AN");     // "LevelName - LEVEL_CODE"
+        String levelRaw = item.get("NHOM_DU_AN");     // "LevelName - LEVEL_CODE"
         String semesterRaw = item.get("HOC_KY");        // "SEMESTER_CODE"
         String subjectRaw = item.get("MON_HOC");       // "SubjectName - SUBJECT_ID"
 
@@ -94,7 +94,7 @@ public class EXProjectServiceImpl implements EXProjectService {
             return RouterHelper.responseError(msg, HttpStatus.BAD_REQUEST);
         }
         if (levelRaw == null || levelRaw.isBlank()) {
-            String msg = "Không được để trống cấp dự án";
+            String msg = "Không được để trống nhóm dự án";
             excelHelper.saveLogError(ImportLogType.PROJECT, msg, request);
             return RouterHelper.responseError(msg, HttpStatus.BAD_REQUEST);
         }
@@ -111,7 +111,7 @@ public class EXProjectServiceImpl implements EXProjectService {
 
         String[] levelParts = levelRaw.split(" - ");
         if (levelParts.length < 2) {
-            String msg = "Định dạng cấp dự án không hợp lệ. Vui lòng chọn từ dropdown.";
+            String msg = "Định dạng nhóm dự án không hợp lệ. Vui lòng chọn từ dropdown.";
             excelHelper.saveLogError(ImportLogType.PROJECT, msg, request);
             return RouterHelper.responseError(msg, HttpStatus.BAD_REQUEST);
         }
@@ -143,7 +143,7 @@ public class EXProjectServiceImpl implements EXProjectService {
 
         LevelProject levelProject = levelProjectExtendRepository.getAllLevelProjectByCode(EntityStatus.ACTIVE, levelCode);
         if (levelProject == null) {
-            String msg = String.format("Cấp dự án '%s' không tồn tại.", levelCode);
+            String msg = String.format("Nhóm dự án '%s' không tồn tại.", levelCode);
             excelHelper.saveLogError(ImportLogType.PROJECT, msg, request);
             return RouterHelper.responseError(msg, HttpStatus.BAD_REQUEST);
         }
@@ -173,7 +173,7 @@ public class EXProjectServiceImpl implements EXProjectService {
              ByteArrayOutputStream data = new ByteArrayOutputStream()) {
             String filename =
                     "Project" + ".xlsx";
-            List<String> headers = List.of("STT", "Tên", "Cấp dự án", "Học kỳ", "Môn học", "Mô tả");
+            List<String> headers = List.of("STT", "Tên", "Nhóm dự án", "Học kỳ", "Môn học", "Mô tả");
 
             Sheet sheet = ExcelUtils.createTemplate(workbook, "Data Export", headers, new ArrayList<>());
 
@@ -210,7 +210,7 @@ public class EXProjectServiceImpl implements EXProjectService {
     @Override
     public ResponseEntity<?> downloadTemplate(EXDataRequest request) {
         String filename = "template-import-project.xlsx";
-        List<String> headers = List.of("Tên dự án", "Mô tả", "Cấp dự án", "Học kỳ", "Môn học");
+        List<String> headers = List.of("Tên dự án", "Mô tả", "Nhóm dự án", "Học kỳ", "Môn học");
 
         List<String> semesterList = semesterExtendRepository
                 .getAllSemester(EntityStatus.ACTIVE)
@@ -365,8 +365,8 @@ public class EXProjectServiceImpl implements EXProjectService {
         dv1.setSuppressDropDownArrow(true);
         dv1.setShowErrorBox(true);
         dv1.createErrorBox(
-                "Lỗi Cấp dự án",
-                "Giá trị không hợp lệ. Vui lòng chọn Cấp dự án từ danh sách, nhấn cancel và xóa giá trị sai"
+                "Lỗi nhóm dự án",
+                "Giá trị không hợp lệ. Vui lòng chọn nhóm dự án từ danh sách, nhấn cancel và xóa giá trị sai"
         );
         dv1.createPromptBox("Chọn dữ liệu", "Hãy chọn dữ liệu cho sẵn");
         sheet.addValidationData(dv1);

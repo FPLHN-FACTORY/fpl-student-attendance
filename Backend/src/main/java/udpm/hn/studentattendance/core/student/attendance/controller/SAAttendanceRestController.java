@@ -31,10 +31,11 @@ public class SAAttendanceRestController {
     public ResponseEntity<?> checkin(
             @ModelAttribute SACheckinAttendanceRequest request,
             @RequestPart(value = "image", required = false) MultipartFile image,
+            @RequestPart(value = "canvas", required = false) MultipartFile canvas,
             @RequestHeader(value = "X-Signature", required = false) String signature
     ) {
         request.setSignature(signature);
-        return saAttendanceService.checkin(request, image);
+        return saAttendanceService.checkin(request, image, canvas);
     }
 
 }

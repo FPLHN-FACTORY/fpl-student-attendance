@@ -64,7 +64,7 @@ public class STProjectManagementImpl implements STProjectManagementService {
 
         LevelProject levelProject = levelProjectRepository.findById(request.getLevelProjectId()).orElse(null);
         if (levelProject == null) {
-            return RouterHelper.responseError("Không tìm thấy cấp độ dự án");
+            return RouterHelper.responseError("Không tìm thấy nhóm dự án");
         }
 
         Semester semester = semesterRepository.findById(request.getSemesterId()).orElse(null);
@@ -124,7 +124,7 @@ public class STProjectManagementImpl implements STProjectManagementService {
 
         LevelProject levelProject = levelProjectRepository.findById(request.getLevelProjectId()).orElse(null);
         if (levelProject == null) {
-            return RouterHelper.responseError("Không tìm thấy cấp độ dự án");
+            return RouterHelper.responseError("Không tìm thấy nhóm dự án");
         }
 
         Semester semester = semesterRepository.findById(request.getSemesterId()).orElse(null);

@@ -11,12 +11,13 @@ import {
 } from '@/constants'
 import { API_ROUTES_STAFF } from '@/constants/staffConstant'
 import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
-import { API_ROUTES_EXCEL, GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
+import { API_ROUTES_EXCEL, GLOBAL_ROUTE_NAMES, WS_ROUTES } from '@/constants/routesConstant'
 import { ROUTE_NAMES } from '@/router/staffRoute'
 import { useRoute, useRouter } from 'vue-router'
 import { autoAddColumnWidth, debounce, formatDate } from '@/utils/utils'
 import useLoadingStore from '@/stores/useLoadingStore'
 import ExcelUploadButton from '@/components/excel/ExcelUploadButton.vue'
+import { Client } from '@stomp/stompjs'
 
 const route = useRoute()
 const router = useRouter()
@@ -215,9 +216,29 @@ const handleSubmitAttendance = async (item) => {
   })
 }
 
+const connectSocket = () => {
+  const client = new Client({
+    brokerURL: WS_ROUTES.SERVER_HOST,
+    reconnectDelay: 3000,
+    onConnect: (frame) => {
+      client.subscribe(WS_ROUTES.TOPIC_ATTENDANCE, (msg) => {
+        const response = JSON.parse(msg.body)
+        const idPlanDate = response?.planDateId || null
+        if (_detail.value.id != idPlanDate) {
+          return
+        }
+        fetchDataList()
+      })
+    },
+  })
+
+  client.activate()
+}
+
 onMounted(() => {
   breadcrumbStore.setRoutes(breadcrumb.value)
   fetchDataDetail()
+  connectSocket()
 })
 
 const debounceFilter = debounce(handleSubmitFilter, 100)
@@ -239,7 +260,7 @@ watch(
             <a-collapse-panel>
               <template #header><FilterFilled /> Bộ lọc ({{ countFilter }})</template>
               <div class="row g-3">
-                <div class="col-md-6 col-sm-12">
+                <div class="col-md-6 col-sm-6">
                   <div class="label-title">Từ khoá:</div>
                   <a-input
                     v-model:value="dataFilter.keyword"

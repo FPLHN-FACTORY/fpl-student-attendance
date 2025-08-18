@@ -57,9 +57,9 @@ public class ADLevelProjectManagementServiceImpl implements ADLevelProjectManage
             return RouterHelper.responseError("Nhóm dự án đã tồn tại trong hệ thống");
         }
 
-        if (!ValidateHelper.isValidFullname(request.getName())) {
-            return RouterHelper.responseError(
-                    "Tên nhóm dự án không hợp lệ: Tối thiểu 2 từ, cách nhau bởi khoảng trắng và Chỉ gồm ký tự chữ không chứa số hay ký tự đặc biệt.");
+        if (!ValidateHelper.isValidName(request.getName())) {
+            return RouterHelper
+                    .responseError("Tên không hợp lệ: Chỉ được chứa ký tự chữ, số và các ký tự đặc biệt _ - #");
         }
 
         LevelProject lv = new LevelProject();
@@ -85,9 +85,9 @@ public class ADLevelProjectManagementServiceImpl implements ADLevelProjectManage
             return RouterHelper.responseError("Nhóm dự án không tồn tại");
         }
 
-        if (!ValidateHelper.isValidFullname(request.getName())) {
-            return RouterHelper.responseError(
-                    "Tên nhóm dự án không hợp lệ: Tối thiểu 2 từ, cách nhau bởi khoảng trắng và Chỉ gồm ký tự chữ không chứa số hay ký tự đặc biệt.");
+        if (!ValidateHelper.isValidName(request.getName())) {
+            return RouterHelper
+                    .responseError("Tên không hợp lệ: Chỉ được chứa ký tự chữ, số và các ký tự đặc biệt _ - #");
         }
 
         String code = CodeGeneratorUtils.generateCodeFromString(request.getName());
@@ -108,7 +108,6 @@ public class ADLevelProjectManagementServiceImpl implements ADLevelProjectManage
         return RouterHelper.responseSuccess("Cập nhật nhóm dự án thành công", updatedLevel);
     }
 
-    // Phương thức helper để lấy thông tin chi tiết cấp độ dự án từ cache hoặc DB
     public LevelProject getLevelProjectById(String id) {
         return repository.findById(id).orElse(null);
     }

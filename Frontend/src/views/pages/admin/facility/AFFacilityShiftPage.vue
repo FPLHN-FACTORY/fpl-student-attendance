@@ -78,6 +78,8 @@ const dataFilter = reactive({
   status: null,
 })
 
+const countFilter = ref(0)
+
 const formRefAddOrUpdate = ref(null)
 
 const formData = reactive({
@@ -136,6 +138,7 @@ const fetchDataList = () => {
     .then(({ data: response }) => {
       lstData.value = response.data.data
       pagination.value.total = response.data.totalPages * pagination.value.pageSize
+      countFilter.value = response.data.totalItems
     })
     .catch((error) => {
       message.error(error?.response?.data?.message || 'Không thể tải danh sách dữ liệu')
@@ -417,7 +420,7 @@ watch(
         <a-card :bordered="false" class="cart no-body-padding">
           <a-collapse ghost>
             <a-collapse-panel>
-              <template #header><FilterFilled /> Bộ lọc</template>
+              <template #header><FilterFilled /> Bộ lọc ({{ countFilter }})</template>
               <div class="row g-3">
                 <div class="col-lg-6 col-md-6 col-sm-6">
                   <div class="label-title">Ca:</div>
@@ -485,7 +488,6 @@ watch(
               @change="handleTableChange"
             >
               <template #bodyCell="{ column, record, index }">
-      
                 <template v-if="column.dataIndex === 'shift'">
                   <a-tag color="purple"> Ca {{ record.shift }} </a-tag>
                 </template>

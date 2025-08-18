@@ -72,9 +72,6 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     @Value("${app.config.face.threshold_register}")
     private double FACE_THRESHOLD_REGISTER;
 
-    @Value("${app.config.face.threshold_antispoof}")
-    private double FACE_THRESHOLD_ANTIS_POOF;
-
     @Override
     public RedirectView authorSwitch(String role, String redirectUri, String facilityId) {
         httpSession.setAttribute(SessionConstant.LOGIN_ROLE, role);
@@ -207,10 +204,6 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 throw new RuntimeException();
             }
 
-            if (onnxService.isFake(image.getBytes(), FACE_THRESHOLD_ANTIS_POOF)) {
-                return RouterHelper.responseError("Ảnh quá mờ hoặc không thể nhận diện. Vui lòng thử lại");
-            }
-
             float[] faceEmbedding = onnxService.getEmbedding(image.getBytes());
 
             if (isFaceExists(facility.getId(), faceEmbedding)) {
@@ -263,10 +256,6 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         try {
             if (image == null || image.isEmpty()) {
                 throw new RuntimeException();
-            }
-
-            if (onnxService.isFake(image.getBytes(), FACE_THRESHOLD_ANTIS_POOF)) {
-                return RouterHelper.responseError("Ảnh quá mờ hoặc không thể nhận diện. Vui lòng thử lại");
             }
 
             float[] faceEmbedding = onnxService.getEmbedding(image.getBytes());

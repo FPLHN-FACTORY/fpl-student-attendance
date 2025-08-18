@@ -9,6 +9,6 @@ public interface SAAttendanceService {
 
     ResponseEntity<?> getAllList(SAFilterAttendanceRequest request);
 
-    ResponseEntity<?> checkin(SACheckinAttendanceRequest request, MultipartFile image);
+    ResponseEntity<?> checkin(SACheckinAttendanceRequest request, MultipartFile image, MultipartFile canvas);
 
 }
