@@ -13,9 +13,9 @@ const THRESHOLD_P = 0.2
 const THRESHOLD_X = 0.1
 const THRESHOLD_Y = 0.12
 const THRESHOLD_EMOTIONS = 0.8
-const MIN_BRIGHTNESS = isMobile ? 40 : 50
-const MAX_BRIGHTNESS = isMobile ? 70 : 95
-const THRESHOLD_LIGHT = 40
+const MIN_BRIGHTNESS = isMobile ? 100 : 140
+const MAX_BRIGHTNESS = isMobile ? 160 : 200
+const THRESHOLD_LIGHT = 45
 const SIZE_CAMERA = 480
 const SKIP_FRAME = 5
 const CHECK_DISTANCE = true
@@ -212,11 +212,11 @@ const useFaceIDStore = defineStore('faceID', () => {
       }
     }
 
+    ort.env.wasm.wasmPaths = {
+      'ort-wasm-simd.wasm': '/models/wasm/ort-wasm-simd.wasm',
+      'ort-wasm-simd-threaded.wasm': '/models/wasm/ort-wasm-simd-threaded.wasm',
+    }
     const loadLivenessModel = async () => {
-      ort.env.wasm.wasmPaths = {
-        'ort-wasm-simd.wasm': '/models/wasm/ort-wasm-simd.wasm',
-        'ort-wasm-simd-threaded.wasm': '/models/wasm/ort-wasm-simd-threaded.wasm',
-      }
       await ort.InferenceSession.create('/models/liveness.onnx', {
         executionProviders: ['wasm'],
       }).then((session) => {
@@ -251,68 +251,73 @@ const useFaceIDStore = defineStore('faceID', () => {
     const aX = axis.value.querySelectorAll('.a-x > div')
     const aY = axis.value.querySelectorAll('.a-y > div')
 
-    const getAverageBrightness = async (imageData) => {
-      const padding = 70
-      const width = canvas.value.width - 2 * padding
-      const height = canvas.value.height - 2 * padding
+    const getDataImageWithoutPadding = (
+      paddingTop = 0,
+      paddingRight = 0,
+      paddingBottom = 0,
+      paddingLeft = 0,
+    ) => {
+      const width = canvas.value.width - paddingLeft - paddingRight
+      const height = canvas.value.height - paddingTop - paddingBottom
 
       const tmpCanvas = document.createElement('canvas')
       tmpCanvas.width = width
       tmpCanvas.height = height
       const tmpCtx = tmpCanvas.getContext('2d')
-      tmpCtx.putImageData(imageData, -padding, -padding)
 
-      const crop = tmpCtx.getImageData(0, 0, width, height)
-      const data = crop.data
+      tmpCtx.drawImage(canvas.value, paddingLeft, paddingTop, width, height, 0, 0, width, height)
+
+      return tmpCtx.getImageData(0, 0, width, height)
+    }
+
+    const getHalfImageData = async () => {
+      const image = getDataImageWithoutPadding(0, 70, 150, 70)
+      const width = image.width
+      const height = image.height
+      const halfWidth = Math.floor(width / 2)
+
+      const tmpCanvas = document.createElement('canvas')
+      tmpCanvas.width = width
+      tmpCanvas.height = height
+      const tmpCtx = tmpCanvas.getContext('2d')
+      tmpCtx.putImageData(image, 0, 0)
+
+      const leftImageData = tmpCtx.getImageData(0, 0, halfWidth, height)
+      const rightImageData = tmpCtx.getImageData(halfWidth, 0, width - halfWidth, height)
+
+      const brightnessLeft = await getAverageBrightness(leftImageData)
+      const brightnessRight = await getAverageBrightness(rightImageData)
+
+      return {
+        leftImageData,
+        rightImageData,
+        brightnessLeft,
+        brightnessRight,
+      }
+    }
+
+    const getAverageBrightness = async (image) => {
+      const data = image.data
       let sum = 0
 
       for (let i = 0; i < data.length; i += 4) {
-        const avg = (data[i] + data[i + 1] + data[i + 2]) / 3
-        sum += avg
+        const brightness = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2]
+        sum += brightness
       }
 
-      return sum / (imageData.width * imageData.height)
+      return sum / (image.width * image.height)
     }
 
-    const isLightBalance = async () => {
-      const width = canvas.value.width
-      const height = canvas.value.height
-      const halfWidth = Math.floor(width / 2)
-
-      const leftData = ctx.getImageData(0, 0, halfWidth, height)
-      const rightData = ctx.getImageData(halfWidth, 0, width - halfWidth, height)
-
-      const brightnessLeft = await getAverageBrightness(leftData)
-      const brightnessRight = await getAverageBrightness(rightData)
-
+    const isLightBalance = async ({ brightnessLeft, brightnessRight }) => {
       const brightnessDiff = Math.abs(brightnessLeft - brightnessRight)
       return brightnessDiff <= THRESHOLD_LIGHT
     }
 
-    const isLightTooDark = async () => {
-      const width = canvas.value.width
-      const height = canvas.value.height
-      const halfWidth = Math.floor(width / 2)
-
-      const leftData = ctx.getImageData(0, 0, halfWidth, height)
-      const rightData = ctx.getImageData(halfWidth, 0, width - halfWidth, height)
-
-      const brightnessLeft = await getAverageBrightness(leftData)
-      const brightnessRight = await getAverageBrightness(rightData)
+    const isLightTooDark = async ({ brightnessLeft, brightnessRight }) => {
       return brightnessLeft < MIN_BRIGHTNESS || brightnessRight < MIN_BRIGHTNESS
     }
 
-    const isLightTooBright = async () => {
-      const width = canvas.value.width
-      const height = canvas.value.height
-      const halfWidth = Math.floor(width / 2)
-
-      const leftData = ctx.getImageData(0, 0, halfWidth, height)
-      const rightData = ctx.getImageData(halfWidth, 0, width - halfWidth, height)
-
-      const brightnessLeft = await getAverageBrightness(leftData)
-      const brightnessRight = await getAverageBrightness(rightData)
-
+    const isLightTooBright = async ({ brightnessLeft, brightnessRight }) => {
       return brightnessLeft > MAX_BRIGHTNESS || brightnessRight > MAX_BRIGHTNESS
     }
 
@@ -483,10 +488,17 @@ const useFaceIDStore = defineStore('faceID', () => {
         !face ||
         !(await cropFace(face)) ||
         !isInsideCenter(face.boxRaw) ||
-        (await isInvalidSize(face)) ||
-        !(await isLightBalance()) ||
-        (await isLightTooBright()) ||
-        (await isLightTooDark())
+        (await isInvalidSize(face))
+      ) {
+        return []
+      }
+
+      const halfImageData = await getHalfImageData()
+
+      if (
+        !(await isLightBalance(halfImageData)) ||
+        (await isLightTooBright(halfImageData)) ||
+        (await isLightTooDark(halfImageData))
       ) {
         return []
       }
@@ -663,7 +675,7 @@ const useFaceIDStore = defineStore('faceID', () => {
       return null
     }
 
-    const preprocessLiveness = (imageData) => {
+    const preprocessOnnx = (imageData) => {
       const { width, height, data } = imageData
       const channels = 3
       const preprocessed = new Float32Array(1 * channels * height * width)
@@ -698,23 +710,27 @@ const useFaceIDStore = defineStore('faceID', () => {
       })
     }
 
-    const predictLiveness = async () => {
+    const createFeeds = async (size) => {
       const tmpCanvas = document.createElement('canvas')
-      tmpCanvas.width = 128
-      tmpCanvas.height = 128
+      tmpCanvas.width = size
+      tmpCanvas.height = size
       const tmpCtx = tmpCanvas.getContext('2d')
-      tmpCtx.drawImage(canvas.value, 0, 0, 128, 128)
-      const faceImageData = tmpCtx.getImageData(0, 0, 128, 128)
-      const input_image = preprocessLiveness(faceImageData)
+      tmpCtx.drawImage(canvas.value, 0, 0, size, size)
+      const faceImageData = tmpCtx.getImageData(0, 0, size, size)
+      const input_image = preprocessOnnx(faceImageData)
 
-      const input_tensor = new ort.Tensor(
-        'float32',
-        new Float32Array(128 * 128 * 3),
-        [1, 3, 128, 128],
-      )
+      const input_tensor = new ort.Tensor('float32', new Float32Array(size * size * 3), [
+        1,
+        3,
+        size,
+        size,
+      ])
       input_tensor.data.set(input_image.data)
-      const feeds = { input: input_tensor }
+      return { input: input_tensor }
+    }
 
+    const predictLiveness = async () => {
+      const feeds = await createFeeds(128)
       const output_tensor = await livenessModel.run(feeds)
       return softmax(output_tensor['output'].data)
     }
@@ -764,7 +780,6 @@ const useFaceIDStore = defineStore('faceID', () => {
       const faceBoxRaw = detection.boxRaw
 
       const angle = await getFaceAngle()
-
       if (!(await cropFace(detection))) {
         return
       }
@@ -789,16 +804,14 @@ const useFaceIDStore = defineStore('faceID', () => {
       }
 
       if (isFullStep || (!isFullStep && (step.value === 0 || step.value === 3))) {
-        if (await isLightTooDark()) {
-          return renderTextStep('Camera quá tối, Vui lòng tăng độ sáng')
-        }
+        const halfImageData = await getHalfImageData()
 
-        if (await isLightTooBright()) {
-          return renderTextStep('Camera quá sáng, Vui lòng giảm độ sáng')
-        }
-
-        if (!(await isLightBalance())) {
+        if (!(await isLightBalance(halfImageData))) {
           return renderTextStep('Ánh sáng không đều. Vui lòng thử lại')
+        } else if (await isLightTooDark(halfImageData)) {
+          return renderTextStep('Camera quá tối, Vui lòng tăng độ sáng')
+        } else if (await isLightTooBright(halfImageData)) {
+          return renderTextStep('Camera quá sáng, Vui lòng giảm độ sáng')
         }
 
         const { pitch, roll } = detection.rotation?.angle || {}
