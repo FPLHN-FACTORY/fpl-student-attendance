@@ -175,4 +175,5 @@ public class EXStudentServiceImpl implements EXStudentService {
         List<ExImportLogDetailResponse> data = importLogDetailRepository.getAllList(id, sessionHelper.getUserId(), sessionHelper.getFacilityId());
         return RouterHelper.responseSuccess("Lấy danh sách dữ liệu thành công", data);
     }
+
 }

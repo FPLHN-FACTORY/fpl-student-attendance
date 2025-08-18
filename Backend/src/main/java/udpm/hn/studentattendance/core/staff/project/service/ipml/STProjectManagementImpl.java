@@ -101,7 +101,7 @@ public class STProjectManagementImpl implements STProjectManagementService {
         }
         projectManagementRepository.save(project);
         userActivityLogHelper.saveLog("vừa thêm 1 dự án mới: " + project.getName());
-        return RouterHelper.responseSuccess("Thêm dự án thành công", project);
+        return RouterHelper.responseSuccess("Thêm mới dự án thành công: " + project.getName(), project);
     }
 
     @Override

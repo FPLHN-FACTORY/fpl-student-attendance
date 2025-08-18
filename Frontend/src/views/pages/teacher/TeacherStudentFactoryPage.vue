@@ -138,8 +138,7 @@ const fetchStudentFactory = () => {
       students.value = result.data
       // Nếu API trả về tổng số trang, sử dụng:
       pagination.total = result.totalItems
-      // Nếu trả về tổng số bản ghi, thay thế bằng: pagination.total = result.totalRecords
-      pagination.current = filter.page
+
       countFilter.value = result.totalItems
     })
     .catch((error) => {

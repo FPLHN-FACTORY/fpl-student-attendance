@@ -171,7 +171,6 @@ const fetchTeachingSchedule = () => {
       const result = response.data.data
       teachingScheduleRecords.value = result.data
       pagination.value.total = result.totalItems
-      pagination.value.current = filter.page
       countFilter.value = result.totalItems
     })
     .catch((error) => {
