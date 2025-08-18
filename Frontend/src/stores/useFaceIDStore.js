@@ -17,12 +17,11 @@ const MIN_BRIGHTNESS = isMobile ? 100 : 140
 const MAX_BRIGHTNESS = isMobile ? 160 : 200
 const THRESHOLD_LIGHT = 45
 const SIZE_CAMERA = 480
-const SKIP_FRAME = 5
+const SKIP_FRAME = 30
 const CHECK_DISTANCE = true
 
 const useFaceIDStore = defineStore('faceID', () => {
   let isFullStep = false
-  let isLongerDistance = false
   let video = null
   let canvas = null
   let axis = null
@@ -100,10 +99,6 @@ const useFaceIDStore = defineStore('faceID', () => {
 
   const setCallback = (callback) => {
     onSuccess = callback
-  }
-
-  const setLongerDistance = (type) => {
-    isLongerDistance = type
   }
 
   const toDegrees = (rad) => rad * (180 / Math.PI)
@@ -251,7 +246,7 @@ const useFaceIDStore = defineStore('faceID', () => {
     const aX = axis.value.querySelectorAll('.a-x > div')
     const aY = axis.value.querySelectorAll('.a-y > div')
 
-    const getDataImageWithoutPadding = (
+    const getDataImageWithoutPadding = async (
       paddingTop = 0,
       paddingRight = 0,
       paddingBottom = 0,
@@ -271,7 +266,7 @@ const useFaceIDStore = defineStore('faceID', () => {
     }
 
     const getHalfImageData = async () => {
-      const image = getDataImageWithoutPadding(0, 70, 150, 70)
+      const image = await getDataImageWithoutPadding(0, 70, 150, 70)
       const width = image.width
       const height = image.height
       const halfWidth = Math.floor(width / 2)
@@ -301,8 +296,8 @@ const useFaceIDStore = defineStore('faceID', () => {
       let sum = 0
 
       for (let i = 0; i < data.length; i += 4) {
-        const brightness = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2]
-        sum += brightness
+        const avg = (data[i] + data[i + 1] + data[i + 2]) / 3
+        sum += avg
       }
 
       return sum / (image.width * image.height)
@@ -661,8 +656,8 @@ const useFaceIDStore = defineStore('faceID', () => {
       const videoArea = video.value.videoWidth * video.value.videoHeight
       const ratio = faceArea / videoArea
 
-      const min = isLongerDistance === true ? 0.4 : 0.5
-      const max = isLongerDistance === true ? 0.6 : 0.7
+      const min = 0.5
+      const max = 0.7
 
       if (ratio < min) {
         return 'Vui lòng đưa mặt lại gần hơn'
@@ -806,32 +801,14 @@ const useFaceIDStore = defineStore('faceID', () => {
       if (isFullStep || (!isFullStep && (step.value === 0 || step.value === 3))) {
         const halfImageData = await getHalfImageData()
 
-        if (!(await isLightBalance(halfImageData))) {
-          return renderTextStep('Ánh sáng không đều. Vui lòng thử lại')
-        } else if (await isLightTooDark(halfImageData)) {
+        if (await isLightTooDark(halfImageData)) {
           return renderTextStep('Camera quá tối, Vui lòng tăng độ sáng')
-        } else if (await isLightTooBright(halfImageData)) {
+        }
+        if (await isLightTooBright(halfImageData)) {
           return renderTextStep('Camera quá sáng, Vui lòng giảm độ sáng')
         }
-
-        const { pitch, roll } = detection.rotation?.angle || {}
-
-        if (
-          human.result.gesture.some((o) => o.gesture.includes('head up')) &&
-          Math.abs(pitch) > 0.2
-        ) {
-          return renderTextStep('Vui lòng không ngẩng mặt')
-        }
-
-        if (
-          human.result.gesture.some((o) => o.gesture.includes('head down')) &&
-          Math.abs(pitch) > 0.2
-        ) {
-          return renderTextStep('Vui lòng không cúi mặt')
-        }
-
-        if (Math.abs(roll) > 0.07) {
-          return renderTextStep('Vui lòng không nghiêng đầu')
+        if (!(await isLightBalance(halfImageData))) {
+          return renderTextStep('Ánh sáng không đều. Vui lòng thử lại')
         }
       }
 
@@ -896,10 +873,12 @@ const useFaceIDStore = defineStore('faceID', () => {
             return renderTextStep()
           }
           if (step.value === 1 && angle === -1 && isReal) {
+            await delay(500)
             step.value = 2
             return renderTextStep()
           }
           if (step.value === 2 && angle === 1 && isReal) {
+            await delay(500)
             step.value = 3
             renderTextStep()
             return await delay(2000)
@@ -978,7 +957,6 @@ const useFaceIDStore = defineStore('faceID', () => {
     setup,
     setFullStep,
     setCallback,
-    setLongerDistance,
     setShowError,
     loadModels,
     startVideo,
