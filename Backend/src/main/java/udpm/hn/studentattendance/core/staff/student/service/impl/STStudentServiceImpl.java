@@ -147,7 +147,7 @@ public class STStudentServiceImpl implements STStudentService {
         // Invalidate all caches
         redisInvalidationHelper.invalidateAllCaches();
 
-        return RouterHelper.responseSuccess("Thêm sinh viên mới thành công", saveUserStudent);
+        return RouterHelper.responseSuccess("Thêm sinh viên mới thành công: " + saveUserStudent.getName() + " - " + saveUserStudent.getCode(), saveUserStudent);
     }
 
     @Override
