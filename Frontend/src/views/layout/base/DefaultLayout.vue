@@ -12,6 +12,7 @@ import {
   EyeOutlined,
   EyeInvisibleOutlined,
   SettingOutlined,
+  CustomerServiceOutlined,
 } from '@ant-design/icons-vue'
 import imgLogoUdpm from '@/assets/images/logo-udpm.png'
 import useAuthStore from '@/stores/useAuthStore'
@@ -39,6 +40,10 @@ const route = useRoute()
 
 const screenWidth = ref(window.innerWidth)
 const screenHeight = ref(window.innerHeight)
+
+const support = reactive({
+  isShow: false,
+})
 
 const collapsed = ref(false)
 const authStore = useAuthStore()
@@ -598,6 +603,10 @@ watch(
                   <SettingOutlined />
                   <span class="ms-2">Cài đặt hệ thống</span>
                 </a-menu-item>
+                <a-menu-item key="support" @click="() => (support.isShow = true)">
+                  <CustomerServiceOutlined />
+                  <span class="ms-2">Gửi yêu cầu hỗ trợ</span>
+                </a-menu-item>
                 <a-menu-item key="logout" @click="handleLogout()">
                   <LogoutOutlined />
                   <span class="ms-2">Đăng xuất</span>
@@ -624,8 +633,9 @@ watch(
           </template>
         </a-breadcrumb>
         <router-view />
+
         <ExcelUploadList />
-        <SupportButton />
+        <SupportButton v-model:show="support" />
       </a-layout-content>
     </a-layout>
   </a-layout>

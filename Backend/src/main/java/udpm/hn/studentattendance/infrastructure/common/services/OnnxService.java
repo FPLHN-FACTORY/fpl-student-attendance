@@ -41,7 +41,7 @@ public class OnnxService {
     private static final int SIZE_ANTISPOOF = 224;
     private static final int SIZE_ANTISPOOF2 = 112;
     private static final int SIZE_ANTISPOOF3 = 256;
-    private static final int SIZE_ANTISPOOF4 = 128;
+    private static final int SIZE_ANTISPOOF4 = 224;
     private static final int SIZE_ANTISPOOF5 = 224;
     private static final int SIZE_ARCFACE = 112;
 
@@ -206,7 +206,7 @@ public class OnnxService {
 
         return Criteria.builder()
                 .setTypes(byte[].class, float[].class)
-                .optModelPath(Paths.get(modelPath, "AntiSpoofing_bin_1.5_128.onnx").toAbsolutePath())
+                .optModelPath(Paths.get(modelPath, "model_quantized.onnx").toAbsolutePath())
                 .optEngine("OnnxRuntime")
                 .optOption("executionProvider", "CPUExecutionProvider")
                 .optOption("device", "cpu")
@@ -408,7 +408,7 @@ public class OnnxService {
         try {
             float[] result = predictor.predict(imgBytes);
             float[] softmax = softmax(result);
-            return softmax[1];
+            return softmax[0];
         } finally {
             antiSpoof2PredictorPool.put(predictor);
         }
@@ -430,7 +430,7 @@ public class OnnxService {
         try {
             float[] result = predictor.predict(imgBytes);
             float[] softmax = softmax(result);
-            return softmax[0];
+            return softmax[1];
         } finally {
             antiSpoof4PredictorPool.put(predictor);
         }
@@ -458,7 +458,8 @@ public class OnnxService {
     public boolean isFake(byte[] faceBox, byte[] canvas)  {
         try {
             if (isColorFake(faceBox)) {
-                return true;
+                System.out.println("isColorFake");
+//                return true;
             }
 
             float antiSpoof = antiSpoof(faceBox);
@@ -469,14 +470,21 @@ public class OnnxService {
 
             List<Boolean> checking = new ArrayList<>();
             checking.add(antiSpoof < 0.01);
-            checking.add(antiSpoof2 < 0.7);
-            checking.add(antiSpoof3 < 0.7);
-            checking.add(antiSpoof4 < 0.7);
-            checking.add(antiSpoof5 > 0.5);
+            checking.add(antiSpoof2 < 0.65);
+            checking.add(antiSpoof3 < 0.6);
+            checking.add(antiSpoof4 < 0.6);
+            checking.add(antiSpoof5 < 0.6);
 
+            System.out.println("antiSpoof: " + antiSpoof);
+            System.out.println("antiSpoof2: " + antiSpoof2);
+            System.out.println("antiSpoof3: " + antiSpoof3);
+            System.out.println("antiSpoof4: " + antiSpoof4);
+            System.out.println("antiSpoof5: " + antiSpoof5);
+
+            System.out.println(checking);
             long totalReject = checking.stream().filter(Boolean::booleanValue).count();
 
-            if (antiSpoof > 0.999 && totalReject < 4) {
+            if (antiSpoof > 0.99 && totalReject < 3) {
                 return false;
             }
             return totalReject > 2;
