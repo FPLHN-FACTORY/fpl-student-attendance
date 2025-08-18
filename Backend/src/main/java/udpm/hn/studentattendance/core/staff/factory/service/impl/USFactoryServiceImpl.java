@@ -149,7 +149,6 @@ public class USFactoryServiceImpl implements USFactoryService {
     @Override
     public ResponseEntity<?> createFactory(USFactoryCreateUpdateRequest factoryCreateUpdateRequest) {
 
-
         Optional<UserStaff> userStaff = staffFactoryExtendRepository
                 .findById(factoryCreateUpdateRequest.getIdUserStaff());
         Optional<Project> project = projectFactoryExtendRepository
@@ -198,7 +197,7 @@ public class USFactoryServiceImpl implements USFactoryService {
         // Invalidate all caches
         redisInvalidationHelper.invalidateAllCaches();
 
-        return RouterHelper.responseSuccess("Thêm nhóm xưởng mới thành công", saveFactory);
+        return RouterHelper.responseSuccess("Thêm mới nhóm xưởng thành công: " + saveFactory.getName(), saveFactory);
     }
 
     @Override

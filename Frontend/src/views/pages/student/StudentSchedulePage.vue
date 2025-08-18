@@ -76,7 +76,6 @@ const fetchAttendanceList = () => {
     .then(({ data }) => {
       attendanceList.value = data.data.data
       pagination.value.total = data.data.totalItems
-      pagination.value.current = filter.page
       countFilter.value = data.data.totalItems
     })
     .catch((error) => {
@@ -227,8 +226,6 @@ const exportToPDF = () => {
 
 const handleClearFilter = () => {
   filter.plan = 7
-  filter.page = 1
-  // Không reset về trang 1 khi hủy lọc để giữ nguyên dữ liệu hiện tại
   fetchAttendanceList()
 }
 
