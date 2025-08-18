@@ -108,27 +108,27 @@ public class EXStaffServiceImpl implements EXStaffService {
 
         Facility facility = facilityRepository.getFacilityByCodeAndStatus(facilityCode, EntityStatus.ACTIVE);
 
-        String code = item.get("MA_NHAN_VIEN");
+        String code = item.get("MA_NHAN_SU");
         if (code == null || code.trim().isEmpty()) {
-            String msg = "Không được để trống mã nhân viên";
+            String msg = "Không được để trống mã nhân sự";
             excelHelper.saveLogError(ImportLogType.STAFF, msg, request);
             return RouterHelper.responseError(msg, HttpStatus.BAD_REQUEST);
         }
-        String nameStaff = item.get("TEN_NHAN_VIEN");
+        String nameStaff = item.get("TEN_NHAN_SU");
         if (nameStaff == null || nameStaff.trim().isEmpty()) {
-            String msg = "Không được để trống tên nhân viên";
+            String msg = "Không được để trống tên nhân sự";
             excelHelper.saveLogError(ImportLogType.STAFF, msg, request);
             return RouterHelper.responseError(msg, HttpStatus.BAD_REQUEST);
         }
         String emailFe = item.get("EMAIL_FE");
         if (emailFe == null || emailFe.trim().isEmpty()) {
-            String msg = "Không được để trống email fe của nhân viên";
+            String msg = "Không được để trống email fe của nhân sự";
             excelHelper.saveLogError(ImportLogType.STAFF, msg, request);
             return RouterHelper.responseError(msg, HttpStatus.BAD_REQUEST);
         }
         String emailFpt = item.get("EMAIL_FPT");
         if (emailFpt == null || emailFpt.trim().isEmpty()) {
-            String msg = "Không được để trống email fpt của nhân viên";
+            String msg = "Không được để trống email fpt của nhân sự";
             excelHelper.saveLogError(ImportLogType.STAFF, msg, request);
             return RouterHelper.responseError(msg, HttpStatus.BAD_REQUEST);
         }
@@ -216,7 +216,7 @@ public class EXStaffServiceImpl implements EXStaffService {
     @Override
     public ResponseEntity<?> downloadTemplate(EXDataRequest request) {
         String filename = "template-import-staff.xlsx";
-        List<String> headers = List.of("Mã Nhân Viên", "Tên Nhân Viên", "Email Fe", "Email Fpt", "Vai Trò", "Cơ Sở");
+        List<String> headers = List.of("Mã nhân sự", "Tên nhân sự", "Email Fe", "Email Fpt", "Vai trò", "Cơ sở");
 
         List<String> baseRoleList = Arrays.stream(RoleConstant.values())
                 .filter(r -> r != RoleConstant.STUDENT && r != RoleConstant.ADMIN)

@@ -217,7 +217,7 @@ public class ADStaffServiceImpl implements ADStaffService {
 
         if (!ValidateHelper.isValidFullname(adCreateUpdateStaffRequest.getName())) {
             return RouterHelper.responseError(
-                    "Tên nhân sự không hợp lệ: Tối thiểu 2 từ, cách nhau bởi khoảng trắng và Chỉ gồm ký tự chữ không chứa số hay ký tự đặc biệt.");
+                    "Tên nhân sự không hợp lệ: Tối thiểu 2 từ, cách nhau bởi khoảng trắng và chỉ gồm ký tự chữ không chứa số hay ký tự đặc biệt.");
         }
 
         Optional<UserStaff> opt = adStaffRepository.findById(id);
