@@ -107,7 +107,6 @@ const fetchStudentFactories = () => {
       } else {
         pagination.total = result.totalItems
       }
-      pagination.current = filter.page
       countFilter.value = result.totalItems
     })
     .catch((error) => {
