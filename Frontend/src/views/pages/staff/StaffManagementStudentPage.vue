@@ -97,9 +97,6 @@ const fetchStudents = async () => {
     size: pagination.pageSize,
   }
 
-
-  console.log('Fetching students with params:', params)
-
   try {
     const [stuRes, faceRes] = await Promise.all([
       requestAPI.get(API_ROUTES_STAFF.FETCH_DATA_STUDENT, { params }),
@@ -156,7 +153,6 @@ const handleFaceChange = () => {
   pagination.current = 1
   fetchStudents()
 }
-
 
 const handleAddStudent = () => {
   const validation = validateFormSubmission(newStudent, [
@@ -424,11 +420,13 @@ onMounted(() => {
                   </a-select>
                 </div>
                 <div class="col-md-3 col-sm-12">
-                  <div class="label-title">Đăng Ký FaceID: </div>
-                  <a-select v-model:value="filter.isHasFace"
-                  placeholder="-- Tất cả --"
-                  class="w-100"
-                  @change="handleFaceChange">
+                  <div class="label-title">Đăng Ký FaceID:</div>
+                  <a-select
+                    v-model:value="filter.isHasFace"
+                    placeholder="-- Tất cả --"
+                    class="w-100"
+                    @change="handleFaceChange"
+                  >
                     <a-select-option :value="null">-- Tất cả --</a-select-option>
                     <a-select-option :value="true">Đã đăng ký</a-select-option>
                     <a-select-option :value="false">Chưa đăng ký</a-select-option>

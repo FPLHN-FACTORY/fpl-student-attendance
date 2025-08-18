@@ -25,7 +25,6 @@ const breadcrumb = ref([
   { name: ROUTE_NAMES.MANAGEMENT_STUDENT_ATTENDANCE, breadcrumbName: 'Điểm danh' },
 ])
 
-
 const students = ref([])
 
 const columns = ref(
@@ -122,12 +121,16 @@ const connectSocket = () => {
         if (planDateId != idPlanDate) {
           return
         }
-        const student = students.value.find((o) => o.userStudentId === response?.userStudentId)
+
+        const student = students.value.find((o) => o.id === response?.userStudentId)
         if (!student) {
           return
         }
-
-        student.status = ATTENDANCE_STATUS.PRESENT.id
+        student.idAttendance = response.attendance.id
+        student.status = ATTENDANCE_STATUS[response.attendance.attendanceStatus].id
+        student.updatedAt = response.attendance.updatedAt
+        student.createdAt = response.attendance.createdAt
+        student._tmpStatus = student.status
       })
     },
   })

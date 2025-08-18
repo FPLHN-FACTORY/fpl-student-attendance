@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import udpm.hn.studentattendance.entities.Attendance;
 
 @Setter
 @Getter
@@ -14,5 +15,7 @@ public class AttendanceMessage {
     private String userStudentId;
 
     private String planDateId;
+
+    private Attendance attendance;
 
 }

@@ -148,7 +148,7 @@ const handleShowLog = (item) => {
   position: fixed;
   bottom: 0;
   right: 14px;
-  z-index: 99;
+  z-index: 999;
   width: 400px;
   max-width: 100%;
   background: #fff;

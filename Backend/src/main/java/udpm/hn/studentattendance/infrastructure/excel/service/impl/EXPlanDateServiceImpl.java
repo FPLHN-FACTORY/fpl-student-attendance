@@ -130,13 +130,12 @@ public class EXPlanDateServiceImpl implements EXPlanDateService {
         addOrUpdatePlanDateRequest.setIdPlanFactory(idPlanFactory);
 
         String ngayDienRa = item.get("NGAY_DIEN_RA");
-        String caBatDau = item.get("CA_BAT_DAU");
-        String caKetThuc = item.get("CA_KET_THUC");
-        String hinhThucHoc = item.get("HINH_THUC_HOC");
+        String ca = item.get("CA");
+        String hinhThucHoc = item.get("HINH_THUC");
         String diemDanhMuonToiDa = item.get("DIEM_DANH_MUON_TOI_DA");
-        String noiDungBuoiHoc = item.get("NOI_DUNG_BUOI_HOC");
-        String linkHocOnline = item.get("LINK_HOC_ONLINE");
-        String phongHoc = item.get("PHONG_HOC");
+        String noiDungBuoiHoc = item.get("NOI_DUNG");
+        String linkHocOnline = item.get("LINK_ONLINE");
+        String phongHoc = item.get("PHONG");
         String checkIp = item.get("CHECK_IP");
         String checkDiaDiem = item.get("CHECK_DIA_DIEM");
         String yeuCauCheckin = item.get("YEU_CAU_CHECKIN");
@@ -155,17 +154,12 @@ public class EXPlanDateServiceImpl implements EXPlanDateService {
         }
 
         try {
-            int startShift = Integer.parseInt(caBatDau);
-            int endShift = Integer.parseInt(caKetThuc);
-            if (endShift < startShift) {
-                return error("Ca kết thúc phải lớn hơn ca bắt đầu", caBatDau + " - " + caKetThuc, request);
-            }
-
-            addOrUpdatePlanDateRequest.setShift(IntStream.rangeClosed(startShift, endShift)
-                    .boxed()
-                    .collect(Collectors.toList()));
+            int shift = Integer.parseInt(ca);
+            List<Integer> lstShift = new ArrayList<>();
+            lstShift.add(shift);
+            addOrUpdatePlanDateRequest.setShift(lstShift);
         } catch (Exception e) {
-            return error("Ca không hợp lệ (1, 2, 3, ...)", caBatDau + " - " + caKetThuc, request);
+            return error("Ca không hợp lệ (1, 2, 3, ...)", ca, request);
         }
 
         try {
@@ -258,8 +252,8 @@ public class EXPlanDateServiceImpl implements EXPlanDateService {
         try (Workbook workbook = new XSSFWorkbook();
                 ByteArrayOutputStream data = new ByteArrayOutputStream()) {
             String filename = "template-import-plan-date.xlsx";
-            List<String> headers = List.of("Ngày diễn ra", "Hình thức", "Ca bắt đầu", "Ca kết thúc",
-                    "Điểm danh muộn tối đa", "Nội dung buổi", "Link online", "Phòng", "Check IP", "Check địa điểm",
+            List<String> headers = List.of("Ngày diễn ra", "Hình thức", "Ca",
+                    "Điểm danh muộn tối đa", "Nội dung", "Link online", "Phòng", "Check IP", "Check địa điểm",
                     "Yêu cầu checkin", "Yêu cầu checkout");
 
             int firstRow = 1;
@@ -275,11 +269,10 @@ public class EXPlanDateServiceImpl implements EXPlanDateService {
             ExcelUtils.addDateValidation(templateSheet, firstRow, lastRow, 0, "dd/MM/yyyy", "01/01/1900", "31/12/9999");
             ExcelUtils.addListValidation(templateSheet, firstRow, lastRow, 1, lstShiftType);
             ExcelUtils.addListValidation(templateSheet, firstRow, lastRow, 2, lstShift);
-            ExcelUtils.addListValidation(templateSheet, firstRow, lastRow, 3, lstShift);
+            ExcelUtils.addListValidation(templateSheet, firstRow, lastRow, 7, List.of("Có", "Không"));
             ExcelUtils.addListValidation(templateSheet, firstRow, lastRow, 8, List.of("Có", "Không"));
             ExcelUtils.addListValidation(templateSheet, firstRow, lastRow, 9, List.of("Có", "Không"));
             ExcelUtils.addListValidation(templateSheet, firstRow, lastRow, 10, List.of("Có", "Không"));
-            ExcelUtils.addListValidation(templateSheet, firstRow, lastRow, 11, List.of("Có", "Không"));
             workbook.write(data);
 
             HttpHeaders headersHttp = new HttpHeaders();

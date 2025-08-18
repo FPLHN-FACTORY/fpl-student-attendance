@@ -239,7 +239,7 @@ public class SPDPlanServiceImpl implements SPDPlanService {
                 .orElse(null);
 
         if (planResponse == null || planResponse.getStatus() != plan.getStatus().ordinal()) {
-            return RouterHelper.responseError("Không thể thay đổi trạng thái kế hoạch này. Vui lòng kiểm tra lại trạng thái dự án, cấp độ dự án, ...");
+            return RouterHelper.responseError("Không thể thay đổi trạng thái kế hoạch này. Vui lòng kiểm tra lại trạng thái dự án, nhóm dự án, ...");
         }
 
         if (commonPlanDateRepository.existsNotYetStartedByPlan(plan.getId())) {

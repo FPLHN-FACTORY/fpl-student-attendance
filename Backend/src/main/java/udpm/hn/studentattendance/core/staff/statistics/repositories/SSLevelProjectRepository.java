@@ -28,6 +28,9 @@ public interface SSLevelProjectRepository extends LevelProjectRepository {
                     sf.id_facility = :idFacility AND
                     s.id = :idSemester
             )
+        WHERE
+            lp.status = 1
+            OR (lp.status = 0 AND p.id IS NOT NULL)
         GROUP BY lp.id, lp.name
         ORDER BY lp.name ASC
     """, nativeQuery = true)
