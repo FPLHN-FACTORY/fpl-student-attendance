@@ -34,7 +34,6 @@ const isLoadingExport = ref(false)
 
 const attendanceList = ref([])
 const filter = reactive({
-  page: 1,
   plan: 7, // Mặc định 7 ngày tới
 })
 const pagination = ref({ ...DEFAULT_PAGINATION })
@@ -111,7 +110,7 @@ const exportToExcel = async () => {
         now,
         max,
         page: 1,
-        size: 1000, // Get all data by setting a large page size
+        size: 9999, // Get all data by setting a large page size
       },
     })
 

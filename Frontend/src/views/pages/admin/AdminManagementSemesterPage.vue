@@ -36,7 +36,6 @@ const breadcrumb = ref([
   },
 ])
 
-
 const semesters = ref([])
 const filter = reactive({
   semesterCode: '',
@@ -351,7 +350,11 @@ const handleClearFilter = () => {
   Object.keys(filter).forEach((key) => {
     filter[key] = ''
   })
-  // Không reset về trang 1 khi hủy lọc để giữ nguyên dữ liệu hiện tại
+  handleSubmitFilter()
+}
+
+const handleSubmitFilter = () => {
+  pagination.current = 1
   fetchSemesters()
 }
 
@@ -429,7 +432,7 @@ onMounted(() => {
                     v-model:value="filter.semesterCode"
                     placeholder="Tìm kiếm theo mã học kỳ"
                     allowClear
-                    @change="fetchSemesters"
+                    @change="handleSubmitFilter"
                   >
                     <template #prefix>
                       <SearchOutlined />
@@ -442,7 +445,7 @@ onMounted(() => {
                     v-model:value="filter.status"
                     placeholder="-- Tất cả trạng thái --"
                     class="w-100"
-                    @change="fetchSemesters"
+                    @change="handleSubmitFilter"
                   >
                     <a-select-option :value="''">-- Tất cả trạng thái --</a-select-option>
                     <a-select-option value="ACTIVE">Đang hoạt động</a-select-option>
@@ -462,7 +465,7 @@ onMounted(() => {
 
                 <div class="col-12">
                   <div class="d-flex justify-content-center flex-wrap gap-2">
-                    <a-button class="btn-light" @click="fetchSemesters">
+                    <a-button class="btn-light" @click="handleSubmitFilter">
                       <FilterFilled /> Lọc
                     </a-button>
                     <a-button class="btn-gray" @click="handleClearFilter"> Huỷ lọc </a-button>
@@ -650,14 +653,16 @@ onMounted(() => {
             format="DD/MM/YYYY"
             @keyup.enter="updateSemester"
             :disabled="
-              (detailSemester.fromDate && isStartDateBeforeToday(detailSemester.originalFromDate)) ||
+              (detailSemester.fromDate &&
+                isStartDateBeforeToday(detailSemester.originalFromDate)) ||
               isSemesterInProgress(detailSemester)
             "
             :disabledDate="shouldDisableStartDate"
           />
           <div
             v-if="
-              (detailSemester.fromDate && isStartDateBeforeToday(detailSemester.originalFromDate)) ||
+              (detailSemester.fromDate &&
+                isStartDateBeforeToday(detailSemester.originalFromDate)) ||
               isSemesterInProgress(detailSemester)
             "
             class="ant-form-item-explain"

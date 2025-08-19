@@ -187,7 +187,10 @@ const handleClearFilter = () => {
     levelProjectId: null,
     facilityId: null,
   })
-  // Không reset về trang 1 khi hủy lọc để giữ nguyên dữ liệu hiện tại
+  handleSubmitFilter()
+}
+const handleSubmitFilter = () => {
+  pagination.current = 1
   fetchProjects()
 }
 
@@ -403,7 +406,7 @@ onMounted(() => {
                     placeholder="Tìm kiếm theo tên"
                     allowClear
                     class="filter-input w-100"
-                    @change="fetchProjects"
+                    @change="handleSubmitFilter"
                   >
                     <template #prefix>
                       <SearchOutlined />
@@ -419,7 +422,7 @@ onMounted(() => {
                     show-search
                     class="filter-select w-100"
                     :dropdownMatchSelectWidth="false"
-                    @change="fetchProjects"
+                    @change="handleSubmitFilter"
                     :filter-option="
                       (input, option) =>
                         (option.label || '').toLowerCase().includes(input.toLowerCase())
@@ -448,7 +451,7 @@ onMounted(() => {
                     show-search
                     class="filter-select w-100"
                     :dropdownMatchSelectWidth="false"
-                    @change="fetchProjects"
+                    @change="handleSubmitFilter"
                     :filter-option="
                       (input, option) =>
                         (option.label || '').toLowerCase().includes(input.toLowerCase())
@@ -476,7 +479,7 @@ onMounted(() => {
                     show-search
                     class="filter-select w-100"
                     :dropdownMatchSelectWidth="false"
-                    @change="fetchProjects"
+                    @change="handleSubmitFilter"
                     :filter-option="
                       (input, option) =>
                         (option.label || '').toLowerCase().includes(input.toLowerCase())
@@ -502,7 +505,7 @@ onMounted(() => {
                     placeholder="-- Tất cả trạng thái --"
                     class="filter-select w-100"
                     :dropdownMatchSelectWidth="false"
-                    @change="fetchProjects"
+                    @change="handleSubmitFilter"
                   >
                     <a-select-option :value="null">-- Tất cả trạng thái --</a-select-option>
                     <a-select-option :value="1">Đang triển khai</a-select-option>
@@ -513,7 +516,7 @@ onMounted(() => {
               <div class="row">
                 <div class="col-12">
                   <div class="d-flex justify-content-center flex-wrap gap-2 mt-3">
-                    <a-button class="btn-light" @click="fetchProjects">
+                    <a-button class="btn-light" @click="handleSubmitFilter">
                       <FilterFilled /> Lọc
                     </a-button>
                     <a-button class="btn-gray" @click="handleClearFilter"> Huỷ lọc </a-button>

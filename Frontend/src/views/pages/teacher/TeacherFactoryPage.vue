@@ -45,7 +45,6 @@ const filter = reactive({
   factoryName: '',
   projectId: '',
   semesterId: null,
-  page: 1,
 })
 const pagination = reactive({
   ...DEFAULT_PAGINATION,
@@ -174,11 +173,11 @@ const handleClearFilter = () => {
   filter.factoryName = ''
   filter.projectId = ''
   filter.semesterId = null
+  handleSubmitFilter()
+}
 
-  // Không reset về trang 1 khi hủy lọc để giữ nguyên dữ liệu hiện tại
-  filter.page = 1
-
-  // Fetch with cleared filters
+const handleSubmitFilter = () => {
+  pagination.current = 1
   fetchFactoryByTeacher()
 }
 
@@ -218,7 +217,7 @@ onMounted(() => {
                     v-model:value="filter.factoryName"
                     placeholder="Tìm theo tên nhóm xưởng"
                     allowClear
-                    @change="fetchFactoryByTeacher"
+                    @change="handleSubmitFilter"
                   >
                     <template #prefix>
                       <SearchOutlined />
@@ -232,7 +231,7 @@ onMounted(() => {
                     placeholder="Chọn dự án"
                     allowClear
                     class="w-100"
-                    @change="fetchFactoryByTeacher"
+                    @change="handleSubmitFilter"
                   >
                     <a-select-option :value="''">-- Tất cả dự án --</a-select-option>
                     <a-select-option v-for="item in projects" :key="item.id" :value="item.id">
@@ -247,7 +246,7 @@ onMounted(() => {
                     placeholder="Chọn học kỳ"
                     allowClear
                     class="w-100"
-                    @change="fetchFactoryByTeacher"
+                    @change="handleSubmitFilter"
                   >
                     <a-select-option :value="null">-- Tất cả học kỳ --</a-select-option>
                     <a-select-option v-for="item in semesters" :key="item.id" :value="item.id">
@@ -258,7 +257,7 @@ onMounted(() => {
 
                 <div class="col-12">
                   <div class="d-flex justify-content-center flex-wrap gap-2">
-                    <a-button class="btn-light" @click="fetchFactoryByTeacher">
+                    <a-button class="btn-light" @click="handleSubmitFilter">
                       <FilterFilled /> Lọc
                     </a-button>
                     <a-button class="btn-gray" @click="handleClearFilter"> Huỷ lọc </a-button>

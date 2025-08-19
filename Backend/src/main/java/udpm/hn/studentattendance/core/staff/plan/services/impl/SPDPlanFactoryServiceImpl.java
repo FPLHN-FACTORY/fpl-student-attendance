@@ -275,20 +275,19 @@ public class SPDPlanFactoryServiceImpl implements SPDPlanFactoryService {
                         "dd/MM/yyyy HH:mm");
 
         String logMessage = String.format(
-                "vừa thêm nhóm xưởng '%s' (ID: %s) vào kế hoạch '%s' (ID: %s) - " +
+                "vừa thêm nhóm xưởng '%s' vào kế hoạch '%s' - " +
                         "Hình thức: %s, Ca: %s, Ngày: %s, Phòng: %s, Link: %s, " +
-                        "Điều kiện IP: %s, Vị trí: %s, Checkin: %s, Checkout: %s, " +
                         "Thời gian muộn: %d phút, Tổng số buổi: %d, " +
                         "Thời gian từ: %s đến: %s",
-                factory.getName(), factory.getId(),
-                plan.getName(), plan.getId(),
+                factory.getName(),
+                plan.getName(),
                 type.name(), request.getShift(), request.getDays(),
                 request.getRoom() != null ? request.getRoom() : "Không có",
                 request.getLink() != null ? "Có" : "Không",
-                requiredIp.name(), requiredLocation.name(), requiredCheckin.name(), requiredCheckout.name(),
                 request.getLateArrival(), lstPlanDate.size(),
                 firstPlanDate, lastPlanDate);
         userActivityLogHelper.saveLog(logMessage);
+
         return RouterHelper.responseSuccess("Tạo mới kế hoạch thành công " + lstPlanDate.size() + " kế hoạch",
                 lstEntity);
     }
