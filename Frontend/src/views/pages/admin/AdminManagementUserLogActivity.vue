@@ -174,8 +174,7 @@ const handleClearFilter = () => {
     fromDate: null, // Clear fromDate
     toDate: null, // Clear toDate
   })
-  // Không reset về trang 1 khi hủy lọc để giữ nguyên dữ liệu hiện tại
-  getList()
+  handleSubmitFilter()
 }
 
 // Hàm xử lý khi thay đổi khoảng ngày
@@ -189,9 +188,7 @@ const handleDateRangeChange = (range) => {
     dataFilter.fromDate = null
     dataFilter.toDate = null
   }
-  // Reset về trang 1 khi thay đổi filter để tránh lỗi dữ liệu
-  pagination.value.current = 1
-  getList()
+  handleSubmitFilter()
 }
 
 onMounted(() => {
