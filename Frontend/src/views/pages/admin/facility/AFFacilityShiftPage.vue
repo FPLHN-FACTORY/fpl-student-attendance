@@ -94,6 +94,33 @@ const formRules = reactive({
   timeRange: [{ required: true, message: 'Vui lòng chọn thời gian ca!' }],
 })
 
+const rangeDisabledTime = () => {
+  const disabledHours = () => {
+    const hours = []
+    for (let hour = 0; hour < 24; hour++) {
+      if (hour < 7 || hour > 20) hours.push(hour)
+    }
+    return hours
+  }
+
+  const disabledMinutes = (selectedHour) => {
+    if (selectedHour === 20) {
+      const minutes = []
+      for (let minute = 31; minute < 60; minute++) {
+        minutes.push(minute)
+      }
+      return minutes
+    }
+    return []
+  }
+
+  return {
+    disabledHours,
+    disabledMinutes,
+    disabledSeconds: () => [],
+  }
+}
+
 const fetchDataDetail = () => {
   loadingStore.show()
   requestAPI
@@ -305,7 +332,9 @@ const handleSubmitAdd = async () => {
         fetchAddItem()
       },
     })
-  } catch (error) {}
+  } catch (error) {
+    console.error(error)
+  }
 }
 
 const handleSubmitUpdate = async () => {
@@ -321,7 +350,9 @@ const handleSubmitUpdate = async () => {
         fetchUpdateItem()
       },
     })
-  } catch (error) {}
+  } catch (error) {
+    console.error(error)
+  }
 }
 
 const handleChangeStatus = (id) => {
@@ -407,6 +438,7 @@ watch(
           v-model:value="formData.timeRange"
           :show-time="{ format: 'HH:mm' }"
           format="HH:mm"
+          :disabledTime="rangeDisabledTime"
           picker="time"
           :placeholder="['Thời gian bắt đầu', 'Thời gian kết thúc']"
         />
@@ -487,7 +519,7 @@ watch(
               :scroll="{ x: 'auto' }"
               @change="handleTableChange"
             >
-              <template #bodyCell="{ column, record, index }">
+              <template #bodyCell="{ column, record }">
                 <template v-if="column.dataIndex === 'shift'">
                   <a-tag color="purple"> Ca {{ record.shift }} </a-tag>
                 </template>

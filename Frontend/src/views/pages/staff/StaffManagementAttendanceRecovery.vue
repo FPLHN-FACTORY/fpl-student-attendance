@@ -130,15 +130,18 @@ const handleDateRangeChange = (range) => {
     filter.fromDate = null
     filter.toDate = null
   }
-  pagination.current = 1
-  fetchAttendanceRecovery()
+  handleSubmitFilter()
 }
 
 const handleClearFilter = () => {
   Object.keys(filter).forEach((key) => {
     filter[key] = ''
   })
-  // Không reset về trang 1 khi hủy lọc để giữ nguyên dữ liệu hiện tại
+  fetchAttendanceRecovery()
+}
+
+const handleSubmitFilter = () => {
+  pagination.current = 1
   fetchAttendanceRecovery()
 }
 
@@ -466,7 +469,7 @@ onMounted(() => {
                     placeholder="Tìm theo tên hoặc mô tả"
                     allowClear
                     class="filter-input w-100"
-                    @change="fetchAttendanceRecovery"
+                    @change="handleSubmitFilter"
                   >
                     <template #prefix>
                       <SearchOutlined />
@@ -484,7 +487,7 @@ onMounted(() => {
                 </div>
                 <div class="col-12">
                   <div class="d-flex justify-content-center flex-wrap gap-2">
-                    <a-button class="btn-light" @click="fetchAttendanceRecovery">
+                    <a-button class="btn-light" @click="handleSubmitFilter">
                       <FilterFilled /> Lọc
                     </a-button>
                     <a-button class="btn-gray" @click="handleClearFilter"> Huỷ lọc </a-button>

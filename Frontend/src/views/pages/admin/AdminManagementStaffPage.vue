@@ -390,7 +390,11 @@ const handleClearFilter = () => {
   Object.keys(filter).forEach((key) => {
     filter[key] = ''
   })
-  // Không reset về trang 1 khi hủy lọc để giữ nguyên dữ liệu hiện tại
+  handleSubmitFilter()
+}
+
+const handleSubmitFilter = () => {
+  pagination.value.current = 1
   fetchStaffs()
 }
 
@@ -428,7 +432,7 @@ onMounted(() => {
                     v-model:value="filter.searchQuery"
                     placeholder="Tìm kiếm theo mã, tên, email"
                     allowClear
-                    @change="fetchStaffs"
+                    @change="handleSubmitFilter"
                   >
                     <template #prefix>
                       <SearchOutlined />
@@ -442,7 +446,7 @@ onMounted(() => {
                     v-model:value="filter.status"
                     placeholder="-- Tất cả trạng thái --"
                     class="w-100"
-                    @change="fetchStaffs"
+                    @change="handleSubmitFilter"
                   >
                     <a-select-option :value="''">-- Tất cả trạng thái --</a-select-option>
                     <a-select-option value="ACTIVE">Đang hoạt động</a-select-option>
@@ -458,7 +462,7 @@ onMounted(() => {
                     placeholder="Chọn vai trò"
                     allowClear
                     class="w-100"
-                    @change="fetchStaffs"
+                    @change="handleSubmitFilter"
                   >
                     <a-select-option :value="''">-- Tất cả vai trò --</a-select-option>
                     <a-select-option value="1">Phụ trách xưởng</a-select-option>
@@ -473,7 +477,7 @@ onMounted(() => {
                     placeholder="Chọn cơ sở"
                     allowClear
                     class="w-100"
-                    @change="fetchStaffs"
+                    @change="handleSubmitFilter"
                   >
                     <a-select-option :value="''">-- Tất cả cơ sở --</a-select-option>
                     <a-select-option
@@ -488,7 +492,7 @@ onMounted(() => {
 
                 <div class="col-12">
                   <div class="d-flex justify-content-center flex-wrap gap-2">
-                    <a-button class="btn-light" @click="fetchStaffs">
+                    <a-button class="btn-light" @click="handleSubmitFilter">
                       <FilterFilled /> Lọc
                     </a-button>
                     <a-button class="btn-gray" @click="handleClearFilter"> Huỷ lọc </a-button>

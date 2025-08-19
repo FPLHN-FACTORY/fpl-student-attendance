@@ -27,7 +27,6 @@ const loadingStore = useLoadingStore()
 const filter = reactive({
   semesterId: '',
   factoryId: '',
-  page: 1,
 })
 
 const countFilter = ref(0)

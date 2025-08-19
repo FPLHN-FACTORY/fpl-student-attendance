@@ -354,7 +354,10 @@ const handleClearFilter = () => {
   filter.searchQuery = ''
   filter.studentStatus = null
   filter.isHasFace = null
-  // Reset về trang 1 khi hủy lọc để tránh lỗi dữ liệu
+  handleSubmitFilter()
+}
+
+const handleSubmitFilter = () => {
   pagination.current = 1
   fetchStudents()
 }
@@ -434,7 +437,7 @@ onMounted(() => {
                 </div>
                 <div class="col-12">
                   <div class="d-flex justify-content-center flex-wrap gap-2">
-                    <a-button class="btn-light" @click="fetchStudents">
+                    <a-button class="btn-light" @click="handleSubmitFilter">
                       <FilterFilled /> Lọc
                     </a-button>
                     <a-button class="btn-gray" @click="handleClearFilter"> Huỷ lọc </a-button>

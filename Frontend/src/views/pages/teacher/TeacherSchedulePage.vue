@@ -46,7 +46,6 @@ const filter = reactive({
   shift: '',
   shiftType: '',
   durationOption: 'future_7', // mặc định là 7 ngày tới
-  page: 1,
 })
 
 // Tính toán startDate và endDate dựa trên durationOption (trả về dayjs objects)
@@ -463,7 +462,11 @@ const handleClearFilter = () => {
       filter[key] = ''
     }
   })
-  // Không reset về trang 1 khi hủy lọc để giữ nguyên dữ liệu hiện tại
+  handleSubmitFilter()
+}
+
+const handleSubmitFilter = () => {
+  pagination.value.current = 1
   fetchTeachingSchedule()
 }
 
@@ -611,7 +614,7 @@ onMounted(() => {
                     @change="
                       (_, option) => {
                         title = option.label
-                        fetchTeachingSchedule()
+                        handleSubmitFilter()
                       }
                     "
                   >
@@ -630,7 +633,7 @@ onMounted(() => {
                     placeholder="Chọn hình thức"
                     allowClear
                     class="w-100"
-                    @change="fetchTeachingSchedule"
+                    @change="handleSubmitFilter"
                   >
                     <a-select-option :value="''">-- Tất cả hình thức --</a-select-option>
                     <a-select-option value="1">Online</a-select-option>
@@ -639,7 +642,7 @@ onMounted(() => {
                 </div>
                 <div class="col-md-4 col-sm-12">
                   <div class="d-flex justify-content-center justify-content-md-start gap-2">
-                    <a-button class="btn-light" @click="fetchTeachingSchedule">
+                    <a-button class="btn-light" @click="handleSubmitFilter">
                       <FilterFilled /> Lọc
                     </a-button>
                     <a-button class="btn-gray" @click="handleClearFilter"> Huỷ lọc </a-button>

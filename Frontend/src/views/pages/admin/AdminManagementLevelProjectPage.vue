@@ -113,9 +113,7 @@ const handleTableChange = (pageInfo) => {
 
 const handleAddLevelProject = () => {
   // Validate required fields with whitespace and number-only check
-  const validation = validateFormSubmission(newLevel, [
-    { key: 'name', label: 'Tên nhóm dự án' },
-  ])
+  const validation = validateFormSubmission(newLevel, [{ key: 'name', label: 'Tên nhóm dự án' }])
 
   if (!validation.isValid) {
     message.error(validation.message)
@@ -179,9 +177,7 @@ const prepareUpdateLevel = (record) => {
 
 const submitUpdateLevel = () => {
   // Validate required fields with whitespace and number-only check
-  const validation = validateFormSubmission(detailLevel, [
-    { key: 'name', label: 'Tên nhóm dự án' },
-  ])
+  const validation = validateFormSubmission(detailLevel, [{ key: 'name', label: 'Tên nhóm dự án' }])
 
   if (!validation.isValid) {
     message.error(validation.message)
@@ -255,7 +251,12 @@ const handleClearFilter = () => {
   Object.keys(filter).forEach((key) => {
     filter[key] = null
   })
-  // Không reset về trang 1 khi hủy lọc để giữ nguyên dữ liệu hiện tại
+  pagination.current = 1
+  fetchLevels()
+}
+
+const handleSubmitFilter = () => {
+  pagination.current = 1
   fetchLevels()
 }
 
@@ -357,7 +358,7 @@ onMounted(() => {
                     v-model:value="filter.name"
                     placeholder="Tìm theo tên hoặc mã nhóm dự án"
                     allowClear
-                    @change="fetchLevels"
+                    @change="handleSubmitFilter"
                   >
                     <template #prefix>
                       <SearchOutlined />
@@ -370,7 +371,7 @@ onMounted(() => {
                     v-model:value="filter.status"
                     placeholder="-- Tất cả trạng thái --"
                     class="w-100"
-                    @change="fetchLevels"
+                    @change="handleSubmitFilter"
                   >
                     <a-select-option :value="null">-- Tất cả trạng thái --</a-select-option>
                     <a-select-option value="1">Hoạt động</a-select-option>
@@ -379,7 +380,7 @@ onMounted(() => {
                 </div>
                 <div class="col-12">
                   <div class="d-flex justify-content-center flex-wrap gap-2">
-                    <a-button class="btn-light" @click="fetchLevels">
+                    <a-button class="btn-light" @click="handleSubmitFilter">
                       <FilterFilled /> Lọc
                     </a-button>
                     <a-button class="btn-gray" @click="handleClearFilter"> Huỷ lọc </a-button>
