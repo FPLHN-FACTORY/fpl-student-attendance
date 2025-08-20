@@ -66,18 +66,20 @@ public class AppUtils {
     }
 
     public static String getClientIP(HttpServletRequest request) {
-        String ip = request.getHeader("X-Forwarded-For");
+        String ip = request.getHeader("CF-Connecting-IP");
+
+        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getHeader("X-Forwarded-For");
+            if (ip != null && !ip.isEmpty() && !"unknown".equalsIgnoreCase(ip)) {
+                ip = ip.split(",")[0].trim();
+            }
+        }
+
         if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
             ip = request.getRemoteAddr();
-        } else {
-            ip = ip.split(",")[0].trim();
         }
 
-        if (ValidateHelper.isLocalhost(ip)) {
-            ip = getPublicIP();
-        }
-
-        if (ip != null && ip.contains(":")) {
+        if (ValidateHelper.isLocalhost(ip) || (ip != null && ip.contains(":"))) {
             ip = getPublicIP();
         }
 
