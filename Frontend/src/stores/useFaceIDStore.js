@@ -13,16 +13,15 @@ const THRESHOLD_P = 0.2
 const THRESHOLD_X = 0.1
 const THRESHOLD_Y = 0.12
 const THRESHOLD_EMOTIONS = 0.8
-const MIN_BRIGHTNESS = isMobile ? 40 : 45
-const MAX_BRIGHTNESS = isMobile ? 70 : 95
-const THRESHOLD_LIGHT = 35
+const MIN_BRIGHTNESS = isMobile ? 100 : 140
+const MAX_BRIGHTNESS = isMobile ? 160 : 200
+const THRESHOLD_LIGHT = 45
 const SIZE_CAMERA = 480
-const SKIP_FRAME = 5
+const SKIP_FRAME = 30
 const CHECK_DISTANCE = true
 
 const useFaceIDStore = defineStore('faceID', () => {
   let isFullStep = false
-  let isLongerDistance = false
   let video = null
   let canvas = null
   let axis = null
@@ -40,6 +39,7 @@ const useFaceIDStore = defineStore('faceID', () => {
   const step = ref(0)
   const textStep = ref('Vui lòng đợi camera...')
   const dataImage = ref(null)
+  const dataCanvas = ref(null)
   const count = ref(0)
   const embedding = ref(null)
   const prevEmbedding = ref(null)
@@ -99,10 +99,6 @@ const useFaceIDStore = defineStore('faceID', () => {
 
   const setCallback = (callback) => {
     onSuccess = callback
-  }
-
-  const setLongerDistance = (type) => {
-    isLongerDistance = type
   }
 
   const toDegrees = (rad) => rad * (180 / Math.PI)
@@ -211,11 +207,11 @@ const useFaceIDStore = defineStore('faceID', () => {
       }
     }
 
+    ort.env.wasm.wasmPaths = {
+      'ort-wasm-simd.wasm': '/models/wasm/ort-wasm-simd.wasm',
+      'ort-wasm-simd-threaded.wasm': '/models/wasm/ort-wasm-simd-threaded.wasm',
+    }
     const loadLivenessModel = async () => {
-      ort.env.wasm.wasmPaths = {
-        'ort-wasm-simd.wasm': '/models/wasm/ort-wasm-simd.wasm',
-        'ort-wasm-simd-threaded.wasm': '/models/wasm/ort-wasm-simd-threaded.wasm',
-      }
       await ort.InferenceSession.create('/models/liveness.onnx', {
         executionProviders: ['wasm'],
       }).then((session) => {
@@ -245,24 +241,58 @@ const useFaceIDStore = defineStore('faceID', () => {
   const detectFace = async () => {
     let faceDescriptor = null
 
-    const ctx = canvas.value.getContext('2d')
+    const ctx = canvas.value.getContext('2d', { willReadFrequently: true })
 
     const aX = axis.value.querySelectorAll('.a-x > div')
     const aY = axis.value.querySelectorAll('.a-y > div')
 
-    const getAverageBrightness = async (imageData) => {
-      const padding = 70
-      const width = canvas.value.width - 2 * padding
-      const height = canvas.value.height - 2 * padding
+    const getDataImageWithoutPadding = async (
+      paddingTop = 0,
+      paddingRight = 0,
+      paddingBottom = 0,
+      paddingLeft = 0,
+    ) => {
+      const width = canvas.value.width - paddingLeft - paddingRight
+      const height = canvas.value.height - paddingTop - paddingBottom
 
       const tmpCanvas = document.createElement('canvas')
       tmpCanvas.width = width
       tmpCanvas.height = height
       const tmpCtx = tmpCanvas.getContext('2d')
-      tmpCtx.putImageData(imageData, -padding, -padding)
 
-      const crop = tmpCtx.getImageData(0, 0, width, height)
-      const data = crop.data
+      tmpCtx.drawImage(canvas.value, paddingLeft, paddingTop, width, height, 0, 0, width, height)
+
+      return tmpCtx.getImageData(0, 0, width, height)
+    }
+
+    const getHalfImageData = async () => {
+      const image = await getDataImageWithoutPadding(0, 70, 150, 70)
+      const width = image.width
+      const height = image.height
+      const halfWidth = Math.floor(width / 2)
+
+      const tmpCanvas = document.createElement('canvas')
+      tmpCanvas.width = width
+      tmpCanvas.height = height
+      const tmpCtx = tmpCanvas.getContext('2d')
+      tmpCtx.putImageData(image, 0, 0)
+
+      const leftImageData = tmpCtx.getImageData(0, 0, halfWidth, height)
+      const rightImageData = tmpCtx.getImageData(halfWidth, 0, width - halfWidth, height)
+
+      const brightnessLeft = await getAverageBrightness(leftImageData)
+      const brightnessRight = await getAverageBrightness(rightImageData)
+
+      return {
+        leftImageData,
+        rightImageData,
+        brightnessLeft,
+        brightnessRight,
+      }
+    }
+
+    const getAverageBrightness = async (image) => {
+      const data = image.data
       let sum = 0
 
       for (let i = 0; i < data.length; i += 4) {
@@ -270,48 +300,19 @@ const useFaceIDStore = defineStore('faceID', () => {
         sum += avg
       }
 
-      return sum / (imageData.width * imageData.height)
+      return sum / (image.width * image.height)
     }
 
-    const isLightBalance = async () => {
-      const width = canvas.value.width
-      const height = canvas.value.height
-      const halfWidth = Math.floor(width / 2)
-
-      const leftData = ctx.getImageData(0, 0, halfWidth, height)
-      const rightData = ctx.getImageData(halfWidth, 0, width - halfWidth, height)
-
-      const brightnessLeft = await getAverageBrightness(leftData)
-      const brightnessRight = await getAverageBrightness(rightData)
-
+    const isLightBalance = async ({ brightnessLeft, brightnessRight }) => {
       const brightnessDiff = Math.abs(brightnessLeft - brightnessRight)
       return brightnessDiff <= THRESHOLD_LIGHT
     }
 
-    const isLightTooDark = async () => {
-      const width = canvas.value.width
-      const height = canvas.value.height
-      const halfWidth = Math.floor(width / 2)
-
-      const leftData = ctx.getImageData(0, 0, halfWidth, height)
-      const rightData = ctx.getImageData(halfWidth, 0, width - halfWidth, height)
-
-      const brightnessLeft = await getAverageBrightness(leftData)
-      const brightnessRight = await getAverageBrightness(rightData)
+    const isLightTooDark = async ({ brightnessLeft, brightnessRight }) => {
       return brightnessLeft < MIN_BRIGHTNESS || brightnessRight < MIN_BRIGHTNESS
     }
 
-    const isLightTooBright = async () => {
-      const width = canvas.value.width
-      const height = canvas.value.height
-      const halfWidth = Math.floor(width / 2)
-
-      const leftData = ctx.getImageData(0, 0, halfWidth, height)
-      const rightData = ctx.getImageData(halfWidth, 0, width - halfWidth, height)
-
-      const brightnessLeft = await getAverageBrightness(leftData)
-      const brightnessRight = await getAverageBrightness(rightData)
-
+    const isLightTooBright = async ({ brightnessLeft, brightnessRight }) => {
       return brightnessLeft > MAX_BRIGHTNESS || brightnessRight > MAX_BRIGHTNESS
     }
 
@@ -408,7 +409,7 @@ const useFaceIDStore = defineStore('faceID', () => {
       renderTextStep(text)
     }
 
-    const pushDescriptor = async (max) => {
+    const pushDescriptor = async () => {
       count.value = 0
       const descriptor = normalize(Array.from(embedding.value))
       if (!descriptor.length) {
@@ -416,11 +417,6 @@ const useFaceIDStore = defineStore('faceID', () => {
       }
 
       lstDescriptor.value.push(descriptor)
-
-      if (max !== lstDescriptor.value.length) {
-        step.value = 0
-        return clearDescriptor()
-      }
     }
 
     const submit = async () => {
@@ -487,10 +483,17 @@ const useFaceIDStore = defineStore('faceID', () => {
         !face ||
         !(await cropFace(face)) ||
         !isInsideCenter(face.boxRaw) ||
-        (await isInvalidSize(face)) ||
-        !(await isLightBalance())
-        //  || (await isLightTooBright()) ||
-        // (await isLightTooDark())
+        (await isInvalidSize(face))
+      ) {
+        return []
+      }
+
+      const halfImageData = await getHalfImageData()
+
+      if (
+        !(await isLightBalance(halfImageData)) ||
+        (await isLightTooBright(halfImageData)) ||
+        (await isLightTooDark(halfImageData))
       ) {
         return []
       }
@@ -543,6 +546,12 @@ const useFaceIDStore = defineStore('faceID', () => {
           return (count.value = 0)
         }
 
+        const cvs = document.createElement('canvas')
+        cvs.width = video.value.videoWidth
+        cvs.height = video.value.videoHeight
+        const ctx = cvs.getContext('2d')
+        ctx.drawImage(video.value, 0, 0, cvs.width, cvs.height)
+        dataCanvas.value = cvs.toDataURL('image/png')
         prevEmbedding.value = currentEmbedding
         embedding.value = currentEmbedding
         count.value -= 1
@@ -647,8 +656,8 @@ const useFaceIDStore = defineStore('faceID', () => {
       const videoArea = video.value.videoWidth * video.value.videoHeight
       const ratio = faceArea / videoArea
 
-      const min = isLongerDistance === true ? 0.4 : 0.5
-      const max = isLongerDistance === true ? 0.6 : 0.7
+      const min = 0.5
+      const max = 0.7
 
       if (ratio < min) {
         return 'Vui lòng đưa mặt lại gần hơn'
@@ -661,7 +670,7 @@ const useFaceIDStore = defineStore('faceID', () => {
       return null
     }
 
-    const preprocessLiveness = (imageData) => {
+    const preprocessOnnx = (imageData) => {
       const { width, height, data } = imageData
       const channels = 3
       const preprocessed = new Float32Array(1 * channels * height * width)
@@ -696,23 +705,27 @@ const useFaceIDStore = defineStore('faceID', () => {
       })
     }
 
-    const predictLiveness = async () => {
+    const createFeeds = async (size) => {
       const tmpCanvas = document.createElement('canvas')
-      tmpCanvas.width = 128
-      tmpCanvas.height = 128
+      tmpCanvas.width = size
+      tmpCanvas.height = size
       const tmpCtx = tmpCanvas.getContext('2d')
-      tmpCtx.drawImage(canvas.value, 0, 0, 128, 128)
-      const faceImageData = tmpCtx.getImageData(0, 0, 128, 128)
-      const input_image = preprocessLiveness(faceImageData)
+      tmpCtx.drawImage(canvas.value, 0, 0, size, size)
+      const faceImageData = tmpCtx.getImageData(0, 0, size, size)
+      const input_image = preprocessOnnx(faceImageData)
 
-      const input_tensor = new ort.Tensor(
-        'float32',
-        new Float32Array(128 * 128 * 3),
-        [1, 3, 128, 128],
-      )
+      const input_tensor = new ort.Tensor('float32', new Float32Array(size * size * 3), [
+        1,
+        3,
+        size,
+        size,
+      ])
       input_tensor.data.set(input_image.data)
-      const feeds = { input: input_tensor }
+      return { input: input_tensor }
+    }
 
+    const predictLiveness = async () => {
+      const feeds = await createFeeds(128)
       const output_tensor = await livenessModel.run(feeds)
       return softmax(output_tensor['output'].data)
     }
@@ -762,7 +775,6 @@ const useFaceIDStore = defineStore('faceID', () => {
       const faceBoxRaw = detection.boxRaw
 
       const angle = await getFaceAngle()
-
       if (!(await cropFace(detection))) {
         return
       }
@@ -787,36 +799,16 @@ const useFaceIDStore = defineStore('faceID', () => {
       }
 
       if (isFullStep || (!isFullStep && (step.value === 0 || step.value === 3))) {
-        if (await isLightTooDark()) {
+        const halfImageData = await getHalfImageData()
+
+        if (await isLightTooDark(halfImageData)) {
           return renderTextStep('Camera quá tối, Vui lòng tăng độ sáng')
         }
-
-        if (await isLightTooBright()) {
+        if (await isLightTooBright(halfImageData)) {
           return renderTextStep('Camera quá sáng, Vui lòng giảm độ sáng')
         }
-
-        if (!(await isLightBalance())) {
+        if (!(await isLightBalance(halfImageData))) {
           return renderTextStep('Ánh sáng không đều. Vui lòng thử lại')
-        }
-
-        const { pitch, roll } = detection.rotation?.angle || {}
-
-        if (
-          human.result.gesture.some((o) => o.gesture.includes('head up')) &&
-          Math.abs(pitch) > 0.2
-        ) {
-          return renderTextStep('Vui lòng không ngẩng mặt')
-        }
-
-        if (
-          human.result.gesture.some((o) => o.gesture.includes('head down')) &&
-          Math.abs(pitch) > 0.2
-        ) {
-          return renderTextStep('Vui lòng không cúi mặt')
-        }
-
-        if (Math.abs(roll) > 0.07) {
-          return renderTextStep('Vui lòng không nghiêng đầu')
         }
       }
 
@@ -850,7 +842,7 @@ const useFaceIDStore = defineStore('faceID', () => {
             if (!embedding.value || embedding.length < 1) {
               return
             }
-            await pushDescriptor(1)
+            await pushDescriptor()
             step.value = 1
             return renderTextStep()
           }
@@ -863,7 +855,7 @@ const useFaceIDStore = defineStore('faceID', () => {
             if (!embedding.value || embedding.length < 1) {
               return
             }
-            await pushDescriptor(2)
+            await pushDescriptor()
             step.value = 2
             return await submit()
           }
@@ -876,18 +868,20 @@ const useFaceIDStore = defineStore('faceID', () => {
             if (!embedding.value || embedding.length < 1) {
               return
             }
-            await pushDescriptor(1)
+            await pushDescriptor()
             step.value = 1
             return renderTextStep()
           }
           if (step.value === 1 && angle === -1 && isReal) {
+            await delay(500)
             step.value = 2
             return renderTextStep()
           }
           if (step.value === 2 && angle === 1 && isReal) {
+            await delay(500)
             step.value = 3
             renderTextStep()
-            return delay(2000)
+            return await delay(2000)
           }
           if (step.value === 3 && angle === 0) {
             prevEmbedding.value = null
@@ -895,7 +889,7 @@ const useFaceIDStore = defineStore('faceID', () => {
             if (!embedding.value || embedding.length < 1) {
               return
             }
-            await pushDescriptor(2)
+            await pushDescriptor()
             step.value = 4
             return await submit()
           }
@@ -963,7 +957,6 @@ const useFaceIDStore = defineStore('faceID', () => {
     setup,
     setFullStep,
     setCallback,
-    setLongerDistance,
     setShowError,
     loadModels,
     startVideo,
@@ -971,6 +964,7 @@ const useFaceIDStore = defineStore('faceID', () => {
     detectFace,
     renderStyle,
     dataImage,
+    dataCanvas,
     step,
     textStep,
     isLoading,

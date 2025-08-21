@@ -57,7 +57,6 @@ const studentFactories = ref([])
 const filter = reactive({
   searchQuery: '',
   status: null,
-  page: 1,
 })
 const pagination = reactive({
   ...DEFAULT_PAGINATION,
@@ -107,7 +106,6 @@ const fetchStudentFactories = () => {
       } else {
         pagination.total = result.totalItems
       }
-      pagination.current = filter.page
       countFilter.value = result.totalItems
     })
     .catch((error) => {
@@ -148,7 +146,6 @@ const fetchExistingStudents = () => {
 /* -------------------- Danh sách tất cả sinh viên (modal thêm sinh viên) -------------------- */
 const studentFilter = reactive({
   searchQuery: '',
-  page: 1,
 })
 const studentPagination = reactive({
   ...DEFAULT_PAGINATION,
@@ -196,7 +193,6 @@ const fetchAllStudents = () => {
       } else {
         studentPagination.total = result.totalItems
       }
-      studentPagination.current = studentFilter.page
       updateAllStudentsCheckStatus()
     })
     .catch((error) => {
@@ -279,7 +275,6 @@ const handleAddStudents = () => {
 const resetStudentModal = () => {
   isAddStudentModalVisible.value = false
   studentFilter.searchQuery = ''
-  studentFilter.page = 1
   studentPagination.current = 1
   for (const key in selectedStudents) {
     selectedStudents[key] = false
@@ -423,7 +418,6 @@ function handleShiftTableChange(paginationObj) {
 watch(isAddStudentModalVisible, (newVal) => {
   if (newVal) {
     studentFilter.searchQuery = ''
-    studentFilter.page = 1
     studentPagination.current = 1
     // Cập nhật cả danh sách sinh viên tổng và danh sách đã có trong nhóm
     fetchExistingStudents()
@@ -435,9 +429,12 @@ const handleClearFilter = () => {
   Object.assign(filter, {
     searchQuery: '',
     status: null,
-    page: 1,
   })
-  // Không reset về trang 1 khi hủy lọc để giữ nguyên dữ liệu hiện tại
+  handleSubmitFilter()
+}
+
+const handleSubmitFilter = () => {
+  pagination.current = 1
   fetchStudentFactories()
 }
 
@@ -465,7 +462,7 @@ onMounted(() => {
                     v-model:value="filter.searchQuery"
                     placeholder="Tìm theo mã, tên hoặc email sinh viên"
                     allowClear
-                    @change="fetchStudentFactories"
+                    @change="handleSubmitFilter"
                   >
                     <template #prefix>
                       <SearchOutlined />
@@ -478,7 +475,7 @@ onMounted(() => {
                     v-model:value="filter.status"
                     placeholder="-- Tất cả trạng thái --"
                     class="w-100"
-                    @change="fetchStudentFactories"
+                    @change="handleSubmitFilter"
                   >
                     <a-select-option :value="null">-- Tất cả trạng thái --</a-select-option>
                     <a-select-option value="1">Đang học</a-select-option>
@@ -488,7 +485,7 @@ onMounted(() => {
 
                 <div class="col-12">
                   <div class="d-flex justify-content-center flex-wrap gap-2">
-                    <a-button class="btn-light" @click="fetchStudentFactories">
+                    <a-button class="btn-light" @click="handleSubmitFilter">
                       <FilterFilled /> Lọc
                     </a-button>
                     <a-button class="btn-gray" @click="handleClearFilter"> Huỷ lọc </a-button>
@@ -753,7 +750,12 @@ onMounted(() => {
             v-model:value="studentFilter.searchQuery"
             placeholder="Mã, tên hoặc email sinh viên"
             allowClear
-            @change="fetchAllStudents"
+            @change="
+              () => {
+                studentPagination.current = 1
+                fetchAllStudents()
+              }
+            "
           />
         </div>
       </div>

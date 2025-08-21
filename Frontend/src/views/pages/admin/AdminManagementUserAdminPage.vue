@@ -316,7 +316,11 @@ const handleClearFilter = () => {
   Object.keys(filter).forEach((key) => {
     filter[key] = ''
   })
-  // Không reset về trang 1 khi hủy lọc để giữ nguyên dữ liệu hiện tại
+  handleSubmitFilter()
+}
+
+const handleSubmitFilter = () => {
+  pagination.value.current = 1
   fetchUsers()
 }
 
@@ -350,7 +354,7 @@ onMounted(() => {
                     v-model:value="filter.searchQuery"
                     placeholder="Nhập mã, tên hoặc email"
                     allowClear
-                    @change="fetchUsers"
+                    @change="handleSubmitFilter"
                   >
                     <template #prefix>
                       <SearchOutlined />
@@ -363,7 +367,7 @@ onMounted(() => {
                     v-model:value="filter.status"
                     placeholder="-- Tất cả trạng thái --"
                     class="w-100"
-                    @change="fetchUsers"
+                    @change="handleSubmitFilter"
                   >
                     <a-select-option :value="''">-- Tất cả trạng thái --</a-select-option>
                     <a-select-option value="1">Hoạt động</a-select-option>
@@ -373,7 +377,7 @@ onMounted(() => {
 
                 <div class="col-12">
                   <div class="d-flex justify-content-center flex-wrap gap-2">
-                    <a-button class="btn-light" @click="fetchUsers">
+                    <a-button class="btn-light" @click="handleSubmitFilter">
                       <FilterFilled /> Lọc
                     </a-button>
                     <a-button class="btn-gray" @click="handleClearFilter"> Huỷ lọc </a-button>

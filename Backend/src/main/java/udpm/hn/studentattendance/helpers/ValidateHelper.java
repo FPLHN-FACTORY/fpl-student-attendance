@@ -23,11 +23,11 @@ public class ValidateHelper {
 
     private static final String CODE_REGEX = "^[a-zA-Z0-9._]+$";
 
-    private static final String EMAIL_REGEX = "^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$";
+    private static final String EMAIL_REGEX = "^[A-Za-z0-9._+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$";
 
-    private static final String EMAIL_FE_REGEX = "^[A-Za-z0-9._%+-]+@fe.edu.vn$";
+    private static final String EMAIL_FPT_REGEX = "^[A-Za-z0-9._+-]+@fpt\\.edu\\.vn$";
 
-    private static final String EMAIL_FPT_REGEX = "^[A-Za-z0-9._%+-]+@fpt.edu.vn$";
+    private static final String EMAIL_FE_REGEX  = "^[A-Za-z0-9._+-]+@fe\\.edu\\.vn$";
 
     private static final String PHONE_REGEX = "^0[0-9]{9,10}$";
 

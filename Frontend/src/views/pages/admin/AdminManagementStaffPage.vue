@@ -77,12 +77,6 @@ const modalUpdateLoading = ref(false)
 const modalAdd = ref(false)
 const modalUpdate = ref(false)
 
-// Thêm các hằng số cho domain email
-const EMAIL_DOMAINS = {
-  FE: '@fe.edu.vn',
-  FPT: '@fpt.edu.vn',
-}
-
 // Sửa lại newStaff để thêm computed properties cho email
 const newStaff = reactive({
   staffCode: '',
@@ -98,7 +92,7 @@ const emailFeWithDomain = computed({
   get: () => newStaff.emailFe,
   set: (value) => {
     // Loại bỏ domain nếu có
-    newStaff.emailFe = value.replace(EMAIL_DOMAINS.FE, '')
+    newStaff.emailFe = value
   },
 })
 
@@ -106,7 +100,7 @@ const emailFptWithDomain = computed({
   get: () => newStaff.emailFpt,
   set: (value) => {
     // Loại bỏ domain nếu có
-    newStaff.emailFpt = value.replace(EMAIL_DOMAINS.FPT, '')
+    newStaff.emailFpt = value
   },
 })
 
@@ -115,7 +109,7 @@ const detailEmailFeWithDomain = computed({
   get: () => detailStaff.emailFe,
   set: (value) => {
     // Loại bỏ domain nếu có
-    detailStaff.emailFe = value.replace(EMAIL_DOMAINS.FE, '')
+    detailStaff.emailFe = value
   },
 })
 
@@ -123,7 +117,7 @@ const detailEmailFptWithDomain = computed({
   get: () => detailStaff.emailFpt,
   set: (value) => {
     // Loại bỏ domain nếu có
-    detailStaff.emailFpt = value.replace(EMAIL_DOMAINS.FPT, '')
+    detailStaff.emailFpt = value
   },
 })
 
@@ -216,8 +210,12 @@ const handleAddStaff = () => {
     return
   }
 
-  if (!newStaff.facilityId || newStaff.roleCodes.length === 0) {
-    message.error('Vui lòng chọn cơ sở và ít nhất một vai trò')
+  if (!newStaff.facilityId) {
+    message.error('Vui lòng chọn cơ sở')
+    return
+  }
+  if (newStaff.roleCodes.length === 0) {
+    message.error('Vui lòng chọn ít nhất một vai trò')
     return
   }
   Modal.confirm({
@@ -230,8 +228,8 @@ const handleAddStaff = () => {
       loadingStore.show()
       const payload = {
         ...newStaff,
-        emailFe: newStaff.emailFe + EMAIL_DOMAINS.FE,
-        emailFpt: newStaff.emailFpt + EMAIL_DOMAINS.FPT,
+        emailFe: newStaff.emailFe,
+        emailFpt: newStaff.emailFpt,
       }
       requestAPI
         .post(API_ROUTES_ADMIN.FETCH_DATA_STAFF, payload)
@@ -265,8 +263,8 @@ const handleUpdateStaff = (record) => {
       detailStaff.staffCode = staff.staffCode
       detailStaff.name = staff.staffName
       // Loại bỏ domain khỏi email nếu có
-      detailStaff.emailFe = staff.staffEmailFe.replace(EMAIL_DOMAINS.FE, '')
-      detailStaff.emailFpt = staff.staffEmailFpt.replace(EMAIL_DOMAINS.FPT, '')
+      detailStaff.emailFe = staff.staffEmailFe
+      detailStaff.emailFpt = staff.staffEmailFpt
       detailStaff.facilityId = staff.facilityId
       detailStaff.roleCodes = staff.roleCode.split(',').map((role) => role.trim())
       modalUpdate.value = true
@@ -296,8 +294,13 @@ const updateStaff = () => {
     return
   }
 
-  if (!detailStaff.facilityId || detailStaff.roleCodes.length === 0) {
-    message.error('Vui lòng chọn cơ sở và vai trò')
+  if (!detailStaff.facilityId) {
+    message.error('Vui lòng chọn cơ sở')
+    return
+  }
+
+  if (detailStaff.roleCodes.length === 0) {
+    message.error('Vui lòng chọn vai trò')
     return
   }
   Modal.confirm({
@@ -310,8 +313,8 @@ const updateStaff = () => {
       loadingStore.show()
       const payload = {
         ...detailStaff,
-        emailFe: detailStaff.emailFe + EMAIL_DOMAINS.FE,
-        emailFpt: detailStaff.emailFpt + EMAIL_DOMAINS.FPT,
+        emailFe: detailStaff.emailFe,
+        emailFpt: detailStaff.emailFpt,
       }
       requestAPI
         .put(`${API_ROUTES_ADMIN.FETCH_DATA_STAFF}/${detailStaff.id}`, payload)
@@ -387,7 +390,11 @@ const handleClearFilter = () => {
   Object.keys(filter).forEach((key) => {
     filter[key] = ''
   })
-  // Không reset về trang 1 khi hủy lọc để giữ nguyên dữ liệu hiện tại
+  handleSubmitFilter()
+}
+
+const handleSubmitFilter = () => {
+  pagination.value.current = 1
   fetchStaffs()
 }
 
@@ -425,7 +432,7 @@ onMounted(() => {
                     v-model:value="filter.searchQuery"
                     placeholder="Tìm kiếm theo mã, tên, email"
                     allowClear
-                    @change="fetchStaffs"
+                    @change="handleSubmitFilter"
                   >
                     <template #prefix>
                       <SearchOutlined />
@@ -439,7 +446,7 @@ onMounted(() => {
                     v-model:value="filter.status"
                     placeholder="-- Tất cả trạng thái --"
                     class="w-100"
-                    @change="fetchStaffs"
+                    @change="handleSubmitFilter"
                   >
                     <a-select-option :value="''">-- Tất cả trạng thái --</a-select-option>
                     <a-select-option value="ACTIVE">Đang hoạt động</a-select-option>
@@ -455,7 +462,7 @@ onMounted(() => {
                     placeholder="Chọn vai trò"
                     allowClear
                     class="w-100"
-                    @change="fetchStaffs"
+                    @change="handleSubmitFilter"
                   >
                     <a-select-option :value="''">-- Tất cả vai trò --</a-select-option>
                     <a-select-option value="1">Phụ trách xưởng</a-select-option>
@@ -470,7 +477,7 @@ onMounted(() => {
                     placeholder="Chọn cơ sở"
                     allowClear
                     class="w-100"
-                    @change="fetchStaffs"
+                    @change="handleSubmitFilter"
                   >
                     <a-select-option :value="''">-- Tất cả cơ sở --</a-select-option>
                     <a-select-option
@@ -485,7 +492,7 @@ onMounted(() => {
 
                 <div class="col-12">
                   <div class="d-flex justify-content-center flex-wrap gap-2">
-                    <a-button class="btn-light" @click="fetchStaffs">
+                    <a-button class="btn-light" @click="handleSubmitFilter">
                       <FilterFilled /> Lọc
                     </a-button>
                     <a-button class="btn-gray" @click="handleClearFilter"> Huỷ lọc </a-button>
@@ -597,36 +604,18 @@ onMounted(() => {
           />
         </a-form-item>
         <a-form-item label="Email FE" required>
-          <a-input-group compact>
-            <a-input
-              v-model:value="emailFeWithDomain"
-              placeholder="Nhập email FE"
-              style="width: calc(100% - 100px)"
-              @keyup.enter="handleAddStaff"
-            />
-            <a-input
-              :value="EMAIL_DOMAINS.FE"
-              style="width: 100px; background-color: #f5f5f5"
-              disabled
-              @keyup.enter="handleAddStaff"
-            />
-          </a-input-group>
+          <a-input
+            v-model:value="emailFeWithDomain"
+            placeholder="Nhập email FE"
+            @keyup.enter="handleAddStaff"
+          />
         </a-form-item>
         <a-form-item label="Email FPT" required>
-          <a-input-group compact>
-            <a-input
-              v-model:value="emailFptWithDomain"
-              placeholder="Nhập email FPT"
-              style="width: calc(100% - 100px)"
-              @keyup.enter="handleAddStaff"
-            />
-            <a-input
-              :value="EMAIL_DOMAINS.FPT"
-              style="width: 100px; background-color: #f5f5f5"
-              disabled
-              @keyup.enter="handleAddStaff"
-            />
-          </a-input-group>
+          <a-input
+            v-model:value="emailFptWithDomain"
+            placeholder="Nhập email FPT"
+            @keyup.enter="handleAddStaff"
+          />
         </a-form-item>
         <a-form-item label="Cơ sở" required>
           <a-select v-model:value="newStaff.facilityId" placeholder="Chọn cơ sở">
@@ -674,36 +663,18 @@ onMounted(() => {
           />
         </a-form-item>
         <a-form-item label="Email FE" required>
-          <a-input-group compact>
-            <a-input
-              v-model:value="detailEmailFeWithDomain"
-              placeholder="Nhập email FE"
-              style="width: calc(100% - 100px)"
-              @keyup.enter="updateStaff"
-            />
-            <a-input
-              :value="EMAIL_DOMAINS.FE"
-              style="width: 100px; background-color: #f5f5f5"
-              disabled
-              @keyup.enter="updateStaff"
-            />
-          </a-input-group>
+          <a-input
+            v-model:value="detailEmailFeWithDomain"
+            placeholder="Nhập email FE"
+            @keyup.enter="updateStaff"
+          />
         </a-form-item>
         <a-form-item label="Email FPT" required>
-          <a-input-group compact>
-            <a-input
-              v-model:value="detailEmailFptWithDomain"
-              placeholder="Nhập email FPT"
-              style="width: calc(100% - 100px)"
-              @keyup.enter="updateStaff"
-            />
-            <a-input
-              :value="EMAIL_DOMAINS.FPT"
-              style="width: 100px; background-color: #f5f5f5"
-              disabled
-              @keyup.enter="updateStaff"
-            />
-          </a-input-group>
+          <a-input
+            v-model:value="detailEmailFptWithDomain"
+            placeholder="Nhập email FPT"
+            @keyup.enter="updateStaff"
+          />
         </a-form-item>
         <a-form-item label="Cơ sở" required>
           <a-select v-model:value="detailStaff.facilityId" placeholder="Chọn cơ sở">

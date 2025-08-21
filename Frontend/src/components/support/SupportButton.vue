@@ -7,20 +7,21 @@ import requestAPI from '@/services/requestApiService'
 import useLoadingStore from '@/stores/useLoadingStore'
 
 const loadingStore = useLoadingStore()
-const showModal = ref(false)
 const submitting = ref(false)
 const fileList = ref([])
 const uploadLoading = ref(false)
+
+const status = defineModel('show', {
+  default: () => ({
+    isShow: false,
+  }),
+})
 
 const formData = reactive({
   title: '',
   message: '',
   files: [],
 })
-
-const handleSupport = () => {
-  showModal.value = true
-}
 
 const beforeUpload = (file) => {
   uploadLoading.value = true
@@ -94,7 +95,7 @@ const sendSupportRequest = async () => {
 
     message.success('Yêu cầu hỗ trợ đã được gửi thành công!')
     resetForm()
-    showModal.value = false
+    status.isShow = false
   } catch (error) {
     message.error(error.response?.data?.message || 'Có lỗi xảy ra khi gửi yêu cầu hỗ trợ')
   } finally {
@@ -111,94 +112,79 @@ const resetForm = () => {
 }
 
 const handleCancel = () => {
-  showModal.value = false
+  status.isShow = false
   resetForm()
 }
 </script>
 
 <template>
-  <div class="support-button-container">
-    <a-tooltip title="Hỗ trợ người dùng" placement="left" :mouseEnterDelay="0.5">
-      <a-button
-        type="default"
-        shape="circle"
-        size="large"
-        class="support-button"
-        @click="handleSupport"
-        aria-label="Hỗ trợ khách hàng"
-      >
+  <a-modal
+    v-model:open="status.isShow"
+    :confirm-loading="submitting"
+    @cancel="handleCancel"
+    @ok="handleSubmit"
+    okText="Gửi yêu cầu"
+    cancelText="Hủy"
+    width="600px"
+  >
+    <template #title>
+      <div class="modal-title">
         <CustomerServiceOutlined />
-      </a-button>
-    </a-tooltip>
+        <span>Yêu cầu hỗ trợ</span>
+      </div>
+    </template>
+    <a-form layout="vertical">
+      <a-form-item label="Tiêu đề" required>
+        <a-input
+          v-model:value="formData.title"
+          placeholder="Nhập tiêu đề yêu cầu"
+          :maxLength="255"
+        />
+      </a-form-item>
 
-    <a-modal
-      v-model:open="showModal"
-      :confirm-loading="submitting"
-      @cancel="handleCancel"
-      @ok="handleSubmit"
-      okText="Gửi yêu cầu"
-      cancelText="Hủy"
-      width="600px"
-    >
-      <template #title>
-        <div class="modal-title">
-          <CustomerServiceOutlined />
-          <span>Yêu cầu hỗ trợ</span>
-        </div>
-      </template>
-      <a-form layout="vertical">
-        <a-form-item label="Tiêu đề" required>
-          <a-input
-            v-model:value="formData.title"
-            placeholder="Nhập tiêu đề yêu cầu"
-            :maxLength="255"
-          />
-        </a-form-item>
+      <a-form-item label="Nội dung" required>
+        <a-textarea
+          v-model:value="formData.message"
+          placeholder="Mô tả chi tiết vấn đề của bạn..."
+          :rows="6"
+        />
+      </a-form-item>
 
-        <a-form-item label="Nội dung" required>
-          <a-textarea
-            v-model:value="formData.message"
-            placeholder="Mô tả chi tiết vấn đề của bạn..."
-            :rows="6"
-          />
-        </a-form-item>
+      <a-form-item label="Tệp đính kèm (tối đa 5 tệp)">
+        <a-spin :spinning="uploadLoading" size="small">
+          <a-upload
+            :file-list="fileList"
+            :before-upload="beforeUpload"
+            :multiple="true"
+            :disabled="fileList.length >= 5 || uploadLoading"
+            :show-upload-list="false"
+          >
+            <a-button :disabled="fileList.length >= 5 || uploadLoading">
+              <PaperClipOutlined /> Tải lên tệp
+            </a-button>
+          </a-upload>
+        </a-spin>
 
-        <a-form-item label="Tệp đính kèm (tối đa 5 tệp)">
-          <a-spin :spinning="uploadLoading" size="small">
-            <a-upload
-              :file-list="fileList"
-              :before-upload="beforeUpload"
-              :multiple="true"
-              :disabled="fileList.length >= 5 || uploadLoading"
-              :show-upload-list="false"
-            >
-              <a-button :disabled="fileList.length >= 5 || uploadLoading">
-                <PaperClipOutlined /> Tải lên tệp
-              </a-button>
-            </a-upload>
-          </a-spin>
-
-          <!-- Display files -->
-          <div class="file-list" v-if="fileList.length > 0">
-            <div v-for="(file, index) in fileList" :key="index" class="file-item">
-              <div class="file-info">
-                <PaperClipOutlined />
-                <span class="file-name">{{ file.name }}</span>
-                <span class="file-size">({{ formatFileSize(file.size) }})</span>
-              </div>
-              <a-button type="text" size="small" danger @click="removeFile(file)" title="Xóa tệp">
-                <DeleteOutlined />
-              </a-button>
+        <!-- Display files -->
+        <div class="file-list" v-if="fileList.length > 0">
+          <div v-for="(file, index) in fileList" :key="index" class="file-item">
+            <div class="file-info">
+              <PaperClipOutlined />
+              <span class="file-name">{{ file.name }}</span>
+              <span class="file-size">({{ formatFileSize(file.size) }})</span>
             </div>
+            <a-button type="text" size="small" danger @click="removeFile(file)" title="Xóa tệp">
+              <DeleteOutlined />
+            </a-button>
           </div>
+        </div>
 
-          <div class="upload-hint" v-if="fileList.length >= 5">
-            Đã đạt giới hạn số lượng tệp tải lên
-          </div>
-        </a-form-item>
-      </a-form>
-    </a-modal>
-  </div>
+        <div class="upload-hint" v-if="fileList.length >= 5">
+          Đã đạt giới hạn số lượng tệp tải lên
+        </div>
+      </a-form-item>
+    </a-form>
+  </a-modal>
 </template>
 
 <style scoped>

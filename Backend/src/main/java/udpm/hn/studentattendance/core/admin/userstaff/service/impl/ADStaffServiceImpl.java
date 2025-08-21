@@ -129,14 +129,25 @@ public class ADStaffServiceImpl implements ADStaffService {
                 return RouterHelper
                         .responseError("Email FPT không được chứa khoảng trắng và phải kết thúc bằng @fpt.edu.vn");
             }
+        } else {
+            if (!ValidateHelper.isValidEmail(adCreateUpdateStaffRequest.getEmailFe().trim())) {
+                return RouterHelper
+                        .responseError("Email FE không hợp lệ");
+            }
+            if (!ValidateHelper.isValidEmail(adCreateUpdateStaffRequest.getEmailFpt().trim())) {
+                return RouterHelper
+                        .responseError("Email FPT không hợp lệ");
+            }
         }
+
+
 
         UserStaff staffExist = isStaffExist(
                 adCreateUpdateStaffRequest.getStaffCode(),
                 adCreateUpdateStaffRequest.getEmailFe(),
                 adCreateUpdateStaffRequest.getEmailFpt());
         if (staffExist != null) {
-            return RouterHelper.responseError("Nhân sự đã tồn tại");
+            return RouterHelper.responseError("Nhân sự đã tồn tại: " + staffExist.getName() + " - " + staffExist.getCode());
         }
 
         UserStaff staff = new UserStaff();
@@ -192,7 +203,7 @@ public class ADStaffServiceImpl implements ADStaffService {
 
         redisInvalidationHelper.invalidateAllCaches();
 
-        return RouterHelper.responseSuccess("Thêm nhân sự mới thành công");
+        return RouterHelper.responseSuccess("Thêm nhân sự mới thành công: " + staff.getName() + " - " + staff.getCode());
     }
 
     @Override
@@ -205,7 +216,7 @@ public class ADStaffServiceImpl implements ADStaffService {
 
         if (!ValidateHelper.isValidFullname(adCreateUpdateStaffRequest.getName())) {
             return RouterHelper.responseError(
-                    "Tên nhân sự không hợp lệ: Tối thiểu 2 từ, cách nhau bởi khoảng trắng và Chỉ gồm ký tự chữ không chứa số hay ký tự đặc biệt.");
+                    "Tên nhân sự không hợp lệ: Tối thiểu 2 từ, cách nhau bởi khoảng trắng và chỉ gồm ký tự chữ không chứa số hay ký tự đặc biệt.");
         }
 
         Optional<UserStaff> opt = adStaffRepository.findById(id);
@@ -230,6 +241,15 @@ public class ADStaffServiceImpl implements ADStaffService {
             }
             if (!ValidateHelper.isValidEmailFPT(adCreateUpdateStaffRequest.getEmailFpt().trim())) {
                 return RouterHelper.responseError("Không chứa khoảng trắng và kết thúc bằng @fpt.edu.vn");
+            }
+        } else {
+            if (!ValidateHelper.isValidEmail(adCreateUpdateStaffRequest.getEmailFe().trim())) {
+                return RouterHelper
+                        .responseError("Email FE không hợp lệ");
+            }
+            if (!ValidateHelper.isValidEmail(adCreateUpdateStaffRequest.getEmailFpt().trim())) {
+                return RouterHelper
+                        .responseError("Email FPT không hợp lệ");
             }
         }
 

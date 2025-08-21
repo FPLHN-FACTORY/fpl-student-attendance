@@ -1117,7 +1117,10 @@ watch(
         <a-card :bordered="false" class="cart">
           <template #title>
             <UnorderedListOutlined /> Danh sách ca
-            {{ `(${formatDate(_detail?.fromDate)} - ${formatDate(_detail?.toDate)})` }}
+            <span v-if="!dataFilter.startDate">
+              {{ `(${formatDate(_detail?.fromDate)} - ${formatDate(_detail?.toDate)})` }}
+            </span>
+            <span v-else>{{ `(${formatDate(dataFilter.startDate)})` }}</span>
           </template>
 
           <div class="d-flex justify-content-end flex-wrap gap-3 mb-2">

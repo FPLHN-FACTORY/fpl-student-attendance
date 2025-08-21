@@ -13,6 +13,7 @@ const handleSubmit = (descriptors) => {
   window.ReactNativeWebView.postMessage(
     JSON.stringify({
       image: faceIDStore.dataImage,
+      canvas: faceIDStore.dataCanvas,
     }),
   )
 }
@@ -20,7 +21,6 @@ const handleSubmit = (descriptors) => {
 onMounted(() => {
   faceIDStore.setFullStep(isFullStep)
   faceIDStore.setShowError(false)
-  faceIDStore.setLongerDistance(route.query?.type === 'longer')
   faceIDStore.setCallback((descriptor) => {
     handleSubmit(descriptor)
   })

@@ -46,12 +46,14 @@ const AttendanceScreen: React.FC<Props> = ({ route, navigation }) => {
 
   const insets = useSafeAreaInsets()
 
-  const handleAttendance = async (image: string) => {
+  const handleAttendance = async (image: string, canvas: string) => {
     showLoading()
 
-    const file = await base64ToFile(image)
+    const file_image = await base64ToFile(image)
+    const file_canvas = await base64ToFile(canvas)
     const data = new FormData()
-    data.append('image', file as any)
+    data.append('image', file_image as any)
+    data.append('canvas', file_canvas as any)
     data.append('idPlanDate', idPlanDate)
     data.append('latitude', location?.coords.latitude?.toString() ?? '')
     data.append('longitude', location?.coords.longitude?.toString() ?? '')
@@ -60,7 +62,7 @@ const AttendanceScreen: React.FC<Props> = ({ route, navigation }) => {
       .post(`${API_ROUTES.FETCH_DATA_STUDENT_ATTENDANCE}/checkin`, data, {
         headers: {
           'Content-Type': 'multipart/form-data',
-          'X-Signature': generateSignature(idPlanDate, file.size),
+          'X-Signature': generateSignature(idPlanDate, file_image.size),
         },
       })
       .then(({ data: response }) => {
@@ -73,7 +75,8 @@ const AttendanceScreen: React.FC<Props> = ({ route, navigation }) => {
       })
       .finally(() => {
         hideLoading()
-        unlinkBase64ToFile(file.uri)
+        unlinkBase64ToFile(file_image.uri)
+        unlinkBase64ToFile(file_canvas.uri)
       })
   }
 
@@ -118,12 +121,12 @@ const AttendanceScreen: React.FC<Props> = ({ route, navigation }) => {
         {statusWebcam === PermissionStatus.GRANTED && (
           <WebView
             ref={webviewRef}
-            source={{ uri: `${CLIENT_DOMAIN}/${SECRET_KEY}/false?type=longer` }}
+            source={{ uri: `${CLIENT_DOMAIN}/${SECRET_KEY}/false` }}
             onMessage={({ nativeEvent }) => {
               try {
                 const data = JSON.parse(nativeEvent?.data)
                 if (data?.image) {
-                  handleAttendance(data?.image)
+                  handleAttendance(data?.image, data?.canvas)
                 }
               } catch (error) {}
             }}

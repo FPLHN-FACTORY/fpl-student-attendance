@@ -41,6 +41,7 @@ const faceIDStore = useFaceIDStore()
 const loadingPage = useLoadingStore()
 
 const isLoading = ref(false)
+const isAttendance = ref(false)
 
 const lstData = ref([])
 
@@ -184,6 +185,11 @@ const handleSubmitFilter = () => {
 }
 
 const handleSubmitAttendance = () => {
+  if (isAttendance.value) {
+    return
+  }
+
+  isAttendance.value = true
   loadingPage.show()
   const data = new FormData()
   Object.entries(formData).forEach(([key, value]) => {
@@ -192,6 +198,7 @@ const handleSubmitAttendance = () => {
   })
   const dataImage = base64ToBlob(formData.image)
   data.append('image', dataImage)
+  data.append('canvas', base64ToBlob(faceIDStore.dataCanvas))
 
   requestAPI
     .post(`${API_ROUTES_STUDENT.FETCH_DATA_ATTENDANCE}/checkin`, data, {
@@ -212,6 +219,7 @@ const handleSubmitAttendance = () => {
     })
     .finally(() => {
       loadingPage.hide()
+      isAttendance.value = false
     })
 }
 
@@ -244,7 +252,6 @@ const handleSubmitUpdateInfo = () => {
 const handleUpdateInfo = async () => {
   isShowCamera.value = true
   faceIDStore.setFullStep(false)
-  faceIDStore.setLongerDistance(true)
   faceIDStore.setCallback((descriptor) => {
     formData.image = faceIDStore.dataImage
     Modal.confirm({

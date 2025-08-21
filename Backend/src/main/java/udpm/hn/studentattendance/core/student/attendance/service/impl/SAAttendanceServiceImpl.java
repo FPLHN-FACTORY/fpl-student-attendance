@@ -79,9 +79,6 @@ public class SAAttendanceServiceImpl implements SAAttendanceService {
     @Value("${app.config.face.threshold_checkin}")
     private double FACE_THRESHOLD_CHECKIN;
 
-    @Value("${app.config.face.threshold_antispoof}")
-    private double FACE_THRESHOLD_ANTIS_POOF;
-
     private int TIME_LIVE_SIGN = 5;
 
     @Override
@@ -97,7 +94,7 @@ public class SAAttendanceServiceImpl implements SAAttendanceService {
     }
 
     @Override
-    public ResponseEntity<?> checkin(SACheckinAttendanceRequest request, MultipartFile image) {
+    public ResponseEntity<?> checkin(SACheckinAttendanceRequest request, MultipartFile image, MultipartFile canvas) {
         PlanDate planDate = planDateRepository.findById(request.getIdPlanDate()).orElse(null);
         if (planDate == null
                 || !Objects.equals(
@@ -223,8 +220,16 @@ public class SAAttendanceServiceImpl implements SAAttendanceService {
 
 
         try {
-            if (image == null || image.isEmpty()) {
+            if ((image == null || image.isEmpty()) && (canvas == null || canvas.isEmpty())) {
                 throw new RuntimeException();
+            }
+
+            if (canvas == null || canvas.isEmpty()) {
+                canvas = image;
+            }
+
+            if (image == null || image.isEmpty()) {
+                image = canvas;
             }
 
             Set<String> serverSignature = new HashSet<>();
@@ -246,7 +251,7 @@ public class SAAttendanceServiceImpl implements SAAttendanceService {
                 throw new RuntimeException();
             }
 
-            if (onnxService.isFake(image.getBytes(), FACE_THRESHOLD_ANTIS_POOF)) {
+            if (onnxService.isFake(image.getBytes(), canvas.getBytes())) {
                 return RouterHelper.responseError("Ảnh quá mờ hoặc không thể nhận diện. Vui lòng thử lại");
             }
 
@@ -280,7 +285,7 @@ public class SAAttendanceServiceImpl implements SAAttendanceService {
                 attendance.setLateCheckout(lateCheckout);
 
                 Attendance entity = attendanceRepository.save(attendance);
-                sendMessageWS(planDate, userStudent);
+                sendMessageWS(planDate, userStudent, entity);
 
                 response = RouterHelper.responseSuccess("Checkin đầu giờ thành công", entity);
             }
@@ -298,14 +303,16 @@ public class SAAttendanceServiceImpl implements SAAttendanceService {
             attendance.setPlanDate(planDate);
         }
         attendance.setAttendanceStatus(AttendanceStatus.PRESENT);
-        sendMessageWS(planDate, userStudent);
-        return attendanceRepository.save(attendance);
+        Attendance save = attendanceRepository.save(attendance);
+        sendMessageWS(planDate, userStudent, save);
+        return save;
     }
 
-    private void sendMessageWS(PlanDate planDate, UserStudent userStudent) {
+    private void sendMessageWS(PlanDate planDate, UserStudent userStudent, Attendance attendance) {
         AttendanceMessage attendanceMessage = new AttendanceMessage();
         attendanceMessage.setPlanDateId(planDate.getId());
         attendanceMessage.setUserStudentId(userStudent.getId());
+        attendanceMessage.setAttendance(attendance);
         messagingTemplate.convertAndSend(RouteWebsocketConstant.TOPIC_ATTENDANCE, attendanceMessage);
     }
 

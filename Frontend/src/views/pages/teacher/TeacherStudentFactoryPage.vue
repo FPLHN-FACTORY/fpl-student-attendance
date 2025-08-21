@@ -54,7 +54,6 @@ const filter = reactive({
   searchQuery: '',
   status: '',
   factoryId: factoryId, // từ query string
-  page: 1,
 })
 const pagination = reactive({
   ...DEFAULT_PAGINATION,
@@ -138,8 +137,7 @@ const fetchStudentFactory = () => {
       students.value = result.data
       // Nếu API trả về tổng số trang, sử dụng:
       pagination.total = result.totalItems
-      // Nếu trả về tổng số bản ghi, thay thế bằng: pagination.total = result.totalRecords
-      pagination.current = filter.page
+
       countFilter.value = result.totalItems
     })
     .catch((error) => {
@@ -161,11 +159,11 @@ const handleClearFilter = () => {
   // Preserve factoryId and reset only search filters
   filter.searchQuery = ''
   filter.status = ''
+  handleSubmitFilter()
+}
 
-  // Không reset về trang 1 khi hủy lọc để giữ nguyên dữ liệu hiện tại
-  filter.page = 1
-
-  // Refetch with cleared filters but preserved factoryId
+const handleSubmitFilter = () => {
+  pagination.current = 1
   fetchStudentFactory()
 }
 
@@ -320,7 +318,7 @@ onMounted(() => {
                     v-model:value="filter.searchQuery"
                     placeholder="Nhập mã, tên hoặc email sinh viên"
                     allowClear
-                    @change="fetchStudentFactory"
+                    @change="handleSubmitFilter"
                   >
                     <template #prefix>
                       <SearchOutlined />
@@ -333,7 +331,7 @@ onMounted(() => {
                     v-model:value="filter.status"
                     placeholder="-- Tất cả trạng thái --"
                     class="w-100"
-                    @change="fetchStudentFactory"
+                    @change="handleSubmitFilter"
                   >
                     <a-select-option :value="''">-- Tất cả trạng thái --</a-select-option>
                     <a-select-option value="1">Đang hoạt động</a-select-option>
@@ -343,7 +341,7 @@ onMounted(() => {
 
                 <div class="col-12">
                   <div class="d-flex justify-content-center flex-wrap gap-2">
-                    <a-button class="btn-light" @click="fetchStudentFactory">
+                    <a-button class="btn-light" @click="handleSubmitFilter">
                       <FilterFilled /> Lọc
                     </a-button>
                     <a-button class="btn-gray" @click="handleClearFilter"> Huỷ lọc </a-button>

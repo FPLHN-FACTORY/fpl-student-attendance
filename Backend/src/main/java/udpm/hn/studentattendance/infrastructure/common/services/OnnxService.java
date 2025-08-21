@@ -39,54 +39,71 @@ import java.util.concurrent.BlockingQueue;
 public class OnnxService {
 
     private static final int SIZE_ANTISPOOF = 224;
+    private static final int SIZE_ANTISPOOF2 = 112;
+    private static final int SIZE_ANTISPOOF3 = 256;
+    private static final int SIZE_ANTISPOOF4 = 224;
+    private static final int SIZE_ANTISPOOF5 = 224;
     private static final int SIZE_ARCFACE = 112;
-    private static final int SIZE_DEPTH = 256;
 
     @Value("${app.config.path.model}")
     private String modelPath;
 
     private ZooModel<byte[], float[]> antiSpoofModel;
+    private ZooModel<byte[], float[]> antiSpoof2Model;
+    private ZooModel<byte[], float[]> antiSpoof3Model;
+    private ZooModel<byte[], float[]> antiSpoof4Model;
+    private ZooModel<byte[], float[]> antiSpoof5Model;
     private ZooModel<byte[], float[]> arcFaceModel;
-    private ZooModel<byte[], float[]> depthModel;
-    private ZooModel<float[], float[]> readDepthModel;
 
     private BlockingQueue<Predictor<byte[], float[]>> antiSpoofPredictorPool;
+    private BlockingQueue<Predictor<byte[], float[]>> antiSpoof2PredictorPool;
+    private BlockingQueue<Predictor<byte[], float[]>> antiSpoof3PredictorPool;
+    private BlockingQueue<Predictor<byte[], float[]>> antiSpoof4PredictorPool;
+    private BlockingQueue<Predictor<byte[], float[]>> antiSpoof5PredictorPool;
     private BlockingQueue<Predictor<byte[], float[]>> arcFacePredictorPool;
-    private BlockingQueue<Predictor<byte[], float[]>> depthPredictorPool;
-    private BlockingQueue<Predictor<float[], float[]>> readDepthPredictorPool;
 
     private final int POOL_SIZE = Runtime.getRuntime().availableProcessors();
 
     @PostConstruct
     public void init() throws IOException, ModelNotFoundException, MalformedModelException {
         antiSpoofModel = ModelZoo.loadModel(buildAntiSpoofCriteria());
+        antiSpoof2Model = ModelZoo.loadModel(buildAntiSpoof2Criteria());
+        antiSpoof3Model = ModelZoo.loadModel(buildAntiSpoof3Criteria());
+        antiSpoof4Model = ModelZoo.loadModel(buildAntiSpoof4Criteria());
+        antiSpoof5Model = ModelZoo.loadModel(buildAntiSpoof5Criteria());
         arcFaceModel = ModelZoo.loadModel(buildArcFaceCriteria());
-        depthModel = ModelZoo.loadModel(buildDepthCriteria());
-        readDepthModel = ModelZoo.loadModel(buildReadDepthCriteria());
 
         antiSpoofPredictorPool = new ArrayBlockingQueue<>(POOL_SIZE);
+        antiSpoof2PredictorPool = new ArrayBlockingQueue<>(POOL_SIZE);
+        antiSpoof3PredictorPool = new ArrayBlockingQueue<>(POOL_SIZE);
+        antiSpoof4PredictorPool = new ArrayBlockingQueue<>(POOL_SIZE);
+        antiSpoof5PredictorPool = new ArrayBlockingQueue<>(POOL_SIZE);
         arcFacePredictorPool = new ArrayBlockingQueue<>(POOL_SIZE);
-        depthPredictorPool = new ArrayBlockingQueue<>(POOL_SIZE);
-        readDepthPredictorPool = new ArrayBlockingQueue<>(POOL_SIZE);
 
         for (int i = 0; i < POOL_SIZE; i++) {
             antiSpoofPredictorPool.add(antiSpoofModel.newPredictor());
+            antiSpoof2PredictorPool.add(antiSpoof2Model.newPredictor());
+            antiSpoof3PredictorPool.add(antiSpoof3Model.newPredictor());
+            antiSpoof4PredictorPool.add(antiSpoof4Model.newPredictor());
+            antiSpoof5PredictorPool.add(antiSpoof5Model.newPredictor());
             arcFacePredictorPool.add(arcFaceModel.newPredictor());
-            depthPredictorPool.add(depthModel.newPredictor());
-            readDepthPredictorPool.add(readDepthModel.newPredictor());
         }
     }
 
     @PreDestroy
     public void close() {
         antiSpoofPredictorPool.forEach(Predictor::close);
+        antiSpoof2PredictorPool.forEach(Predictor::close);
+        antiSpoof3PredictorPool.forEach(Predictor::close);
+        antiSpoof4PredictorPool.forEach(Predictor::close);
+        antiSpoof5PredictorPool.forEach(Predictor::close);
         arcFacePredictorPool.forEach(Predictor::close);
-        depthPredictorPool.forEach(Predictor::close);
-        readDepthPredictorPool.forEach(Predictor::close);
         antiSpoofModel.close();
+        antiSpoof2Model.close();
+        antiSpoof3Model.close();
+        antiSpoof4Model.close();
+        antiSpoof5Model.close();
         arcFaceModel.close();
-        depthModel.close();
-        readDepthModel.close();
     }
 
     private Criteria<byte[], float[]> buildAntiSpoofCriteria() {
@@ -116,6 +133,114 @@ public class OnnxService {
                 .build();
     }
 
+    private Criteria<byte[], float[]> buildAntiSpoof2Criteria() {
+        Translator<byte[], float[]> translator = new Translator<>() {
+            @Override
+            public NDList processInput(TranslatorContext ctx, byte[] input) throws IOException {
+                BufferedImage img = ImageIO.read(new ByteArrayInputStream(input));
+                BufferedImage resized = resizeImage(img, SIZE_ANTISPOOF2);
+                float[] data = bufferedImageToCHWFloatArray(resized);
+                return new NDList(ctx.getNDManager().create(data, new Shape(1, 3, SIZE_ANTISPOOF2, SIZE_ANTISPOOF2)));
+            }
+            @Override
+            public float[] processOutput(TranslatorContext ctx, NDList list) {
+                return list.singletonOrThrow().toFloatArray();
+            }
+            @Override
+            public Batchifier getBatchifier() { return null; }
+        };
+
+        return Criteria.builder()
+                .setTypes(byte[].class, float[].class)
+                .optModelPath(Paths.get(modelPath, "modelrgb.onnx").toAbsolutePath())
+                .optEngine("OnnxRuntime")
+                .optOption("executionProvider", "CPUExecutionProvider")
+                .optOption("device", "cpu")
+                .optTranslator(translator)
+                .build();
+    }
+
+    private Criteria<byte[], float[]> buildAntiSpoof3Criteria() {
+        Translator<byte[], float[]> translator = new Translator<>() {
+            @Override
+            public NDList processInput(TranslatorContext ctx, byte[] input) throws IOException {
+                BufferedImage img = ImageIO.read(new ByteArrayInputStream(input));
+                BufferedImage resized = resizeImage(img, SIZE_ANTISPOOF3);
+                float[] data = bufferedImageToCHWFloatArray(resized);
+                return new NDList(ctx.getNDManager().create(data, new Shape(1, 3, SIZE_ANTISPOOF3, SIZE_ANTISPOOF3)));
+            }
+            @Override
+            public float[] processOutput(TranslatorContext ctx, NDList list) {
+                return list.singletonOrThrow().toFloatArray();
+            }
+            @Override
+            public Batchifier getBatchifier() { return null; }
+        };
+
+        return Criteria.builder()
+                .setTypes(byte[].class, float[].class)
+                .optModelPath(Paths.get(modelPath, "m8.onnx").toAbsolutePath())
+                .optEngine("OnnxRuntime")
+                .optOption("executionProvider", "CPUExecutionProvider")
+                .optOption("device", "cpu")
+                .optTranslator(translator)
+                .build();
+    }
+
+    private Criteria<byte[], float[]> buildAntiSpoof4Criteria() {
+        Translator<byte[], float[]> translator = new Translator<>() {
+            @Override
+            public NDList processInput(TranslatorContext ctx, byte[] input) throws IOException {
+                BufferedImage img = ImageIO.read(new ByteArrayInputStream(input));
+                BufferedImage resized = resizeImage(img, SIZE_ANTISPOOF4);
+                float[] data = bufferedImageToCHWFloatArray(resized);
+                return new NDList(ctx.getNDManager().create(data, new Shape(1, 3, SIZE_ANTISPOOF4, SIZE_ANTISPOOF4)));
+            }
+            @Override
+            public float[] processOutput(TranslatorContext ctx, NDList list) {
+                return list.singletonOrThrow().toFloatArray();
+            }
+            @Override
+            public Batchifier getBatchifier() { return null; }
+        };
+
+        return Criteria.builder()
+                .setTypes(byte[].class, float[].class)
+                .optModelPath(Paths.get(modelPath, "model_quantized.onnx").toAbsolutePath())
+                .optEngine("OnnxRuntime")
+                .optOption("executionProvider", "CPUExecutionProvider")
+                .optOption("device", "cpu")
+                .optTranslator(translator)
+                .build();
+    }
+
+    private Criteria<byte[], float[]> buildAntiSpoof5Criteria() {
+        Translator<byte[], float[]> translator = new Translator<>() {
+            @Override
+            public NDList processInput(TranslatorContext ctx, byte[] input) throws IOException {
+                BufferedImage img = ImageIO.read(new ByteArrayInputStream(input));
+                BufferedImage resized = resizeImage(img, SIZE_ANTISPOOF5);
+                float[] data = bufferedImageToCHWFloatArray(resized);
+                return new NDList(ctx.getNDManager().create(data, new Shape(1, 3, SIZE_ANTISPOOF5, SIZE_ANTISPOOF5)));
+            }
+            @Override
+            public float[] processOutput(TranslatorContext ctx, NDList list) {
+                return list.get(1).toFloatArray();
+            }
+            @Override
+            public Batchifier getBatchifier() { return null; }
+        };
+
+        return Criteria.builder()
+                .setTypes(byte[].class, float[].class)
+                .optModelPath(Paths.get(modelPath, "OULU_Protocol_2_model_0_0.onnx").toAbsolutePath())
+                .optEngine("OnnxRuntime")
+                .optOption("executionProvider", "CPUExecutionProvider")
+                .optOption("device", "cpu")
+                .optTranslator(translator)
+                .build();
+    }
+
     private Criteria<byte[], float[]> buildArcFaceCriteria() {
         Translator<byte[], float[]> translator = new Translator<>() {
             @Override
@@ -136,110 +261,6 @@ public class OnnxService {
         return Criteria.builder()
                 .setTypes(byte[].class, float[].class)
                 .optModelPath(Paths.get(modelPath, "embedding.onnx").toAbsolutePath())
-                .optEngine("OnnxRuntime")
-                .optOption("executionProvider", "CPUExecutionProvider")
-                .optOption("device", "cpu")
-                .optTranslator(translator)
-                .build();
-    }
-
-    private Criteria<byte[], float[]> buildDepthCriteria() {
-        Translator<byte[], float[]> translator = new Translator<>() {
-            @Override
-            public NDList processInput(TranslatorContext ctx, byte[] input) throws IOException {
-                BufferedImage img = ImageIO.read(new ByteArrayInputStream(input));
-                BufferedImage resized = resizeImage(img, SIZE_DEPTH);
-                float[] data = bufferedImageToCHWFloatArray(resized);
-                return new NDList(ctx.getNDManager().create(data, new Shape(1, 3, SIZE_DEPTH, SIZE_DEPTH)));
-            }
-            @Override
-            public float[] processOutput(TranslatorContext ctx, NDList list) {
-                NDArray arr = list.singletonOrThrow();
-                long[] shape = arr.getShape().getShape();
-                float[] flat = arr.toFloatArray();
-
-                int H = 0, W = 0;
-                if (shape.length == 4) {
-                    H = (int) shape[2];
-                    W = (int) shape[3];
-                } else if (shape.length == 3) {
-                    H = (int) shape[1];
-                    W = (int) shape[2];
-                } else if (shape.length == 2) {
-                    H = (int) shape[0];
-                    W = (int) shape[1];
-                } else if (shape.length == 1) {
-                    W = SIZE_DEPTH;
-                    H = flat.length / W;
-                    if (H * W != flat.length) {
-                        throw new IllegalStateException("Unexpected flat length: " + flat.length);
-                    }
-                } else {
-                    throw new IllegalStateException("Unexpected NDArray shape: " + Arrays.toString(shape));
-                }
-
-                float minPred = Float.MAX_VALUE, maxPred = Float.MIN_VALUE;
-                for (float v : flat) {
-                    if (v < minPred) minPred = v;
-                    if (v > maxPred) maxPred = v;
-                }
-                float origRange = maxPred - minPred;
-
-                if (origRange != 0) {
-                    for (int i = 0; i < flat.length; i++) {
-                        flat[i] = (flat[i] - minPred) / origRange;
-                    }
-                }
-
-                double sum = 0, sumSq = 0, gradSum = 0;
-                for (int y = 0; y < H; y++) {
-                    for (int x = 0; x < W; x++) {
-                        float v = flat[y * W + x];
-                        sum += v;
-                        sumSq += v * v;
-                        if (x < W - 1) gradSum += Math.abs(v - flat[y * W + (x + 1)]);
-                        if (y < H - 1) gradSum += Math.abs(v - flat[(y + 1) * W + x]);
-                    }
-                }
-
-                double mean = sum / (H * W);
-                float variance = (float) ((sumSq / (H * W)) - (mean * mean));
-                float std = (float) Math.sqrt(variance + 1e-6f);
-                float gradScore = (float) (gradSum / ((W - 1) * H + (H - 1) * W));
-
-                return new float[]{variance, origRange, gradScore, (float) mean, std};
-            }
-            @Override
-            public Batchifier getBatchifier() { return null; }
-        };
-
-        return Criteria.builder()
-                .setTypes(byte[].class, float[].class)
-                .optModelPath(Paths.get(modelPath, "depth.onnx").toAbsolutePath())
-                .optEngine("OnnxRuntime")
-                .optOption("executionProvider", "CPUExecutionProvider")
-                .optOption("device", "cpu")
-                .optTranslator(translator)
-                .build();
-    }
-
-    private Criteria<float[], float[]> buildReadDepthCriteria() {
-        Translator<float[], float[]> translator = new Translator<>() {
-            @Override
-            public NDList processInput(TranslatorContext ctx, float[] input) {
-                return new NDList(ctx.getNDManager().create(input, new Shape(1, input.length)));
-            }
-            @Override
-            public float[] processOutput(TranslatorContext ctx, NDList list) {
-                return list.get(1).toFloatArray();
-            }
-            @Override
-            public Batchifier getBatchifier() { return null; }
-        };
-
-        return Criteria.builder()
-                .setTypes(float[].class, float[].class)
-                .optModelPath(Paths.get(modelPath, "read_depth.onnx").toAbsolutePath())
                 .optEngine("OnnxRuntime")
                 .optOption("executionProvider", "CPUExecutionProvider")
                 .optOption("device", "cpu")
@@ -330,13 +351,11 @@ public class OnnxService {
             float[] hsv = Color.RGBtoHSB(avgR, avgG, avgB, null);
             float hue = hsv[0] * 360;
             float sat = hsv[1];
+            float brightness = hsv[2];
 
-            if (sat > 0.1) {
-                //da quá vàng đỏ hoặc vàng
-                if ((hue >= 0 && hue <= 10) || (hue >= 35 && hue <= 60)) return true;
-                //da quá xanh
-                if (hue >= 120 && hue <= 240) return true;
-            }
+            if (sat > 0.1 && hue >= 120 && hue <= 240) return true;
+            if (sat <= 0.2 && brightness >= 0.85) return true;
+
             return false;
         }
     }
@@ -360,13 +379,18 @@ public class OnnxService {
         return dest;
     }
 
-    public static boolean softmax(float[] logits) {
-        double e0 = Math.exp(logits[1]);
-        double e1 = Math.exp(logits[0]);
-        double sum = e0 + e1;
-        double probReal = e0 / sum;
-        double probFake = e1 / sum;
-        return probReal > probFake;
+    private static float[] softmax(float[] logits) {
+        float max = Float.NEGATIVE_INFINITY;
+        for (float l : logits) if (l > max) max = l;
+
+        float sum = 0f;
+        float[] exps = new float[logits.length];
+        for (int i = 0; i < logits.length; i++) {
+            exps[i] = (float)Math.exp(logits[i] - max);
+            sum += exps[i];
+        }
+        for (int i = 0; i < exps.length; i++) exps[i] /= sum;
+        return exps;
     }
 
     public float antiSpoof(byte[] imgBytes) throws InterruptedException, TranslateException {
@@ -379,13 +403,46 @@ public class OnnxService {
         }
     }
 
-    public boolean isDepthReal(float[] features) throws InterruptedException, TranslateException {
-        Predictor<float[], float[]> predictor = readDepthPredictorPool.take();
+    public float antiSpoof2(byte[] imgBytes) throws InterruptedException, TranslateException {
+        Predictor<byte[], float[]> predictor = antiSpoof2PredictorPool.take();
         try {
-            float[] result = predictor.predict(features);
-            return softmax(result);
+            float[] result = predictor.predict(imgBytes);
+            float[] softmax = softmax(result);
+            return softmax[0];
         } finally {
-            readDepthPredictorPool.put(predictor);
+            antiSpoof2PredictorPool.put(predictor);
+        }
+    }
+
+    public float antiSpoof3(byte[] imgBytes) throws InterruptedException, TranslateException {
+        Predictor<byte[], float[]> predictor = antiSpoof3PredictorPool.take();
+        try {
+            float[] result = predictor.predict(imgBytes);
+            float[] softmax = softmax(result);
+            return softmax[0];
+        } finally {
+            antiSpoof3PredictorPool.put(predictor);
+        }
+    }
+
+    public float antiSpoof4(byte[] imgBytes) throws InterruptedException, TranslateException {
+        Predictor<byte[], float[]> predictor = antiSpoof4PredictorPool.take();
+        try {
+            float[] result = predictor.predict(imgBytes);
+            float[] softmax = softmax(result);
+            return softmax[1];
+        } finally {
+            antiSpoof4PredictorPool.put(predictor);
+        }
+    }
+
+    public float antiSpoof5(byte[] imgBytes) throws InterruptedException, TranslateException {
+        Predictor<byte[], float[]> predictor = antiSpoof5PredictorPool.take();
+        try {
+            float[] result = predictor.predict(imgBytes);
+            return result[0];
+        } finally {
+            antiSpoof5PredictorPool.put(predictor);
         }
     }
 
@@ -398,67 +455,42 @@ public class OnnxService {
         }
     }
 
-    public float[] getDepth(byte[] imgBytes) throws InterruptedException, TranslateException {
-        Predictor<byte[], float[]> predictor = depthPredictorPool.take();
+    public boolean isFake(byte[] faceBox, byte[] canvas)  {
         try {
-            float[] result = predictor.predict(imgBytes);
-            System.out.println(Arrays.toString(result));
-            return result;
-        } finally {
-            depthPredictorPool.put(predictor);
-        }
-    }
+            if (isColorFake(faceBox)) {
+                System.out.println("isColorFake");
+//                return true;
+            }
 
-    public boolean rule1(float[] depth) {
-        return (depth[0] > 0.06 && depth[0] < 0.14) && depth[1] > 1900 && depth[2] > 0.0035 && depth[3] > 0.2 && depth[3] < 0.8 && depth[4] > 0.25 && depth[4] <= 0.31;
-    }
+            float antiSpoof = antiSpoof(faceBox);
+            float antiSpoof2 = antiSpoof2(faceBox);
+            float antiSpoof3 = antiSpoof3(canvas);
+            float antiSpoof4 = antiSpoof4(faceBox);
+            float antiSpoof5 = antiSpoof5(faceBox);
 
-    public boolean rule2(float[] depth) {
-        return (depth[0] >= 0.06 && depth[0] <= 0.14) && (depth[1] >= 2100 && depth[1] <= 3000) && (depth[2] >= 0.0035 && depth[2] <= 0.005) && (depth[3] >= 0.7 && depth[3] <= 0.85) && (depth[4] >= 0.25 && depth[4] <= 0.37);
-    }
+            List<Boolean> checking = new ArrayList<>();
+            checking.add(antiSpoof < 0.01);
+            checking.add(antiSpoof2 < 0.65);
+            checking.add(antiSpoof3 < 0.6);
+            checking.add(antiSpoof4 < 0.6);
+            checking.add(antiSpoof5 < 0.6);
 
-    public boolean rule3(float[] depth) {
-        return (depth[0] > 0.05 && depth[0] < 0.15) && depth[1] > 2000 && depth[2] > 0.003 && depth[3] > 0.65 && depth[3] < 0.85 && depth[4] > 0.2 && depth[4] < 0.4;
-    }
+            System.out.println("antiSpoof: " + antiSpoof);
+            System.out.println("antiSpoof2: " + antiSpoof2);
+            System.out.println("antiSpoof3: " + antiSpoof3);
+            System.out.println("antiSpoof4: " + antiSpoof4);
+            System.out.println("antiSpoof5: " + antiSpoof5);
 
-    public boolean rule4(float[] depth) {
-        return (depth[0] >= 0.05 && depth[0] <= 0.15) && (depth[1] >= 1800 && depth[1] <= 3000) && (depth[2] >= 0.003 && depth[2] <= 0.005) && (depth[3] >= 0.7 && depth[3] <= 0.85) && (depth[4] >= 0.25 && depth[4] <= 0.38);
-    }
+            System.out.println(checking);
+            long totalReject = checking.stream().filter(Boolean::booleanValue).count();
 
-
-    public boolean isFake(byte[] imgBytes, double threshold) throws TranslateException, InterruptedException, IOException {
-
-        if (isColorFake(imgBytes)) {
-            System.out.println("isColorFake");
+            if (antiSpoof > 0.99 && totalReject < 3) {
+                return false;
+            }
+            return totalReject > 2;
+        } catch (Exception e) {
             return true;
         }
-
-        float antiSpoof = antiSpoof(imgBytes);
-        if (antiSpoof > 0.99) {
-            return false;
-        }
-        System.out.println("antiSpoof: " + antiSpoof);
-
-        float[] depth = getDepth(imgBytes);
-        float[] features = new float[depth.length + 1];
-        System.arraycopy(depth, 0, features, 0, depth.length);
-        features[depth.length] = antiSpoof;
-
-        boolean isDepthReal = isDepthReal(features);
-
-        List<Boolean> checking = new ArrayList<>();
-        checking.add(rule1(depth));
-        checking.add(rule2(depth));
-        checking.add(rule3(depth));
-        checking.add(rule4(depth));
-        checking.add(isDepthReal);
-
-        boolean isReal = checking.stream().filter(Boolean::booleanValue).count() >= 2;
-        System.out.println(checking);
-
-        boolean isFake = antiSpoof < threshold || !isReal;
-        System.out.println("=> " + (isFake ? "Fake" : "real"));
-        return isFake;
     }
 
 }

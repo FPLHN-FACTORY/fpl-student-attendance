@@ -17,4 +17,6 @@ public interface SPDPlanDateAttendanceResponse extends IsIdentify, HasOrderNumbe
 
     Integer getRequiredCheckout();
 
+    Integer getStatus();
+
 }

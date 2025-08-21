@@ -7,6 +7,7 @@ import lombok.Setter;
 import lombok.ToString;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.HashMap;
 import java.util.Map;
 
 @Setter
@@ -25,4 +26,18 @@ public class EXImportRequest {
 
     private Map<String, String> item;
 
+    public Map<String, String> getItem() {
+        if (item == null) return null;
+
+        Map<String, String> result = new HashMap<>();
+        for (Map.Entry<String, String> entry : item.entrySet()) {
+            String key = entry.getKey();
+            String value = entry.getValue();
+            if (value != null) {
+                value = value.replaceAll("[^\\p{L}\\p{N}\\s~`!@#$%^&*()_+\\-=\\[\\]{}|;:'\",.<>/?\\\\]", "").replaceAll("\\s+", " ").trim();
+            }
+            result.put(key, value);
+        }
+        return result;
+    }
 }

@@ -34,7 +34,6 @@ const isLoadingExport = ref(false)
 
 const attendanceList = ref([])
 const filter = reactive({
-  page: 1,
   plan: 7, // Mặc định 7 ngày tới
 })
 const pagination = ref({ ...DEFAULT_PAGINATION })
@@ -76,7 +75,6 @@ const fetchAttendanceList = () => {
     .then(({ data }) => {
       attendanceList.value = data.data.data
       pagination.value.total = data.data.totalItems
-      pagination.value.current = filter.page
       countFilter.value = data.data.totalItems
     })
     .catch((error) => {
@@ -112,7 +110,7 @@ const exportToExcel = async () => {
         now,
         max,
         page: 1,
-        size: 1000, // Get all data by setting a large page size
+        size: 9999, // Get all data by setting a large page size
       },
     })
 
@@ -227,8 +225,6 @@ const exportToPDF = () => {
 
 const handleClearFilter = () => {
   filter.plan = 7
-  filter.page = 1
-  // Không reset về trang 1 khi hủy lọc để giữ nguyên dữ liệu hiện tại
   fetchAttendanceList()
 }
 
