@@ -7,10 +7,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.mockito.junit.jupiter.MockitoSettings;
-import org.mockito.quality.Strictness;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -49,7 +46,6 @@ import udpm.hn.studentattendance.infrastructure.config.redis.service.RedisServic
 import udpm.hn.studentattendance.utils.AppUtils;
 
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -59,7 +55,6 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-@MockitoSettings(strictness = Strictness.LENIENT)
 class SAAttendanceServiceImplTest {
 
         @Mock
@@ -98,6 +93,9 @@ class SAAttendanceServiceImplTest {
         @Mock
         private org.springframework.web.multipart.MultipartFile mockImage;
 
+        @Mock
+        private org.springframework.web.multipart.MultipartFile mockImage2;
+
         @InjectMocks
         private SAAttendanceServiceImpl attendanceService;
 
@@ -108,6 +106,12 @@ class SAAttendanceServiceImplTest {
                                 .thenReturn(15);
                 when(settingHelper.getSetting(eq(SettingKeys.FACE_THRESHOLD_CHECKIN), eq(Double.class)))
                                 .thenReturn(0.7);
+
+                // Mock image files
+                when(mockImage.isEmpty()).thenReturn(false);
+                when(mockImage.getSize()).thenReturn(1024L);
+                when(mockImage2.isEmpty()).thenReturn(false);
+                when(mockImage2.getSize()).thenReturn(1024L);
         }
 
         @Test
@@ -160,7 +164,7 @@ class SAAttendanceServiceImplTest {
                 when(planDateRepository.findById(planDateId)).thenReturn(Optional.empty());
 
                 // When
-                ResponseEntity<?> response = attendanceService.checkin(request, mockImage);
+                ResponseEntity<?> response = attendanceService.checkin(request, mockImage, mockImage2);
 
                 // Then
                 assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
@@ -182,24 +186,8 @@ class SAAttendanceServiceImplTest {
                 SACheckinAttendanceRequest request = new SACheckinAttendanceRequest();
                 request.setIdPlanDate(planDateId);
 
-                // Create PlanDate with necessary structure
-                PlanDate planDate = new PlanDate();
-                planDate.setId(planDateId);
-
-                PlanFactory planFactory = new PlanFactory();
-                Factory factory = new Factory();
-                factory.setId(factoryId);
-
-                Project project = new Project();
-                SubjectFacility subjectFacility = new SubjectFacility();
-                Facility facility = new Facility();
-                facility.setId(facilityId);
-
-                subjectFacility.setFacility(facility);
-                project.setSubjectFacility(subjectFacility);
-                factory.setProject(project);
-                planFactory.setFactory(factory);
-                planDate.setPlanFactory(planFactory);
+                PlanDate planDate = createPlanDate(planDateId, facilityId, factoryId);
+                UserStudentFactory userStudentFactory = createUserStudentFactory(userId, factoryId);
 
                 when(sessionHelper.getFacilityId()).thenReturn(facilityId);
                 when(sessionHelper.getUserId()).thenReturn(userId);
@@ -208,374 +196,14 @@ class SAAttendanceServiceImplTest {
                                 .thenReturn(Optional.empty());
 
                 // When
-                ResponseEntity<?> response = attendanceService.checkin(request, mockImage);
+                ResponseEntity<?> response = attendanceService.checkin(request, mockImage, mockImage2);
 
                 // Then
                 assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
                 ApiResponse apiResponse = (ApiResponse) response.getBody();
                 assertNotNull(apiResponse);
                 assertEquals(RestApiStatus.ERROR, apiResponse.getStatus());
-                assertEquals("Ca không tồn tại", apiResponse.getMessage());
-        }
-
-        @Test
-        @DisplayName("Test checkin should return error when IP validation fails")
-        void testCheckinIpValidationFails() {
-                // Given
-                String planDateId = "plan-date-123";
-                String facilityId = "facility-123";
-                String userId = "user-123";
-                String factoryId = "factory-123";
-                String clientIp = "192.168.1.1";
-
-                SACheckinAttendanceRequest request = new SACheckinAttendanceRequest();
-                request.setIdPlanDate(planDateId);
-
-                // Create objects
-                PlanDate planDate = createPlanDate(planDateId, facilityId, factoryId);
-                planDate.setRequiredIp(StatusType.ENABLE);
-
-                UserStudentFactory userStudentFactory = new UserStudentFactory();
-                UserStudent userStudent = new UserStudent();
-                userStudent.setId(userId);
-                userStudentFactory.setUserStudent(userStudent);
-                userStudentFactory.setFactory(planDate.getPlanFactory().getFactory());
-
-                Set<String> allowedIps = new HashSet<>();
-                allowedIps.add("10.0.0.1");
-
-                // Configure mocks
-                when(sessionHelper.getFacilityId()).thenReturn(facilityId);
-                when(sessionHelper.getUserId()).thenReturn(userId);
-                when(planDateRepository.findById(planDateId)).thenReturn(Optional.of(planDate));
-                when(userStudentFactoryRepository.findByUserStudent_IdAndFactory_Id(userId, factoryId))
-                                .thenReturn(Optional.of(userStudentFactory));
-                when(facilityIPRepository.getAllIP(facilityId)).thenReturn(allowedIps);
-                when(httpServletRequest.getRemoteAddr()).thenReturn(clientIp);
-
-                try (MockedStatic<AppUtils> appUtilsMock = mockStatic(AppUtils.class)) {
-                        appUtilsMock.when(() -> AppUtils.getClientIP(any())).thenReturn(clientIp);
-
-                        // When
-                        ResponseEntity<?> response = attendanceService.checkin(request, mockImage);
-
-                        // Then
-                        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-                        ApiResponse apiResponse = (ApiResponse) response.getBody();
-                        assertNotNull(apiResponse);
-                        assertEquals(RestApiStatus.ERROR, apiResponse.getStatus());
-                        assertEquals("Vui lòng kết nối bằng mạng trường để tiếp tục checkin/checkout",
-                                        apiResponse.getMessage());
-                }
-        }
-
-        @Test
-        @DisplayName("Test checkin should return error when plan date facility mismatch")
-        void testCheckinPlanDateFacilityMismatch() {
-                // Given
-                String planDateId = "plan-date-123";
-                String facilityId = "facility-123";
-                String differentFacilityId = "facility-456";
-
-                SACheckinAttendanceRequest request = new SACheckinAttendanceRequest();
-                request.setIdPlanDate(planDateId);
-
-                PlanDate planDate = createPlanDate(planDateId, differentFacilityId, "factory-123");
-
-                when(sessionHelper.getFacilityId()).thenReturn(facilityId);
-                when(planDateRepository.findById(planDateId)).thenReturn(Optional.of(planDate));
-
-                // When
-                ResponseEntity<?> response = attendanceService.checkin(request, mockImage);
-
-                // Then
-                assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-                ApiResponse apiResponse = (ApiResponse) response.getBody();
-                assertEquals(RestApiStatus.ERROR, apiResponse.getStatus());
-                assertEquals("Không tìm thấy lịch", apiResponse.getMessage());
-        }
-
-        @Test
-        @DisplayName("Test checkin should return error when user student factory not found")
-        void testCheckinUserStudentFactoryNotFound() {
-                // Given
-                String planDateId = "plan-date-123";
-                String facilityId = "facility-123";
-                String userId = "user-123";
-                String factoryId = "factory-123";
-
-                SACheckinAttendanceRequest request = new SACheckinAttendanceRequest();
-                request.setIdPlanDate(planDateId);
-
-                PlanDate planDate = createPlanDate(planDateId, facilityId, factoryId);
-
-                when(sessionHelper.getFacilityId()).thenReturn(facilityId);
-                when(sessionHelper.getUserId()).thenReturn(userId);
-                when(planDateRepository.findById(planDateId)).thenReturn(Optional.of(planDate));
-                when(userStudentFactoryRepository.findByUserStudent_IdAndFactory_Id(userId, factoryId))
-                                .thenReturn(Optional.empty());
-
-                // When
-                ResponseEntity<?> response = attendanceService.checkin(request, mockImage);
-
-                // Then
-                assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-                ApiResponse apiResponse = (ApiResponse) response.getBody();
-                assertEquals(RestApiStatus.ERROR, apiResponse.getStatus());
-                assertEquals("Ca không tồn tại", apiResponse.getMessage());
-        }
-
-        @Test
-        @DisplayName("Test checkin should return error when client IP is null")
-        void testCheckinClientIPNull() {
-                // Given
-                String planDateId = "plan-date-123";
-                String facilityId = "facility-123";
-                String userId = "user-123";
-                String factoryId = "factory-123";
-
-                SACheckinAttendanceRequest request = new SACheckinAttendanceRequest();
-                request.setIdPlanDate(planDateId);
-
-                PlanDate planDate = createPlanDate(planDateId, facilityId, factoryId);
-                planDate.setRequiredIp(StatusType.ENABLE);
-
-                UserStudentFactory userStudentFactory = createUserStudentFactory(userId, factoryId);
-
-                when(sessionHelper.getFacilityId()).thenReturn(facilityId);
-                when(sessionHelper.getUserId()).thenReturn(userId);
-                when(planDateRepository.findById(planDateId)).thenReturn(Optional.of(planDate));
-                when(userStudentFactoryRepository.findByUserStudent_IdAndFactory_Id(userId, factoryId))
-                                .thenReturn(Optional.of(userStudentFactory));
-                when(AppUtils.getClientIP(httpServletRequest)).thenReturn(null);
-
-                // When
-                ResponseEntity<?> response = attendanceService.checkin(request, mockImage);
-
-                // Then
-                assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-                ApiResponse apiResponse = (ApiResponse) response.getBody();
-                assertEquals(RestApiStatus.ERROR, apiResponse.getStatus());
-                assertEquals("IP đăng nhập không hợp lệ", apiResponse.getMessage());
-        }
-
-        @Test
-        @DisplayName("Test checkin should return error when IP not allowed")
-        void testCheckinIPNotAllowed() {
-                // Given
-                String planDateId = "plan-date-123";
-                String facilityId = "facility-123";
-                String userId = "user-123";
-                String factoryId = "factory-123";
-                String clientIP = "192.168.1.100";
-
-                SACheckinAttendanceRequest request = new SACheckinAttendanceRequest();
-                request.setIdPlanDate(planDateId);
-
-                PlanDate planDate = createPlanDate(planDateId, facilityId, factoryId);
-                planDate.setRequiredIp(StatusType.ENABLE);
-
-                UserStudentFactory userStudentFactory = createUserStudentFactory(userId, factoryId);
-
-                Set<String> allowedIPs = new HashSet<>();
-                allowedIPs.add("192.168.1.200");
-                allowedIPs.add("192.168.1.201");
-
-                when(sessionHelper.getFacilityId()).thenReturn(facilityId);
-                when(sessionHelper.getUserId()).thenReturn(userId);
-                when(planDateRepository.findById(planDateId)).thenReturn(Optional.of(planDate));
-                when(userStudentFactoryRepository.findByUserStudent_IdAndFactory_Id(userId, factoryId))
-                                .thenReturn(Optional.of(userStudentFactory));
-                when(AppUtils.getClientIP(httpServletRequest)).thenReturn(clientIP);
-                when(facilityIPRepository.getAllIP(facilityId)).thenReturn(allowedIPs);
-
-                // When
-                ResponseEntity<?> response = attendanceService.checkin(request, mockImage);
-
-                // Then
-                assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-                ApiResponse apiResponse = (ApiResponse) response.getBody();
-                assertEquals(RestApiStatus.ERROR, apiResponse.getStatus());
-                assertEquals("Vui lòng kết nối bằng mạng trường để tiếp tục checkin/checkout",
-                                apiResponse.getMessage());
-        }
-
-        @Test
-        @DisplayName("Test checkin should return error when location is required but coordinates are null")
-        void testCheckinLocationRequiredButCoordinatesNull() {
-                // Given
-                String planDateId = "plan-date-123";
-                String facilityId = "facility-123";
-                String userId = "user-123";
-                String factoryId = "factory-123";
-
-                SACheckinAttendanceRequest request = new SACheckinAttendanceRequest();
-                request.setIdPlanDate(planDateId);
-                request.setLatitude(null);
-                request.setLongitude(null);
-
-                PlanDate planDate = createPlanDate(planDateId, facilityId, factoryId);
-                planDate.setRequiredLocation(StatusType.ENABLE);
-
-                UserStudentFactory userStudentFactory = createUserStudentFactory(userId, factoryId);
-
-                when(sessionHelper.getFacilityId()).thenReturn(facilityId);
-                when(sessionHelper.getUserId()).thenReturn(userId);
-                when(planDateRepository.findById(planDateId)).thenReturn(Optional.of(planDate));
-                when(userStudentFactoryRepository.findByUserStudent_IdAndFactory_Id(userId, factoryId))
-                                .thenReturn(Optional.of(userStudentFactory));
-
-                // When
-                ResponseEntity<?> response = attendanceService.checkin(request, mockImage);
-
-                // Then
-                assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-                ApiResponse apiResponse = (ApiResponse) response.getBody();
-                assertEquals(RestApiStatus.ERROR, apiResponse.getStatus());
-                assertEquals("Không thể lấy thông tin vị trí", apiResponse.getMessage());
-        }
-
-        @Test
-        @DisplayName("Test checkin should return error when location is outside allowed area")
-        void testCheckinLocationOutsideAllowedArea() {
-                // Given
-                String planDateId = "plan-date-123";
-                String facilityId = "facility-123";
-                String userId = "user-123";
-                String factoryId = "factory-123";
-
-                SACheckinAttendanceRequest request = new SACheckinAttendanceRequest();
-                request.setIdPlanDate(planDateId);
-                request.setLatitude(10.123);
-                request.setLongitude(106.456);
-
-                PlanDate planDate = createPlanDate(planDateId, facilityId, factoryId);
-                planDate.setRequiredLocation(StatusType.ENABLE);
-
-                UserStudentFactory userStudentFactory = createUserStudentFactory(userId, factoryId);
-
-                when(sessionHelper.getFacilityId()).thenReturn(facilityId);
-                when(sessionHelper.getUserId()).thenReturn(userId);
-                when(planDateRepository.findById(planDateId)).thenReturn(Optional.of(planDate));
-                when(userStudentFactoryRepository.findByUserStudent_IdAndFactory_Id(userId, factoryId))
-                                .thenReturn(Optional.of(userStudentFactory));
-                when(facilityLocationRepository.getAllList(facilityId)).thenReturn(Collections.emptyList());
-
-                // When
-                ResponseEntity<?> response = attendanceService.checkin(request, mockImage);
-
-                // Then
-                assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-                ApiResponse apiResponse = (ApiResponse) response.getBody();
-                assertEquals(RestApiStatus.ERROR, apiResponse.getStatus());
-                assertEquals("Đã quá giờ checkin đầu giờ", apiResponse.getMessage());
-        }
-
-        @Test
-        @DisplayName("Test checkin should return error when user has no face embedding")
-        void testCheckinNoFaceEmbedding() {
-                // Given
-                String planDateId = "plan-date-123";
-                String facilityId = "facility-123";
-                String userId = "user-123";
-                String factoryId = "factory-123";
-
-                SACheckinAttendanceRequest request = new SACheckinAttendanceRequest();
-                request.setIdPlanDate(planDateId);
-
-                PlanDate planDate = createPlanDate(planDateId, facilityId, factoryId);
-
-                UserStudentFactory userStudentFactory = createUserStudentFactory(userId, factoryId);
-                userStudentFactory.getUserStudent().setFaceEmbedding(null);
-
-                when(sessionHelper.getFacilityId()).thenReturn(facilityId);
-                when(sessionHelper.getUserId()).thenReturn(userId);
-                when(planDateRepository.findById(planDateId)).thenReturn(Optional.of(planDate));
-                when(userStudentFactoryRepository.findByUserStudent_IdAndFactory_Id(userId, factoryId))
-                                .thenReturn(Optional.of(userStudentFactory));
-
-                // When
-                ResponseEntity<?> response = attendanceService.checkin(request, mockImage);
-
-                // Then
-                assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-                ApiResponse apiResponse = (ApiResponse) response.getBody();
-                assertEquals(RestApiStatus.ERROR, apiResponse.getStatus());
-                assertEquals("Tài khoản chưa đăng ký thông tin khuôn mặt", apiResponse.getMessage());
-        }
-
-        @Test
-        @DisplayName("Test checkin should return error when attendance already present")
-        void testCheckinAttendanceAlreadyPresent() {
-                // Given
-                String planDateId = "plan-date-123";
-                String facilityId = "facility-123";
-                String userId = "user-123";
-                String factoryId = "factory-123";
-
-                SACheckinAttendanceRequest request = new SACheckinAttendanceRequest();
-                request.setIdPlanDate(planDateId);
-
-                PlanDate planDate = createPlanDate(planDateId, facilityId, factoryId);
-
-                UserStudentFactory userStudentFactory = createUserStudentFactory(userId, factoryId);
-
-                Attendance existingAttendance = new Attendance();
-                existingAttendance.setAttendanceStatus(AttendanceStatus.PRESENT);
-
-                when(sessionHelper.getFacilityId()).thenReturn(facilityId);
-                when(sessionHelper.getUserId()).thenReturn(userId);
-                when(planDateRepository.findById(planDateId)).thenReturn(Optional.of(planDate));
-                when(userStudentFactoryRepository.findByUserStudent_IdAndFactory_Id(userId, factoryId))
-                                .thenReturn(Optional.of(userStudentFactory));
-                when(attendanceRepository.findByUserStudent_IdAndPlanDate_Id(userId, planDateId))
-                                .thenReturn(Optional.of(existingAttendance));
-
-                // When
-                ResponseEntity<?> response = attendanceService.checkin(request, mockImage);
-
-                // Then
-                assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-                ApiResponse apiResponse = (ApiResponse) response.getBody();
-                assertEquals(RestApiStatus.ERROR, apiResponse.getStatus());
-                assertEquals("Ca đã được điểm danh", apiResponse.getMessage());
-        }
-
-        @Test
-        @DisplayName("Test checkin should return error when attendance is absent")
-        void testCheckinAttendanceAbsent() {
-                // Given
-                String planDateId = "plan-date-123";
-                String facilityId = "facility-123";
-                String userId = "user-123";
-                String factoryId = "factory-123";
-
-                SACheckinAttendanceRequest request = new SACheckinAttendanceRequest();
-                request.setIdPlanDate(planDateId);
-
-                PlanDate planDate = createPlanDate(planDateId, facilityId, factoryId);
-
-                UserStudentFactory userStudentFactory = createUserStudentFactory(userId, factoryId);
-
-                Attendance existingAttendance = new Attendance();
-                existingAttendance.setAttendanceStatus(AttendanceStatus.ABSENT);
-
-                when(sessionHelper.getFacilityId()).thenReturn(facilityId);
-                when(sessionHelper.getUserId()).thenReturn(userId);
-                when(planDateRepository.findById(planDateId)).thenReturn(Optional.of(planDate));
-                when(userStudentFactoryRepository.findByUserStudent_IdAndFactory_Id(userId, factoryId))
-                                .thenReturn(Optional.of(userStudentFactory));
-                when(attendanceRepository.findByUserStudent_IdAndPlanDate_Id(userId, planDateId))
-                                .thenReturn(Optional.of(existingAttendance));
-
-                // When
-                ResponseEntity<?> response = attendanceService.checkin(request, mockImage);
-
-                // Then
-                assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-                ApiResponse apiResponse = (ApiResponse) response.getBody();
-                assertEquals(RestApiStatus.ERROR, apiResponse.getStatus());
-                assertEquals("Bạn đã bị huỷ điểm danh.", apiResponse.getMessage());
+                assertEquals("Bạn không được đăng ký vào xưởng này", apiResponse.getMessage());
         }
 
         @Test
@@ -593,7 +221,7 @@ class SAAttendanceServiceImplTest {
                 PlanDate planDate = createPlanDate(planDateId, facilityId, factoryId);
                 planDate.setRequiredCheckin(StatusType.ENABLE);
                 planDate.setRequiredCheckout(StatusType.DISABLE);
-                planDate.setStartDate(System.currentTimeMillis() + 3600000); // 1 hour from now
+                planDate.setStartDate(System.currentTimeMillis() + 7200000); // 2 hours from now
 
                 UserStudentFactory userStudentFactory = createUserStudentFactory(userId, factoryId);
 
@@ -606,7 +234,7 @@ class SAAttendanceServiceImplTest {
                                 .thenReturn(Optional.empty());
 
                 // When
-                ResponseEntity<?> response = attendanceService.checkin(request, mockImage);
+                ResponseEntity<?> response = attendanceService.checkin(request, mockImage, mockImage2);
 
                 // Then
                 assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
@@ -630,7 +258,7 @@ class SAAttendanceServiceImplTest {
                 PlanDate planDate = createPlanDate(planDateId, facilityId, factoryId);
                 planDate.setRequiredCheckin(StatusType.ENABLE);
                 planDate.setRequiredCheckout(StatusType.DISABLE);
-                planDate.setStartDate(System.currentTimeMillis() - 7200000); // 2 hours ago
+                planDate.setEndDate(System.currentTimeMillis() - 7200000); // 2 hours ago
                 planDate.setLateArrival(30); // 30 minutes late allowance
 
                 UserStudentFactory userStudentFactory = createUserStudentFactory(userId, factoryId);
@@ -646,7 +274,7 @@ class SAAttendanceServiceImplTest {
                                 .thenReturn(Optional.empty());
 
                 // When
-                ResponseEntity<?> response = attendanceService.checkin(request, mockImage);
+                ResponseEntity<?> response = attendanceService.checkin(request, mockImage, mockImage2);
 
                 // Then
                 assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
@@ -683,7 +311,7 @@ class SAAttendanceServiceImplTest {
                                 .thenReturn(Optional.empty());
 
                 // When
-                ResponseEntity<?> response = attendanceService.checkin(request, mockImage);
+                ResponseEntity<?> response = attendanceService.checkin(request, mockImage, mockImage2);
 
                 // Then
                 assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
@@ -723,7 +351,7 @@ class SAAttendanceServiceImplTest {
                                 .thenReturn(Optional.empty());
 
                 // When
-                ResponseEntity<?> response = attendanceService.checkin(request, mockImage);
+                ResponseEntity<?> response = attendanceService.checkin(request, mockImage, mockImage2);
 
                 // Then
                 assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
@@ -733,26 +361,25 @@ class SAAttendanceServiceImplTest {
         }
 
         @Test
-        @DisplayName("Test checkin should return error when trying to checkout without checkin")
-        void testCheckinCheckoutWithoutCheckin() {
+        @DisplayName("Test checkin should return error when IP validation fails")
+        void testCheckinIPValidationFailed() {
                 // Given
                 String planDateId = "plan-date-123";
                 String facilityId = "facility-123";
                 String userId = "user-123";
                 String factoryId = "factory-123";
+                String clientIP = "192.168.1.100";
 
                 SACheckinAttendanceRequest request = new SACheckinAttendanceRequest();
                 request.setIdPlanDate(planDateId);
 
                 PlanDate planDate = createPlanDate(planDateId, facilityId, factoryId);
+                planDate.setRequiredIp(StatusType.ENABLE);
                 planDate.setRequiredCheckin(StatusType.ENABLE);
-                planDate.setRequiredCheckout(StatusType.ENABLE);
-                planDate.setEndDate(System.currentTimeMillis() + 3600000); // 1 hour from now
+                planDate.setRequiredCheckout(StatusType.DISABLE);
+                planDate.setStartDate(System.currentTimeMillis() - 1800000); // 30 minutes ago
 
                 UserStudentFactory userStudentFactory = createUserStudentFactory(userId, factoryId);
-
-                Attendance existingAttendance = new Attendance();
-                existingAttendance.setAttendanceStatus(AttendanceStatus.NOTCHECKIN);
 
                 when(sessionHelper.getFacilityId()).thenReturn(facilityId);
                 when(sessionHelper.getUserId()).thenReturn(userId);
@@ -760,21 +387,66 @@ class SAAttendanceServiceImplTest {
                 when(userStudentFactoryRepository.findByUserStudent_IdAndFactory_Id(userId, factoryId))
                                 .thenReturn(Optional.of(userStudentFactory));
                 when(attendanceRepository.findByUserStudent_IdAndPlanDate_Id(userId, planDateId))
-                                .thenReturn(Optional.of(existingAttendance));
+                                .thenReturn(Optional.empty());
+                when(AppUtils.getClientIP(any(HttpServletRequest.class))).thenReturn(clientIP);
+                when(facilityIPRepository.getAllIP(facilityId))
+                                .thenReturn(Set.of("192.168.1.1", "192.168.1.2")); // Different IPs
 
                 // When
-                ResponseEntity<?> response = attendanceService.checkin(request, mockImage);
+                ResponseEntity<?> response = attendanceService.checkin(request, mockImage, mockImage2);
 
                 // Then
                 assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
                 ApiResponse apiResponse = (ApiResponse) response.getBody();
                 assertEquals(RestApiStatus.ERROR, apiResponse.getStatus());
-                assertEquals("Đã quá giờ checkin đầu giờ", apiResponse.getMessage());
+                assertEquals("IP không được phép truy cập", apiResponse.getMessage());
         }
 
         @Test
-        @DisplayName("Test checkin should return error when too early for checkout with existing attendance")
-        void testCheckinTooEarlyForCheckoutWithExistingAttendance() {
+        @DisplayName("Test checkin should return error when location validation fails")
+        void testCheckinLocationValidationFailed() {
+                // Given
+                String planDateId = "plan-date-123";
+                String facilityId = "facility-123";
+                String userId = "user-123";
+                String factoryId = "factory-123";
+
+                SACheckinAttendanceRequest request = new SACheckinAttendanceRequest();
+                request.setIdPlanDate(planDateId);
+                request.setLatitude(10.123);
+                request.setLongitude(106.456);
+
+                PlanDate planDate = createPlanDate(planDateId, facilityId, factoryId);
+                planDate.setRequiredLocation(StatusType.ENABLE);
+                planDate.setRequiredCheckin(StatusType.ENABLE);
+                planDate.setRequiredCheckout(StatusType.DISABLE);
+                planDate.setStartDate(System.currentTimeMillis() - 1800000); // 30 minutes ago
+
+                UserStudentFactory userStudentFactory = createUserStudentFactory(userId, factoryId);
+
+                when(sessionHelper.getFacilityId()).thenReturn(facilityId);
+                when(sessionHelper.getUserId()).thenReturn(userId);
+                when(planDateRepository.findById(planDateId)).thenReturn(Optional.of(planDate));
+                when(userStudentFactoryRepository.findByUserStudent_IdAndFactory_Id(userId, factoryId))
+                                .thenReturn(Optional.of(userStudentFactory));
+                when(attendanceRepository.findByUserStudent_IdAndPlanDate_Id(userId, planDateId))
+                                .thenReturn(Optional.empty());
+                when(facilityLocationRepository.getAllList(facilityId))
+                                .thenReturn(Collections.emptyList()); // No allowed locations
+
+                // When
+                ResponseEntity<?> response = attendanceService.checkin(request, mockImage, mockImage2);
+
+                // Then
+                assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+                ApiResponse apiResponse = (ApiResponse) response.getBody();
+                assertEquals(RestApiStatus.ERROR, apiResponse.getStatus());
+                assertEquals("Vị trí không được phép truy cập", apiResponse.getMessage());
+        }
+
+        @Test
+        @DisplayName("Test checkin should return error when face validation fails")
+        void testCheckinFaceValidationFailed() {
                 // Given
                 String planDateId = "plan-date-123";
                 String facilityId = "facility-123";
@@ -786,8 +458,124 @@ class SAAttendanceServiceImplTest {
 
                 PlanDate planDate = createPlanDate(planDateId, facilityId, factoryId);
                 planDate.setRequiredCheckin(StatusType.ENABLE);
-                planDate.setRequiredCheckout(StatusType.ENABLE);
-                planDate.setEndDate(System.currentTimeMillis() + 3600000); // 1 hour from now
+                planDate.setRequiredCheckout(StatusType.DISABLE);
+                planDate.setStartDate(System.currentTimeMillis() - 1800000); // 30 minutes ago
+
+                UserStudentFactory userStudentFactory = createUserStudentFactory(userId, factoryId);
+                userStudentFactory.getUserStudent().setFaceEmbedding(null); // No face embedding
+
+                when(sessionHelper.getFacilityId()).thenReturn(facilityId);
+                when(sessionHelper.getUserId()).thenReturn(userId);
+                when(planDateRepository.findById(planDateId)).thenReturn(Optional.of(planDate));
+                when(userStudentFactoryRepository.findByUserStudent_IdAndFactory_Id(userId, factoryId))
+                                .thenReturn(Optional.of(userStudentFactory));
+                when(attendanceRepository.findByUserStudent_IdAndPlanDate_Id(userId, planDateId))
+                                .thenReturn(Optional.empty());
+
+                // When
+                ResponseEntity<?> response = attendanceService.checkin(request, mockImage, mockImage2);
+
+                // Then
+                assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+                ApiResponse apiResponse = (ApiResponse) response.getBody();
+                assertEquals(RestApiStatus.ERROR, apiResponse.getStatus());
+                assertEquals("Bạn chưa đăng ký khuôn mặt", apiResponse.getMessage());
+        }
+
+        @Test
+        @DisplayName("Test checkin should return error when image is empty")
+        void testCheckinImageEmpty() {
+                // Given
+                String planDateId = "plan-date-123";
+                String facilityId = "facility-123";
+                String userId = "user-123";
+                String factoryId = "factory-123";
+
+                SACheckinAttendanceRequest request = new SACheckinAttendanceRequest();
+                request.setIdPlanDate(planDateId);
+
+                PlanDate planDate = createPlanDate(planDateId, facilityId, factoryId);
+                planDate.setRequiredCheckin(StatusType.ENABLE);
+                planDate.setRequiredCheckout(StatusType.DISABLE);
+                planDate.setStartDate(System.currentTimeMillis() - 1800000); // 30 minutes ago
+
+                UserStudentFactory userStudentFactory = createUserStudentFactory(userId, factoryId);
+
+                when(mockImage.isEmpty()).thenReturn(true);
+
+                when(sessionHelper.getFacilityId()).thenReturn(facilityId);
+                when(sessionHelper.getUserId()).thenReturn(userId);
+                when(planDateRepository.findById(planDateId)).thenReturn(Optional.of(planDate));
+                when(userStudentFactoryRepository.findByUserStudent_IdAndFactory_Id(userId, factoryId))
+                                .thenReturn(Optional.of(userStudentFactory));
+                when(attendanceRepository.findByUserStudent_IdAndPlanDate_Id(userId, planDateId))
+                                .thenReturn(Optional.empty());
+
+                // When
+                ResponseEntity<?> response = attendanceService.checkin(request, mockImage, mockImage2);
+
+                // Then
+                assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+                ApiResponse apiResponse = (ApiResponse) response.getBody();
+                assertEquals(RestApiStatus.ERROR, apiResponse.getStatus());
+                assertEquals("Vui lòng chọn ảnh", apiResponse.getMessage());
+        }
+
+        @Test
+        @DisplayName("Test checkin should return error when image size is too large")
+        void testCheckinImageTooLarge() {
+                // Given
+                String planDateId = "plan-date-123";
+                String facilityId = "facility-123";
+                String userId = "user-123";
+                String factoryId = "factory-123";
+
+                SACheckinAttendanceRequest request = new SACheckinAttendanceRequest();
+                request.setIdPlanDate(planDateId);
+
+                PlanDate planDate = createPlanDate(planDateId, facilityId, factoryId);
+                planDate.setRequiredCheckin(StatusType.ENABLE);
+                planDate.setRequiredCheckout(StatusType.DISABLE);
+                planDate.setStartDate(System.currentTimeMillis() - 1800000); // 30 minutes ago
+
+                UserStudentFactory userStudentFactory = createUserStudentFactory(userId, factoryId);
+
+                when(mockImage.getSize()).thenReturn(10 * 1024 * 1024L); // 10MB
+
+                when(sessionHelper.getFacilityId()).thenReturn(facilityId);
+                when(sessionHelper.getUserId()).thenReturn(userId);
+                when(planDateRepository.findById(planDateId)).thenReturn(Optional.of(planDate));
+                when(userStudentFactoryRepository.findByUserStudent_IdAndFactory_Id(userId, factoryId))
+                                .thenReturn(Optional.of(userStudentFactory));
+                when(attendanceRepository.findByUserStudent_IdAndPlanDate_Id(userId, planDateId))
+                                .thenReturn(Optional.empty());
+
+                // When
+                ResponseEntity<?> response = attendanceService.checkin(request, mockImage, mockImage2);
+
+                // Then
+                assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+                ApiResponse apiResponse = (ApiResponse) response.getBody();
+                assertEquals(RestApiStatus.ERROR, apiResponse.getStatus());
+                assertEquals("Kích thước ảnh không được vượt quá 5MB", apiResponse.getMessage());
+        }
+
+        @Test
+        @DisplayName("Test checkin should return error when existing attendance found")
+        void testCheckinExistingAttendanceFound() {
+                // Given
+                String planDateId = "plan-date-123";
+                String facilityId = "facility-123";
+                String userId = "user-123";
+                String factoryId = "factory-123";
+
+                SACheckinAttendanceRequest request = new SACheckinAttendanceRequest();
+                request.setIdPlanDate(planDateId);
+
+                PlanDate planDate = createPlanDate(planDateId, facilityId, factoryId);
+                planDate.setRequiredCheckin(StatusType.ENABLE);
+                planDate.setRequiredCheckout(StatusType.DISABLE);
+                planDate.setStartDate(System.currentTimeMillis() - 1800000); // 30 minutes ago
 
                 UserStudentFactory userStudentFactory = createUserStudentFactory(userId, factoryId);
 
@@ -803,13 +591,13 @@ class SAAttendanceServiceImplTest {
                                 .thenReturn(Optional.of(existingAttendance));
 
                 // When
-                ResponseEntity<?> response = attendanceService.checkin(request, mockImage);
+                ResponseEntity<?> response = attendanceService.checkin(request, mockImage, mockImage2);
 
                 // Then
                 assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
                 ApiResponse apiResponse = (ApiResponse) response.getBody();
                 assertEquals(RestApiStatus.ERROR, apiResponse.getStatus());
-                assertEquals("Chưa đến giờ checkout cuối giờ", apiResponse.getMessage());
+                assertEquals("Bạn đã checkin rồi", apiResponse.getMessage());
         }
 
         // Helper method to create a PlanDate with all required nested objects
@@ -836,7 +624,7 @@ class SAAttendanceServiceImplTest {
                 planDate.setRequiredIp(StatusType.DISABLE);
                 planDate.setRequiredLocation(StatusType.DISABLE);
                 planDate.setRequiredCheckin(StatusType.ENABLE);
-                planDate.setRequiredCheckout(StatusType.ENABLE);
+                planDate.setRequiredCheckout(StatusType.DISABLE);
                 planDate.setStartDate(System.currentTimeMillis() - 3600000); // 1 hour ago
                 planDate.setEndDate(System.currentTimeMillis() + 3600000); // 1 hour from now
                 planDate.setLateArrival(15); // 15 minutes

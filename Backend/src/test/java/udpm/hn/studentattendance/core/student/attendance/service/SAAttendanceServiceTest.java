@@ -26,7 +26,7 @@ class SAAttendanceServiceTest {
 
         lenient().when(saAttendanceService.getAllList(any()))
                 .thenReturn(responseEntity);
-        lenient().when(saAttendanceService.checkin(any(), any()))
+        lenient().when(saAttendanceService.checkin(any(), any(), any()))
                 .thenReturn(responseEntity);
     }
 
@@ -49,7 +49,9 @@ class SAAttendanceServiceTest {
         udpm.hn.studentattendance.core.student.attendance.model.request.SACheckinAttendanceRequest request = new udpm.hn.studentattendance.core.student.attendance.model.request.SACheckinAttendanceRequest();
         org.springframework.web.multipart.MultipartFile image = mock(
                 org.springframework.web.multipart.MultipartFile.class);
-        ResponseEntity<?> response = saAttendanceService.checkin(request, image);
+        org.springframework.web.multipart.MultipartFile image2 = mock(
+                org.springframework.web.multipart.MultipartFile.class);
+        ResponseEntity<?> response = saAttendanceService.checkin(request, image, image2);
         assertNotNull(response);
         assertEquals(200, response.getStatusCode().value());
         assertNotNull(response.getBody());
