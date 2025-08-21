@@ -33,7 +33,6 @@ public class ScheduleTeacherAndStudentRemindHelper {
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy");
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
 
-
     @Scheduled(cron = "0 0 20 * * SUN")
     public void sendWeeklyScheduleReminders() {
         log.info("Bắt đầu gửi email nhắc nhở lịch hàng tuần");
@@ -76,7 +75,6 @@ public class ScheduleTeacherAndStudentRemindHelper {
             log.error("Lỗi khi gửi email nhắc nhở lịch hàng tuần: {}", e.getMessage(), e);
         }
     }
-
 
     private void sendFactoryScheduleReminders(String factoryId, List<PlanDate> planDates,
             LocalDate weekStart, LocalDate weekEnd) {
@@ -138,7 +136,6 @@ public class ScheduleTeacherAndStudentRemindHelper {
         }
     }
 
-
     private void sendTeacherScheduleReminders(List<String> teacherEmails, String emailContent,
             LocalDate weekStart, LocalDate weekEnd) {
         for (String teacherEmail : teacherEmails) {
@@ -160,7 +157,6 @@ public class ScheduleTeacherAndStudentRemindHelper {
             }
         }
     }
-
 
     private String createWeeklyScheduleEmailContent(List<PlanDate> planDates, LocalDate weekStart, LocalDate weekEnd) {
         StringBuilder content = new StringBuilder();
@@ -216,7 +212,6 @@ public class ScheduleTeacherAndStudentRemindHelper {
         return content.toString();
     }
 
-
     private LocalDate getNextMonday() {
         LocalDate today = LocalDate.now(ZoneId.of(ZONE_ID));
         LocalDate nextMonday = today;
@@ -227,7 +222,6 @@ public class ScheduleTeacherAndStudentRemindHelper {
 
         return nextMonday;
     }
-
 
     public void sendManualScheduleReminders(String factoryId, LocalDate startDate, LocalDate endDate) {
         try {
