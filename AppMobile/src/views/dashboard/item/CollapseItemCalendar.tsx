@@ -11,7 +11,7 @@ type Props = {
 }
 
 export const CollapseItemCalendar = ({ item }: Props) => {
-  const [collapsed, setCollapsed] = useState(true)
+  const [collapsed, setCollapsed] = useState(false)
 
   const { shiftName, shiftType, shiftColor } = getShift(item)
 
@@ -94,14 +94,16 @@ export const CollapseItemCalendar = ({ item }: Props) => {
               {item.staffName}
             </Text>
           </View>
-          <View style={styles.line}>
-            <Text variant="labelSmall" style={styles.label}>
-              Nội dung:
-            </Text>
-            <Text variant="bodySmall" style={styles.labelValue}>
-              {item.description}
-            </Text>
-          </View>
+          {item.description != '' && (
+            <View style={styles.line}>
+              <Text variant="labelSmall" style={styles.label}>
+                Nội dung:
+              </Text>
+              <Text variant="bodySmall" style={styles.labelValue}>
+                {item.description}
+              </Text>
+            </View>
+          )}
         </View>
       )}
       <View style={styles.shadow1} />
