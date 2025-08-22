@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
@@ -67,13 +68,16 @@ public class AuthenticationRestController {
     @PutMapping(RouteAuthenticationConstant.API_STUDENT_REGISTER)
     public ResponseEntity<?> studentRegister(
             @ModelAttribute AuthenticationStudentRegisterRequest request,
-            @RequestPart(value = "image", required = false) MultipartFile image) {
+            @RequestPart(value = "image", required = false) MultipartFile image,
+            @RequestHeader(value = "X-Signature", required = false) String signature
+    ) {
+        request.setSignature(signature);
         return authenticationService.studentRegister(request, image);
     }
 
     @PutMapping(RouteAuthenticationConstant.API_STUDENT_UPDATE_FACE_ID)
-    public ResponseEntity<?> studentUpdateFaceID(@RequestPart("image") MultipartFile image) {
-        return authenticationService.studentUpdateFaceID(image);
+    public ResponseEntity<?> studentUpdateFaceID(@RequestPart("image") MultipartFile image, @RequestHeader(value = "X-Signature", required = false) String signature) {
+        return authenticationService.studentUpdateFaceID(image, signature);
     }
 
     @GetMapping(RouteAuthenticationConstant.API_STUDENT_INFO)

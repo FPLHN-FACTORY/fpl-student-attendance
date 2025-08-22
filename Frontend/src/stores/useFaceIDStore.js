@@ -13,9 +13,9 @@ const THRESHOLD_P = 0.2
 const THRESHOLD_X = 0.1
 const THRESHOLD_Y = 0.12
 const THRESHOLD_EMOTIONS = 0.8
-const MIN_BRIGHTNESS = isMobile ? 100 : 140
-const MAX_BRIGHTNESS = isMobile ? 160 : 200
-const THRESHOLD_LIGHT = 45
+const MIN_BRIGHTNESS = 45
+const MAX_BRIGHTNESS = 110
+const THRESHOLD_LIGHT = 30
 const SIZE_CAMERA = 480
 const SKIP_FRAME = 30
 const CHECK_DISTANCE = true
@@ -246,27 +246,90 @@ const useFaceIDStore = defineStore('faceID', () => {
     const aX = axis.value.querySelectorAll('.a-x > div')
     const aY = axis.value.querySelectorAll('.a-y > div')
 
-    const getDataImageWithoutPadding = async (
-      paddingTop = 0,
-      paddingRight = 0,
-      paddingBottom = 0,
-      paddingLeft = 0,
-    ) => {
-      const width = canvas.value.width - paddingLeft - paddingRight
-      const height = canvas.value.height - paddingTop - paddingBottom
+    const drawRegion = (ctx, points) => {
+      ctx.beginPath()
+      ctx.moveTo(points[0][0], points[0][1])
+      for (let i = 1; i < points.length; i++) ctx.lineTo(points[i][0], points[i][1])
+      ctx.closePath()
+      ctx.fill()
+    }
 
-      const tmpCanvas = document.createElement('canvas')
-      tmpCanvas.width = width
-      tmpCanvas.height = height
-      const tmpCtx = tmpCanvas.getContext('2d')
+    const expandRegion = (points, factor = 1.2) => {
+      const cx = points.reduce((s, p) => s + p[0], 0) / points.length
+      const cy = points.reduce((s, p) => s + p[1], 0) / points.length
+      return points.map(([x, y]) => [cx + (x - cx) * factor, cy + (y - cy) * factor])
+    }
 
-      tmpCtx.drawImage(canvas.value, paddingLeft, paddingTop, width, height, 0, 0, width, height)
+    const drawOvalMask = (ctx, points) => {
+      const xs = points.map((p) => p[0])
+      const ys = points.map((p) => p[1])
+      const cx = (Math.min(...xs) + Math.max(...xs)) / 2
+      const cy = (Math.min(...ys) + Math.max(...ys)) / 2
+      let rx = (Math.max(...xs) - Math.min(...xs)) / 2
+      let ry = (Math.max(...ys) - Math.min(...ys)) / 2
 
-      return tmpCtx.getImageData(0, 0, width, height)
+      const scaleX = 0.85
+      rx *= scaleX
+
+      ctx.beginPath()
+      ctx.ellipse(cx, cy, rx, ry, 0, 0, 2 * Math.PI)
+      ctx.fill()
+    }
+
+    const computeSkinBrightness = async (canvas) => {
+      const res = await human.detect(canvas)
+      if (!res.face.length) return null
+      const ann = res.face[0].annotations
+
+      const width = canvas.width,
+        height = canvas.height
+
+      const maskCanvas = document.createElement('canvas')
+      maskCanvas.width = width
+      maskCanvas.height = height
+      const mctx = maskCanvas.getContext('2d')
+
+      mctx.fillStyle = 'white'
+      drawOvalMask(mctx, ann.silhouette)
+
+      mctx.globalCompositeOperation = 'destination-out'
+      drawRegion(mctx, expandRegion([...ann.leftEyeUpper0, ...ann.leftEyeLower0]))
+      drawRegion(mctx, expandRegion([...ann.rightEyeUpper0, ...ann.rightEyeLower0]))
+      drawRegion(mctx, expandRegion([...ann.lipsUpperOuter, ...ann.lipsLowerOuter]))
+      drawRegion(mctx, expandRegion(ann.leftEyebrowUpper, 1.3))
+      drawRegion(mctx, expandRegion(ann.rightEyebrowUpper, 1.3))
+      mctx.globalCompositeOperation = 'source-over'
+
+      const octx = canvas.getContext('2d')
+      const src = octx.getImageData(0, 0, width, height).data
+      const msk = mctx.getImageData(0, 0, width, height).data
+
+      const outCanvas = document.createElement('canvas')
+      outCanvas.width = width
+      outCanvas.height = height
+      const outCtx = outCanvas.getContext('2d')
+      const out = outCtx.createImageData(width, height)
+
+      for (let i = 0; i < src.length; i += 4) {
+        if (msk[i + 3] > 0) {
+          out.data[i] = src[i]
+          out.data[i + 1] = src[i + 1]
+          out.data[i + 2] = src[i + 2]
+          out.data[i + 3] = 255
+        } else out.data[i + 3] = 0
+      }
+      outCtx.putImageData(out, 0, 0)
+      return out
     }
 
     const getHalfImageData = async () => {
-      const image = await getDataImageWithoutPadding(0, 70, 150, 70)
+      const image = await computeSkinBrightness(canvas.value)
+      if (!image) {
+        return {
+          brightnessLeft: 0,
+          brightnessRight: 0,
+        }
+      }
       const width = image.width
       const height = image.height
       const halfWidth = Math.floor(width / 2)
@@ -284,8 +347,6 @@ const useFaceIDStore = defineStore('faceID', () => {
       const brightnessRight = await getAverageBrightness(rightImageData)
 
       return {
-        leftImageData,
-        rightImageData,
         brightnessLeft,
         brightnessRight,
       }
@@ -489,7 +550,6 @@ const useFaceIDStore = defineStore('faceID', () => {
       }
 
       const halfImageData = await getHalfImageData()
-
       if (
         !(await isLightBalance(halfImageData)) ||
         (await isLightTooBright(halfImageData)) ||
@@ -800,15 +860,14 @@ const useFaceIDStore = defineStore('faceID', () => {
 
       if (isFullStep || (!isFullStep && (step.value === 0 || step.value === 3))) {
         const halfImageData = await getHalfImageData()
-
+        if (!(await isLightBalance(halfImageData))) {
+          return renderTextStep('Ánh sáng không đều. Vui lòng thử lại')
+        }
         if (await isLightTooDark(halfImageData)) {
           return renderTextStep('Camera quá tối, Vui lòng tăng độ sáng')
         }
         if (await isLightTooBright(halfImageData)) {
           return renderTextStep('Camera quá sáng, Vui lòng giảm độ sáng')
-        }
-        if (!(await isLightBalance(halfImageData))) {
-          return renderTextStep('Ánh sáng không đều. Vui lòng thử lại')
         }
       }
 

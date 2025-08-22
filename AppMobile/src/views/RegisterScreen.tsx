@@ -1,6 +1,7 @@
 import { RootStackParamList } from '@/types/RootStackParamList'
 import {
   base64ToFile,
+  generateSignature,
   logout,
   unlinkBase64ToFile,
   UPPER_HEADER_HEIGHT,
@@ -39,6 +40,7 @@ const RegisterScreen: React.FC<Props> = ({ route, navigation }) => {
 
   const webviewRef = useRef<WebViewType>(null)
 
+  const studentInfo = useGlobalStore((state) => state.studentInfo)
   const setStudentInfo = useGlobalStore((state) => state.setStudentInfo)
 
   const [visible, setVisible] = useState(false)
@@ -91,6 +93,7 @@ const RegisterScreen: React.FC<Props> = ({ route, navigation }) => {
       .put(`${API_ROUTES.FETCH_DATA_REGISTER}`, data, {
         headers: {
           'Content-Type': 'multipart/form-data',
+          'X-Signature': generateSignature(studentInfo.id, file.size),
         },
       })
       .then(async ({ data: response }) => {
