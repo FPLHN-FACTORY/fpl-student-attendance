@@ -11,7 +11,7 @@ type Props = {
 }
 
 export const CollapseItemHistory = ({ item }: Props) => {
-  const [collapsed, setCollapsed] = useState(false)
+  const [collapsed, setCollapsed] = useState(true)
 
   const { shiftName, shiftType, shiftColor } = getShift(item)
 
