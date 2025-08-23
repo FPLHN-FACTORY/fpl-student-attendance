@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import { AuthenticationRoutes, ROUTE_NAMES as RouteNameAuth } from './authenticationRoute'
+import { AuthenticationRoutes } from './authenticationRoute'
 import { AdminRoutes } from './adminRoute'
 import { StaffRoutes } from './staffRoute'
 import { TeacherRoutes } from './teacherRoute'
@@ -9,6 +9,12 @@ import useAuthStore from '@/stores/useAuthStore'
 import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
 import useApplicationStore from '@/stores/useApplicationStore'
 import { SECRET_KEY } from '@/constants'
+import useLoadingStore from '@/stores/useLoadingStore'
+import { setActivePinia } from 'pinia'
+import { pinia } from '@/stores'
+
+setActivePinia(pinia)
+const loadingPage = useLoadingStore()
 
 const routes = [
   {
@@ -65,6 +71,7 @@ const router = createRouter({
 })
 
 router.beforeEach((to, from, next) => {
+  loadingPage.show()
   document.title =
     (to.meta?.name ? to.meta.title + ' - ' + to.meta.name : to.meta.title || '') +
     ' | ' +
@@ -97,6 +104,12 @@ router.beforeEach((to, from, next) => {
   }
 
   next()
+})
+
+router.afterEach(() => {
+  setTimeout(() => {
+    loadingPage.hide()
+  }, 300)
 })
 
 export default router

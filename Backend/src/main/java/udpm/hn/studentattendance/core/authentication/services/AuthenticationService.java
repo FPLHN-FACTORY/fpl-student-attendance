@@ -21,7 +21,7 @@ public interface AuthenticationService {
 
     ResponseEntity<?> studentInfo();
 
-    ResponseEntity<?> studentUpdateFaceID(MultipartFile image);
+    ResponseEntity<?> studentUpdateFaceID(MultipartFile image, String signature);
 
     ResponseEntity<?> refreshToken(String refreshToken);
 

@@ -9,8 +9,9 @@ const loadingPage = useLoadingStore()
 
 <template>
   <a-config-provider :theme="themeConfig" :locale="viVN">
-    <a-spin :spinning="loadingPage.isLoading" tip="Đang tải dữ liệu..." class="fullscreen-spin">
-      <RouterView />
-    </a-spin>
+    <RouterView />
+    <div v-if="loadingPage.isLoading" class="fullscreen-spin">
+      <a-spin tip="Vui lòng chờ..." size="large" />
+    </div>
   </a-config-provider>
 </template>

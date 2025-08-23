@@ -2,8 +2,10 @@ package udpm.hn.studentattendance.infrastructure.common.services;
 
 import ai.djl.MalformedModelException;
 import ai.djl.inference.Predictor;
+import ai.djl.modality.cv.ImageFactory;
 import ai.djl.ndarray.NDArray;
 import ai.djl.ndarray.NDList;
+import ai.djl.ndarray.NDManager;
 import ai.djl.ndarray.types.DataType;
 import ai.djl.ndarray.types.Shape;
 import ai.djl.repository.zoo.Criteria;
@@ -25,6 +27,7 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -40,10 +43,10 @@ public class OnnxService {
 
     private static final int SIZE_ANTISPOOF = 224;
     private static final int SIZE_ANTISPOOF2 = 112;
-    private static final int SIZE_ANTISPOOF3 = 256;
+    private static final int SIZE_ANTISPOOF3 = 224;
     private static final int SIZE_ANTISPOOF4 = 224;
-    private static final int SIZE_ANTISPOOF5 = 224;
     private static final int SIZE_ARCFACE = 112;
+    private static final int SIZE_DETECT = 128;
 
     @Value("${app.config.path.model}")
     private String modelPath;
@@ -52,15 +55,15 @@ public class OnnxService {
     private ZooModel<byte[], float[]> antiSpoof2Model;
     private ZooModel<byte[], float[]> antiSpoof3Model;
     private ZooModel<byte[], float[]> antiSpoof4Model;
-    private ZooModel<byte[], float[]> antiSpoof5Model;
     private ZooModel<byte[], float[]> arcFaceModel;
+    private ZooModel<byte[], float[]> detectModel;
 
     private BlockingQueue<Predictor<byte[], float[]>> antiSpoofPredictorPool;
     private BlockingQueue<Predictor<byte[], float[]>> antiSpoof2PredictorPool;
     private BlockingQueue<Predictor<byte[], float[]>> antiSpoof3PredictorPool;
     private BlockingQueue<Predictor<byte[], float[]>> antiSpoof4PredictorPool;
-    private BlockingQueue<Predictor<byte[], float[]>> antiSpoof5PredictorPool;
     private BlockingQueue<Predictor<byte[], float[]>> arcFacePredictorPool;
+    private BlockingQueue<Predictor<byte[], float[]>> detectPredictorPool;
 
     private final int POOL_SIZE = Runtime.getRuntime().availableProcessors();
 
@@ -70,23 +73,23 @@ public class OnnxService {
         antiSpoof2Model = ModelZoo.loadModel(buildAntiSpoof2Criteria());
         antiSpoof3Model = ModelZoo.loadModel(buildAntiSpoof3Criteria());
         antiSpoof4Model = ModelZoo.loadModel(buildAntiSpoof4Criteria());
-        antiSpoof5Model = ModelZoo.loadModel(buildAntiSpoof5Criteria());
         arcFaceModel = ModelZoo.loadModel(buildArcFaceCriteria());
+        detectModel = ModelZoo.loadModel(buildDetectCriteria());
 
         antiSpoofPredictorPool = new ArrayBlockingQueue<>(POOL_SIZE);
         antiSpoof2PredictorPool = new ArrayBlockingQueue<>(POOL_SIZE);
         antiSpoof3PredictorPool = new ArrayBlockingQueue<>(POOL_SIZE);
         antiSpoof4PredictorPool = new ArrayBlockingQueue<>(POOL_SIZE);
-        antiSpoof5PredictorPool = new ArrayBlockingQueue<>(POOL_SIZE);
         arcFacePredictorPool = new ArrayBlockingQueue<>(POOL_SIZE);
+        detectPredictorPool = new ArrayBlockingQueue<>(POOL_SIZE);
 
         for (int i = 0; i < POOL_SIZE; i++) {
             antiSpoofPredictorPool.add(antiSpoofModel.newPredictor());
             antiSpoof2PredictorPool.add(antiSpoof2Model.newPredictor());
             antiSpoof3PredictorPool.add(antiSpoof3Model.newPredictor());
             antiSpoof4PredictorPool.add(antiSpoof4Model.newPredictor());
-            antiSpoof5PredictorPool.add(antiSpoof5Model.newPredictor());
             arcFacePredictorPool.add(arcFaceModel.newPredictor());
+            detectPredictorPool.add(detectModel.newPredictor());
         }
     }
 
@@ -96,14 +99,14 @@ public class OnnxService {
         antiSpoof2PredictorPool.forEach(Predictor::close);
         antiSpoof3PredictorPool.forEach(Predictor::close);
         antiSpoof4PredictorPool.forEach(Predictor::close);
-        antiSpoof5PredictorPool.forEach(Predictor::close);
         arcFacePredictorPool.forEach(Predictor::close);
+        detectPredictorPool.forEach(Predictor::close);
         antiSpoofModel.close();
         antiSpoof2Model.close();
         antiSpoof3Model.close();
         antiSpoof4Model.close();
-        antiSpoof5Model.close();
         arcFaceModel.close();
+        detectModel.close();
     }
 
     private Criteria<byte[], float[]> buildAntiSpoofCriteria() {
@@ -179,7 +182,7 @@ public class OnnxService {
 
         return Criteria.builder()
                 .setTypes(byte[].class, float[].class)
-                .optModelPath(Paths.get(modelPath, "m8.onnx").toAbsolutePath())
+                .optModelPath(Paths.get(modelPath, "model_quantized.onnx").toAbsolutePath())
                 .optEngine("OnnxRuntime")
                 .optOption("executionProvider", "CPUExecutionProvider")
                 .optOption("device", "cpu")
@@ -198,33 +201,6 @@ public class OnnxService {
             }
             @Override
             public float[] processOutput(TranslatorContext ctx, NDList list) {
-                return list.singletonOrThrow().toFloatArray();
-            }
-            @Override
-            public Batchifier getBatchifier() { return null; }
-        };
-
-        return Criteria.builder()
-                .setTypes(byte[].class, float[].class)
-                .optModelPath(Paths.get(modelPath, "model_quantized.onnx").toAbsolutePath())
-                .optEngine("OnnxRuntime")
-                .optOption("executionProvider", "CPUExecutionProvider")
-                .optOption("device", "cpu")
-                .optTranslator(translator)
-                .build();
-    }
-
-    private Criteria<byte[], float[]> buildAntiSpoof5Criteria() {
-        Translator<byte[], float[]> translator = new Translator<>() {
-            @Override
-            public NDList processInput(TranslatorContext ctx, byte[] input) throws IOException {
-                BufferedImage img = ImageIO.read(new ByteArrayInputStream(input));
-                BufferedImage resized = resizeImage(img, SIZE_ANTISPOOF5);
-                float[] data = bufferedImageToCHWFloatArray(resized);
-                return new NDList(ctx.getNDManager().create(data, new Shape(1, 3, SIZE_ANTISPOOF5, SIZE_ANTISPOOF5)));
-            }
-            @Override
-            public float[] processOutput(TranslatorContext ctx, NDList list) {
                 return list.get(1).toFloatArray();
             }
             @Override
@@ -234,6 +210,60 @@ public class OnnxService {
         return Criteria.builder()
                 .setTypes(byte[].class, float[].class)
                 .optModelPath(Paths.get(modelPath, "OULU_Protocol_2_model_0_0.onnx").toAbsolutePath())
+                .optEngine("OnnxRuntime")
+                .optOption("executionProvider", "CPUExecutionProvider")
+                .optOption("device", "cpu")
+                .optTranslator(translator)
+                .build();
+    }
+
+    private Criteria<byte[], float[]> buildDetectCriteria() {
+        Translator<byte[], float[]> translator = new Translator<>() {
+
+            @Override
+            public NDList processInput(TranslatorContext ctx, byte[] input) throws IOException {
+                BufferedImage img = ImageIO.read(new ByteArrayInputStream(input));
+                BufferedImage resized = resizeImage(img, SIZE_DETECT);
+                float[] data = bufferedImageToCHWFloatArray(resized);
+
+                NDManager manager = ctx.getNDManager();
+                NDArray imageND = manager.create(data, new Shape(1, 3, SIZE_DETECT, SIZE_DETECT));
+
+                NDArray confThreshold = manager.create(new float[]{0.0f});
+                NDArray maxDetections = manager.create(new long[]{1});
+                NDArray iouThreshold = manager.create(new float[]{0.3f});
+
+                return new NDList(imageND, confThreshold, maxDetections, iouThreshold);
+            }
+            @Override
+            public float[] processOutput(TranslatorContext ctx, NDList list) {
+                float[] out = list.get(0).toFloatArray();
+                float bestConf = 0f;
+                int bestIdx = -1;
+                int numBoxes = out.length / 16;
+                for (int i = 0; i < numBoxes; i++) {
+                    float conf = out[i * 16 + 4];
+                    if (conf > bestConf) {
+                        bestConf = conf;
+                        bestIdx = i;
+                    }
+                }
+                if (bestIdx == -1) return null;
+
+                float x1 = out[bestIdx * 16];
+                float y1 = out[bestIdx * 16 + 1];
+                float x2 = out[bestIdx * 16 + 2];
+                float y2 = out[bestIdx * 16 + 3];
+
+                return new float[]{x1, y1, x2, y2};
+            }
+            @Override
+            public Batchifier getBatchifier() { return null; }
+        };
+
+        return Criteria.builder()
+                .setTypes(byte[].class, float[].class)
+                .optModelPath(Paths.get(modelPath, "blaze.onnx").toAbsolutePath())
                 .optEngine("OnnxRuntime")
                 .optOption("executionProvider", "CPUExecutionProvider")
                 .optOption("device", "cpu")
@@ -419,7 +449,7 @@ public class OnnxService {
         try {
             float[] result = predictor.predict(imgBytes);
             float[] softmax = softmax(result);
-            return softmax[0];
+            return softmax[1];
         } finally {
             antiSpoof3PredictorPool.put(predictor);
         }
@@ -429,20 +459,48 @@ public class OnnxService {
         Predictor<byte[], float[]> predictor = antiSpoof4PredictorPool.take();
         try {
             float[] result = predictor.predict(imgBytes);
-            float[] softmax = softmax(result);
-            return softmax[1];
+            return result[0];
         } finally {
             antiSpoof4PredictorPool.put(predictor);
         }
     }
 
-    public float antiSpoof5(byte[] imgBytes) throws InterruptedException, TranslateException {
-        Predictor<byte[], float[]> predictor = antiSpoof5PredictorPool.take();
+    public byte[] detected(byte[] imgBytes) throws Exception {
+        Predictor<byte[], float[]> predictor = detectPredictorPool.take();
         try {
-            float[] result = predictor.predict(imgBytes);
-            return result[0];
+            int shiftX = -40;
+            int shiftY = 0;
+            BufferedImage img = ImageIO.read(new ByteArrayInputStream(imgBytes));
+            int w = img.getWidth(), h = img.getHeight();
+
+            float[] bbox = predictor.predict(imgBytes);
+            if (bbox == null || bbox.length != 4) {
+                return null;
+            }
+
+            int x1 = Math.round(bbox[0] * w);
+            int y1 = Math.round(bbox[1] * h);
+            int x2 = Math.round(bbox[2] * w);
+            int y2 = Math.round(bbox[3] * h);
+
+            int iw = x2 - x1;
+            int ih = y2 - y1;
+
+            if (iw <= 0 || ih <= 0) {
+                return null;
+            }
+
+            x1 = Math.max(0, x1 + shiftX);
+            y1 = Math.max(0, y1 + shiftY);
+            x2 = Math.min(w, x1 + iw);
+            y2 = Math.min(h, y1 + ih);
+
+            BufferedImage cropped = img.getSubimage(x1, y1, x2 - x1, y2 - y1);
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            ImageIO.write(cropped, "png", baos);
+            return baos.toByteArray();
         } finally {
-            antiSpoof5PredictorPool.put(predictor);
+            detectPredictorPool.put(predictor);
         }
     }
 
@@ -457,37 +515,40 @@ public class OnnxService {
 
     public boolean isFake(byte[] faceBox, byte[] canvas)  {
         try {
-            if (isColorFake(faceBox)) {
-                System.out.println("isColorFake");
-//                return true;
+            byte[] faceDetected = detected(canvas);
+            if (faceDetected == null) {
+                return true;
             }
 
-            float antiSpoof = antiSpoof(faceBox);
-            float antiSpoof2 = antiSpoof2(faceBox);
-            float antiSpoof3 = antiSpoof3(canvas);
+            if (isColorFake(faceDetected)) {
+                System.out.println("isColorFake");
+                return true;
+            }
+
+            float antiSpoof = antiSpoof(faceDetected);
+            float antiSpoof2 = antiSpoof2(faceDetected);
+            float antiSpoof3 = antiSpoof3(faceDetected);
             float antiSpoof4 = antiSpoof4(faceBox);
-            float antiSpoof5 = antiSpoof5(faceBox);
 
             List<Boolean> checking = new ArrayList<>();
-            checking.add(antiSpoof < 0.01);
-            checking.add(antiSpoof2 < 0.65);
+            checking.add(antiSpoof < 0.6);
+            checking.add(antiSpoof2 < 0.7);
             checking.add(antiSpoof3 < 0.6);
             checking.add(antiSpoof4 < 0.6);
-            checking.add(antiSpoof5 < 0.6);
 
             System.out.println("antiSpoof: " + antiSpoof);
             System.out.println("antiSpoof2: " + antiSpoof2);
             System.out.println("antiSpoof3: " + antiSpoof3);
             System.out.println("antiSpoof4: " + antiSpoof4);
-            System.out.println("antiSpoof5: " + antiSpoof5);
 
             System.out.println(checking);
+
             long totalReject = checking.stream().filter(Boolean::booleanValue).count();
 
-            if (antiSpoof > 0.99 && totalReject < 3) {
+            if ((antiSpoof > 0.99 || antiSpoof4 > 0.99) && totalReject < 2) {
                 return false;
             }
-            return totalReject > 2;
+            return totalReject > 2 || (antiSpoof < 0.02 || antiSpoof4 < 0.02);
         } catch (Exception e) {
             return true;
         }

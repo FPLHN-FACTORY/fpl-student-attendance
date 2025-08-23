@@ -204,6 +204,10 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 throw new RuntimeException();
             }
 
+            if (!AppUtils.isSignatureValidated(request.getSignature(), String.valueOf(image.getSize()), sessionHelper.getUserId())) {
+                throw new RuntimeException();
+            }
+
             float[] faceEmbedding = onnxService.getEmbedding(image.getBytes());
 
             if (isFaceExists(facility.getId(), faceEmbedding)) {
@@ -243,7 +247,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     }
 
     @Override
-    public ResponseEntity<?> studentUpdateFaceID(MultipartFile image) {
+    public ResponseEntity<?> studentUpdateFaceID(MultipartFile image, String signature) {
         UserStudent student = authenticationUserStudentRepository.findById(sessionHelper.getUserId()).orElse(null);
         if (student == null) {
             return RouterHelper.responseError("Không tìm thấy sinh viên");
@@ -255,6 +259,10 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
         try {
             if (image == null || image.isEmpty()) {
+                throw new RuntimeException();
+            }
+
+            if (!AppUtils.isSignatureValidated(signature, String.valueOf(image.getSize()), sessionHelper.getUserId())) {
                 throw new RuntimeException();
             }
 

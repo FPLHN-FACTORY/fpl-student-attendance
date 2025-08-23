@@ -118,11 +118,11 @@ public class SPDPlanFactoryServiceImpl implements SPDPlanFactoryService {
             return RouterHelper.responseError("Không tìm thấy nhóm xưởng");
         }
 
-        if (spdFactoryRepository.getCountTotalStudentInFactory(factory.getId()) > 0) {
-            return RouterHelper.responseError("Chỉ có thể thêm nhóm xưởng khi chưa có sinh viên nào");
-        }
+//        if (spdFactoryRepository.getCountTotalStudentInFactory(factory.getId()) > 0) {
+//            return RouterHelper.responseError("Chỉ có thể thêm nhóm xưởng khi chưa có sinh viên nào");
+//        }
 
-        List<List<Integer>> lstConsecutiveShift = ShiftHelper.findConsecutiveShift(request.getShift());
+        List<Integer> lstConsecutiveShift = request.getShift();
         if (lstConsecutiveShift.isEmpty()) {
             return RouterHelper.responseError("Vui lòng chọn ít nhất 1 ca");
         }
@@ -171,24 +171,19 @@ public class SPDPlanFactoryServiceImpl implements SPDPlanFactoryService {
 
         while (!current.isAfter(toDate)) {
             DayOfWeek dayOfWeek = current.getDayOfWeek();
-            for (List<Integer> lstShift : lstConsecutiveShift) {
-                int startShift = lstShift.get(0);
-                int endShift = lstShift.get(lstShift.size() - 1);
+            for (Integer shift : lstConsecutiveShift) {
 
                 FacilityShift shiftStart = spdFacilityShiftRepository
-                        .getOneById(startShift, sessionHelper.getFacilityId()).orElse(null);
-                FacilityShift shiftEnd = spdFacilityShiftRepository.getOneById(endShift, sessionHelper.getFacilityId())
-                        .orElse(null);
+                        .getOneById(shift, sessionHelper.getFacilityId()).orElse(null);
+
                 if (shiftStart == null) {
-                    return RouterHelper.responseError("Ca " + startShift + " không tồn tại");
+                    return RouterHelper.responseError("Ca " + shift + " không tồn tại");
                 }
-                if (shiftEnd == null) {
-                    return RouterHelper.responseError("Ca " + endShift + " không tồn tại");
-                }
+
                 Long startDate = ShiftHelper.getShiftTimeStart(current,
                         LocalTime.of(shiftStart.getFromHour(), shiftStart.getFromMinute()));
                 Long endDate = startDate + ShiftHelper.getDiffTime(shiftStart.getFromHour(), shiftStart.getFromMinute(),
-                        shiftEnd.getToHour(), shiftEnd.getToMinute());
+                        shiftStart.getToHour(), shiftStart.getToMinute());
 
                 if (request.getDays().contains(dayOfWeek.getValue())) {
                     if (startDate < DateTimeUtils.getCurrentTimeMillis()) {
@@ -246,7 +241,7 @@ public class SPDPlanFactoryServiceImpl implements SPDPlanFactoryService {
                     planDate.setPlanFactory(planFactory);
                     planDate.setStartDate(startDate);
                     planDate.setEndDate(endDate);
-                    planDate.setShift(lstShift);
+                    planDate.setShift(List.of(shift));
                     planDate.setType(type);
                     planDate.setLink(link);
                     planDate.setRoom(type == ShiftType.ONLINE ? null : request.getRoom());
