@@ -18,7 +18,6 @@ const MIN_BRIGHTNESS = isMobile ? 30 : 35
 const MAX_BRIGHTNESS = isMobile ? 90 : 100
 const THRESHOLD_LIGHT = 40
 const SIZE_CAMERA = 480
-const SKIP_FRAME = 10
 const CHECK_DISTANCE = true
 
 const useFaceIDStore = defineStore('faceID', () => {
@@ -465,7 +464,6 @@ const useFaceIDStore = defineStore('faceID', () => {
     }
 
     const rollback = (text) => {
-      console.log(step.value)
       if (step.value !== 3) {
         lstDescriptor.value.pop()
         step.value = Math.max(0, step.value - 1)
@@ -494,7 +492,7 @@ const useFaceIDStore = defineStore('faceID', () => {
         lstDescriptor.value[lstDescriptor.value.length - 1],
       )
 
-      if (similarity < 0.7) {
+      if (similarity < 0.6) {
         return rollback('Vui lòng xác nhận lại')
       }
 
@@ -979,28 +977,20 @@ const useFaceIDStore = defineStore('faceID', () => {
     }
 
     let frameCount = 0
-    let isProgress = false
     let detectTimeoutId = null
     let detectAxiesTimeoutId = null
     const detectLoop = async () => {
       if (!isRunScan.value) return clearTimeout(detectTimeoutId)
 
-      if (isLoadingModels.value && video.value?.readyState === 4 && frameCount % SKIP_FRAME === 0) {
-        if (!isProgress) {
-          isProgress = true
-          try {
-            await runTask()
-          } finally {
-            isProgress = false
-          }
-        }
+      if (isLoadingModels.value && video.value?.readyState === 4) {
+        await runTask()
         if (isLoading.value) {
           isLoading.value = false
         }
       }
 
       frameCount++
-      detectTimeoutId = setTimeout(detectLoop, 0)
+      detectTimeoutId = setTimeout(detectLoop, 200)
     }
     const detectAxies = async () => {
       if (!isRunScan.value) return clearTimeout(detectAxiesTimeoutId)
@@ -1011,7 +1001,7 @@ const useFaceIDStore = defineStore('faceID', () => {
           isLoading.value = false
         }
       }
-      detectAxiesTimeoutId = setTimeout(detectAxies, 0)
+      detectAxiesTimeoutId = setTimeout(detectAxies, 30)
     }
     detectAxies()
     detectLoop()
