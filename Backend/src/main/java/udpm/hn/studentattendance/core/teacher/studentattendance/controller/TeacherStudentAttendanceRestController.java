@@ -3,7 +3,7 @@ package udpm.hn.studentattendance.core.teacher.studentattendance.controller;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import udpm.hn.studentattendance.core.teacher.studentattendance.model.request.TeacherStudentAttendanceRequest;
+import udpm.hn.studentattendance.core.teacher.studentattendance.model.request.TeacherModifyStudentAttendanceRequest;
 import udpm.hn.studentattendance.core.teacher.studentattendance.service.TeacherStudentAttendanceService;
 import udpm.hn.studentattendance.infrastructure.constants.router.RouteTeacherConstant;
 
@@ -14,19 +14,21 @@ public class TeacherStudentAttendanceRestController {
 
     private final TeacherStudentAttendanceService service;
 
-    @GetMapping("/{req}")
-    public ResponseEntity<?> create(@PathVariable("req") String req) {
-        return service.createAttendance(req);
+
+    @PostMapping("{planDateId}")
+    public ResponseEntity<?> createBulk(@PathVariable("planDateId") String planDateId) {
+        return service.createAttendance(planDateId);
     }
 
-    @GetMapping("/show/{req}")
-    public ResponseEntity<?> show(@PathVariable("req") String req) {
-        return service.getAllByPlanDate(req);
+
+    @GetMapping("/show/{planDateId}")
+    public ResponseEntity<?> show(@PathVariable("planDateId") String planDateId) {
+        return service.getAllByPlanDate(planDateId);
     }
 
-    @PutMapping
-    public ResponseEntity<?> update(@RequestBody TeacherStudentAttendanceRequest req) {
+
+    @PutMapping()
+    public ResponseEntity<?> updateStatus(@RequestBody TeacherModifyStudentAttendanceRequest req) {
         return service.updateStatusAttendance(req);
     }
-
 }

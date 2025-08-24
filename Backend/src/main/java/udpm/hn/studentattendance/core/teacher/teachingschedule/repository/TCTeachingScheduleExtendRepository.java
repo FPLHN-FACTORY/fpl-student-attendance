@@ -17,7 +17,7 @@ import java.util.Optional;
 public interface TCTeachingScheduleExtendRepository extends PlanDateRepository {
 
     @Query(value = """
-            SELECT
+            SELECT 
                 pd.id AS idPlanDate,
                 pd.start_date AS startTeaching,
                 pd.end_date AS endTeaching,
@@ -30,28 +30,20 @@ public interface TCTeachingScheduleExtendRepository extends PlanDateRepository {
                 us.id AS userId,
                 CONCAT(p.name, ' - ', lp.name) AS projectName,
                 pd.late_arrival AS lateArrival,
-                fl.name as location,
+                pd.room as room,
                 pd.description AS description
             FROM
                 plan_date pd
-                LEFT JOIN plan_factory pf ON pf.id = pd.id_plan_factory
-                LEFT JOIN factory ft ON ft.id = pf.id_factory
-                LEFT JOIN user_staff us ON us.id = ft.id_user_staff
-                LEFT JOIN project p ON p.id = ft.id_project
-                LEFT JOIN subject_facility sf ON sf.id = p.id_subject_facility
-                LEFT JOIN facility f ON f.id = sf.id_facility
-                LEFT JOIN facility_location fl ON fl.id_facility = f.id
-                LEFT JOIN subject sb ON sb.id = sf.id_subject
-                LEFT JOIN level_project lp ON lp.id = p.id_level_project
+                JOIN plan_factory pf ON pf.id = pd.id_plan_factory
+                JOIN factory ft ON ft.id = pf.id_factory
+                JOIN user_staff us ON us.id = COALESCE(pd.id_user_staff, ft.id_user_staff)
+                JOIN project p ON p.id = ft.id_project
+                JOIN subject_facility sf ON sf.id = p.id_subject_facility
+                JOIN facility f ON f.id = sf.id_facility
+                JOIN subject sb ON sb.id = sf.id_subject
+                JOIN level_project lp ON lp.id = p.id_level_project
             WHERE
                 us.id = :userId
-                AND us.status = 1
-                AND pd.status = 1
-                AND ft.status = 1
-                AND p.status = 1
-                AND sf.status = 1
-                AND sb.status = 1
-                AND pf.status = 1
             AND pd.start_date BETWEEN :#{#teachingScheduleRequest.startDate} AND :#{#teachingScheduleRequest.endDate}
                 AND (:#{#teachingScheduleRequest.idSubject} IS NULL OR sb.id = :#{#teachingScheduleRequest.idSubject})
                 AND (:#{#teachingScheduleRequest.idFactory} IS NULL OR ft.id = :#{#teachingScheduleRequest.idFactory})
@@ -63,23 +55,15 @@ public interface TCTeachingScheduleExtendRepository extends PlanDateRepository {
             SELECT COUNT(*)
             FROM
                 plan_date pd
-                LEFT JOIN plan_factory pf ON pf.id = pd.id_plan_factory
-                LEFT JOIN factory ft ON ft.id = pf.id_factory
-                LEFT JOIN user_staff us ON us.id = ft.id_user_staff
-                LEFT JOIN project p ON p.id = ft.id_project
-                LEFT JOIN subject_facility sf ON sf.id = p.id_subject_facility
-                LEFT JOIN subject sb ON sb.id = sf.id_subject
-                LEFT JOIN facility f ON f.id = sf.id_facility
-                LEFT JOIN facility_location fl ON fl.id_facility = f.id
+                JOIN plan_factory pf ON pf.id = pd.id_plan_factory
+                JOIN factory ft ON ft.id = pf.id_factory
+                JOIN user_staff us ON us.id = COALESCE(pd.id_user_staff, ft.id_user_staff)
+                JOIN project p ON p.id = ft.id_project
+                JOIN subject_facility sf ON sf.id = p.id_subject_facility
+                JOIN subject sb ON sb.id = sf.id_subject
+                JOIN facility f ON f.id = sf.id_facility
             WHERE
                 us.id = :userId
-                AND us.status = 1
-                AND pd.status = 1
-                AND ft.status = 1
-                AND p.status = 1
-                AND sf.status = 1
-                AND sb.status = 1
-                AND pf.status = 1
                 AND pd.start_date BETWEEN :#{#teachingScheduleRequest.startDate} AND :#{#teachingScheduleRequest.endDate}
                 AND (:#{#teachingScheduleRequest.idSubject} IS NULL OR sb.id = :#{#teachingScheduleRequest.idSubject})
                 AND (:#{#teachingScheduleRequest.idFactory} IS NULL OR ft.id = :#{#teachingScheduleRequest.idFactory})
@@ -105,17 +89,16 @@ public interface TCTeachingScheduleExtendRepository extends PlanDateRepository {
                                     pd.link as link,
                                     pd.late_arrival AS lateArrival,
                                     pd.description AS description,
-                                    fl.name as location
+                                    pd.room as room
                                 FROM
                                     plan_date pd
-                                    LEFT JOIN plan_factory pf ON pf.id = pd.id_plan_factory
-                                    LEFT JOIN factory ft ON ft.id = pf.id_factory
-                                    LEFT JOIN user_staff us ON us.id = ft.id_user_staff
-                                    LEFT JOIN project p ON p.id = ft.id_project
-                                    LEFT JOIN subject_facility sf ON sf.id = p.id_subject_facility
-                                    LEFT JOIN subject sb ON sb.id = sf.id_subject
-                                    LEFT JOIN facility f ON f.id = sf.id_facility
-                                    LEFT JOIN facility_location fl ON fl.id_facility = f.id
+                                    JOIN plan_factory pf ON pf.id = pd.id_plan_factory
+                                    JOIN factory ft ON ft.id = pf.id_factory
+                                    JOIN user_staff us ON us.id = COALESCE(pd.id_user_staff, ft.id_user_staff)
+                                    JOIN project p ON p.id = ft.id_project
+                                    JOIN subject_facility sf ON sf.id = p.id_subject_facility
+                                    JOIN subject sb ON sb.id = sf.id_subject
+                                    JOIN facility f ON f.id = sf.id_facility
                                 WHERE
                                     us.id = :userId
                                     AND us.status = 1
@@ -132,12 +115,12 @@ public interface TCTeachingScheduleExtendRepository extends PlanDateRepository {
             SELECT COUNT(*)
             FROM
                 plan_date pd
-                LEFT JOIN plan_factory pf ON pf.id = pd.id_plan_factory
-                LEFT JOIN factory ft ON ft.id = pf.id_factory
-                LEFT JOIN user_staff us ON us.id = ft.id_user_staff
-                LEFT JOIN project p ON p.id = ft.id_project
-                LEFT JOIN subject_facility sf ON sf.id = p.id_subject_facility
-                LEFT JOIN subject sb ON sb.id = sf.id_subject
+                JOIN plan_factory pf ON pf.id = pd.id_plan_factory
+                JOIN factory ft ON ft.id = pf.id_factory
+                JOIN user_staff us ON us.id = COALESCE(pd.id_user_staff, ft.id_user_staff)
+                JOIN project p ON p.id = ft.id_project
+                JOIN subject_facility sf ON sf.id = p.id_subject_facility
+                JOIN subject sb ON sb.id = sf.id_subject
             WHERE
                 us.id = :userId
                 AND us.status = 1
@@ -165,6 +148,7 @@ public interface TCTeachingScheduleExtendRepository extends PlanDateRepository {
                 pd.description as description,
                 pd.link as link,
                 pd.type as type,
+                pd.room as room,
                 pd.id as planDateId
                 FROM plan_date pd
                 WHERE pd.id = :planDateId
@@ -185,25 +169,19 @@ public interface TCTeachingScheduleExtendRepository extends PlanDateRepository {
             p.name AS projectName,
             pd.type as type,
             pd.link as link,
+            pd.room as room,
             pd.late_arrival AS lateArrival,
             pd.description AS description
             FROM
                 plan_date pd
-                LEFT JOIN plan_factory pf ON pf.id = pd.id_plan_factory
-                LEFT JOIN factory ft ON ft.id = pf.id_factory
-                LEFT JOIN user_staff us ON us.id = ft.id_user_staff
-                LEFT JOIN project p ON p.id = ft.id_project
-                LEFT JOIN subject_facility sf ON sf.id = p.id_subject_facility
-                LEFT JOIN subject sb ON sb.id = sf.id_subject
+                JOIN plan_factory pf ON pf.id = pd.id_plan_factory
+                JOIN factory ft ON ft.id = pf.id_factory
+                JOIN user_staff us ON us.id = COALESCE(pd.id_user_staff, ft.id_user_staff)
+                JOIN project p ON p.id = ft.id_project
+                JOIN subject_facility sf ON sf.id = p.id_subject_facility
+                JOIN subject sb ON sb.id = sf.id_subject
             WHERE
                 us.id = :userId
-                AND us.status = 1
-                AND pd.status = 1
-                AND ft.status = 1
-                AND p.status = 1
-                AND sf.status = 1
-                AND sb.status = 1
-                AND pf.status = 1
                 AND pd.start_date BETWEEN :#{#teachingScheduleRequest.startDate} AND :#{#teachingScheduleRequest.endDate}
             ORDER BY pd.start_date ASC
 

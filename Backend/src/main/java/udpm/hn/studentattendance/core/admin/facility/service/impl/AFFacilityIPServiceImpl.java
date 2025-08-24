@@ -1,7 +1,6 @@
 package udpm.hn.studentattendance.core.admin.facility.service.impl;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import udpm.hn.studentattendance.core.admin.facility.model.request.AFAddOrUpdateFacilityIPRequest;
@@ -13,12 +12,17 @@ import udpm.hn.studentattendance.core.admin.facility.service.AFFacilityIPService
 import udpm.hn.studentattendance.entities.Facility;
 import udpm.hn.studentattendance.entities.FacilityIP;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
+import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
 import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.helpers.ValidateHelper;
 import udpm.hn.studentattendance.infrastructure.common.ApiResponse;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.IPType;
+import udpm.hn.studentattendance.infrastructure.constants.RedisPrefixConstant;
+import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
+import com.fasterxml.jackson.core.type.TypeReference;
+import udpm.hn.studentattendance.helpers.RedisCacheHelper;
 
 @Service
 @RequiredArgsConstructor
@@ -28,8 +32,28 @@ public class AFFacilityIPServiceImpl implements AFFacilityIPService {
 
     private final AFFacilityIPRepository afFacilityIPRepository;
 
+    private final UserActivityLogHelper userActivityLogHelper;
+
+    private final RedisCacheHelper redisCacheHelper;
+
+    private final RedisInvalidationHelper redisInvalidationHelper;
+
+    public PageableObject<AFFacilityIPResponse> getIPList(AFFilterFacilityIPRequest request) {
+        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_FACILITY_IP + "list_" + request.toString();
+        return redisCacheHelper.getOrSet(
+                cacheKey,
+                () -> PageableObject
+                        .of(afFacilityIPRepository.getAllByFilter(PaginationHelper.createPageable(request), request)),
+                new TypeReference<>() {
+                });
+    }
+
     private ResponseEntity<ApiResponse> checkIP(IPType type, String ip) {
-        if (type == IPType.IPV4) {
+        if (type == IPType.DNSSUFFIX) {
+            if (!ValidateHelper.isValidDnsSuffix(ip)) {
+                return RouterHelper.responseError("DNS Suffix không hợp lệ");
+            }
+        } else if (type == IPType.IPV4) {
             if (!ip.contains("/")) {
                 if (!ValidateHelper.isValidIPv4(ip)) {
                     return RouterHelper.responseError("IPv4 không hợp lệ");
@@ -55,14 +79,13 @@ public class AFFacilityIPServiceImpl implements AFFacilityIPService {
 
     @Override
     public ResponseEntity<?> getAllList(AFFilterFacilityIPRequest request) {
-        Pageable pageable = PaginationHelper.createPageable(request);
-        PageableObject<AFFacilityIPResponse> data = PageableObject
-                .of(afFacilityIPRepository.getAllByFilter(pageable, request));
+        PageableObject<AFFacilityIPResponse> data = getIPList(request);
         return RouterHelper.responseSuccess("Lấy danh sách dữ liệu thành công", data);
     }
 
     @Override
     public ResponseEntity<?> addIP(AFAddOrUpdateFacilityIPRequest request) {
+
 
         Facility facility = afFacilityExtendRepository.findById(request.getIdFacility()).orElse(null);
 
@@ -70,13 +93,16 @@ public class AFFacilityIPServiceImpl implements AFFacilityIPService {
             return RouterHelper.responseError("Không tìm cơ sở");
         }
 
+        boolean isDnsSuffix = request.getType() == IPType.DNSSUFFIX.getKey();
+
         if (afFacilityIPRepository.isExistsIP(request.getIp(), request.getType(), request.getIdFacility(), null)) {
             return RouterHelper
-                    .responseError("IP " + request.getIp() + " đã tồn tại trong cơ sở " + facility.getName());
+                    .responseError((isDnsSuffix ? "DNS Suffix " : "IP ") + request.getIp() + " đã tồn tại trong cơ sở "
+                            + facility.getName());
         }
 
         IPType type = IPType.fromKey(request.getType());
-        String ip = request.getIp();
+        String ip = request.getIp().trim();
 
         ResponseEntity<ApiResponse> checkIP = checkIP(type, ip);
         if (checkIP != null) {
@@ -87,15 +113,26 @@ public class AFFacilityIPServiceImpl implements AFFacilityIPService {
         facilityIP.setFacility(facility);
         facilityIP.setIp(request.getIp());
         facilityIP.setType(type);
+        userActivityLogHelper.saveLog("vừa thêm " + (isDnsSuffix ? "DNS Suffix " : "IP ") + request.getIp()
+                + " cho cơ sở " + facility.getName());
 
-        return RouterHelper.responseSuccess("Tạo mới IP thành công", afFacilityIPRepository.save(facilityIP));
+        FacilityIP savedIP = afFacilityIPRepository.save(facilityIP);
+
+        // Invalidate all caches
+        redisInvalidationHelper.invalidateAllCaches();
+
+        return RouterHelper.responseSuccess(
+                "Thêm mới " + (isDnsSuffix ? "DNS Suffix " : "IP ") + request.getIp() + " thành công",
+                savedIP);
     }
 
     @Override
     public ResponseEntity<?> updateIP(AFAddOrUpdateFacilityIPRequest request) {
+
+
         FacilityIP facilityIP = afFacilityIPRepository.findById(request.getId()).orElse(null);
         if (facilityIP == null) {
-            return RouterHelper.responseError("Không tìm thấy IP muốn cập nhật");
+            return RouterHelper.responseError("Không tìm thấy IP/DNS Suffix muốn cập nhật");
         }
 
         Facility facility = afFacilityExtendRepository.findById(request.getIdFacility()).orElse(null);
@@ -104,14 +141,17 @@ public class AFFacilityIPServiceImpl implements AFFacilityIPService {
             return RouterHelper.responseError("Không tìm cơ sở");
         }
 
+        boolean isDnsSuffix = request.getType() == IPType.DNSSUFFIX.getKey();
+
         if (afFacilityIPRepository.isExistsIP(request.getIp(), request.getType(), request.getIdFacility(),
                 facilityIP.getId())) {
             return RouterHelper
-                    .responseError("IP " + request.getIp() + " đã tồn tại trong cơ sở " + facility.getName());
+                    .responseError((isDnsSuffix ? "DNS Suffix " : "IP ") + request.getIp() + " đã tồn tại trong cơ sở "
+                            + facility.getName());
         }
 
         IPType type = IPType.fromKey(request.getType());
-        String ip = request.getIp();
+        String ip = request.getIp().trim();
 
         ResponseEntity<ApiResponse> checkIP = checkIP(type, ip);
         if (checkIP != null) {
@@ -120,37 +160,61 @@ public class AFFacilityIPServiceImpl implements AFFacilityIPService {
 
         facilityIP.setIp(request.getIp());
         facilityIP.setType(type);
+        userActivityLogHelper.saveLog("vừa cập nhật " + (isDnsSuffix ? "DNS Suffix " : "IP ") + request.getIp()
+                + " của cơ sở " + facility.getName());
 
-        return RouterHelper.responseSuccess("Cập nhật IP thành công", afFacilityIPRepository.save(facilityIP));
+        FacilityIP savedIP = afFacilityIPRepository.save(facilityIP);
+
+        // Invalidate all caches
+        redisInvalidationHelper.invalidateAllCaches();
+
+        return RouterHelper.responseSuccess("Cập nhật " + (isDnsSuffix ? "DNS Suffix" : "IP") + " thành công",
+                savedIP);
     }
 
     @Override
     public ResponseEntity<?> deleteIP(String id) {
         FacilityIP facilityIP = afFacilityIPRepository.findById(id).orElse(null);
         if (facilityIP == null) {
-            return RouterHelper.responseError("Không tìm thấy IP");
+            return RouterHelper.responseError("Không tìm thấy IP/DNS Suffix");
         }
 
         afFacilityIPRepository.delete(facilityIP);
-        return RouterHelper.responseSuccess("Xoá thành công IP: " + facilityIP.getIp());
+        userActivityLogHelper.saveLog("vừa xóa " + (facilityIP.getType() == IPType.DNSSUFFIX ? "DNS Suffix " : "IP ")
+                + facilityIP.getIp() + " của cơ sở " + facilityIP.getFacility().getName());
+
+        // Invalidate all caches
+        redisInvalidationHelper.invalidateAllCaches();
+
+        return RouterHelper.responseSuccess("Xoá thành công IP/DNS Suffix: " + facilityIP.getIp());
     }
 
     @Override
     public ResponseEntity<?> changeStatus(String id) {
         FacilityIP facilityIP = afFacilityIPRepository.findById(id).orElse(null);
         if (facilityIP == null) {
-            return RouterHelper.responseError("Không tìm thấy IP");
+            return RouterHelper.responseError("Không tìm thấy IP/DNS Suffix");
         }
 
+        boolean isDnsSuffix = facilityIP.getType() == IPType.DNSSUFFIX;
         if (facilityIP.getStatus() == EntityStatus.INACTIVE && afFacilityIPRepository.isExistsIP(facilityIP.getIp(),
                 facilityIP.getType().getKey(), facilityIP.getFacility().getId(), facilityIP.getId())) {
-            return RouterHelper.responseError("IP " + facilityIP.getIp() + " đã được áp dụng trong cơ sở");
+            return RouterHelper.responseError(
+                    (isDnsSuffix ? "DNS Suffix " : "IP ") + facilityIP.getIp() + " đã được áp dụng trong cơ sở");
         }
 
         facilityIP
                 .setStatus(facilityIP.getStatus() == EntityStatus.ACTIVE ? EntityStatus.INACTIVE : EntityStatus.ACTIVE);
-        return RouterHelper.responseSuccess("Thay đổi trạng thái IP thành công",
-                afFacilityIPRepository.save(facilityIP));
+        FacilityIP updatedIP = afFacilityIPRepository.save(facilityIP);
+        userActivityLogHelper.saveLog(
+                "vừa thay đổi trạng thái " + (isDnsSuffix ? "DNS Suffix " : "IP ") + facilityIP.getIp() + " của cơ sở "
+                        + facilityIP.getFacility().getName() + " thành " + updatedIP.getStatus().name());
+
+        // Invalidate all caches
+        redisInvalidationHelper.invalidateAllCaches();
+
+        return RouterHelper.responseSuccess(
+                "Thay đổi trạng thái " + (isDnsSuffix ? "DNS Suffix" : "IP") + " thành công", updatedIP);
     }
 
 }

@@ -6,7 +6,8 @@ import java.util.stream.Stream;
 
 public enum IPType {
     IPV4(0),
-    IPV6(1);
+    IPV6(1),
+    DNSSUFFIX(2);
 
     private final int key;
 
@@ -21,7 +22,7 @@ public enum IPType {
         return key;
     }
 
-    public static IPType fromKey(int key) {
+    public static IPType fromKey(Integer key) {
         return ENUM_MAP.getOrDefault(key, null);
     }
 }

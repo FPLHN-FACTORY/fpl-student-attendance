@@ -17,8 +17,8 @@ public class AFAddOrUpdateFacilityShiftRequest {
 
     private String idFacility;
 
-    @Min(value = 1, message = "Ca học sớm nhất là ca 1")
-    @Max(value = 24, message = "Ca học muộn nhất là ca 24")
+    @Min(value = 1, message = "Ca sớm nhất là ca 1")
+    @Max(value = 6, message = "Ca muộn nhất là ca 6")
     private Integer shift;
 
     @Min(value = 0, message = "Giờ bắt đầu không hợp lệ")

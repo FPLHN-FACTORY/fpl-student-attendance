@@ -1,8 +1,6 @@
 package udpm.hn.studentattendance.core.staff.factory.service.impl;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
@@ -11,16 +9,24 @@ import udpm.hn.studentattendance.core.notification.service.NotificationService;
 import udpm.hn.studentattendance.core.staff.factory.model.request.USFactoryCreateUpdateRequest;
 import udpm.hn.studentattendance.core.staff.factory.model.request.USFactoryRequest;
 import udpm.hn.studentattendance.core.staff.factory.model.response.USDetailFactoryResponse;
+import udpm.hn.studentattendance.core.staff.factory.model.response.USFactoryResponse;
+import udpm.hn.studentattendance.core.staff.factory.model.response.USProjectFactoryResponse;
 import udpm.hn.studentattendance.core.staff.factory.repository.factory.*;
 import udpm.hn.studentattendance.core.staff.factory.service.USFactoryService;
 import udpm.hn.studentattendance.entities.*;
 import udpm.hn.studentattendance.helpers.NotificationHelper;
 import udpm.hn.studentattendance.helpers.PaginationHelper;
+import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.helpers.SessionHelper;
-import udpm.hn.studentattendance.infrastructure.common.ApiResponse;
+import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
+import udpm.hn.studentattendance.helpers.ValidateHelper;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
-import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
-import udpm.hn.studentattendance.infrastructure.constants.RestApiStatus;
+import udpm.hn.studentattendance.infrastructure.common.repositories.CommonPlanDateRepository;
+import udpm.hn.studentattendance.infrastructure.constants.*;
+import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
+import com.fasterxml.jackson.core.type.TypeReference;
+import udpm.hn.studentattendance.helpers.RedisCacheHelper;
+
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -32,312 +38,358 @@ import java.util.Optional;
 @Validated
 public class USFactoryServiceImpl implements USFactoryService {
 
-        private final USFactoryExtendRepository factoryRepository;
+    private final USFactoryExtendRepository factoryRepository;
 
-        private final USProjectFactoryExtendRepository projectFactoryExtendRepository;
+    private final USProjectFactoryExtendRepository projectFactoryExtendRepository;
 
-        private final USStaffFactoryExtendRepository staffFactoryExtendRepository;
+    private final USStaffFactoryExtendRepository staffFactoryExtendRepository;
 
-        private final USSubjectFacilityFactoryExtendRepository subjectFacilityFactoryExtendRepository;
+    private final USSubjectFacilityFactoryExtendRepository subjectFacilityFactoryExtendRepository;
 
-        private final USFactoryPlanExtendRepository factoryPlanExtendRepository;
+    private final USFactoryPlanExtendRepository factoryPlanExtendRepository;
 
-        private final USFactorySemesterExtendRepository semesterRepository;
+    private final USFactorySemesterExtendRepository semesterRepository;
 
-        private final NotificationService notificationService;
+    private final NotificationService notificationService;
 
-        private final SessionHelper sessionHelper;
+    private final SessionHelper sessionHelper;
 
-        @Override
-        public ResponseEntity<?> getAllFactory(USFactoryRequest staffFactoryRequest) {
-                Pageable pageable = PaginationHelper.createPageable(staffFactoryRequest, "createdAt");
-                PageableObject factories = PageableObject.of(
-                                factoryRepository.getAllFactory(pageable, sessionHelper.getFacilityId(),
-                                                staffFactoryRequest));
-                return new ResponseEntity<>(
-                                new ApiResponse(
-                                                RestApiStatus.SUCCESS,
-                                                "Hiển thị tất cả nhóm xưởng thành công",
-                                                factories),
-                                HttpStatus.OK);
+    private final USFactoryProjectPlanExtendRepository projectPlanExtendRepository;
+
+    private final UserActivityLogHelper userActivityLogHelper;
+
+    private final RedisCacheHelper redisCacheHelper;
+
+    private final RedisInvalidationHelper redisInvalidationHelper;
+
+    private final CommonPlanDateRepository commonPlanDateRepository;
+
+    public PageableObject<USFactoryResponse> getCachedFactories(USFactoryRequest factoryRequest) {
+        String key = RedisPrefixConstant.REDIS_PREFIX_FACTORY + "list_" +
+                "facility=" + sessionHelper.getFacilityId() + '_' +
+                factoryRequest.toString();
+        return redisCacheHelper.getOrSet(
+                key,
+                () -> PageableObject.of(
+                        factoryRepository.getAllFactory(PaginationHelper.createPageable(factoryRequest, "createdAt"),
+                                sessionHelper.getFacilityId(), factoryRequest)),
+                new TypeReference<>() {
+                });
+    }
+
+    @Override
+    public ResponseEntity<?> getAllFactory(USFactoryRequest staffFactoryRequest) {
+        PageableObject<USFactoryResponse> factories = getCachedFactories(staffFactoryRequest);
+        return RouterHelper.responseSuccess("Hiển thị tất cả nhóm xưởng thành công", factories);
+    }
+
+    public List<USProjectFactoryResponse> getCachedProjects() {
+        String key = RedisPrefixConstant.REDIS_PREFIX_FACTORY + "projects_" + sessionHelper.getFacilityId();
+        return redisCacheHelper.getOrSet(
+                key,
+                () -> projectFactoryExtendRepository.getAllProject(sessionHelper.getFacilityId()),
+                new TypeReference<>() {
+                });
+    }
+
+    @Override
+    public ResponseEntity<?> getAllProject() {
+        List<USProjectFactoryResponse> projects = getCachedProjects();
+        return RouterHelper.responseSuccess("Lấy tất cả dự án theo cơ sở thành công", projects);
+    }
+
+    public List<SubjectFacility> getCachedSubjectFacilities() {
+        String key = RedisPrefixConstant.REDIS_PREFIX_SUBJECT_FACILITY + "list_" + sessionHelper.getFacilityId();
+        return redisCacheHelper.getOrSet(
+                key,
+                () -> subjectFacilityFactoryExtendRepository.getAllSubjectFacility(EntityStatus.ACTIVE,
+                        EntityStatus.ACTIVE, sessionHelper.getFacilityId()),
+                new TypeReference<>() {
+                });
+    }
+
+    @Override
+    public ResponseEntity<?> getAllSubjectFacility() {
+        List<SubjectFacility> subjectFacilities = getCachedSubjectFacilities();
+        return RouterHelper.responseSuccess("Lấy tất cả bộ môn cơ sở thành công", subjectFacilities);
+    }
+
+    public List<UserStaff> getCachedStaffs() {
+        String key = RedisPrefixConstant.REDIS_PREFIX_STAFF + "list_" +
+                "facility=" + sessionHelper.getFacilityId() +
+                "_role=" + RoleConstant.TEACHER;
+        return redisCacheHelper.getOrSet(
+                key,
+                () -> staffFactoryExtendRepository.getListUserStaff(EntityStatus.ACTIVE, EntityStatus.ACTIVE,
+                        sessionHelper.getFacilityId(), RoleConstant.TEACHER),
+                new TypeReference<>() {
+                });
+    }
+
+    @Override
+    public ResponseEntity<?> getAllStaff() {
+        List<UserStaff> staffs = getCachedStaffs();
+        return RouterHelper.responseSuccess("Lấy tất cả giảng viên theo cơ sở thành công", staffs);
+    }
+
+    public USDetailFactoryResponse getCachedFactoryById(String factoryId) {
+        Optional<USDetailFactoryResponse> factory = factoryRepository.getFactoryById(factoryId);
+        return factory.orElse(null);
+    }
+
+    @Override
+    public ResponseEntity<?> getDetailFactory(String factoryId) {
+        USDetailFactoryResponse factory = getCachedFactoryById(factoryId);
+        if (factory != null) {
+            return RouterHelper.responseSuccess("Xem chi tiết nhóm xưởng thành công", factory);
+        }
+        return RouterHelper.responseError("Nhóm xưởng không tồn tại");
+    }
+
+    @Override
+    public ResponseEntity<?> createFactory(USFactoryCreateUpdateRequest factoryCreateUpdateRequest) {
+
+        Optional<UserStaff> userStaff = staffFactoryExtendRepository
+                .findById(factoryCreateUpdateRequest.getIdUserStaff());
+        Optional<Project> project = projectFactoryExtendRepository
+                .findById(factoryCreateUpdateRequest.getIdProject());
+
+        if (!ValidateHelper.isValidName(factoryCreateUpdateRequest.getFactoryName())) {
+            return RouterHelper
+                    .responseError("Tên nhóm xưởng không hợp lệ: Chỉ được chứa ký tự chữ, số và các ký tự đặc biệt _ - #");
         }
 
-        @Override
-        public ResponseEntity<?> getAllProject() {
-                List<Project> projects = projectFactoryExtendRepository.getAllProject(EntityStatus.ACTIVE,
-                                EntityStatus.ACTIVE, EntityStatus.ACTIVE, EntityStatus.ACTIVE,
-                                sessionHelper.getFacilityId());
-                return new ResponseEntity<>(
-                                new ApiResponse(
-                                                RestApiStatus.SUCCESS,
-                                                "Lấy tất cả dự án theo cơ sở thành công",
-                                                projects),
-                                HttpStatus.OK);
+        if (userStaff.isEmpty()) {
+            return RouterHelper.responseError("Giảng viên không tồn tại");
+        }
+        if (project.isEmpty()) {
+            return RouterHelper.responseError("Dự án không tồn tại");
+        }
+        boolean exists = factoryRepository.isExistNameAndProject(factoryCreateUpdateRequest.getFactoryName(),
+                factoryCreateUpdateRequest.getIdProject(), null);
+        if (exists) {
+            return RouterHelper.responseError("Nhóm xưởng đã tồn tại trong dự án này");
         }
 
-        @Override
-        public ResponseEntity<?> getAllSubjectFacility() {
-                List<SubjectFacility> subjectFacilities = subjectFacilityFactoryExtendRepository.getAllSubjectFacility(
-                                EntityStatus.ACTIVE, EntityStatus.ACTIVE, sessionHelper.getFacilityId());
-                return new ResponseEntity<>(
-                                new ApiResponse(
-                                                RestApiStatus.SUCCESS,
-                                                "Lấy tất cả bộ môn cơ sở thành công",
-                                                subjectFacilities),
-                                HttpStatus.OK);
+        Factory factory = new Factory();
+        factory.setName(factoryCreateUpdateRequest.getFactoryName());
+        factory.setDescription(factoryCreateUpdateRequest.getFactoryDescription());
+        factory.setUserStaff(userStaff.get());
+        factory.setProject(project.get());
+        factory.setStatus(EntityStatus.ACTIVE);
+
+        Factory saveFactory = factoryRepository.save(factory);
+
+        Map<String, Object> dataNotification = new HashMap<>();
+        dataNotification.put(NotificationHelper.KEY_USER_ADMIN,
+                sessionHelper.getUserCode() + " - " + sessionHelper.getUserName());
+        dataNotification.put(NotificationHelper.KEY_FACTORY, factory.getName());
+        NotificationAddRequest notificationAddRequest = new NotificationAddRequest();
+        notificationAddRequest.setIdUser(userStaff.get().getId());
+        notificationAddRequest.setType(NotificationHelper.TYPE_ADD_TEACHER_TO_FACTORY);
+        notificationAddRequest.setData(dataNotification);
+        notificationService.add(notificationAddRequest);
+
+        userActivityLogHelper
+                .saveLog("vừa thêm 1 nhóm xưởng mới: " + saveFactory.getName() + " trong dự án "
+                        + project.get().getName());
+
+        // Invalidate all caches
+        redisInvalidationHelper.invalidateAllCaches();
+
+        return RouterHelper.responseSuccess("Thêm mới nhóm xưởng thành công: " + saveFactory.getName(), saveFactory);
+    }
+
+    @Override
+    public ResponseEntity<?> updateFactory(USFactoryCreateUpdateRequest req) {
+
+        Factory factory = factoryRepository.findById(req.getId())
+                .orElse(null);
+        UserStaff newStaff = staffFactoryExtendRepository.findById(req.getIdUserStaff())
+                .orElse(null);
+        Project newProject = projectFactoryExtendRepository.findById(req.getIdProject())
+                .orElse(null);
+
+        if (newStaff == null) {
+            return RouterHelper.responseError("Giảng viên không tồn tại");
+        }
+        if (newProject == null) {
+            return RouterHelper.responseError("Dự án không tồn tại");
+        }
+        if (factory == null) {
+            return RouterHelper.responseError("Nhóm xưởng không tồn tại");
         }
 
-        @Override
-        public ResponseEntity<?> getAllStaff() {
-                List<UserStaff> staffs = staffFactoryExtendRepository.getListUserStaff(EntityStatus.ACTIVE,
-                                EntityStatus.ACTIVE, sessionHelper.getFacilityId());
-                return new ResponseEntity<>(
-                                new ApiResponse(
-                                                RestApiStatus.SUCCESS,
-                                                "Lấy tất cả giảng viên theo cơ sở thành công",
-                                                staffs),
-                                HttpStatus.OK);
+        if (factoryRepository.isExistNameAndProject(req.getFactoryName(), newProject.getId(), factory.getId())) {
+            return RouterHelper.responseError("Nhóm xưởng đã tồn tại trong dự án này");
         }
 
-        @Override
-        public ResponseEntity<?> getDetailFactory(String factoryId) {
-                Optional<USDetailFactoryResponse> existFactory = factoryRepository.getFactoryById(factoryId);
-                if (existFactory.isPresent()) {
-                        return new ResponseEntity<>(
-                                        new ApiResponse(
-                                                        RestApiStatus.SUCCESS,
-                                                        "Xem chi tiết nhóm xưởng thành công",
-                                                        existFactory),
-                                        HttpStatus.OK);
-                }
-                return new ResponseEntity<>(
-                                new ApiResponse(
-                                                RestApiStatus.ERROR,
-                                                "Nhóm xưởng không tồn tại",
-                                                null),
-                                HttpStatus.NOT_FOUND);
+        if (!ValidateHelper.isValidName(req.getFactoryName())) {
+            return RouterHelper
+                    .responseError("Tên nhóm xưởng không hợp lệ: Chỉ được chứa ký tự chữ, số và các ký tự đặc biệt _ - #");
         }
 
-        @Override
-        public ResponseEntity<?> createFactory(USFactoryCreateUpdateRequest factoryCreateUpdateRequest) {
-                Optional<UserStaff> userStaff = staffFactoryExtendRepository
-                                .findById(factoryCreateUpdateRequest.getIdUserStaff());
-                Optional<Project> project = projectFactoryExtendRepository
-                                .findById(factoryCreateUpdateRequest.getIdProject());
+        int totalPlanDate = factoryRepository.getTotalPlanDate(factory.getId());
 
-                if (userStaff.isEmpty()) {
-                        return new ResponseEntity<>(
-                                        new ApiResponse(
-                                                        RestApiStatus.ERROR,
-                                                        "Giảng viên không tồn tại",
-                                                        null),
-                                        HttpStatus.BAD_REQUEST);
-                }
-                if (project.isEmpty()) {
-                        return new ResponseEntity<>(
-                                        new ApiResponse(
-                                                        RestApiStatus.ERROR,
-                                                        "Dự án không tồn tại",
-                                                        null),
-                                        HttpStatus.BAD_REQUEST);
-                }
-                boolean exists = factoryRepository.isExistNameAndProject(factoryCreateUpdateRequest.getFactoryName(),
-                                factoryCreateUpdateRequest.getIdProject());
-                if (exists) {
-                        return new ResponseEntity<>(
-                                        new ApiResponse(
-                                                        RestApiStatus.ERROR,
-                                                        "Nhóm xưởng đã tồn tại trong dự án này",
-                                                        null),
-                                        HttpStatus.BAD_REQUEST);
-                }
-                boolean teacherJoinThanThreeFactory = factoryRepository.isTeacherJoinThanThreeFactory(
-                                factoryCreateUpdateRequest.getIdUserStaff(), project.get().getSemester().getId());
-                if (teacherJoinThanThreeFactory) {
-                        return new ResponseEntity<>(
-                                        new ApiResponse(
-                                                        RestApiStatus.ERROR,
-                                                        "Giảng viên này đã tham gia 3 nhóm xưởng ở kỳ học này",
-                                                        null),
-                                        HttpStatus.BAD_REQUEST);
-                }
-                Factory factory = new Factory();
-                factory.setName(factoryCreateUpdateRequest.getFactoryName());
-                factory.setDescription(factoryCreateUpdateRequest.getFactoryDescription());
-                factory.setUserStaff(userStaff.get());
-                factory.setProject(project.get());
-                factory.setStatus(EntityStatus.ACTIVE);
-                factoryRepository.save(factory);
+//        String oldProjectId = factory.getProject().getId();
+//        String newProjectId = newProject.getId();
+//        if (totalPlanDate > 0 && !oldProjectId.equals(newProjectId)) {
+//            Plan oldPlan = projectPlanExtendRepository.getPlanByProjectId(oldProjectId);
+//            Plan newPlan = projectPlanExtendRepository.getPlanByProjectId(newProjectId);
+//            if (newPlan == null) {
+//                projectPlanExtendRepository.deleteAllAttendanceAndPlanDateAndPlanFactoryByPlan(oldPlan.getId());
+//            } else if (oldPlan != null) {
+//                boolean associationExists = factoryPlanExtendRepository
+//                        .existsByFactoryIdAndPlanId(factory.getId(), newPlan.getId());
+//                if (!associationExists) {
+//                    PlanFactory pf = factoryPlanExtendRepository.getPlanFactoryByFactoryId(factory.getId());
+//                    pf.setPlan(newPlan);
+//                    factoryPlanExtendRepository.save(pf);
+//                }
+//            }
+//        }
 
-                Map<String, Object> dataNotification = new HashMap<>();
-                dataNotification.put(NotificationHelper.KEY_USER_ADMIN,
-                                sessionHelper.getUserCode() + " - " + sessionHelper.getUserName());
-                dataNotification.put(NotificationHelper.KEY_FACTORY, factory.getName());
-                NotificationAddRequest notificationAddRequest = new NotificationAddRequest();
-                notificationAddRequest.setIdUser(userStaff.get().getId());
-                notificationAddRequest.setType(NotificationHelper.TYPE_ADD_TEACHER_TO_FACTORY);
-                notificationAddRequest.setData(dataNotification);
-                notificationService.add(notificationAddRequest);
+        String oldName = factory.getName();
+        UserStaff oldStaff = factory.getUserStaff();
+        factory.setName(req.getFactoryName());
+        factory.setDescription(req.getFactoryDescription());
 
-                return new ResponseEntity<>(
-                                new ApiResponse(
-                                                RestApiStatus.SUCCESS,
-                                                "Thêm nhóm xưởng mới thành công",
-                                                factory),
-                                HttpStatus.CREATED);
+        factory.setProject(totalPlanDate > 0 ? factory.getProject() : newProject);
 
+        factory.setUserStaff(totalPlanDate > 0 ? factory.getUserStaff() : newStaff);
+        Factory saveFactory = factoryRepository.save(factory);
+
+        Map<String, Object> dataNotification = new HashMap<>();
+        NotificationAddRequest notificationAddRequest = new NotificationAddRequest();
+        dataNotification.put(NotificationHelper.KEY_USER_ADMIN,
+                sessionHelper.getUserCode() + " - " + sessionHelper.getUserName());
+        dataNotification.put(NotificationHelper.KEY_FACTORY, factory.getName());
+        notificationAddRequest.setData(dataNotification);
+        if (!oldStaff.getId().equals(newStaff.getId())) {
+            notificationAddRequest.setIdUser(oldStaff.getId());
+            notificationAddRequest.setType(NotificationHelper.TYPE_REMOVE_TEACHER_TO_FACTORY);
+            notificationService.add(notificationAddRequest);
+        }
+        notificationAddRequest.setIdUser(newStaff.getId());
+        notificationAddRequest.setType(NotificationHelper.TYPE_ADD_TEACHER_TO_FACTORY);
+        notificationService.add(notificationAddRequest);
+
+        userActivityLogHelper.saveLog("vừa cập nhật nhóm xưởng: " + oldName + " → " + saveFactory.getName()
+                + " trong dự án " + saveFactory.getProject().getName());
+
+        // Invalidate all caches
+        redisInvalidationHelper.invalidateAllCaches();
+
+        return RouterHelper.responseSuccess("Cập nhật nhóm xưởng thành công", saveFactory);
+    }
+
+    @Override
+    public ResponseEntity<?> changeStatus(String factoryId) {
+        Optional<Factory> existFactory = factoryRepository.findById(factoryId);
+
+        if (existFactory.isEmpty()) {
+            return RouterHelper.responseError("Không tìm thấy nhóm xưởng");
         }
 
-        @Override
-        public ResponseEntity<?> updateFactory(USFactoryCreateUpdateRequest factoryCreateUpdateRequest) {
-                Optional<Factory> existFactory = factoryRepository.findById(factoryCreateUpdateRequest.getId());
-                Optional<UserStaff> userStaff = staffFactoryExtendRepository
-                                .findById(factoryCreateUpdateRequest.getIdUserStaff());
-                Optional<Project> project = projectFactoryExtendRepository
-                                .findById(factoryCreateUpdateRequest.getIdProject());
+        Factory factory = existFactory.get();
 
-                boolean teacherJoinThanThreeFactory = factoryRepository.isTeacherJoinThanThreeFactory(
-                                factoryCreateUpdateRequest.getIdUserStaff(), project.get().getSemester().getId());
-                if (teacherJoinThanThreeFactory) {
-                        return new ResponseEntity<>(
-                                        new ApiResponse(
-                                                        RestApiStatus.ERROR,
-                                                        "Giảng viên này đã tham gia 3 nhóm xưởng ở kỳ học này",
-                                                        null),
-                                        HttpStatus.BAD_REQUEST);
-                }
-                if (existFactory.isPresent()) {
-                        Factory factory = existFactory.get();
-                        UserStaff currentUserStaff = factory.getUserStaff();
-
-                        factory.setName(factoryCreateUpdateRequest.getFactoryName());
-                        factory.setDescription(factoryCreateUpdateRequest.getFactoryDescription());
-                        factory.setUserStaff(userStaff.get());
-                        factory.setProject(project.get());
-                        factoryRepository.save(factory);
-
-                        Map<String, Object> dataNotification = new HashMap<>();
-                        NotificationAddRequest notificationAddRequest = new NotificationAddRequest();
-                        dataNotification.put(NotificationHelper.KEY_USER_ADMIN,
-                                        sessionHelper.getUserCode() + " - " + sessionHelper.getUserName());
-                        dataNotification.put(NotificationHelper.KEY_FACTORY, factory.getName());
-                        notificationAddRequest.setData(dataNotification);
-                        if (!currentUserStaff.getId().equals(userStaff.get().getId())) {
-                                notificationAddRequest.setIdUser(currentUserStaff.getId());
-                                notificationAddRequest.setType(NotificationHelper.TYPE_REMOVE_TEACHER_TO_FACTORY);
-                                notificationService.add(notificationAddRequest);
-                        }
-                        notificationAddRequest.setIdUser(userStaff.get().getId());
-                        notificationAddRequest.setType(NotificationHelper.TYPE_ADD_TEACHER_TO_FACTORY);
-                        notificationService.add(notificationAddRequest);
-
-                        return new ResponseEntity<>(
-                                        new ApiResponse(
-                                                        RestApiStatus.SUCCESS,
-                                                        "Sửa nhóm xưởng thành công",
-                                                        factory),
-                                        HttpStatus.OK);
-                }
-                return new ResponseEntity<>(
-                                new ApiResponse(
-                                                RestApiStatus.ERROR,
-                                                "Nhóm xưởng không tồn tại",
-                                                null),
-                                HttpStatus.NOT_FOUND);
+        USFactoryResponse factoryResponse = factoryRepository.getDetailFactory(factory.getId(), sessionHelper.getFacilityId()).orElse(null);
+        if (factoryResponse != null && factoryResponse.getFactoryStatus() != factory.getStatus().ordinal()) {
+            return RouterHelper.responseError("Không thể thay đổi trạng thái mục này");
         }
 
-        @Override
-        public ResponseEntity<?> changeStatus(String factoryId) {
-                Optional<Factory> existFactory = factoryRepository.findById(factoryId);
-                if (existFactory.isPresent()) {
-                        Factory factory = existFactory.get();
-                        factory.setStatus(existFactory.get().getStatus() == EntityStatus.ACTIVE ? EntityStatus.INACTIVE
-                                        : EntityStatus.ACTIVE);
-                        factoryRepository.save(factory);
-                }
-                return null;
+        if (commonPlanDateRepository.existsNotYetStartedByFactory(factory.getId())) {
+            return RouterHelper.responseError("Đang tồn tại ca chưa hoặc đang diễn ra. Không thể thay đổi trạng thái");
         }
 
-        @Override
-        public ResponseEntity<?> detailFactory(String factoryId) {
-                Optional<Factory> existFactory = factoryRepository.findById(factoryId);
-                if (existFactory.isPresent()) {
-                        return new ResponseEntity<>(
-                                        new ApiResponse(
-                                                        RestApiStatus.SUCCESS,
-                                                        "Xem chi tiết nhóm xưởng thành công",
-                                                        existFactory),
-                                        HttpStatus.OK);
-                }
-                return new ResponseEntity<>(
-                                new ApiResponse(
-                                                RestApiStatus.ERROR,
-                                                "Nhóm xưởng không tồn tại",
-                                                null),
-                                HttpStatus.NOT_FOUND);
+        String oldStatus = factory.getStatus() == EntityStatus.ACTIVE ? "Hoạt động" : "Không hoạt động";
+        factory.setStatus(existFactory.get().getStatus() == EntityStatus.ACTIVE ? EntityStatus.INACTIVE
+                : EntityStatus.ACTIVE);
+        String newStatus = factory.getStatus() == EntityStatus.ACTIVE ? "Hoạt động" : "Không hoạt động";
+        Factory saveFactory = factoryRepository.save(factory);
+
+        userActivityLogHelper
+                .saveLog("vừa thay đổi trạng thái nhóm xưởng " + saveFactory.getName() + " từ " + oldStatus
+                        + " thành " + newStatus + " trong dự án" + saveFactory.getProject().getName());
+
+        // Invalidate all caches
+        redisInvalidationHelper.invalidateAllCaches();
+
+        return RouterHelper.responseSuccess("Đổi trạng thái nhóm xưởng thành công", null);
+    }
+
+    @Override
+    public ResponseEntity<?> detailFactory(String factoryId) {
+        Optional<Factory> existFactory = factoryRepository.findById(factoryId);
+        if (existFactory.isPresent()) {
+            return RouterHelper.responseSuccess("Xem chi tiết nhóm xưởng thành công", existFactory);
+        }
+        return RouterHelper.responseError("Nhóm xưởng không tồn tại");
+    }
+
+    @Override
+    public ResponseEntity<?> existsPlanByFactoryId(String factoryId) {
+        boolean exists = factoryPlanExtendRepository.existsPlanByFactoryId(factoryId);
+        return RouterHelper.responseSuccess("Lấy thông tin nhóm xưởng thành công", exists);
+    }
+
+    @Override
+    public ResponseEntity<?> changeAllStatusByFactory() {
+        Long now = new Date().getTime();
+        String semesterId = null;
+
+        for (Semester semester : semesterRepository.findAll()) {
+            if (semester.getToDate() < now) {
+                semesterId = semester.getId();
+                break;
+            }
         }
 
-        @Override
-        public ResponseEntity<?> existsPlanByFactoryId(String factoryId) {
-                boolean exists = factoryPlanExtendRepository.existsPlanByFactoryId(factoryId);
-                return new ResponseEntity<>(
-                                new ApiResponse(
-                                                RestApiStatus.SUCCESS,
-                                                "Lấy thông tin nhóm xưởng thành công",
-                                                exists),
-                                HttpStatus.OK);
+        if (semesterId == null) {
+            return RouterHelper.responseError("Không có kỳ học nào đã kết thúc");
         }
 
-        @Override
-        public ResponseEntity<?> changeAllStatusByFactory() {
-                Long now = new Date().getTime();
-                String semesterId = null;
+        List<Factory> factories = factoryRepository.getAllFactoryBySemester(sessionHelper.getFacilityId(),
+                semesterId);
 
-                // Lấy kỳ học đã kết thúc (toDate < now)
-                for (Semester semester : semesterRepository.findAll()) {
-                        if (semester.getToDate() < now) {
-                                semesterId = semester.getId();
-                                break;
-                        }
-                }
-
-                if (semesterId == null) {
-                        return new ResponseEntity<>(
-                                        new ApiResponse(RestApiStatus.ERROR, "Không có kỳ học nào đã kết thúc", null),
-                                        HttpStatus.BAD_REQUEST);
-                }
-
-                // Lấy các Factory thuộc kỳ học đã kết thúc
-                List<Factory> factories = factoryRepository.getAllFactoryBySemester(sessionHelper.getFacilityId(),
-                                semesterId);
-
-                if (factories.isEmpty()) {
-                        return new ResponseEntity<>(
-                                        new ApiResponse(RestApiStatus.SUCCESS,
-                                                        "Không có nhóm xưởng nào thuộc kỳ học đã kết thúc", factories),
-                                        HttpStatus.OK);
-                }
-
-                // Đổi trạng thái cho từng Factory
-                for (Factory factory : factories) {
-                        // Nếu đang ACTIVE thì chuyển sang INACTIVE, ngược lại
-                        factory.setStatus(factory.getStatus() == EntityStatus.ACTIVE ? EntityStatus.INACTIVE
-                                        : EntityStatus.ACTIVE);
-                        factoryRepository.save(factory);
-                }
-
-                return new ResponseEntity<>(
-                                new ApiResponse(RestApiStatus.SUCCESS, "Đổi trạng thái nhóm xưởng kỳ trước thành công",
-                                                factories),
-                                HttpStatus.OK);
+        if (factories.isEmpty()) {
+            return RouterHelper.responseSuccess("Không có nhóm xưởng nào thuộc kỳ học đã kết thúc",
+                    factories);
         }
 
-        @Override
-        public ResponseEntity<?> getAllSemester() {
-                List<Semester> semesters = semesterRepository.findAll();
-                return new ResponseEntity<>(
-                                new ApiResponse(RestApiStatus.SUCCESS, "Lấy thành công tất cả học kỳ", semesters),
-                                HttpStatus.OK);
+        for (Factory factory : factories) {
+            factory.setStatus(factory.getStatus() == EntityStatus.ACTIVE ? EntityStatus.INACTIVE
+                    : EntityStatus.ACTIVE);
+            factoryRepository.save(factory);
+
+            // Invalidate each factory's cache
+            redisInvalidationHelper.invalidateAllCaches();
         }
+
+        userActivityLogHelper.saveLog(
+                "vừa thay đổi trạng thái hàng loạt " + factories.size() + " nhóm xưởng của các kỳ học đã kết thúc");
+
+        // Invalidate all caches
+        redisInvalidationHelper.invalidateAllCaches();
+
+        return RouterHelper.responseSuccess("Đổi trạng thái nhóm xưởng kỳ trước thành công", factories);
+    }
+
+    public List<Semester> getCachedSemesters() {
+        String cacheKey = RedisPrefixConstant.REDIS_PREFIX_LEVEL + "semesters";
+
+        Object cachedData = redisCacheHelper.getOrSet(
+                cacheKey,
+                semesterRepository::findAll,
+                new TypeReference<>() {
+                });
+        return (List<Semester>) cachedData;
+    }
+
+    @Override
+    public ResponseEntity<?> getAllSemester() {
+        List<Semester> semesters = getCachedSemesters();
+        return RouterHelper.responseSuccess("Lấy thành công tất cả học kỳ", semesters);
+    }
 
 }

@@ -3,15 +3,16 @@ import { useRouter } from 'vue-router'
 import imgLogoFpt from '@/assets/images/logo-fpt.png'
 import imgLogoUdpm from '@/assets/images/logo-udpm.png'
 import { nextTick, onMounted, reactive, ref } from 'vue'
-import { toast } from 'vue3-toastify'
 import requestAPI from '@/services/requestApiService'
 import useAuthStore from '@/stores/useAuthStore'
 import useLoadingStore from '@/stores/useLoadingStore'
 import { ROUTE_NAMES_API } from '@/router/authenticationRoute'
 
 import { message, Modal } from 'ant-design-vue'
-import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
+import { BASE_URL, GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
 import useFaceIDStore from '@/stores/useFaceIDStore'
+import WebcamFaceID from '@/components/faceid/WebcamFaceID.vue'
+import { base64ToBlob } from '@/utils/utils'
 
 const router = useRouter()
 
@@ -20,28 +21,26 @@ const loadingPage = useLoadingStore()
 const faceIDStore = useFaceIDStore()
 
 const isShowCamera = ref(false)
-const video = ref(null)
-const canvas = ref(null)
 
 const formData = reactive({
   idFacility: null,
   name: authStore.user.name,
   code: authStore.user.code,
-  faceEmbedding: null,
+  image: null,
 })
 
 const lstFacility = ref([])
 
 const handleLogout = () => {
   authStore.logout()
-  window.location.reload()
+  window.location.href = BASE_URL
 }
 
 const formRules = reactive({
   idFacility: [{ required: true, message: 'Vui lòng chọn 1 cơ sở!' }],
   name: [{ required: true, message: 'Vui lòng nhập họ và tên!' }],
   code: [{ required: true, message: 'Vui lòng nhập mã số sinh viên!' }],
-  faceEmbedding: [{ required: true, message: 'Vui lòng đăng ký khuôn mặt!' }],
+  image: [{ required: true, message: 'Vui lòng chụp ảnh khuôn mặt!' }],
 })
 
 const handleShowCamera = async () => {
@@ -68,14 +67,26 @@ const fetchDataFacility = async () => {
     const response = await requestAPI.get(ROUTE_NAMES_API.FETCH_DATA_FACILITY)
     lstFacility.value = response.data.data
   } catch (error) {
-    toast.error('Không thể tải danh sách cơ sở')
+    message.error('Không thể tải danh sách cơ sở')
   }
 }
 
 const fetchSubmitRegister = () => {
   loadingPage.show()
+
+  const data = new FormData()
+  Object.entries(formData).forEach(([key, value]) => {
+    if (key === 'image') return
+    data.append(key, value)
+  })
+  data.append('image', base64ToBlob(formData.image))
+
   requestAPI
-    .put(`${ROUTE_NAMES_API.FETCH_DATA_REGISTER}`, formData)
+    .put(`${ROUTE_NAMES_API.FETCH_DATA_REGISTER}`, data, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    })
     .then(({ data: response }) => {
       message.success(response.message)
       authStore.updateUser({
@@ -83,7 +94,7 @@ const fetchSubmitRegister = () => {
         name: formData.name,
         code: formData.code,
       })
-      authStore.setToken(response.data)
+      authStore.setToken(response.data.accessToken, response.data.refreshToken)
       router.push({ name: GLOBAL_ROUTE_NAMES.STUDENT_PAGE })
     })
     .catch((error) => {
@@ -97,73 +108,22 @@ const fetchSubmitRegister = () => {
 onMounted(async () => {
   document.body.classList.add('bg-login')
   fetchDataFacility()
-  faceIDStore.init(video, canvas, (descriptor) => {
-    formData.faceEmbedding = JSON.stringify(Array.from(descriptor))
+  faceIDStore.setFullStep(false)
+  faceIDStore.setCallback((descriptor) => {
+    formData.image = faceIDStore.dataImage
     isShowCamera.value = false
   })
-  await faceIDStore.loadModels()
 })
 </script>
 
 <template>
   <a-modal
     v-model:open="isShowCamera"
-    title="Checkin khuôn mặt"
+    title="Xác nhận khuôn mặt"
     @cancel="faceIDStore.stopVideo()"
     :footer="null"
   >
-    <div class="video-container">
-      <canvas ref="canvas"></canvas>
-      <video ref="video" autoplay muted></video>
-      <div class="face-id-step" :class="faceIDStore.renderStyle()">
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-      </div>
-      <div class="face-id-loading" v-show="faceIDStore.isLoading">
-        <div class="bg-loading">
-          <div></div>
-          <div></div>
-          <div></div>
-        </div>
-      </div>
-    </div>
-    <div class="face-id-text" v-show="faceIDStore.textStep != null">
-      {{ faceIDStore.textStep }}
-    </div>
+    <WebcamFaceID />
   </a-modal>
 
   <div class="container">
@@ -204,16 +164,26 @@ onMounted(async () => {
             </a-form-item>
 
             <a-form-item class="col-md-4" label="MSSV:" name="code" :rules="formRules.code">
-              <a-input class="w-100" v-model:value="formData.code" allowClear />
+              <a-input
+                class="w-100"
+                v-model:value="formData.code"
+                allowClear
+                @keyup.enter="handleSubmitRegister"
+              />
             </a-form-item>
             <a-form-item class="col-md-8" label="Họ và tên:" name="name" :rules="formRules.name">
-              <a-input class="w-100" v-model:value="formData.name" allowClear />
+              <a-input
+                class="w-100"
+                v-model:value="formData.name"
+                allowClear
+                @keyup.enter="handleSubmitRegister"
+              />
             </a-form-item>
             <a-form-item
               class="col-md-12"
               label="Xác thực khuôn mặt:"
-              name="faceEmbedding"
-              :rules="formRules.faceEmbedding"
+              name="image"
+              :rules="formRules.image"
             >
               <div class="face-id-input" @click="handleShowCamera">
                 <svg
@@ -373,6 +343,11 @@ onMounted(async () => {
   border: 1px solid #d6bfda;
   padding: 20px 40px;
   box-shadow: 4px 6px 1px 1px #efefef;
+}
+@media (max-width: 576px) {
+  .role-container {
+    padding: 20px 15px;
+  }
 }
 .role-item {
   display: flex;

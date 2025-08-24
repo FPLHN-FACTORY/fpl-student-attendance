@@ -1,18 +1,18 @@
 package udpm.hn.studentattendance.core.authentication.services.impl;
 
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
-import jakarta.persistence.Query;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.view.RedirectView;
+import udpm.hn.studentattendance.core.authentication.model.request.AuthenticationToken;
 import udpm.hn.studentattendance.core.authentication.model.request.AuthenticationStudentRegisterRequest;
-import udpm.hn.studentattendance.core.authentication.model.request.AuthenticationStudentUpdateFaceIDRequest;
 import udpm.hn.studentattendance.core.authentication.oauth2.AuthUser;
 import udpm.hn.studentattendance.core.authentication.repositories.AuthenticationFacilityRepository;
+import udpm.hn.studentattendance.core.authentication.repositories.AuthenticationSemesterRepository;
 import udpm.hn.studentattendance.core.authentication.repositories.AuthenticationUserAdminRepository;
 import udpm.hn.studentattendance.core.authentication.repositories.AuthenticationUserStaffRepository;
 import udpm.hn.studentattendance.core.authentication.repositories.AuthenticationUserStudentRepository;
@@ -25,15 +25,21 @@ import udpm.hn.studentattendance.entities.UserStudent;
 import udpm.hn.studentattendance.helpers.NotificationHelper;
 import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.helpers.SessionHelper;
+import udpm.hn.studentattendance.helpers.SettingHelper;
+import udpm.hn.studentattendance.infrastructure.common.services.OnnxService;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.RoleConstant;
+import udpm.hn.studentattendance.infrastructure.constants.SettingKeys;
 import udpm.hn.studentattendance.infrastructure.constants.router.RouteAuthenticationConstant;
 import udpm.hn.studentattendance.core.authentication.services.AuthenticationService;
 import udpm.hn.studentattendance.entities.Facility;
 import udpm.hn.studentattendance.infrastructure.constants.SessionConstant;
+import udpm.hn.studentattendance.utils.AppUtils;
 import udpm.hn.studentattendance.utils.FaceRecognitionUtils;
 
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -41,24 +47,30 @@ import java.util.Set;
 @RequiredArgsConstructor
 public class AuthenticationServiceImpl implements AuthenticationService {
 
-    @PersistenceContext
-    private EntityManager entityManager;
-
     private final HttpSession httpSession;
 
     private final SessionHelper sessionHelper;
 
+    private final SettingHelper settingHelper;
+
     private final JwtUtil jwtUtil;
+
+    private final OnnxService onnxService;
 
     private final NotificationService notificationService;
 
     private final AuthenticationFacilityRepository authenticationFacilityRepository;
+
+    private final AuthenticationSemesterRepository authenticationSemesterRepository;
 
     private final AuthenticationUserAdminRepository authenticationUserAdminRepository;
 
     private final AuthenticationUserStaffRepository authenticationUserStaffRepository;
 
     private final AuthenticationUserStudentRepository authenticationUserStudentRepository;
+
+    @Value("${app.config.face.threshold_register}")
+    private double FACE_THRESHOLD_REGISTER;
 
     @Override
     public RedirectView authorSwitch(String role, String redirectUri, String facilityId) {
@@ -70,14 +82,67 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     }
 
     @Override
-    public List<Facility> getAllFacility() {
-        return authenticationFacilityRepository.findAllByStatusOrderByPositionAsc(EntityStatus.ACTIVE);
+    public ResponseEntity<?> getAllFacility() {
+        return RouterHelper.responseSuccess("Tải dữ liệu danh sách cơ sở thành công",
+                authenticationFacilityRepository.findAllByStatusOrderByPositionAsc(EntityStatus.ACTIVE));
     }
 
     @Override
-    public AuthUser getInfoUser(String role) {
+    public ResponseEntity<?> getAllSemester() {
+        return RouterHelper.responseSuccess("Tải dữ liệu danh sách học kỳ thành công",
+                authenticationSemesterRepository.findAllByStatusOrderByFromDateDesc(EntityStatus.ACTIVE));
+    }
+
+    @Override
+    public ResponseEntity<?> getSettings() {
+        return RouterHelper.responseSuccess("Lấy dữ liệu cài đặt thành công", settingHelper.getAllSettings());
+    }
+
+    @Override
+    public ResponseEntity<?> saveSettings(Map<SettingKeys, String> settings) {
+        Boolean disableCheckEmailFPTStaff = (Boolean) SettingHelper
+                .parseValue(settings.get(SettingKeys.DISABLED_CHECK_EMAIL_FPT_STAFF));
+        Boolean disableCheckEmailFPTStudent = (Boolean) SettingHelper
+                .parseValue(settings.get(SettingKeys.DISABLED_CHECK_EMAIL_FPT_STUDENT));
+        Integer shiftMinDiff = (Integer) SettingHelper.parseValue(settings.get(SettingKeys.SHIFT_MIN_DIFF));
+        Integer shiftMaxLateArrival = (Integer) SettingHelper
+                .parseValue(settings.get(SettingKeys.SHIFT_MAX_LATE_ARRIVAL));
+        Integer attendanceEarlyCheckin = (Integer) SettingHelper
+                .parseValue(settings.get(SettingKeys.ATTENDANCE_EARLY_CHECKIN));
+        Integer expirationMinuteLogin = (Integer) SettingHelper
+                .parseValue(settings.get(SettingKeys.EXPIRATION_MINUTE_LOGIN));
+
+        if (disableCheckEmailFPTStaff == null || disableCheckEmailFPTStudent == null || shiftMinDiff == null
+                || shiftMaxLateArrival == null || attendanceEarlyCheckin == null || expirationMinuteLogin == null) {
+            return RouterHelper.responseError("Vui lòng nhập đầy đủ các trường bắt buộc");
+        }
+
+        if (shiftMinDiff < 1 || shiftMinDiff > 480) {
+            return RouterHelper.responseError("Thời gian diễn ra ca học tối thiểu không hợp lệ");
+        }
+
+        if (shiftMaxLateArrival < 5 || shiftMaxLateArrival > 90) {
+            return RouterHelper.responseError("Thời gian điểm danh muộn nhất không hợp lệ");
+        }
+
+        if (attendanceEarlyCheckin < 0 || attendanceEarlyCheckin > 30) {
+            return RouterHelper.responseError("Thời gian cho phép checkin sớm không hợp lệ");
+        }
+
+        if (expirationMinuteLogin < 60) {
+            return RouterHelper.responseError("Thời hạn phiên đăng nhập không hợp lệ");
+        }
+
+        for (Map.Entry<SettingKeys, String> entry : settings.entrySet()) {
+            settingHelper.save(entry.getKey(), entry.getValue());
+        }
+        return RouterHelper.responseSuccess("Lưu lại cài đặt thành công");
+    }
+
+    @Override
+    public ResponseEntity<?> getInfoUser(String role) {
         if (role == null) {
-            return null;
+            return RouterHelper.responseError("Token đăng nhập không hợp lệ");
         }
 
         role = role.trim();
@@ -87,7 +152,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         if (role.equalsIgnoreCase(RoleConstant.ADMIN.name())) {
             Optional<UserAdmin> userAdmin = authenticationUserAdminRepository.findByEmail(sessionHelper.getUserEmail());
             if (userAdmin.isEmpty()) {
-                return null;
+                return RouterHelper.responseError("Token đăng nhập không hợp lệ hoặc đã hết hạn");
             }
             userData = sessionHelper.buildAuthUser(userAdmin.get(), sessionHelper.getUserRole(), facilityID);
         } else if (role.equalsIgnoreCase(RoleConstant.STAFF.name())
@@ -95,7 +160,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             Optional<UserStaff> userStaff = authenticationUserStaffRepository.findLogin(sessionHelper.getUserEmailFpt(),
                     facilityID);
             if (userStaff.isEmpty()) {
-                return null;
+                return RouterHelper.responseError("Token đăng nhập không hợp lệ hoặc đã hết hạn");
             }
             userData = sessionHelper.buildAuthUser(userStaff.get(), sessionHelper.getUserRole(), facilityID);
         } else if (role.equalsIgnoreCase(RoleConstant.STUDENT.name())) {
@@ -104,16 +169,17 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                             facilityID)
                     : authenticationUserStudentRepository.findByEmail(sessionHelper.getUserEmail());
             if (userStudent.isEmpty()) {
-                return null;
+                return RouterHelper.responseError("Token đăng nhập không hợp lệ hoặc đã hết hạn");
             }
             userData = sessionHelper.buildAuthUser(userStudent.get(), sessionHelper.getUserRole(), facilityID);
         }
 
-        return userData;
+        return RouterHelper.responseSuccess("Lấy thông tin người dùng thành công", userData);
     }
 
     @Override
-    public ResponseEntity<?> studentRegister(AuthenticationStudentRegisterRequest request) {
+    public ResponseEntity<?> studentRegister(AuthenticationStudentRegisterRequest request, MultipartFile image) {
+
         UserStudent student = authenticationUserStudentRepository.findById(sessionHelper.getUserId()).orElse(null);
         if (student == null) {
             return RouterHelper.responseError("Không tìm thấy sinh viên");
@@ -133,24 +199,31 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             return RouterHelper.responseError("Mã số sinh viên đã tồn tại trên cơ sở này");
         }
 
-        if (request.getFaceEmbedding() == null || request.getFaceEmbedding().isEmpty()) {
-            return RouterHelper.responseError("Thông tin khuôn mặt không hợp lệ");
+        try {
+            if (image == null || image.isEmpty()) {
+                throw new RuntimeException();
+            }
+
+            float[] faceEmbedding = onnxService.getEmbedding(image.getBytes());
+
+            if (isFaceExists(facility.getId(), faceEmbedding)) {
+                return RouterHelper.responseError("Dữ liệu khuôn mặt đã tồn tại trên hệ thống");
+            }
+
+            student.setFacility(facility);
+            student.setCode(request.getCode());
+            student.setName(request.getName());
+            student.setFaceEmbedding(Arrays.toString(faceEmbedding));
+            authenticationUserStudentRepository.save(student);
+
+            String accessToken = jwtUtil.generateToken(student.getEmail(),
+                    sessionHelper.buildAuthUser(student, Set.of(RoleConstant.STUDENT), student.getFacility().getId()));
+            String refreshToken = jwtUtil.generateRefreshToken(accessToken);
+
+            return RouterHelper.responseSuccess("Đăng ký thông tin sinh viên thành công", new AuthenticationToken(accessToken, refreshToken));
+        } catch (Exception e) {
+            return RouterHelper.responseError("Thông tin khuôn mặt không hợp lệ. Vui lòng thử lại");
         }
-
-        double[] faceEmbedding = FaceRecognitionUtils.parseEmbedding(request.getFaceEmbedding());
-        if (isFaceExists(faceEmbedding)) {
-            return RouterHelper.responseError("Đã tồn tại khuôn mặt trên hệ thống");
-        }
-
-        student.setFacility(facility);
-        student.setCode(request.getCode());
-        student.setName(request.getName());
-        student.setFaceEmbedding(request.getFaceEmbedding());
-        authenticationUserStudentRepository.save(student);
-
-        String token = jwtUtil.generateToken(student.getEmail(),
-                sessionHelper.buildAuthUser(student, Set.of(RoleConstant.STUDENT), student.getFacility().getId()));
-        return RouterHelper.responseSuccess("Đăng ký thông tin sinh viên thành công", token);
     }
 
     @Override
@@ -162,7 +235,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             return RouterHelper.responseError("Vui lòng đăng ký thông tin sinh viên");
         }
 
-        if (StringUtils.hasText(student.getFaceEmbedding())) {
+        if (student.getFaceEmbedding() != null && !student.getFaceEmbedding().isEmpty()) {
             student.setFaceEmbedding("OK");
         }
 
@@ -170,7 +243,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     }
 
     @Override
-    public ResponseEntity<?> studentUpdateFaceID(AuthenticationStudentUpdateFaceIDRequest request) {
+    public ResponseEntity<?> studentUpdateFaceID(MultipartFile image) {
         UserStudent student = authenticationUserStudentRepository.findById(sessionHelper.getUserId()).orElse(null);
         if (student == null) {
             return RouterHelper.responseError("Không tìm thấy sinh viên");
@@ -180,49 +253,60 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             return RouterHelper.responseError("Không thể cập nhật khuôn mặt tài khoản này");
         }
 
-        if (request.getFaceEmbedding() == null || request.getFaceEmbedding().isEmpty()) {
-            return RouterHelper.responseError("Thông tin khuôn mặt không hợp lệ");
+        try {
+            if (image == null || image.isEmpty()) {
+                throw new RuntimeException();
+            }
+
+            float[] faceEmbedding = onnxService.getEmbedding(image.getBytes());
+            if (isFaceExists(sessionHelper.getFacilityId(), faceEmbedding)) {
+                return RouterHelper.responseError("Dữ liệu khuôn mặt đã tồn tại trên hệ thống");
+            }
+
+            student.setFaceEmbedding(Arrays.toString(faceEmbedding));
+
+            NotificationAddRequest notificationAddRequest = new NotificationAddRequest();
+            notificationAddRequest.setType(NotificationHelper.TYPE_SUCCESS_UPDATE_FACE_ID);
+            notificationAddRequest.setIdUser(student.getId());
+            notificationService.add(notificationAddRequest);
+
+            return RouterHelper.responseSuccess("Cập nhật khuôn mặt thành công",
+                    authenticationUserStudentRepository.save(student));
+        } catch (Exception e) {
+            return RouterHelper.responseError("Thông tin khuôn mặt không hợp lệ. Vui lòng thử lại");
         }
-
-        double[] faceEmbedding = FaceRecognitionUtils.parseEmbedding(request.getFaceEmbedding());
-        if (isFaceExists(faceEmbedding)) {
-            return RouterHelper.responseError("Đã tồn tại khuôn mặt trên hệ thống");
-        }
-
-        student.setFaceEmbedding(request.getFaceEmbedding());
-
-        NotificationAddRequest notificationAddRequest = new NotificationAddRequest();
-        notificationAddRequest.setType(NotificationHelper.TYPE_SUCCESS_UPDATE_FACE_ID);
-        notificationAddRequest.setIdUser(student.getId());
-        notificationService.add(notificationAddRequest);
-
-        return RouterHelper.responseSuccess("Cập nhật khuôn mặt thành công",
-                authenticationUserStudentRepository.save(student));
     }
 
-    private boolean isFaceExists(double[] embedding) {
-        StringBuilder queryBuilder = new StringBuilder(
-                "SELECT COUNT(*) > 0 FROM user_student WHERE face_embedding IS NOT NULL AND face_embedding <> '' AND ");
-
-        queryBuilder.append("SQRT(");
-        for (int i = 0; i < embedding.length; i++) {
-            if (i > 0)
-                queryBuilder.append(" + ");
-            queryBuilder.append("POW(IFNULL(JSON_EXTRACT(face_embedding, '$[").append(i).append("]'), 0) - :e")
-                    .append(i).append(", 2)");
-        }
-        queryBuilder.append(") < :threshold");
-
-        Query query = entityManager.createNativeQuery(queryBuilder.toString());
-
-        for (int i = 0; i < embedding.length; i++) {
-            query.setParameter("e" + i, embedding[i]);
+    @Override
+    public ResponseEntity<?> refreshToken(String refreshToken) {
+        if (!jwtUtil.validateToken(refreshToken)) {
+            return RouterHelper.responseError("Refresh Token không hợp lệ hoặc đã hết hạn");
         }
 
-        query.setParameter("threshold", FaceRecognitionUtils.THRESHOLD);
+        String newToken = jwtUtil.generateToken(refreshToken);
+        String newRefreshToken = jwtUtil.generateRefreshToken(newToken);
 
-        Number count = (Number) query.getSingleResult();
-        return count != null && count.longValue() > 0;
+        AuthenticationToken data = new AuthenticationToken();
+        data.setAccessToken(newToken);
+        data.setRefreshToken(newRefreshToken);
+        return RouterHelper.responseSuccess("Gia hạn token thành công", data);
+    }
+
+    @Override
+    public ResponseEntity<?> getAvatar(String urlImage) {
+        return RouterHelper.responseSuccess("Lấy dữ liệu avatar thành công", AppUtils.imageUrlToBase64(urlImage));
+    }
+
+    private boolean isFaceExists(String idFacility, float[] embedding) {
+        List<String> lstRawFaceEmbeddings = authenticationUserStudentRepository.getAllFaceEmbedding(idFacility);
+        List<float[]> lstFaceEmbeddings = lstRawFaceEmbeddings.stream().map(FaceRecognitionUtils::parseEmbedding)
+                .toList();
+
+        if (lstFaceEmbeddings.isEmpty()) {
+            return false;
+        }
+
+        return FaceRecognitionUtils.isSameFaces(lstFaceEmbeddings, embedding, FACE_THRESHOLD_REGISTER);
     }
 
 }

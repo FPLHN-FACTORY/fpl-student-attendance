@@ -11,13 +11,13 @@ import {
 } from '@ant-design/icons-vue'
 import { message, Modal } from 'ant-design-vue'
 import requestAPI from '@/services/requestApiService'
-import { DEFAULT_DATE_FORMAT, DEFAULT_PAGINATION } from '@/constants'
+import { DEFAULT_DATE_FORMAT, DEFAULT_PAGINATION, STATUS_TYPE } from '@/constants'
 import { API_ROUTES_STAFF } from '@/constants/staffConstant'
 import { useRouter } from 'vue-router'
 import { ROUTE_NAMES } from '@/router/staffRoute'
 import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
 import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
-import { debounce, formatDate } from '@/utils/utils'
+import { autoAddColumnWidth, debounce, formatDate } from '@/utils/utils'
 import dayjs from 'dayjs'
 
 const router = useRouter()
@@ -47,17 +47,27 @@ const maxRangeDate = ref(dayjs())
 
 const currentProject = ref(null)
 
-const columns = ref([
-  { title: '#', dataIndex: 'orderNumber', key: 'orderNumber', width: 50 },
-  { title: 'Tên kế hoạch', dataIndex: 'planName', key: 'planName', width: 120 },
-  { title: 'Tên dự án', dataIndex: 'projectName', key: 'projectName' },
-  { title: 'Nội dung', dataIndex: 'description', key: 'description' },
-  { title: 'Bộ môn', dataIndex: 'subjectName', key: 'subjectName' },
-  { title: 'Cấp độ', dataIndex: 'level', key: 'level', width: 120 },
-  { title: 'Ngày diễn ra', dataIndex: 'semesterName', key: 'semesterName' },
-  { title: 'Trạng thái', dataIndex: 'status', key: 'status' },
-  { title: '', key: 'actions' },
-])
+const countFilter = ref(0)
+
+const columns = ref(
+  autoAddColumnWidth([
+    { title: '#', dataIndex: 'orderNumber', key: 'orderNumber' },
+    { title: 'Tên kế hoạch', dataIndex: 'planName', key: 'planName' },
+    { title: 'Tên dự án', dataIndex: 'projectName', key: 'projectName' },
+    { title: 'Nội dung', dataIndex: 'description', key: 'description' },
+    { title: 'Bộ môn', dataIndex: 'subjectName', key: 'subjectName' },
+    { title: 'Nhóm dự án', dataIndex: 'level', key: 'level' },
+    { title: 'Ngày diễn ra', dataIndex: 'semesterName', key: 'semesterName' },
+    {
+      title: 'Checkin/checkout muộn',
+      dataIndex: 'maxLateArrival',
+      key: 'maxLateArrival',
+      align: 'center',
+    },
+    { title: 'Trạng thái', dataIndex: 'status', key: 'status' },
+    { title: '', key: 'actions' },
+  ]),
+)
 
 const breadcrumb = ref([
   {
@@ -93,14 +103,15 @@ const formData = reactive({
   idProject: null,
   name: null,
   description: null,
+  maxLateArrival: 0,
   rangeDate: [],
 })
 
 const formRules = reactive({
   idProject: [{ required: true, message: 'Vui lòng chọn 1 dự án!' }],
   name: [{ required: true, message: 'Vui lòng nhập mục này!' }],
-  description: [{ required: true, message: 'Vui lòng nhập mục này!' }],
   rangeDate: [{ required: true, message: 'Vui lòng nhập mục này!' }],
+  maxLateArrival: [{ required: true, message: 'Vui lòng nhập mục này!' }],
 })
 
 const disabledDate = (current) => {
@@ -125,7 +136,7 @@ const fetchDataLevel = () => {
       optLevel.value = response.data
     })
     .catch((error) => {
-      message.error(error?.response?.data?.message || 'Lỗi khi lấy dữ liệu cấp độ dự án')
+      message.error(error?.response?.data?.message || 'Lỗi khi lấy dữ liệu nhóm dự án')
     })
 }
 
@@ -168,6 +179,7 @@ const fetchDataList = () => {
     .then(({ data: response }) => {
       lstData.value = response.data.data
       pagination.value.total = response.data.totalPages * pagination.value.pageSize
+      countFilter.value = response.data.totalItems
     })
     .catch((error) => {
       message.error(error?.response?.data?.message || 'Không thể tải danh sách dữ liệu')
@@ -270,7 +282,7 @@ const handleShowDescription = (text) => {
   Modal.info({
     title: 'Nội dung kế hoạch',
     type: 'info',
-    content: text,
+    content: text || 'Không có mô tả',
     okText: 'Đóng',
     okButtonProps: {
       class: 'btn-gray',
@@ -314,11 +326,11 @@ const handleSubmitAdd = async () => {
   try {
     await formRefAddOrUpdate.value.validate()
     Modal.confirm({
-      title: `Xác nhận thêm mới`,
+      title: `Xác nhận tạo kế hoạch mới`,
       type: 'info',
-      content: `Bạn có chắc muốn tạo kế hoạch này?`,
-      okText: 'Tiếp tục',
-      cancelText: 'Hủy bỏ',
+      content: `Bạn có chắc chắn muốn tạo kế hoạch này không?`,
+      okText: 'Tạo kế hoạch',
+      cancelText: 'Hủy',
       onOk() {
         fetchSubmitCreate()
       },
@@ -330,11 +342,11 @@ const handleSubmitUpdate = async () => {
   try {
     await formRefAddOrUpdate.value.validate()
     Modal.confirm({
-      title: `Xác nhận cập nhật`,
+      title: `Xác nhận cập nhật kế hoạch`,
       type: 'info',
-      content: `Mọi dữ liệu dư thừa trong khoảng thời gian diễn ra có thể mất. Bạn có chắc muốn cập nhật kế hoạch này?`,
-      okText: 'Tiếp tục',
-      cancelText: 'Hủy bỏ',
+      content: `Cập nhật kế hoạch có thể làm mất một số dữ liệu dư thừa trong khoảng thời gian diễn ra. Bạn có chắc chắn muốn tiếp tục không?`,
+      okText: 'Cập nhật',
+      cancelText: 'Hủy',
       onOk() {
         fetchSubmitUpdate()
       },
@@ -344,11 +356,11 @@ const handleSubmitUpdate = async () => {
 
 const handleChangeStatus = (id) => {
   Modal.confirm({
-    title: `Xác nhận thay đổi trạng thái`,
+    title: `Xác nhận thay đổi trạng thái kế hoạch`,
     type: 'info',
-    content: `Bạn có chắc muốn thay đổi trạng thái kế hoạch này?`,
-    okText: 'Tiếp tục',
-    cancelText: 'Hủy bỏ',
+    content: `Bạn có chắc chắn muốn thay đổi trạng thái của kế hoạch này không?`,
+    okText: 'Thay đổi',
+    cancelText: 'Hủy',
     onOk() {
       fetchSubmitChangeStatus(id)
     },
@@ -357,11 +369,11 @@ const handleChangeStatus = (id) => {
 
 const handleDelete = (id) => {
   Modal.confirm({
-    title: `Xác nhận xoá kế hoạch`,
+    title: `Xác nhận xóa kế hoạch`,
     type: 'warning',
-    content: `Mọi dữ liệu điểm danh sẽ bị xoá. Bạn vẫn muốn tiếp tục?`,
-    okText: 'Tiếp tục',
-    cancelText: 'Hủy bỏ',
+    content: `Việc xóa kế hoạch sẽ làm mất toàn bộ dữ liệu điểm danh liên quan. Bạn có chắc chắn muốn tiếp tục không?`,
+    okText: 'Xóa kế hoạch',
+    cancelText: 'Hủy',
     onOk() {
       fetchSubmitDelete(id)
     },
@@ -378,7 +390,14 @@ const handleChangeProjectId = (id) => {
   currentProject.value = lstDataProject.value.find((o) => o.id === id)
   minRangeDate.value = dayjs(currentProject.value.fromDate)
   maxRangeDate.value = dayjs(currentProject.value.toDate)
-  formData.rangeDate = [currentProject.value ? minRangeDate.value : dayjs(), maxRangeDate.value]
+  formData.rangeDate = [
+    currentProject.value
+      ? currentProject.value.fromDate < dayjs().valueOf()
+        ? dayjs()
+        : minRangeDate.value
+      : dayjs(),
+    maxRangeDate.value,
+  ]
 }
 
 const handleShowDetail = (id) => {
@@ -415,6 +434,7 @@ const handleShowModalAdd = () => {
   formData.name = null
   formData.description = null
   formData.rangeDate = []
+  formData.maxLateArrival = 0
 }
 
 const handleShowModalUpdate = (item) => {
@@ -452,6 +472,7 @@ const handleShowModalUpdate = (item) => {
   formData.name = item.planName
   formData.description = item.description
   formData.rangeDate = [dayjs(item.fromDate), dayjs(item.toDate)]
+  formData.maxLateArrival = item.maxLateArrival || 0
 }
 
 onMounted(() => {
@@ -542,7 +563,7 @@ watch(
           v-model:value="dataFilterAdd.level"
           class="w-100"
           :dropdownMatchSelectWidth="false"
-          placeholder="-- Chọn 1 cấp độ --"
+          placeholder="-- Chọn 1 nhóm dự án --"
           allowClear
           :disabled="modalAddOrUpdate.isLoading"
         >
@@ -590,12 +611,31 @@ watch(
         />
       </a-form-item>
 
-      <a-form-item class="col-sm-12" label="Tên kế hoạch" name="name" :rules="formRules.name">
+      <a-form-item class="col-sm-8" label="Tên kế hoạch" name="name" :rules="formRules.name">
         <a-input
           class="w-100"
           v-model:value="formData.name"
           :disabled="modalAddOrUpdate.isLoading"
           allowClear
+          @keyup.enter="modalAddOrUpdate.onOk"
+        />
+      </a-form-item>
+
+      <a-form-item
+        class="col-sm-4"
+        label="Checkin/checkout muộn"
+        name="maxLateArrival"
+        :rules="formRules.maxLateArrival"
+      >
+        <a-input-number
+          class="w-100"
+          placeholder="% / tổng số buổi"
+          v-model:value="formData.maxLateArrival"
+          :min="0"
+          :max="50"
+          :disabled="modalAddOrUpdate.isLoading"
+          allowClear
+          @keyup.enter="modalAddOrUpdate.onOk"
         />
       </a-form-item>
 
@@ -619,112 +659,114 @@ watch(
   <div class="container-fluid">
     <div class="row g-3">
       <div class="col-12">
-        <!-- Bộ lọc tìm kiếm -->
-        <a-card :bordered="false" class="cart">
-          <template #title> <FilterFilled /> Bộ lọc </template>
-          <div class="row g-2">
-            <div class="col-xxl-2 col-md-4 col-sm-12">
-              <div class="label-title">Từ khoá:</div>
-              <a-input
-                v-model:value="dataFilter.keyword"
-                placeholder="Tìm theo tên kế hoạch..."
-                allowClear
-              >
-                <template #prefix>
-                  <SearchOutlined />
-                </template>
-              </a-input>
-            </div>
-            <div class="col-xxl-2 col-md-4 col-sm-6">
-              <div class="label-title">Trạng thái:</div>
-              <a-select
-                v-model:value="dataFilter.status"
-                class="w-100"
-                :dropdownMatchSelectWidth="false"
-                placeholder="-- Tất cả trạng thái --"
-                allowClear
-              >
-                <a-select-option :value="null">-- Tất cả trạng thái --</a-select-option>
-                <a-select-option :value="1">Đang triển khai</a-select-option>
-                <a-select-option :value="0">Ngừng triển khai</a-select-option>
-              </a-select>
-            </div>
-            <div class="col-xxl-2 col-md-4 col-sm-6">
-              <div class="label-title">Bộ môn:</div>
-              <a-select
-                v-model:value="dataFilter.subject"
-                class="w-100"
-                :dropdownMatchSelectWidth="false"
-                placeholder="-- Tất cả bộ môn --"
-                allowClear
-              >
-                <a-select-option :value="null">-- Tất cả bộ môn --</a-select-option>
-                <a-select-option v-for="o in optSubject" :key="o.id" :value="o.id">
-                  {{ `${o.code} - ${o.name}` }}
-                </a-select-option>
-              </a-select>
-            </div>
-            <div class="col-xxl-2 col-md-4 col-sm-6">
-              <div class="label-title">Cấp độ dự án:</div>
-              <a-select
-                v-model:value="dataFilter.level"
-                class="w-100"
-                :dropdownMatchSelectWidth="false"
-                placeholder="-- Tất cả level --"
-                allowClear
-              >
-                <a-select-option :value="null">-- Tất cả level --</a-select-option>
-                <a-select-option v-for="o in optLevel" :key="o.id" :value="o.id">
-                  {{ `${o.code} - ${o.name}` }}
-                </a-select-option>
-              </a-select>
-            </div>
-            <div class="col-xxl-2 col-md-4 col-sm-6">
-              <div class="label-title">Học kỳ:</div>
-              <a-select
-                v-model:value="dataFilter.semester"
-                class="w-100"
-                :dropdownMatchSelectWidth="false"
-                placeholder="-- Tất cả học kỳ --"
-                allowClear
-              >
-                <a-select-option :value="null">-- Tất cả học kỳ --</a-select-option>
-                <a-select-option v-for="o in optSemester" :key="o" :value="o">
-                  {{ o }}
-                </a-select-option>
-              </a-select>
-            </div>
-            <div class="col-xxl-2 col-md-4 col-sm-6">
-              <div class="label-title">Năm học:</div>
-              <a-select
-                v-model:value="dataFilter.year"
-                class="w-100"
-                :dropdownMatchSelectWidth="false"
-                placeholder="-- Tất cả năm học --"
-                allowClear
-              >
-                <a-select-option :value="null">-- Tất cả năm học --</a-select-option>
-                <a-select-option v-for="o in optYear" :key="o" :value="o">
-                  {{ o }}
-                </a-select-option>
-              </a-select>
-            </div>
-            <div class="col-12">
-              <div class="d-flex justify-content-center flex-wrap gap-2 mt-3">
-                <a-button class="btn-light" @click="handleSubmitFilter">
-                  <FilterFilled /> Lọc
-                </a-button>
-                <a-button class="btn-gray" @click="handleClearFilter"> Huỷ lọc </a-button>
+        <a-card :bordered="false" class="cart no-body-padding">
+          <a-collapse ghost>
+            <a-collapse-panel>
+              <template #header><FilterFilled /> Bộ lọc ({{ countFilter }})</template>
+              <div class="row g-3">
+                <div class="col-xxl-2 col-md-4 col-sm-12">
+                  <div class="label-title">Từ khoá:</div>
+                  <a-input
+                    v-model:value="dataFilter.keyword"
+                    placeholder="Tìm theo tên kế hoạch..."
+                    allowClear
+                  >
+                    <template #prefix>
+                      <SearchOutlined />
+                    </template>
+                  </a-input>
+                </div>
+                <div class="col-xxl-2 col-md-4 col-sm-12">
+                  <div class="label-title">Trạng thái:</div>
+                  <a-select
+                    v-model:value="dataFilter.status"
+                    class="w-100"
+                    :dropdownMatchSelectWidth="false"
+                    placeholder="-- Tất cả trạng thái --"
+                  >
+                    <a-select-option :value="null">-- Tất cả trạng thái --</a-select-option>
+                    <a-select-option :value="1">Đang triển khai</a-select-option>
+                    <a-select-option :value="0">Ngừng triển khai</a-select-option>
+                  </a-select>
+                </div>
+                <div class="col-xxl-2 col-md-4 col-sm-6">
+                  <div class="label-title">Bộ môn:</div>
+                  <a-select
+                    v-model:value="dataFilter.subject"
+                    class="w-100"
+                    :dropdownMatchSelectWidth="false"
+                    placeholder="-- Tất cả bộ môn --"
+                    allowClear
+                  >
+                    <a-select-option :value="null">-- Tất cả bộ môn --</a-select-option>
+                    <a-select-option v-for="o in optSubject" :key="o.id" :value="o.id">
+                      {{ `${o.code} - ${o.name}` }}
+                    </a-select-option>
+                  </a-select>
+                </div>
+                <div class="col-xxl-2 col-md-4 col-sm-6">
+                  <div class="label-title">Nhóm dự án:</div>
+                  <a-select
+                    v-model:value="dataFilter.level"
+                    class="w-100"
+                    :dropdownMatchSelectWidth="false"
+                    placeholder="-- Tất cả level --"
+                    allowClear
+                  >
+                    <a-select-option :value="null">-- Tất cả level --</a-select-option>
+                    <a-select-option v-for="o in optLevel" :key="o.id" :value="o.id">
+                      {{ `${o.code} - ${o.name}` }}
+                    </a-select-option>
+                  </a-select>
+                </div>
+                <div class="col-xxl-2 col-md-4 col-sm-6">
+                  <div class="label-title">Học kỳ:</div>
+                  <a-select
+                    v-model:value="dataFilter.semester"
+                    class="w-100"
+                    :dropdownMatchSelectWidth="false"
+                    placeholder="-- Tất cả học kỳ --"
+                    allowClear
+                  >
+                    <a-select-option :value="null">-- Tất cả học kỳ --</a-select-option>
+                    <a-select-option v-for="o in optSemester" :key="o" :value="o">
+                      {{ o }}
+                    </a-select-option>
+                  </a-select>
+                </div>
+                <div class="col-xxl-2 col-md-4 col-sm-6">
+                  <div class="label-title">Năm:</div>
+                  <a-select
+                    v-model:value="dataFilter.year"
+                    class="w-100"
+                    :dropdownMatchSelectWidth="false"
+                    placeholder="-- Tất cả năm --"
+                    allowClear
+                  >
+                    <a-select-option :value="null">-- Tất cả năm --</a-select-option>
+                    <a-select-option v-for="o in optYear" :key="o" :value="o">
+                      {{ o }}
+                    </a-select-option>
+                  </a-select>
+                </div>
+                <div class="col-12">
+                  <div class="d-flex justify-content-center flex-wrap gap-2">
+                    <a-button class="btn-light" @click="handleSubmitFilter">
+                      <FilterFilled /> Lọc
+                    </a-button>
+                    <a-button class="btn-gray" @click="handleClearFilter"> Huỷ lọc </a-button>
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
+            </a-collapse-panel>
+          </a-collapse>
         </a-card>
       </div>
 
       <div class="col-12">
         <a-card :bordered="false" class="cart">
           <template #title> <UnorderedListOutlined /> Danh sách kế hoạch </template>
-          <div class="d-flex justify-content-end mb-3 gap-3">
+          <div class="d-flex justify-content-end gap-3 mb-2">
             <a-button type="primary" @click="handleShowModalAdd">
               <PlusOutlined /> Tạo kế hoạch mới
             </a-button>
@@ -737,14 +779,17 @@ watch(
             :columns="columns"
             :loading="isLoading"
             :pagination="pagination"
-            :scroll="{ y: 500, x: 'auto' }"
+            :scroll="{ x: 'auto' }"
             @change="handleTableChange"
           >
             <template #bodyCell="{ column, record }">
               <template v-if="column.dataIndex === 'description'">
-                <a-typography-link @click="handleShowDescription(record.description)"
+                <a-typography-link
+                  v-if="record.description"
+                  @click="handleShowDescription(record.description)"
                   >Chi tiết</a-typography-link
                 >
+                <span v-else>Không có mô tả</span>
               </template>
               <template v-if="column.key === 'planName'">
                 <RouterLink
@@ -754,15 +799,21 @@ watch(
                 </RouterLink>
               </template>
 
+              <template v-if="column.dataIndex === 'maxLateArrival'">
+                <span v-if="record.maxLateArrival <= 0">--</span>
+                <a-tag v-else color="purple">{{ record.maxLateArrival }}% số buổi</a-tag>
+              </template>
+
               <template v-if="column.dataIndex === 'semesterName'">
                 <span>{{ formatDate(record.fromDate) }}</span> -
                 <span>{{ formatDate(record.toDate) }}</span>
-                <a-tag class="ms-2">{{ record.semesterName }}</a-tag>
+                <a-tag class="ms-2" color="orange">{{ record.semesterName }}</a-tag>
               </template>
               <template v-if="column.dataIndex === 'status'">
                 <a-switch
                   class="me-2"
-                  :checked="record.status === 1"
+                  :checked="record.status === STATUS_TYPE.ENABLE"
+                  :disabled="record.status !== record.currentStatus"
                   @change="handleChangeStatus(record.id)"
                 />
                 <a-tag :color="record.status === 1 ? 'green' : 'red'">{{
@@ -770,17 +821,17 @@ watch(
                 }}</a-tag>
               </template>
               <template v-if="column.key === 'actions'">
-                <a-tooltip title="Chi tiết kế hoạch">
+                <a-tooltip title="Phân công nhóm xưởng">
                   <a-button
-                    class="btn-outline-primary border-0 me-2"
+                    class="btn-outline-primary border-0"
                     @click="handleShowDetail(record.id)"
                   >
                     <AlignLeftOutlined />
                   </a-button>
                 </a-tooltip>
-                <a-tooltip title="Chỉnh sửa kế hoạch">
+                <a-tooltip v-if="record.status === 1" title="Chỉnh sửa kế hoạch">
                   <a-button
-                    class="btn-outline-info border-0"
+                    class="btn-outline-info border-0 ms-2"
                     @click="handleShowModalUpdate(record)"
                   >
                     <EditFilled />

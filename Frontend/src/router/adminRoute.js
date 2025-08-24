@@ -5,11 +5,14 @@ import {
   BookOutlined,
   CalendarOutlined,
   ClusterOutlined,
+  PieChartOutlined,
+  SolutionOutlined,
   TeamOutlined,
   UserOutlined,
 } from '@ant-design/icons-vue'
 
 export const ROUTE_NAMES = {
+  MANAGEMENT_STATISTICS: 'route_admin_management_statistics',
   MANAGEMENT_FACILITY: 'route_admin_management_facility',
   MANAGEMENT_FACILITY_IP: 'route_admin_management_facility_ip',
   MANAGEMENT_FACILITY_LOCATION: 'route_admin_management_facility_location',
@@ -20,6 +23,7 @@ export const ROUTE_NAMES = {
   MANAGEMENT_LEVEL_PROJECT: 'route_admin_management_level_project',
   MANAGEMENT_STAFF: 'route_admin_management_staff',
   MANAGEMENT_ADMIN: 'route_admin_management_admin',
+  MANAGEMENT_USER_LOG_ACTIVITY: 'route_admin_management_user_log_activity',
 }
 let selectedKey = 1
 
@@ -28,12 +32,22 @@ export const AdminRoutes = [
     path: '/Admin',
     name: GLOBAL_ROUTE_NAMES.ADMIN_PAGE,
     component: () => import('@/views/layout/AdminLayout.vue'),
-    redirect: { name: ROUTE_NAMES.MANAGEMENT_FACILITY },
+    redirect: { name: ROUTE_NAMES.MANAGEMENT_STATISTICS },
     meta: {
-      title: 'Ban đào tạo',
+      title: 'Admin',
       requireRole: ROLE.ADMIN,
     },
     children: [
+      {
+        path: 'management-statistics',
+        name: ROUTE_NAMES.MANAGEMENT_STATISTICS,
+        component: () => import('@/views/pages/admin/AdminManagementStatisticsPage.vue'),
+        meta: {
+          selectedKey: selectedKey++,
+          name: 'Thống kê',
+          icon: PieChartOutlined,
+        },
+      },
       {
         path: 'management-facility',
         name: ROUTE_NAMES.MANAGEMENT_FACILITY,
@@ -57,7 +71,7 @@ export const AdminRoutes = [
         name: ROUTE_NAMES.MANAGEMENT_FACILITY_SHIFT,
         component: () => import('@/views/pages/admin/facility/AFFacilityShiftPage.vue'),
         meta: {
-          name: 'Quản lý ca học cơ sở',
+          name: 'Quản lý ca cơ sở',
         },
       },
       {
@@ -94,7 +108,7 @@ export const AdminRoutes = [
         component: () => import('@/views/pages/admin/AdminManagementLevelProjectPage.vue'),
         meta: {
           selectedKey: selectedKey++,
-          name: 'Quản lý cấp độ dự án',
+          name: 'Quản lý nhóm dự án',
           icon: ClusterOutlined,
         },
       },
@@ -104,7 +118,7 @@ export const AdminRoutes = [
         component: () => import('@/views/pages/admin/AdminManagementStaffPage.vue'),
         meta: {
           selectedKey: selectedKey++,
-          name: 'Quản lý phụ trách xưởng',
+          name: 'Quản lý nhân sự',
           icon: TeamOutlined,
         },
       },
@@ -114,10 +128,21 @@ export const AdminRoutes = [
         component: () => import('@/views/pages/admin/AdminManagementUserAdminPage.vue'),
         meta: {
           selectedKey: selectedKey++,
-          name: 'Quản lý ban đào tạo',
+          name: 'Quản lý Admin',
           icon: UserOutlined,
         },
       },
+      {
+        path: 'management-user-log-activity',
+        name: ROUTE_NAMES.MANAGEMENT_USER_LOG_ACTIVITY,
+        component: () => import('@/views/pages/admin/AdminManagementUserLogActivity.vue'),
+        meta: {
+          selectedKey: selectedKey++,
+          name: 'Lịch sử hoạt động',
+          icon: SolutionOutlined,
+        },
+      },
+
       {
         path: 'management-subject_facility',
         name: ROUTE_NAMES.MANAGEMENT_SUBJECT_FACILITY,

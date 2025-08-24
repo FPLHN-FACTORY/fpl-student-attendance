@@ -21,15 +21,15 @@ public interface AFFacilityShiftRepository extends FacilityShiftRepository {
                     fs.from_minute,
                     fs.to_hour,
                     fs.to_minute,
-                    CONCAT(fs.from_hour, ':', fs.from_minute) AS startTime,
-                    CONCAT(fs.to_hour, ':', fs.to_minute) AS endTime
+                    CONCAT(LPAD(fs.from_hour, 2, 0), ':', LPAD(fs.from_minute, 2, 0)) AS startTime,
+                    CONCAT(LPAD(fs.to_hour, 2, 0), ':', LPAD(fs.to_minute, 2, 0)) AS endTime
                 FROM facility_shift fs
                 JOIN facility f ON fs.id_facility = f.id
                 WHERE
                     f.id = :#{#request.idFacility} AND
                     (:#{#request.shift} IS NULL OR fs.shift = :#{#request.shift}) AND
                     (:#{#request.status} IS NULL OR fs.status = :#{#request.status})
-                ORDER BY fs.status DESC, fs.shift ASC
+                ORDER BY fs.shift ASC
             """, countQuery = """
                 SELECT
                     COUNT(DISTINCT fs.id)

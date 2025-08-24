@@ -21,7 +21,7 @@ public enum StatusType {
         return key;
     }
 
-    public static StatusType fromKey(int key) {
+    public static StatusType fromKey(Integer key) {
         return ENUM_MAP.getOrDefault(key, null);
     }
 

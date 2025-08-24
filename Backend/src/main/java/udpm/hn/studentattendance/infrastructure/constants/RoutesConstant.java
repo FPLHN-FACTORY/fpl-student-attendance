@@ -16,5 +16,7 @@ public class RoutesConstant {
 
     public final static String PREFIX_API_NOTIFICATION = API_PREFIX + "/notification";
 
+    public final static String PREFIX_API_SUPPORT = API_PREFIX + "/support";
+
 
 }

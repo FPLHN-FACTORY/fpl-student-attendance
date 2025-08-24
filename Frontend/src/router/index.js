@@ -4,18 +4,33 @@ import { AdminRoutes } from './adminRoute'
 import { StaffRoutes } from './staffRoute'
 import { TeacherRoutes } from './teacherRoute'
 import { StudentRoutes } from './studentRoute'
-import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
+import { GLOBAL_ROUTE_NAMES, PREFIX_ADMIN_PANEL } from '@/constants/routesConstant'
 import useAuthStore from '@/stores/useAuthStore'
 import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
 import useApplicationStore from '@/stores/useApplicationStore'
+import { SECRET_KEY } from '@/constants'
 
 const routes = [
   {
     path: '/',
+    component: () => import('@/views/pages/authentication/AuthenticationLandingPage.vue'),
+    meta: {
+      title: 'Đăng nhập hệ thống',
+    },
+  },
+  {
+    path: `/${SECRET_KEY}/:fullstep`,
+    component: () => import('@/views/pages/student/StudentFaceID.vue'),
+    meta: {
+      title: 'Xác thực khuôn mặt',
+    },
+  },
+  {
+    path: PREFIX_ADMIN_PANEL,
     name: GLOBAL_ROUTE_NAMES.SWITCH_ROLE,
     component: () => import('@/views/pages/authentication/AuthenticationLandingPage.vue'),
     meta: {
-      title: 'Thay đổi vai trò',
+      title: 'Admin panel',
     },
   },
   { path: '/:pathMatch(.*)*', component: () => import('@/views/pages/errors/Error404Page.vue') },
@@ -32,12 +47,28 @@ const routes = [
 ]
 
 const router = createRouter({
-  history: createWebHistory(import.meta.env.BASE_URL),
+  history: createWebHistory(),
   routes,
+  scrollBehavior(to, from, savedPosition) {
+    if (to.hash) {
+      return {
+        el: to.hash,
+        behavior: 'smooth',
+      }
+    }
+    return {
+      left: 0,
+      top: 0,
+      behavior: 'smooth',
+    }
+  },
 })
 
 router.beforeEach((to, from, next) => {
-  document.title = to.meta?.name ? to.meta.title + ' - ' + to.meta.name : to.meta.title || ''
+  document.title =
+    (to.meta?.name ? to.meta.title + ' - ' + to.meta.name : to.meta.title || '') +
+    ' | ' +
+    import.meta.env.VITE_APP_NAME
 
   const applicationStore = useApplicationStore()
 
@@ -57,12 +88,8 @@ router.beforeEach((to, from, next) => {
 
   const user = authStore.user || null
 
-  if (requireAuth && !user) {
-    return next({ name: RouteNameAuth.LOGIN_PAGE })
-  }
-
-  if (!user && requireRole) {
-    return next({ name: RouteNameAuth.LOGIN_PAGE })
+  if ((requireAuth && !user) || (!user && requireRole)) {
+    return next({ path: '/' })
   }
 
   if (requireRole && !user.role.includes(requireRole.toUpperCase())) {

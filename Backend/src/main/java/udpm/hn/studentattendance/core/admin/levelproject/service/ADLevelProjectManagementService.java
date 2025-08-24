@@ -1,20 +1,20 @@
 package udpm.hn.studentattendance.core.admin.levelproject.service;
 
+import org.springframework.http.ResponseEntity;
 import udpm.hn.studentattendance.core.admin.levelproject.model.request.ADLevelProjectCreateRequest;
 import udpm.hn.studentattendance.core.admin.levelproject.model.request.ADLevelProjectUpdateRequest;
 import udpm.hn.studentattendance.core.admin.levelproject.model.request.ADLevelProjectSearchRequest;
-import udpm.hn.studentattendance.infrastructure.common.ResponseObject;
 
 public interface ADLevelProjectManagementService {
 
-    ResponseObject<?> getListLevelProject(ADLevelProjectSearchRequest request);
+    ResponseEntity<?> getListLevelProject(ADLevelProjectSearchRequest request);
 
-    ResponseObject<?> createLevelProject(ADLevelProjectCreateRequest request);
+    ResponseEntity<?> createLevelProject(ADLevelProjectCreateRequest request);
 
-    ResponseObject<?> updateLevelProject(String id, ADLevelProjectUpdateRequest request);
+    ResponseEntity<?> updateLevelProject(String id, ADLevelProjectUpdateRequest request);
 
-    ResponseObject<?> detailLevelProject(String id);
+    ResponseEntity<?> detailLevelProject(String id);
 
-    ResponseObject<?> changeStatus(String id);
+    ResponseEntity<?> changeStatus(String id);
 
 }

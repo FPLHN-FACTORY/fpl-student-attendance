@@ -1,0 +1,38 @@
+{
+  "expo": {
+    "scheme": "fplstudentattendance",
+    "name": "S-FaceTrack",
+    "slug": "sfaceTrack",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": false,
+    "extra": {
+      "SERVER_DOMAIN": "https://server.fptudpm.site",
+      "CLIENT_DOMAIN": "https://fptudpm.site",
+      "SECRET_KEY": "ldhfnke-aksfne-emgkse"
+    },
+    "splash": {
+      "backgroundColor": "#41395a"
+    },
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "edgeToEdgeEnabled": true,
+      "package": "com.sfacetrack.App",
+      "permissions": ["CAMERA", "ACCESS_FINE_LOCATION", "INTERNET"]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "assetBundlePatterns": ["assets/**/*"],
+    "plugins": ["expo-secure-store"],
+    "owner": "inuha"
+  }
+}

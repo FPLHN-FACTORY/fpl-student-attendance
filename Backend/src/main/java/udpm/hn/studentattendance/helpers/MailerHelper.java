@@ -3,7 +3,10 @@ package udpm.hn.studentattendance.helpers;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
@@ -13,8 +16,8 @@ import udpm.hn.studentattendance.infrastructure.config.mailer.model.MailerDefaul
 import udpm.hn.studentattendance.infrastructure.constants.ExecutorConstants;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
@@ -22,6 +25,8 @@ import java.util.concurrent.CompletableFuture;
 @Component
 @RequiredArgsConstructor
 public class MailerHelper {
+
+    private static final Logger logger = LoggerFactory.getLogger(MailerHelper.class);
 
     private final JavaMailSender mailSender;
 
@@ -35,6 +40,21 @@ public class MailerHelper {
     public final static String TEMPLATE_CHANGE_STATUS_FACILITY = "change-status-facility.html";
 
     public final static String TEMPLATE_CHANGE_STATUS_ADMIN = "change-status-admin.html";
+
+    public final static String TEMPLATE_STATISTICS_STAFF = "statistics-staff.html";
+
+    public final static String TEMPLATE_STATISTICS_TEACHER = "statistics-teacher.html";
+
+    public final static String TEMPLATE_UPCOMING_SCHEDULE_PLAN_DATE = "upcoming-schedule-plandate.html";
+
+    public final static String TEMPLATE_WEEKLY_SCHEDULE_REMINDER = "weekly-schedule-reminder.html";
+
+    public final static String TEMPLATE_STATISTICS_DAILY = "statistics-staff.html";
+
+    public final static String TEMPLATE_SUPPORT = "support.html";
+
+    public final static String TEMPLATE_SUPPORT_CONFIRMATION = "support-confirmation.html";
+
     public final static String HEADER_DEFAULT = "";
 
     public final static String FOOTER_DEFAULT = """
@@ -46,10 +66,13 @@ public class MailerHelper {
 
     @Async(ExecutorConstants.TASK_EXECUTOR)
     public CompletableFuture<Boolean> send(MailerDefaultRequest request) {
+        if (request == null) {
+            return CompletableFuture.completedFuture(false);
+        }
+
         String content = request.getTemplate() != null ? loadTemplate(request.getTemplate()) : request.getContent();
 
         if (Objects.isNull(content)) {
-            LogHelper.error("Gửi mail thất bại!");
             return CompletableFuture.completedFuture(false);
         }
 
@@ -66,6 +89,10 @@ public class MailerHelper {
         }
 
         MimeMessage mimeMessage = mailSender.createMimeMessage();
+        if (mimeMessage == null) {
+            return CompletableFuture.completedFuture(false);
+        }
+
         MimeMessageHelper mimeMessageHelper = null;
         try {
 
@@ -74,33 +101,50 @@ public class MailerHelper {
             mimeMessageHelper = new MimeMessageHelper(mimeMessage, true, StandardCharsets.UTF_8.toString());
             mimeMessageHelper.setFrom(from);
             mimeMessageHelper.setTo(request.getTo());
+            mimeMessageHelper.setReplyTo(from);
 
             if (request.getBcc() != null && request.getBcc().length > 0) {
                 mimeMessageHelper.setBcc(request.getBcc());
+            }
+
+            if (request.getAttachments() != null) {
+                for (Map.Entry<String, byte[]> entry : request.getAttachments().entrySet()) {
+                    String filename = entry.getKey();
+                    byte[] fileData = entry.getValue();
+                    ByteArrayResource resource = new ByteArrayResource(fileData);
+                    mimeMessageHelper.addAttachment(filename, resource);
+                }
             }
 
             mimeMessageHelper.setText(content, true);
             mimeMessageHelper.setSubject(request.getTitle());
 
             mailSender.send(mimeMessage);
-        } catch (MessagingException e) {
-            LogHelper.error("Không thể gửi mail", e);
+        } catch (Exception e) {
+            logger.warn(e.getMessage());
             return CompletableFuture.completedFuture(false);
         }
+        logger.info("Gửi email thành công: " + request.getTitle());
         return CompletableFuture.completedFuture(true);
     }
 
-
     public static String loadTemplate(String template_name) {
         try {
-            return Files.readString(new ClassPathResource(buildPathTemplate(template_name)).getFile().toPath());
+            ClassPathResource resource = new ClassPathResource(buildPathTemplate(template_name));
+            try (InputStream inputStream = resource.getInputStream()) {
+                return new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
+            }
         } catch (IOException e) {
-            LogHelper.error("Không thể tải template mailer: ", e);
+            logger.error("Không thể tải template: " + template_name);
             return "";
         }
     }
 
     public static String loadTemplate(String template_name, Map<String, Object> data) {
+        if (data == null) {
+            return loadTemplate(template_name);
+        }
+
         String content = loadTemplate(template_name);
         for (String key : data.keySet()) {
             Object value = data.get(key);

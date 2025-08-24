@@ -18,7 +18,7 @@ public class ADUserAdminRestController {
     private final ADUserAdminServiceImpl userAdminService;
 
     @GetMapping
-    public ResponseEntity<?> getAllUserAdmin(ADUserAdminRequest request) {
+    public ResponseEntity<?> getAllUserAdmin(@Valid ADUserAdminRequest request) {
         return userAdminService.getAllUserAdmin(request);
     }
 
@@ -56,5 +56,10 @@ public class ADUserAdminRestController {
     @PostMapping("/change-power")
     public ResponseEntity<?> changePowerShift(@RequestBody ADUserAdminChangePowerShiftRequest userAdminChangePowerShiftRequest) {
         return userAdminService.changePowerShift(userAdminChangePowerShiftRequest);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteUserAdmin(@PathVariable(name = "id") String id){
+        return userAdminService.deleteUserAdmin(id);
     }
 }

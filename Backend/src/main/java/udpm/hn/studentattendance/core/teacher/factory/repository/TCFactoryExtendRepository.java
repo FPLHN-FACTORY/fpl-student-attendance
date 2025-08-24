@@ -13,51 +13,72 @@ public interface TCFactoryExtendRepository extends FactoryRepository {
 
     @Query(value = """
             SELECT
-                ROW_NUMBER() OVER (ORDER BY ft.created_at DESC) AS rowNumber,
+                ROW_NUMBER() OVER (ORDER BY LEAST(ft.status, p.status, sf.status, sj.status, lp.status, pf.status, pl.status, f.status) DESC, ft.created_at DESC) AS rowNumber,
                 ft.id AS factoryId,
                 us.id AS userStaffId,
                 ft.name AS factoryName,
                 p.id AS projectId,
                 p.name AS projectName,
                 ft.description AS factoryDescription,
-                ft.status as factoryStatus
+                (SELECT COUNT(DISTINCT usf.id)
+                    FROM user_student_factory usf
+                    JOIN user_student us ON usf.id_user_student = us.id
+                    WHERE
+                        usf.status = 1 AND
+                    usf.id_factory = ft.id
+                ) AS totalStudent,
+                (SELECT COUNT(DISTINCT pd.id)
+                    FROM plan_date pd
+                    JOIN plan_factory pf ON pd.id_plan_factory = pf.id
+                    WHERE
+                        pd.status = 1 AND
+                        pd.id_plan_factory = pf.id AND
+                        pf.id_factory = ft.id
+                ) AS totalShift,
+                LEAST(ft.status, p.status, sf.status, sj.status, lp.status, pf.status, pl.status, f.status) as factoryStatus
             FROM factory ft
-            LEFT JOIN user_staff us ON us.id = ft.id_user_staff
-            LEFT JOIN project p ON p.id = ft.id_project
-            LEFT JOIN subject_facility sf ON sf.id = p.id_subject_facility
-            LEFT JOIN facility f ON f.id = sf.id_facility
+            JOIN user_staff us ON us.id = ft.id_user_staff
+            JOIN project p ON p.id = ft.id_project
+            JOIN subject_facility sf ON sf.id = p.id_subject_facility
+            JOIN subject sj ON sf.id_subject = sj.id
+            JOIN level_project lp ON p.id_level_project = lp.id
+            JOIN plan_factory pf ON ft.id = pf.id_factory
+            JOIN plan pl ON p.id = pl.id_project
+            JOIN facility f ON f.id = sf.id_facility
+            JOIN semester s ON p.id_semester = s.id
             WHERE
                 us.code = :userStaffCode
                 AND f.id = :facilityId
-                AND f.status = 1
-                AND p.status = 1
-                AND sf.status = 1
-                AND ft.status = 1
-                AND (:#{#teacherStudentRequest.factoryName} IS NULL OR ft.name LIKE CONCAT('%', :#{#teacherStudentRequest.factoryName}, '%'))
-                AND (:#{#teacherStudentRequest.projectId} IS NULL OR p.id LIKE CONCAT('%', :#{#teacherStudentRequest.projectId}, '%'))
-                AND (:#{#teacherStudentRequest.factoryStatus} IS NULL OR ft.status = :#{#teacherStudentRequest.factoryStatus})
+                AND s.status = 1
+                AND (:#{#teacherStudentRequest.semesterId} IS NULL OR s.id = :#{#teacherStudentRequest.semesterId})
+                AND (:#{#teacherStudentRequest.factoryName} IS NULL OR ft.name LIKE CONCAT('%', TRIM(:#{#teacherStudentRequest.factoryName}), '%'))
+                AND (:#{#teacherStudentRequest.projectId} IS NULL OR p.id LIKE CONCAT('%', TRIM(:#{#teacherStudentRequest.projectId}), '%'))
+                AND (:#{#teacherStudentRequest.factoryStatus} IS NULL OR LEAST(ft.status, p.status, sf.status, sj.status, lp.status, pf.status, pl.status, f.status) = :#{#teacherStudentRequest.factoryStatus})
 
-            ORDER BY ft.created_at DESC
+            ORDER BY LEAST(ft.status, p.status, sf.status, sj.status, lp.status, pf.status, pl.status, f.status) DESC, ft.created_at DESC
             """, countQuery = """
             SELECT COUNT(*)
             FROM factory ft
-            LEFT JOIN user_staff us ON us.id = ft.id_user_staff
-            LEFT JOIN project p ON p.id = ft.id_project
-            LEFT JOIN subject_facility sf ON sf.id = p.id_subject_facility
-            LEFT JOIN facility f ON f.id = sf.id_facility
+            JOIN user_staff us ON us.id = ft.id_user_staff
+            JOIN project p ON p.id = ft.id_project
+            JOIN subject_facility sf ON sf.id = p.id_subject_facility
+            JOIN subject sj ON sf.id_subject = sj.id
+            JOIN level_project lp ON p.id_level_project = lp.id
+            JOIN plan_factory pf ON ft.id = pf.id_factory
+            JOIN plan pl ON p.id = pl.id_project
+            JOIN facility f ON f.id = sf.id_facility
+            JOIN semester s ON p.id_semester = s.id
             WHERE
                 us.code = :userStaffCode
                 AND f.id = :facilityId
-                AND f.status = 1
-                AND p.status = 1
-                AND sf.status = 1
-                AND ft.status = 1
-                AND (:#{#teacherStudentRequest.factoryName} IS NULL OR ft.name LIKE CONCAT('%', :#{#teacherStudentRequest.factoryName}, '%'))
-                AND (:#{#teacherStudentRequest.projectId} IS NULL OR p.id LIKE CONCAT('%', :#{#teacherStudentRequest.projectId}, '%'))
-                AND (:#{#teacherStudentRequest.factoryStatus} IS NULL OR ft.status = :#{#teacherStudentRequest.factoryStatus})
+                AND s.status = 1
+                AND (:#{#teacherStudentRequest.factoryName} IS NULL OR ft.name LIKE CONCAT('%', TRIM(:#{#teacherStudentRequest.factoryName}), '%'))
+                AND (:#{#teacherStudentRequest.projectId} IS NULL OR p.id LIKE CONCAT('%', TRIM(:#{#teacherStudentRequest.projectId}), '%'))
+                AND (:#{#teacherStudentRequest.factoryStatus} IS NULL OR LEAST(ft.status, p.status, sf.status, sj.status, lp.status, pf.status, pl.status, f.status) = :#{#teacherStudentRequest.factoryStatus})
+                AND (:#{#teacherStudentRequest.semesterId} IS NULL OR s.id = :#{#teacherStudentRequest.semesterId})
 
             """, nativeQuery = true)
     Page<TCFactoryResponse> getAllFactoryByTeacher(Pageable pageable, String facilityId, String userStaffCode,
-                                                   TCFactoryRequest teacherStudentRequest);
+            TCFactoryRequest teacherStudentRequest);
 
 }

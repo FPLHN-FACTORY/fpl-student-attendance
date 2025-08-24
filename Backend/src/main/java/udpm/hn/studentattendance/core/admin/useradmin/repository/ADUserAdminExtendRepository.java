@@ -16,7 +16,7 @@ public interface ADUserAdminExtendRepository extends UserAdminRepository {
 
     @Query(value = """
             SELECT
-            	ROW_NUMBER() OVER (ORDER BY ua.created_at DESC) AS rowNumber,
+            	ROW_NUMBER() OVER (ORDER BY ua.status DESC, ua.created_at DESC) AS rowNumber,
             	ua.id AS userAdminId,
             	ua.code AS userAdminCode,
             	ua.name AS userAdminName,
@@ -24,24 +24,29 @@ public interface ADUserAdminExtendRepository extends UserAdminRepository {
             	ua.status AS userAdminStatus
             FROM user_admin ua
             WHERE
-                (trim(:#{#request.searchQuery}) IS NULL
-            	OR trim(:#{#request.searchQuery}) = ''
-            	OR ua.name LIKE concat('%', trim(:#{#request.searchQuery}), '%')
-            	OR ua.code LIKE concat('%', trim(:#{#request.searchQuery}), '%')
-            	OR ua.email LIKE concat('%', trim(:#{#request.searchQuery}), '%')
-            	)
-            	AND (:#{#request.status} IS NULL OR ua.status = :#{#request.status})
-            ORDER BY ua.created_at DESC
+                (
+                   TRIM(:#{#request.searchQuery})      IS NULL
+                 OR TRIM(:#{#request.searchQuery})      = ''
+                 OR ua.name      LIKE CONCAT('%', TRIM(:#{#request.searchQuery}), '%')
+                 OR ua.code      LIKE CONCAT('%', TRIM(:#{#request.searchQuery}), '%')
+                 OR ua.email     LIKE CONCAT('%', TRIM(:#{#request.searchQuery}), '%')
+                )
+                AND
+                ( :#{#request.status} IS NULL OR ua.status = :#{#request.status} )
+            ORDER BY ua.status DESC, ua.created_at DESC 
             """, countQuery = """
-                                SELECT COUNT(*)
-                                FROM user_admin ua
-                                WHERE
-                                    (trim(:#{#request.searchQuery}) IS NULL
-                                	OR trim(:#{#request.searchQuery}) = ''
-                                	OR ua.name LIKE concat('%', trim(:#{#request.searchQuery}), '%')
-                                	OR ua.code LIKE concat('%', trim(:#{#request.searchQuery}), '%')
-                                	OR ua.email LIKE concat('%', trim(:#{#request.searchQuery}), '%')
-                                	AND (:#{#request.status} IS NULL OR ua.status = :#{#request.status})
+                               SELECT COUNT(*)
+                               FROM user_admin ua
+                               WHERE
+                                 (
+                                    TRIM(:#{#request.searchQuery})      IS NULL
+                                  OR TRIM(:#{#request.searchQuery})      = ''
+                                  OR ua.name      LIKE CONCAT('%', TRIM(:#{#request.searchQuery}), '%')
+                                  OR ua.code      LIKE CONCAT('%', TRIM(:#{#request.searchQuery}), '%')
+                                  OR ua.email     LIKE CONCAT('%', TRIM(:#{#request.searchQuery}), '%')
+                                 )
+                                 AND
+                                 ( :#{#request.status} IS NULL OR ua.status = :#{#request.status} )
             """, nativeQuery = true)
     Page<ADUserAdminResponse> getAllUserAdmin(Pageable pageable, ADUserAdminRequest request);
 
@@ -68,6 +73,15 @@ public interface ADUserAdminExtendRepository extends UserAdminRepository {
             ) THEN 'TRUE' ELSE 'FALSE' END
             """, nativeQuery = true)
     boolean isExistEmailUpdate(String newEmailFe, String currentEmailFe);
+
+    @Query(value = """
+        SELECT CASE WHEN COUNT(*) > 0 THEN 'TRUE' ELSE 'FALSE' END 
+        FROM user_admin ua
+        WHERE
+        ua.email = :email
+        OR ua.code = :code
+""", nativeQuery = true)
+    boolean isAdmin(String email, String code);
 
     @Query(value = """
             SELECT CASE 

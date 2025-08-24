@@ -9,8 +9,12 @@ import lombok.ToString;
 @ToString
 public class TeacherStudentAttendanceRequest {
 
-    private String id;
+    private String idAttendance;
 
-    private String status;
+    private String idUserStudent;
+
+    private String idPlanDate;
+
+    private Integer status;
 
 }

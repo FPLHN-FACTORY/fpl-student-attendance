@@ -8,4 +8,9 @@ public interface TCFactoryService {
     ResponseEntity<?> getAllFactoryByTeacher(TCFactoryRequest teacherStudentRequest);
 
     ResponseEntity<?> getAllProjectByFacility();
+
+    ResponseEntity<?> getAllPlanDateByFactory();
+
+    ResponseEntity<?> getAllSemester();
+    
 }

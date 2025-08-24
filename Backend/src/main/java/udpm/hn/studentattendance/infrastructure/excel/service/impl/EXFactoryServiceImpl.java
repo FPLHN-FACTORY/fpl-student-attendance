@@ -8,7 +8,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import udpm.hn.studentattendance.core.admin.userstaff.model.response.ADStaffResponse;
 import udpm.hn.studentattendance.core.staff.factory.model.request.USFactoryCreateUpdateRequest;
+import udpm.hn.studentattendance.core.staff.factory.model.response.USFactoryResponse;
+import udpm.hn.studentattendance.core.staff.factory.repository.factory.USFactoryExtendRepository;
 import udpm.hn.studentattendance.core.staff.factory.repository.factory.USProjectFactoryExtendRepository;
 import udpm.hn.studentattendance.core.staff.factory.repository.factory.USStaffFactoryExtendRepository;
 import udpm.hn.studentattendance.core.staff.factory.service.USFactoryService;
@@ -22,6 +25,7 @@ import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.ImportLogType;
 import udpm.hn.studentattendance.infrastructure.constants.RestApiStatus;
+import udpm.hn.studentattendance.infrastructure.constants.RoleConstant;
 import udpm.hn.studentattendance.infrastructure.excel.model.request.EXDataRequest;
 import udpm.hn.studentattendance.infrastructure.excel.model.request.EXImportRequest;
 import udpm.hn.studentattendance.infrastructure.excel.model.request.EXUploadRequest;
@@ -30,6 +34,7 @@ import udpm.hn.studentattendance.infrastructure.excel.model.response.ExImportLog
 import udpm.hn.studentattendance.infrastructure.excel.repositories.EXImportLogDetailRepository;
 import udpm.hn.studentattendance.infrastructure.excel.repositories.EXImportLogRepository;
 import udpm.hn.studentattendance.infrastructure.excel.service.EXFactoryService;
+import udpm.hn.studentattendance.utils.ExcelUtils;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -47,6 +52,8 @@ public class EXFactoryServiceImpl implements EXFactoryService {
     private final EXImportLogDetailRepository importLogDetailRepository;
     private final SessionHelper sessionHelper;
     private final ExcelHelper excelHelper;
+
+    private final USFactoryExtendRepository factoryExtendRepository;
 
     @Override
     public ResponseEntity<?> getDataFromFile(EXUploadRequest request) {
@@ -73,8 +80,6 @@ public class EXFactoryServiceImpl implements EXFactoryService {
     public ResponseEntity<?> importItem(EXImportRequest request) {
         Map<String, String> item = request.getItem();
 
-
-
         // Tên nhóm xưởng
         String factoryName = item.get("TEN_NHOM_XUONG");
         if (factoryName == null || factoryName.trim().isEmpty()) {
@@ -92,7 +97,7 @@ public class EXFactoryServiceImpl implements EXFactoryService {
             return RouterHelper.responseError(msg, HttpStatus.BAD_REQUEST);
         }
         int lecturerStart = lecturerValue.lastIndexOf("(");
-        int lecturerEnd   = lecturerValue.lastIndexOf(")");
+        int lecturerEnd = lecturerValue.lastIndexOf(")");
         if (lecturerStart < 0 || lecturerEnd < 0 || lecturerStart >= lecturerEnd) {
             String msg = "Định dạng giảng viên không hợp lệ. Vui lòng chọn giá trị từ menu sổ xuống.";
             excelHelper.saveLogError(ImportLogType.FACTORY, msg + " => " + lecturerValue, request);
@@ -132,20 +137,59 @@ public class EXFactoryServiceImpl implements EXFactoryService {
     }
 
     @Override
+    public ResponseEntity<?> exportData(EXDataRequest request) {
+        List<USFactoryResponse> list = factoryExtendRepository.exportAllFactory(sessionHelper.getFacilityId());
+
+        try (Workbook workbook = new XSSFWorkbook();
+             ByteArrayOutputStream data = new ByteArrayOutputStream()) {
+            String filename =
+                    "Factory" + ".xlsx";
+            List<String> headers = List.of("STT", "Tên nhóm xưởng ", "Dự án", "Bộ môn", "Giảng viên", "Mô tả");
+
+            Sheet sheet = ExcelUtils.createTemplate(workbook, "Data Export", headers, new ArrayList<>());
+
+            for (int i = 0; i < list.size(); i++) {
+                int row = i + 1;
+                USFactoryResponse factoryResponse = list.get(i);
+                String index = String.valueOf(row);
+                String name = factoryResponse.getName();
+                String projectName = factoryResponse.getProjectName();
+                String subjectCode = factoryResponse.getSubjectCode();
+                String staffName = factoryResponse.getStaffName();
+                String factoryDescription = factoryResponse.getFactoryDescription();
+
+                List<Object> dataCell = List.of(index, name, projectName, subjectCode, staffName, factoryDescription);
+                ExcelUtils.insertRow(sheet, row, dataCell);
+            }
+            sheet.setColumnWidth(2, 30 * 256);
+            sheet.setColumnWidth(3, 40 * 256);
+            sheet.setColumnWidth(4, 40 * 256);
+            sheet.setColumnWidth(5, 30 * 256);
+            sheet.setColumnWidth(6, 30 * 256);
+            workbook.write(data);
+
+            HttpHeaders headersHttp = new HttpHeaders();
+            headersHttp.setContentDisposition(ContentDisposition.builder("attachment").filename(filename).build());
+            headersHttp.set(HttpHeaders.ACCESS_CONTROL_EXPOSE_HEADERS, HttpHeaders.CONTENT_DISPOSITION);
+            headersHttp.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+            return new ResponseEntity<>(data.toByteArray(), headersHttp, HttpStatus.OK);
+        } catch (IOException e) {
+            return null;
+        }
+    }
+
+    @Override
     public ResponseEntity<?> downloadTemplate(EXDataRequest request) {
         String filename = "template-import-factory.xlsx";
-        List<String> headers = List.of("Tên Nhóm Xưởng", "Mô Tả", "Dự Án", "Giảng Viên");
+        List<String> headers = List.of("Tên nhóm Xưởng", "Mô tả", "Dự án", "Giảng viên");
 
-        var projects = projectFactoryExtendRepository.getAllProject(
-                EntityStatus.ACTIVE, EntityStatus.ACTIVE,
-                EntityStatus.ACTIVE, EntityStatus.ACTIVE,
-                sessionHelper.getFacilityId());
-        List<String> projectNames = projects.stream().map(p -> p.getName()).collect(Collectors.toList());
-        List<String> projectIds   = projects.stream().map(p -> p.getId()).collect(Collectors.toList());
+        var projects = projectFactoryExtendRepository.getAllProject(sessionHelper.getFacilityId());
+        List<String> projectNames = projects.stream().map(p -> p.getProjectName()).collect(Collectors.toList());
+        List<String> projectIds = projects.stream().map(p -> p.getId()).collect(Collectors.toList());
 
         List<String> staffList = staffFactoryExtendRepository.getListUserStaff(
                         EntityStatus.ACTIVE, EntityStatus.ACTIVE,
-                        sessionHelper.getFacilityId())
+                        sessionHelper.getFacilityId(), RoleConstant.TEACHER)
                 .stream().map(s -> s.getName() + " (" + s.getCode() + ")")
                 .collect(Collectors.toList());
 
@@ -195,15 +239,15 @@ public class EXFactoryServiceImpl implements EXFactoryService {
 
         final int MAX_ROWS = 100;
         Workbook workbook = new XSSFWorkbook();
-        // ngay sau khi tạo workbook, trước khi write ra ByteArrayOutputStream
         workbook.setForceFormulaRecalculation(true);
         Sheet sheet = workbook.createSheet(sheetName);
 
-        // Style header
+        // --- Styles ---
         CellStyle headerStyle = workbook.createCellStyle();
         headerStyle.setFillForegroundColor(IndexedColors.LIGHT_GREEN.getIndex());
         headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
-        Font headerFont = workbook.createFont(); headerFont.setBold(true);
+        Font headerFont = workbook.createFont();
+        headerFont.setBold(true);
         headerStyle.setFont(headerFont);
         headerStyle.setWrapText(true);
         headerStyle.setVerticalAlignment(VerticalAlignment.CENTER);
@@ -212,7 +256,7 @@ public class EXFactoryServiceImpl implements EXFactoryService {
         wrapStyle.setWrapText(true);
         wrapStyle.setVerticalAlignment(VerticalAlignment.CENTER);
 
-        // Header chính
+        // --- Header chính ---
         Row headerRow = sheet.createRow(0);
         headerRow.setHeightInPoints(sheet.getDefaultRowHeightInPoints() * 1.5f);
         for (int i = 0; i < headers.size(); i++) {
@@ -222,14 +266,14 @@ public class EXFactoryServiceImpl implements EXFactoryService {
             sheet.setDefaultColumnStyle(i, wrapStyle);
         }
 
-        // Thêm cột ẩn ProjectID
+        // Cột ẩn lưu Project ID
         int projectIdColIdx = headers.size();
         Cell projIdHeader = headerRow.createCell(projectIdColIdx);
         projIdHeader.setCellValue("DAY_LA_DU_AN");
         projIdHeader.setCellStyle(headerStyle);
         sheet.setDefaultColumnStyle(projectIdColIdx, wrapStyle);
 
-        // Dữ liệu mẫu (nếu có)
+        // --- Dữ liệu mẫu ---
         int rowIndex = 1;
         for (Map<String, String> rowData : data) {
             Row row = sheet.createRow(rowIndex++);
@@ -240,13 +284,13 @@ public class EXFactoryServiceImpl implements EXFactoryService {
             }
         }
 
-        // Kích thước cột
+        // --- Auto-size và width cố định ---
         for (int i = 0; i < headers.size(); i++) sheet.autoSizeColumn(i);
         sheet.setColumnWidth(1, 30 * 256);
         sheet.setColumnWidth(2, 30 * 256);
-        sheet.setColumnWidth(2, 20 * 256);
+        sheet.setColumnWidth(3, 20 * 256);
 
-        // Sheet DropdownData
+        // --- Sheet chứa dữ liệu dropdown ---
         Sheet dropdownSheet = workbook.createSheet("DropdownData");
         for (int i = 0; i < projectNames.size(); i++) {
             Row row = dropdownSheet.createRow(i);
@@ -259,52 +303,77 @@ public class EXFactoryServiceImpl implements EXFactoryService {
             row.createCell(2).setCellValue(staffList.get(i));
         }
 
-        // Named ranges
+        // --- Named ranges ---
         Name projectNameList = workbook.createName();
         projectNameList.setNameName("ProjectNameList");
         projectNameList.setRefersToFormula("DropdownData!$A$1:$A$" + projectNames.size());
+
         Name projectIdList = workbook.createName();
         projectIdList.setNameName("ProjectIdList");
         projectIdList.setRefersToFormula("DropdownData!$B$1:$B$" + projectIds.size());
+
         Name staffNameList = workbook.createName();
         staffNameList.setNameName("StaffList");
         staffNameList.setRefersToFormula("DropdownData!$C$1:$C$" + staffList.size());
 
+        // --- Validation ---
         DataValidationHelper dvHelper = sheet.getDataValidationHelper();
-        // Project dropdown chỉ tên
+
+        // 1) Project dropdown (cột C, index=2)
         DataValidationConstraint projCons = dvHelper.createFormulaListConstraint("ProjectNameList");
         CellRangeAddressList projAddr = new CellRangeAddressList(1, MAX_ROWS, 2, 2);
         DataValidation projValid = dvHelper.createValidation(projCons, projAddr);
         projValid.setSuppressDropDownArrow(true);
+        projValid.setShowErrorBox(true);
+        projValid.createErrorBox(
+                "Lỗi Dự án",
+                "Giá trị không hợp lệ. Vui lòng chọn dự án từ danh sách."
+        );
+        projValid.createPromptBox(
+                "Chọn dự án",
+                "Nhấn mũi tên để chọn dự án có sẵn"
+        );
         sheet.addValidationData(projValid);
 
-        // Staff dropdown giữ nguyên
+        // 2) Staff dropdown (cột D, index=3)
         DataValidationConstraint staffCons = dvHelper.createFormulaListConstraint("StaffList");
         CellRangeAddressList staffAddr = new CellRangeAddressList(1, MAX_ROWS, 3, 3);
         DataValidation staffValid = dvHelper.createValidation(staffCons, staffAddr);
         staffValid.setSuppressDropDownArrow(true);
+        staffValid.setShowErrorBox(true);
+        staffValid.createErrorBox(
+                "Lỗi Giảng viên",
+                "Giá trị không hợp lệ. Vui lòng chọn giảng viên từ danh sách."
+        );
+        staffValid.createPromptBox(
+                "Chọn giảng viên",
+                "Nhấn mũi tên để chọn giảng viên có sẵn"
+        );
         sheet.addValidationData(staffValid);
 
-        // Công thức lookup ProjectID
+        // --- Công thức lookup ProjectID ---
         for (int r = 1; r <= MAX_ROWS; r++) {
             Row row = sheet.getRow(r);
             if (row == null) row = sheet.createRow(r);
             String excelRow = String.valueOf(r + 1);
             Cell pidCell = row.createCell(projectIdColIdx);
             pidCell.setCellFormula(String.format(
-                    "IF($C$%s<>\"\",VLOOKUP($C$%s,DropdownData!$A$1:$B$%d,2,FALSE),\"\")",
+                    "IF(C%s<>\"\",VLOOKUP(C%s,DropdownData!$A$1:$B$%d,2,FALSE),\"\")",
                     excelRow, excelRow, projectNames.size()));
             pidCell.setCellStyle(wrapStyle);
         }
 
-        // Ẩn cột ẩn và sheet phụ
+        // --- Ẩn cột ID và sheet phụ ---
         sheet.setColumnHidden(projectIdColIdx, true);
         workbook.setSheetHidden(workbook.getSheetIndex(dropdownSheet), true);
 
+        // --- Xuất ra byte array ---
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
             workbook.write(baos);
             workbook.close();
             return baos.toByteArray();
         }
     }
+
+
 }

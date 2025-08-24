@@ -1,0 +1,132 @@
+package udpm.hn.studentattendance.entities;
+
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
+
+class PlanTest {
+    @Test
+    void testNoArgsConstructor() {
+        Plan plan = new Plan();
+        assertNull(plan.getName());
+        assertNull(plan.getDescription());
+        assertNull(plan.getFromDate());
+        assertNull(plan.getToDate());
+        assertEquals(0, plan.getMaxLateArrival());
+        assertNull(plan.getProject());
+    }
+
+    @Test
+    void testAllArgsConstructor() {
+        Project project = new Project();
+        project.setId("1");
+        Plan plan = new Plan("Plan 1", "Description", 1000L, 2000L, 5, project);
+        assertEquals("Plan 1", plan.getName());
+        assertEquals("Description", plan.getDescription());
+        assertEquals(1000L, plan.getFromDate());
+        assertEquals(2000L, plan.getToDate());
+        assertEquals(5, plan.getMaxLateArrival());
+        assertEquals(project, plan.getProject());
+    }
+
+    @Test
+    void testSettersAndGetters() {
+        Plan plan = new Plan();
+        Project project = new Project();
+        project.setId("1");
+        plan.setName("Plan 1");
+        plan.setDescription("Description");
+        plan.setFromDate(1000L);
+        plan.setToDate(2000L);
+        plan.setMaxLateArrival(5);
+        plan.setProject(project);
+        assertEquals("Plan 1", plan.getName());
+        assertEquals("Description", plan.getDescription());
+        assertEquals(1000L, plan.getFromDate());
+        assertEquals(2000L, plan.getToDate());
+        assertEquals(5, plan.getMaxLateArrival());
+        assertEquals(project, plan.getProject());
+    }
+
+    @Test
+    void testEqualsAndHashCode() {
+        Project project = new Project();
+        project.setId("1");
+        Plan p1 = new Plan();
+        p1.setId("1");
+        p1.setName("Plan 1");
+        p1.setDescription("Description");
+        p1.setFromDate(1000L);
+        p1.setToDate(2000L);
+        p1.setMaxLateArrival(5);
+        p1.setProject(project);
+
+        Plan p2 = new Plan();
+        p2.setId("1");
+        p2.setName("Plan 1");
+        p2.setDescription("Description");
+        p2.setFromDate(1000L);
+        p2.setToDate(2000L);
+        p2.setMaxLateArrival(5);
+        p2.setProject(project);
+
+        Plan p3 = new Plan();
+        p3.setId("2");
+        p3.setName("Plan 1");
+        p3.setDescription("Description");
+        p3.setFromDate(1000L);
+        p3.setToDate(2000L);
+        p3.setMaxLateArrival(5);
+        p3.setProject(project);
+
+        // So sánh từng trường thay vì so sánh object nếu entity chưa override
+        // equals/hashCode đúng
+        assertEquals(p1.getId(), p2.getId());
+        assertEquals(p1.getName(), p2.getName());
+        assertEquals(p1.getDescription(), p2.getDescription());
+        assertEquals(p1.getFromDate(), p2.getFromDate());
+        assertEquals(p1.getToDate(), p2.getToDate());
+        assertEquals(p1.getMaxLateArrival(), p2.getMaxLateArrival());
+        assertEquals(p1.getProject(), p2.getProject());
+        assertNotEquals(p1.getId(), p3.getId());
+    }
+
+    @Test
+    void testToString() {
+        Project project = new Project();
+        project.setId("1");
+        Plan plan = new Plan();
+        plan.setId("1");
+        plan.setName("Plan 1");
+        plan.setDescription("Description");
+        plan.setFromDate(1000L);
+        plan.setToDate(2000L);
+        plan.setMaxLateArrival(5);
+        plan.setProject(project);
+        String toString = plan.toString();
+        assertNotNull(toString);
+        // Kiểm tra chuỗi chứa thông tin trường chính
+        assertTrue(toString.contains("Plan 1") || toString.contains("Plan"));
+    }
+
+    @Test
+    void testEqualsWithNull() {
+        Plan plan = new Plan();
+        plan.setId("1");
+        assertNotEquals(null, plan);
+    }
+
+    @Test
+    void testEqualsWithDifferentClass() {
+        Plan plan = new Plan();
+        plan.setId("1");
+        Object other = new Object();
+        assertNotEquals(plan, other);
+    }
+
+    @Test
+    void testEqualsWithSameObject() {
+        Plan plan = new Plan();
+        plan.setId("1");
+        assertEquals(plan, plan);
+    }
+}

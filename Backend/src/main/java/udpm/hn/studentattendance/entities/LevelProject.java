@@ -21,7 +21,6 @@ import java.io.Serializable;
 @NoArgsConstructor
 @Table(name = "level_project")
 @DynamicUpdate
-@ToString
 public class LevelProject extends PrimaryEntity implements Serializable {
 
     @Column(name = "code", length = EntityProperties.LENGTH_NAME)

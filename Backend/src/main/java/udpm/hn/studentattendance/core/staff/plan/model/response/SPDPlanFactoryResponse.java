@@ -15,6 +15,8 @@ public interface SPDPlanFactoryResponse extends IsIdentify, HasOrderNumber {
 
     Integer getTotalShift();
 
+    Integer getTotalCurrentShift();
+
     Integer getTotalStudent();
 
     Long getFromDate();
@@ -22,5 +24,7 @@ public interface SPDPlanFactoryResponse extends IsIdentify, HasOrderNumber {
     Long getToDate();
 
     Integer getStatus();
+
+    Integer getCurrentStatus();
 
 }

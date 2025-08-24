@@ -1,8 +1,10 @@
 import { DEFAULT_DATE_FORMAT } from '@/constants'
+import dayjs from 'dayjs'
 import { unref } from 'vue'
+import cryptoJS from 'crypto-js'
 
 export const decodeBase64 = (base64String) => {
-  const fixedBase64 = base64String
+  const fixedBase64 = base64String.replace(/ /g, '+')
   const byteArray = Uint8Array.from(atob(fixedBase64), (c) => c.charCodeAt(0))
   return new TextDecoder('utf-8').decode(byteArray)
 }
@@ -17,11 +19,60 @@ export const debounce = (func, delay) => {
   }
 }
 
-export const dayOfWeek = (timestamp) => {
-  const date = new Date(timestamp)
-  const daysOfWeek = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy']
+export const autoAddColumnWidth = (columns, ellipsis = false, charWidth = 10, padding = 20) => {
+  return columns.map((col) => {
+    if (!col.width) {
+      const titleLength = (col.title || '').length
+      const estimatedWidth = titleLength * charWidth + padding
+      return { ...col, width: estimatedWidth, minWidth: estimatedWidth, ellipsis }
+    }
+    return col
+  })
+}
 
-  return daysOfWeek[date.getDay()]
+export const getCurrentSemester = (semesters) => {
+  const now = Date.now()
+
+  let currentSemester = semesters.find((item) => now >= item.fromDate && now <= item.toDate)
+
+  if (!currentSemester) {
+    currentSemester = semesters.reduce((closest, item) => {
+      const diffCurrent = Math.abs(item.fromDate - now)
+      const diffClosest = Math.abs(closest.fromDate - now)
+      return diffCurrent < diffClosest ? item : closest
+    })
+  }
+  return currentSemester
+}
+
+export const dayOfWeek = (timestamp) => {
+  const inputDate = new Date(timestamp)
+  const now = new Date()
+
+  const inputDateOnly = new Date(inputDate.getFullYear(), inputDate.getMonth(), inputDate.getDate())
+  const nowDateOnly = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+
+  const diffInDays = (inputDateOnly - nowDateOnly) / (1000 * 60 * 60 * 24)
+
+  const daysOfWeek = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy']
+  const dayName = daysOfWeek[inputDate.getDay()]
+
+  if (diffInDays === 0) {
+    return 'Hôm nay'
+  } else if (diffInDays === -1) {
+    return 'Hôm qua'
+  } else if (diffInDays === 1) {
+    return 'Ngày mai'
+  } else {
+    return dayName
+  }
+}
+
+export const colorDayOfWeek = (timestamp) => {
+  const inputDate = new Date(timestamp)
+  const daysOfWeek = ['red', 'green', 'cyan', 'blue', 'purple', 'orange', 'pink']
+  const color = daysOfWeek[inputDate.getDay()]
+  return color
 }
 
 export const formatDate = (timestamp, format) => {
@@ -49,7 +100,25 @@ export const formatDate = (timestamp, format) => {
   return format.replace(/YYYY|yyyy|MM|dd|DD|HH|mm|ss/g, (matched) => map[matched])
 }
 
-export const rowSelectTable = (selectedRowKeys, isDisabled = () => false) => {
+export const getShiftTimeStart = (timestamp, startHour, startMinute) => {
+  return dayjs(timestamp)
+    .set('hour', startHour)
+    .set('minute', startMinute)
+    .set('second', 0)
+    .set('millisecond', 0)
+    .valueOf()
+}
+
+export const getShiftTimeEnd = (timestamp, endHour, endMinute) => {
+  return dayjs(timestamp)
+    .set('hour', endHour)
+    .set('minute', endMinute)
+    .set('second', 0)
+    .set('millisecond', 0)
+    .valueOf()
+}
+
+export const rowSelectTable = (selectedRowKeys, isDisabled = () => false, rowKey = 'id') => {
   return {
     selectedRowKeys: unref(selectedRowKeys),
     onChange: (changableRowKeys) => {
@@ -57,7 +126,7 @@ export const rowSelectTable = (selectedRowKeys, isDisabled = () => false) => {
     },
     hideDefaultSelections: true,
     getCheckboxProps: (record) => ({
-      disabled: isDisabled(record.id),
+      disabled: isDisabled(record[rowKey]),
     }),
     selections: [
       {
@@ -109,4 +178,37 @@ export const rowSelectTable = (selectedRowKeys, isDisabled = () => false) => {
       },
     ],
   }
+}
+
+export const isProbablyMobile = () => {
+  return (
+    window.innerWidth <= 768 &&
+    navigator.maxTouchPoints > 1 &&
+    window.matchMedia('(orientation: portrait)').matches
+  )
+}
+
+export const base64ToBlob = (base64, contentType = 'image/jpeg') => {
+  const byteCharacters = atob(base64.split(',')[1])
+  const byteArrays = []
+
+  for (let offset = 0; offset < byteCharacters.length; offset += 512) {
+    const slice = byteCharacters.slice(offset, offset + 512)
+
+    const byteNumbers = new Array(slice.length)
+    for (let i = 0; i < slice.length; i++) {
+      byteNumbers[i] = slice.charCodeAt(i)
+    }
+
+    const byteArray = new Uint8Array(byteNumbers)
+    byteArrays.push(byteArray)
+  }
+
+  return new Blob(byteArrays, { type: contentType })
+}
+
+export const generateSignature = (key, data) => {
+  const timestamp = Math.floor(Date.now() / 1000)
+  const toSign = data + '|' + timestamp
+  return cryptoJS.HmacSHA256(toSign, key).toString(cryptoJS.enc.Hex)
 }

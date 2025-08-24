@@ -20,28 +20,28 @@ public class ADLevelProjectRestController {
 
     @GetMapping("/list")
     public ResponseEntity<?> getListLevelProject(@Valid ADLevelProjectSearchRequest request) {
-        return PaginationHelper.createResponseEntity(service.getListLevelProject(request));
+        return service.getListLevelProject(request);
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<?> getLevelProject(@PathVariable String id) {
-        return PaginationHelper.createResponseEntity(service.detailLevelProject(id));
+        return service.detailLevelProject(id);
     }
 
     @PostMapping
-    public ResponseEntity<?> addLevelProject(@RequestBody ADLevelProjectCreateRequest request) {
-        return PaginationHelper.createResponseEntity(service.createLevelProject(request));
+    public ResponseEntity<?> addLevelProject(@Valid @RequestBody ADLevelProjectCreateRequest request) {
+        return service.createLevelProject(request);
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<?> updateLevelProject(@PathVariable String id,
-            @RequestBody ADLevelProjectUpdateRequest request) {
-        return PaginationHelper.createResponseEntity(service.updateLevelProject(id, request));
+            @Valid @RequestBody ADLevelProjectUpdateRequest request) {
+        return service.updateLevelProject(id, request);
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteLevelProject(@PathVariable String id) {
-        return PaginationHelper.createResponseEntity(service.changeStatus(id));
+        return service.changeStatus(id);
     }
 
 }

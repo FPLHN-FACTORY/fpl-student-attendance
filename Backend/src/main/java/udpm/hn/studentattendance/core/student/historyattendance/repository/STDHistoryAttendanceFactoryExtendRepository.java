@@ -11,17 +11,31 @@ import java.util.List;
 @Repository
 public interface STDHistoryAttendanceFactoryExtendRepository extends FactoryRepository {
     @Query(value = """
-                        SELECT
-                        ft
-                        FROM
-                        Factory ft
-                        LEFT JOIN
-                        UserStudentFactory usf ON usf.factory.id = ft.id
-                        WHERE
-                        ft.status = :factoryStatus
-                        AND
-                        usf.userStudent.id = :userStudentId
-            """)
-    List<Factory> getAllFactoryByUser(EntityStatus factoryStatus, String userStudentId);
+           SELECT ft
+           FROM Factory ft
+           JOIN UserStudentFactory usf ON usf.factory.id = ft.id
+           WHERE
+            usf.userStudent.id = :userStudentId
+    """)
+    List<Factory> getAllFactoryByUser(String userStudentId);
+
+    @Query(value = """
+        SELECT f.*
+        FROM factory f
+        WHERE
+            EXISTS(
+                SELECT 1
+                FROM user_student_factory usf
+                JOIN project p ON f.id_project = p.id
+                JOIN semester s ON p.id_semester = s.id
+                WHERE
+                    usf.id_user_student = :idUserStudent
+                    AND usf.status = 1
+                    AND usf.id_factory = f.id
+                    AND s.id = :idSemester
+            )
+        ORDER BY f.name ASC
+    """, nativeQuery = true)
+    List<Factory> getAllByUserStudentAndSemester(String idUserStudent, String idSemester);
 
 }

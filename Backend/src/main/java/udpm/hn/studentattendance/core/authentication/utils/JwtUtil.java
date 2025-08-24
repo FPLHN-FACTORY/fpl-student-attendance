@@ -5,10 +5,16 @@ import io.jsonwebtoken.Jws;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import udpm.hn.studentattendance.core.authentication.oauth2.AuthUser;
+import udpm.hn.studentattendance.helpers.SettingHelper;
+import udpm.hn.studentattendance.infrastructure.constants.SettingKeys;
+
 import javax.crypto.SecretKey;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -17,12 +23,13 @@ import java.util.Map;
 import java.util.Set;
 
 @Component
+@RequiredArgsConstructor
 public class JwtUtil {
+
+    private final SettingHelper settingHelper;
 
     @Value("${authentication.secret-key}")
     private String SECRET_KEY;
-
-    private static final long EXPIRATION_TIME = 86400000;
 
     public static String getAuthorization(HttpServletRequest request) {
         String token = request.getHeader("Authorization");
@@ -38,12 +45,11 @@ public class JwtUtil {
     }
 
     public boolean validateToken(String token) {
+        if (token == null) {
+            return false;
+        }
         try {
-            Jws<Claims> claims = Jwts.parserBuilder()
-                    .setSigningKey(getSecretKey())
-                    .build()
-                    .parseClaimsJws(token);
-
+            Jws<Claims> claims = getClaimsFromToken(token);
             Date expirationDate = claims.getBody().getExpiration();
             return !expirationDate.before(new Date());
         } catch (Exception e) {
@@ -62,14 +68,40 @@ public class JwtUtil {
         return buildToken(email, dataUser);
     }
 
+    public String generateToken(String token) {
+        Claims claims = getClaimsFromToken(token).getBody();
+        return buildToken(claims);
+    }
+
     private String buildToken(String email, Map<String, Object> data) {
         return Jwts.builder()
                 .setSubject(email)
                 .addClaims(data)
                 .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
+                .setExpiration(buildExpiration())
                 .signWith(getSecretKey())
                 .compact();
+    }
+
+    private String buildToken(Claims claims) {
+        return buildToken(claims, buildExpiration());
+    }
+
+    private String buildToken(Claims claims, Date expiration) {
+        return Jwts.builder()
+                .setClaims(claims)
+                .setIssuedAt(new Date())
+                .setExpiration(expiration)
+                .signWith(getSecretKey())
+                .compact();
+    }
+
+    public String generateRefreshToken(String token) {
+        Jws<Claims> claimsJws = getClaimsFromToken(token);
+        Date expirationDate = claimsJws.getBody().getExpiration();
+        Instant newExpiration = expirationDate.toInstant().plus(Duration.ofMinutes(5));
+        Date updatedExpiration = Date.from(newExpiration);
+        return buildToken(claimsJws.getBody(), updatedExpiration);
     }
 
     public String getEmailFromToken(String token) {
@@ -80,21 +112,24 @@ public class JwtUtil {
         return claims.getSubject();
     }
 
-    public Claims getClaimsFromToken(String token) {
-        Jws<Claims> claimsJws = Jwts.parserBuilder()
+    public Jws<Claims> getClaimsFromToken(String token) {
+        return Jwts.parserBuilder()
                 .setSigningKey(getSecretKey())
                 .build()
                 .parseClaimsJws(token);
-
-        return claimsJws.getBody();
     }
 
     public Set<String> getRoleFromToken(String token) {
-        return new HashSet<>(getClaimsFromToken(token).get("role", List.class));
+        return new HashSet<>(getClaimsFromToken(token).getBody().get("role", List.class));
     }
 
     public String getFacilityFromToken(String token) {
-        return getClaimsFromToken(token).get("facilityID", String.class);
+        return getClaimsFromToken(token).getBody().get("facilityID", String.class);
+    }
+
+    private Date buildExpiration() {
+        long EXPIRATION_TIME = settingHelper.getSetting(SettingKeys.EXPIRATION_MINUTE_LOGIN, Integer.class);
+        return new Date(System.currentTimeMillis() + EXPIRATION_TIME * 60 * 1000);
     }
 
 }

@@ -21,7 +21,7 @@ public interface SPDPlanRepository extends PlanRepository {
 
     @Query(value = """
                 SELECT
-                    ROW_NUMBER() OVER (ORDER BY pl.created_at DESC) as orderNumber,
+                    ROW_NUMBER() OVER (ORDER BY LEAST(pl.status, p.status, lp.status, s.status, sf.status, s2.status) DESC, pl.created_at DESC) as orderNumber,
                     pl.id,
                     pl.name AS planName,
                     p.id AS projectId,
@@ -32,9 +32,11 @@ public interface SPDPlanRepository extends PlanRepository {
                     s.from_date AS fromDateSemester,
                     s.to_date AS toDateSemester,
                     pl.description,
+                    pl.max_late_arrival,
                     CONCAT(s.name, ' - ', s.year) AS semesterName,
                     s2.name AS subjectName,
-                    LEAST(pl.status, p.status, lp.status, s.status, sf.status, s2.status) AS status
+                    LEAST(pl.status, p.status, lp.status, s.status, sf.status, s2.status) AS status,
+                    pl.status AS currentStatus
                 FROM plan pl
                 JOIN project p ON p.id = pl.id_project
                 JOIN level_project lp ON lp.id = p.id_level_project
@@ -42,18 +44,14 @@ public interface SPDPlanRepository extends PlanRepository {
                 JOIN subject_facility sf ON sf.id = p.id_subject_facility
                 JOIN subject s2 ON s2.id = sf.id_subject
                 WHERE
-                    p.status = 1 AND
-                    s.status = 1 AND
-                    sf.status = 1 AND
-                    s2.status = 1 AND
                     sf.id_facility = :#{#request.idFacility} AND
-                    (NULLIF(TRIM(:#{#request.keyword}), '') IS NULL OR BINARY pl.name LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%')) AND
+                    (NULLIF(TRIM(:#{#request.keyword}), '') IS NULL OR pl.name LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%')) AND
                     (:#{#request.level} IS NULL OR lp.id = :#{#request.level}) AND
                     (:#{#request.semester} IS NULL OR s.name = :#{#request.semester}) AND
                     (:#{#request.year} IS NULL OR s.year = :#{#request.year}) AND
                     (:#{#request.subject} IS NULL OR s2.id = :#{#request.subject}) AND
-                    (:#{#request.status} IS NULL OR pl.status = :#{#request.status})
-                ORDER BY pl.status DESC, pl.created_at DESC
+                    (:#{#request.status} IS NULL OR LEAST(pl.status, p.status, lp.status, s.status, sf.status, s2.status) = :#{#request.status})
+                ORDER BY LEAST(pl.status, p.status, lp.status, s.status, sf.status, s2.status) DESC, pl.created_at DESC
             """, countQuery = """
                 SELECT
                     COUNT(DISTINCT pl.id)
@@ -64,17 +62,13 @@ public interface SPDPlanRepository extends PlanRepository {
                 JOIN subject_facility sf ON sf.id = p.id_subject_facility
                 JOIN subject s2 ON s2.id = sf.id_subject
                 WHERE
-                    p.status = 1 AND
-                    s.status = 1 AND
-                    sf.status = 1 AND
-                    s2.status = 1 AND
                     sf.id_facility = :#{#request.idFacility} AND
-                    (NULLIF(TRIM(:#{#request.keyword}), '') IS NULL OR BINARY pl.name LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%')) AND
+                    (NULLIF(TRIM(:#{#request.keyword}), '') IS NULL OR pl.name LIKE CONCAT('%', TRIM(:#{#request.keyword}), '%')) AND
                     (:#{#request.level} IS NULL OR lp.id = :#{#request.level}) AND
                     (:#{#request.semester} IS NULL OR s.name = :#{#request.semester}) AND
                     (:#{#request.year} IS NULL OR s.year = :#{#request.year}) AND
                     (:#{#request.subject} IS NULL OR s2.id = :#{#request.subject}) AND
-                    (:#{#request.status} IS NULL OR pl.status = :#{#request.status})
+                    (:#{#request.status} IS NULL OR LEAST(pl.status, p.status, lp.status, s.status, sf.status, s2.status) = :#{#request.status})
             """, nativeQuery = true)
     Page<SPDPlanResponse> getAllByFilter(Pageable pageable, SPDFilterPlanRequest request);
 
@@ -91,9 +85,11 @@ public interface SPDPlanRepository extends PlanRepository {
                     s.from_date AS fromDateSemester,
                     s.to_date AS toDateSemester,
                     pl.description,
+                    pl.max_late_arrival,
                     CONCAT(s.name, ' - ', s.year) AS semesterName,
                     s2.name AS subjectName,
-                    LEAST(pl.status, p.status, lp.status, s.status, sf.status, s2.status) AS status
+                    LEAST(pl.status, p.status, lp.status, s.status, sf.status, s2.status) AS status,
+                    pl.status AS currentStatus
                 FROM plan pl
                 JOIN project p ON p.id = pl.id_project
                 JOIN level_project lp ON lp.id = p.id_level_project
@@ -101,11 +97,6 @@ public interface SPDPlanRepository extends PlanRepository {
                 JOIN subject_facility sf ON sf.id = p.id_subject_facility
                 JOIN subject s2 ON s2.id = sf.id_subject
                 WHERE
-                    p.status = 1 AND
-                    lp.status = 1 AND
-                    s.status = 1 AND
-                    sf.status = 1 AND
-                    s2.status = 1 AND
                     sf.id_facility = :idFacility AND
                     pl.id = :idPlan
             """, nativeQuery = true)

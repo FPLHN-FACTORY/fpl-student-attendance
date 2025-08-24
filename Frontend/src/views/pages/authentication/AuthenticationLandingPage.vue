@@ -8,15 +8,20 @@ import imgRoleTeacher from '@/assets/images/role-teacher.png'
 import imgRoleStudent from '@/assets/images/role-student.png'
 import { GoogleOutlined } from '@ant-design/icons-vue'
 import { onMounted, ref } from 'vue'
-import { toast } from 'vue3-toastify'
 import requestAPI from '@/services/requestApiService'
 import { REDIRECT_LOGIN_ADMIN } from '@/constants/authenticationConstant'
 import useAuthStore from '@/stores/useAuthStore'
 import useLoadingStore from '@/stores/useLoadingStore'
 import { decodeBase64 } from '@/utils/utils'
-import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
+import {
+  BASE_URL,
+  GLOBAL_ROUTE_NAMES,
+  PREFIX_ADMIN_PANEL,
+  URL_ADMIN_PANEL,
+} from '@/constants/routesConstant'
 import { ROUTE_NAMES_API } from '@/router/authenticationRoute'
 import { ROLE } from '@/constants'
+import { message } from 'ant-design-vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -29,10 +34,10 @@ const facilityID = ref(null)
 const isShowModalSelectFacility = ref(false)
 const lstFacility = ref([])
 
-const roles = [
+let roles = ref([
   {
     role: ROLE.ADMIN,
-    label: 'Cán bộ đào tạo',
+    label: 'Admin',
     img: imgRoleAdmin,
     route: GLOBAL_ROUTE_NAMES.ADMIN_PAGE,
   },
@@ -54,7 +59,24 @@ const roles = [
     img: imgRoleStudent,
     route: GLOBAL_ROUTE_NAMES.STUDENT_PAGE,
   },
-]
+])
+
+const tmpRoles = [...roles.value]
+
+const isRouteAdm = route.path === PREFIX_ADMIN_PANEL
+
+const isRoleAdmin = () => {
+  return (
+    authStore?.user?.role.includes(ROLE.ADMIN) ||
+    authStore?.user?.role.includes(ROLE.STAFF) ||
+    authStore?.user?.role.includes(ROLE.TEACHER)
+  )
+}
+
+const handleLogout = () => {
+  authStore.logout()
+  window.location.href = isRoleAdmin() ? URL_ADMIN_PANEL : BASE_URL
+}
 
 const showModalSelectFacility = () => (isShowModalSelectFacility.value = true)
 
@@ -72,20 +94,20 @@ const handleSelectFacility = (role) => {
 }
 
 const handleRedirectLogin = (width_out_facility = false) => {
-  toast.clearAll()
+  message.destroy()
   if (!width_out_facility && !facilityID.value) {
-    return toast.error('Vui lòng chọn cơ sở muốn đăng nhập')
+    return message.error('Vui lòng chọn cơ sở muốn đăng nhập')
   }
 
-  const currentRole = roles.find((o) => o.role.includes(roleLogin.value))
+  const currentRole = roles.value.find((o) => o.role.includes(roleLogin.value))
 
   if (!currentRole) {
-    return toast.error('Role đăng nhập không chính xác')
+    return message.error('Role đăng nhập không chính xác')
   }
 
   const params = new URLSearchParams({
     role: currentRole.role,
-    redirect_uri: window.location.origin,
+    redirect_uri: isRouteAdm ? URL_ADMIN_PANEL : window.location.origin,
     facility_id: facilityID.value,
   })
 
@@ -100,13 +122,13 @@ const fetchDataFacility = async () => {
       facilityID.value = lstFacility.value[0].id
     }
   } catch (error) {
-    toast.error('Không thể tải danh sách cơ sở')
+    message.error('Không thể tải danh sách cơ sở')
   }
 }
 
 const redirectLoginRole = () => {
   if (authStore.isLogin) {
-    const role = roles.find((o) => o.role.includes(roleLogin.value))
+    const role = roles.value.find((o) => o.role.includes(roleLogin.value))
 
     if (role) {
       loadingPage.hide()
@@ -127,25 +149,40 @@ const checkLogin = () => {
   const authenticationToken = route.query.authencation_token || null
   const authenticationError = route.query.authencation_error || null
 
-  loadingPage.show()
+  router.replace({ path: route.path, query: {} })
 
+  loadingPage.show()
   if (authenticationToken) {
     if (!authStore.login(authenticationToken)) {
       loadingPage.hide()
-      return toast.error('Tài khoản của bạn không thể truy cập vào mục này!')
+      return message.error('Tài khoản của bạn không thể truy cập vào mục này!')
     }
   } else if (authenticationError) {
     const dataError = JSON.parse(decodeBase64(authenticationError))
     loadingPage.hide()
-    return toast.error(dataError.message)
+    return message.error(dataError.message)
   }
   redirectLoginRole()
 }
 
-onMounted(() => {
+onMounted(async () => {
   document.body.classList.add('bg-login')
   checkLogin()
-  fetchDataFacility()
+
+  const isRoleAdm = isRoleAdmin()
+
+  if (isRouteAdm || isRoleAdm) {
+    roles.value = roles.value.filter((o) =>
+      isRoleAdm || !authStore.isLogin ? o.role !== ROLE.STUDENT : o.role === ROLE.STUDENT,
+    )
+  } else {
+    roles.value = roles.value.filter((o) => o.role === ROLE.STUDENT)
+  }
+
+  if (!roles.value.length && authStore.isLogin) {
+    roles.value = tmpRoles.filter((o) => authStore.user.role.includes(o.role))
+  }
+  await fetchDataFacility()
   loadingPage.hide()
 })
 </script>
@@ -180,6 +217,19 @@ onMounted(() => {
           </template>
         </div>
       </div>
+      <div class="d-flex justify-content-center align-items-center" v-if="authStore.isLogin">
+        <div class="role-container mt-2">
+          <div class="role-item">
+            <a-button
+              type="primary"
+              class="role-button button-logout"
+              size="large"
+              @click="handleLogout"
+              >Đăng xuất</a-button
+            >
+          </div>
+        </div>
+      </div>
       <p class="footer">Powered by <strong>FPLHN-UDPM</strong></p>
     </div>
 
@@ -211,8 +261,9 @@ onMounted(() => {
         <a-button
           type="primary"
           danger
-          class="bg-pink-500 text-white text-lg font-semibold flex items-center justify-center h-12"
+          class="bg-pink-500 text-white text-lg font-semibold flex items-center justify-center h-12 btn-google mb-3"
           size="large"
+          :disabled="lstFacility.length < 1"
           @click="handleRedirectLogin()"
         >
           <GoogleOutlined class="mr-2" /> Google
@@ -234,6 +285,9 @@ onMounted(() => {
 .logo {
   text-align: center;
 }
+.btn-google {
+  background-color: #ff5722;
+}
 .logo img {
   width: 200px;
   max-width: 100%;
@@ -254,6 +308,11 @@ onMounted(() => {
   gap: 20px;
   margin-top: 20px;
 }
+@media (max-width: 687px) {
+  .role-container {
+    flex-direction: column-reverse;
+  }
+}
 .role-item {
   display: flex;
   flex-direction: column;
@@ -265,6 +324,7 @@ onMounted(() => {
   height: auto;
   max-width: 100%;
 }
+
 .role-button {
   width: 100%;
   margin-top: 10px;
@@ -277,6 +337,20 @@ onMounted(() => {
   background-color: #6b667d;
   border-color: #6b667d;
   color: white;
+}
+.button-logout {
+  width: 280px;
+  max-width: 100%;
+  color: #000;
+  background-color: #f1f3f5;
+  border-color: #d9d9d9;
+  box-shadow: none;
+}
+.button-logout:hover,
+.button-logout:active {
+  background: #dce1e3;
+  color: #000;
+  border-color: #d9d9d9;
 }
 .footer {
   margin-top: 6rem;

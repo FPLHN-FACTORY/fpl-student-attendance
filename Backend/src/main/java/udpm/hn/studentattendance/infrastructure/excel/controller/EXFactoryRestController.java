@@ -30,6 +30,11 @@ public class EXFactoryRestController implements IEXDefaultController {
     }
 
     @Override
+    public ResponseEntity<?> exportData(EXDataRequest request) {
+        return factoryService.exportData(request);
+    }
+
+    @Override
     public ResponseEntity<?> downloadTemplate(EXDataRequest request) {
 
         return factoryService.downloadTemplate(request);

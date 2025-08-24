@@ -5,10 +5,7 @@ import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import udpm.hn.studentattendance.core.student.historyattendance.model.request.STDHistoryAttendanceRequest;
 import udpm.hn.studentattendance.core.student.historyattendance.model.response.STDHistoryAttendanceResponse;
 import udpm.hn.studentattendance.core.student.historyattendance.repository.STDHistoryAttendanceExtendRepository;
@@ -48,18 +45,28 @@ public class STDHistoryAttendanceRestController {
         return historyAttendanceService.getAllFactoryByUserStudent();
     }
 
+    @GetMapping("/factories/{idSemester}")
+    public ResponseEntity<?> getAllFactoryBySemester(@PathVariable String idSemester) {
+        return historyAttendanceService.getAllFactoryBySemester(idSemester);
+    }
+
     @GetMapping(value = "/export-pdf", produces = MediaType.APPLICATION_PDF_VALUE)
     public ResponseEntity<InputStreamResource> exportTeachingSchedule(@RequestParam String factoryName,
-            @RequestParam String factoryId) throws UnsupportedEncodingException, IOException {
+                                                                      @RequestParam String factoryId) throws UnsupportedEncodingException, IOException {
         List<STDHistoryAttendanceResponse> list = attendanceExtendRepository
-                .getAllHistoryAttendanceByFactory(sessionHelper.getUserId(), factoryId);
+                .getAllHistoryAttendanceByFactory(sessionHelper.getUserId(), factoryId, System.currentTimeMillis());
         ByteArrayInputStream byteArrayInputStream = historyAttendanceService.exportHistoryAttendance(list, factoryName);
         HttpHeaders headers = new HttpHeaders();
         String fileName = "lịch-sử-điểm-danh.pdf";
         headers.add("Content-Disposition",
-                "inline; filename*=UTF-8''" + URLEncoder.encode(fileName, StandardCharsets.UTF_8.toString()));
+                "inline; filename*=UTF-8''" + URLEncoder.encode(fileName, StandardCharsets.UTF_8));
         return ResponseEntity.ok().headers(headers).contentType(MediaType.APPLICATION_PDF)
                 .body(new InputStreamResource(byteArrayInputStream));
+    }
+
+    @GetMapping("/detail")
+    public ResponseEntity<?> getDetailPlanDate() {
+        return historyAttendanceService.getDetailPlanDate();
     }
 
 }

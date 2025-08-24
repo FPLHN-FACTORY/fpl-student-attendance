@@ -15,7 +15,13 @@ public final class RouteAuthenticationConstant {
 
     public final static String API_CONVERT_IMAGE_TO_BASE64 = "/get-avatar";
 
+    public final static String API_SETTINGS = "/settings";
+
+    public final static String API_REFRESH_TOKEN = "/refresh-token";
+
     public final static String API_GET_ALL_FACILITY = "/get-all-facility";
+
+    public final static String API_GET_ALL_SEMESTER = "/get-all-semester";
 
     public final static String API_GET_INFO_USER = "/get-info-user";
 

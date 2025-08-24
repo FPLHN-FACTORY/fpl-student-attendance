@@ -1,3 +1,7 @@
+.gray-text {
+  color: #41395a;
+}
+
 .text {
   &-primary {
     color: var(--primary-color);
@@ -21,6 +25,15 @@
 
 .ant-select-item-option-selected {
   background-color: #dbdfe2 !important;
+}
+
+.bg {
+  &-white {
+    background-color: #fff;
+    & > * {
+      background-color: #fff !important;
+    }
+  }
 }
 
 .ant-input-affix-wrapper:focus,

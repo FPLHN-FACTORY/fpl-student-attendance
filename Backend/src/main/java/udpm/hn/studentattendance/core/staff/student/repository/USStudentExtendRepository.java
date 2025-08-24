@@ -10,50 +10,71 @@ import udpm.hn.studentattendance.core.staff.student.model.response.USStudentResp
 import udpm.hn.studentattendance.entities.UserStudent;
 import udpm.hn.studentattendance.repositories.UserStudentRepository;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Repository
 public interface USStudentExtendRepository extends UserStudentRepository {
     @Query(value = """
+    SELECT
+         us.id as studentId,
+         us.name as studentName,
+         us.code as studentCode,
+         us.email as studentEmail,
+         us.status as studentStatus,
+         us.face_embedding as faceEmbedding
+    FROM user_student us
+    LEFT JOIN facility f ON f.id = us.id_facility
+    WHERE
+         (
+           (:#{#studentRequest.searchQuery} IS NULL OR TRIM(:#{#studentRequest.searchQuery}) = '')
+           OR us.name LIKE concat('%', TRIM(:#{#studentRequest.searchQuery}), '%')
+           OR us.code LIKE concat('%', TRIM(:#{#studentRequest.searchQuery}), '%')
+           OR us.email LIKE concat('%', TRIM(:#{#studentRequest.searchQuery}), '%')
+         )
+         AND f.id = :facilityId
+         AND (:#{#studentRequest.studentStatus} IS NULL OR us.status = :#{#studentRequest.studentStatus})
+         AND (
+             (:#{#studentRequest.isHasFace} IS NULL)
+             OR (:#{#studentRequest.isHasFace} = true AND us.face_embedding IS NOT NULL)
+             OR (:#{#studentRequest.isHasFace} = false AND us.face_embedding IS NULL)
+         )
+    ORDER BY  us.status DESC, us.created_at DESC
+    """, countQuery = """
+    SELECT COUNT(*)
+    FROM user_student us
+    LEFT JOIN facility f ON f.id = us.id_facility
+    WHERE
+         (
+           (:#{#studentRequest.searchQuery} IS NULL OR TRIM(:#{#studentRequest.searchQuery}) = '')
+           OR us.name LIKE concat('%', TRIM(:#{#studentRequest.searchQuery}), '%')
+           OR us.code LIKE concat('%', TRIM(:#{#studentRequest.searchQuery}), '%')
+           OR us.email LIKE concat('%', TRIM(:#{#studentRequest.searchQuery}), '%')
+         )
+         AND f.id = :facilityId
+         AND (:#{#studentRequest.studentStatus} IS NULL OR us.status = :#{#studentRequest.studentStatus})
+         AND (
+             (:#{#studentRequest.isHasFace} IS NULL)
+             OR (:#{#studentRequest.isHasFace} = true AND us.face_embedding IS NOT NULL)
+             OR (:#{#studentRequest.isHasFace} = false AND us.face_embedding IS NULL)
+         )
+    """, nativeQuery = true)
+    Page<USStudentResponse> getAllStudentByFacility(Pageable pageable, USStudentRequest studentRequest, String facilityId);
+    @Query(value = """
             SELECT
-                 ROW_NUMBER() OVER (ORDER BY us.createdAt DESC) AS rowNumber,
                  us.id as studentId,
                  us.name as studentName,
                  us.code as studentCode,
                  us.email as studentEmail,
                  us.status as studentStatus
-            FROM UserStudent us
-            LEFT JOIN us.facility f ON us.facility.id = f.id
+            FROM user_student us
+            LEFT JOIN facility f ON f.id = us.id_facility
             WHERE
-                 (
-                   (:#{#studentRequest.searchQuery} IS NULL OR trim(:#{#studentRequest.searchQuery}) = '')
-                   OR us.id LIKE concat('%', trim(:#{#studentRequest.searchQuery}), '%')
-                   OR us.name LIKE concat('%', trim(:#{#studentRequest.searchQuery}), '%')
-                   OR us.code LIKE concat('%', trim(:#{#studentRequest.searchQuery}), '%')
-                   OR us.email LIKE concat('%', trim(:#{#studentRequest.searchQuery}), '%')
-                 )
-                 AND f.id = :facilityId
-                 AND (:#{#studentRequest.studentStatus} IS NULL OR us.status = :#{#studentRequest.studentStatus})
-            ORDER BY us.createdAt DESC
-            """, countQuery = """
-            SELECT COUNT(us)
-            FROM UserStudent us
-            LEFT JOIN us.facility f ON us.facility.id = f.id
-            WHERE
-                 (
-                   (:#{#studentRequest.searchQuery} IS NULL OR trim(:#{#studentRequest.searchQuery}) = '')
-                   OR us.id LIKE concat('%', trim(:#{#studentRequest.searchQuery}), '%')
-                   OR us.name LIKE concat('%', trim(:#{#studentRequest.searchQuery}), '%')
-                   OR us.code LIKE concat('%', trim(:#{#studentRequest.searchQuery}), '%')
-                   OR us.email LIKE concat('%', trim(:#{#studentRequest.searchQuery}), '%')
-                 )
-                 AND f.id = :facilityId
-                 AND (:#{#studentRequest.studentStatus} IS NULL OR us.status = :#{#studentRequest.studentStatus})
-            """)
-    Page<USStudentResponse> getAllStudentByFacility(Pageable pageable, USStudentRequest studentRequest,
-                                                    String facilityId);
+                 f.id = :facilityId
+            ORDER BY us.status DESC, us.created_at DESC
+            """, nativeQuery = true)
+    List<USStudentResponse> exportAllStudent(String facilityId);
 
     @Query(value = """
             SELECT
@@ -91,16 +112,17 @@ public interface USStudentExtendRepository extends UserStudentRepository {
 
 
     @Query(value = """
-                           SELECT
-                                CASE
-                                  WHEN us.face_embedding IS NOT NULL THEN TRUE
-                                  ELSE FALSE
-                                END
-                              FROM user_student us
-                          WHERE us.id_facility = :facilityId
-                          ORDER BY us.created_at DESC
-            """, nativeQuery = true)
-    List<Integer> existFaceForAllStudents(String facilityId);
+    SELECT
+            CAST(us.id AS CHAR(50)) as studentId,
+            CASE
+            WHEN us.face_embedding IS NOT NULL THEN 1
+            ELSE 0
+        END as hasFace
+    FROM user_student us
+    WHERE us.id_facility = :facilityId
+    ORDER BY us.created_at DESC
+    """, nativeQuery = true)
+    List<Map<String, Object>> existFaceForAllStudents(String facilityId);
 }
 
 

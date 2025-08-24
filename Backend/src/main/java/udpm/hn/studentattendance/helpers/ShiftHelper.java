@@ -13,7 +13,7 @@ import java.util.List;
 
 public class ShiftHelper {
 
-    private static final ZoneId ZONEID = ZoneId.of("Asia/Ho_Chi_Minh");
+    private static final ZoneId ZONEID = ZoneId.of(DateTimeUtils.ZONE_ID);
 
     public static Long getShiftTimeStart(long time, LocalTime startTime) {
         LocalDate date = DateTimeUtils.convertTimestampToLocalDate(time);
@@ -76,5 +76,30 @@ public class ShiftHelper {
 
         result.add(currentShift);
         return result;
+    }
+
+    /**
+     * Formats a list of shifts into a readable string
+     * 
+     * @param shifts List of shift numbers
+     * @return Formatted string representing the shifts
+     */
+    public static String getShiftsString(List<Integer> shifts) {
+        if (shifts == null || shifts.isEmpty()) {
+            return "Không xác định";
+        }
+
+        List<List<Integer>> consecutiveGroups = findConsecutiveShift(shifts);
+        List<String> formattedGroups = new ArrayList<>();
+
+        for (List<Integer> group : consecutiveGroups) {
+            if (group.size() == 1) {
+                formattedGroups.add("Ca " + group.get(0));
+            } else {
+                formattedGroups.add("Ca " + group.get(0) + "-" + group.get(group.size() - 1));
+            }
+        }
+
+        return String.join(", ", formattedGroups);
     }
 }

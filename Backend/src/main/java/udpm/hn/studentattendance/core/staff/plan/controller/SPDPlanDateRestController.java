@@ -14,6 +14,8 @@ import org.springframework.web.bind.annotation.RestController;
 import udpm.hn.studentattendance.core.staff.plan.model.request.SPDAddOrUpdatePlanDateRequest;
 import udpm.hn.studentattendance.core.staff.plan.model.request.SPDDeletePlanDateRequest;
 import udpm.hn.studentattendance.core.staff.plan.model.request.SPDFilterPlanDateRequest;
+import udpm.hn.studentattendance.core.staff.plan.model.request.SPDSearchTeacherRequest;
+import udpm.hn.studentattendance.core.staff.plan.model.request.SPDUpdateLinkMeetRequest;
 import udpm.hn.studentattendance.core.staff.plan.services.SPDPlanDateService;
 import udpm.hn.studentattendance.infrastructure.constants.router.RouteStaffConstant;
 
@@ -36,15 +38,16 @@ public class SPDPlanDateRestController {
         return spdPlanDateService.getAllList(request);
     }
 
-    @DeleteMapping("/{idFactory}/delete")
+    @DeleteMapping("/{idPlanFactory}/delete")
     public ResponseEntity<?> deleteMultiplePlanDate(@RequestBody SPDDeletePlanDateRequest request,
-            @PathVariable String idFactory) {
+            @PathVariable String idPlanFactory) {
+        request.setIdPlanFactory(idPlanFactory);
         return spdPlanDateService.deleteMultiplePlanDate(request);
     }
 
-    @DeleteMapping("/{idFactory}/delete/{idPlanDate}")
+    @DeleteMapping("/{idPlanFactory}/delete/{idPlanDate}")
     public ResponseEntity<?> deletePlanDate(@PathVariable("idPlanDate") String idPlanDate,
-            @PathVariable String idFactory) {
+            @PathVariable String idPlanFactory) {
         return spdPlanDateService.deletePlanDate(idPlanDate);
     }
 
@@ -55,8 +58,24 @@ public class SPDPlanDateRestController {
         return spdPlanDateService.addPlanDate(request);
     }
 
-    @PutMapping("/{idFactory}/update")
+    @PutMapping("/{idPlanFactory}/update")
     public ResponseEntity<?> updatePlanDate(@Valid @RequestBody SPDAddOrUpdatePlanDateRequest request) {
         return spdPlanDateService.updatePlanDate(request);
     }
+
+    @PutMapping("/{idPlanFactory}/update-link")
+    public ResponseEntity<?> updateLinkMeet(@Valid @RequestBody SPDUpdateLinkMeetRequest request) {
+        return spdPlanDateService.updateLinkMeet(request);
+    }
+
+    @PostMapping("/{idPlanFactory}/send-mail")
+    public ResponseEntity<?> sendMail(@PathVariable String idPlanFactory) {
+        return spdPlanDateService.sendMail(idPlanFactory);
+    }
+
+    @GetMapping("/search-teacher")
+    public ResponseEntity<?> searchTeacher(@Valid SPDSearchTeacherRequest request) {
+        return spdPlanDateService.searchTeacher(request);
+    }
+
 }

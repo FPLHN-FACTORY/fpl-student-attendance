@@ -15,7 +15,11 @@ public interface STDHistoryAttendanceService {
 
     ResponseEntity<?> getAllFactoryByUserStudent();
 
+    ResponseEntity<?> getAllFactoryBySemester(String idSemester);
+
     ByteArrayInputStream exportHistoryAttendance(List<STDHistoryAttendanceResponse> attendanceResponses,
             String factoryName);
+
+    ResponseEntity<?> getDetailPlanDate();
 
 }

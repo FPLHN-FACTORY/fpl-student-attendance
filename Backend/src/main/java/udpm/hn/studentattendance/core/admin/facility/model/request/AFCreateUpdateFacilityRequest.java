@@ -4,12 +4,15 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
+import udpm.hn.studentattendance.infrastructure.constants.EntityProperties;
 
 @Getter
 @Setter
 public class AFCreateUpdateFacilityRequest {
+
     @NotBlank(message = "Tên cơ sở không được để trống")
     @Size(min = 3, message = "Tên cơ sở phải có ít nhất 3 kí tự")
-    @Size(max = 50, message = "Tên cơ sở phải ít hơn 50 kí tự")
+    @Size(max = EntityProperties.LENGTH_CODE, message = "Tên cơ sở chỉ có thể có tối đa 50 kí tự")
     private String facilityName;
+
 }

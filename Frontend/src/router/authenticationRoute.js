@@ -1,8 +1,11 @@
 import { ROLE } from '@/constants'
-import { API_URL, GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
+import { API_URL, GLOBAL_ROUTE_NAMES, PREFIX_ADMIN_PANEL } from '@/constants/routesConstant'
 
 export const ROUTE_NAMES_API = {
+  FETCH_DATA_REFRESH_TOKEN: API_URL + '/refresh-token',
+  FETCH_DATA_SETTINGS: API_URL + '/settings',
   FETCH_DATA_FACILITY: API_URL + '/get-all-facility',
+  FETCH_DATA_SEMESTER: API_URL + '/get-all-semester',
   FETCH_DATA_AVATAR: API_URL + '/get-avatar',
   FETCH_DATA_INFO_USER: API_URL + '/get-info-user',
   FETCH_DATA_REGISTER: API_URL + '/student-register',
@@ -22,6 +25,14 @@ export const AuthenticationRoutes = [
     component: () => import('@/views/pages/authentication/AuthenticationLandingPage.vue'),
     meta: {
       title: 'Đăng nhập hệ thống',
+    },
+  },
+  {
+    path: PREFIX_ADMIN_PANEL,
+    name: ROUTE_NAMES.LOGIN_PAGE,
+    component: () => import('@/views/pages/authentication/AuthenticationLandingPage.vue'),
+    meta: {
+      title: 'Đăng nhập quản trị',
     },
   },
   {

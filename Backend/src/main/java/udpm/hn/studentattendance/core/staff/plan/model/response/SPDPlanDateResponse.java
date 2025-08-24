@@ -21,6 +21,8 @@ public interface SPDPlanDateResponse extends IsIdentify, HasOrderNumber {
 
     Integer getType();
 
+    String getRoom();
+
     Long getFromDate();
 
     Long getToDate();
@@ -28,5 +30,13 @@ public interface SPDPlanDateResponse extends IsIdentify, HasOrderNumber {
     Integer getRequiredIp();
 
     Integer getRequiredLocation();
+
+    Integer getRequiredCheckin();
+
+    Integer getRequiredCheckout();
+
+    String getIdTeacher();
+
+    String getNameTeacher();
 
 }

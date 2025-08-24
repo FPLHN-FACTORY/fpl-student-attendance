@@ -1,5 +1,7 @@
 package udpm.hn.studentattendance.infrastructure.exception;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindException;
@@ -11,32 +13,28 @@ import udpm.hn.studentattendance.infrastructure.common.ApiResponse;
 @RestControllerAdvice
 public class GlobalRestExceptionHandler {
 
+    private static final Logger logger = LoggerFactory.getLogger(GlobalRestExceptionHandler.class);
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse> handleException(Exception ex) {
-        ex.printStackTrace();
+        logger.error(ex.getMessage());
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(ApiResponse.error("Có lỗi xảy ra. Vui lòng thử lại sau ít phút", ex.getMessage()));
     }
 
     @ExceptionHandler(BindException.class)
     public ResponseEntity<ApiResponse> handleValidationExceptions(BindException e) {
-        e.printStackTrace();
+        logger.error(e.getMessage(), e);
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(ApiResponse.error(e.getBindingResult().getAllErrors().get(0).getDefaultMessage()));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiResponse> handleValidationException(MethodArgumentNotValidException ex) {
-        ex.printStackTrace();
+        logger.error(ex.getMessage(), ex);
         String errorMessage = ex.getBindingResult().getAllErrors().get(0).getDefaultMessage();
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(ApiResponse.error(errorMessage));
-    }
-
-    @ExceptionHandler(RestApiException.class)
-    public ResponseEntity<ApiResponse> handleValidationException(RestApiException ex) {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(ApiResponse.error(ex.getMessage()));
     }
 
 }

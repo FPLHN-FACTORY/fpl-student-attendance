@@ -5,21 +5,21 @@ import { useRouter } from 'vue-router'
 import requestAPI from '@/services/requestApiService'
 import {
   PlusOutlined,
-  EyeOutlined,
-  EditOutlined,
   ClusterOutlined,
   UnorderedListOutlined,
   FilterFilled,
-  SyncOutlined,
   EditFilled,
   EyeFilled,
+  SearchOutlined,
 } from '@ant-design/icons-vue'
-import { DEFAULT_PAGINATION } from '@/constants'
+import { DEFAULT_PAGINATION, STATUS_TYPE } from '@/constants'
 import useBreadcrumbStore from '@/stores/useBreadCrumbStore'
 import useLoadingStore from '@/stores/useLoadingStore'
 import { API_ROUTES_ADMIN } from '@/constants/adminConstant'
 import { ROUTE_NAMES } from '@/router/adminRoute'
 import { GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
+import { autoAddColumnWidth } from '@/utils/utils'
+import { validateFormSubmission } from '@/utils/validationUtils'
 
 const router = useRouter()
 const breadcrumbStore = useBreadcrumbStore()
@@ -27,6 +27,8 @@ const loadingStore = useLoadingStore()
 
 /* ----------------- Data & Reactive Variables ----------------- */
 const subjects = ref([])
+
+const countFilter = ref(0)
 
 const filter = reactive({
   name: '',
@@ -56,24 +58,25 @@ const detailSubject = reactive({
   sizeSubjectSemester: 0,
 })
 
-const columns = ref([
-  { title: '#', dataIndex: 'indexs', key: 'indexs', width: 50 },
-  { title: 'Tên bộ môn', dataIndex: 'name', key: 'name', width: 200 },
-  { title: 'Mã bộ môn', dataIndex: 'code', key: 'code', width: 150 },
-  {
-    title: 'Cơ sở hoạt động',
-    dataIndex: 'sizeSubjectSemester',
-    key: 'sizeSubjectSemester',
-    width: 150,
-  },
-  { title: 'Trạng thái', dataIndex: 'status', key: 'status', width: 100 },
-  { title: 'Chức năng', key: 'actions', width: 200 },
-])
+const columns = ref(
+  autoAddColumnWidth([
+    { title: '#', key: 'rowNumber' },
+    { title: 'Mã bộ môn', dataIndex: 'code', key: 'code' },
+    { title: 'Tên bộ môn', dataIndex: 'name', key: 'name' },
+    {
+      title: 'Cơ sở hoạt động',
+      dataIndex: 'sizeSubjectSemester',
+      key: 'sizeSubjectSemester',
+    },
+    { title: 'Trạng thái', dataIndex: 'status', key: 'status' },
+    { title: 'Chức năng', key: 'actions' },
+  ]),
+)
 
 const breadcrumb = ref([
   {
     name: GLOBAL_ROUTE_NAMES.ADMIN_PAGE,
-    breadcrumbName: 'Ban đào tạo',
+    breadcrumbName: 'Admin',
   },
   {
     name: ROUTE_NAMES.MANAGEMENT_SUBJECT,
@@ -97,6 +100,7 @@ const fetchSubjects = () => {
       subjects.value = result.data
       pagination.total =
         result.totalElements || result.totalItems || result.totalPages * pagination.pageSize
+      countFilter.value = result.totalItems
     })
     .catch((error) => {
       message.error(error.response?.data?.message || 'Lỗi khi lấy danh sách bộ môn')
@@ -113,34 +117,51 @@ const handleTableChange = (pageInfo) => {
 }
 
 const showAddModal = (isOpen) => {
+  newSubject.code = null
+  newSubject.name = null
   modalAdd.value = isOpen
 }
 
 const handleAddSubject = () => {
-  if (!newSubject.name || !newSubject.name.trim()) {
-    message.error('Vui lòng nhập tên bộ môn')
+  const validation = validateFormSubmission(newSubject, [
+    { key: 'name', label: 'Tên bộ môn' },
+    { key: 'code', label: 'Mã bộ môn', allowOnlyNumbers: true },
+  ])
+
+  if (!validation.isValid) {
+    message.error(validation.message)
     return
   }
-  if (!newSubject.code || !newSubject.code.trim()) {
-    message.error('Vui lòng nhập mã bộ môn')
-    return
-  }
-  loadingStore.show()
-  requestAPI
-    .post(API_ROUTES_ADMIN.FETCH_DATA_SUBJECT, newSubject)
-    .then((response) => {
-      message.success(response.data.message || 'Thêm bộ môn thành công')
-      modalAdd.value = false
-      fetchSubjects()
-      newSubject.name = ''
-      newSubject.code = ''
-    })
-    .catch((error) => {
-      message.error(error.response?.data?.message || 'Lỗi khi thêm bộ môn')
-    })
-    .finally(() => {
-      loadingStore.hide()
-    })
+
+  Modal.confirm({
+    title: `Xác nhận thêm mới`,
+    type: 'info',
+    content: `Bạn có chắc muốn thêm mới bộ môn này?`,
+    okText: 'Tiếp tục',
+    cancelText: 'Hủy bỏ',
+    onOk() {
+      loadingStore.show()
+      requestAPI
+        .post(API_ROUTES_ADMIN.FETCH_DATA_SUBJECT, newSubject)
+        .then((response) => {
+          message.success(response.data.message || 'Thêm bộ môn thành công')
+          modalAdd.value = false
+          fetchSubjects()
+          clearFormAdd()
+        })
+        .catch((error) => {
+          message.error(error.response?.data?.message || 'Lỗi khi thêm bộ môn')
+        })
+        .finally(() => {
+          loadingStore.hide()
+        })
+    },
+  })
+}
+
+const clearFormAdd = () => {
+  newSubject.name = ''
+  newSubject.code = ''
 }
 
 const handleDetailSubject = (record) => {
@@ -177,12 +198,13 @@ const handleUpdateSubject = (record) => {
 }
 
 const updateSubject = () => {
-  if (!detailSubject.name) {
-    message.error('Vui lòng nhập tên bộ môn')
-    return
-  }
-  if (!detailSubject.code) {
-    message.error('Vui lòng nhập mã bộ môn')
+  const validation = validateFormSubmission(detailSubject, [
+    { key: 'name', label: 'Tên bộ môn' },
+    { key: 'code', label: 'Mã bộ môn', allowOnlyNumbers: true },
+  ])
+
+  if (!validation.isValid) {
+    message.error(validation.message)
     return
   }
   loadingStore.show()
@@ -190,7 +212,6 @@ const updateSubject = () => {
     id: detailSubject.id,
     name: detailSubject.name,
     code: detailSubject.code,
-    status: detailSubject.status,
   }
 
   requestAPI
@@ -250,6 +271,19 @@ const getStatusColor = (status) => {
   return status === 'ACTIVE' ? 'green' : 'red'
 }
 
+const handleClearFilter = () => {
+  // Clear all filter values
+  Object.keys(filter).forEach((key) => {
+    filter[key] = ''
+  })
+  handleSubmitFilter()
+}
+
+const handleSubmitFilter = () => {
+  pagination.current = 1
+  fetchSubjects()
+}
+
 onMounted(() => {
   breadcrumbStore.setRoutes(breadcrumb.value)
   fetchSubjects()
@@ -261,94 +295,105 @@ onMounted(() => {
     <!-- Card Bộ lọc tìm kiếm -->
     <div class="row g-3">
       <div class="col-12">
-        <a-card :bordered="false" class="cart mb-3">
-          <template #title> <FilterFilled /> Bộ lọc </template>
-          <a-row :gutter="16" class="filter-container">
-            <!-- Input tìm kiếm theo tên -->
-            <a-col :span="12" class="col">
-              <div class="label-title">Tìm kiếm theo tên:</div>
-              <a-input
-                v-model:value="filter.name"
-                placeholder="Tìm kiếm theo tên"
-                allowClear
-                @change="fetchSubjects"
-              />
-            </a-col>
+        <a-card :bordered="false" class="cart no-body-padding">
+          <a-collapse ghost>
+            <a-collapse-panel>
+              <template #header><FilterFilled /> Bộ lọc ({{ countFilter }})</template>
+              <div class="row g-3 filter-container">
+                <div class="col-md-8 col-sm-6">
+                  <div class="label-title">Từ khoá:</div>
+                  <a-input
+                    v-model:value="filter.name"
+                    placeholder="Nhập tên hoặc mã bộ môn"
+                    allowClear
+                    @change="handleSubmitFilter"
+                  >
+                    <template #prefix>
+                      <SearchOutlined />
+                    </template>
+                  </a-input>
+                </div>
+                <div class="col-md-4 col-sm-6">
+                  <div class="label-title">Trạng thái:</div>
+                  <a-select
+                    v-model:value="filter.status"
+                    placeholder="-- Tất cả trạng thái --"
+                    class="w-100"
+                    @change="handleSubmitFilter"
+                  >
+                    <a-select-option :value="null">-- Tất cả trạng thái --</a-select-option>
+                    <a-select-option value="1">Hoạt động</a-select-option>
+                    <a-select-option value="0">Không hoạt động</a-select-option>
+                  </a-select>
+                </div>
 
-            <!-- Combobox trạng thái -->
-            <a-col :span="12" class="col">
-              <div class="label-title">Trạng thái:</div>
-              <a-select
-                v-model:value="filter.status"
-                placeholder="Chọn trạng thái"
-                allowClear
-                style="width: 100%"
-                @change="fetchSubjects"
-              >
-                <a-select-option :value="null">Tất cả trạng thái</a-select-option>
-                <a-select-option :value="1">Hoạt động</a-select-option>
-                <a-select-option :value="0">Không hoạt động</a-select-option>
-              </a-select>
-            </a-col>
-          </a-row>
+                <div class="col-12">
+                  <div class="d-flex justify-content-center flex-wrap gap-2">
+                    <a-button class="btn-light" @click="handleSubmitFilter">
+                      <FilterFilled /> Lọc
+                    </a-button>
+                    <a-button class="btn-gray" @click="handleClearFilter"> Huỷ lọc </a-button>
+                  </div>
+                </div>
+              </div>
+            </a-collapse-panel>
+          </a-collapse>
         </a-card>
       </div>
-    </div>
 
-    <!-- Card Danh sách bộ môn -->
-    <div class="row g-3">
       <div class="col-12">
         <a-card :bordered="false" class="cart">
           <template #title> <UnorderedListOutlined /> Danh sách bộ môn </template>
-          <div class="d-flex justify-content-end mb-3">
+
+          <div class="d-flex justify-content-end mb-2">
             <a-tooltip title="Thêm bộ môn">
               <a-button type="primary" @click="showAddModal(true)">
-                <PlusOutlined /> Thêm
+                <PlusOutlined /> Thêm bộ môn
               </a-button>
             </a-tooltip>
           </div>
+
           <a-table
+            class="nowrap"
             :dataSource="subjects"
             :columns="columns"
             rowKey="id"
             :pagination="pagination"
             @change="handleTableChange"
             :loading="loadingStore.isLoading"
-            :scroll="{ y: 500, x: 'auto' }"
+            :scroll="{ x: 'auto' }"
           >
             <template #bodyCell="{ column, record, index }">
-              <template v-if="column.dataIndex">
-                <template v-if="column.dataIndex === 'indexs'">
-                  {{ index + 1 }}
-                </template>
-                <template v-else-if="column.dataIndex === 'name'">
-                  <a @click="handleAddSubjectFacility(record)">{{ record.name }}</a>
-                </template>
-                <template v-else-if="column.dataIndex === 'status'">
-                  <span class="nowrap">
-                    <a-switch
-                      class="me-2"
-                      :checked="record.status === 'ACTIVE' || record.status === 1"
-                      @change="confirmChangeStatus(record)"
-                    />
-                    <a-tag
-                      :color="record.status === 'ACTIVE' || record.status === 1 ? 'green' : 'red'"
-                    >
-                      {{
-                        record.status === 'ACTIVE' || record.status === 1
-                          ? 'Hoạt động'
-                          : 'Không hoạt động'
-                      }}
-                    </a-tag>
-                  </span>
-                </template>
-                <template v-else>
-                  {{ record[column.dataIndex] }}
-                </template>
+              <template v-if="column.key === 'rowNumber'">
+                {{ (pagination.current - 1) * pagination.pageSize + index + 1 }}
               </template>
-              <template v-else-if="column.key === 'actions'">
+              <template v-else-if="column.dataIndex === 'name'">
+                <a @click="handleAddSubjectFacility(record)">{{ record.name }}</a>
+              </template>
+              <template v-else-if="column.dataIndex === 'status'">
+                <span class="nowrap">
+                  <a-switch
+                    class="me-2"
+                    :checked="record.status === 'ACTIVE' || record.status === 1"
+                    @change="confirmChangeStatus(record)"
+                  />
+                  <a-tag
+                    :color="record.status === 'ACTIVE' || record.status === 1 ? 'green' : 'red'"
+                  >
+                    {{
+                      record.status === 'ACTIVE' || record.status === 1
+                        ? 'Hoạt động'
+                        : 'Không hoạt động'
+                    }}
+                  </a-tag>
+                </span>
+              </template>
+              <template v-else>
+                {{ record[column.dataIndex] }}
+              </template>
+              <template v-if="column.key === 'actions'">
                 <a-space>
-                  <a-tooltip title="Bộ môn cơ sở">
+                  <a-tooltip title="Bộ môn cơ sở" v-if="record.status === STATUS_TYPE.ENABLE">
                     <a-button
                       @click="handleAddSubjectFacility(record)"
                       type="text"
@@ -386,16 +431,29 @@ onMounted(() => {
     <!-- Modal Thêm bộ môn -->
     <a-modal
       v-model:open="modalAdd"
-      title="Thêm bộ môn"
       @ok="handleAddSubject"
       :okButtonProps="{ loading: loadingStore.isLoading }"
+      @cancel="clearFormAdd"
+      @close="clearFormAdd"
     >
+      <template #title>
+        <PlusOutlined class="me-2 text-primary" />
+        Thêm bộ môn
+      </template>
       <a-form layout="vertical">
         <a-form-item label="Mã bộ môn" required>
-          <a-input v-model:value="newSubject.code" placeholder="Nhập mã bộ môn" />
+          <a-input
+            v-model:value="newSubject.code"
+            placeholder="Nhập mã bộ môn"
+            @keyup.enter="handleAddSubject"
+          />
         </a-form-item>
         <a-form-item label="Tên bộ môn" required>
-          <a-input v-model:value="newSubject.name" placeholder="Nhập tên bộ môn" />
+          <a-input
+            v-model:value="newSubject.name"
+            placeholder="Nhập tên bộ môn"
+            @keyup.enter="handleAddSubject"
+          />
         </a-form-item>
       </a-form>
     </a-modal>
@@ -425,22 +483,27 @@ onMounted(() => {
     <!-- Modal Cập nhật bộ môn -->
     <a-modal
       v-model:open="modalUpdate"
-      title="Cập nhật bộ môn"
       @ok="updateSubject"
       :okButtonProps="{ loading: loadingStore.isLoading }"
     >
+      <template #title>
+        <EditFilled class="me-2 text-primary" />
+        Cập nhật bộ môn
+      </template>
       <a-form layout="vertical">
         <a-form-item label="Mã bộ môn" required>
-          <a-input v-model:value="detailSubject.code" placeholder="Nhập mã bộ môn" />
+          <a-input
+            v-model:value="detailSubject.code"
+            placeholder="Nhập mã bộ môn"
+            @keyup.enter="updateSubject"
+          />
         </a-form-item>
         <a-form-item label="Tên bộ môn" required>
-          <a-input v-model:value="detailSubject.name" placeholder="Nhập tên bộ môn" />
-        </a-form-item>
-        <a-form-item label="Trạng thái">
-          <a-select v-model:value="detailSubject.status" placeholder="Chọn trạng thái">
-            <a-select-option value="ACTIVE">Hoạt động</a-select-option>
-            <a-select-option value="INACTIVE">Không hoạt động</a-select-option>
-          </a-select>
+          <a-input
+            v-model:value="detailSubject.name"
+            placeholder="Nhập tên bộ môn"
+            @keyup.enter="updateSubject"
+          />
         </a-form-item>
       </a-form>
     </a-modal>

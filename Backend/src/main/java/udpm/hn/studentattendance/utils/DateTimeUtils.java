@@ -12,9 +12,9 @@ import java.util.Date;
 
 public class DateTimeUtils {
 
-    public static String DATE_FORMAT = "dd/MM/yyyy";
+    public static final String DATE_FORMAT = "dd/MM/yyyy";
     
-    private static final String ZONE_ID = "Asia/Ho_Chi_Minh";
+    public static final String ZONE_ID = "Asia/Ho_Chi_Minh";
 
     public static Long parseStringToLong(String date) {
         return parseStringToLong(date, DATE_FORMAT);
@@ -29,7 +29,6 @@ public class DateTimeUtils {
             try {
                 return Long.parseLong(date);
             } catch (NumberFormatException ex) {
-                ex.printStackTrace(System.err);
                 return null;
             }
         }
@@ -86,6 +85,10 @@ public class DateTimeUtils {
     public static Long getCurrentTimeMillis() {
         ZonedDateTime now = ZonedDateTime.now(ZoneId.of(ZONE_ID));
         return now.toInstant().toEpochMilli();
+    }
+
+    public static Long getCurrentTimeSecond() {
+        return getCurrentTimeMillis() / 1000;
     }
 
     public static long toStartOfDay(long timestamp) {

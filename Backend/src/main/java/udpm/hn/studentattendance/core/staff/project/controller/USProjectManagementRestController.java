@@ -1,67 +1,62 @@
 package udpm.hn.studentattendance.core.staff.project.controller;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import udpm.hn.studentattendance.core.staff.project.model.request.USProjectCreateRequest;
-import udpm.hn.studentattendance.core.staff.project.model.request.USProjectUpdateRequest;
+import udpm.hn.studentattendance.core.staff.project.model.request.USProjectCreateOrUpdateRequest;
 import udpm.hn.studentattendance.core.staff.project.model.request.USProjectSearchRequest;
 import udpm.hn.studentattendance.core.staff.project.model.response.USLevelProjectResponse;
 import udpm.hn.studentattendance.core.staff.project.model.response.USSemesterResponse;
 import udpm.hn.studentattendance.core.staff.project.model.response.USSubjectResponse;
-import udpm.hn.studentattendance.core.staff.project.service.Staff_ProjectManagementService;
-import udpm.hn.studentattendance.core.staff.project.service.ipml.Staff_LevelProjectManagementService;
-import udpm.hn.studentattendance.core.staff.project.service.ipml.Staff_SemesterManagementService;
-import udpm.hn.studentattendance.core.staff.project.service.ipml.Staff_SubjectFacilityManagementService;
-import udpm.hn.studentattendance.helpers.PaginationHelper;
+import udpm.hn.studentattendance.core.staff.project.service.STLevelProjectManagementService;
+import udpm.hn.studentattendance.core.staff.project.service.STProjectManagementService;
+import udpm.hn.studentattendance.core.staff.project.service.STSemesterManagementService;
+import udpm.hn.studentattendance.core.staff.project.service.STSubjectFacilityManagementService;
+import udpm.hn.studentattendance.entities.Semester;
 import udpm.hn.studentattendance.helpers.SessionHelper;
 import udpm.hn.studentattendance.infrastructure.constants.router.RouteStaffConstant;
 
 import java.util.List;
 
 @RestController
+@RequiredArgsConstructor
 @RequestMapping(RouteStaffConstant.URL_API_PROJECT_MANAGEMENT)
 public class USProjectManagementRestController {
 
-    @Autowired
-    private SessionHelper sessionHelper;
+    private final SessionHelper sessionHelper;
 
-    @Autowired
-    private Staff_ProjectManagementService service;
+    private final STProjectManagementService service;
 
-    @Autowired
-    private Staff_LevelProjectManagementService serviceLevel;
+    private final STLevelProjectManagementService serviceLevel;
 
-    @Autowired
-    private Staff_SemesterManagementService serviceSemester;
+    private final STSemesterManagementService serviceSemester;
 
-    @Autowired
-    private Staff_SubjectFacilityManagementService serviceSubjectFacility;
+    private final STSubjectFacilityManagementService serviceSubjectFacility;
 
-    @PostMapping("/list")
-    public ResponseEntity<?> getListProject(@RequestBody USProjectSearchRequest request) {
-        request.setFacilityId(sessionHelper.getFacilityId());
-        return PaginationHelper.createResponseEntity(service.getListProject(request));
+    @GetMapping("/list")
+    public ResponseEntity<?> getListProject(USProjectSearchRequest request) {
+        return service.getListProject(request);
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<?> getProject(@PathVariable String id) {
-        return PaginationHelper.createResponseEntity(service.detailProject(id));
+        return service.detailProject(id);
     }
 
     @PostMapping
-    public ResponseEntity<?> addProject(@RequestBody USProjectCreateRequest request) {
-        return PaginationHelper.createResponseEntity(service.createProject(request));
+    public ResponseEntity<?> addProject(@Valid @RequestBody USProjectCreateOrUpdateRequest request) {
+        return service.createProject(request);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateProject(@PathVariable String id, @RequestBody USProjectUpdateRequest request) {
-        return PaginationHelper.createResponseEntity(service.updateProject(id, request));
+    public ResponseEntity<?> updateProject(@PathVariable String id, @Valid @RequestBody USProjectCreateOrUpdateRequest request) {
+        return service.updateProject(id, request);
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteProject(@PathVariable String id) {
-        return PaginationHelper.createResponseEntity(service.changeStatus(id));
+    @PutMapping("/change-status/{id}")
+    public ResponseEntity<?> changeStatusProject(@PathVariable String id) {
+        return service.changeStatus(id);
     }
 
     // Get data show combobox
@@ -72,12 +67,22 @@ public class USProjectManagementRestController {
 
     @GetMapping("/semester-combobox")
     public List<USSemesterResponse> getSemester() {
-        return serviceSemester.getComboboxSemester(sessionHelper.getFacilityId());
+        return serviceSemester.getComboboxSemester();
+    }
+
+    @GetMapping("/semester")
+    public List<Semester> getAllSemester() {
+        return serviceSemester.getSemester();
     }
 
     @GetMapping("/subject-facility-combobox")
     public List<USSubjectResponse> getSubjectFacility() {
         return serviceSubjectFacility.getComboboxSubjectFacility(sessionHelper.getFacilityId());
+    }
+
+    @PutMapping("/change-status-semester")
+    public ResponseEntity<?> changeStatusProjectPreviousSemester(){
+        return service.changeAllStatusPreviousSemester();
     }
 
 }

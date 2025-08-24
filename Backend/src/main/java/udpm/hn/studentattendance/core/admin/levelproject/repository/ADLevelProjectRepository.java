@@ -14,7 +14,7 @@ public interface ADLevelProjectRepository extends LevelProjectRepository {
     @Query(value = """
                     select
                         row_number() over(
-                        order by created_at desc) as indexs,
+                        order by created_at desc) as orderNumber,
                         id as id,
                         name as name,
                         description as description,
@@ -27,7 +27,7 @@ public interface ADLevelProjectRepository extends LevelProjectRepository {
                             or code LIKE CONCAT('%', :#{#request.name}, '%')
                             )
                         AND (:#{#request.status} IS NULL OR status = :#{#request.status})
-                    ORDER BY created_at DESC
+                    ORDER BY status DESC, created_at DESC
             """, countQuery = """
                     select
                         count(*)
@@ -39,4 +39,16 @@ public interface ADLevelProjectRepository extends LevelProjectRepository {
                         AND (:#{#request.status} IS NULL OR status = :#{#request.status})
             """, nativeQuery = true)
     Page<ADLevelProjectResponse> getAll(Pageable pageable, ADLevelProjectSearchRequest request);
+
+    @Query(value = """
+                SELECT
+                    CASE WHEN COUNT(*) > 0 THEN 'TRUE' ELSE 'FALSE' END
+                FROM level_project
+                WHERE
+                    status = 1 AND
+                    code = :code AND
+                    (:idLevelProject IS NULL OR id != :idLevelProject)
+            """, nativeQuery = true)
+    boolean isExistsLevelProject(String code, String idLevelProject);
+
 }
