@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import useFaceIDStore from '@/stores/useFaceIDStore'
 import { CheckOutlined } from '@ant-design/icons-vue'
 
@@ -8,9 +8,43 @@ const video = ref(null)
 const canvas = ref(null)
 const axis = ref(null)
 
+const isShow = ref(false)
+
+const hasAction = computed(() => {
+  const actions = faceIDStore.renderAction()
+  return Object.values(actions).some((v) => v)
+})
+
+let intervalId = null
+let timeoutId = null
+
 onMounted(async () => {
   faceIDStore.setup(video, canvas, axis)
   await faceIDStore.loadModels()
+
+  watch(hasAction, (newVal) => {
+    clearInterval(intervalId)
+    clearTimeout(timeoutId)
+
+    if (newVal) {
+      const run = () => {
+        isShow.value = true
+        timeoutId = setTimeout(() => {
+          isShow.value = false
+        }, 1500)
+      }
+
+      run()
+      intervalId = setInterval(run, 4000)
+    } else {
+      isShow.value = false
+    }
+  })
+})
+
+onUnmounted(() => {
+  clearInterval(intervalId)
+  clearTimeout(timeoutId)
 })
 </script>
 
@@ -72,6 +106,9 @@ onMounted(async () => {
           <div class="a-y__top"></div>
           <div class="a-y__bottom"></div>
         </div>
+      </div>
+      <div class="step-action" :class="{ show: isShow && !faceIDStore.count }">
+        <div :class="faceIDStore.renderAction()"></div>
       </div>
     </div>
     <div class="face-background"></div>
