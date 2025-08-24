@@ -19,6 +19,7 @@ const MAX_BRIGHTNESS = isMobile ? 90 : 100
 const THRESHOLD_LIGHT = 40
 const SIZE_CAMERA = 480
 const CHECK_DISTANCE = true
+const DELAY_SUCCESS = 5000
 
 const useFaceIDStore = defineStore('faceID', () => {
   let isFullStep = false
@@ -505,7 +506,7 @@ const useFaceIDStore = defineStore('faceID', () => {
         console.error(error)
       }
 
-      await delay(3000)
+      await delay(DELAY_SUCCESS)
       lstDescriptor.value = []
       faceDescriptor = null
       step.value = 0
@@ -981,8 +982,7 @@ const useFaceIDStore = defineStore('faceID', () => {
     let detectAxiesTimeoutId = null
     const detectLoop = async () => {
       if (!isRunScan.value) return clearTimeout(detectTimeoutId)
-
-      if (isLoadingModels.value && video.value?.readyState === 4) {
+      if (isLoadingModels.value && video.value?.readyState === 4 && !isSuccess.value) {
         await runTask()
         if (isLoading.value) {
           isLoading.value = false
@@ -995,7 +995,7 @@ const useFaceIDStore = defineStore('faceID', () => {
     const detectAxies = async () => {
       if (!isRunScan.value) return clearTimeout(detectAxiesTimeoutId)
 
-      if (isLoadingModels.value && video.value?.readyState === 4) {
+      if (isLoadingModels.value && video.value?.readyState === 4 && !isSuccess.value) {
         await getFaceAngle()
         if (isLoading.value) {
           isLoading.value = false
