@@ -49,12 +49,12 @@ const styles = StyleSheet.create({
   },
   item: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   dot: {
-    height: 4,
-    width: 4,
+    height: 6,
+    width: 6,
     borderRadius: 999,
-    backgroundColor: Colors.primary,
+    backgroundColor: Colors.error,
     position: 'absolute',
-    top: 16,
+    top: 0,
     left: 0,
   },
 })

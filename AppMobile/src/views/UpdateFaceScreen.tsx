@@ -1,6 +1,7 @@
 import { RootStackParamList } from '@/types/RootStackParamList'
 import {
   base64ToFile,
+  generateSignature,
   logout,
   unlinkBase64ToFile,
   UPPER_HEADER_HEIGHT,
@@ -23,6 +24,7 @@ import requestAPI from '@/services/requestApiService'
 import { API_ROUTES } from '@/constants/ApiRoutes'
 import { useLoading } from '@/components/loading/LoadingContext'
 import { useGlobalSnackbar } from '@/components/GlobalSnackbarProvider'
+import { useGlobalStore } from '@/utils/GlobalStore'
 
 type Props = NativeStackScreenProps<RootStackParamList, 'UpdateFace'>
 
@@ -37,6 +39,8 @@ const UpdateFaceScreen: React.FC<Props> = ({ navigation }) => {
 
   const [visible, setVisible] = useState(false)
   const [image, setImage] = useState('')
+
+  const studentInfo = useGlobalStore((state) => state.studentInfo)
 
   const handleLogout = async () => {
     await logout()
@@ -56,6 +60,7 @@ const UpdateFaceScreen: React.FC<Props> = ({ navigation }) => {
       .put(`${API_ROUTES.FETCH_DATA_STUDENT_UPDATE_FACEID}`, data, {
         headers: {
           'Content-Type': 'multipart/form-data',
+          'X-Signature': generateSignature(studentInfo.id, file.size),
         },
       })
       .then(({ data: response }) => {

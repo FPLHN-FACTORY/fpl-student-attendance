@@ -35,8 +35,10 @@ import { LMap, LMarker, LTileLayer } from '@vue-leaflet/vue-leaflet'
 
 import 'leaflet/dist/leaflet.css'
 import WebcamFaceID from '@/components/faceid/WebcamFaceID.vue'
+import useAuthStore from '@/stores/useAuthStore'
 
 const applicationStore = useApplicationStore()
+const authStore = useAuthStore()
 const faceIDStore = useFaceIDStore()
 const loadingPage = useLoadingStore()
 
@@ -226,12 +228,14 @@ const handleSubmitAttendance = () => {
 const handleSubmitUpdateInfo = () => {
   loadingPage.show()
   const data = new FormData()
-  data.append('image', base64ToBlob(formData.image))
+  const dataImage = base64ToBlob(formData.image)
+  data.append('image', dataImage)
 
   requestAPI
     .put(`${ROUTE_NAMES_API.FETCH_DATA_UPDATE_FACEID}`, data, {
       headers: {
         'Content-Type': 'multipart/form-data',
+        'X-Signature': generateSignature(authStore.user.id, dataImage.size),
       },
     })
     .then(({ data: response }) => {

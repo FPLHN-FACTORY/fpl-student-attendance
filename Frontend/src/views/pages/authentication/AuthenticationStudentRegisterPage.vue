@@ -12,7 +12,7 @@ import { message, Modal } from 'ant-design-vue'
 import { BASE_URL, GLOBAL_ROUTE_NAMES } from '@/constants/routesConstant'
 import useFaceIDStore from '@/stores/useFaceIDStore'
 import WebcamFaceID from '@/components/faceid/WebcamFaceID.vue'
-import { base64ToBlob } from '@/utils/utils'
+import { base64ToBlob, generateSignature } from '@/utils/utils'
 
 const router = useRouter()
 
@@ -79,12 +79,14 @@ const fetchSubmitRegister = () => {
     if (key === 'image') return
     data.append(key, value)
   })
-  data.append('image', base64ToBlob(formData.image))
+  const dataImage = base64ToBlob(formData.image)
+  data.append('image', dataImage)
 
   requestAPI
     .put(`${ROUTE_NAMES_API.FETCH_DATA_REGISTER}`, data, {
       headers: {
         'Content-Type': 'multipart/form-data',
+        'X-Signature': generateSignature(authStore.user.id, dataImage.size),
       },
     })
     .then(({ data: response }) => {

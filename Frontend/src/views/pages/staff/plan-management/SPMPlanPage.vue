@@ -59,7 +59,7 @@ const columns = ref(
     { title: 'Nhóm dự án', dataIndex: 'level', key: 'level' },
     { title: 'Ngày diễn ra', dataIndex: 'semesterName', key: 'semesterName' },
     {
-      title: 'Checkin/checkout muộn',
+      title: 'Checkin/checkout bù',
       dataIndex: 'maxLateArrival',
       key: 'maxLateArrival',
       align: 'center',
@@ -623,7 +623,7 @@ watch(
 
       <a-form-item
         class="col-sm-4"
-        label="Checkin/checkout muộn"
+        label="Checkin/checkout bù (%)"
         name="maxLateArrival"
         :rules="formRules.maxLateArrival"
       >
