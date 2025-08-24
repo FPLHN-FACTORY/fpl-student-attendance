@@ -10,14 +10,15 @@ import * as ort from 'onnxruntime-web'
 const isMobile = isProbablyMobile()
 
 const THRESHOLD_P = 0.2
-const THRESHOLD_X = 0.1
+const THRESHOLD_X = 0.05
 const THRESHOLD_Y = 0.12
+const THRESHOLD_R = 0.07
 const THRESHOLD_EMOTIONS = 0.8
-const MIN_BRIGHTNESS = isMobile ? 30 : 40
-const MAX_BRIGHTNESS = isMobile ? 90 : 110
-const THRESHOLD_LIGHT = 30
+const MIN_BRIGHTNESS = isMobile ? 30 : 35
+const MAX_BRIGHTNESS = isMobile ? 90 : 100
+const THRESHOLD_LIGHT = 40
 const SIZE_CAMERA = 480
-const SKIP_FRAME = 30
+const SKIP_FRAME = 10
 const CHECK_DISTANCE = true
 
 const useFaceIDStore = defineStore('faceID', () => {
@@ -383,7 +384,7 @@ const useFaceIDStore = defineStore('faceID', () => {
         return
       }
 
-      const { yaw, pitch } = face.rotation?.angle || {}
+      const { yaw, pitch, roll } = face.rotation?.angle || {}
 
       const yawDeg = toDegrees(yaw)
       const pitchDeg = toDegrees(pitch)
@@ -393,6 +394,7 @@ const useFaceIDStore = defineStore('faceID', () => {
       if (
         Math.abs(yaw) < THRESHOLD_X &&
         Math.abs(pitch) < THRESHOLD_P &&
+        Math.abs(roll) < THRESHOLD_R &&
         human.result.gesture.some((o) => o.gesture.includes('facing center'))
       ) {
         return 0
@@ -463,6 +465,7 @@ const useFaceIDStore = defineStore('faceID', () => {
     }
 
     const rollback = (text) => {
+      console.log(step.value)
       if (step.value !== 3) {
         lstDescriptor.value.pop()
         step.value = Math.max(0, step.value - 1)
@@ -568,9 +571,9 @@ const useFaceIDStore = defineStore('faceID', () => {
             o.gesture.includes('blink left eye') ||
             o.gesture.includes('blink right eye'),
         ) &&
-          Math.abs(pitch) > 0.2) ||
-        Math.abs(roll) > 0.07 ||
-        Math.abs(yaw) > 0.07
+          Math.abs(pitch) > THRESHOLD_P) ||
+        Math.abs(roll) > THRESHOLD_R ||
+        Math.abs(yaw) > THRESHOLD_X
       ) {
         return []
       }
@@ -858,7 +861,7 @@ const useFaceIDStore = defineStore('faceID', () => {
         return
       }
 
-      if (isFullStep || (!isFullStep && (step.value === 0 || step.value === 3))) {
+      if (!isFullStep && (step.value === 0 || step.value === 3)) {
         const halfImageData = await getHalfImageData()
         if (!(await isLightBalance(halfImageData))) {
           return renderTextStep('Ánh sáng không đều. Vui lòng thử lại')
@@ -869,13 +872,32 @@ const useFaceIDStore = defineStore('faceID', () => {
         if (await isLightTooBright(halfImageData)) {
           return renderTextStep('Camera quá sáng, Vui lòng giảm độ sáng')
         }
-      }
 
-      if (!isFullStep) {
+        const { pitch, roll } = detection.rotation?.angle || {}
+
+        if (
+          human.result.gesture.some((o) => o.gesture.includes('head up')) &&
+          Math.abs(pitch) > THRESHOLD_P
+        ) {
+          return renderTextStep('Vui lòng không ngẩng mặt')
+        }
+
+        if (
+          human.result.gesture.some((o) => o.gesture.includes('head down')) &&
+          Math.abs(pitch) > THRESHOLD_P
+        ) {
+          return renderTextStep('Vui lòng không cúi mặt')
+        }
+
+        if (Math.abs(roll) > THRESHOLD_R) {
+          return renderTextStep('Vui lòng không nghiêng đầu')
+        }
         if (await isReaction()) {
           return renderTextStep('Vui lòng không biểu cảm')
         }
+      }
 
+      if (!isFullStep) {
         if (await isWithGlasses()) {
           step.value = 0
           return renderTextStep('Vui lòng không nhắm mắt hoặc đeo kính')

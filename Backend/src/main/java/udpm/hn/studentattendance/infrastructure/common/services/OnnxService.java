@@ -43,7 +43,7 @@ public class OnnxService {
 
     private static final int SIZE_ANTISPOOF = 224;
     private static final int SIZE_ANTISPOOF2 = 112;
-    private static final int SIZE_ANTISPOOF3 = 224;
+    private static final int SIZE_ANTISPOOF3 = 128;
     private static final int SIZE_ANTISPOOF4 = 224;
     private static final int SIZE_ARCFACE = 112;
     private static final int SIZE_DETECT = 128;
@@ -182,7 +182,7 @@ public class OnnxService {
 
         return Criteria.builder()
                 .setTypes(byte[].class, float[].class)
-                .optModelPath(Paths.get(modelPath, "model_quantized.onnx").toAbsolutePath())
+                .optModelPath(Paths.get(modelPath, "AntiSpoofing_bin_1.5_128.onnx").toAbsolutePath())
                 .optEngine("OnnxRuntime")
                 .optOption("executionProvider", "CPUExecutionProvider")
                 .optOption("device", "cpu")
@@ -384,9 +384,7 @@ public class OnnxService {
             float brightness = hsv[2];
 
             if (sat > 0.1 && hue >= 120 && hue <= 240) return true;
-            if (sat <= 0.2 && brightness >= 0.85) return true;
-
-            return false;
+            return sat <= 0.2 && brightness >= 0.85;
         }
     }
 
@@ -449,7 +447,7 @@ public class OnnxService {
         try {
             float[] result = predictor.predict(imgBytes);
             float[] softmax = softmax(result);
-            return softmax[1];
+            return softmax[0];
         } finally {
             antiSpoof3PredictorPool.put(predictor);
         }
@@ -521,34 +519,65 @@ public class OnnxService {
             }
 
             if (isColorFake(faceDetected)) {
-                System.out.println("isColorFake");
                 return true;
             }
 
-            float antiSpoof = antiSpoof(faceDetected);
+            float antiSpoof = antiSpoof(faceBox);
             float antiSpoof2 = antiSpoof2(faceDetected);
             float antiSpoof3 = antiSpoof3(faceDetected);
-            float antiSpoof4 = antiSpoof4(faceBox);
+            float antiSpoof4 = antiSpoof4(faceDetected);
+
+            if(antiSpoof > 0.7 && antiSpoof3 > 0.7 && antiSpoof4 > 0.7) {
+                return false;
+            }
+
+            if (antiSpoof > 0.9999 || antiSpoof4 > 0.9999 || antiSpoof3 > 0.99) {
+                return false;
+            }
+
+            int score = 0;
+            if (antiSpoof > 0.8) {
+                score++;
+            }
+            if (antiSpoof3 > 0.7) {
+                score++;
+            }
+            if (antiSpoof4 > 0.8) {
+                score++;
+            }
+
+            if (score > 1) {
+                return false;
+            }
+
+            int scoreF = 0;
+            if (antiSpoof < 0.1) {
+                scoreF++;
+            }
+            if (antiSpoof3 < 0.1) {
+                scoreF++;
+            }
+            if (antiSpoof4 < 0.1) {
+                scoreF++;
+            }
+
+            if (scoreF > 1) {
+                return true;
+            }
+
+            if (antiSpoof < 0.00001 || antiSpoof2 < 0.00001 || antiSpoof3 < 0.00001 || antiSpoof4 < 0.00001) {
+                return true;
+            }
 
             List<Boolean> checking = new ArrayList<>();
             checking.add(antiSpoof < 0.6);
             checking.add(antiSpoof2 < 0.7);
-            checking.add(antiSpoof3 < 0.6);
+            checking.add(antiSpoof3 < 0.01);
             checking.add(antiSpoof4 < 0.6);
-
-            System.out.println("antiSpoof: " + antiSpoof);
-            System.out.println("antiSpoof2: " + antiSpoof2);
-            System.out.println("antiSpoof3: " + antiSpoof3);
-            System.out.println("antiSpoof4: " + antiSpoof4);
-
-            System.out.println(checking);
-
+            
             long totalReject = checking.stream().filter(Boolean::booleanValue).count();
 
-            if ((antiSpoof > 0.99 || antiSpoof4 > 0.99) && totalReject < 2) {
-                return false;
-            }
-            return totalReject > 2 || (antiSpoof < 0.02 || antiSpoof4 < 0.02);
+            return totalReject > 1 || (antiSpoof < 0.01 || antiSpoof3 < 0.01 ||  antiSpoof4 < 0.016);
         } catch (Exception e) {
             return true;
         }
