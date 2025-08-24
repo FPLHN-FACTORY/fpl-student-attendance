@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import udpm.hn.studentattendance.helpers.ValidateHelper;
 
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -17,9 +19,13 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class AppUtils {
+
+    private static int TIME_LIVE_SIGN = 5;
 
     public static String imageUrlToBase64(String imageUrl) {
         try {
@@ -66,18 +72,20 @@ public class AppUtils {
     }
 
     public static String getClientIP(HttpServletRequest request) {
-        String ip = request.getHeader("X-Forwarded-For");
+        String ip = request.getHeader("CF-Connecting-IP");
+
+        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getHeader("X-Forwarded-For");
+            if (ip != null && !ip.isEmpty() && !"unknown".equalsIgnoreCase(ip)) {
+                ip = ip.split(",")[0].trim();
+            }
+        }
+
         if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
             ip = request.getRemoteAddr();
-        } else {
-            ip = ip.split(",")[0].trim();
         }
 
-        if (ValidateHelper.isLocalhost(ip)) {
-            ip = getPublicIP();
-        }
-
-        if (ip != null && ip.contains(":")) {
+        if (ValidateHelper.isLocalhost(ip) || (ip != null && ip.contains(":"))) {
             ip = getPublicIP();
         }
 
@@ -99,6 +107,33 @@ public class AppUtils {
             return jsonNode.get("ip").asText();
         } catch (Exception e) {
             return null;
+        }
+    }
+
+    public static boolean isSignatureValidated(String request_signature, String data, String secret_key) {
+        if (request_signature == null || request_signature.isEmpty()) {
+            return false;
+        }
+
+        try {
+            Set<String> serverSignature = new HashSet<>();
+            for (int i = 0; i < TIME_LIVE_SIGN; i++) {
+                long timestamp = DateTimeUtils.getCurrentTimeSecond() - i;
+                String toSign = data + "|" + timestamp;
+                Mac mac = Mac.getInstance("HmacSHA256");
+                mac.init(new SecretKeySpec(secret_key.getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
+                byte[] hash = mac.doFinal(toSign.getBytes(StandardCharsets.UTF_8));
+                StringBuilder sb = new StringBuilder();
+                for (byte b : hash) {
+                    sb.append(String.format("%02x", b));
+                }
+                String signature = sb.toString();
+                serverSignature.add(signature);
+            }
+
+            return serverSignature.contains(request_signature);
+        } catch (Exception e) {
+            return false;
         }
     }
 

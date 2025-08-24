@@ -1,6 +1,7 @@
 <script setup>
 import { onMounted, ref } from 'vue'
 import useFaceIDStore from '@/stores/useFaceIDStore'
+import { CheckOutlined } from '@ant-design/icons-vue'
 
 const faceIDStore = useFaceIDStore()
 const video = ref(null)
@@ -22,8 +23,10 @@ onMounted(async () => {
         {{ faceIDStore.count }}
       </div>
     </transition>
-
     <div class="face-id-step" :class="faceIDStore.renderStyle()">
+      <div class="bg-success">
+        <CheckOutlined />
+      </div>
       <div class="dot"></div>
       <div class="dot"></div>
       <div class="dot"></div>

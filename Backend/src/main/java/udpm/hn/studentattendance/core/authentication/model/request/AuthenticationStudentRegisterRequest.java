@@ -25,4 +25,6 @@ public class AuthenticationStudentRegisterRequest {
     @NotBlank(message = "Họ và tên sinh viên không được bỏ trống")
     private String name;
 
+    private String signature;
+
 }

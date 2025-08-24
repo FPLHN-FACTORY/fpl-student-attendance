@@ -1,6 +1,7 @@
 package udpm.hn.studentattendance.helpers;
 
 import jakarta.mail.MessagingException;
+import jakarta.mail.internet.InternetAddress;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -29,6 +30,9 @@ public class MailerHelper {
     private static final Logger logger = LoggerFactory.getLogger(MailerHelper.class);
 
     private final JavaMailSender mailSender;
+
+    @Value("${spring.mail.name}")
+    private String fromName;
 
     @Value("${spring.mail.username}")
     private String fromDefault;
@@ -99,7 +103,7 @@ public class MailerHelper {
             String from = request.getFrom() != null ? request.getFrom() : fromDefault;
 
             mimeMessageHelper = new MimeMessageHelper(mimeMessage, true, StandardCharsets.UTF_8.toString());
-            mimeMessageHelper.setFrom(from);
+            mimeMessageHelper.setFrom(new InternetAddress(from, fromName));
             mimeMessageHelper.setTo(request.getTo());
             mimeMessageHelper.setReplyTo(from);
 
