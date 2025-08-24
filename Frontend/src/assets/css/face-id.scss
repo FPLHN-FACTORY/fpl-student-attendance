@@ -299,7 +299,7 @@
         background-size: 164px auto;
         width: 164px;
         height: 164px;
-        animation: turn 0.4s steps(7) forwards;
+        animation: turn 0.3s steps(7) forwards;
       }
       .turn-left {
         background-repeat: no-repeat;
@@ -308,7 +308,7 @@
         transform: scaleX(-1);
         width: 164px;
         height: 164px;
-        animation: turn 0.4s steps(7) forwards;
+        animation: turn 0.3s steps(7) forwards;
       }
     }
 

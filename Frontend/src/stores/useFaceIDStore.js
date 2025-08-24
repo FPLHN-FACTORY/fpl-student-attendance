@@ -862,6 +862,8 @@ const useFaceIDStore = defineStore('faceID', () => {
         }
         isReady.value = false
         isShowLookAhead.value = true
+        isShowActionTurnLeft.value = false
+        isShowActionTurnRight.value = false
         return renderTextStep('Vui lòng nhìn vào camera')
       }
       error = 0
@@ -873,7 +875,7 @@ const useFaceIDStore = defineStore('faceID', () => {
         return
       }
 
-      isShowLookAhead.value = step.value === 3 || step.value === 0
+      isShowLookAhead.value = false
 
       if (isFullStep || (!isFullStep && (step.value === 0 || step.value === 3))) {
         if (!isInsideCenter(faceBoxRaw)) {
@@ -1001,6 +1003,7 @@ const useFaceIDStore = defineStore('faceID', () => {
           if (step.value === 2 && angle === 1 && isReal) {
             await delay(500)
             step.value = 3
+            isShowLookAhead.value = true
             isShowActionTurnRight.value = false
             isShowActionTurnLeft.value = false
             renderTextStep()

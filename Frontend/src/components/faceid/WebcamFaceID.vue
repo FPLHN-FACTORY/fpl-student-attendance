@@ -15,37 +15,30 @@ const hasAction = computed(() => {
   return Object.values(actions).some((v) => v)
 })
 
-let intervalId = null
 let timeoutId = null
+
+const loop = () => {
+  if (!hasAction.value) return
+
+  isShow.value = true
+  timeoutId = setTimeout(() => {
+    isShow.value = false
+    timeoutId = setTimeout(loop, 2500)
+  }, 1000)
+}
+
+watch(hasAction, (newVal) => {
+  clearTimeout(timeoutId)
+  if (newVal) loop()
+  else isShow.value = false
+})
 
 onMounted(async () => {
   faceIDStore.setup(video, canvas, axis)
   await faceIDStore.loadModels()
-
-  watch(hasAction, (newVal) => {
-    clearInterval(intervalId)
-    clearTimeout(timeoutId)
-
-    if (newVal) {
-      const run = () => {
-        isShow.value = true
-        timeoutId = setTimeout(() => {
-          isShow.value = false
-        }, 1500)
-      }
-
-      run()
-      intervalId = setInterval(run, 4000)
-    } else {
-      isShow.value = false
-    }
-  })
 })
 
-onUnmounted(() => {
-  clearInterval(intervalId)
-  clearTimeout(timeoutId)
-})
+onUnmounted(() => clearTimeout(timeoutId))
 </script>
 
 <template>
