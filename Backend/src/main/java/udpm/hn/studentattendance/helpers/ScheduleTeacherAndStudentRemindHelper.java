@@ -26,7 +26,7 @@ public class ScheduleTeacherAndStudentRemindHelper {
     private final CommonScheduleReminderRepository commonScheduleReminderRepository;
     private final MailerHelper mailerHelper;
 
-    @Value("${app.config.app-name:Student Attendance}")
+    @Value("${app.config.app-name}")
     private String appName;
 
     private static final String ZONE_ID = "Asia/Ho_Chi_Minh";
@@ -177,6 +177,7 @@ public class ScheduleTeacherAndStudentRemindHelper {
             content.append("<th>Thời gian</th>");
             content.append("<th>Ca</th>");
             content.append("<th>Phòng</th>");
+            content.append("<th>Link</th>");
             content.append("<th>Mô tả</th>");
             content.append("</tr>");
             content.append("</thead>");
@@ -195,10 +196,13 @@ public class ScheduleTeacherAndStudentRemindHelper {
 
                 content.append("<td class='shift-cell'>Ca ").append(planDate.getShift()).append("</td>");
 
-                content.append("<td class='room-cell'>").append(planDate.getRoom() != null ? planDate.getRoom() : "N/A")
+                content.append("<td class='room-cell'>").append(planDate.getRoom() != null ? planDate.getRoom() : "")
                         .append("</td>");
 
-                content.append("<td>").append(planDate.getDescription() != null ? planDate.getDescription() : "N/A")
+                content.append("<td>").append(planDate.getLink() != null ? planDate.getLink() : "");
+                content.append("</td>");
+
+                content.append("<td>").append(planDate.getDescription() != null ? planDate.getDescription() : "")
                         .append("</td>");
 
                 content.append("</tr>");
