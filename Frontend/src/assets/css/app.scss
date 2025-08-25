@@ -574,6 +574,9 @@ hr {
       & > td {
         background: #fff !important;
       }
+      & th {
+        padding: 4px 16px !important;
+      }
     }
 
     .ant-table-cell-fix-right {

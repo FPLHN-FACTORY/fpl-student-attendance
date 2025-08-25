@@ -622,6 +622,7 @@ const useFaceIDStore = defineStore('faceID', () => {
       await delay(1000)
       embedding.value = null
       count.value = startCount
+      isShowLookAhead.value = false
       while (count.value > endCount) {
         renderTextStep('Vui lòng giữ nguyên...')
 

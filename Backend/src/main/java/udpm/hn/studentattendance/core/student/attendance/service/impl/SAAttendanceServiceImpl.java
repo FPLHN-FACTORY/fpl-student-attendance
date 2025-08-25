@@ -234,7 +234,9 @@ public class SAAttendanceServiceImpl implements SAAttendanceService {
             }
 
             float[] faceEmbedding = onnxService.getEmbedding(image.getBytes());
-
+            if (faceEmbedding == null || faceEmbedding.length < 1) {
+                return RouterHelper.responseError("Dữ liệu khuôn mặt không hợp lệ");
+            }
             float[] storedEmbedding = FaceRecognitionUtils.parseEmbedding(userStudent.getFaceEmbedding());
 
             boolean isMatch = FaceRecognitionUtils.isSameFace(faceEmbedding, storedEmbedding, FACE_THRESHOLD_CHECKIN);

@@ -68,6 +68,17 @@ export const dayOfWeek = (timestamp) => {
   }
 }
 
+export const isToday = (ms) => {
+  const inputDate = new Date(ms)
+
+  const now = new Date()
+  return (
+    inputDate.getFullYear() === now.getFullYear() &&
+    inputDate.getMonth() === now.getMonth() &&
+    inputDate.getDate() === now.getDate()
+  )
+}
+
 export const colorDayOfWeek = (timestamp) => {
   const inputDate = new Date(timestamp)
   const daysOfWeek = ['red', 'green', 'cyan', 'blue', 'purple', 'orange', 'pink']

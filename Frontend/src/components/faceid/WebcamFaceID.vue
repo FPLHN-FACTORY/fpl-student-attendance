@@ -29,7 +29,7 @@ const loop = () => {
 }
 const handleAction = debounce((newVal) => {
   clearTimeout(timeoutId)
-  if (newVal) timeoutId = setTimeout(loop, 1500)
+  if (newVal) timeoutId = setTimeout(loop, 500)
   else isShow.value = false
 }, 300)
 
