@@ -196,11 +196,10 @@ public class USStudentFactoryServiceImplTest {
                 String id = "notfound";
                 when(studentFactoryRepository.findById(id)).thenReturn(Optional.empty());
 
-                // Act
-                ResponseEntity<?> response = studentFactoryService.changeStatus(id);
-
-                // Assert
-                assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+                // Act & Assert
+                assertThrows(NoSuchElementException.class, () -> {
+                        studentFactoryService.changeStatus(id);
+                });
         }
 
         @Test

@@ -100,9 +100,10 @@ class AuthenticationRestControllerTest {
     void testStudentRegister() {
         AuthenticationStudentRegisterRequest req = new AuthenticationStudentRegisterRequest();
         MultipartFile image = mock(MultipartFile.class);
+        String signature = "test-signature";
         when(authenticationService.studentRegister(req, image))
                 .thenReturn((ResponseEntity) ResponseEntity.ok("registered"));
-        ResponseEntity<?> res = controller.studentRegister(req, image);
+        ResponseEntity<?> res = controller.studentRegister(req, image, signature);
         assertEquals(200, res.getStatusCode().value());
         assertEquals("registered", res.getBody());
     }
@@ -110,9 +111,10 @@ class AuthenticationRestControllerTest {
     @Test
     void testStudentUpdateFaceID() {
         MultipartFile image = mock(MultipartFile.class);
-        when(authenticationService.studentUpdateFaceID(image))
+        String signature = "test-signature";
+        when(authenticationService.studentUpdateFaceID(image, signature))
                 .thenReturn((ResponseEntity) ResponseEntity.ok("updated"));
-        ResponseEntity<?> res = controller.studentUpdateFaceID(image);
+        ResponseEntity<?> res = controller.studentUpdateFaceID(image, signature);
         assertEquals(200, res.getStatusCode().value());
         assertEquals("updated", res.getBody());
     }

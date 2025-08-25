@@ -28,7 +28,7 @@ import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
 import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
 import udpm.hn.studentattendance.infrastructure.common.ApiResponse;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
-
+import udpm.hn.studentattendance.infrastructure.common.repositories.CommonPlanDateRepository;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.RedisPrefixConstant;
 import udpm.hn.studentattendance.infrastructure.config.redis.service.RedisService;
@@ -64,6 +64,9 @@ class ADSubjectFacilityServiceImplTest {
 
     @Mock
     private RedisCacheHelper redisCacheHelper;
+
+    @Mock
+    private CommonPlanDateRepository commonPlanDateRepository;
 
     @InjectMocks
     private ADSubjectFacilityServiceImpl subjectFacilityService;

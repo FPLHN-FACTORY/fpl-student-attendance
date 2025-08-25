@@ -63,6 +63,9 @@ class AFFacilityServiceImplTest {
     @Mock
     private RedisCacheHelper redisCacheHelper;
 
+    @Mock
+    private udpm.hn.studentattendance.infrastructure.common.repositories.CommonPlanDateRepository commonPlanDateRepository;
+
     @InjectMocks
     private AFFacilityServiceImpl facilityService;
 
@@ -242,7 +245,8 @@ class AFFacilityServiceImplTest {
     void testUpdateFacilityNotFound() {
         // Given
         String facilityId = "non-existent-id";
-        AFCreateUpdateFacilityRequest request = mock(AFCreateUpdateFacilityRequest.class);
+        AFCreateUpdateFacilityRequest request = new AFCreateUpdateFacilityRequest();
+        request.setFacilityName("Test Facility"); // Set the facility name to avoid NullPointerException
 
         when(facilityRepository.findById(facilityId)).thenReturn(Optional.empty());
 

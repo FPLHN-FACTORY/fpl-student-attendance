@@ -35,6 +35,11 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
+import udpm.hn.studentattendance.entities.PlanFactory;
+import udpm.hn.studentattendance.entities.Factory;
+import udpm.hn.studentattendance.entities.Plan;
+import udpm.hn.studentattendance.entities.PlanDate;
+
 @ExtendWith(MockitoExtension.class)
 class SPDPlanDateServiceImplTest {
 
@@ -147,8 +152,21 @@ class SPDPlanDateServiceImplTest {
         SPDPlanDateResponse planDateResponse = mock(SPDPlanDateResponse.class);
         when(planDateResponse.getId()).thenReturn(planDateId);
         when(planDateResponse.getStartDate()).thenReturn(startDate);
+        when(planDateResponse.getShift()).thenReturn("Morning");
+
+        // Mock PlanDate with nested objects for logging
+        PlanDate planDate = mock(PlanDate.class);
+        PlanFactory planFactory = mock(PlanFactory.class);
+        Factory factory = mock(Factory.class);
+        Plan plan = mock(Plan.class);
+        when(factory.getName()).thenReturn("Test Factory");
+        when(plan.getName()).thenReturn("Test Plan");
+        when(planFactory.getFactory()).thenReturn(factory);
+        when(planFactory.getPlan()).thenReturn(plan);
+        when(planDate.getPlanFactory()).thenReturn(planFactory);
 
         when(planDateRepository.getPlanDateById(planDateId, facilityId)).thenReturn(Optional.of(planDateResponse));
+        when(planDateRepository.findById(planDateId)).thenReturn(Optional.of(planDate));
         when(planDateRepository.deletePlanDateById(eq(facilityId), anyList())).thenReturn(1);
 
         doNothing().when(userActivityLogHelper).saveLog(anyString());
@@ -160,7 +178,7 @@ class SPDPlanDateServiceImplTest {
         assertEquals(HttpStatus.OK, response.getStatusCode());
         ApiResponse apiResponse = (ApiResponse) response.getBody();
         assertNotNull(apiResponse);
-        assertEquals("Xoá thành công kế hoạch chi tiết.", apiResponse.getMessage());
+        assertEquals("Xoá ca thành công.", apiResponse.getMessage());
 
         verify(planDateRepository).deletePlanDateById(facilityId, List.of(planDateId));
         verify(userActivityLogHelper).saveLog(anyString());
@@ -193,14 +211,26 @@ class SPDPlanDateServiceImplTest {
     void testDeleteMultiplePlanDate_Success() {
         // Arrange
         String facilityId = "facility-1";
+        String planFactoryId = "plan-factory-1";
         List<String> planDateIds = Arrays.asList("plan-date-1", "plan-date-2");
 
         when(sessionHelper.getFacilityId()).thenReturn(facilityId);
 
         SPDDeletePlanDateRequest request = new SPDDeletePlanDateRequest();
         request.setDays(planDateIds);
+        request.setIdPlanFactory(planFactoryId);
 
-        when(planDateRepository.deletePlanDateById(facilityId, planDateIds)).thenReturn(2);
+        // Mock PlanFactory for validation
+        PlanFactory planFactory = mock(PlanFactory.class);
+        Factory factory = mock(Factory.class);
+        Plan plan = mock(Plan.class);
+        when(factory.getName()).thenReturn("Test Factory");
+        when(plan.getName()).thenReturn("Test Plan");
+        when(planFactory.getFactory()).thenReturn(factory);
+        when(planFactory.getPlan()).thenReturn(plan);
+        when(planFactoryRepository.findById(planFactoryId)).thenReturn(Optional.of(planFactory));
+
+        when(planDateRepository.deletePlanDateByDay(facilityId, planDateIds)).thenReturn(2);
         doNothing().when(userActivityLogHelper).saveLog(anyString());
 
         // Act
@@ -210,10 +240,10 @@ class SPDPlanDateServiceImplTest {
         assertEquals(HttpStatus.OK, response.getStatusCode());
         ApiResponse apiResponse = (ApiResponse) response.getBody();
         assertNotNull(apiResponse);
-        assertEquals("Xoá thành công 2 kế hoạch chi tiết.", apiResponse.getMessage());
+        assertEquals("Xoá thành công 2 ca.", apiResponse.getMessage());
 
-        verify(planDateRepository).deletePlanDateById(facilityId, planDateIds);
-        verify(userActivityLogHelper).saveLog(contains("vừa xóa 2 kế hoạch chi tiết"));
+        verify(planDateRepository).deletePlanDateByDay(facilityId, planDateIds);
+        verify(userActivityLogHelper).saveLog(contains("vừa xóa 2 ca ngày"));
     }
 
     @Test

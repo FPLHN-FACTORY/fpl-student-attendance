@@ -59,6 +59,9 @@ class SPDPlanFactoryServiceImplTest {
     @Mock
     private UserActivityLogHelper userActivityLogHelper;
 
+    @Mock
+    private udpm.hn.studentattendance.infrastructure.common.repositories.CommonPlanDateRepository commonPlanDateRepository;
+
     @InjectMocks
     private SPDPlanFactoryServiceImpl planFactoryService;
 
@@ -258,6 +261,15 @@ class SPDPlanFactoryServiceImplTest {
 
         PlanFactory planFactory = mock(PlanFactory.class);
         when(planFactory.getStatus()).thenReturn(EntityStatus.ACTIVE); // Active factory
+
+        Factory factory = mock(Factory.class);
+        lenient().when(factory.getName()).thenReturn("Test Factory");
+
+        Plan plan = mock(Plan.class);
+        lenient().when(plan.getName()).thenReturn("Test Plan");
+
+        when(planFactory.getFactory()).thenReturn(factory);
+        when(planFactory.getPlan()).thenReturn(plan);
 
         when(spdPlanFactoryRepository.findById(planFactoryId)).thenReturn(Optional.of(planFactory));
 

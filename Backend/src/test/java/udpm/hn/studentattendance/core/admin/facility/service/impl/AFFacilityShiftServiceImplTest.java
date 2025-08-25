@@ -23,6 +23,7 @@ import udpm.hn.studentattendance.helpers.SettingHelper;
 import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
+import udpm.hn.studentattendance.infrastructure.constants.SettingKeys;
 import udpm.hn.studentattendance.infrastructure.config.redis.service.RedisService;
 import udpm.hn.studentattendance.helpers.RedisCacheHelper;
 
@@ -44,13 +45,11 @@ class AFFacilityShiftServiceImplTest {
     @Mock
     private UserActivityLogHelper userActivityLogHelper;
     @Mock
-    private SettingHelper settingHelper;
-    @Mock
-    private RedisService redisService;
-    @Mock
     private RedisInvalidationHelper redisInvalidationHelper;
     @Mock
     private RedisCacheHelper redisCacheHelper;
+    @Mock
+    private SettingHelper settingHelper;
 
     // Shared TypeReference instance for mocking
     private final TypeReference<PageableObject<AFFacilityShiftResponse>> pageableObjectTypeRef = new TypeReference<PageableObject<AFFacilityShiftResponse>>() {
@@ -61,7 +60,9 @@ class AFFacilityShiftServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        ReflectionTestUtils.setField(shiftService, "MIN_DIFF_SHIFT", 10); // 10 phút tối thiểu
+        // Mock the default setting value for SHIFT_MIN_DIFF
+        // Use lenient to avoid "Unnecessary stubbings" errors
+        lenient().when(settingHelper.getSetting(SettingKeys.SHIFT_MIN_DIFF, Integer.class)).thenReturn(30);
     }
 
     @Test

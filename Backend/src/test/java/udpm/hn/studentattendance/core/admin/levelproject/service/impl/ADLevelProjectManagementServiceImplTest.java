@@ -26,7 +26,7 @@ import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
 import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
 import udpm.hn.studentattendance.infrastructure.common.ApiResponse;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
-
+import udpm.hn.studentattendance.infrastructure.common.repositories.CommonPlanDateRepository;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.RedisPrefixConstant;
 import udpm.hn.studentattendance.infrastructure.config.redis.service.RedisService;
@@ -58,6 +58,9 @@ class ADLevelProjectManagementServiceImplTest {
 
     @Mock
     private RedisCacheHelper redisCacheHelper;
+
+    @Mock
+    private CommonPlanDateRepository commonPlanDateRepository;
 
     @InjectMocks
     private ADLevelProjectManagementServiceImpl levelProjectService;
@@ -143,6 +146,8 @@ class ADLevelProjectManagementServiceImplTest {
                     .thenReturn("ADVANCED_PROJECT");
             validateHelperMockedStatic.when(() -> ValidateHelper.isValidCode("Advanced Project"))
                     .thenReturn(true);
+            validateHelperMockedStatic.when(() -> ValidateHelper.isValidName("Advanced Project"))
+                    .thenReturn(true);
 
             when(repository.isExistsLevelProject("ADVANCED_PROJECT", null)).thenReturn(false);
 
@@ -222,6 +227,8 @@ class ADLevelProjectManagementServiceImplTest {
             mockedStatic.when(() -> CodeGeneratorUtils.generateCodeFromString("Updated Project"))
                     .thenReturn("UPDATED_PROJECT");
             validateHelperMockedStatic.when(() -> ValidateHelper.isValidCode("Updated Project"))
+                    .thenReturn(true);
+            validateHelperMockedStatic.when(() -> ValidateHelper.isValidName("Updated Project"))
                     .thenReturn(true);
 
             when(repository.findById(levelId)).thenReturn(Optional.of(existingLevel));

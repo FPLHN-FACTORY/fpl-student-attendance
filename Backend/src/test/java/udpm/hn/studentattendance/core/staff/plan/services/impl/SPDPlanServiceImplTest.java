@@ -199,7 +199,7 @@ class SPDPlanServiceImplTest {
         assertEquals(HttpStatus.OK, response.getStatusCode());
         ApiResponse apiResponse = (ApiResponse) response.getBody();
         assertEquals(RestApiStatus.SUCCESS, apiResponse.getStatus());
-        assertEquals("Lấy dữ liệu học kỳ thành công", apiResponse.getMessage());
+        assertEquals("Lấy dữ liệu kỳ thành công", apiResponse.getMessage());
 
         @SuppressWarnings("unchecked")
         List<String> actualSemesterNames = (List<String>) apiResponse.getData();
@@ -316,6 +316,7 @@ class SPDPlanServiceImplTest {
         // Arrange
         SPDAddOrUpdatePlanRequest request = new SPDAddOrUpdatePlanRequest();
         request.setIdProject("project-1");
+        request.setName("Test Plan"); // Add valid name to pass validation
         request.setRangeDate(Arrays.asList(
                 DateTimeUtils.getCurrentTimeMillis(),
                 DateTimeUtils.getCurrentTimeMillis() + 86400000L));
@@ -360,6 +361,7 @@ class SPDPlanServiceImplTest {
         // Arrange
         SPDAddOrUpdatePlanRequest request = new SPDAddOrUpdatePlanRequest();
         request.setIdProject("project-404");
+        request.setName("Test Plan"); // Add valid name to pass validation
         request.setRangeDate(Arrays.asList(
                 DateTimeUtils.getCurrentTimeMillis(),
                 DateTimeUtils.getCurrentTimeMillis() + 86400000L));
@@ -386,6 +388,7 @@ class SPDPlanServiceImplTest {
         // Arrange
         SPDAddOrUpdatePlanRequest request = new SPDAddOrUpdatePlanRequest();
         request.setIdProject("project-1");
+        request.setName("Test Plan"); // Add valid name to pass validation
         request.setRangeDate(Arrays.asList(
                 DateTimeUtils.getCurrentTimeMillis(),
                 DateTimeUtils.getCurrentTimeMillis() + 86400000L));
@@ -438,7 +441,7 @@ class SPDPlanServiceImplTest {
         // Assert
         assertEquals(HttpStatus.OK, response.getStatusCode());
         ApiResponse apiResponse = (ApiResponse) response.getBody();
-        assertEquals("Lấy dữ liệu năm học thành công", apiResponse.getMessage());
+        assertEquals("Lấy dữ liệu năm thành công", apiResponse.getMessage());
         assertEquals(years, apiResponse.getData());
     }
 

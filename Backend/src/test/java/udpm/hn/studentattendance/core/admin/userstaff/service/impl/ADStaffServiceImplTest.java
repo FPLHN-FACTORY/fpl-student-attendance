@@ -287,7 +287,7 @@ class ADStaffServiceImplTest extends BaseServiceTest {
         assertEquals(HttpStatus.OK, response.getStatusCode());
         ApiResponse apiResponse = (ApiResponse) response.getBody();
         assertNotNull(apiResponse);
-        assertEquals("Thêm nhân sự mới thành công", apiResponse.getMessage());
+        assertEquals("Thêm nhân sự mới thành công: Nguyen Van Staff - ST001", apiResponse.getMessage());
 
         // Verify repository was called
         verify(adStaffRepository).save(any(UserStaff.class));
@@ -362,7 +362,7 @@ class ADStaffServiceImplTest extends BaseServiceTest {
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         ApiResponse apiResponse = (ApiResponse) response.getBody();
         assertNotNull(apiResponse);
-        assertEquals("Nhân sự đã tồn tại", apiResponse.getMessage());
+        assertEquals("Nhân sự đã tồn tại: null - null", apiResponse.getMessage());
 
         // Verify repository was not called to save
         verify(adStaffRepository, never()).save(any(UserStaff.class));

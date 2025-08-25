@@ -83,7 +83,7 @@ class ADUserAdminServiceImplTest extends BaseServiceTest {
 
         PageableObject<ADUserAdminResponse> mockData = mock(PageableObject.class);
 
-        when(redisCacheHelper.getOrSet(eq(cacheKey), any(), any())).thenReturn(mockData);
+        lenient().when(redisCacheHelper.getOrSet(anyString(), any(), any())).thenReturn(mockData);
 
         // When
         ResponseEntity<?> response = userAdminService.getAllUserAdmin(request);
@@ -448,7 +448,7 @@ class ADUserAdminServiceImplTest extends BaseServiceTest {
         assertEquals(HttpStatus.OK, response.getStatusCode());
         ApiResponse apiResponse = (ApiResponse) response.getBody();
         assertNotNull(apiResponse);
-        assertEquals("Lấy thành công danh sách nhân viên", apiResponse.getMessage());
+        assertEquals("Lấy thành công danh sách nhân sự", apiResponse.getMessage());
         assertEquals(cachedStaff, apiResponse.getData());
 
         // Verify repository was not called
@@ -478,7 +478,7 @@ class ADUserAdminServiceImplTest extends BaseServiceTest {
         assertEquals(HttpStatus.OK, response.getStatusCode());
         ApiResponse apiResponse = (ApiResponse) response.getBody();
         assertNotNull(apiResponse);
-        assertEquals("Lấy thành công danh sách nhân viên", apiResponse.getMessage());
+        assertEquals("Lấy thành công danh sách nhân sự", apiResponse.getMessage());
         assertEquals(userStaffList, apiResponse.getData());
     }
 

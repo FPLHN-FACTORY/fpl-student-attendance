@@ -357,7 +357,7 @@ class TCTeachingScheduleServiceImplTest {
         assertEquals(HttpStatus.OK, response.getStatusCode());
         ApiResponse apiResponse = (ApiResponse) response.getBody();
         assertNotNull(apiResponse);
-        assertTrue(apiResponse.getMessage().contains("Lấy tất cả môn học của"));
+        assertTrue(apiResponse.getMessage().contains("Lấy tất cả môn của"));
         assertEquals(mockSubjects, apiResponse.getData());
 
         verify(redisCacheHelper).getOrSet(eq(cacheKey), any(), any());
@@ -774,9 +774,11 @@ class TCTeachingScheduleServiceImplTest {
         PlanFactory planFactory = mock(PlanFactory.class);
         Factory factory = mock(Factory.class);
         UserStaff userStaff = mock(UserStaff.class);
+        when(userStaff.getId()).thenReturn("staff-1");
         when(factory.getUserStaff()).thenReturn(userStaff);
         when(planDate.getPlanFactory()).thenReturn(planFactory);
         when(planFactory.getFactory()).thenReturn(factory);
+        when(planDate.getUserStaff()).thenReturn(userStaff); // Add missing mock
         when(teachingScheduleRepository.findById("plan-date-1")).thenReturn(Optional.of(planDate));
 
         ResponseEntity<?> response = teachingScheduleService.updatePlanDate(request);
@@ -797,9 +799,11 @@ class TCTeachingScheduleServiceImplTest {
         PlanFactory planFactory = mock(PlanFactory.class);
         Factory factory = mock(Factory.class);
         UserStaff userStaff = mock(UserStaff.class);
+        when(userStaff.getId()).thenReturn("staff-1");
         when(factory.getUserStaff()).thenReturn(userStaff);
         when(planDate.getPlanFactory()).thenReturn(planFactory);
         when(planFactory.getFactory()).thenReturn(factory);
+        when(planDate.getUserStaff()).thenReturn(userStaff); // Add missing mock
         when(teachingScheduleRepository.findById("plan-date-1")).thenReturn(Optional.of(planDate));
 
         ResponseEntity<?> response = teachingScheduleService.updatePlanDate(request);
@@ -833,9 +837,11 @@ class TCTeachingScheduleServiceImplTest {
         PlanFactory planFactory = mock(PlanFactory.class);
         Factory factory = mock(Factory.class);
         UserStaff userStaff = mock(UserStaff.class);
+        when(userStaff.getId()).thenReturn("staff-1");
         when(factory.getUserStaff()).thenReturn(userStaff);
         when(planDate.getPlanFactory()).thenReturn(planFactory);
         when(planFactory.getFactory()).thenReturn(factory);
+        when(planDate.getUserStaff()).thenReturn(userStaff); // Add missing mock
         when(teachingScheduleRepository.findById("plan-date-1")).thenReturn(Optional.of(planDate));
 
         ResponseEntity<?> response = teachingScheduleService.changeTypePlanDate(planDateId, room);

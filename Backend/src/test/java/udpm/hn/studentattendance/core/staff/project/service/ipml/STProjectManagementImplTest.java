@@ -51,8 +51,8 @@ class STProjectManagementImplTest {
     @Mock
     private STProjectSubjectFacilityExtendRepository subjectFacilityRepository;
 
-
-
+    @Mock
+    private udpm.hn.studentattendance.infrastructure.common.repositories.CommonPlanDateRepository commonPlanDateRepository;
 
     @Mock
     private SessionHelper sessionHelper;
@@ -153,7 +153,7 @@ class STProjectManagementImplTest {
         ApiResponse apiResponse = (ApiResponse) response.getBody();
         assertNotNull(apiResponse);
         assertEquals(RestApiStatus.SUCCESS, apiResponse.getStatus());
-        assertEquals("Thêm dự án thành công", apiResponse.getMessage());
+        assertEquals("Thêm mới dự án thành công: Test Project", apiResponse.getMessage());
 
         verify(projectManagementRepository).save(any(Project.class));
         verify(userActivityLogHelper).saveLog(contains("vừa thêm 1 dự án mới:"));

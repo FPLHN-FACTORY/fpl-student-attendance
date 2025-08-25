@@ -55,6 +55,9 @@ class ADSubjectManagementServiceImplTest {
     @Mock
     private RedisCacheHelper redisCacheHelper;
 
+    @Mock
+    private udpm.hn.studentattendance.infrastructure.common.repositories.CommonPlanDateRepository commonPlanDateRepository;
+
     @InjectMocks
     private ADSubjectManagementServiceImpl subjectService;
 
