@@ -256,6 +256,9 @@ const handleSubmitUpdateInfo = () => {
 const handleUpdateInfo = async () => {
   isShowCamera.value = true
   faceIDStore.setFullStep(false)
+  faceIDStore.setAllowGlasses(false)
+  faceIDStore.setAllowMask(false)
+  faceIDStore.setAllowReaction(false)
   faceIDStore.setCallback((descriptor) => {
     formData.image = faceIDStore.dataImage
     Modal.confirm({
@@ -282,6 +285,9 @@ const handleCheckin = async (item) => {
 
   isShowCamera.value = true
   faceIDStore.setFullStep(false)
+  faceIDStore.setAllowGlasses(true)
+  faceIDStore.setAllowMask(true)
+  faceIDStore.setAllowReaction(true)
   faceIDStore.setCallback((descriptor) => {
     formData.image = faceIDStore.dataImage
     handleSubmitAttendance()

@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import udpm.hn.studentattendance.core.staff.student.model.request.USStudentCreateUpdateRequest;
 import udpm.hn.studentattendance.core.staff.student.model.request.USStudentRequest;
 import udpm.hn.studentattendance.core.staff.student.service.STStudentService;
@@ -51,5 +52,10 @@ public class USStudentRestController {
     @GetMapping("/exist-face")
     public ResponseEntity<?> isNotExistFace() {
         return studentService.isExistFace();
+    }
+
+    @PutMapping("/update-face/{idUserStudent}")
+    public ResponseEntity<?> updateFace(@RequestPart("image") MultipartFile image, @RequestHeader(value = "X-Signature", required = false) String signature, @PathVariable String idUserStudent) {
+        return studentService.updateFace(idUserStudent, image, signature);
     }
 }
