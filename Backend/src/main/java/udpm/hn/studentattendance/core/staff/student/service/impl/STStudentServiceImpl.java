@@ -3,7 +3,9 @@ package udpm.hn.studentattendance.core.staff.student.service.impl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.web.multipart.MultipartFile;
 import udpm.hn.studentattendance.core.notification.model.request.NotificationAddRequest;
 import udpm.hn.studentattendance.core.notification.service.NotificationService;
 import udpm.hn.studentattendance.core.staff.student.model.request.USStudentCreateUpdateRequest;
@@ -21,12 +23,14 @@ import udpm.hn.studentattendance.helpers.SettingHelper;
 import udpm.hn.studentattendance.helpers.UserActivityLogHelper;
 import udpm.hn.studentattendance.helpers.ValidateHelper;
 import udpm.hn.studentattendance.infrastructure.common.PageableObject;
+import udpm.hn.studentattendance.infrastructure.common.services.OnnxService;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.RedisPrefixConstant;
 import udpm.hn.studentattendance.infrastructure.constants.SettingKeys;
 import udpm.hn.studentattendance.helpers.RedisInvalidationHelper;
 import com.fasterxml.jackson.core.type.TypeReference;
 import udpm.hn.studentattendance.helpers.RedisCacheHelper;
+import udpm.hn.studentattendance.utils.AppUtils;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -35,6 +39,8 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Validated
 public class STStudentServiceImpl implements STStudentService {
+
+    private final OnnxService onnxService;
 
     private final USStudentExtendRepository studentExtendRepository;
 
@@ -286,6 +292,44 @@ public class STStudentServiceImpl implements STStudentService {
     public ResponseEntity<?> isExistFace() {
         Map<String, Boolean> studentFaceMap = getCachedFaceStatus();
         return RouterHelper.responseSuccess("Lấy trạng thái face của sinh viên thành công", studentFaceMap);
+    }
+
+    @Override
+    public ResponseEntity<?> updateFace(String idUserStudent, MultipartFile image, String signature) {
+        UserStudent student = studentExtendRepository.findById(idUserStudent).orElse(null);
+        if (student == null) {
+            return RouterHelper.responseError("Không tìm thấy sinh viên");
+        }
+
+        if (StringUtils.hasText(student.getFaceEmbedding())) {
+            return RouterHelper.responseError("Không thể cập nhật khuôn mặt tài khoản này");
+        }
+
+        try {
+            if (image == null || image.isEmpty()) {
+                throw new RuntimeException();
+            }
+
+            if (!AppUtils.isSignatureValidated(signature, String.valueOf(image.getSize()), idUserStudent)) {
+                throw new RuntimeException();
+            }
+
+            float[] faceEmbedding = onnxService.getEmbedding(image.getBytes());
+            if (faceEmbedding == null || faceEmbedding.length < 1) {
+                return RouterHelper.responseError("Dữ liệu khuôn mặt không hợp lệ");
+            }
+
+            student.setFaceEmbedding(Arrays.toString(faceEmbedding));
+            NotificationAddRequest notificationAddRequest = new NotificationAddRequest();
+            notificationAddRequest.setType(NotificationHelper.TYPE_SUCCESS_UPDATE_FACE_ID);
+            notificationAddRequest.setIdUser(student.getId());
+            notificationService.add(notificationAddRequest);
+
+            return RouterHelper.responseSuccess("Cập nhật dữ liệu khuôn mặt thành công sinh viên: " + student.getCode() + " - " + student.getName(),
+                    studentExtendRepository.save(student));
+        } catch (Exception e) {
+            return RouterHelper.responseError("Thông tin khuôn mặt không hợp lệ. Vui lòng thử lại");
+        }
     }
 
 }

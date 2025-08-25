@@ -19,6 +19,7 @@ const MAX_BRIGHTNESS = isMobile ? 90 : 100
 const THRESHOLD_LIGHT = 40
 const SIZE_CAMERA = 480
 const CHECK_DISTANCE = true
+const DELAY_SUCCESS = 5000
 
 const useFaceIDStore = defineStore('faceID', () => {
   let isFullStep = false
@@ -30,11 +31,18 @@ const useFaceIDStore = defineStore('faceID', () => {
 
   let human = null
 
+  let isAllowGlasses = false
+  let isAllowMask = false
+  let isAllowReaction = false
+
   const isRunScan = ref(false)
   const isLoading = ref(true)
   const isLoadingModels = ref(false)
   const isReady = ref(false)
   const isSuccess = ref(false)
+  const isShowLookAhead = ref(false)
+  const isShowActionTurnLeft = ref(false)
+  const isShowActionTurnRight = ref(false)
 
   const step = ref(0)
   const textStep = ref('Vui lòng đợi camera...')
@@ -95,6 +103,18 @@ const useFaceIDStore = defineStore('faceID', () => {
 
   const setFullStep = (type) => {
     isFullStep = type
+  }
+
+  const setAllowGlasses = (type) => {
+    isAllowGlasses = type
+  }
+
+  const setAllowMask = (type) => {
+    isAllowMask = type
+  }
+
+  const setAllowReaction = (type) => {
+    isAllowReaction = type
   }
 
   const setCallback = (callback) => {
@@ -179,7 +199,7 @@ const useFaceIDStore = defineStore('faceID', () => {
 
     const models = []
 
-    if (!isFullStep) {
+    if (!isAllowMask) {
       const loadMaskModel = async () => {
         try {
           maskModel = await tf.loadLayersModel('indexeddb://maskes-model')
@@ -188,7 +208,12 @@ const useFaceIDStore = defineStore('faceID', () => {
           await maskModel.save('indexeddb://maskes-model')
         }
       }
+      if (!maskModel) {
+        models.push(loadMaskModel())
+      }
+    }
 
+    if (!isAllowGlasses) {
       const loadGlassModel = async () => {
         try {
           glassesModel = await tf.loadLayersModel('indexeddb://glasses-model')
@@ -196,10 +221,6 @@ const useFaceIDStore = defineStore('faceID', () => {
           glassesModel = await tf.loadLayersModel('/models/glasses/model.json')
           await glassesModel.save('indexeddb://glasses-model')
         }
-      }
-
-      if (!maskModel) {
-        models.push(loadMaskModel())
       }
 
       if (!glassesModel) {
@@ -417,6 +438,9 @@ const useFaceIDStore = defineStore('faceID', () => {
     }
 
     const isWithMask = async () => {
+      if (isAllowMask) {
+        return false
+      }
       const input = tf.browser
         .fromPixels(canvas.value)
         .resizeNearestNeighbor([224, 224])
@@ -429,6 +453,9 @@ const useFaceIDStore = defineStore('faceID', () => {
     }
 
     const isWithGlasses = async () => {
+      if (isAllowGlasses) {
+        return false
+      }
       const input = tf.browser
         .fromPixels(canvas.value)
         .resizeNearestNeighbor([224, 224])
@@ -505,7 +532,7 @@ const useFaceIDStore = defineStore('faceID', () => {
         console.error(error)
       }
 
-      await delay(3000)
+      await delay(DELAY_SUCCESS)
       lstDescriptor.value = []
       faceDescriptor = null
       step.value = 0
@@ -516,6 +543,9 @@ const useFaceIDStore = defineStore('faceID', () => {
     const delay = (ms) => new Promise((res) => setTimeout(res, ms))
 
     const isReaction = async () => {
+      if (isAllowReaction) {
+        return false
+      }
       let progress = []
       let i = 0
       while (i < 4) {
@@ -554,7 +584,10 @@ const useFaceIDStore = defineStore('faceID', () => {
       if (
         !(await isLightBalance(halfImageData)) ||
         (await isLightTooBright(halfImageData)) ||
-        (await isLightTooDark(halfImageData))
+        (await isLightTooDark(halfImageData)) ||
+        (await isWithGlasses()) ||
+        (await isWithMask()) ||
+        (await isReaction())
       ) {
         return []
       }
@@ -589,6 +622,7 @@ const useFaceIDStore = defineStore('faceID', () => {
       await delay(1000)
       embedding.value = null
       count.value = startCount
+      isShowLookAhead.value = false
       while (count.value > endCount) {
         renderTextStep('Vui lòng giữ nguyên...')
 
@@ -828,9 +862,11 @@ const useFaceIDStore = defineStore('faceID', () => {
           faceDescriptor = null
         }
         isReady.value = false
+        isShowLookAhead.value = true
+        isShowActionTurnLeft.value = false
+        isShowActionTurnRight.value = false
         return renderTextStep('Vui lòng nhìn vào camera')
       }
-
       error = 0
       const detection = detections.face?.[0]
       const faceBoxRaw = detection.boxRaw
@@ -839,6 +875,8 @@ const useFaceIDStore = defineStore('faceID', () => {
       if (!(await cropFace(detection))) {
         return
       }
+
+      isShowLookAhead.value = false
 
       if (isFullStep || (!isFullStep && (step.value === 0 || step.value === 3))) {
         if (!isInsideCenter(faceBoxRaw)) {
@@ -895,16 +933,14 @@ const useFaceIDStore = defineStore('faceID', () => {
         }
       }
 
-      if (!isFullStep) {
-        if (await isWithGlasses()) {
-          step.value = 0
-          return renderTextStep('Vui lòng không nhắm mắt hoặc đeo kính')
-        }
+      if (await isWithGlasses()) {
+        step.value = 0
+        return renderTextStep('Vui lòng không nhắm mắt hoặc đeo kính')
+      }
 
-        if (await isWithMask()) {
-          step.value = 0
-          return renderTextStep('Vui lòng không đeo khẩu trang')
-        }
+      if (await isWithMask()) {
+        step.value = 0
+        return renderTextStep('Vui lòng không đeo khẩu trang')
       }
 
       if (faceDescriptor) {
@@ -912,6 +948,11 @@ const useFaceIDStore = defineStore('faceID', () => {
         count.value = 0
 
         renderTextStep()
+
+        if (step.value === 0) {
+          isShowActionTurnRight.value = false
+          isShowActionTurnLeft.value = false
+        }
 
         if (isFullStep) {
           if (step.value === 0 && angle === 0) {
@@ -926,7 +967,6 @@ const useFaceIDStore = defineStore('faceID', () => {
             return renderTextStep()
           }
           if (step.value === 1) {
-            await delay(500)
             await getBestEmbedding(1, 0, () => {
               step.value = 0
               renderTextStep()
@@ -949,16 +989,22 @@ const useFaceIDStore = defineStore('faceID', () => {
             }
             await pushDescriptor()
             step.value = 1
+            isShowActionTurnRight.value = true
+            isShowActionTurnLeft.value = false
             return renderTextStep()
           }
           if (step.value === 1 && angle === -1 && isReal) {
-            await delay(500)
             step.value = 2
-            return renderTextStep()
+            isShowActionTurnRight.value = false
+            isShowActionTurnLeft.value = true
+            renderTextStep()
+            return await delay(1000)
           }
           if (step.value === 2 && angle === 1 && isReal) {
-            await delay(500)
             step.value = 3
+            isShowLookAhead.value = true
+            isShowActionTurnRight.value = false
+            isShowActionTurnLeft.value = false
             renderTextStep()
             return await delay(2000)
           }
@@ -981,8 +1027,7 @@ const useFaceIDStore = defineStore('faceID', () => {
     let detectAxiesTimeoutId = null
     const detectLoop = async () => {
       if (!isRunScan.value) return clearTimeout(detectTimeoutId)
-
-      if (isLoadingModels.value && video.value?.readyState === 4) {
+      if (isLoadingModels.value && video.value?.readyState === 4 && !isSuccess.value) {
         await runTask()
         if (isLoading.value) {
           isLoading.value = false
@@ -995,7 +1040,7 @@ const useFaceIDStore = defineStore('faceID', () => {
     const detectAxies = async () => {
       if (!isRunScan.value) return clearTimeout(detectAxiesTimeoutId)
 
-      if (isLoadingModels.value && video.value?.readyState === 4) {
+      if (isLoadingModels.value && video.value?.readyState === 4 && !isSuccess.value) {
         await getFaceAngle()
         if (isLoading.value) {
           isLoading.value = false
@@ -1023,17 +1068,29 @@ const useFaceIDStore = defineStore('faceID', () => {
     }
   }
 
+  const renderAction = () => {
+    return {
+      'turn-left': isShowActionTurnLeft.value && !isFullStep && !isSuccess.value && !count.value,
+      'turn-right': isShowActionTurnRight.value && !isFullStep && !isSuccess.value && !count.value,
+      'look-ahead': isShowLookAhead.value && !isSuccess.value && !count.value,
+    }
+  }
+
   return {
     init,
     setup,
     setFullStep,
     setCallback,
     setShowError,
+    setAllowGlasses,
+    setAllowMask,
+    setAllowReaction,
     loadModels,
     startVideo,
     stopVideo,
     detectFace,
     renderStyle,
+    renderAction,
     dataImage,
     dataCanvas,
     step,

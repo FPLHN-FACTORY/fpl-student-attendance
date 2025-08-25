@@ -21,6 +21,9 @@ const handleSubmit = (descriptors) => {
 onMounted(() => {
   faceIDStore.setFullStep(isFullStep)
   faceIDStore.setShowError(false)
+  faceIDStore.setAllowGlasses(isFullStep)
+  faceIDStore.setAllowMask(isFullStep)
+  faceIDStore.setAllowReaction(isFullStep)
   faceIDStore.setCallback((descriptor) => {
     handleSubmit(descriptor)
   })

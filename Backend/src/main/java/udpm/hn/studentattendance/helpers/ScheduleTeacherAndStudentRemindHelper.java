@@ -26,12 +26,13 @@ public class ScheduleTeacherAndStudentRemindHelper {
     private final CommonScheduleReminderRepository commonScheduleReminderRepository;
     private final MailerHelper mailerHelper;
 
-    @Value("${app.config.app-name}")
+    @Value("${app.config.app-name:Student Attendance}")
     private String appName;
 
     private static final String ZONE_ID = "Asia/Ho_Chi_Minh";
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy");
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
+
 
     @Scheduled(cron = "0 0 20 * * SUN")
     public void sendWeeklyScheduleReminders() {
@@ -75,6 +76,7 @@ public class ScheduleTeacherAndStudentRemindHelper {
             log.error("Lỗi khi gửi email nhắc nhở lịch hàng tuần: {}", e.getMessage(), e);
         }
     }
+
 
     private void sendFactoryScheduleReminders(String factoryId, List<PlanDate> planDates,
             LocalDate weekStart, LocalDate weekEnd) {
@@ -136,6 +138,7 @@ public class ScheduleTeacherAndStudentRemindHelper {
         }
     }
 
+
     private void sendTeacherScheduleReminders(List<String> teacherEmails, String emailContent,
             LocalDate weekStart, LocalDate weekEnd) {
         for (String teacherEmail : teacherEmails) {
@@ -158,6 +161,7 @@ public class ScheduleTeacherAndStudentRemindHelper {
         }
     }
 
+
     private String createWeeklyScheduleEmailContent(List<PlanDate> planDates, LocalDate weekStart, LocalDate weekEnd) {
         StringBuilder content = new StringBuilder();
 
@@ -176,8 +180,7 @@ public class ScheduleTeacherAndStudentRemindHelper {
             content.append("<tr>");
             content.append("<th>Thời gian</th>");
             content.append("<th>Ca</th>");
-            content.append("<th>Phòng</th>");
-            content.append("<th>Link</th>");
+            content.append("<th>Phòng/Link</th>");
             content.append("<th>Mô tả</th>");
             content.append("</tr>");
             content.append("</thead>");
@@ -196,13 +199,10 @@ public class ScheduleTeacherAndStudentRemindHelper {
 
                 content.append("<td class='shift-cell'>Ca ").append(planDate.getShift()).append("</td>");
 
-                content.append("<td class='room-cell'>").append(planDate.getRoom() != null ? planDate.getRoom() : "")
+                content.append("<td class='room-cell'>").append(planDate.getRoom() != null ? planDate.getRoom() : planDate.getLink())
                         .append("</td>");
 
-                content.append("<td>").append(planDate.getLink() != null ? planDate.getLink() : "");
-                content.append("</td>");
-
-                content.append("<td>").append(planDate.getDescription() != null ? planDate.getDescription() : "")
+                content.append("<td>").append(planDate.getDescription() != null ? planDate.getDescription() : "N/A")
                         .append("</td>");
 
                 content.append("</tr>");
@@ -216,6 +216,7 @@ public class ScheduleTeacherAndStudentRemindHelper {
         return content.toString();
     }
 
+
     private LocalDate getNextMonday() {
         LocalDate today = LocalDate.now(ZoneId.of(ZONE_ID));
         LocalDate nextMonday = today;
@@ -226,6 +227,7 @@ public class ScheduleTeacherAndStudentRemindHelper {
 
         return nextMonday;
     }
+
 
     public void sendManualScheduleReminders(String factoryId, LocalDate startDate, LocalDate endDate) {
         try {
