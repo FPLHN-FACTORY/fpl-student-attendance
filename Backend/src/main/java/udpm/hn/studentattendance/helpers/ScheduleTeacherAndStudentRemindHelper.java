@@ -180,7 +180,7 @@ public class ScheduleTeacherAndStudentRemindHelper {
             content.append("<tr>");
             content.append("<th>Thời gian</th>");
             content.append("<th>Ca</th>");
-            content.append("<th>Phòng</th>");
+            content.append("<th>Phòng/Link</th>");
             content.append("<th>Mô tả</th>");
             content.append("</tr>");
             content.append("</thead>");
@@ -199,7 +199,7 @@ public class ScheduleTeacherAndStudentRemindHelper {
 
                 content.append("<td class='shift-cell'>Ca ").append(planDate.getShift()).append("</td>");
 
-                content.append("<td class='room-cell'>").append(planDate.getRoom() != null ? planDate.getRoom() : "N/A")
+                content.append("<td class='room-cell'>").append(planDate.getRoom() != null ? planDate.getRoom() : planDate.getLink())
                         .append("</td>");
 
                 content.append("<td>").append(planDate.getDescription() != null ? planDate.getDescription() : "N/A")

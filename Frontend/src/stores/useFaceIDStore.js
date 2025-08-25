@@ -966,7 +966,6 @@ const useFaceIDStore = defineStore('faceID', () => {
             return renderTextStep()
           }
           if (step.value === 1) {
-            await delay(500)
             await getBestEmbedding(1, 0, () => {
               step.value = 0
               renderTextStep()
@@ -994,14 +993,13 @@ const useFaceIDStore = defineStore('faceID', () => {
             return renderTextStep()
           }
           if (step.value === 1 && angle === -1 && isReal) {
-            await delay(500)
             step.value = 2
             isShowActionTurnRight.value = false
             isShowActionTurnLeft.value = true
-            return renderTextStep()
+            renderTextStep()
+            return await delay(1000)
           }
           if (step.value === 2 && angle === 1 && isReal) {
-            await delay(500)
             step.value = 3
             isShowLookAhead.value = true
             isShowActionTurnRight.value = false

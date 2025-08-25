@@ -2,6 +2,7 @@
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import useFaceIDStore from '@/stores/useFaceIDStore'
 import { CheckOutlined } from '@ant-design/icons-vue'
+import { debounce } from '@/utils/utils'
 
 const faceIDStore = useFaceIDStore()
 const video = ref(null)
@@ -26,11 +27,14 @@ const loop = () => {
     timeoutId = setTimeout(loop, 2500)
   }, 1000)
 }
+const handleAction = debounce((newVal) => {
+  clearTimeout(timeoutId)
+  if (newVal) timeoutId = setTimeout(loop, 1500)
+  else isShow.value = false
+}, 300)
 
 watch(hasAction, (newVal) => {
-  clearTimeout(timeoutId)
-  if (newVal) loop()
-  else isShow.value = false
+  handleAction(newVal)
 })
 
 onMounted(async () => {
