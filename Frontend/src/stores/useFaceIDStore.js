@@ -994,6 +994,7 @@ const useFaceIDStore = defineStore('faceID', () => {
             return renderTextStep()
           }
           if (step.value === 1 && angle === -1 && isReal) {
+            await delay(500)
             step.value = 2
             isShowActionTurnRight.value = false
             isShowActionTurnLeft.value = true
@@ -1001,6 +1002,7 @@ const useFaceIDStore = defineStore('faceID', () => {
             return await delay(1000)
           }
           if (step.value === 2 && angle === 1 && isReal) {
+            await delay(500)
             step.value = 3
             isShowLookAhead.value = true
             isShowActionTurnRight.value = false
@@ -1035,7 +1037,7 @@ const useFaceIDStore = defineStore('faceID', () => {
       }
 
       frameCount++
-      detectTimeoutId = setTimeout(detectLoop, 200)
+      detectTimeoutId = setTimeout(detectLoop, 100)
     }
     const detectAxies = async () => {
       if (!isRunScan.value) return clearTimeout(detectAxiesTimeoutId)
