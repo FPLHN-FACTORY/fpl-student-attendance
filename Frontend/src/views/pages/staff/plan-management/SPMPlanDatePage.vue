@@ -36,6 +36,7 @@ import {
   formatDate,
   getShiftTimeEnd,
   getShiftTimeStart,
+  isToday,
   rowSelectTable,
 } from '@/utils/utils'
 import dayjs from 'dayjs'
@@ -1157,7 +1158,11 @@ watch(
             >
               <template #bodyCell="{ column, record }">
                 <template v-if="column.dataIndex === 'day'">
-                  <a-tag :color="colorDayOfWeek(record.startDate)">
+                  <a-tag
+                    :color="
+                      isToday(record.startDate) ? '#2db7f5' : colorDayOfWeek(record.startDate)
+                    "
+                  >
                     {{ dayOfWeek(record.startDate) }}
                   </a-tag>
                 </template>

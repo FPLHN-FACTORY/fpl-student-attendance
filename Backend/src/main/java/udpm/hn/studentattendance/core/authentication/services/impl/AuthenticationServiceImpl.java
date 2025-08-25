@@ -209,7 +209,9 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             }
 
             float[] faceEmbedding = onnxService.getEmbedding(image.getBytes());
-
+            if (faceEmbedding == null || faceEmbedding.length < 1) {
+                return RouterHelper.responseError("Dữ liệu khuôn mặt không hợp lệ");
+            }
             if (isFaceExists(facility.getId(), faceEmbedding)) {
                 return RouterHelper.responseError("Dữ liệu khuôn mặt đã tồn tại trên hệ thống");
             }
@@ -267,6 +269,9 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             }
 
             float[] faceEmbedding = onnxService.getEmbedding(image.getBytes());
+            if (faceEmbedding == null || faceEmbedding.length < 1) {
+                return RouterHelper.responseError("Dữ liệu khuôn mặt không hợp lệ");
+            }
             if (isFaceExists(sessionHelper.getFacilityId(), faceEmbedding)) {
                 return RouterHelper.responseError("Dữ liệu khuôn mặt đã tồn tại trên hệ thống");
             }
