@@ -125,4 +125,11 @@ public class DateTimeUtils {
         return instant.atZone(ZoneId.of(ZONE_ID)).toLocalDate();
     }
 
+    public static boolean isSameDay(long ms1, long ms2) {
+        ZoneId zone = ZoneId.of(ZONE_ID);
+        LocalDate d1 = Instant.ofEpochMilli(ms1).atZone(zone).toLocalDate();
+        LocalDate d2 = Instant.ofEpochMilli(ms2).atZone(zone).toLocalDate();
+        return d1.equals(d2);
+    }
+
 }
