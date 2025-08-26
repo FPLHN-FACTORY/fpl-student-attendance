@@ -193,6 +193,17 @@ public class STAttendanceRecoveryServiceImpl implements STAttendanceRecoveryServ
                 return RouterHelper.responseError("Dữ liệu đầu vào không hợp lệ", null);
             }
 
+            Optional<AttendanceRecovery> attendanceRecoveryOptional = attendanceRecoveryRepository
+                    .findById(request.getAttendanceRecoveryId());
+
+            if (attendanceRecoveryOptional.isEmpty()) {
+                return RouterHelper.responseError("Không tìm thấy sự kiện");
+            }
+
+            if (!DateTimeUtils.isSameDay(request.getDay(), attendanceRecoveryOptional.get().getDay())) {
+                return RouterHelper.responseError("Ngày điểm danh không khớp với ngày diễn ra sự kiện");
+            }
+
             UserStudent userStudent = validateAndGetStudent(request.getStudentCode());
             if (userStudent == null) {
                 return RouterHelper.responseError(
@@ -227,8 +238,6 @@ public class STAttendanceRecoveryServiceImpl implements STAttendanceRecoveryServ
                         null);
             }
 
-            Optional<AttendanceRecovery> attendanceRecoveryOptional = attendanceRecoveryRepository
-                    .findById(request.getAttendanceRecoveryId());
             AttendanceProcessResult result = processAttendanceRecords(validPlanDates, userStudent,
                     attendanceRecoveryOptional.get());
 
