@@ -387,15 +387,27 @@ const useFaceIDStore = defineStore('faceID', () => {
 
     const isLightBalance = async ({ brightnessLeft, brightnessRight }) => {
       const brightnessDiff = Math.abs(brightnessLeft - brightnessRight)
-      return brightnessDiff <= THRESHOLD_LIGHT
+      const r = brightnessDiff <= THRESHOLD_LIGHT
+      if (!r) {
+        renderTextStep('Ánh sáng không đều. Vui lòng thử lại')
+      }
+      return r
     }
 
     const isLightTooDark = async ({ brightnessLeft, brightnessRight }) => {
-      return brightnessLeft < MIN_BRIGHTNESS || brightnessRight < MIN_BRIGHTNESS
+      const r = brightnessLeft < MIN_BRIGHTNESS || brightnessRight < MIN_BRIGHTNESS
+      if (r) {
+        renderTextStep('Camera quá tối, Vui lòng tăng độ sáng')
+      }
+      return r
     }
 
     const isLightTooBright = async ({ brightnessLeft, brightnessRight }) => {
-      return brightnessLeft > MAX_BRIGHTNESS || brightnessRight > MAX_BRIGHTNESS
+      const r = brightnessLeft > MAX_BRIGHTNESS || brightnessRight > MAX_BRIGHTNESS
+      if (r) {
+        renderTextStep('Camera quá sáng, Vui lòng giảm độ sáng')
+      }
+      return r
     }
 
     const getFaceAngle = async () => {
@@ -899,14 +911,12 @@ const useFaceIDStore = defineStore('faceID', () => {
 
       if (!isFullStep && (step.value === 0 || step.value === 3)) {
         const halfImageData = await getHalfImageData()
-        if (!(await isLightBalance(halfImageData))) {
-          return renderTextStep('Ánh sáng không đều. Vui lòng thử lại')
-        }
-        if (await isLightTooDark(halfImageData)) {
-          return renderTextStep('Camera quá tối, Vui lòng tăng độ sáng')
-        }
-        if (await isLightTooBright(halfImageData)) {
-          return renderTextStep('Camera quá sáng, Vui lòng giảm độ sáng')
+        if (
+          !(await isLightBalance(halfImageData)) ||
+          (await isLightTooDark(halfImageData)) ||
+          (await isLightTooBright(halfImageData))
+        ) {
+          return
         }
 
         const { pitch, roll } = detection.rotation?.angle || {}
