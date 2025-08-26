@@ -284,7 +284,7 @@ const handleCheckin = async (item) => {
   formData.idPlanDate = item.idPlanDate
 
   isShowCamera.value = true
-  faceIDStore.setFullStep(false)
+  faceIDStore.setFullStep(true)
   faceIDStore.setAllowGlasses(true)
   faceIDStore.setAllowMask(true)
   faceIDStore.setAllowReaction(true)
