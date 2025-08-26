@@ -387,27 +387,15 @@ const useFaceIDStore = defineStore('faceID', () => {
 
     const isLightBalance = async ({ brightnessLeft, brightnessRight }) => {
       const brightnessDiff = Math.abs(brightnessLeft - brightnessRight)
-      const r = brightnessDiff <= THRESHOLD_LIGHT
-      if (!r) {
-        renderTextStep('Ánh sáng không đều. Vui lòng thử lại')
-      }
-      return r
+      return brightnessDiff <= THRESHOLD_LIGHT
     }
 
     const isLightTooDark = async ({ brightnessLeft, brightnessRight }) => {
-      const r = brightnessLeft < MIN_BRIGHTNESS || brightnessRight < MIN_BRIGHTNESS
-      if (r) {
-        renderTextStep('Camera quá tối, Vui lòng tăng độ sáng')
-      }
-      return r
+      return brightnessLeft < MIN_BRIGHTNESS || brightnessRight < MIN_BRIGHTNESS
     }
 
     const isLightTooBright = async ({ brightnessLeft, brightnessRight }) => {
-      const r = brightnessLeft > MAX_BRIGHTNESS || brightnessRight > MAX_BRIGHTNESS
-      if (r) {
-        renderTextStep('Camera quá sáng, Vui lòng giảm độ sáng')
-      }
-      return r
+      return brightnessLeft > MAX_BRIGHTNESS || brightnessRight > MAX_BRIGHTNESS
     }
 
     const getFaceAngle = async () => {
@@ -582,52 +570,83 @@ const useFaceIDStore = defineStore('faceID', () => {
     const getEmbedding = async () => {
       const result = await human.detect(video.value)
       const face = result.face?.[0]
+      if (!face) return []
 
-      if (
-        !face ||
-        !(await cropFace(face)) ||
-        !isInsideCenter(face.boxRaw) ||
-        (await isInvalidSize(face))
-      ) {
+      const [cropped, invalidSize] = await Promise.all([cropFace(face), isInvalidSize(face)])
+      if (!cropped) {
+        return []
+      }
+
+      if (!isInsideCenter(face.boxRaw)) {
+        renderTextStep('Vui lòng căn chỉnh khuôn mặt vào giữa')
+        return []
+      }
+
+      if (invalidSize) {
+        renderTextStep(invalidSize)
         return []
       }
 
       const halfImageData = await getHalfImageData()
-      if (
-        !(await isLightBalance(halfImageData)) ||
-        (await isLightTooBright(halfImageData)) ||
-        (await isLightTooDark(halfImageData)) ||
-        (await isWithGlasses()) ||
-        (await isWithMask()) ||
-        (await isReaction())
-      ) {
+      const [lightBalance, tooBright, tooDark, withGlasses, withMask, reaction] = await Promise.all(
+        [
+          isLightBalance(halfImageData),
+          isLightTooBright(halfImageData),
+          isLightTooDark(halfImageData),
+          isWithGlasses(),
+          isWithMask(),
+          isReaction(),
+        ],
+      )
+      if (!lightBalance) {
+        renderTextStep('Ánh sáng không đều. Vui lòng thử lại')
         return []
       }
 
-      const { pitch, roll, yaw } = face.rotation?.angle || {}
+      if (tooDark) {
+        renderTextStep('Camera quá tối, Vui lòng tăng độ sáng')
+        return []
+      }
+      if (tooBright) {
+        renderTextStep('Camera quá sáng, Vui lòng giảm độ sáng')
+        return []
+      }
 
+      if (withGlasses) {
+        renderTextStep('Vui lòng không nhắm mắt hoặc đeo kính')
+        return []
+      }
+
+      if (withMask) {
+        renderTextStep('Vui lòng không đeo khẩu trang')
+        return []
+      }
+
+      if (reaction) {
+        renderTextStep('Vui lòng không biểu cảm')
+        return []
+      }
+
+      const { pitch = 0, roll = 0, yaw = 0 } = face.rotation?.angle || {}
+      const hasGesture = human.result.gesture.some(
+        (o) =>
+          o.gesture.includes('head up') ||
+          o.gesture.includes('head down') ||
+          o.gesture.includes('blink left eye') ||
+          o.gesture.includes('blink right eye'),
+      )
       if (
-        (human.result.gesture.some(
-          (o) =>
-            o.gesture.includes('head up') ||
-            o.gesture.includes('head down') ||
-            o.gesture.includes('blink left eye') ||
-            o.gesture.includes('blink right eye'),
-        ) &&
-          Math.abs(pitch) > THRESHOLD_P) ||
+        (hasGesture && Math.abs(pitch) > THRESHOLD_P) ||
         Math.abs(roll) > THRESHOLD_R ||
         Math.abs(yaw) > THRESHOLD_X
       ) {
+        renderTextStep('Vui lòng nhìn thẳng')
         return []
       }
 
       const result2 = await human.detect(canvas.value)
       const face2 = result2.face?.[0]
-
-      if (!face2) {
-        return []
-      }
-      return face2.embedding
+      return face2 ? face2.embedding : []
     }
 
     const getBestEmbedding = async (startCount, endCount, callbackError) => {
@@ -847,18 +866,6 @@ const useFaceIDStore = defineStore('faceID', () => {
 
     let error = 0
     const runTask = async () => {
-      if (!faceDescriptor) {
-        if (axis.value) {
-          axis.value.classList.remove('active')
-          aX.forEach((o) => {
-            o.style.transform = `rotateY(90deg)`
-          })
-          aY.forEach((o) => {
-            o.style.transform = `rotateX(90deg)`
-          })
-        }
-      }
-
       const detections = await human.detect(video.value)
 
       if (detections.face?.length > 1) {
@@ -866,6 +873,10 @@ const useFaceIDStore = defineStore('faceID', () => {
       }
 
       if (detections.face?.length < 1) {
+        if (axis.value) {
+          axis.value.classList.remove('active')
+        }
+
         error++
         if (error > 10) {
           step.value = Math.max(0, step.value - 1)
@@ -883,8 +894,8 @@ const useFaceIDStore = defineStore('faceID', () => {
       const detection = detections.face?.[0]
       const faceBoxRaw = detection.boxRaw
 
-      const angle = await getFaceAngle()
-      if (!(await cropFace(detection))) {
+      const [cropped, angle] = await Promise.all([cropFace(detection), getFaceAngle()])
+      if (!cropped) {
         return
       }
 
@@ -911,12 +922,18 @@ const useFaceIDStore = defineStore('faceID', () => {
 
       if (!isFullStep && (step.value === 0 || step.value === 3)) {
         const halfImageData = await getHalfImageData()
-        if (
-          !(await isLightBalance(halfImageData)) ||
-          (await isLightTooDark(halfImageData)) ||
-          (await isLightTooBright(halfImageData))
-        ) {
-          return
+        const [lightBalance, tooDark, tooBright] = await Promise.all([
+          isLightBalance(halfImageData),
+          isLightTooDark(halfImageData),
+          isLightTooBright(halfImageData),
+        ])
+
+        if (!lightBalance) {
+          return renderTextStep('Ánh sáng không đều. Vui lòng thử lại')
+        } else if (tooDark) {
+          return renderTextStep('Camera quá tối, Vui lòng tăng độ sáng')
+        } else if (tooBright) {
+          return renderTextStep('Camera quá sáng, Vui lòng giảm độ sáng')
         }
 
         const { pitch, roll } = detection.rotation?.angle || {}
