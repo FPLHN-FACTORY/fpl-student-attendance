@@ -182,17 +182,15 @@ public class AutomaticStatisticsEmailService {
                         .collect(Collectors.toSet());
 
                 List<String> lstPlanDate = stPlanDate.stream()
-                        .sorted(Comparator.comparing(s -> {
-                            try {
-                                String datePart = s.split(" - ")[0];
-                                return LocalDate.parse(datePart,
-                                        DateTimeFormatter.ofPattern(DateTimeUtils.DATE_FORMAT.replace('/', '-')));
-                            } catch (Exception e) {
-                                logger.error("Error parsing date: " + s);
-                                return LocalDate.MIN;
-                            }
+                        .sorted(Comparator.comparing((String s) -> {
+                            String datePart = s.split(" - ")[0];
+                            return LocalDate.parse(datePart,
+                                    DateTimeFormatter.ofPattern("dd-MM-yyyy"));
+                        }).thenComparingInt(s -> {
+                            String caPart = s.split(" - ")[1].replace("Ca ", "");
+                            return Integer.parseInt(caPart);
                         }))
-                        .collect(Collectors.toList());
+                        .toList();
 
                 Set<EXStudentModel> stPStudent = lstData.stream()
                         .map(o -> new EXStudentModel(o.getCode(), o.getName()))

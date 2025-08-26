@@ -203,10 +203,13 @@ public class TSStatisticsServiceImpl implements TSStatisticsService {
                         .map(this::buildCellPlanDate)
                         .collect(Collectors.toSet());
                 List<String> lstPlanDate = stPlanDate.stream()
-                        .sorted(Comparator.comparing(s -> {
+                        .sorted(Comparator.comparing((String s) -> {
                             String datePart = s.split(" - ")[0];
                             return LocalDate.parse(datePart,
-                                    DateTimeFormatter.ofPattern(DateTimeUtils.DATE_FORMAT.replace('/', '-')));
+                                    DateTimeFormatter.ofPattern("dd-MM-yyyy"));
+                        }).thenComparingInt(s -> {
+                            String caPart = s.split(" - ")[1].replace("Ca ", "");
+                            return Integer.parseInt(caPart);
                         }))
                         .toList();
 
