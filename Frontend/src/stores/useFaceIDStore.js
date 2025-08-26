@@ -598,33 +598,18 @@ const useFaceIDStore = defineStore('faceID', () => {
           isReaction(),
         ],
       )
-      if (!lightBalance) {
-        renderTextStep('Ánh sáng không đều. Vui lòng thử lại')
-        return []
-      }
 
-      if (tooDark) {
-        renderTextStep('Camera quá tối, Vui lòng tăng độ sáng')
-        return []
-      }
-      if (tooBright) {
-        renderTextStep('Camera quá sáng, Vui lòng giảm độ sáng')
-        return []
-      }
+      const messages = [
+        [!lightBalance, 'Ánh sáng không đều. Vui lòng thử lại'],
+        [tooDark, 'Camera quá tối, Vui lòng tăng độ sáng'],
+        [tooBright, 'Camera quá sáng, Vui lòng giảm độ sáng'],
+        [withGlasses, 'Vui lòng không nhắm mắt hoặc đeo kính'],
+        [withMask, 'Vui lòng không đeo khẩu trang'],
+        [reaction, 'Vui lòng không biểu cảm'],
+      ]
 
-      if (withGlasses) {
-        renderTextStep('Vui lòng không nhắm mắt hoặc đeo kính')
-        return []
-      }
-
-      if (withMask) {
-        renderTextStep('Vui lòng không đeo khẩu trang')
-        return []
-      }
-
-      if (reaction) {
-        renderTextStep('Vui lòng không biểu cảm')
-        return []
+      for (const [cond, msg] of messages) {
+        if (cond) return renderTextStep(msg) || []
       }
 
       const { pitch = 0, roll = 0, yaw = 0 } = face.rotation?.angle || {}
