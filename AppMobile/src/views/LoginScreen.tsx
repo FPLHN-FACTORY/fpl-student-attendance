@@ -30,7 +30,8 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
   const { showError } = useGlobalSnackbar()
 
   const lstFacilities = useGlobalStore((state) => state.lstFacilities)
-  const [facility, setFacility] = useState('')
+
+  const [facility, setFacility] = useState(lstFacilities?.[0]?.id)
   const setStudentInfo = useGlobalStore((state) => state.setStudentInfo)
 
   const redirectUri = AuthSession.makeRedirectUri({
