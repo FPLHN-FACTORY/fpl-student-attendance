@@ -20,6 +20,7 @@ import java.io.Serializable;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
+@ToString
 @Table(name = "subject_facility")
 @DynamicUpdate
 public class SubjectFacility extends PrimaryEntity implements Serializable {

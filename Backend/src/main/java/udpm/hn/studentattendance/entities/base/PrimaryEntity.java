@@ -8,12 +8,14 @@ import jakarta.persistence.Id;
 import jakarta.persistence.MappedSuperclass;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 import udpm.hn.studentattendance.infrastructure.constants.EntityProperties;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.listener.PrimaryEntityListener;
 
 @Getter
 @Setter
+@ToString
 @MappedSuperclass
 @EntityListeners(PrimaryEntityListener.class)
 public abstract class PrimaryEntity extends AuditEntity implements IsIdentified {

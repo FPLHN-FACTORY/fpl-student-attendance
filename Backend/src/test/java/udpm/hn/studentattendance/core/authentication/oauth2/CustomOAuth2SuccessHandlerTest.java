@@ -6,6 +6,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.security.core.Authentication;
@@ -15,13 +17,12 @@ import udpm.hn.studentattendance.core.authentication.utils.JwtUtil;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 public class CustomOAuth2SuccessHandlerTest {
 
     @Mock
@@ -51,12 +52,8 @@ public class CustomOAuth2SuccessHandlerTest {
     @Test
     void testOnAuthenticationSuccess() throws ServletException, IOException {
         // Arrange
-        Map<String, Object> attributes = new HashMap<>();
-        attributes.put("email", "test@fpt.edu.vn");
-
         CustomOAuth2User customOAuth2User = new CustomOAuth2User(oauth2User);
         when(authentication.getPrincipal()).thenReturn(customOAuth2User);
-        when(oauth2User.getAttributes()).thenReturn(attributes);
         when(oauth2User.getAttribute("email")).thenReturn("test@fpt.edu.vn");
         when(httpSession.getAttribute("login_role")).thenReturn("ADMIN");
         when(httpSession.getAttribute("login_redirect")).thenReturn("http://localhost:3000");

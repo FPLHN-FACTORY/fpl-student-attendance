@@ -1,27 +1,32 @@
 package udpm.hn.studentattendance.core.support.controller;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.mock.web.MockMultipartFile;
-import org.springframework.test.web.servlet.MockMvc;
 import udpm.hn.studentattendance.core.support.service.SupportService;
+import udpm.hn.studentattendance.core.support.model.request.SupportEmailRequest;
 
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(SupportController.class)
 class SupportControllerTest {
 
-    @Autowired
-    private MockMvc mockMvc;
-
-    @MockBean
+    @Mock
     private SupportService supportService;
+
+    @InjectMocks
+    private SupportController supportController;
+
+    @BeforeEach
+    void setUp() {
+        MockitoAnnotations.openMocks(this);
+    }
 
     @Test
     void testSendSupportRequest() throws Exception {
@@ -32,11 +37,18 @@ class SupportControllerTest {
                 MediaType.TEXT_PLAIN_VALUE,
                 "Hello, World!".getBytes());
 
-        // When & Then
-        mockMvc.perform(multipart("/api/v1/support/send-mail")
-                .file(file)
-                .param("title", "Test Support Request")
-                .param("message", "This is a test support message"))
-                .andExpect(status().isOk());
+        // Mock the service response
+        when(supportService.sendSupportMail(any(SupportEmailRequest.class)))
+                .thenReturn(ResponseEntity.ok().build());
+
+        // When
+        ResponseEntity<?> response = supportController.sendSupportRequest(
+                "Test Support Request",
+                "This is a test support message",
+                java.util.List.of(file));
+
+        // Then
+        assertNotNull(response);
+        assertEquals(200, response.getStatusCode().value());
     }
 }

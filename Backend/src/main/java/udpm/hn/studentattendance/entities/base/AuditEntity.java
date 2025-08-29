@@ -5,10 +5,12 @@ import jakarta.persistence.EntityListeners;
 import jakarta.persistence.MappedSuperclass;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 import udpm.hn.studentattendance.infrastructure.listener.AuditEntityListener;
 
 @Getter
 @Setter
+@ToString
 @MappedSuperclass
 @EntityListeners(AuditEntityListener.class)
 public abstract class AuditEntity {

@@ -7,6 +7,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.ToString;
 import org.hibernate.annotations.DynamicUpdate;
 import org.hibernate.annotations.Nationalized;
 import udpm.hn.studentattendance.entities.base.PrimaryEntity;
@@ -19,6 +20,7 @@ import java.io.Serializable;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
+@ToString
 @Table(name = "role")
 @DynamicUpdate
 public class Role extends PrimaryEntity implements Serializable {

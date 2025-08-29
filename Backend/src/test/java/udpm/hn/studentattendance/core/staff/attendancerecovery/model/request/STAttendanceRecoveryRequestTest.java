@@ -28,14 +28,16 @@ public class STAttendanceRecoveryRequestTest {
         assertEquals("findme", req.getQ());
 
         String toString = req.toString();
+        // Test that toString contains the class name and field values
+        assertTrue(toString.contains("STAttendanceRecoveryRequest"));
         assertTrue(toString.contains("page=2"));
-        assertTrue(toString.contains("_size=20"));
-        assertTrue(toString.contains("_orderBy=createdAt"));
-        assertTrue(toString.contains("_sortBy=desc"));
-        assertTrue(toString.contains("_q=findme"));
-        assertTrue(toString.contains("_searchQuery=abc"));
-        assertTrue(toString.contains("_fromDate=123456789"));
-        assertTrue(toString.contains("_toDate=987654321"));
-        assertTrue(toString.contains("_semesterId=sem-1"));
+        assertTrue(toString.contains("size=20"));
+        assertTrue(toString.contains("orderBy=createdAt"));
+        assertTrue(toString.contains("sortBy=desc"));
+        assertTrue(toString.contains("q=findme"));
+        assertTrue(toString.contains("searchQuery=abc"));
+        assertTrue(toString.contains("fromDate=123456789"));
+        assertTrue(toString.contains("toDate=987654321"));
+        assertTrue(toString.contains("semesterId=sem-1"));
     }
 }

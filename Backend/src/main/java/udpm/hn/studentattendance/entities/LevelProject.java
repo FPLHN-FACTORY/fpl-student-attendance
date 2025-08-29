@@ -19,6 +19,7 @@ import java.io.Serializable;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
+@ToString
 @Table(name = "level_project")
 @DynamicUpdate
 public class LevelProject extends PrimaryEntity implements Serializable {

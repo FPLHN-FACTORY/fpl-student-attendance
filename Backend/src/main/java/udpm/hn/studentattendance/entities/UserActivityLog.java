@@ -23,6 +23,7 @@ import java.io.Serializable;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
+@ToString
 @Table(name = "user_activity_log")
 @DynamicUpdate
 public class UserActivityLog extends PrimaryEntity implements Serializable {

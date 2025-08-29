@@ -164,16 +164,12 @@ class MailerHelperTest {
         request.setContent("Test Content");
 
         when(mailSender.createMimeMessage()).thenReturn(mimeMessage);
-        // Mock MimeMessageHelper constructor to throw MessagingException
-        try (MockedConstruction<MimeMessageHelper> mockedConstruction = mockConstruction(MimeMessageHelper.class,
-                (mock, context) -> {
-                    when(mock.getMimeMessage()).thenReturn(mimeMessage);
-                    doThrow(new jakarta.mail.MessagingException("Test exception")).when(mock).setFrom(anyString());
-                })) {
+        
+        // Test that the method handles exceptions properly by mocking a runtime exception
+        doThrow(new RuntimeException("Test exception")).when(mailSender).send(any(MimeMessage.class));
 
-            CompletableFuture<Boolean> result = mailerHelper.send(request);
-            assertFalse(result.get());
-        }
+        CompletableFuture<Boolean> result = mailerHelper.send(request);
+        assertFalse(result.get());
     }
 
     @Test

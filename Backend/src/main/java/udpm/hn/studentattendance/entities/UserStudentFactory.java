@@ -1,6 +1,5 @@
 package udpm.hn.studentattendance.entities;
 
-
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.Entity;
 import jakarta.persistence.JoinColumn;
@@ -10,6 +9,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.ToString;
 import org.hibernate.annotations.DynamicUpdate;
 import udpm.hn.studentattendance.entities.base.PrimaryEntity;
 
@@ -20,6 +20,7 @@ import java.io.Serializable;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
+@ToString
 @Table(name = "user_student_factory")
 @DynamicUpdate
 public class UserStudentFactory extends PrimaryEntity implements Serializable {

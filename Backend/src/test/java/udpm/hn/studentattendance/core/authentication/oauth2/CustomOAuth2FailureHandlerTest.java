@@ -55,7 +55,6 @@ public class CustomOAuth2FailureHandlerTest {
     void testOnAuthenticationFailureWithNullException() throws ServletException, IOException {
         // Arrange
         AuthenticationException exception = null;
-        when(httpSession.getAttribute("login_redirect")).thenReturn("http://localhost:3000");
 
         // Act & Assert - should throw exception due to null pointer
         assertThrows(NullPointerException.class, () -> {

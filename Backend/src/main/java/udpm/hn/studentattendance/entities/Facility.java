@@ -17,6 +17,7 @@ import java.io.Serializable;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
+@ToString
 @Table(name = "facility")
 @DynamicUpdate
 public class Facility extends PrimaryEntity implements Serializable {

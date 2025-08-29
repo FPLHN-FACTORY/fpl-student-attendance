@@ -11,6 +11,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.ToString;
 import org.hibernate.annotations.DynamicUpdate;
 import udpm.hn.studentattendance.entities.base.PrimaryEntity;
 import udpm.hn.studentattendance.infrastructure.constants.EntityProperties;
@@ -22,6 +23,7 @@ import java.io.Serializable;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
+@ToString
 @Table(name = "factory")
 @DynamicUpdate
 public class Factory extends PrimaryEntity implements Serializable {

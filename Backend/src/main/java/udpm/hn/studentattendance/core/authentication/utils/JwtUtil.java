@@ -70,7 +70,10 @@ public class JwtUtil {
 
     public String generateToken(String token) {
         Claims claims = getClaimsFromToken(token).getBody();
-        return buildToken(claims);
+        Map<String, Object> newClaims = new HashMap<>();
+        newClaims.putAll(claims);
+        newClaims.put("regenerated", System.currentTimeMillis());
+        return buildToken(claims.getSubject(), newClaims);
     }
 
     private String buildToken(String email, Map<String, Object> data) {

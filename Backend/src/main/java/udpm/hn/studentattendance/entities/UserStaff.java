@@ -6,6 +6,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.ToString;
 import org.hibernate.annotations.DynamicUpdate;
 import org.hibernate.annotations.Nationalized;
 import org.springframework.security.core.GrantedAuthority;
@@ -23,6 +24,7 @@ import java.util.List;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
+@ToString
 @Table(name = "user_staff")
 @DynamicUpdate
 public class UserStaff extends PrimaryEntity implements UserDetails {

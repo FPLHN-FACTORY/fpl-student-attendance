@@ -352,7 +352,7 @@ class USFactoryServiceImplTest {
                 ApiResponse apiResponse = (ApiResponse) response.getBody();
                 assertNotNull(apiResponse);
                 assertEquals(RestApiStatus.SUCCESS, apiResponse.getStatus());
-                assertEquals("Thêm nhóm xưởng mới thành công", apiResponse.getMessage());
+                assertTrue(apiResponse.getMessage().contains("Thêm mới nhóm xưởng thành công"));
 
                 verify(factoryRepository).save(any(Factory.class));
                 verify(notificationService).add(any(NotificationAddRequest.class));
@@ -457,10 +457,14 @@ class USFactoryServiceImplTest {
                 Project oldProject = mock(Project.class);
                 when(oldProject.getId()).thenReturn("old-project-1");
 
+                UserStaff oldStaff = mock(UserStaff.class);
+                when(oldStaff.getId()).thenReturn("old-staff-1");
+
                 Factory existingFactory = mock(Factory.class);
                 when(existingFactory.getId()).thenReturn("factory-1");
                 when(existingFactory.getName()).thenReturn("Old Factory Name");
                 when(existingFactory.getProject()).thenReturn(oldProject);
+                when(existingFactory.getUserStaff()).thenReturn(oldStaff);
                 when(factoryRepository.findById("factory-1")).thenReturn(Optional.of(existingFactory));
 
                 UserStaff mockStaff = mock(UserStaff.class);
@@ -478,6 +482,7 @@ class USFactoryServiceImplTest {
                 Factory updatedFactory = new Factory();
                 updatedFactory.setId("factory-1");
                 updatedFactory.setName(request.getFactoryName());
+                updatedFactory.setProject(mockProject);
                 when(factoryRepository.save(any(Factory.class))).thenReturn(updatedFactory);
 
                 doNothing().when(userActivityLogHelper).saveLog(anyString());

@@ -22,6 +22,7 @@ import java.io.Serializable;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
+@ToString
 @Table(name = "import_log_detail")
 @DynamicUpdate
 public class ImportLogDetail extends PrimaryEntity implements Serializable {

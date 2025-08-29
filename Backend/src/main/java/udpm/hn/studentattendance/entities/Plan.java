@@ -1,6 +1,5 @@
 package udpm.hn.studentattendance.entities;
 
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.JoinColumn;
@@ -10,6 +9,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.ToString;
 import org.hibernate.annotations.DynamicUpdate;
 import udpm.hn.studentattendance.entities.base.PrimaryEntity;
 import udpm.hn.studentattendance.infrastructure.constants.EntityProperties;
@@ -21,6 +21,7 @@ import java.io.Serializable;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
+@ToString
 @Table(name = "plan")
 @DynamicUpdate
 public class Plan extends PrimaryEntity implements Serializable {

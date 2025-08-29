@@ -210,7 +210,7 @@ public class STStudentServiceImplTest {
         assertEquals(HttpStatus.OK, response.getStatusCode());
         ApiResponse apiResponse = (ApiResponse) response.getBody();
         assertEquals(RestApiStatus.SUCCESS, apiResponse.getStatus());
-        assertEquals("Thêm sinh viên mới thành công", apiResponse.getMessage());
+        assertEquals("Thêm sinh viên mới thành công: Nguyen Van A - ST001", apiResponse.getMessage());
 
         verify(studentExtendRepository).save(any(UserStudent.class));
         verify(userActivityLogHelper).saveLog(contains("vừa thêm 1 sinh viên mới"));

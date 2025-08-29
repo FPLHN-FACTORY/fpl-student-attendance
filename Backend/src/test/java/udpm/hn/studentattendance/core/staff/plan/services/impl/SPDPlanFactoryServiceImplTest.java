@@ -215,26 +215,32 @@ class SPDPlanFactoryServiceImplTest {
     void testDeletePlanFactory_Success() {
         // Arrange
         String planFactoryId = "plan-factory-1";
+        String facilityId = "facility-1";
+
+        when(sessionHelper.getFacilityId()).thenReturn(facilityId);
 
         PlanFactory planFactory = mock(PlanFactory.class);
         when(planFactory.getId()).thenReturn(planFactoryId);
-        when(planFactory.getStatus()).thenReturn(EntityStatus.INACTIVE);
 
         Factory factory = mock(Factory.class);
-        lenient().when(factory.getName()).thenReturn("Test Factory");
+        when(factory.getName()).thenReturn("Test Factory");
 
         Plan plan = mock(Plan.class);
-        lenient().when(plan.getName()).thenReturn("Test Plan");
-        lenient().when(plan.getFromDate()).thenReturn(System.currentTimeMillis());
-        lenient().when(plan.getToDate()).thenReturn(System.currentTimeMillis() + 86400000L);
+        when(plan.getName()).thenReturn("Test Plan");
 
         when(planFactory.getFactory()).thenReturn(factory);
         when(planFactory.getPlan()).thenReturn(plan);
 
         when(spdPlanFactoryRepository.findById(planFactoryId)).thenReturn(Optional.of(planFactory));
 
-        lenient().when(spdPlanFactoryRepository.deleteAllAttendanceByIdPlanFactory(planFactoryId)).thenReturn(1);
-        lenient().when(spdPlanFactoryRepository.deleteAllPlanDateByIdPlanFactory(planFactoryId)).thenReturn(1);
+        // Mock the getDetail method to return an inactive status response
+        SPDPlanFactoryResponse planFactoryResponse = mock(SPDPlanFactoryResponse.class);
+        when(planFactoryResponse.getStatus()).thenReturn(EntityStatus.INACTIVE.ordinal());
+        when(spdPlanFactoryRepository.getDetail(eq(planFactoryId), eq(facilityId)))
+                .thenReturn(Optional.of(planFactoryResponse));
+
+        when(spdPlanFactoryRepository.deleteAllAttendanceByIdPlanFactory(planFactoryId)).thenReturn(1);
+        when(spdPlanFactoryRepository.deleteAllPlanDateByIdPlanFactory(planFactoryId)).thenReturn(1);
         doNothing().when(spdPlanFactoryRepository).delete(planFactory);
         doNothing().when(userActivityLogHelper).saveLog(anyString());
 
@@ -258,20 +264,20 @@ class SPDPlanFactoryServiceImplTest {
     void testDeletePlanFactory_ActiveFactory() {
         // Arrange
         String planFactoryId = "plan-factory-1";
+        String facilityId = "facility-1";
+
+        when(sessionHelper.getFacilityId()).thenReturn(facilityId);
 
         PlanFactory planFactory = mock(PlanFactory.class);
-        when(planFactory.getStatus()).thenReturn(EntityStatus.ACTIVE); // Active factory
-
-        Factory factory = mock(Factory.class);
-        lenient().when(factory.getName()).thenReturn("Test Factory");
-
-        Plan plan = mock(Plan.class);
-        lenient().when(plan.getName()).thenReturn("Test Plan");
-
-        when(planFactory.getFactory()).thenReturn(factory);
-        when(planFactory.getPlan()).thenReturn(plan);
+        when(planFactory.getId()).thenReturn(planFactoryId);
 
         when(spdPlanFactoryRepository.findById(planFactoryId)).thenReturn(Optional.of(planFactory));
+
+        // Mock the getDetail method to return an active status response
+        SPDPlanFactoryResponse planFactoryResponse = mock(SPDPlanFactoryResponse.class);
+        when(planFactoryResponse.getStatus()).thenReturn(EntityStatus.ACTIVE.ordinal());
+        when(spdPlanFactoryRepository.getDetail(eq(planFactoryId), eq(facilityId)))
+                .thenReturn(Optional.of(planFactoryResponse));
 
         // Act
         ResponseEntity<?> response = planFactoryService.deletePlanFactory(planFactoryId);

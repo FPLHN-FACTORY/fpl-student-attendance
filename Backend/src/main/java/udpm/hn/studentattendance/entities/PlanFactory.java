@@ -21,6 +21,7 @@ import java.io.Serializable;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
+@ToString
 @Table(name = "plan_factory")
 @DynamicUpdate
 public class PlanFactory extends PrimaryEntity implements Serializable {

@@ -27,7 +27,7 @@ public class ValidateHelper {
 
     private static final String EMAIL_FPT_REGEX = "^[A-Za-z0-9._+-]+@fpt\\.edu\\.vn$";
 
-    private static final String EMAIL_FE_REGEX  = "^[A-Za-z0-9._+-]+@fe\\.edu\\.vn$";
+    private static final String EMAIL_FE_REGEX = "^[A-Za-z0-9._+-]+@fe\\.edu\\.vn$";
 
     private static final String PHONE_REGEX = "^0[0-9]{9,10}$";
 
@@ -92,10 +92,16 @@ public class ValidateHelper {
     }
 
     public static boolean isValidIPv6(String ip) {
+        if (ip == null) {
+            return false;
+        }
         return validator.isValidInet6Address(ip);
     }
 
     public static boolean isValidIPv4CIDR(String cidr) {
+        if (cidr == null) {
+            return false;
+        }
         try {
             new SubnetUtils(cidr);
             return true;
@@ -105,7 +111,31 @@ public class ValidateHelper {
     }
 
     public static boolean isValidIPv6CIDR(String cidr) {
-        return cidr.matches("^([0-9a-fA-F:]+:+)+[0-9a-fA-F]+/\\d{1,3}$");
+        if (cidr == null) {
+            return false;
+        }
+        // Simple IPv6 CIDR validation - check format and prefix length
+        if (!cidr.contains("/")) {
+            return false;
+        }
+        String[] parts = cidr.split("/");
+        if (parts.length != 2) {
+            return false;
+        }
+        String ip = parts[0];
+        String prefixLength = parts[1];
+
+        try {
+            int prefix = Integer.parseInt(prefixLength);
+            if (prefix < 0 || prefix > 128) {
+                return false;
+            }
+            // Basic IPv6 format check
+            return ip.matches(
+                    "^([0-9a-fA-F]{1,4}:){0,7}[0-9a-fA-F]{1,4}$|^::$|^([0-9a-fA-F]{1,4}:){1,7}:$|^([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}$");
+        } catch (NumberFormatException e) {
+            return false;
+        }
     }
 
     public static boolean isLocalhost(String ip) {
@@ -116,32 +146,50 @@ public class ValidateHelper {
     }
 
     public static boolean isAllowedIP(String ip, Set<String> ALLOWED_IP_OR_CIDR) {
+        if (ip == null || ALLOWED_IP_OR_CIDR == null || ALLOWED_IP_OR_CIDR.isEmpty()) {
+            return false;
+        }
+
         if (!validator.isValid(ip)) {
             return false;
         }
 
         for (String allowed : ALLOWED_IP_OR_CIDR) {
-            if (isValidDnsSuffix(allowed)) {
-                List<String> lstDNSSuffix = AppUtils.getDnsSuffixes();
-                if (lstDNSSuffix.contains(allowed)) {
-                    return true;
-                }
-            } else {
-                if (allowed.contains("/")) {
-                    if (allowed.contains(":")) {
-                        if (isIPInIPv6Range(ip, allowed)) {
-                            return true;
-                        }
-                    } else {
+            if (allowed == null) {
+                continue;
+            }
+
+            // First check if it's an exact IP match
+            if (allowed.equals(ip)) {
+                return true;
+            }
+
+            // Then check if it's a CIDR range
+            if (allowed.contains("/")) {
+                if (allowed.contains(":")) {
+                    // IPv6 CIDR
+                    if (isIPInIPv6Range(ip, allowed)) {
+                        return true;
+                    }
+                } else {
+                    // IPv4 CIDR
+                    try {
                         SubnetUtils subnet = new SubnetUtils(allowed);
                         if (subnet.getInfo().isInRange(ip)) {
                             return true;
                         }
+                    } catch (IllegalArgumentException e) {
+                        // Invalid CIDR format, skip this entry
+                        continue;
                     }
-                } else {
-                    if (allowed.equals(ip)) {
-                        return true;
-                    }
+                }
+            }
+
+            // Finally check if it's a DNS suffix (this should be rare for IP validation)
+            if (isValidDnsSuffix(allowed)) {
+                List<String> lstDNSSuffix = AppUtils.getDnsSuffixes();
+                if (lstDNSSuffix != null && lstDNSSuffix.contains(allowed)) {
+                    return true;
                 }
             }
         }
@@ -149,10 +197,21 @@ public class ValidateHelper {
     }
 
     public static boolean isIPInIPv6Range(String ip, String cidr) {
+        if (ip == null || cidr == null) {
+            return false;
+        }
         if (!validator.isValidInet6Address(ip)) {
             return false;
         }
-        return ip.startsWith(cidr.split("/")[0]);
+        if (!cidr.contains("/")) {
+            return false;
+        }
+        try {
+            String networkPart = cidr.split("/")[0];
+            return ip.startsWith(networkPart);
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     public static boolean isValidDnsSuffix(String suffix) {

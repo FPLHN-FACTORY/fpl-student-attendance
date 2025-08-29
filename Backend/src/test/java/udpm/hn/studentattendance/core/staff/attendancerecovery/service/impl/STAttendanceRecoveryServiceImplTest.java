@@ -367,14 +367,15 @@ class STAttendanceRecoveryServiceImplTest {
 
         PlanDate planDate = mock(PlanDate.class);
         when(planDate.getId()).thenReturn("plan-date-1");
-        when(planDate.getEndDate()).thenReturn(request.getDay());
-        List<PlanDate> planDates = Collections.singletonList(planDate);
+        when(planDate.getEndDate()).thenReturn(request.getDay()); // Same day to ensure matching
+
         when(planDateRepository.getAllPlanDateByPlanFactoryId("plan-factory-1", EntityStatus.ACTIVE,
                 EntityStatus.ACTIVE))
-                .thenReturn(planDates);
+                .thenReturn(Arrays.asList(planDate));
 
         AttendanceRecovery attendanceRecovery = mock(AttendanceRecovery.class);
         when(attendanceRecoveryRepository.findById("recovery-1")).thenReturn(Optional.of(attendanceRecovery));
+        when(attendanceRecovery.getDay()).thenReturn(request.getDay());
 
         when(attendanceRepository.findByUserStudentIdAndPlanDateId("student-1", "plan-date-1")).thenReturn(null);
 
@@ -412,6 +413,11 @@ class STAttendanceRecoveryServiceImplTest {
         request.setDay(System.currentTimeMillis());
         request.setAttendanceRecoveryId("recovery-1");
 
+        // Mock attendance recovery to exist
+        AttendanceRecovery attendanceRecovery = mock(AttendanceRecovery.class);
+        when(attendanceRecoveryRepository.findById("recovery-1")).thenReturn(Optional.of(attendanceRecovery));
+        when(attendanceRecovery.getDay()).thenReturn(request.getDay());
+
         when(studentRepository.getStudentByCode("ST001", EntityStatus.ACTIVE)).thenReturn(null);
 
         // Act
@@ -432,6 +438,11 @@ class STAttendanceRecoveryServiceImplTest {
         request.setStudentCode("ST001");
         request.setDay(System.currentTimeMillis());
         request.setAttendanceRecoveryId("recovery-1");
+
+        // Mock attendance recovery to exist
+        AttendanceRecovery attendanceRecovery = mock(AttendanceRecovery.class);
+        when(attendanceRecoveryRepository.findById("recovery-1")).thenReturn(Optional.of(attendanceRecovery));
+        when(attendanceRecovery.getDay()).thenReturn(request.getDay());
 
         UserStudent student = mock(UserStudent.class);
         when(student.getId()).thenReturn("student-1");
@@ -461,6 +472,11 @@ class STAttendanceRecoveryServiceImplTest {
         request.setStudentCode("ST001");
         request.setDay(System.currentTimeMillis());
         request.setAttendanceRecoveryId("recovery-1");
+
+        // Mock attendance recovery to exist
+        AttendanceRecovery attendanceRecovery = mock(AttendanceRecovery.class);
+        when(attendanceRecoveryRepository.findById("recovery-1")).thenReturn(Optional.of(attendanceRecovery));
+        when(attendanceRecovery.getDay()).thenReturn(request.getDay());
 
         UserStudent student = mock(UserStudent.class);
         when(student.getId()).thenReturn("student-1");
@@ -498,6 +514,11 @@ class STAttendanceRecoveryServiceImplTest {
         request.setDay(System.currentTimeMillis());
         request.setAttendanceRecoveryId("recovery-1");
 
+        // Mock attendance recovery to exist
+        AttendanceRecovery attendanceRecovery = mock(AttendanceRecovery.class);
+        when(attendanceRecoveryRepository.findById("recovery-1")).thenReturn(Optional.of(attendanceRecovery));
+        when(attendanceRecovery.getDay()).thenReturn(request.getDay());
+
         UserStudent student = mock(UserStudent.class);
         when(student.getId()).thenReturn("student-1");
         when(student.getCode()).thenReturn("ST001");
@@ -517,6 +538,10 @@ class STAttendanceRecoveryServiceImplTest {
         when(planFactoryRepository.getPlanFactoryByFactoryId("factory-1", EntityStatus.ACTIVE, EntityStatus.ACTIVE))
                 .thenReturn(planFactory);
 
+        PlanDate planDate = mock(PlanDate.class);
+        when(planDate.getId()).thenReturn("plan-date-1");
+        when(planDate.getEndDate()).thenReturn(request.getDay() + 86400000L); // Next day to ensure filtering
+
         when(planDateRepository.getAllPlanDateByPlanFactoryId("plan-factory-1", EntityStatus.ACTIVE,
                 EntityStatus.ACTIVE))
                 .thenReturn(Collections.emptyList());
@@ -528,7 +553,7 @@ class STAttendanceRecoveryServiceImplTest {
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         ApiResponse apiResponse = (ApiResponse) response.getBody();
         assertEquals(RestApiStatus.ERROR, apiResponse.getStatus());
-        assertTrue(apiResponse.getMessage().contains("không có ca học nào"));
+        assertTrue(apiResponse.getMessage().contains("không có ca nào"));
     }
 
     @Test

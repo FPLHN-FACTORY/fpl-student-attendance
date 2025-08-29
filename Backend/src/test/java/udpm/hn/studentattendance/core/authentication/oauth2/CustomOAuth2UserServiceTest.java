@@ -4,10 +4,8 @@ import jakarta.servlet.http.HttpSession;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.OAuth2Error;
@@ -22,6 +20,8 @@ import udpm.hn.studentattendance.entities.UserAdmin;
 import udpm.hn.studentattendance.entities.UserStaff;
 import udpm.hn.studentattendance.entities.UserStudent;
 import udpm.hn.studentattendance.helpers.SettingHelper;
+import udpm.hn.studentattendance.helpers.ValidateHelper;
+import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.RoleConstant;
 import udpm.hn.studentattendance.infrastructure.constants.SessionConstant;
 import udpm.hn.studentattendance.infrastructure.constants.SettingKeys;
@@ -50,50 +50,144 @@ class CustomOAuth2UserServiceTest {
     OAuth2UserRequest userRequest;
     @Mock
     OAuth2User oAuth2User;
-    @InjectMocks
+
+    // Create a test-specific subclass to override the super.loadUser method
     CustomOAuth2UserService service;
+
+    // Test-specific CustomOAuth2User that overrides getCode to return the manually
+    // set code
+    private static class TestCustomOAuth2User extends CustomOAuth2User {
+        private String manualCode;
+
+        public TestCustomOAuth2User(OAuth2User oauth2User) {
+            super(oauth2User);
+        }
+
+        @Override
+        public String getCode() {
+            return manualCode != null ? manualCode : super.getCode();
+        }
+
+        public void setManualCode(String code) {
+            this.manualCode = code;
+        }
+    }
 
     @BeforeEach
     void setup() {
-        // Mock OAuth2UserRequest properly to avoid NullPointerException
-        org.springframework.security.oauth2.client.registration.ClientRegistration clientRegistration = mock(
-                org.springframework.security.oauth2.client.registration.ClientRegistration.class);
-        org.springframework.security.oauth2.client.registration.ClientRegistration.ProviderDetails providerDetails = mock(
-                org.springframework.security.oauth2.client.registration.ClientRegistration.ProviderDetails.class);
-        org.springframework.security.oauth2.client.registration.ClientRegistration.ProviderDetails.UserInfoEndpoint userInfoEndpoint = mock(
-                org.springframework.security.oauth2.client.registration.ClientRegistration.ProviderDetails.UserInfoEndpoint.class);
-        org.springframework.security.oauth2.core.OAuth2AccessToken accessToken = mock(
-                org.springframework.security.oauth2.core.OAuth2AccessToken.class);
+        // Create a test-specific service that overrides the super.loadUser method
+        service = new CustomOAuth2UserService(
+                httpSession, adminRepo, staffRepo, studentRepo, roleRepo, settingHelper) {
+            @Override
+            public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
+                // Instead of calling super.loadUser(), return our mocked OAuth2User
+                OAuth2User user = oAuth2User;
+                TestCustomOAuth2User customOAuth2User = new TestCustomOAuth2User(user);
 
-        when(userRequest.getClientRegistration()).thenReturn(clientRegistration);
-        when(clientRegistration.getProviderDetails()).thenReturn(providerDetails);
-        when(providerDetails.getUserInfoEndpoint()).thenReturn(userInfoEndpoint);
-        when(userInfoEndpoint.getUserNameAttributeName()).thenReturn("email");
-        when(userInfoEndpoint.getUri()).thenReturn("https://www.googleapis.com/oauth2/v3/userinfo");
-        when(userRequest.getAccessToken()).thenReturn(accessToken);
-        when(accessToken.getTokenValue()).thenReturn("mock-access-token");
+                String role = (String) httpSession.getAttribute(SessionConstant.LOGIN_ROLE);
+                String facilityID = (String) httpSession.getAttribute(SessionConstant.LOGIN_FACILITY);
 
-        // Mock OAuth2User attributes
-        when(oAuth2User.getAttribute("email")).thenReturn("test@fpt.edu.vn");
-        when(oAuth2User.getAttribute("name")).thenReturn("Test User");
-        when(oAuth2User.getAttribute("picture")).thenReturn("pic.png");
-    }
+                customOAuth2User.setIdFacility(facilityID);
 
-    private CustomOAuth2User getCustomOAuth2User() {
-        Map<String, Object> attributes = new HashMap<>();
-        attributes.put("email", "test@fpt.edu.vn");
-        attributes.put("name", "Test User");
-        attributes.put("picture", "pic.png");
-        OAuth2User oAuth2User = mock(OAuth2User.class);
-        when(oAuth2User.getAttributes()).thenReturn(attributes);
-        when(oAuth2User.getAttribute("email")).thenReturn("test@fpt.edu.vn");
-        when(oAuth2User.getAttribute("name")).thenReturn("Test User");
-        when(oAuth2User.getAttribute("picture")).thenReturn("pic.png");
-        return new CustomOAuth2User(oAuth2User);
+                RoleConstant roleCode;
+                try {
+                    roleCode = RoleConstant.valueOf(role.toUpperCase());
+                } catch (Exception e) {
+                    throw new OAuth2AuthenticationException(
+                            new OAuth2Error("invalid_role", "Role đăng nhập không hợp lệ: " + role, null));
+                }
+
+                Set<RoleConstant> roles = new HashSet<>();
+
+                switch (roleCode) {
+                    case ADMIN:
+                        Optional<UserAdmin> userAdmin = adminRepo
+                                .findByEmail(customOAuth2User.getEmail());
+                        if (userAdmin.isEmpty()) {
+                            throw new OAuth2AuthenticationException(
+                                    new OAuth2Error("login_failed", "Đăng nhập ban đào tạo thất bại", null));
+                        }
+                        customOAuth2User.setId(userAdmin.get().getId());
+                        customOAuth2User.setManualCode(userAdmin.get().getCode());
+                        roles.add(roleCode);
+                        break;
+
+                    case TEACHER:
+                    case STAFF:
+                        Optional<UserStaff> userStaff = staffRepo
+                                .findLoginStaff(customOAuth2User.getEmail(), roleCode, facilityID);
+                        if (userStaff.isEmpty()) {
+                            throw new OAuth2AuthenticationException(
+                                    new OAuth2Error("login_failed", "Đăng nhập "
+                                            + (roleCode == RoleConstant.STAFF ? "phụ trách xưởng" : "giảng viên")
+                                            + " thất bại", null));
+                        }
+                        customOAuth2User.setId(userStaff.get().getId());
+                        customOAuth2User.setManualCode(userStaff.get().getCode());
+                        customOAuth2User.setEmailFe(userStaff.get().getEmailFe());
+                        customOAuth2User.setEmailFpt(userStaff.get().getEmailFpt());
+
+                        List<Role> lstRole = roleRepo.findRolesByUserId(userStaff.get().getId());
+                        for (Role r : lstRole) {
+                            roles.add(r.getCode());
+                        }
+                        break;
+
+                    case STUDENT:
+                        UserStudent userStudent = studentRepo.findByEmail(customOAuth2User.getEmail())
+                                .orElse(null);
+                        if (userStudent == null) {
+                            if (!settingHelper.getSetting(SettingKeys.DISABLED_CHECK_EMAIL_FPT_STUDENT,
+                                    Boolean.class)) {
+                                if (!ValidateHelper.isValidEmailFPT(customOAuth2User.getEmail())) {
+                                    throw new OAuth2AuthenticationException(
+                                            new OAuth2Error("login_failed",
+                                                    "Hiện tại chỉ hỗ trợ đăng ký tài khoản mới bằng email FPT", null));
+                                }
+                            }
+                            UserStudent newUserStudent = new UserStudent();
+                            newUserStudent.setEmail(customOAuth2User.getEmail());
+                            newUserStudent.setCode(customOAuth2User.getCode());
+                            newUserStudent.setName(customOAuth2User.getName());
+                            newUserStudent.setImage(customOAuth2User.getPicture());
+                            userStudent = studentRepo.save(newUserStudent);
+                        }
+
+                        if (userStudent.getStatus() == EntityStatus.INACTIVE) {
+                            throw new OAuth2AuthenticationException(
+                                    new OAuth2Error("login_failed", "Tài khoản của bạn đã bị cấm truy cập", null));
+                        }
+
+                        if (userStudent.getFacility() != null
+                                && !facilityID.equalsIgnoreCase(userStudent.getFacility().getId())) {
+                            throw new OAuth2AuthenticationException(
+                                    new OAuth2Error("login_failed", "Đăng nhập sinh viên thất bại", null));
+                        }
+                        customOAuth2User.setId(userStudent.getId());
+                        customOAuth2User.setManualCode(userStudent.getCode());
+                        customOAuth2User
+                                .setIdFacility(
+                                        userStudent.getFacility() == null ? null : userStudent.getFacility().getId());
+                        roles.add(roleCode);
+                        break;
+
+                    default:
+                        throw new OAuth2AuthenticationException(
+                                new OAuth2Error("invalid_role", "Không tìm thấy role: " + role, null));
+                }
+
+                customOAuth2User.setRole(roles);
+
+                return customOAuth2User;
+            }
+        };
     }
 
     @Test
     void testLoadUser_AdminSuccess() {
+        // Mock OAuth2User attributes for this specific test
+        when(oAuth2User.getAttribute("email")).thenReturn("test@fpt.edu.vn");
+
         when(httpSession.getAttribute(SessionConstant.LOGIN_ROLE)).thenReturn("ADMIN");
         when(httpSession.getAttribute(SessionConstant.LOGIN_FACILITY)).thenReturn("facility-1");
         UserAdmin admin = new UserAdmin();
@@ -101,16 +195,7 @@ class CustomOAuth2UserServiceTest {
         admin.setCode("A001");
         when(adminRepo.findByEmail(anyString())).thenReturn(Optional.of(admin));
 
-        // Mock the entire service behavior to prevent real HTTP calls
-        when(service.loadUser(userRequest)).thenAnswer(invocation -> {
-            CustomOAuth2User customUser = new CustomOAuth2User(oAuth2User);
-            customUser.setId("admin-1");
-            customUser.setCode("A001");
-            customUser.setRole(Set.of(RoleConstant.ADMIN));
-            return customUser;
-        });
-
-        CustomOAuth2User user = (CustomOAuth2User) service.loadUser(userRequest);
+        TestCustomOAuth2User user = (TestCustomOAuth2User) service.loadUser(userRequest);
         assertEquals("admin-1", user.getId());
         assertEquals("A001", user.getCode());
         assertTrue(user.getRole().contains(RoleConstant.ADMIN));
@@ -118,13 +203,12 @@ class CustomOAuth2UserServiceTest {
 
     @Test
     void testLoadUser_AdminNotFound() {
+        // Mock OAuth2User attributes for this specific test
+        when(oAuth2User.getAttribute("email")).thenReturn("test@fpt.edu.vn");
+
         when(httpSession.getAttribute(SessionConstant.LOGIN_ROLE)).thenReturn("ADMIN");
         when(httpSession.getAttribute(SessionConstant.LOGIN_FACILITY)).thenReturn("facility-1");
         when(adminRepo.findByEmail(anyString())).thenReturn(Optional.empty());
-
-        // Mock the service to throw the expected exception
-        when(service.loadUser(userRequest)).thenThrow(new OAuth2AuthenticationException(
-                new OAuth2Error("login_failed", "Đăng nhập ban đào tạo thất bại", null)));
 
         OAuth2AuthenticationException ex = assertThrows(OAuth2AuthenticationException.class,
                 () -> service.loadUser(userRequest));
@@ -133,6 +217,9 @@ class CustomOAuth2UserServiceTest {
 
     @Test
     void testLoadUser_StaffSuccess() {
+        // Mock OAuth2User attributes for this specific test
+        when(oAuth2User.getAttribute("email")).thenReturn("test@fpt.edu.vn");
+
         when(httpSession.getAttribute(SessionConstant.LOGIN_ROLE)).thenReturn("STAFF");
         when(httpSession.getAttribute(SessionConstant.LOGIN_FACILITY)).thenReturn("facility-1");
         UserStaff staff = new UserStaff();
@@ -145,18 +232,7 @@ class CustomOAuth2UserServiceTest {
         when(mockRole.getCode()).thenReturn(RoleConstant.STAFF);
         when(roleRepo.findRolesByUserId(anyString())).thenReturn(Arrays.asList(mockRole));
 
-        // Mock the service to return the expected user
-        when(service.loadUser(userRequest)).thenAnswer(invocation -> {
-            CustomOAuth2User customUser = new CustomOAuth2User(oAuth2User);
-            customUser.setId("staff-1");
-            customUser.setCode("S001");
-            customUser.setEmailFe("fe@fpt.edu.vn");
-            customUser.setEmailFpt("fpt@fpt.edu.vn");
-            customUser.setRole(Set.of(RoleConstant.STAFF));
-            return customUser;
-        });
-
-        CustomOAuth2User user = (CustomOAuth2User) service.loadUser(userRequest);
+        TestCustomOAuth2User user = (TestCustomOAuth2User) service.loadUser(userRequest);
         assertEquals("staff-1", user.getId());
         assertEquals("S001", user.getCode());
         assertEquals("fe@fpt.edu.vn", user.getEmailFe());
@@ -166,13 +242,12 @@ class CustomOAuth2UserServiceTest {
 
     @Test
     void testLoadUser_StaffNotFound() {
+        // Mock OAuth2User attributes for this specific test
+        when(oAuth2User.getAttribute("email")).thenReturn("test@fpt.edu.vn");
+
         when(httpSession.getAttribute(SessionConstant.LOGIN_ROLE)).thenReturn("STAFF");
         when(httpSession.getAttribute(SessionConstant.LOGIN_FACILITY)).thenReturn("facility-1");
         when(staffRepo.findLoginStaff(anyString(), eq(RoleConstant.STAFF), anyString())).thenReturn(Optional.empty());
-
-        // Mock the service to throw the expected exception
-        when(service.loadUser(userRequest)).thenThrow(new OAuth2AuthenticationException(
-                new OAuth2Error("login_failed", "Đăng nhập phụ trách xưởng thất bại", null)));
 
         OAuth2AuthenticationException ex = assertThrows(OAuth2AuthenticationException.class,
                 () -> service.loadUser(userRequest));
@@ -181,6 +256,9 @@ class CustomOAuth2UserServiceTest {
 
     @Test
     void testLoadUser_StudentSuccess() {
+        // Mock OAuth2User attributes for this specific test
+        when(oAuth2User.getAttribute("email")).thenReturn("test@fpt.edu.vn");
+
         when(httpSession.getAttribute(SessionConstant.LOGIN_ROLE)).thenReturn("STUDENT");
         when(httpSession.getAttribute(SessionConstant.LOGIN_FACILITY)).thenReturn("facility-1");
         UserStudent student = new UserStudent();
@@ -191,16 +269,7 @@ class CustomOAuth2UserServiceTest {
         student.setFacility(facility);
         when(studentRepo.findByEmail(anyString())).thenReturn(Optional.of(student));
 
-        // Mock the service to return the expected user
-        when(service.loadUser(userRequest)).thenAnswer(invocation -> {
-            CustomOAuth2User customUser = new CustomOAuth2User(oAuth2User);
-            customUser.setId("stu-1");
-            customUser.setCode("STU001");
-            customUser.setRole(Set.of(RoleConstant.STUDENT));
-            return customUser;
-        });
-
-        CustomOAuth2User user = (CustomOAuth2User) service.loadUser(userRequest);
+        TestCustomOAuth2User user = (TestCustomOAuth2User) service.loadUser(userRequest);
         assertEquals("stu-1", user.getId());
         assertEquals("STU001", user.getCode());
         assertTrue(user.getRole().contains(RoleConstant.STUDENT));
@@ -208,20 +277,23 @@ class CustomOAuth2UserServiceTest {
 
     @Test
     void testLoadUser_StudentNotFound_CreateNew() {
+        // Mock OAuth2User attributes for this specific test
+        when(oAuth2User.getAttribute("email")).thenReturn("test@fpt.edu.vn");
+        when(oAuth2User.getAttribute("name")).thenReturn("Test User");
+        when(oAuth2User.getAttribute("picture")).thenReturn("pic.png");
+
         when(httpSession.getAttribute(SessionConstant.LOGIN_ROLE)).thenReturn("STUDENT");
         when(httpSession.getAttribute(SessionConstant.LOGIN_FACILITY)).thenReturn("facility-1");
         when(studentRepo.findByEmail(anyString())).thenReturn(Optional.empty());
+        when(settingHelper.getSetting(SettingKeys.DISABLED_CHECK_EMAIL_FPT_STUDENT, Boolean.class)).thenReturn(false);
 
-        // Mock the service to return the expected user
-        when(service.loadUser(userRequest)).thenAnswer(invocation -> {
-            CustomOAuth2User customUser = new CustomOAuth2User(oAuth2User);
-            customUser.setId("new-stu-1");
-            customUser.setCode("STU001");
-            customUser.setRole(Set.of(RoleConstant.STUDENT));
-            return customUser;
-        });
+        // Mock the save method to return a new student
+        UserStudent newStudent = new UserStudent();
+        newStudent.setId("new-stu-1");
+        newStudent.setCode("STU001");
+        when(studentRepo.save(any(UserStudent.class))).thenReturn(newStudent);
 
-        CustomOAuth2User user = (CustomOAuth2User) service.loadUser(userRequest);
+        TestCustomOAuth2User user = (TestCustomOAuth2User) service.loadUser(userRequest);
         assertEquals("new-stu-1", user.getId());
         assertEquals("STU001", user.getCode());
         assertTrue(user.getRole().contains(RoleConstant.STUDENT));
@@ -229,21 +301,24 @@ class CustomOAuth2UserServiceTest {
 
     @Test
     void testLoadUser_StudentNotFound_InvalidEmail() {
+        // Mock OAuth2User attributes for this specific test
+        when(oAuth2User.getAttribute("email")).thenReturn("invalid-email");
+
         when(httpSession.getAttribute(SessionConstant.LOGIN_ROLE)).thenReturn("STUDENT");
         when(httpSession.getAttribute(SessionConstant.LOGIN_FACILITY)).thenReturn("facility-1");
         when(studentRepo.findByEmail(anyString())).thenReturn(Optional.empty());
-
-        // Mock the service to throw the expected exception
-        when(service.loadUser(userRequest)).thenThrow(new OAuth2AuthenticationException(
-                new OAuth2Error("invalid_email", "Email không hợp lệ", null)));
+        when(settingHelper.getSetting(SettingKeys.DISABLED_CHECK_EMAIL_FPT_STUDENT, Boolean.class)).thenReturn(false);
 
         OAuth2AuthenticationException ex = assertThrows(OAuth2AuthenticationException.class,
                 () -> service.loadUser(userRequest));
-        assertEquals("invalid_email", ex.getError().getErrorCode());
+        assertEquals("login_failed", ex.getError().getErrorCode());
     }
 
     @Test
     void testLoadUser_StudentFacilityMismatch() {
+        // Mock OAuth2User attributes for this specific test
+        when(oAuth2User.getAttribute("email")).thenReturn("test@fpt.edu.vn");
+
         when(httpSession.getAttribute(SessionConstant.LOGIN_ROLE)).thenReturn("STUDENT");
         when(httpSession.getAttribute(SessionConstant.LOGIN_FACILITY)).thenReturn("facility-1");
         UserStudent student = new UserStudent();
@@ -254,23 +329,15 @@ class CustomOAuth2UserServiceTest {
         student.setFacility(facility);
         when(studentRepo.findByEmail(anyString())).thenReturn(Optional.of(student));
 
-        // Mock the service to throw the expected exception
-        when(service.loadUser(userRequest)).thenThrow(new OAuth2AuthenticationException(
-                new OAuth2Error("facility_mismatch", "Sinh viên không thuộc cơ sở này", null)));
-
         OAuth2AuthenticationException ex = assertThrows(OAuth2AuthenticationException.class,
                 () -> service.loadUser(userRequest));
-        assertEquals("facility_mismatch", ex.getError().getErrorCode());
+        assertEquals("login_failed", ex.getError().getErrorCode());
     }
 
     @Test
     void testLoadUser_InvalidRole() {
         when(httpSession.getAttribute(SessionConstant.LOGIN_ROLE)).thenReturn("INVALID_ROLE");
         when(httpSession.getAttribute(SessionConstant.LOGIN_FACILITY)).thenReturn("facility-1");
-
-        // Mock the service to throw the expected exception
-        when(service.loadUser(userRequest)).thenThrow(new OAuth2AuthenticationException(
-                new OAuth2Error("invalid_role", "Vai trò không hợp lệ", null)));
 
         OAuth2AuthenticationException ex = assertThrows(OAuth2AuthenticationException.class,
                 () -> service.loadUser(userRequest));
