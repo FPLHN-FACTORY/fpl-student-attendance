@@ -20,14 +20,12 @@ import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import udpm.hn.studentattendance.helpers.RouterHelper;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -42,7 +40,7 @@ import java.util.concurrent.BlockingQueue;
 public class OnnxService {
 
     private static final int SIZE_ANTISPOOF = 224;
-    private static final int SIZE_ANTISPOOF2 = 112;
+    private static final int SIZE_ANTISPOOF2 = 256;
     private static final int SIZE_ANTISPOOF3 = 128;
     private static final int SIZE_ANTISPOOF4 = 224;
     private static final int SIZE_ARCFACE = 112;
@@ -155,7 +153,7 @@ public class OnnxService {
 
         return Criteria.builder()
                 .setTypes(byte[].class, float[].class)
-                .optModelPath(Paths.get(modelPath, "modelrgb.onnx").toAbsolutePath())
+                .optModelPath(Paths.get(modelPath, "m8.onnx").toAbsolutePath())
                 .optEngine("OnnxRuntime")
                 .optOption("executionProvider", "CPUExecutionProvider")
                 .optOption("device", "cpu")
@@ -527,16 +525,19 @@ public class OnnxService {
             float antiSpoof3 = antiSpoof3(faceDetected);
             float antiSpoof4 = antiSpoof4(faceDetected);
 
-            if(antiSpoof > 0.7 && antiSpoof3 > 0.7 && antiSpoof4 > 0.7) {
+            if(antiSpoof > 0.7  && antiSpoof2 > 0.7 && antiSpoof3 > 0.7 && antiSpoof4 > 0.7) {
                 return false;
             }
 
-            if (antiSpoof > 0.9999 || antiSpoof4 > 0.9999 || antiSpoof3 > 0.99) {
+            if (antiSpoof > 0.9999 || antiSpoof2 > 0.99  || antiSpoof3 > 0.99 || antiSpoof4 > 0.9999) {
                 return false;
             }
 
             int score = 0;
             if (antiSpoof > 0.8) {
+                score++;
+            }
+            if (antiSpoof2 > 0.8) {
                 score++;
             }
             if (antiSpoof3 > 0.7) {
@@ -546,12 +547,15 @@ public class OnnxService {
                 score++;
             }
 
-            if (score > 1) {
-                return false;
+            if (score > 2) {
+                return antiSpoof < 0.00009 || antiSpoof2 < 0.2 || antiSpoof3 < 0.000000009 || antiSpoof4 < 0.0009;
             }
 
             int scoreF = 0;
             if (antiSpoof < 0.1) {
+                scoreF++;
+            }
+            if (antiSpoof2 < 0.1) {
                 scoreF++;
             }
             if (antiSpoof3 < 0.1) {
@@ -565,19 +569,19 @@ public class OnnxService {
                 return true;
             }
 
-            if (antiSpoof < 0.00001 || antiSpoof2 < 0.00001 || antiSpoof3 < 0.00001 || antiSpoof4 < 0.00001) {
+            if (antiSpoof < 0.00001 || antiSpoof2 < 0.01 || antiSpoof3 < 0.00001 || antiSpoof4 < 0.00001) {
                 return true;
             }
 
             List<Boolean> checking = new ArrayList<>();
             checking.add(antiSpoof < 0.6);
-            checking.add(antiSpoof2 < 0.7);
-            checking.add(antiSpoof3 < 0.01);
+            checking.add(antiSpoof2 < 0.6);
+            checking.add(antiSpoof3 < 0.6);
             checking.add(antiSpoof4 < 0.6);
             
             long totalReject = checking.stream().filter(Boolean::booleanValue).count();
 
-            return totalReject > 1 || (antiSpoof < 0.01 || antiSpoof3 < 0.01 ||  antiSpoof4 < 0.016);
+            return totalReject > 1 || (antiSpoof < 0.01 || antiSpoof2 < 0.01 || antiSpoof3 < 0.01 ||  antiSpoof4 < 0.016);
         } catch (Exception e) {
             return true;
         }

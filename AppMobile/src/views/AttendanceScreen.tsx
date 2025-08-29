@@ -121,7 +121,12 @@ const AttendanceScreen: React.FC<Props> = ({ route, navigation }) => {
         {statusWebcam === PermissionStatus.GRANTED && (
           <WebView
             ref={webviewRef}
-            source={{ uri: `${CLIENT_DOMAIN}/${SECRET_KEY}/false` }}
+            source={{ uri: `${CLIENT_DOMAIN}/${SECRET_KEY}/true` }}
+            cacheEnabled={true}
+            javaScriptEnabled={true}
+            originWhitelist={['*']}
+            setSupportMultipleWindows={false}
+            startInLoadingState={true}
             onMessage={({ nativeEvent }) => {
               try {
                 const data = JSON.parse(nativeEvent?.data)
