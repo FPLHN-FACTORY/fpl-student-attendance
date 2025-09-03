@@ -104,6 +104,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 .parseValue(settings.get(SettingKeys.DISABLED_CHECK_EMAIL_FPT_STAFF));
         Boolean disableCheckEmailFPTStudent = (Boolean) SettingHelper
                 .parseValue(settings.get(SettingKeys.DISABLED_CHECK_EMAIL_FPT_STUDENT));
+        Boolean disableCheckRoom = (Boolean) SettingHelper
+                .parseValue(settings.get(SettingKeys.DISABLED_CHECK_ROOM));
         Integer shiftMinDiff = (Integer) SettingHelper.parseValue(settings.get(SettingKeys.SHIFT_MIN_DIFF));
         Integer shiftMaxLateArrival = (Integer) SettingHelper
                 .parseValue(settings.get(SettingKeys.SHIFT_MAX_LATE_ARRIVAL));
@@ -112,7 +114,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         Integer expirationMinuteLogin = (Integer) SettingHelper
                 .parseValue(settings.get(SettingKeys.EXPIRATION_MINUTE_LOGIN));
 
-        if (disableCheckEmailFPTStaff == null || disableCheckEmailFPTStudent == null || shiftMinDiff == null
+        if (disableCheckEmailFPTStaff == null || disableCheckEmailFPTStudent == null || disableCheckRoom == null || shiftMinDiff == null
                 || shiftMaxLateArrival == null || attendanceEarlyCheckin == null || expirationMinuteLogin == null) {
             return RouterHelper.responseError("Vui lòng nhập đầy đủ các trường bắt buộc");
         }

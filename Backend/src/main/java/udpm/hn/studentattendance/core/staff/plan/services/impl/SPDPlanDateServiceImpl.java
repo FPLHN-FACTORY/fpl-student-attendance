@@ -201,6 +201,8 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
     public ResponseEntity<?> updatePlanDate(SPDAddOrUpdatePlanDateRequest request) {
 
         request.setIdFacility(sessionHelper.getFacilityId());
+
+        boolean DISABLE_CHECK_ROOM = settingHelper.getSetting(SettingKeys.DISABLED_CHECK_ROOM, Boolean.class);
         int MAX_LATE_ARRIVAL = settingHelper.getSetting(SettingKeys.SHIFT_MAX_LATE_ARRIVAL, Integer.class);
 
         if (request.getLateArrival() > MAX_LATE_ARRIVAL) {
@@ -280,7 +282,7 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
             if (!ValidateHelper.isValidName(request.getRoom())) {
                 return RouterHelper.responseError("Tên phòng chỉ được chứa ký tự chữ, số và các ký tự đặc biệt _ - #");
             }
-            if (spdPlanDateRepository.isExistsRoomOnShift(request.getRoom(), startDate, endDate, planDate.getId())) {
+            if (!DISABLE_CHECK_ROOM && spdPlanDateRepository.isExistsRoomOnShift(request.getRoom(), startDate, endDate, planDate.getId())) {
                 return RouterHelper.responseError("Địa điểm " + request.getRoom() + " đã được sử dụng vào ca " + request.getShift()
                         + " trong ngày "
                         + DateTimeUtils.convertMillisToDate(startDate));
@@ -407,6 +409,7 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
 
         request.setIdFacility(sessionHelper.getFacilityId());
 
+        boolean DISABLE_CHECK_ROOM = settingHelper.getSetting(SettingKeys.DISABLED_CHECK_ROOM, Boolean.class);
         int MAX_LATE_ARRIVAL = settingHelper.getSetting(SettingKeys.SHIFT_MAX_LATE_ARRIVAL, Integer.class);
 
         if (request.getLateArrival() > MAX_LATE_ARRIVAL) {
@@ -488,7 +491,7 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
             if (!ValidateHelper.isValidName(request.getRoom())) {
                 return RouterHelper.responseError("Tên phòng chỉ được chứa ký tự chữ, số và các ký tự đặc biệt _ - #");
             }
-            if (spdPlanDateRepository.isExistsRoomOnShift(request.getRoom(), startDate, endDate,
+            if (!DISABLE_CHECK_ROOM && spdPlanDateRepository.isExistsRoomOnShift(request.getRoom(), startDate, endDate,
                     null)) {
                 return RouterHelper.responseError("Địa điểm " + request.getRoom() + " đã được sử dụng vào ca " + request.getShift()
                         + " trong ngày "
