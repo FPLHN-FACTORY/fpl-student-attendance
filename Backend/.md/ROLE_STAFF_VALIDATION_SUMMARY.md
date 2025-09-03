@@ -190,21 +190,21 @@ private Integer lateArrival;
 
 ## Phân hệ Quản lý Phục hồi Điểm danh (staff/attendancerecovery)
 
-### 1. Tạo/Cập nhật sự kiện phục hồi điểm danh
+### 1. Tạo/Cập nhật hoạt động phục hồi điểm danh
 | Trường      | Kiểu    | Validation annotation                | Biên ký tự | Bắt buộc | Kiểm tra trùng/logic nghiệp vụ | Thông báo lỗi |
 |-------------|---------|--------------------------------------|------------|----------|-------------------------------|---------------|
-| name        | String  | @NotBlank (không để trống), @Size(min = 2, max = 255) | 2-255      | Có       |                               | - "Không được để trống tên sự kiện" <br> - "Tên sụ kiện chỉ được tối đa 255 ký tự" |
+| name        | String  | @NotBlank (không để trống), @Size(min = 2, max = 255) | 2-255      | Có       |                               | - "Không được để trống tên hoạt động" <br> - "Tên sụ kiện chỉ được tối đa 255 ký tự" |
 | description | String  |                              |            | Không    |                               |               |
 | day         | Long    |                              |            | Không    |                               |               |
 
-### 2. Thêm sinh viên vào sự kiện phục hồi
+### 2. Thêm sinh viên vào hoạt động phục hồi
 | Trường      | Kiểu    | Validation annotation         | Biên ký tự | Bắt buộc | Kiểm tra trùng/logic nghiệp vụ | Thông báo lỗi |
 |-------------|---------|------------------------------|------------|----------|-------------------------------|---------------|
 | day         | Long    |                              |            | Có       | - Kiểm tra sinh viên có ca học trong ngày | - "Dữ liệu đầu vào không hợp lệ" <br> - "Không tìm thấy mã sinh viên {code}" <br> - "Sinh viên {code} - {name} chưa tham gia nhóm xưởng nào" <br> - "Nhóm xưởng của sinh viên {code} - {name} chưa có kế hoạch hoặc không tồn tại" <br> - "Ngày {date} - Sinh viên {code} - {name} không có ca học nào" <br> - "Sinh viên đã được điểm danh có mặt cho tất cả ca học trong ngày {date}" |
 | studentCode | String  |                              |            | Có       | - Kiểm tra sinh viên tồn tại   |               |
-| attendanceRecoveryId | String |                      |            | Có       | - Kiểm tra sự kiện tồn tại    |               |
+| attendanceRecoveryId | String |                      |            | Có       | - Kiểm tra hoạt động tồn tại    |               |
 
-### 3. Tìm kiếm sự kiện phục hồi
+### 3. Tìm kiếm hoạt động phục hồi
 | Trường      | Kiểu    | Validation annotation         | Biên ký tự | Bắt buộc | Kiểm tra trùng/logic nghiệp vụ | Thông báo lỗi |
 |-------------|---------|------------------------------|------------|----------|-------------------------------|---------------|
 | searchQuery | String  |                              |            | Không    |                               |               |

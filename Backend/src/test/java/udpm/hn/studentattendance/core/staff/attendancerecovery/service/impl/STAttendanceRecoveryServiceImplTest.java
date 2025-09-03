@@ -179,7 +179,7 @@ class STAttendanceRecoveryServiceImplTest {
         ApiResponse apiResponse = (ApiResponse) response.getBody();
         assertNotNull(apiResponse);
         assertEquals(RestApiStatus.SUCCESS, apiResponse.getStatus());
-        assertEquals("Lấy danh sách sự kiện thành công", apiResponse.getMessage());
+        assertEquals("Lấy danh sách hoạt động thành công", apiResponse.getMessage());
     }
 
     @Test
@@ -202,11 +202,11 @@ class STAttendanceRecoveryServiceImplTest {
         assertEquals(HttpStatus.OK, response.getStatusCode());
         ApiResponse apiResponse = (ApiResponse) response.getBody();
         assertEquals(RestApiStatus.SUCCESS, apiResponse.getStatus());
-        assertEquals("Xóa sự kiện khôi phục điểm danh sinh viên thành công", apiResponse.getMessage());
+        assertEquals("Xóa hoạt động khôi phục điểm danh sinh viên thành công", apiResponse.getMessage());
 
         verify(attendanceRepository).deleteAll(attendanceList);
         verify(attendanceRecoveryRepository).deleteById(eventId);
-        verify(userActivityLogHelper).saveLog(contains("vừa xóa sự kiện khôi phục điểm danh"));
+        verify(userActivityLogHelper).saveLog(contains("vừa xóa hoạt động khôi phục điểm danh"));
     }
 
     @Test
@@ -310,7 +310,7 @@ class STAttendanceRecoveryServiceImplTest {
         assertEquals(HttpStatus.OK, response.getStatusCode());
         ApiResponse apiResponse = (ApiResponse) response.getBody();
         assertEquals(RestApiStatus.SUCCESS, apiResponse.getStatus());
-        assertEquals("Lấy chi tiết sự kiện khôi phục điểm danh thành công", apiResponse.getMessage());
+        assertEquals("Lấy chi tiết hoạt động khôi phục điểm danh thành công", apiResponse.getMessage());
         assertEquals(event, apiResponse.getData());
     }
 
@@ -546,7 +546,7 @@ class STAttendanceRecoveryServiceImplTest {
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         ApiResponse apiResponse = (ApiResponse) response.getBody();
         assertEquals(RestApiStatus.ERROR, apiResponse.getStatus());
-        assertEquals("Sự kiện khôi phục điểm danh sinh viên không tồn tại", apiResponse.getMessage());
+        assertEquals("Hoạt động khôi phục điểm danh sinh viên không tồn tại", apiResponse.getMessage());
     }
 
     @Test
@@ -608,7 +608,7 @@ class STAttendanceRecoveryServiceImplTest {
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         ApiResponse apiResponse = (ApiResponse) response.getBody();
         assertEquals(RestApiStatus.ERROR, apiResponse.getStatus());
-        assertEquals("Sự kiện khôi phục điểm danh không tồn tại", apiResponse.getMessage());
+        assertEquals("Hoạt động khôi phục điểm danh không tồn tại", apiResponse.getMessage());
     }
 
     @Test
@@ -806,7 +806,7 @@ class STAttendanceRecoveryServiceImplTest {
         assertEquals(HttpStatus.OK, response.getStatusCode());
         ApiResponse apiResponse = (ApiResponse) response.getBody();
         assertEquals(RestApiStatus.SUCCESS, apiResponse.getStatus());
-        assertEquals("Kiểm tra sự kiện có sinh viên thành công", apiResponse.getMessage());
+        assertEquals("Kiểm tra hoạt động có sinh viên thành công", apiResponse.getMessage());
         assertTrue((Boolean) apiResponse.getData());
     }
 
@@ -824,7 +824,7 @@ class STAttendanceRecoveryServiceImplTest {
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         ApiResponse apiResponse = (ApiResponse) response.getBody();
         assertEquals(RestApiStatus.ERROR, apiResponse.getStatus());
-        assertEquals("Không tìm thấy sự kiện", apiResponse.getMessage());
+        assertEquals("Không tìm thấy hoạt động", apiResponse.getMessage());
     }
 
     @Test
@@ -881,6 +881,6 @@ class STAttendanceRecoveryServiceImplTest {
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         ApiResponse apiResponse = (ApiResponse) response.getBody();
         assertEquals(RestApiStatus.ERROR, apiResponse.getStatus());
-        assertEquals("Không tìm thấy sự kiện khôi phục điểm danh", apiResponse.getMessage());
+        assertEquals("Không tìm thấy hoạt động khôi phục điểm danh", apiResponse.getMessage());
     }
 }
