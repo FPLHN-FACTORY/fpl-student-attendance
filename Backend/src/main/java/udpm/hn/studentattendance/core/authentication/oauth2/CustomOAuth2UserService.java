@@ -74,6 +74,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
                             new OAuth2Error("login_failed", "Đăng nhập ban đào tạo thất bại", null));
                 }
                 customOAuth2User.setId(userAdmin.get().getId());
+                customOAuth2User.setName(userAdmin.get().getName());
                 customOAuth2User.setCode(userAdmin.get().getCode());
                 roles.add(roleCode);
                 break;
@@ -87,6 +88,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
                             new OAuth2Error("login_failed", "Đăng nhập " + (roleCode == RoleConstant.STAFF ? "phụ trách xưởng" : "giảng viên") + " thất bại", null));
                 }
                 customOAuth2User.setId(userStaff.get().getId());
+                customOAuth2User.setName(userStaff.get().getName());
                 customOAuth2User.setCode(userStaff.get().getCode());
                 customOAuth2User.setEmailFe(userStaff.get().getEmailFe());
                 customOAuth2User.setEmailFpt(userStaff.get().getEmailFpt());
@@ -94,6 +96,9 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
                 List<Role> lstRole = authenticationRoleRepository.findRolesByUserId(userStaff.get().getId());
                 for (Role r : lstRole) {
                     roles.add(r.getCode());
+                    if (customOAuth2User.getNameFacility() == null) {
+                        customOAuth2User.setNameFacility(r.getFacility().getName());
+                    }
                 }
 
                 break;
@@ -127,9 +132,11 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
                             new OAuth2Error("login_failed", "Đăng nhập sinh viên thất bại", null));
                 }
                 customOAuth2User.setId(userStudent.getId());
+                customOAuth2User.setName(userStudent.getName());
                 customOAuth2User.setCode(userStudent.getCode());
                 customOAuth2User
                         .setIdFacility(userStudent.getFacility() == null ? null : userStudent.getFacility().getId());
+                customOAuth2User.setNameFacility(userStudent.getFacility() == null ? null : userStudent.getFacility().getName());
                 roles.add(roleCode);
                 break;
 

@@ -5,6 +5,7 @@ import lombok.Setter;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.core.user.OAuth2User;
+import org.springframework.util.StringUtils;
 import udpm.hn.studentattendance.infrastructure.constants.RoleConstant;
 
 import java.util.ArrayList;
@@ -38,11 +39,15 @@ public class CustomOAuth2User extends AuthUser implements OAuth2User {
 
     @Override
     public String getName() {
-        return oauth2User.getAttribute("name");
+        return StringUtils.hasText(this.name) ? this.name : oauth2User.getAttribute("name");
     }
 
     @Override
     public String getCode() {
+        if (StringUtils.hasText(this.name)) {
+            return this.code;
+        }
+
         String[] split = getEmail().trim().split("@");
         return split[0];
     }

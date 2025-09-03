@@ -24,6 +24,8 @@ public class AuthUser {
 
     protected String idFacility;
 
+    protected String nameFacility;
+
     protected String code;
 
     protected String picture;

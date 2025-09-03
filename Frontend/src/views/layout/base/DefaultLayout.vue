@@ -69,6 +69,7 @@ const formDataSettings = reactive({
   DISABLED_CHECK_EMAIL_FPT_STAFF: true,
   DISABLED_CHECK_EMAIL_FPT_STUDENT: false,
   DISABLED_CHECK_ROOM: false,
+  ALLOWS_ONE_TEACHER_TO_TEACH_MULTIPLE_CLASESS: false,
   SHIFT_MIN_DIFF: 0,
   SHIFT_MAX_LATE_ARRIVAL: 0,
   ATTENDANCE_EARLY_CHECKIN: 0,
@@ -283,8 +284,8 @@ watch(
       class="mt-3"
       autocomplete="off"
       :model="formDataSettings"
-      :label-col="{ span: 10 }"
-      :wrapper-col="{ span: 13 }"
+      :label-col="{ span: 13 }"
+      :wrapper-col="{ span: 10 }"
     >
       <a-form-item
         label="Chỉ chấp nhận email FPT (nhân sự):"
@@ -325,6 +326,21 @@ watch(
           class="me-2"
           :checked="formDataSettings.DISABLED_CHECK_ROOM"
           @change="formDataSettings.DISABLED_CHECK_ROOM = !formDataSettings.DISABLED_CHECK_ROOM"
+          :disabled="modalSettings.isLoading"
+        />
+      </a-form-item>
+      <a-form-item
+        label="Cho phép giảng viên quản lý đồng thời nhiều nhóm:"
+        name="ALLOWS_ONE_TEACHER_TO_TEACH_MULTIPLE_CLASESS"
+        :rules="ruleRequired"
+      >
+        <a-switch
+          class="me-2"
+          :checked="formDataSettings.ALLOWS_ONE_TEACHER_TO_TEACH_MULTIPLE_CLASESS"
+          @change="
+            formDataSettings.ALLOWS_ONE_TEACHER_TO_TEACH_MULTIPLE_CLASESS =
+              !formDataSettings.ALLOWS_ONE_TEACHER_TO_TEACH_MULTIPLE_CLASESS
+          "
           :disabled="modalSettings.isLoading"
         />
       </a-form-item>
@@ -490,6 +506,9 @@ watch(
     <a-layout-sider v-model:collapsed="collapsed" :trigger="null" theme="light" collapsible>
       <div class="logo">
         <img :src="imgLogoUdpm" />
+        <span class="facility-name" v-if="authStore?.user?.facilityName">{{
+          authStore?.user?.facilityName
+        }}</span>
       </div>
       <a-menu
         v-model:selectedKeys="applicationStore.selectedKeys"
@@ -589,14 +608,14 @@ watch(
             <a class="user-menu" @click.prevent>
               <a-avatar size="medium" :src="authStore.user?.picture" />
               <div class="user-deital">
-                <div class="username">{{ authStore.user?.name }}</div>
+                <div class="username">{{ authStore.user?.name }} - {{ authStore.user?.code }}</div>
                 <div class="email">{{ authStore.user?.sub }}</div>
               </div>
             </a>
             <template #overlay>
               <a-menu>
                 <a-menu-item class="active d-lg-none">
-                  <b>{{ authStore.user?.name }}</b>
+                  <b>{{ authStore.user?.name }} - {{ authStore.user?.code }}</b>
                   <div>{{ authStore.user?.sub }}</div>
                 </a-menu-item>
                 <a-menu-divider class="d-lg-none" />

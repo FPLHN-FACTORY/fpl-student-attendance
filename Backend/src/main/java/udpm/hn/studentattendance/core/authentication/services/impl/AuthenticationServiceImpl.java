@@ -26,6 +26,7 @@ import udpm.hn.studentattendance.helpers.NotificationHelper;
 import udpm.hn.studentattendance.helpers.RouterHelper;
 import udpm.hn.studentattendance.helpers.SessionHelper;
 import udpm.hn.studentattendance.helpers.SettingHelper;
+import udpm.hn.studentattendance.helpers.ValidateHelper;
 import udpm.hn.studentattendance.infrastructure.common.services.OnnxService;
 import udpm.hn.studentattendance.infrastructure.constants.EntityStatus;
 import udpm.hn.studentattendance.infrastructure.constants.RoleConstant;
@@ -106,6 +107,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 .parseValue(settings.get(SettingKeys.DISABLED_CHECK_EMAIL_FPT_STUDENT));
         Boolean disableCheckRoom = (Boolean) SettingHelper
                 .parseValue(settings.get(SettingKeys.DISABLED_CHECK_ROOM));
+        Boolean allowOneTeacherToTeachMultipleClasess = (Boolean) SettingHelper
+                .parseValue(settings.get(SettingKeys.ALLOWS_ONE_TEACHER_TO_TEACH_MULTIPLE_CLASESS));
         Integer shiftMinDiff = (Integer) SettingHelper.parseValue(settings.get(SettingKeys.SHIFT_MIN_DIFF));
         Integer shiftMaxLateArrival = (Integer) SettingHelper
                 .parseValue(settings.get(SettingKeys.SHIFT_MAX_LATE_ARRIVAL));
@@ -114,7 +117,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         Integer expirationMinuteLogin = (Integer) SettingHelper
                 .parseValue(settings.get(SettingKeys.EXPIRATION_MINUTE_LOGIN));
 
-        if (disableCheckEmailFPTStaff == null || disableCheckEmailFPTStudent == null || disableCheckRoom == null || shiftMinDiff == null
+        if (disableCheckEmailFPTStaff == null || disableCheckEmailFPTStudent == null || disableCheckRoom == null || allowOneTeacherToTeachMultipleClasess == null || shiftMinDiff == null
                 || shiftMaxLateArrival == null || attendanceEarlyCheckin == null || expirationMinuteLogin == null) {
             return RouterHelper.responseError("Vui lòng nhập đầy đủ các trường bắt buộc");
         }
@@ -197,8 +200,18 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             return RouterHelper.responseError("Cơ sở không tồn tại");
         }
 
+        if (!ValidateHelper.isValidCode(request.getCode())) {
+            return RouterHelper.responseError(
+                    "Mã sinh viên không hợp lệ: không có khoảng trắng, không có ký tự đặc biệt ngoài dấu chấm . và dấu gạch dưới _.");
+        }
+
         if (authenticationUserStudentRepository.isExistsCode(request.getCode(), student.getId(), facility.getId())) {
             return RouterHelper.responseError("Mã số sinh viên đã tồn tại trên cơ sở này");
+        }
+
+        if (!ValidateHelper.isValidFullname(request.getName())) {
+            return RouterHelper.responseError(
+                    "Họ tên sinh viên không hợp lệ: Tối thiểu 2 từ, cách nhau bởi khoảng trắng và chỉ bao gồm chữ cái.");
         }
 
         try {

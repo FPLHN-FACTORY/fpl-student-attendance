@@ -367,6 +367,10 @@ hr {
         width: 80px;
       }
 
+      .facility-name {
+        display: none !important;
+      }
+
       @media (max-width: 912px) {
         flex: 0 0 0 !important;
         max-width: 0 !important;
@@ -375,6 +379,10 @@ hr {
 
         .ant-layout-sider-children {
           width: 250px;
+        }
+
+        .facility-name {
+          display: inline-block !important;
         }
       }
     }
@@ -498,6 +506,19 @@ hr {
     img {
       max-width: 100%;
       max-height: 100%;
+    }
+
+    .facility-name {
+      display: inline-block;
+      border-radius: 25px;
+      border: 1px solid;
+      color: #7f85c1;
+      font-size: 0.8rem;
+      padding: 5px 10px;
+
+      @media (max-width: 912px) {
+        display: none;
+      }
     }
   }
 }
