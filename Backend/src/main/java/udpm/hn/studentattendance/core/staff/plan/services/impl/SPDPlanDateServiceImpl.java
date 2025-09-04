@@ -91,9 +91,6 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
     @Value("${app.config.app-name}")
     private String appName;
 
-    @Value("${app.config.allows-one-teacher-to-teach-multiple-classes}")
-    private boolean isDisableCheckExistsTeacherOnShift;
-
     @Override
     public ResponseEntity<?> getDetail(String idPlanFactory) {
         Optional<SPDPlanFactoryResponse> data = spdPlanFactoryRepository.getDetail(idPlanFactory,
@@ -203,6 +200,7 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
         request.setIdFacility(sessionHelper.getFacilityId());
 
         boolean DISABLE_CHECK_ROOM = settingHelper.getSetting(SettingKeys.DISABLED_CHECK_ROOM, Boolean.class);
+        boolean ALLOWS_ONE_TEACHER_TO_TEACH_MULTIPLE_CLASESS = settingHelper.getSetting(SettingKeys.ALLOWS_ONE_TEACHER_TO_TEACH_MULTIPLE_CLASESS, Boolean.class);
         int MAX_LATE_ARRIVAL = settingHelper.getSetting(SettingKeys.SHIFT_MAX_LATE_ARRIVAL, Integer.class);
 
         if (request.getLateArrival() > MAX_LATE_ARRIVAL) {
@@ -300,7 +298,7 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
                     + DateTimeUtils.convertMillisToDate(startDate));
         }
 
-        if (!isDisableCheckExistsTeacherOnShift) {
+        if (!ALLOWS_ONE_TEACHER_TO_TEACH_MULTIPLE_CLASESS) {
             if (spdPlanDateRepository.isExistsTeacherOnShift(factory.getUserStaff().getId(), startDate, endDate,
                     planDate.getId())) {
                 return RouterHelper.responseError("Giảng viên " + factory.getUserStaff().getName() + " - "
@@ -325,7 +323,7 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
                 return RouterHelper.responseError("Không tìm thấy giảng viên dạy thay");
             }
 
-            if (!isDisableCheckExistsTeacherOnShift) {
+            if (!ALLOWS_ONE_TEACHER_TO_TEACH_MULTIPLE_CLASESS) {
                 if (spdPlanDateRepository.isExistsTeacherOnShift(teacher.getId(), startDate, endDate,
                         planDate.getId())) {
                     return RouterHelper.responseError("Giảng viên " + teacher.getName() + " - "
@@ -410,6 +408,7 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
         request.setIdFacility(sessionHelper.getFacilityId());
 
         boolean DISABLE_CHECK_ROOM = settingHelper.getSetting(SettingKeys.DISABLED_CHECK_ROOM, Boolean.class);
+        boolean ALLOWS_ONE_TEACHER_TO_TEACH_MULTIPLE_CLASESS = settingHelper.getSetting(SettingKeys.ALLOWS_ONE_TEACHER_TO_TEACH_MULTIPLE_CLASESS, Boolean.class);
         int MAX_LATE_ARRIVAL = settingHelper.getSetting(SettingKeys.SHIFT_MAX_LATE_ARRIVAL, Integer.class);
 
         if (request.getLateArrival() > MAX_LATE_ARRIVAL) {
@@ -514,7 +513,7 @@ public class SPDPlanDateServiceImpl implements SPDPlanDateService {
                     + DateTimeUtils.convertMillisToDate(startDate));
         }
 
-        if (!isDisableCheckExistsTeacherOnShift) {
+        if (!ALLOWS_ONE_TEACHER_TO_TEACH_MULTIPLE_CLASESS) {
             if (spdPlanDateRepository.isExistsTeacherOnShift(factory.getUserStaff().getId(), startDate, endDate,
                     null)) {
                 return RouterHelper.responseError("Giảng viên dạy thay " + factory.getUserStaff().getName() + " - "

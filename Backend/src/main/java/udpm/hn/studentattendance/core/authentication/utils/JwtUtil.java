@@ -62,6 +62,7 @@ public class JwtUtil {
         dataUser.put("id", oauthUser.getId());
         dataUser.put("role", oauthUser.getRole());
         dataUser.put("facilityID", oauthUser.getIdFacility());
+        dataUser.put("facilityName", oauthUser.getNameFacility());
         dataUser.put("name", oauthUser.getName());
         dataUser.put("code", oauthUser.getCode());
         dataUser.put("picture", oauthUser.getPicture());

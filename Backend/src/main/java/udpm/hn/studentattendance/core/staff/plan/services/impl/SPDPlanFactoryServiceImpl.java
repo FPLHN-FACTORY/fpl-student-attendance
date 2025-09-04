@@ -68,9 +68,6 @@ public class SPDPlanFactoryServiceImpl implements SPDPlanFactoryService {
 
     private final CommonPlanDateRepository commonPlanDateRepository;
 
-    @Value("${app.config.allows-one-teacher-to-teach-multiple-classes}")
-    private boolean isDisableCheckExistsTeacherOnShift;
-
     @Override
     public ResponseEntity<?> getAllList(SPDFilterPlanFactoryRequest request) {
         request.setIdFacility(sessionHelper.getFacilityId());
@@ -97,6 +94,7 @@ public class SPDPlanFactoryServiceImpl implements SPDPlanFactoryService {
     public ResponseEntity<?> createPlanFactory(SPDAddPlanFactoryRequest request) {
 
         boolean DISABLE_CHECK_ROOM = settingHelper.getSetting(SettingKeys.DISABLED_CHECK_ROOM, Boolean.class);
+        boolean ALLOWS_ONE_TEACHER_TO_TEACH_MULTIPLE_CLASESS = settingHelper.getSetting(SettingKeys.ALLOWS_ONE_TEACHER_TO_TEACH_MULTIPLE_CLASESS, Boolean.class);
         int MAX_LATE_ARRIVAL = settingHelper.getSetting(SettingKeys.SHIFT_MAX_LATE_ARRIVAL, Integer.class);
 
         if (request.getLateArrival() > MAX_LATE_ARRIVAL) {
@@ -218,7 +216,7 @@ public class SPDPlanFactoryServiceImpl implements SPDPlanFactoryService {
                                 + DateTimeUtils.convertMillisToDate(startDate));
                     }
 
-                    if (!isDisableCheckExistsTeacherOnShift) {
+                    if (!ALLOWS_ONE_TEACHER_TO_TEACH_MULTIPLE_CLASESS) {
                         if (spdPlanDateRepository.isExistsTeacherOnShift(factory.getUserStaff().getId(), startDate,
                                 endDate, null)) {
                             spdPlanFactoryRepository.delete(planFactory);
