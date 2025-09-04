@@ -79,6 +79,10 @@ public class DBGenerator {
             settingHelper.save(SettingKeys.DISABLED_CHECK_EMAIL_FPT_STUDENT, "true");
         }
 
+        if (settings.get(SettingKeys.DISABLED_CHECK_ROOM) == null) {
+            settingHelper.save(SettingKeys.DISABLED_CHECK_ROOM, "false");
+        }
+
         if (settings.get(SettingKeys.SHIFT_MIN_DIFF) == null) {
             settingHelper.save(SettingKeys.SHIFT_MIN_DIFF, "30");
         }

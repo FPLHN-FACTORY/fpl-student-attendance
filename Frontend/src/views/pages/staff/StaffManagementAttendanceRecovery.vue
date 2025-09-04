@@ -162,7 +162,7 @@ const handleShowModalAdd = () => {
 }
 const handleAddEvent = () => {
   // Validate required fields with whitespace check
-  const validation = validateFormSubmission(newEvent, [{ key: 'name', label: 'Tên sự kiện' }])
+  const validation = validateFormSubmission(newEvent, [{ key: 'name', label: 'Tên hoạt động' }])
 
   if (!validation.isValid) {
     message.error(validation.message)
@@ -175,7 +175,7 @@ const handleAddEvent = () => {
   }
   Modal.confirm({
     title: 'Xác nhận thêm mới',
-    content: 'Bạn có chắc chắn muốn thêm sự kiện khôi phục điểm danh mới này?',
+    content: 'Bạn có chắc chắn muốn thêm hoạt động khôi phục điểm danh mới này?',
     okText: 'Tiếp tục',
     cancelText: 'Hủy bỏ',
     onOk() {
@@ -189,12 +189,14 @@ const handleAddEvent = () => {
       requestAPI
         .post(API_ROUTES_STAFF.FETCH_DATA_ATTENDANCE_RECOVERY, payload)
         .then(() => {
-          message.success('Thêm sự kiện khôi phục điểm danh thành công')
+          message.success('Thêm hoạt động khôi phục điểm danh thành công')
           clearData()
           fetchAttendanceRecovery()
         })
         .catch((error) => {
-          message.error(error.response?.data?.message || 'Lỗi khi thêm sự kiện khôi phục điểm danh')
+          message.error(
+            error.response?.data?.message || 'Lỗi khi thêm hoạt động khôi phục điểm danh',
+          )
         })
         .finally(() => {
           modalAddLoading.value = false
@@ -227,7 +229,7 @@ const handleShowModalEdit = (record) => {
     })
     .catch((error) => {
       message.error(
-        error.response?.data?.message || 'Lỗi khi lấy chi tiết sự kiện khôi phục điểm danh',
+        error.response?.data?.message || 'Lỗi khi lấy chi tiết hoạt động khôi phục điểm danh',
       )
     })
     .finally(() => {
@@ -237,7 +239,7 @@ const handleShowModalEdit = (record) => {
 
 const handleEditEvent = () => {
   // Validate required fields with whitespace check
-  const validation = validateFormSubmission(editEvent, [{ key: 'name', label: 'Tên sự kiện' }])
+  const validation = validateFormSubmission(editEvent, [{ key: 'name', label: 'Tên hoạt động' }])
 
   if (!validation.isValid) {
     message.error(validation.message)
@@ -250,7 +252,7 @@ const handleEditEvent = () => {
   }
   Modal.confirm({
     title: 'Xác nhận cập nhật',
-    content: 'Bạn có chắc chắn muốn cập nhật thông tin sự kiện khôi phục điểm danh này?',
+    content: 'Bạn có chắc chắn muốn cập nhật thông tin hoạt động khôi phục điểm danh này?',
     okText: 'Tiếp tục',
     cancelText: 'Hủy bỏ',
     onOk() {
@@ -265,13 +267,13 @@ const handleEditEvent = () => {
       requestAPI
         .put(API_ROUTES_STAFF.FETCH_DATA_ATTENDANCE_RECOVERY + '/' + editEvent.id, payload)
         .then(() => {
-          message.success('Cập nhật sự kiện khôi phục điểm danh thành công')
+          message.success('Cập nhật hoạt động khôi phục điểm danh thành công')
           clearData()
           fetchAttendanceRecovery()
         })
         .catch((error) => {
           message.error(
-            error.response?.data?.message || 'Lỗi khi cập nhật sự kiện khôi phục điểm danh',
+            error.response?.data?.message || 'Lỗi khi cập nhật hoạt động khôi phục điểm danh',
           )
         })
         .finally(() => {
@@ -333,7 +335,7 @@ const checkAttendanceRecoveryHistory = (data) => {
         Modal.confirm({
           title: 'Cảnh báo',
           content:
-            'Sự kiện này đã được khôi phục điểm danh cho sinh viên rồi. Nếu import tiếp, những sinh viên cũ sẽ bị xóa. Bạn có muốn tiếp tục?',
+            'Hoạt động này đã được khôi phục điểm danh cho sinh viên rồi. Nếu import tiếp, những sinh viên cũ sẽ bị xóa. Bạn có muốn tiếp tục?',
           okText: 'Tiếp tục',
           cancelText: 'Hủy bỏ',
           okType: 'danger',
@@ -502,13 +504,13 @@ onMounted(() => {
       <div class="col-12">
         <a-card :bordered="false" class="cart">
           <template #title>
-            <UnorderedListOutlined /> Danh sách sự kiện khôi phục điểm danh
+            <UnorderedListOutlined /> Danh sách hoạt động khôi phục điểm danh
           </template>
           <div class="d-flex justify-content-end mb-3 flex-wrap gap-3">
             <ExcelUploadButton v-bind="configImportExcelTemplate" />
             <a-space>
               <a-button type="primary" @click="handleShowModalAdd">
-                <PlusOutlined /> Thêm sự kiện
+                <PlusOutlined /> Thêm hoạt động
               </a-button>
             </a-space>
           </div>
@@ -586,11 +588,11 @@ onMounted(() => {
   >
     <template #title>
       <PlusOutlined class="me-2 text-primary" />
-      Thêm sự kiện khôi phục điểm danh
+      Thêm hoạt động khôi phục điểm danh
     </template>
     <a-form :model="newEvent" layout="vertical">
-      <a-form-item label="Tên sự kiện" required>
-        <a-input v-model:value="newEvent.name" placeholder="Nhập tên sự kiện" />
+      <a-form-item label="Tên hoạt động" required>
+        <a-input v-model:value="newEvent.name" placeholder="Nhập tên hoạt động" />
       </a-form-item>
       <a-form-item label="Mô tả">
         <a-textarea v-model:value="newEvent.description" placeholder="Nhập mô tả" />
@@ -615,11 +617,11 @@ onMounted(() => {
   >
     <template #title>
       <EditFilled class="me-2 text-primary" />
-      Sửa sự kiện khôi phục điểm danh
+      Sửa hoạt động khôi phục điểm danh
     </template>
     <a-form :model="editEvent" layout="vertical">
-      <a-form-item label="Tên sự kiện" required>
-        <a-input v-model:value="editEvent.name" placeholder="Nhập tên sự kiện" />
+      <a-form-item label="Tên hoạt động" required>
+        <a-input v-model:value="editEvent.name" placeholder="Nhập tên hoạt động" />
       </a-form-item>
       <a-form-item label="Mô tả">
         <a-textarea v-model:value="editEvent.description" placeholder="Nhập mô tả" />

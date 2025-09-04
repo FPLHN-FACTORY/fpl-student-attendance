@@ -68,6 +68,7 @@ const columns = ref(
 const formDataSettings = reactive({
   DISABLED_CHECK_EMAIL_FPT_STAFF: true,
   DISABLED_CHECK_EMAIL_FPT_STUDENT: false,
+  DISABLED_CHECK_ROOM: false,
   SHIFT_MIN_DIFF: 0,
   SHIFT_MAX_LATE_ARRIVAL: 0,
   ATTENDANCE_EARLY_CHECKIN: 0,
@@ -312,6 +313,18 @@ watch(
             formDataSettings.DISABLED_CHECK_EMAIL_FPT_STUDENT =
               !formDataSettings.DISABLED_CHECK_EMAIL_FPT_STUDENT
           "
+          :disabled="modalSettings.isLoading"
+        />
+      </a-form-item>
+      <a-form-item
+        label="Cho phép dùng chung 1 phòng:"
+        name="DISABLED_CHECK_ROOM"
+        :rules="ruleRequired"
+      >
+        <a-switch
+          class="me-2"
+          :checked="formDataSettings.DISABLED_CHECK_ROOM"
+          @change="formDataSettings.DISABLED_CHECK_ROOM = !formDataSettings.DISABLED_CHECK_ROOM"
           :disabled="modalSettings.isLoading"
         />
       </a-form-item>
