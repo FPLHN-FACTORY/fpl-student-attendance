@@ -548,7 +548,7 @@ public class OnnxService {
             }
 
             if (score > 2) {
-                return antiSpoof < 0.00009 || antiSpoof2 < 0.2 || antiSpoof3 < 0.000000009 || antiSpoof4 < 0.0009;
+                return antiSpoof < 0.00009 || antiSpoof2 < 0.2  || antiSpoof4 < 0.0009; // || antiSpoof3 < 0.000000009
             }
 
             int scoreF = 0;

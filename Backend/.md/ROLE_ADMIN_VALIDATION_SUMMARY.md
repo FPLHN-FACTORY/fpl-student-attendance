@@ -264,21 +264,21 @@ private String staffName;
 
 ## 11. Quản lý Khôi phục điểm danh (Staff/AttendanceRecovery)
 
-### a) Tạo/Cập nhật sự kiện khôi phục điểm danh
+### a) Tạo/Cập nhật hoạt động khôi phục điểm danh
 | Trường       | Validate/Bắt buộc                | Biên ký tự | Check trùng/Logic nghiệp vụ                | Lỗi trả về |
 |--------------|----------------------------------|------------|--------------------------------------------|------------|
-| name         | Bắt buộc, không để trống, @Size(min=2, max=255) | 2-255      | Không trùng tên trong cùng cơ sở (nếu có)  | "Không được để trống tên sự kiện", "Tên tối đa 255 ký tự" |
+| name         | Bắt buộc, không để trống, @Size(min=2, max=255) | 2-255      | Không trùng tên trong cùng cơ sở (nếu có)  | "Không được để trống tên hoạt động", "Tên tối đa 255 ký tự" |
 | description  | Không bắt buộc                   |            |                                            |            |
 | day          | Không validate annotation, kiểu Long (epoch millis) |            | Phải là ngày hợp lệ, không trùng event (nếu có) |            |
 
-### b) Thêm sinh viên vào sự kiện khôi phục điểm danh
+### b) Thêm sinh viên vào hoạt động khôi phục điểm danh
 | Trường              | Validate/Bắt buộc | Biên ký tự | Check trùng/Logic nghiệp vụ                                                                 | Lỗi trả về                                                                                 |
 |---------------------|------------------|------------|--------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------|
 | day                 | Không validate   | epoch millis| Phải có ca học hợp lệ trong ngày này                                                       | "Ngày ... không có ca học nào"                                                            |
 | studentCode         | Không validate   |            | Phải tồn tại sinh viên với mã này, phải thuộc nhóm xưởng, phải có kế hoạch, không được điểm danh trùng | "Không tìm thấy mã sinh viên", "Chưa tham gia nhóm xưởng", "Chưa có kế hoạch", "Đã điểm danh đủ" |
-| attendanceRecoveryId| Không validate   |            | Phải tồn tại sự kiện khôi phục điểm danh                                                   | "Không tìm thấy sự kiện khôi phục điểm danh"                                              |
+| attendanceRecoveryId| Không validate   |            | Phải tồn tại hoạt động khôi phục điểm danh                                                   | "Không tìm thấy hoạt động khôi phục điểm danh"                                              |
 
-### c) Lấy danh sách sự kiện khôi phục điểm danh
+### c) Lấy danh sách hoạt động khôi phục điểm danh
 | Trường       | Validate/Bắt buộc | Biên ký tự | Check trùng/Logic nghiệp vụ | Lỗi trả về |
 |--------------|------------------|------------|-----------------------------|------------|
 | searchQuery  | Không validate   |            |                             |            |

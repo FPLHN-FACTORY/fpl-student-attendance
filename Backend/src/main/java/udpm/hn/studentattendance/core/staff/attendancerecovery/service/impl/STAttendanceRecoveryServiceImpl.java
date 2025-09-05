@@ -84,7 +84,7 @@ public class STAttendanceRecoveryServiceImpl implements STAttendanceRecoveryServ
     @Override
     public ResponseEntity<?> getListAttendanceRecovery(STAttendanceRecoveryRequest request) {
         PageableObject<?> list = getCachedAttendanceRecoveryList(request);
-        return RouterHelper.responseSuccess("Lấy danh sách sự kiện thành công", list);
+        return RouterHelper.responseSuccess("Lấy danh sách hoạt động thành công", list);
     }
 
     @Override
@@ -97,15 +97,15 @@ public class STAttendanceRecoveryServiceImpl implements STAttendanceRecoveryServ
             attendanceRepository.deleteAll(attendanceList);
 
             userActivityLogHelper.saveLog(
-                    "vừa xóa sự kiện khôi phục điểm danh: " + attendanceRecoveryOptional.get().getName());
+                    "vừa xóa hoạt động khôi phục điểm danh: " + attendanceRecoveryOptional.get().getName());
             attendanceRecoveryRepository.deleteById(attendanceRecoveryOptional.get().getId());
 
             // Invalidate all caches
             redisInvalidationHelper.invalidateAllCaches();
 
-            return RouterHelper.responseSuccess("Xóa sự kiện khôi phục điểm danh sinh viên thành công", null);
+            return RouterHelper.responseSuccess("Xóa hoạt động khôi phục điểm danh sinh viên thành công", null);
         } else {
-            return RouterHelper.responseError("Sự kiện khôi phục điểm danh sinh viên không tồn tại", null);
+            return RouterHelper.responseError("Hoạt động khôi phục điểm danh sinh viên không tồn tại", null);
         }
     }
 
@@ -139,12 +139,12 @@ public class STAttendanceRecoveryServiceImpl implements STAttendanceRecoveryServ
         attendanceRecovery.setFacility(facilityOptional.get());
         AttendanceRecovery attendanceRecoverySave = attendanceRecoveryRepository.save(attendanceRecovery);
 
-        userActivityLogHelper.saveLog("vừa thêm sự kiện khôi phục điểm danh mới: " + attendanceRecoverySave.getName());
+        userActivityLogHelper.saveLog("vừa thêm hoạt động khôi phục điểm danh mới: " + attendanceRecoverySave.getName());
 
         // Invalidate all caches
         redisInvalidationHelper.invalidateAllCaches();
 
-        return RouterHelper.responseSuccess("Thêm sự kiện khôi phục điểm danh mới thành công", attendanceRecoverySave);
+        return RouterHelper.responseSuccess("Thêm hoạt động khôi phục điểm danh mới thành công", attendanceRecoverySave);
     }
 
     public AttendanceRecovery getCachedAttendanceRecoveryDetail(String id) {
@@ -156,10 +156,10 @@ public class STAttendanceRecoveryServiceImpl implements STAttendanceRecoveryServ
     public ResponseEntity<?> getDetailEventAttendanceRecovery(String idEventAttendanceRecovery) {
         AttendanceRecovery attendanceRecovery = getCachedAttendanceRecoveryDetail(idEventAttendanceRecovery);
         if (attendanceRecovery != null) {
-            return RouterHelper.responseSuccess("Lấy chi tiết sự kiện khôi phục điểm danh thành công",
+            return RouterHelper.responseSuccess("Lấy chi tiết hoạt động khôi phục điểm danh thành công",
                     attendanceRecovery);
         }
-        return RouterHelper.responseError("Sự Kiện khôi phục điểm danh không tồn tại", null);
+        return RouterHelper.responseError("Hoạt động khôi phục điểm danh không tồn tại", null);
     }
 
     @Override
@@ -176,14 +176,14 @@ public class STAttendanceRecoveryServiceImpl implements STAttendanceRecoveryServ
             attendanceRecoveryRepository.save(attendanceRecovery);
 
             userActivityLogHelper.saveLog(
-                    "vừa cập nhật sự kiện khôi phục điểm danh: " + oldName + " → " + attendanceRecovery.getName());
+                    "vừa cập nhật hoạt động khôi phục điểm danh: " + oldName + " → " + attendanceRecovery.getName());
 
             // Invalidate all caches
             redisInvalidationHelper.invalidateAllCaches();
 
-            return RouterHelper.responseSuccess("Cập nhật sự kiện khôi phục điểm danh thành công", attendanceRecovery);
+            return RouterHelper.responseSuccess("Cập nhật hoạt động khôi phục điểm danh thành công", attendanceRecovery);
         }
-        return RouterHelper.responseError("Sự kiện khôi phục điểm danh không tồn tại", null);
+        return RouterHelper.responseError("Hoạt động khôi phục điểm danh không tồn tại", null);
     }
 
     @Override
@@ -197,11 +197,11 @@ public class STAttendanceRecoveryServiceImpl implements STAttendanceRecoveryServ
                     .findById(request.getAttendanceRecoveryId());
 
             if (attendanceRecoveryOptional.isEmpty()) {
-                return RouterHelper.responseError("Không tìm thấy sự kiện");
+                return RouterHelper.responseError("Không tìm thấy hoạt động");
             }
 
             if (!DateTimeUtils.isSameDay(request.getDay(), attendanceRecoveryOptional.get().getDay())) {
-                return RouterHelper.responseError("Ngày điểm danh không khớp với ngày diễn ra sự kiện");
+                return RouterHelper.responseError("Ngày điểm danh không khớp với ngày diễn ra hoạt động");
             }
 
             UserStudent userStudent = validateAndGetStudent(request.getStudentCode());
@@ -456,9 +456,9 @@ public class STAttendanceRecoveryServiceImpl implements STAttendanceRecoveryServ
                 .findById(idAttendanceRecovery);
         if (attendanceRecoveryOptional.isPresent()) {
             Boolean hasStudents = getCachedHasStudentAttendanceRecovery(idAttendanceRecovery);
-            return RouterHelper.responseSuccess("Kiểm tra sự kiện có sinh viên thành công", hasStudents);
+            return RouterHelper.responseSuccess("Kiểm tra hoạt động có sinh viên thành công", hasStudents);
         }
-        return RouterHelper.responseError("Không tìm thấy sự kiện", false);
+        return RouterHelper.responseError("Không tìm thấy hoạt động", false);
     }
 
     @Override
@@ -491,14 +491,14 @@ public class STAttendanceRecoveryServiceImpl implements STAttendanceRecoveryServ
             attendanceRecoveryRepository.save(attendanceRecovery);
 
             userActivityLogHelper
-                    .saveLog("đã xóa dữ liệu điểm danh của sự kiện khôi phục: " + attendanceRecovery.getName());
+                    .saveLog("đã xóa dữ liệu điểm danh của hoạt động khôi phục: " + attendanceRecovery.getName());
 
             // Invalidate all caches
             redisInvalidationHelper.invalidateAllCaches();
 
             return RouterHelper.responseSuccess("Xóa dữ liệu điểm danh thành công", null);
         }
-        return RouterHelper.responseError("Không tìm thấy sự kiện khôi phục điểm danh", null);
+        return RouterHelper.responseError("Không tìm thấy hoạt động khôi phục điểm danh", null);
     }
 
 }

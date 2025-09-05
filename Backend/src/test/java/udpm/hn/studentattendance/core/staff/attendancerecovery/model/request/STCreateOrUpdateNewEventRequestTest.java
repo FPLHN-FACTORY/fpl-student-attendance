@@ -7,12 +7,12 @@ public class STCreateOrUpdateNewEventRequestTest {
     @Test
     void testGetterSetter() {
         STCreateOrUpdateNewEventRequest req = new STCreateOrUpdateNewEventRequest();
-        req.setName("Sự kiện A");
+        req.setName("Hoạt động A");
         req.setDay(123456789L);
-        req.setDescription("Mô tả sự kiện");
+        req.setDescription("Mô tả hoạt động");
 
-        assertEquals("Sự kiện A", req.getName());
+        assertEquals("Hoạt động A", req.getName());
         assertEquals(123456789L, req.getDay());
-        assertEquals("Mô tả sự kiện", req.getDescription());
+        assertEquals("Mô tả hoạt động", req.getDescription());
     }
 }
