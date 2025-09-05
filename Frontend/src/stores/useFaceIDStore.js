@@ -635,14 +635,14 @@ const useFaceIDStore = defineStore('faceID', () => {
     }
 
     const getBestEmbedding = async (startCount, endCount, callbackError) => {
-      await delay(1000)
+      await delay(300)
       embedding.value = null
       count.value = startCount
       isShowLookAhead.value = false
       while (count.value > endCount) {
         renderTextStep('Vui lòng giữ nguyên...')
 
-        const [_, currentEmbedding] = await Promise.all([delay(1000), getEmbedding()])
+        const [_, currentEmbedding] = await Promise.all([delay(300), getEmbedding()])
 
         if (!currentEmbedding || currentEmbedding.length === 0) {
           embedding.value = null
@@ -1006,21 +1006,21 @@ const useFaceIDStore = defineStore('faceID', () => {
             return renderTextStep()
           }
           if (step.value === 1 && angle === -1 && isReal) {
-            await delay(500)
+            await delay(200)
             step.value = 2
             isShowActionTurnRight.value = false
             isShowActionTurnLeft.value = true
             renderTextStep()
-            return await delay(1000)
+            return await delay(500)
           }
           if (step.value === 2 && angle === 1 && isReal) {
-            await delay(500)
+            await delay(200)
             step.value = 3
             isShowLookAhead.value = true
             isShowActionTurnRight.value = false
             isShowActionTurnLeft.value = false
             renderTextStep()
-            return await delay(2000)
+            return await delay(1000)
           }
           if (step.value === 3 && angle === 0) {
             prevEmbedding.value = null

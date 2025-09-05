@@ -141,7 +141,6 @@ const handleShowModalAdd = () => {
   modalAdd.value = true
 }
 
-// Sự kiện thay đổi phân trang (dynamic)
 const handleTableChange = (pageInfo) => {
   pagination.current = pageInfo.current
   pagination.pageSize = pageInfo.pageSize

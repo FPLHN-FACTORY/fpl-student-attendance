@@ -202,7 +202,7 @@ public class EXAttendanceRecoveryServiceImpl implements EXAttendanceRecoveryServ
             attendanceRecoveryRepository.save(attendanceRecovery);
 
 //            userActivityLogHelper.saveLog(
-//                    "vừa thêm danh sách sinh viên vào sự kiện: " + attendanceRecoveryOptional.get().getName());
+//                    "vừa thêm danh sách sinh viên vào hoạt động: " + attendanceRecoveryOptional.get().getName());
 
         }
     }

@@ -189,7 +189,6 @@ const fetchFacilitiesListCombobox = () => {
     })
 }
 
-// Sự kiện thay đổi trang bảng, cập nhật cả current và pageSize rồi gọi lại fetchStaffs
 const handleTableChange = (pageInfo) => {
   pagination.value.current = pageInfo.current
   pagination.value.pageSize = pageInfo.pageSize
